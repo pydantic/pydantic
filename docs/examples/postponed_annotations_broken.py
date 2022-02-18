@@ -8,6 +8,6 @@ def this_is_broken():
     from typing import List
 
     class Model(BaseModel):
-        a: List[int]
+        a: list[int]
 
     print(Model(a=(1, 2)))

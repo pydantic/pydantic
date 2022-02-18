@@ -17,3 +17,10 @@ repos:
     entry: make mypy
     types: [python]
     language: system
+
+- repo: https://github.com/asottile/pyupgrade
+  rev: v2.31.0
+  hooks:
+    - id: pyupgrade
+      args:
+        - --py37-plus

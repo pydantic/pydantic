@@ -7,13 +7,13 @@ from pydantic import BaseModel, Field, conint
 
 
 class Pet(BaseModel):
-    name: Optional[str] = None
-    age: Optional[int] = None
+    name: str | None = None
+    age: int | None = None
 
 
 class Person(BaseModel):
     first_name: str = Field(..., description="The person's first name.")
     last_name: str = Field(..., description="The person's last name.")
-    age: Optional[conint(ge=0)] = Field(None, description='Age in years.')
-    pets: Optional[List[Pet]] = None
-    comment: Optional[Any] = None
+    age: conint(ge=0) | None = Field(None, description='Age in years.')
+    pets: list[Pet] | None = None
+    comment: Any | None = None

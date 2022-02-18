@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    a: List[int]
+    a: list[int]
 
 
 print(Model(a=('1', 2, 3)))

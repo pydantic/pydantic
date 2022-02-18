@@ -205,7 +205,7 @@ def test_post_init_post_parse():
 
 def test_post_init_post_parse_types():
     @pydantic.dataclasses.dataclass
-    class CustomType(object):
+    class CustomType:
         b: int
 
     @pydantic.dataclasses.dataclass
