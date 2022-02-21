@@ -43,27 +43,36 @@ cd pydantic
 # 2. Set up a virtualenv for running tests
 virtualenv -p `which python3.8` env
 source env/bin/activate
+python -m pip install -e .
 # Building docs requires 3.8. If you don't need to build docs you can use
 # whichever version; 3.7 will work too.
 
-# 3. Install pydantic, dependencies, test dependencies and doc dependencies
+# 3. Install additional packages required for development.
+python -m pip install black flake8 isort pytest pytest-cov pytest-mock
+# Install these for more complete test coverage. Support for these packages will
+# not be tested if they are not installed.
+python -m pip install hypothesis mypy sqlalchemy orjson ujson
+# These are only needed if you need to build the docs.
+python -m pip install ansi2html
+
+# 4. Install pydantic, dependencies, test dependencies and doc dependencies
 make install
 
-# 4. Checkout a new branch and make your changes
+# 5. Checkout a new branch and make your changes
 git checkout -b my-new-feature-branch
 # make your changes...
 
-# 5. Fix formatting and imports
+# 6. Fix formatting and imports
 make format
 # Pydantic uses black to enforce formatting and isort to fix imports
 # (https://github.com/ambv/black, https://github.com/timothycrosley/isort)
 
-# 6. Run tests and linting
+# 7. Run tests and linting
 make
 # there are a few sub-commands in Makefile like `test`, `testcov` and `lint`
 # which you might want to use, but generally just `make` should be all you need
 
-# 7. Build documentation
+# 8. Build documentation
 make docs
 # if you have changed the documentation make sure it builds successfully
 # you can also use `make docs-serve` to serve the documentation at localhost:8000
