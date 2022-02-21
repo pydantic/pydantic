@@ -433,13 +433,13 @@ def test_with_declared_hash():
         x: int
 
         def __hash__(self):
-            return self.x ** 2
+            return self.x**2
 
     class Bar(Foo):
         y: int
 
         def __hash__(self):
-            return self.y ** 3
+            return self.y**3
 
     class Buz(Bar):
         z: int

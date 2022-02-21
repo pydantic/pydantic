@@ -25,6 +25,9 @@ jobs:
           make install-linting
           pip freeze
 
+      - name: check format
+        run: make check-format
+
       - name: lint
         run: make lint
 

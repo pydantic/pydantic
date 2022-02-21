@@ -122,7 +122,7 @@ def int_domain_regex() -> Pattern[str]:
 class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
-    max_length = 2 ** 16
+    max_length = 2**16
     allowed_schemes: Optional[Collection[str]] = None
     tld_required: bool = False
     user_required: bool = False
@@ -386,7 +386,7 @@ def stricturl(
     *,
     strip_whitespace: bool = True,
     min_length: int = 1,
-    max_length: int = 2 ** 16,
+    max_length: int = 2**16,
     tld_required: bool = True,
     host_required: bool = True,
     allowed_schemes: Optional[Collection[str]] = None,

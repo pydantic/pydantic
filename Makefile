@@ -42,6 +42,11 @@ format:
 	$(isort)
 	$(black)
 
+.PHONY: check-format
+check-format:
+	$(isort) --check
+	$(black) --check
+
 .PHONY: lint
 lint:
 	flake8 pydantic/ tests/
