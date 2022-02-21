@@ -1,7 +1,7 @@
 ansi2html==1.6.0
 flake8==4.0.1
 flake8-quotes==3.3.1
-hypothesis==6.31.6
+hypothesis==6.37.1
 markdown-include==0.6.0
 mdx-truly-sane-lists==1.2
 mkdocs==1.2.3
