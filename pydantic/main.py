@@ -691,6 +691,36 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     @no_type_check
+    def _get_value_lazy(
+        cls,
+        v: Any,
+        by_alias: bool,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        exclude_unset: bool,
+        exclude_defaults: bool,
+        exclude_none: bool,
+    ) -> Any:
+
+        if isinstance(v, BaseModel):
+            v_dict = partial(v._dict_prep,
+                             to_dict=True,
+                             by_alias=by_alias,
+                             exclude_unset=exclude_unset,
+                             exclude_defaults=exclude_defaults,
+                             include=include,
+                             exclude=exclude,
+                             exclude_none=exclude_none,
+                             )
+            # no idea how to handle rootkey
+            # if ROOT_KEY in v_dict:
+            #     return v_dict[ROOT_KEY]
+            return v_dict
+        else:
+            raise ValueError
+
+    @classmethod
+    @no_type_check
     def _get_value(
         cls,
         v: Any,
@@ -719,10 +749,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             else:
                 return v.copy(include=include, exclude=exclude)
 
-        value_exclude = ValueItems(v, exclude) if exclude else None
-        value_include = ValueItems(v, include) if include else None
+        elif isinstance(v, dict):
+            value_exclude = ValueItems(v, exclude) if exclude else None
+            value_include = ValueItems(v, include) if include else None
 
-        if isinstance(v, dict):
             return {
                 k_: cls._get_value(
                     v_,
@@ -740,6 +770,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             }
 
         elif sequence_like(v):
+            value_exclude = ValueItems(v, exclude) if exclude else None
+            value_include = ValueItems(v, include) if include else None
+
             seq_args = (
                 cls._get_value(
                     v_,
@@ -842,6 +875,77 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 )
             yield dict_key, v
 
+    def _dict_prep(
+        self,
+        to_dict: bool = False,
+        by_alias: bool = False,
+        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+    ) -> dict:
+
+        # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
+        # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
+        if exclude is not None or self.__exclude_fields__ is not None:
+            exclude = ValueItems.merge(self.__exclude_fields__, exclude)
+
+        if include is not None or self.__include_fields__ is not None:
+            include = ValueItems.merge(self.__include_fields__, include, intersect=True)
+
+        allowed_keys = self._calculate_keys(
+            include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
+        )
+        if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
+            # huge boost for plain _iter()
+            return self.__dict__.items()
+
+
+        value_exclude = ValueItems(self, exclude) if exclude is not None else None
+        value_include = ValueItems(self, include) if include is not None else None
+
+        returnkeys = {"basic":{},"model":{}}
+        for field_key, v in self.__dict__.items():
+            if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
+                continue
+
+            if exclude_defaults:
+                model_field = self.__fields__.get(field_key)
+                if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
+                    continue
+
+            if by_alias and field_key in self.__fields__:
+                dict_key = self.__fields__[field_key].alias
+            else:
+                dict_key = field_key
+
+            if to_dict or value_include or value_exclude:
+                if isinstance(v, BaseModel):
+                   returnkeys["model"][dict_key] = (v,{
+                    "to_dict":to_dict,
+                    "by_alias":by_alias,
+                    "include":value_include and value_include.for_element(field_key),
+                    "exclude":value_exclude and value_exclude.for_element(field_key),
+                    "exclude_unset":exclude_unset,
+                    "exclude_defaults":exclude_defaults,
+                    "exclude_none":exclude_none})
+
+                else:
+                    returnkeys["basic"][dict_key] = partial(self._get_value,
+                    v,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    include=value_include and value_include.for_element(field_key),
+                    exclude=value_exclude and value_exclude.for_element(field_key),
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
+                    exclude_none=exclude_none
+                )
+
+
+        return returnkeys
+
     def _calculate_keys(
         self,
         include: Optional['MappingIntStrAny'],
@@ -869,14 +973,102 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         return keys
 
+    @classmethod
+    @no_type_check
+    def compare_basic(cls,dict_prep, other) -> bool:
+        if isinstance(other, dict):
+            if (dict_prep["basic"].keys() | dict_prep["model"].keys()) != other.keys():
+                return False
+            for key, value in dict_prep["basic"].items():
+                if value() != other[key]:
+                    return False
+            for key, value in dict_prep["model"].items():
+                if not cls.compare_basic(value[0]._dict_prep(**value[1]), other[key]):
+                    return False
+        else:
+            # no idea what to check for beyond here
+            return False
+
+        return True
+
+    @classmethod
+    @no_type_check
+    def compare_dict_prep(cls, dict_prep, dict_prep2) -> bool:
+
+        if (dict_prep["basic"].keys() | dict_prep["model"].keys()) != \
+                (dict_prep2["basic"].keys() | dict_prep2["model"].keys()):
+            return False
+
+        shared_simple = dict_prep["basic"].keys() & dict_prep2["basic"].keys()
+        shared_models = dict_prep["model"].keys() & dict_prep2["model"].keys()
+        first_model = dict_prep["model"].keys() & dict_prep2["basic"].keys()
+        second_model = dict_prep["basic"].keys() & dict_prep2["model"].keys()
+
+        for key in shared_simple:
+            if dict_prep["basic"][key]() != dict_prep2["basic"][key]():
+                return False
+
+        for key in shared_models:
+            first_check = dict_prep["model"][key]
+            second_check = dict_prep2["model"][key]
+            if not cls.compare_dict_prep(first_check[0]._dict_prep(**first_check[1]),
+                                         second_check[0]._dict_prep(**second_check[1])):
+                return False
+
+        for key in first_model:
+            first_check = dict_prep["model"][key]
+            second_check = dict_prep2["basic"][key]
+            if not cls.compare_basic(first_check[0]._dict_prep(**first_check[1]), second_check):
+                return False
+
+        for key in second_model:
+            first_check = dict_prep2["model"][key]
+            second_check = dict_prep["basic"][key]
+            if not cls.compare_basic(first_check[0]._dict_prep(**first_check[1]), second_check):
+                return False
+
+
+        return True
+
+
     def __eq__(self, other: Any) -> bool:
+        """
+        current benchmarks
+        Simple object
+        optimized 0:00:11.672748 for different
+                  0:00:05.148253 for nonsense dict
+                  0:00:20.987068 for similar object
+                  0:00:00.082380 for same object
+
+        orginal   0:00:15.974565 for different
+                  0:00:08.083867 for nonsense dict
+                  0:00:15.999414 for similar object
+                  0:00:16.239027 for same object
+
+
+        Commplex object
+        optimized 0:00:58.117039 for different (isnt optimzed for lists)
+                  0:00:05.129671 for nonsense dict
+                  0:00:58.982112 for similar object
+                  0:00:00.083755 for same object
+
+        orginal   0:00:51.947044 for different
+                  0:00:26.374109 for nonsense dict
+                  0:00:54.089041 for similar object
+                  0:00:53.464103 for same object
+
+        """
+
         if self is other:
             return True
 
         if isinstance(other, BaseModel):
-            return self.dict() == other.dict()
+            return self.compare_dict_prep(self._dict_prep(to_dict=True),
+                                           other._dict_prep(to_dict=True))
+
         else:
-            return self.dict() == other
+            return self.compare_basic(self._dict_prep(to_dict=True), other)
+
 
     def __repr_args__(self) -> 'ReprArgs':
         return [
