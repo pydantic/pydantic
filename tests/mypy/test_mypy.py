@@ -120,3 +120,12 @@ def test_explicit_reexports() -> None:
     for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
         for export in export_all:
             assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
+
+
+@pytest.mark.skipif(not (dotenv and mypy_api), reason='dotenv or mypy are not installed')
+def test_version_parsing() -> None:
+    from pydantic.mypy import _parse_mypy_version
+
+    assert _parse_mypy_version('0.930') == (0, 930)
+    assert _parse_mypy_version('0.930.1') == (0, 930, 1)
+    assert _parse_mypy_version('0.940+dev.2d30dbaa34eab9d7519e440480f360fc9a1e65c3') == (0, 940)

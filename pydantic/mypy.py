@@ -62,13 +62,23 @@ except ImportError:  # pragma: no cover
     # Backward-compatible with TypeVarDef from Mypy 0.910.
     from mypy.types import TypeVarType as TypeVarDef
 
+
+def _parse_mypy_version(mypy_version: str) -> Tuple[int, ...]:
+    # mypy release versions are . separated. Development versions are suffixed
+    # with +dev, and development versions from git are further suffixed with a
+    # git SHA. A full example:
+    # 0.940+dev.2d30dbaa34eab9d7519e440480f360fc9a1e65c3
+    non_dev_version = mypy_version.split('+')[0]
+    return tuple(int(c) for c in non_dev_version.split('.'))
+
+
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
-BUILTINS_NAME = 'builtins' if float(mypy_version) >= 0.930 else '__builtins__'
+BUILTINS_NAME = 'builtins' if _parse_mypy_version(mypy_version) >= (0, 930) else '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
