@@ -37,6 +37,19 @@ The format of `$ref`s (`"#/definitions/FooBar"` above) can be altered by calling
 with the `ref_template` keyword argument, e.g. `ApplePie.schema(ref_template='/schemas/{model}.json#/')`, here `{model}`
 will be replaced with the model naming using `str.format()`.
 
+## Getting schema of a specified type
+
+_Pydantic_ includes two standalone utility functions `schema_of` and `schema_json_of` that can be used to
+apply the schema generation logic used for _pydantic_ models in a more ad-hoc way.
+These functions behave similarly to `BaseModel.schema` and `BaseModel.schema_json`,
+but work with arbitrary pydantic-compatible types.
+
+```py
+{!.tmp_examples/schema_ad_hoc.py!}
+```
+_(This script is complete, it should run "as is")_
+
+
 ## Field customization
 
 Optionally, the `Field` function can be used to provide extra information about the field and validations.
@@ -136,6 +149,21 @@ For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
 Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
 see [Custom Data Types](types.md#custom-data-types) for more details.
+
+`__modify_schema__` can also take a `field` argument which will have type `Optional[ModelField]`.
+*pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
+included.
+
+```py
+{!.tmp_examples/schema_with_field.py!}
+```
+_(This script is complete, it should run "as is")_
+
+Outputs:
+
+```json
+{!.tmp_examples/schema_with_field.json!}
+```
 
 ## JSON Schema Types
 

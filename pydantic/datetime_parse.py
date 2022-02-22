@@ -245,4 +245,4 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     kw_ = {k: float(v) for k, v in kw.items() if v is not None}
 
-    return sign * timedelta(**kw_)  # type: ignore
+    return sign * timedelta(**kw_)

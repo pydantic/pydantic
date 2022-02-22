@@ -68,6 +68,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'AmqpDsn',
     'RedisDsn',
     'KafkaDsn',
     'validate_email',
@@ -284,6 +285,7 @@ class AnyUrl(str):
             tld = d.group('tld')
             if tld is None and not is_international:
                 d = int_domain_regex().fullmatch(host)
+                assert d is not None
                 tld = d.group('tld')
                 is_international = True
 
@@ -349,6 +351,11 @@ class PostgresDsn(AnyUrl):
         'postgresql+pygresql',
     }
     user_required = True
+
+
+class AmqpDsn(AnyUrl):
+    allowed_schemes = {'amqp', 'amqps'}
+    host_required = False
 
 
 class RedisDsn(AnyUrl):

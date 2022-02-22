@@ -1,1 +1,0 @@
-Always use `Enum` value as default in generated JSON schema.
