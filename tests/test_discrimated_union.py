@@ -267,6 +267,24 @@ def test_discriminated_union_basemodel_instance_value():
     assert isinstance(t, Top)
 
 
+def test_discriminated_union_basemodel_instance_value_with_alias():
+    class A(BaseModel):
+        literal: Literal['a'] = Field(alias='lit')
+
+    class B(BaseModel):
+        literal: Literal['b'] = Field(alias='lit')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    class Top(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='literal')
+
+    assert Top(sub=A(lit='a')).sub.literal == 'a'
+    assert Top(sub=B(lit='b')).sub.literal == 'b'
+    assert Top(sub=B(literal='b')).sub.literal == 'b'
+
+
 def test_discriminated_union_int():
     class A(BaseModel):
         l: Literal[1]
