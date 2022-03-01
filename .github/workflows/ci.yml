@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
         uses: actions/setup-python@v2
@@ -40,7 +40,7 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v1
@@ -71,7 +71,7 @@ jobs:
       OS: ubuntu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v2
@@ -140,7 +140,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v2
@@ -173,7 +173,7 @@ jobs:
         mypy-version: ['0.910', '0.920', '0.921']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v2
@@ -210,7 +210,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v1
         with:
@@ -239,7 +239,7 @@ jobs:
     name: test fastAPI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v2
@@ -259,7 +259,7 @@ jobs:
       BENCHMARK_REPEATS: 1
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v2
@@ -292,7 +292,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
       uses: actions/setup-python@v2
@@ -343,7 +343,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
         uses: actions/setup-python@v2
