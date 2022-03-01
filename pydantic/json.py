@@ -33,7 +33,7 @@ def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
 
     This is useful when we use ConstrainedDecimal to represent Numeric(x,0)
     where a integer (but not int typed) is used. Encoding this as a float
-    results in failed round-tripping between encode and prase.
+    results in failed round-tripping between encode and parse.
     Our Id type is a prime example of this.
 
     >>> decimal_encoder(Decimal("1.0"))
