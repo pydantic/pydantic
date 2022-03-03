@@ -12,4 +12,4 @@ git checkout "${latest_tag}"
 pip install -U flit
 flit install
 
-PYTHONPATH=./docs/src pytest
+./scripts/test.sh
