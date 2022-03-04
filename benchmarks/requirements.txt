@@ -12,3 +12,4 @@ cattrs
 cerberus
 voluptuous
 schematics
+jsons

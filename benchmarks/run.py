@@ -64,6 +64,12 @@ except Exception as e:
     print('WARNING: unable to import TestSchematics')
     TestSchematics = None
 
+try:
+    from test_jsons import TestJsons
+except Exception as e:
+    print('WARNING: unable to import TestJsons')
+    TestJsons = None
+
 PUNCTUATION = ' \t\n!"#$%&\'()*+,-./'
 LETTERS = string.ascii_letters
 UNICODE = '\xa0\xad¡¢£¤¥¦§¨©ª«¬ ®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
@@ -77,6 +83,7 @@ other_tests = [
     TestMarshmallow,
     TestVoluptuous,
     TestTrafaret,
+    TestJsons,
     TestSchematics,
     TestDRF,
     TestCerberus,
