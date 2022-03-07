@@ -3206,3 +3206,43 @@ def test_future_date_validation_fails(value):
             'type': 'value_error.date.not_in_the_future',
         }
     ]
+
+
+# Issue 2329 - Strict* types should be drop in replacements for normal types,
+# so their constructors should produce the same type of objects.
+# 'isinstance' is weakest test, so comes first.
+# 'type' check is next.
+# 'is' check on values is tightest, only possible for some.
+# '==' check is for default values
+
+
+def test_strict_bool_constructor():
+    assert isinstance(StrictBool(bool), bool)
+    assert type(StrictBool(bool)) is bool
+    assert StrictBool(True) is True
+    assert StrictBool(False) is False
+    assert StrictBool() == bool()
+
+
+def test_strict_float_constructor():
+    assert isinstance(StrictFloat(1), float)
+    assert type(StrictFloat(1)) is float
+    assert StrictFloat() == float()
+
+
+def test_strict_int_constructor():
+    assert isinstance(StrictInt(1), int)
+    assert type(StrictInt(1)) is int
+    assert StrictInt() == int()
+
+
+def test_strict_bytes_constructor():
+    assert isinstance(StrictBytes(b''), bytes)
+    assert type(StrictBytes(b'')) is bytes
+    assert StrictBytes() == bytes()
+
+
+def test_strict_str_constructor():
+    assert isinstance(StrictStr(''), str)
+    assert type(StrictStr('')) is str
+    assert StrictStr() == str()

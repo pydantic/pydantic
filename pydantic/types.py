@@ -167,6 +167,9 @@ else:
         StrictBool to allow for bools which are not type-coerced.
         """
 
+        def __new__(self, value=False):
+            return bool(value)
+
         @classmethod
         def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
             field_schema.update(type='boolean')
@@ -246,6 +249,12 @@ else:
     class StrictInt(ConstrainedInt):
         strict = True
 
+        def __new__(cls, value=0):
+            if cls is StrictInt:
+                return int(value)
+            else:
+                return super().__new__(cls, value)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -322,6 +331,12 @@ else:
     class StrictFloat(ConstrainedFloat):
         strict = True
 
+        def __new__(cls, value=0.0):
+            if cls is StrictFloat:
+                return float(value)
+            else:
+                return super().__new__(cls, value)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -370,6 +385,12 @@ else:
 
     class StrictBytes(ConstrainedBytes):
         strict = True
+
+        def __new__(cls, value=b''):
+            if cls is StrictBytes:
+                return bytes(value)
+            else:
+                return super().__new__(cls, value)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -442,6 +463,12 @@ else:
 
     class StrictStr(ConstrainedStr):
         strict = True
+
+        def __new__(cls, value=''):
+            if cls is StrictStr:
+                return str(value)
+            else:
+                return super().__new__(cls, value)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
