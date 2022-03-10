@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from dateutil.parser import parse
@@ -5,34 +6,40 @@ from typing import List, Optional
 
 import jsons
 
-jsons.set_deserializer(lambda dt, cls, **_: parse(dt), datetime)
-
 
 class TestJsons:
     package = 'jsons'
     version = jsons.__version__
 
     def __init__(self, allow_extra):
+        class Validated(ABC):
+            @abstractmethod
+            def validate(self):
+                raise NotImplementedError
+
+        class PositiveInt(int, Validated):
+            def validate(self):
+                return self > 0
+
+        def constr_str(max_length, min_length=0):
+            class ConstrStr(str, Validated):
+                def validate(self):
+                    return min_length <= len(self) <= max_length
+            return ConstrStr
+
+        jsons.set_validator(lambda v: v.validate(), Validated)
+        jsons.set_deserializer(lambda v, cls, **_: cls(v), Validated)
+        jsons.set_deserializer(lambda dt, cls, **_: parse(dt), datetime)
+
         @dataclass
         class Model:
             # dataclass needs non-default fields first
             id: int
             sort_index: float
-            grecaptcha_response: str
-            client_name: str
+            grecaptcha_response: constr_str(1000, 20)
+            client_name: constr_str(255)
             # client_email: EmailStr = None
-            client_phone: Optional[str] = None
-
-            def __post_init__(self):
-                def check_length(s, max_length, min_length=0):
-                    if not (s is None or min_length <= len(s) <= max_length):
-                        raise ValueError
-                check_length(self.client_name, 255)
-                check_length(self.client_phone, 255)
-                check_length(self.upstream_http_referrer, 1023)
-                check_length(self.grecaptcha_response, 1000, 20)
-                if not self.contractor > 0:
-                    raise ValueError
+            client_phone: Optional[constr_str(255)] = None
 
             @dataclass
             class Location:
@@ -41,8 +48,8 @@ class TestJsons:
 
             location: Optional[Location] = None
 
-            contractor: Optional[int] = None
-            upstream_http_referrer: Optional[str] = None
+            contractor: Optional[PositiveInt] = None
+            upstream_http_referrer: Optional[constr_str(1023)] = None
             last_updated: Optional[datetime] = None
 
             @dataclass
@@ -62,7 +69,7 @@ class TestJsons:
     def validate(self, data):
         try:
             return True, jsons.load(data, self.model)
-        except (ValueError, jsons.exceptions.DeserializationError) as e:
+        except (jsons.exceptions.DeserializationError, jsons.exceptions.ValidationError) as e:
             return False, e
 
     def to_json(self, model):
