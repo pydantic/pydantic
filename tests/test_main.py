@@ -2156,3 +2156,11 @@ def test_new_union_origin():
         'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['x'],
     }
+
+
+def test_nest_alias():
+    class Model(BaseModel):
+        a: int = Field(..., alias='nest.a')
+
+    assert Model.parse_obj({'nest': {'a': 1}}).a == 1
+    assert Model.parse_obj({'nest': {'a': 1}}).dict(by_alias=True) == {'nest': {'a': 1}}

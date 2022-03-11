@@ -1,8 +1,9 @@
+import operator
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
-from functools import partial
+from functools import partial, reduce
 from pathlib import Path
 from types import FunctionType
 from typing import (
@@ -840,7 +841,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
                 )
-            yield dict_key, v
+
+            if '.' not in dict_key:
+                yield dict_key, v
+            else:
+                yield dict_key.split('.', maxsplit=1)[0], reduce(
+                    lambda v, k: {k: v}, reversed(dict_key.split('.')[1:]), v
+                )
 
     def _calculate_keys(
         self,
@@ -998,7 +1005,14 @@ def validate_model(  # noqa: C901 (ignore complexity)
             return {}, set(), ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls_)
 
     for name, field in model.__fields__.items():
-        value = input_data.get(field.alias, _missing)
+        if '.' not in field.alias:
+            value = input_data.get(field.alias, _missing)
+        else:
+            try:
+                value = reduce(operator.getitem, field.alias.split('.'), input_data)
+            except KeyError:
+                value = _missing
+
         using_name = False
         if value is _missing and config.allow_population_by_field_name and field.alt_alias:
             value = input_data.get(field.name, _missing)
