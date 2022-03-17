@@ -19,6 +19,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import (
     BaseConfig,
@@ -2156,3 +2157,15 @@ def test_new_union_origin():
         'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['x'],
     }
+
+
+def test_annotated_class():
+    class PydanticModel(BaseModel):
+        foo: str = '123'
+
+    PydanticAlias = Annotated[PydanticModel, 'bar baz']
+
+    pa = PydanticAlias()
+    pa.__doc__ = 'qwe'
+    assert repr(pa) == "PydanticModel(foo='123')"
+    assert pa.__doc__ == 'qwe'

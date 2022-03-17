@@ -73,6 +73,7 @@ __all__ = (
     'ROOT_KEY',
     'get_unique_discriminator_alias',
     'get_discriminator_alias_and_values',
+    'DUNDER_ATTRIBUTES',
 )
 
 ROOT_KEY = '__root__'
@@ -661,15 +662,19 @@ def is_valid_field(name: str) -> bool:
     return ROOT_KEY == name
 
 
+DUNDER_ATTRIBUTES = {
+    '__annotations__',
+    '__classcell__',
+    '__doc__',
+    '__module__',
+    '__orig_bases__',
+    '__orig_class__',
+    '__qualname__',
+}
+
+
 def is_valid_private_name(name: str) -> bool:
-    return not is_valid_field(name) and name not in {
-        '__annotations__',
-        '__classcell__',
-        '__doc__',
-        '__module__',
-        '__orig_bases__',
-        '__qualname__',
-    }
+    return not is_valid_field(name) and name not in DUNDER_ATTRIBUTES
 
 
 _EMPTY = object()
