@@ -2156,3 +2156,11 @@ def test_new_union_origin():
         'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['x'],
     }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='need 3.9 version for PEP 585')
+def test_standard_collection_generic_forward_ref():
+    class Nested(BaseModel):
+        nested_list: dict[str, 'Nested']  # noqa: F821
+
+    assert repr(Nested(nested_list={})) == 'Nested(nested_list={})'

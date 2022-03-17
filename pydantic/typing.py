@@ -140,9 +140,13 @@ else:
             get_args(Callable[[], T][int]) == ([], int)
         """
         if type(tp).__name__ in AnnotatedTypeNames:
-            return tp.__args__ + tp.__metadata__
-        # the fallback is needed for the same reasons as `get_origin` (see above)
-        return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
+            tp_args = tp.__args__ + tp.__metadata__
+        else:
+            # the fallback is needed for the same reasons as `get_origin` (see above)
+            tp_args = _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
+        # ensure args are valid
+        # e.g. with tp = list['MyClass'], args == ('MyClass',) but we expect (ForwardRef('MyClass'),))
+        return tuple(ForwardRef(x) if isinstance(x, str) else x for x in tp_args)
 
 
 if sys.version_info < (3, 10):
