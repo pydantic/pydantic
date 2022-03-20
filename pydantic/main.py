@@ -277,6 +277,7 @@ class ModelMetaclass(ABCMeta):
             '__slots__': slots | private_attributes.keys(),
             '__hash__': hash_func,
             '__class_vars__': class_vars,
+            '__match_args__': tuple(fields),
             **{n: v for n, v in namespace.items() if n not in exclude_from_namespace},
         }
 
