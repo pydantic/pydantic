@@ -2884,3 +2884,27 @@ def test_alias_same():
             },
         },
     }
+
+
+def test_extra_inheritance():
+    class A(BaseModel):
+        root: Optional[str]
+
+        class Config:
+            fields = {
+                'root': {'description': 'root path of data', 'level': 1},
+            }
+
+    class Model(A):
+        root: str = Field('asa', description='image height', level=3)
+
+    m = Model()
+    assert m.schema()['properties'] == {
+        'root': {
+            'title': 'Root',
+            'type': 'string',
+            'description': 'image height',
+            'default': 'asa',
+            'level': 3,
+        }
+    }
