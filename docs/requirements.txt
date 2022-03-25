@@ -5,6 +5,7 @@ hypothesis==6.31.6
 markdown-include==0.6.0
 mdx-truly-sane-lists==1.2
 mkdocs==1.2.3
+jinja2<3.1  # https://github.com/mkdocs/mkdocs/pull/2795 and https://github.com/pallets/jinja/pull/1544
 mkdocs-exclude==1.0.2
 mkdocs-material==8.2.3
 sqlalchemy
