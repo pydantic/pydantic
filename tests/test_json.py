@@ -355,21 +355,27 @@ def test_nested_models_with_inner_encoders():
             }
 
     # test child inner encoding
-    m = WithCustomEncoders(dt=datetime.datetime(2032, 6, 1), diff=datetime.timedelta(hours=100))
-    assert m.json() == r'{"dt": 1969624800.0, "diff": "P4DT4H0M0.000000S"}'
+    m = WithCustomEncoders(
+        dt=datetime.datetime(2032, 6, 1, tzinfo=datetime.timezone.utc),
+        diff=datetime.timedelta(hours=100),
+    )
+    assert m.json() == r'{"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}'
 
-    ides = datetime.datetime(44, 3, 15)
+    ides = datetime.datetime(44, 3, 15, tzinfo=datetime.timezone.utc)
 
     p = ParentWithoutEncoders(child=m, dt=ides)
-    assert p.json() == r'{"dt": "0044-03-15T00:00:00", "child": {"dt": "2032-06-01T00:00:00", "diff": 360000.0}}'
-    iso_format = r'{"dt": "0044-03-15T00:00:00", "child": {"dt": 1969624800.0, "diff": "P4DT4H0M0.000000S"}}'
+    assert (
+        p.json()
+        == r'{"dt": "0044-03-15T00:00:00+00:00", "child": {"dt": "2032-06-01T00:00:00+00:00", "diff": 360000.0}}'
+    )
+    iso_format = r'{"dt": "0044-03-15T00:00:00+00:00", "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
     assert p.json(use_nested_encoders=True) == iso_format
 
     p2 = ParentWithVariableEncoders(child=m, dt=ides)
     default_child = r'{"dt": 44, "child": {"dt": 2032, "diff": 360000.0}}'
     assert p2.json() == default_child
     # Expected: ParentWithVariableEncoders.dt is year, ParentWithVariableEncoders.child.dt is timestamp
-    timestamped_child = r'{"dt": 44, "child": {"dt": 1969624800.0, "diff": "P4DT4H0M0.000000S"}}'
+    timestamped_child = r'{"dt": 44, "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
     assert p2.json(use_nested_encoders=True) == timestamped_child
 
     # turning off models_as_dict defaults to top-level
@@ -378,12 +384,12 @@ def test_nested_models_with_inner_encoders():
 
     p3 = ParentWithClassEncoders(child=m, dt=ides)
     # default: all top-level variable format
-    assert p3.json() == r'{"dt": -60772325992.0, "child": {"dt": 1969624800.0, "diff": 360000.0}}'
+    assert p3.json() == r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": 360000.0}}'
     # models_as_dict=True, use_nested_encoders=True, means top-level encoder has no effect on child
-    iso_format_child = r'{"dt": -60772325992.0, "child": {"dt": 1969624800.0, "diff": "P4DT4H0M0.000000S"}}'
+    iso_format_child = r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
     assert p3.json(use_nested_encoders=True) == iso_format_child
     # models_as_dict=False, use_nested_encoders=False, means top-level encoder class swings into action
-    top_level_encoded = r'{"dt": -60772325992.0, "child": {"dt": 2032}}'
+    top_level_encoded = r'{"dt": -60772291200.0, "child": {"dt": 2032}}'
     assert p3.json(models_as_dict=False) == top_level_encoded
     # models_as_dict=False, use_nested_encoders=True still uses top-level encoder
     assert p3.json(models_as_dict=False, use_nested_encoders=True) == top_level_encoded
