@@ -420,6 +420,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        encode_as_json: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -441,6 +442,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                encode_as_json=encode_as_json,
             )
         )
 
@@ -456,6 +458,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         models_as_dict: bool = True,
+        use_nested_encoders: bool = False,
         **dumps_kwargs: Any,
     ) -> str:
         """
@@ -483,6 +486,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                encode_as_json=use_nested_encoders,
             )
         )
         if self.__custom_root_type__:
@@ -701,6 +705,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        encode_as_json: bool = False,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -712,6 +717,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     include=include,
                     exclude=exclude,
                     exclude_none=exclude_none,
+                    encode_as_json=encode_as_json,
                 )
                 if ROOT_KEY in v_dict:
                     return v_dict[ROOT_KEY]
@@ -761,6 +767,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
             return v.value
 
+        elif encode_as_json:
+            return cls.__json_encoder__(v)
+
         else:
             return v
 
@@ -794,6 +803,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        encode_as_json: bool = False,
     ) -> 'TupleGenerator':
 
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
@@ -839,6 +849,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
+                    encode_as_json=encode_as_json,
                 )
             yield dict_key, v
 
