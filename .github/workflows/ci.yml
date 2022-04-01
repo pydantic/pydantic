@@ -246,6 +246,9 @@ jobs:
       with:
         python-version: '3.10'
 
+    - name: upgrade pip
+      run: pip install -U pip setuptools wheel
+
     - name: install
       run: make install-testing
 
