@@ -292,29 +292,22 @@ def test_typeddict_postponed_annotation():
         Model.parse_obj({'t': {'v': -1}})
 
 
-def test_typeddict_required_not_required():
-    class DataTD1(TypedDict, total=False):
+def test_typeddict_required():
+    class DataTD(TypedDict, total=False):
         a: int
         b: Required[str]
 
-    class Model1(BaseModel):
-        t: DataTD1
+    class Model(BaseModel):
+        t: DataTD
 
-    class DataTD2(TypedDict, total=True):
-        a: NotRequired[int]
-        b: str
-
-    class Model2(BaseModel):
-        t: DataTD2
-
-    assert Model1.schema() == {
-        'title': 'Model1',
+    assert Model.schema() == {
+        'title': 'Model',
         'type': 'object',
-        'properties': {'t': {'$ref': '#/definitions/DataTD1'}},
+        'properties': {'t': {'$ref': '#/definitions/DataTD'}},
         'required': ['t'],
         'definitions': {
-            'DataTD1': {
-                'title': 'DataTD1',
+            'DataTD': {
+                'title': 'DataTD',
                 'type': 'object',
                 'properties': {
                     'a': {'title': 'A', 'type': 'integer'},
@@ -324,14 +317,24 @@ def test_typeddict_required_not_required():
             }
         },
     }
-    assert Model2.schema() == {
-        'title': 'Model2',
+
+
+def test_typeddict_not_required():
+    class DataTD(TypedDict, total=True):
+        a: NotRequired[int]
+        b: str
+
+    class Model(BaseModel):
+        t: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
         'type': 'object',
-        'properties': {'t': {'$ref': '#/definitions/DataTD2'}},
+        'properties': {'t': {'$ref': '#/definitions/DataTD'}},
         'required': ['t'],
         'definitions': {
-            'DataTD2': {
-                'title': 'DataTD2',
+            'DataTD': {
+                'title': 'DataTD',
                 'type': 'object',
                 'properties': {
                     'a': {'title': 'A', 'type': 'integer'},
