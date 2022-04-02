@@ -127,7 +127,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _is_base_model_class_defined = False
 
-BUILTIN_TYPES: Tuple[Type[Any], ...] = (
+JSON_UNENCODABLE_TYPES: Tuple[Type[Any], ...] = (
     dict,
     list,
     tuple,
@@ -260,7 +260,7 @@ class ModelMetaclass(ABCMeta):
         vg.check_for_unused()
         if config.json_encoders:
             json_encoder = partial(custom_pydantic_encoder, config.json_encoders)
-            json_builtin_types = tuple(t for t in config.json_encoders if lenient_issubclass(t, BUILTIN_TYPES))
+            json_builtin_types = tuple(t for t in config.json_encoders if lenient_issubclass(t, JSON_UNENCODABLE_TYPES))
         else:
             json_encoder = pydantic_encoder
             json_builtin_types = ()
