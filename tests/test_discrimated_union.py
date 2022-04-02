@@ -12,10 +12,21 @@ from pydantic.generics import GenericModel
 
 
 def test_discriminated_union_only_union():
-    with pytest.raises(TypeError, match='`discriminator` can only be used with `Union` type'):
+    with pytest.raises(
+        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+    ):
 
         class Model(BaseModel):
             x: str = Field(..., discriminator='qwe')
+
+
+def test_discriminated_union_single_variant():
+    with pytest.raises(
+        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+    ):
+
+        class Model(BaseModel):
+            x: Union[str] = Field(..., discriminator='qwe')
 
 
 def test_discriminated_union_invalid_type():

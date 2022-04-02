@@ -600,7 +600,7 @@ class ModelField(Representation):
             return
 
         if self.discriminator_key is not None and not is_union(origin):
-            raise TypeError('`discriminator` can only be used with `Union` type')
+            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
         # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
         if origin is None or origin is CollectionsHashable:
