@@ -168,7 +168,8 @@ else:
     from typing_extensions import _AnnotatedAlias
 
     def convert_generics(tp: Type[Any]) -> Type[Any]:
-        """Recursively searches for `str` type hints and replaces them with ForwardRef.
+        """
+        Recursively searches for `str` type hints and replaces them with ForwardRef.
 
         Examples::
             convert_generics(list['Hero']) == list[ForwardRef('Hero')]
@@ -177,7 +178,7 @@ else:
             convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
         """
         origin = get_origin(tp)
-        if (not origin) or (not hasattr(tp, '__args__')):
+        if not origin or not hasattr(tp, '__args__'):
             return tp
 
         args = get_args(tp)
@@ -202,9 +203,9 @@ else:
         else:
             try:
                 setattr(tp, '__args__', converted)
-                return tp
             except AttributeError:
-                return tp
+                pass
+            return tp
 
 
 if sys.version_info < (3, 10):
