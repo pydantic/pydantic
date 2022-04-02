@@ -187,7 +187,7 @@ else:
         if origin is Annotated:
             return _AnnotatedAlias(convert_generics(args[0]), args[1:])
 
-        # recursively replace `str` isntances inside of `GenericAlias` with `ForwardRef(arg)`
+        # recursively replace `str` instances inside of `GenericAlias` with `ForwardRef(arg)`
         converted = tuple(
             ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
             for arg in args

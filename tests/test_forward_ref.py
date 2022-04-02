@@ -679,10 +679,10 @@ skip_until_39 = pytest.mark.skipif(
 
 @skip_until_39
 def test_pep585_self_referencing_generics():
-    class SelfRefencing(BaseModel):
-        names: list['SelfRefencing']  # noqa: F821
+    class SelfReferencing(BaseModel):
+        names: list['SelfReferencing']  # noqa: F821
 
-    SelfRefencing.update_forward_refs()
+    SelfReferencing.update_forward_refs()
 
 
 @skip_until_39
