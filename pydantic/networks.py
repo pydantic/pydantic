@@ -265,7 +265,7 @@ class AnyUrl(str):
     def validate_host(cls, parts: 'Parts') -> Tuple[str, Optional[str], str, bool]:
         host, tld, host_type, rebuild = None, None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
-            host = parts[f]  # type: ignore[misc]
+            host = parts[f]  # type: ignore[literal-required]
             if host:
                 host_type = f
                 break
@@ -310,8 +310,8 @@ class AnyUrl(str):
     @classmethod
     def apply_default_parts(cls, parts: 'Parts') -> 'Parts':
         for key, value in cls.get_default_parts(parts).items():
-            if not parts[key]:  # type: ignore[misc]
-                parts[key] = value  # type: ignore[misc]
+            if not parts[key]:  # type: ignore[literal-required]
+                parts[key] = value  # type: ignore[literal-required]
         return parts
 
     def __repr__(self) -> str:
