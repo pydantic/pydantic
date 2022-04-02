@@ -379,7 +379,11 @@ def update_typeddict_keys(
     typeddict_cls: Type['TypedDict'],  # type: ignore[valid-type]
 ) -> None:
     """
-    Populates keys annotated with TypedDict Required/NotRequired to __required_keys__.
+    TypedDict doesn't handle NotRequired/Required annotated fields.
+
+    This function populates keys annotated with:
+    * Required into __required_keys__
+    * NotRequired into __optional_keys__
     """
     anns = get_type_hints(typeddict_cls)
 
