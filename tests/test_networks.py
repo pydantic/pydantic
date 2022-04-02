@@ -571,8 +571,7 @@ def test_build_url(kwargs, expected):
         (dict(scheme='http', host='example.net'), 'http://example.net'),
         (dict(scheme='https', host='example.net'), 'https://example.net'),
         (dict(scheme='http', user='foo', host='example.net'), 'http://foo@example.net'),
-        (dict(scheme='http', user='foo', host='example.net', port='80'), 'http://foo@example.net'),
-        (dict(scheme='https', user='foo', host='example.net', port='443'), 'https://foo@example.net'),
+        (dict(scheme='https', user='foo', host='example.net'), 'https://foo@example.net'),
         (dict(scheme='http', user='foo', host='example.net', port='123'), 'http://foo@example.net:123'),
         (dict(scheme='https', user='foo', host='example.net', port='123'), 'https://foo@example.net:123'),
         (dict(scheme='http', user='foo', password='x', host='example.net'), 'http://foo:x@example.net'),
@@ -584,7 +583,20 @@ def test_build_url(kwargs, expected):
     ],
 )
 @pytest.mark.parametrize('klass', [AnyHttpUrl, HttpUrl])
-def test_build_http_url(klass, kwargs, expected):
+def test_build_any_http_url(klass, kwargs, expected):
+    assert klass(None, **kwargs) == expected
+
+
+@pytest.mark.parametrize(
+    'klass, kwargs,expected',
+    [
+        (AnyHttpUrl, dict(scheme='http', user='foo', host='example.net', port='80'), 'http://foo@example.net:80'),
+        (AnyHttpUrl, dict(scheme='https', user='foo', host='example.net', port='443'), 'https://foo@example.net:443'),
+        (HttpUrl, dict(scheme='http', user='foo', host='example.net', port='80'), 'http://foo@example.net'),
+        (HttpUrl, dict(scheme='https', user='foo', host='example.net', port='443'), 'https://foo@example.net'),
+    ],
+)
+def test_build_http_url_port(klass, kwargs, expected):
     assert klass(None, **kwargs) == expected
 
 
