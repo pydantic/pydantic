@@ -10,11 +10,13 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Deque,
     Dict,
     FrozenSet,
     Generic,
     Iterable,
     List,
+    NamedTuple,
     NewType,
     Optional,
     Set,
@@ -25,11 +27,12 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Extra, Field, ValidationError, conlist, conset, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.fields import ModelField
 from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -396,6 +399,35 @@ def test_enum_and_model_have_same_behaviour():
     }
 
 
+def test_enum_includes_extra_without_other_params():
+    class Names(str, Enum):
+        rick = 'Rick'
+        morty = 'Morty'
+        summer = 'Summer'
+
+    class Foo(BaseModel):
+        enum: Names
+        extra_enum: Names = Field(..., extra='Extra field')
+
+    assert Foo.schema() == {
+        'definitions': {
+            'Names': {
+                'description': 'An enumeration.',
+                'enum': ['Rick', 'Morty', 'Summer'],
+                'title': 'Names',
+                'type': 'string',
+            },
+        },
+        'properties': {
+            'enum': {'$ref': '#/definitions/Names'},
+            'extra_enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'extra': 'Extra field'},
+        },
+        'required': ['enum', 'extra_enum'],
+        'title': 'Foo',
+        'type': 'object',
+    }
+
+
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'
@@ -482,8 +514,16 @@ def test_optional():
 def test_any():
     class Model(BaseModel):
         a: Any
+        b: object
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'title': 'A'}}}
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A'},
+            'b': {'title': 'B'},
+        },
+    }
 
 
 def test_set():
@@ -525,34 +565,48 @@ def test_const_false():
 
 
 @pytest.mark.parametrize(
-    'field_type,expected_schema',
+    'field_type,extra_props',
     [
-        (tuple, {}),
+        (tuple, {'items': {}}),
         (
             Tuple[str, int, Union[str, int, float], float],
-            [
-                {'type': 'string'},
-                {'type': 'integer'},
-                {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
-                {'type': 'number'},
-            ],
+            {
+                'items': [
+                    {'type': 'string'},
+                    {'type': 'integer'},
+                    {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
+                    {'type': 'number'},
+                ],
+                'minItems': 4,
+                'maxItems': 4,
+            },
         ),
-        (Tuple[str], {'type': 'string'}),
+        (Tuple[str], {'items': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
+        (Tuple[()], {'maxItems': 0, 'minItems': 0}),
     ],
 )
-def test_tuple(field_type, expected_schema):
+def test_tuple(field_type, extra_props):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {
+    assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'array'}},
+        'properties': {'a': {'title': 'A', 'type': 'array', **extra_props}},
         'required': ['a'],
     }
-    base_schema['properties']['a']['items'] = expected_schema
 
-    assert Model.schema() == base_schema
+
+def test_deque():
+    class Model(BaseModel):
+        a: Deque[str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'string'}}},
+        'required': ['a'],
+    }
 
 
 def test_bool():
@@ -745,7 +799,7 @@ def test_str_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16}),
         (
             stricturl(min_length=5, max_length=10),
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
@@ -1382,6 +1436,26 @@ def test_list_default():
     }
 
 
+def test_enum_str_default():
+    class MyEnum(str, Enum):
+        FOO = 'foo'
+
+    class UserModel(BaseModel):
+        friends: MyEnum = MyEnum.FOO
+
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+
+
+def test_enum_int_default():
+    class MyEnum(IntEnum):
+        FOO = 1
+
+    class UserModel(BaseModel):
+        friends: MyEnum = MyEnum.FOO
+
+    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+
+
 def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
@@ -1459,6 +1533,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_items=4)),
         ({'gt': 0}, conset(int, min_items=4)),
+        ({'gt': 0}, confrozenset(int, min_items=4)),
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):
@@ -1922,6 +1997,8 @@ def test_model_with_extra_forbidden():
                     {'exclusiveMinimum': 0, 'type': 'integer'},
                     {'exclusiveMinimum': 0, 'type': 'integer'},
                 ],
+                'minItems': 3,
+                'maxItems': 3,
             },
         ),
         (
@@ -2239,9 +2316,6 @@ class MyModel(BaseModel):
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
@@ -2265,7 +2339,7 @@ def test_schema_for_generic_field():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'data': {'title': 'Data', 'type': 'string'},
+            'data': {'allOf': [{'type': 'string'}], 'title': 'Data'},
             'data1': {
                 'title': 'Data1',
             },
@@ -2276,7 +2350,7 @@ def test_schema_for_generic_field():
     class GenModelModified(GenModel, Generic[T]):
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema.pop('type', None)
+            field_schema.pop('allOf', None)
             field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
 
     class ModelModified(BaseModel):
@@ -2294,9 +2368,140 @@ def test_schema_for_generic_field():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
+def test_namedtuple_default():
+    class Coordinates(NamedTuple):
+        x: float
+        y: float
+
+    class LocationBase(BaseModel):
+        coords: Coordinates = Coordinates(0, 0)
+
+    assert LocationBase.schema() == {
+        'title': 'LocationBase',
+        'type': 'object',
+        'properties': {
+            'coords': {
+                'title': 'Coords',
+                'default': Coordinates(x=0, y=0),
+                'type': 'array',
+                'items': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+                'minItems': 2,
+                'maxItems': 2,
+            }
+        },
+    }
+
+
+def test_advanced_generic_schema():
+    T = TypeVar('T')
+    K = TypeVar('K')
+
+    class Gen(Generic[T]):
+        def __init__(self, data: Any):
+            self.data = data
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return v
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            the_type = field_schema.pop('allOf', [{'type': 'string'}])[0]
+            field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
+
+    class GenTwoParams(Generic[T, K]):
+        def __init__(self, x: str, y: Any):
+            self.x = x
+            self.y = y
+
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, v: Any):
+            return cls(*v)
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(examples='examples')
+
+    class CustomType(Enum):
+        A = 'a'
+        B = 'b'
+
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(title='CustomType title', type='string')
+
+    class Model(BaseModel):
+        data0: Gen
+        data1: Gen[CustomType] = Field(title='Data1 title', description='Data 1 description')
+        data2: GenTwoParams[CustomType, UUID4] = Field(title='Data2 title', description='Data 2')
+        # check Tuple because changes in code touch that type
+        data3: Tuple
+        data4: Tuple[CustomType]
+        data5: Tuple[CustomType, str]
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'data0': {
+                'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
+                'title': 'Gen title',
+            },
+            'data1': {
+                'title': 'Gen title',
+                'description': 'Data 1 description',
+                'anyOf': [
+                    {'$ref': '#/definitions/CustomType'},
+                    {'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+                ],
+            },
+            'data2': {
+                'allOf': [
+                    {
+                        'items': [{'$ref': '#/definitions/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
+                        'type': 'array',
+                    }
+                ],
+                'title': 'Data2 title',
+                'description': 'Data 2',
+                'examples': 'examples',
+            },
+            'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
+            'data4': {
+                'title': 'Data4',
+                'type': 'array',
+                'items': [{'$ref': '#/definitions/CustomType'}],
+                'minItems': 1,
+                'maxItems': 1,
+            },
+            'data5': {
+                'title': 'Data5',
+                'type': 'array',
+                'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
+                'minItems': 2,
+                'maxItems': 2,
+            },
+        },
+        'required': ['data0', 'data1', 'data2', 'data3', 'data4', 'data5'],
+        'definitions': {
+            'CustomType': {
+                'title': 'CustomType title',
+                'description': 'An enumeration.',
+                'enum': ['a', 'b'],
+                'type': 'string',
+            }
+        },
+    }
+
+
 def test_nested_generic():
     """
     Test a nested BaseModel that is also a Generic
@@ -2331,9 +2536,6 @@ def test_nested_generic():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_nested_generic_model():
     """
     Test a nested GenericModel
@@ -2362,9 +2564,6 @@ def test_nested_generic_model():
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 7), reason='schema generation for generic fields is not available in python < 3.7'
-)
 def test_complex_nested_generic():
     """
     Handle a union of a generic.
@@ -2412,4 +2611,276 @@ def test_complex_nested_generic():
             },
         },
         '$ref': '#/definitions/Model',
+    }
+
+
+def test_schema_with_field_parameter():
+    class RestrictedAlphabetStr(str):
+        @classmethod
+        def __modify_schema__(cls, field_schema, field: Optional[ModelField]):
+            assert isinstance(field, ModelField)
+            alphabet = field.field_info.extra['alphabet']
+            field_schema['examples'] = [c * 3 for c in alphabet]
+
+    class MyModel(BaseModel):
+        value: RestrictedAlphabetStr = Field(alphabet='ABC')
+
+    assert MyModel.schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {
+            'value': {'title': 'Value', 'alphabet': 'ABC', 'examples': ['AAA', 'BBB', 'CCC'], 'type': 'string'}
+        },
+        'required': ['value'],
+    }
+
+
+def test_discriminated_union():
+    class BlackCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+
+    class Cat(BaseModel):
+        __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {
+                    'propertyName': 'pet_type',
+                    'mapping': {
+                        'cat': '#/definitions/Cat',
+                        'dog': '#/definitions/Dog',
+                        'reptile': '#/definitions/Lizard',
+                        'lizard': '#/definitions/Lizard',
+                    },
+                },
+                'anyOf': [
+                    {'$ref': '#/definitions/Cat'},
+                    {'$ref': '#/definitions/Dog'},
+                    {'$ref': '#/definitions/Lizard'},
+                ],
+            }
+        },
+        'required': ['pet'],
+        'definitions': {
+            'BlackCat': {
+                'title': 'BlackCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                },
+                'required': ['pet_type', 'color'],
+            },
+            'WhiteCat': {
+                'title': 'WhiteCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                },
+                'required': ['pet_type', 'color'],
+            },
+            'Cat': {
+                'title': 'Cat',
+                'discriminator': {
+                    'propertyName': 'color',
+                    'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
+                },
+                'anyOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'}},
+                'required': ['pet_type'],
+            },
+            'Lizard': {
+                'title': 'Lizard',
+                'type': 'object',
+                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['reptile', 'lizard'], 'type': 'string'}},
+                'required': ['pet_type'],
+            },
+        },
+    }
+
+
+def test_discriminated_annotated_union():
+    class BlackCatWithHeight(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        info: Literal['height']
+        black_infos: str
+
+    class BlackCatWithWeight(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        info: Literal['weight']
+        black_infos: str
+
+    BlackCat = Annotated[Union[BlackCatWithHeight, BlackCatWithWeight], Field(discriminator='info')]
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+        white_infos: str
+
+    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        dog_name: str
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    class Model(BaseModel):
+        pet: Pet
+        number: int
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {
+                    'propertyName': 'pet_type',
+                    'mapping': {
+                        'cat': {
+                            'BlackCatWithHeight': {'$ref': '#/definitions/BlackCatWithHeight'},
+                            'BlackCatWithWeight': {'$ref': '#/definitions/BlackCatWithWeight'},
+                            'WhiteCat': {'$ref': '#/definitions/WhiteCat'},
+                        },
+                        'dog': '#/definitions/Dog',
+                    },
+                },
+                'anyOf': [
+                    {
+                        'anyOf': [
+                            {
+                                'anyOf': [
+                                    {'$ref': '#/definitions/BlackCatWithHeight'},
+                                    {'$ref': '#/definitions/BlackCatWithWeight'},
+                                ]
+                            },
+                            {'$ref': '#/definitions/WhiteCat'},
+                        ]
+                    },
+                    {'$ref': '#/definitions/Dog'},
+                ],
+            },
+            'number': {'title': 'Number', 'type': 'integer'},
+        },
+        'required': ['pet', 'number'],
+        'definitions': {
+            'BlackCatWithHeight': {
+                'title': 'BlackCatWithHeight',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                    'info': {'title': 'Info', 'enum': ['height'], 'type': 'string'},
+                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+            },
+            'BlackCatWithWeight': {
+                'title': 'BlackCatWithWeight',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                    'info': {'title': 'Info', 'enum': ['weight'], 'type': 'string'},
+                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+            },
+            'WhiteCat': {
+                'title': 'WhiteCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                    'white_infos': {'title': 'White Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'white_infos'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'},
+                    'dog_name': {'title': 'Dog Name', 'type': 'string'},
+                },
+                'required': ['pet_type', 'dog_name'],
+            },
+        },
+    }
+
+
+def test_alias_same():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = Field(alias='typeOfPet')
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = Field(alias='typeOfPet')
+        d: str
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+        number: int
+
+    assert Model.schema() == {
+        'type': 'object',
+        'title': 'Model',
+        'properties': {
+            'number': {'title': 'Number', 'type': 'integer'},
+            'pet': {
+                'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'discriminator': {
+                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
+                    'propertyName': 'typeOfPet',
+                },
+                'title': 'Pet',
+            },
+        },
+        'required': ['pet', 'number'],
+        'definitions': {
+            'Cat': {
+                'properties': {
+                    'c': {'title': 'C', 'type': 'string'},
+                    'typeOfPet': {'enum': ['cat'], 'title': 'Typeofpet', 'type': 'string'},
+                },
+                'required': ['typeOfPet', 'c'],
+                'title': 'Cat',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {
+                    'd': {'title': 'D', 'type': 'string'},
+                    'typeOfPet': {'enum': ['dog'], 'title': 'Typeofpet', 'type': 'string'},
+                },
+                'required': ['typeOfPet', 'd'],
+                'title': 'Dog',
+                'type': 'object',
+            },
+        },
     }

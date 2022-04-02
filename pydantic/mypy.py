@@ -46,13 +46,21 @@ from mypy.types import (
     Type,
     TypeOfAny,
     TypeType,
-    TypeVarDef,
     TypeVarType,
     UnionType,
     get_proper_type,
 )
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
+from mypy.version import __version__ as mypy_version
+
+from pydantic.utils import is_valid_field
+
+try:
+    from mypy.types import TypeVarDef  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    from mypy.types import TypeVarType as TypeVarDef
 
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
@@ -60,6 +68,7 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
+BUILTINS_NAME = 'builtins' if float(mypy_version) >= 0.930 else '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -110,11 +119,21 @@ class PydanticPluginConfig:
     def __init__(self, options: Options) -> None:
         if options.config_file is None:  # pragma: no cover
             return
-        plugin_config = ConfigParser()
-        plugin_config.read(options.config_file)
-        for key in self.__slots__:
-            setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
-            setattr(self, key, setting)
+
+        toml_config = parse_toml(options.config_file)
+        if toml_config is not None:
+            config = toml_config.get('tool', {}).get('pydantic-mypy', {})
+            for key in self.__slots__:
+                setting = config.get(key, False)
+                if not isinstance(setting, bool):
+                    raise ValueError(f'Configuration value must be a boolean for key: {key}')
+                setattr(self, key, setting)
+        else:
+            plugin_config = ConfigParser()
+            plugin_config.read(options.config_file)
+            for key in self.__slots__:
+                setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
+                setattr(self, key, setting)
 
 
 def from_orm_callback(ctx: MethodContext) -> Type:
@@ -226,7 +245,7 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr):
+            if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
@@ -247,7 +266,9 @@ class PydanticModelTransformer:
                 # Basically, it is an edge case when dealing with complex import logic
                 # This is the same logic used in the dataclasses plugin
                 continue
-            if not isinstance(node, Var):
+            if not isinstance(node, Var):  # pragma: no cover
+                # Don't know if this edge case still happens with the `is_valid_field` check above
+                # but better safe than sorry
                 continue
 
             # x: ClassVar[int] is ignored by dataclasses.
@@ -322,19 +343,25 @@ class PydanticModelTransformer:
         and does not treat settings fields as optional.
         """
         ctx = self._ctx
-        set_str = ctx.api.named_type('__builtins__.set', [ctx.api.named_type('__builtins__.str')])
+        set_str = ctx.api.named_type(f'{BUILTINS_NAME}.set', [ctx.api.named_type(f'{BUILTINS_NAME}.str')])
         optional_set_str = UnionType([set_str, NoneType()])
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         construct_arguments = self.get_field_arguments(fields, typed=True, force_all_optional=False, use_alias=False)
         construct_arguments = [fields_set_argument] + construct_arguments
 
-        obj_type = ctx.api.named_type('__builtins__.object')
+        obj_type = ctx.api.named_type(f'{BUILTINS_NAME}.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
         tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
-        self_type = TypeVarType(tvd)
+
+        # Backward-compatible with TypeVarDef from Mypy 0.910.
+        if isinstance(tvd, TypeVarType):
+            self_type = tvd
+        else:
+            self_type = TypeVarType(tvd)  # type: ignore[call-arg]
+
         add_method(
             ctx,
             'construct',
@@ -619,7 +646,7 @@ def add_method(
     #     first = []
     else:
         self_type = self_type or fill_typevars(info)
-        first = [Argument(Var('self'), self_type, None, ARG_POS)]
+        first = [Argument(Var('__pydantic_self__'), self_type, None, ARG_POS)]
     args = first + args
     arg_types, arg_names, arg_kinds = [], [], []
     for arg in args:
@@ -628,7 +655,7 @@ def add_method(
         arg_names.append(get_name(arg.variable))
         arg_kinds.append(arg.kind)
 
-    function_type = ctx.api.named_type('__builtins__.function')
+    function_type = ctx.api.named_type(f'{BUILTINS_NAME}.function')
     signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
     if tvar_def:
         signature.variables = [tvar_def]
@@ -688,3 +715,25 @@ def get_name(x: Union[FuncBase, SymbolNode]) -> str:
     if callable(fn):  # pragma: no cover
         return fn()
     return fn
+
+
+def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
+    if not config_file.endswith('.toml'):
+        return None
+
+    read_mode = 'rb'
+    try:
+        import tomli as toml_
+    except ImportError:
+        # older versions of mypy have toml as a dependency, not tomli
+        read_mode = 'r'
+        try:
+            import toml as toml_  # type: ignore[no-redef]
+        except ImportError:  # pragma: no cover
+            import warnings
+
+            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+            return None
+
+    with open(config_file, read_mode) as rf:
+        return toml_.load(rf)  # type: ignore[arg-type]

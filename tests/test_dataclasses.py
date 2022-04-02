@@ -3,9 +3,10 @@ import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Union
 
 import pytest
+from typing_extensions import Literal
 
 import pydantic
 from pydantic import BaseModel, ValidationError, validator
@@ -637,7 +638,7 @@ def test_hashable_required():
     ]
     with pytest.raises(TypeError) as exc_info:
         MyDataclass()
-    assert str(exc_info.value) == "__init__() missing 1 required positional argument: 'v'"
+    assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
 
 
 @pytest.mark.parametrize('default', [1, None, ...])
@@ -920,3 +921,71 @@ def test_config_field_info_create_model():
     assert A2.__pydantic_model__.schema()['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
     }
+
+
+def test_discrimated_union_basemodel_instance_value():
+    @pydantic.dataclasses.dataclass
+    class A:
+        l: Literal['a']
+
+    @pydantic.dataclasses.dataclass
+    class B:
+        l: Literal['b']
+
+    @pydantic.dataclasses.dataclass
+    class Top:
+        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
+
+    t = Top(sub=A(l='a'))
+    assert isinstance(t, Top)
+    assert Top.__pydantic_model__.schema() == {
+        'title': 'Top',
+        'type': 'object',
+        'properties': {
+            'sub': {
+                'title': 'Sub',
+                'discriminator': {'propertyName': 'l', 'mapping': {'a': '#/definitions/A', 'b': '#/definitions/B'}},
+                'anyOf': [{'$ref': '#/definitions/A'}, {'$ref': '#/definitions/B'}],
+            }
+        },
+        'required': ['sub'],
+        'definitions': {
+            'A': {
+                'title': 'A',
+                'type': 'object',
+                'properties': {'l': {'title': 'L', 'enum': ['a'], 'type': 'string'}},
+                'required': ['l'],
+            },
+            'B': {
+                'title': 'B',
+                'type': 'object',
+                'properties': {'l': {'title': 'L', 'enum': ['b'], 'type': 'string'}},
+                'required': ['l'],
+            },
+        },
+    }
+
+
+def test_keeps_custom_properties():
+    class StandardClass:
+        """Class which modifies instance creation."""
+
+        a: str
+
+        def __new__(cls, *args, **kwargs):
+            instance = super().__new__(cls)
+
+            instance._special_property = 1
+
+            return instance
+
+    StandardLibDataclass = dataclasses.dataclass(StandardClass)
+    PydanticDataclass = pydantic.dataclasses.dataclass(StandardClass)
+
+    clases_to_test = [StandardLibDataclass, PydanticDataclass]
+
+    test_string = 'string'
+    for cls in clases_to_test:
+        instance = cls(a=test_string)
+        assert instance._special_property == 1
+        assert instance.a == test_string

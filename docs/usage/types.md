@@ -70,7 +70,7 @@ with custom properties and validation.
 : see [Datetime Types](#datetime-types) below for more detail on parsing and validation
 
 `typing.Any`
-: allows any value include `None`, thus an `Any` field is optional
+: allows any value including `None`, thus an `Any` field is optional
 
 `typing.Annotated`
 : allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The
@@ -104,7 +104,7 @@ with custom properties and validation.
 : see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
 
 `subclass of typing.TypedDict`
-: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.  
+: Same as `dict` but _pydantic_ will validate the dictionary since keys are annotated.
   See [Annotated Types](#annotated-types) below for more detail on parsing and validation
 
 `typing.Set`
@@ -234,21 +234,33 @@ _(This script is complete, it should run "as is")_
 
 The `Union` type allows a model attribute to accept different types, e.g.:
 
-!!! warning
-    This script is complete, it should run "as is". However, it may not reflect the desired behavior; see below.
+!!! info
+    You may get unexpected coercion with `Union`; see below.<br />
+    Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
 
 ```py
 {!.tmp_examples/types_union_incorrect.py!}
 ```
+_(This script is complete, it should run "as is")_
 
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
 the first one that matches. In the above example the `id` of `user_03` was defined as a `uuid.UUID` class (which
 is defined under the attribute's `Union` annotation) but as the `uuid.UUID` can be marshalled into an `int` it
 chose to match against the `int` type and disregarded the other types.
 
+!!! warning
+    `typing.Union` also ignores order when [defined](https://docs.python.org/3/library/typing.html#typing.Union),
+    so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour
+    when combined with matching based on the `Union` type order inside other type definitions, such as `List` and `Dict`
+    types (because python treats these definitions as singletons).
+    For example, `Dict[str, Union[int, float]] == Dict[str, Union[float, int]]` with the order based on the first time it was defined.
+    Please note that this can also be [affected by third party libraries](https://github.com/samuelcolvin/pydantic/issues/2835)
+    and their internal type definitions and the import orders.
+
 As such, it is recommended that, when defining `Union` annotations, the most specific type is included first and
-followed by less specific types. In the above example, the `UUID` class should precede the `int` and `str`
-classes to preclude the unexpected representation as such:
+followed by less specific types.
+
+In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
 ```py
 {!.tmp_examples/types_union_correct.py!}
@@ -261,6 +273,45 @@ _(This script is complete, it should run "as is")_
     `Optional[x]` can also be used to specify a required field that can take `None` as a value.
 
     See more details in [Required Fields](models.md#required-fields).
+
+#### Discriminated Unions (a.k.a. Tagged Unions)
+
+When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
+be checked and validated and want to enforce this.
+To do that you can set the same field - let's call it `my_discriminator` - in each of the submodels
+with a discriminated value, which is one (or many) `Literal` value(s).
+For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+
+Setting a discriminated union has many benefits:
+
+- validation is faster since it is only attempted against one model
+- only one explicit error is raised in case of failure
+- the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
+
+```py
+{!.tmp_examples/types_union_discriminated.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! note
+    Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
+    the `Union` and `discriminator` information. See below for an example!
+
+!!! warning
+    Discriminated unions cannot be used with only a single variant, such as `Union[Cat]`.
+
+    Python changes `Union[T]` into `T` at interpretation time, so it is not possible for `pydantic` to
+    distinguish fields of `Union[T]` from `T`.
+
+#### Nested Discriminated Unions
+
+Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
+In this case you can always create "intermediate" models with `__root__` and add your discriminator.
+
+```py
+{!.tmp_examples/types_union_discriminated_nested.py!}
+```
+_(This script is complete, it should run "as is")_
 
 ### Enums and Choices
 
@@ -444,6 +495,12 @@ _(This script is complete, it should run "as is")_
 `DirectoryPath`
 : like `Path`, but the path must exist and be a directory
 
+`PastDate`
+: like `date`, but the date should be in the past
+
+`FutureDate`
+: like `date`, but the date should be in the future
+
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
   the input string must be a valid email address, and the output is a simple string
@@ -480,8 +537,14 @@ _(This script is complete, it should run "as is")_
 `HttpUrl`
 : a stricter HTTP URL; see [URLs](#urls)
 
+`FileUrl`
+: a file path URL; see [URLs](#urls)
+
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
+
+`RabbitMqDsn`
+: an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
 
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
@@ -556,6 +619,10 @@ _(This script is complete, it should run "as is")_
 : type method for constraining sets;
   see [Constrained Types](#constrained-types)
 
+`confrozenset`
+: type method for constraining frozen sets;
+  see [Constrained Types](#constrained-types)
+
 `constr`
 : type method for constraining strs;
   see [Constrained Types](#constrained-types)
@@ -564,17 +631,26 @@ _(This script is complete, it should run "as is")_
 
 For URI/URL validation the following types are available:
 
-- `AnyUrl`: any scheme allowed, TLD not required
-- `AnyHttpUrl`: scheme `http` or `https`, TLD not required
-- `HttpUrl`: scheme `http` or `https`, TLD required, max length 2083
-- `PostgresDsn`: scheme `postgres` or `postgresql`, user info required, TLD not required
-- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required (CHANGED: user info
+- `AnyUrl`: any scheme allowed, TLD not required, host required
+- `AnyHttpUrl`: scheme `http` or `https`, TLD not required, host required
+- `HttpUrl`: scheme `http` or `https`, TLD required, host required, max length 2083
+- `FileUrl`: scheme `file`, host not required
+- `PostgresDsn`: scheme `postgres`, `postgresql`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `postgresql+asyncpg`
+  - `postgresql+pg8000`
+  - `postgresql+psycopg2`
+  - `postgresql+psycopg2cffi`
+  - `postgresql+py-postgresql`
+  - `postgresql+pygresql`
+- `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
-- `stricturl`, method with the following keyword arguments:
+- `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
     - `max_length: int = 2 ** 16`
     - `tld_required: bool = True`
+    - `host_required: bool = True`
     - `allowed_schemes: Optional[Set[str]] = None`
 
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
@@ -767,6 +843,7 @@ The following arguments are available when using the `conlist` type function
 - `item_type: Type[T]`: type of the list items
 - `min_items: int = None`: minimum number of items in the list
 - `max_items: int = None`: maximum number of items in the list
+- `unique_items: bool = None`: enforces list elements to be unique
 
 ### Arguments to `conset`
 The following arguments are available when using the `conset` type function
@@ -774,6 +851,13 @@ The following arguments are available when using the `conset` type function
 - `item_type: Type[T]`: type of the set items
 - `min_items: int = None`: minimum number of items in the set
 - `max_items: int = None`: maximum number of items in the set
+
+### Arguments to `confrozenset`
+The following arguments are available when using the `confrozenset` type function
+
+- `item_type: Type[T]`: type of the frozenset items
+- `min_items: int = None`: minimum number of items in the frozenset
+- `max_items: int = None`: maximum number of items in the frozenset
 
 ### Arguments to `conint`
 The following arguments are available when using the `conint` type function
@@ -829,16 +913,16 @@ The following arguments are available when using the `conbytes` type function
 
 ## Strict Types
 
-You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types 
+You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types
 to prevent coercion from compatible types.
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`, 
+This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`,
 `ConstrainedFloat` and `ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
 
 The following caveats apply:
 
 - `StrictBytes` (and the `strict` option of `ConstrainedBytes`) will accept both `bytes`,
-   and `bytearray` types. 
+   and `bytearray` types.
 - `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.

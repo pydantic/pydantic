@@ -4,14 +4,14 @@
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/samuelcolvin/pydantic.svg?v=1)](https://coverage-badge.samuelcolvin.workers.dev/redirect/samuelcolvin/pydantic)
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
-[![downloads](https://img.shields.io/pypi/dm/pydantic.svg)](https://pypistats.org/packages/pydantic)
+[![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)
 [![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/samuelcolvin/pydantic)
 [![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
 
-Data validation and settings management using Python type hinting.
+Data validation and settings management using Python type hints.
 
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.6+; validate it with *pydantic*.
+Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
 
 ## Help
 

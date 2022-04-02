@@ -5,6 +5,7 @@ black = black -S -l 120 --target-version py38 pydantic tests
 .PHONY: install-linting
 install-linting:
 	pip install -r tests/requirements-linting.txt
+	pre-commit install
 
 .PHONY: install-pydantic
 install-pydantic:
@@ -78,7 +79,7 @@ test-examples:
 
 .PHONY: test-fastapi
 test-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git
+	git clone https://github.com/tiangolo/fastapi.git --single-branch
 	./tests/test_fastapi.sh
 
 .PHONY: all
@@ -99,9 +100,9 @@ benchmark-json:
 .PHONY: clean
 clean:
 	rm -rf `find . -name __pycache__`
-	rm -f `find . -type f -name '*.py[co]' `
-	rm -f `find . -type f -name '*~' `
-	rm -f `find . -type f -name '.*~' `
+	rm -f `find . -type f -name '*.py[co]'`
+	rm -f `find . -type f -name '*~'`
+	rm -f `find . -type f -name '.*~'`
 	rm -rf .cache
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
@@ -117,7 +118,6 @@ clean:
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
 	rm -rf fastapi/test.db
-	rm -rf codecov.sh
 	rm -rf coverage.xml
 
 .PHONY: docs

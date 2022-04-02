@@ -55,8 +55,8 @@ There are other benefits too! See below for more details.
   cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
 
 #### Generate a signature for `dataclasses`
-* classes decorated with [`@pydantic.dataclasess.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
-* The `@pydantic.dataclasess.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
+* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
+* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
 
 ### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
@@ -85,6 +85,8 @@ To get started, all you need to do is create a `mypy.ini` file with following co
 [mypy]
 plugins = pydantic.mypy
 ```
+
+The plugin is compatible with mypy versions 0.910, 0.920, 0.921 and 0.930.
 
 See the [mypy usage](usage/mypy.md) and [plugin configuration](#configuring-the-plugin) docs for more details.
 
@@ -137,4 +139,29 @@ init_forbid_extra = True
 init_typed = True
 warn_required_dynamic_aliases = True
 warn_untyped_fields = True
+```
+
+As of `mypy>=0.900`, mypy config may also be included in the `pyproject.toml` file rather than `mypy.ini`.
+The same configuration as above would be:
+```toml
+[tool.mypy]
+plugins = [
+  "pydantic.mypy"
+]
+
+follow_imports = "silent"
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+
+# for strict mypy: (this is the tricky one :-))
+disallow_untyped_defs = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
 ```

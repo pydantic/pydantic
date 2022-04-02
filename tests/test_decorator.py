@@ -1,13 +1,14 @@
 import asyncio
 import inspect
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, Field, ValidationError, validate_arguments
+from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import ConfigError
 
@@ -86,9 +87,7 @@ def test_wrap():
     assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
     assert foo_bar.model.schema()['title'] == 'FooBar'
-    # signature is slightly different on 3.6
-    if sys.version_info >= (3, 7):
-        assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
+    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
 def test_kwargs():
@@ -267,7 +266,7 @@ def test_async():
         v = await foo(1, 2)
         assert v == 'a=1 b=2'
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_event_loop_policy().get_event_loop()
     loop.run_until_complete(run())
     with pytest.raises(ValidationError) as exc_info:
         loop.run_until_complete(foo('x'))
@@ -399,3 +398,47 @@ def test_validate(mocker):
         func.validate(['qwe'], 2)
 
     stub.assert_not_called()
+
+
+def test_validate_all():
+    @validate_arguments(config=dict(validate_all=True))
+    def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
+        return dt
+
+    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+@skip_pre_38
+def test_validate_all_positional(create_module):
+    module = create_module(
+        # language=Python
+        """
+from datetime import datetime
+
+from pydantic import Field, validate_arguments
+
+@validate_arguments(config=dict(validate_all=True))
+def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
+    return dt
+"""
+    )
+    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def test_validate_extra():
+    class TypedTest(TypedDict):
+        y: str
+
+    @validate_arguments(config={'extra': Extra.allow})
+    def test(other: TypedTest):
+        return other
+
+    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b', 'z': 'a'}
+
+    @validate_arguments(config={'extra': Extra.ignore})
+    def test(other: TypedTest):
+        return other
+
+    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b'}

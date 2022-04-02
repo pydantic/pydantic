@@ -9,7 +9,8 @@ from .typing import resolve_annotations
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .config import BaseConfig
+    from .main import BaseModel
     from .typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
@@ -97,7 +98,7 @@ def _generate_pydantic_post_init(
         d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
         if validation_error:
             raise validation_error
-        object.__setattr__(self, '__dict__', d)
+        object.__setattr__(self, '__dict__', {**getattr(self, '__dict__', {}), **d})
         object.__setattr__(self, '__initialised__', True)
         if post_init_post_parse is not None:
             post_init_post_parse(self, *initvars)
@@ -168,9 +169,8 @@ def _process_class(
 
         if field.default is not dataclasses.MISSING:
             default = field.default
-        # mypy issue 7020 and 708
-        elif field.default_factory is not dataclasses.MISSING:  # type: ignore
-            default_factory = field.default_factory  # type: ignore
+        elif field.default_factory is not dataclasses.MISSING:
+            default_factory = field.default_factory
         else:
             default = Required
 

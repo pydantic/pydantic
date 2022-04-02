@@ -83,6 +83,23 @@ def test_union_int_str():
     ]
 
 
+def test_union_int_any():
+    class Model(BaseModel):
+        v: Union[int, Any]
+
+    m = Model(v=123)
+    assert m.v == 123
+
+    m = Model(v='123')
+    assert m.v == 123
+
+    m = Model(v='foobar')
+    assert m.v == 'foobar'
+
+    m = Model(v=None)
+    assert m.v is None
+
+
 def test_union_priority():
     class ModelOne(BaseModel):
         v: Union[int, str] = ...
@@ -769,6 +786,27 @@ def test_inheritance():
     assert Bar().dict() == {'x': 12.3, 'a': 123.0}
 
 
+def test_inheritance_subclass_default():
+    class MyStr(str):
+        pass
+
+    # Confirm hint supports a subclass default
+    class Simple(BaseModel):
+        x: str = MyStr('test')
+
+    # Confirm hint on a base can be overridden with a subclass default on a subclass
+    class Base(BaseModel):
+        x: str
+        y: str
+
+    class Sub(Base):
+        x = MyStr('test')
+        y: MyStr = MyStr('test')  # force subtype
+
+    assert Sub.__fields__['x'].type_ == str
+    assert Sub.__fields__['y'].type_ == MyStr
+
+
 def test_invalid_type():
     with pytest.raises(RuntimeError) as exc_info:
 
@@ -859,7 +897,10 @@ def test_annotation_inheritance():
     class B(A):
         integer = 2
 
-    assert B.__annotations__['integer'] == int
+    if sys.version_info < (3, 10):
+        assert B.__annotations__['integer'] == int
+    else:
+        assert B.__annotations__ == {}
     assert B.__fields__['integer'].type_ == int
 
     class C(A):
@@ -1257,7 +1298,6 @@ class DisplayGen(Generic[T1, T2]):
         yield validator
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='output slightly different for 3.6')
 @pytest.mark.parametrize(
     'type_,expected',
     [
@@ -1378,10 +1418,8 @@ def test_modify_fields():
     class Bar(Foo):
         pass
 
-    # output is slightly different for 3.6
-    if sys.version_info >= (3, 7):
-        assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
-        assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
 
@@ -1868,3 +1906,29 @@ def test_arbitrary_types_allowed_custom_eq():
             arbitrary_types_allowed = True
 
     assert Model().x == Foo()
+
+
+def test_bytes_subclass():
+    class MyModel(BaseModel):
+        my_bytes: bytes
+
+    class BytesSubclass(bytes):
+        def __new__(cls, data: bytes):
+            self = bytes.__new__(cls, data)
+            return self
+
+    m = MyModel(my_bytes=BytesSubclass(b'foobar'))
+    assert m.my_bytes.__class__ == BytesSubclass
+
+
+def test_int_subclass():
+    class MyModel(BaseModel):
+        my_int: int
+
+    class IntSubclass(int):
+        def __new__(cls, data: int):
+            self = int.__new__(cls, data)
+            return self
+
+    m = MyModel(my_int=IntSubclass(123))
+    assert m.my_int.__class__ == IntSubclass

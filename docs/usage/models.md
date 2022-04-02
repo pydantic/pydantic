@@ -16,6 +16,8 @@ of the resultant model instance will conform to the field types defined on the m
     This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
     how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
 
+    Although validation is not the main purpose of *pydantic*, you **can** use this library for custom [validation](validators.md).
+
 ## Basic model usage
 
 ```py
@@ -157,13 +159,26 @@ Here a vanilla class is used to demonstrate the principle, but any ORM class cou
 ```
 _(This script is complete, it should run "as is")_
 
-Arbitrary classes are processed by *pydantic* using the `GetterDict` class
-(see [utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
+
+### Data binding
+
+Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
+[utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
 You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`. 
 In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
+
+The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
+value is set). Returning this sentinel means that the field is missing. Any other value will
+be interpreted as the value of the field.
+
+```py
+{!.tmp_examples/models_orm_mode_data_binding.py!}
+```
+_(This script is complete, it should run "as is")_
+
 
 ## Error Handling
 
@@ -281,10 +296,6 @@ For example, in the example above, if `_fields_set` was not provided,
 
 Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
 
-!!! warning
-    Generic models are only supported with python `>=3.7`, this is because of numerous subtle changes in how
-    generics are implemented between python 3.6 and python 3.7.
-
 In order to declare a generic model, you perform the following steps:
 
 * Declare one or more `typing.TypeVar` instances to use to parameterize your model.
@@ -366,8 +377,8 @@ the `create_model` method to allow models to be created on the fly.
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
 !!! warning
-    See the note in [Required Optional Fields](#required-optional-fields) for the distinct between an ellipsis as a
-    field default and annotation only fields. 
+    See the note in [Required Optional Fields](#required-optional-fields) for the distinction between an ellipsis as a
+    field default and annotation-only fields. 
     See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
@@ -482,7 +493,7 @@ _(This script is complete, it should run "as is")_
     in the same model can result in surprising field orderings. (This is due to limitations of python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
-    would determine the type by itself to guarentee field order is preserved.
+    would determine the type by itself to guarantee field order is preserved.
 
 ## Required fields
 
@@ -599,6 +610,8 @@ _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+
+Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
 
 ## Model signature
 

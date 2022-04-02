@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Set, Tuple, Type, Union
 
 from .typing import display_as_type
 
@@ -36,7 +36,6 @@ __all__ = (
     'IntegerError',
     'FloatError',
     'PathError',
-    '_PathValueError',
     'PathNotExistsError',
     'PathNotAFileError',
     'PathNotADirectoryError',
@@ -49,11 +48,15 @@ __all__ = (
     'TupleLengthError',
     'ListMinLengthError',
     'ListMaxLengthError',
+    'ListUniqueItemsError',
+    'SetMinLengthError',
+    'SetMaxLengthError',
+    'FrozenSetMinLengthError',
+    'FrozenSetMaxLengthError',
     'AnyStrMinLengthError',
     'AnyStrMaxLengthError',
     'StrError',
     'StrRegexError',
-    '_NumberBoundError',
     'NumberNotGtError',
     'NumberNotGeError',
     'NumberNotLtError',
@@ -66,6 +69,8 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
+    'DateNotInThePastError',
+    'DateNotInTheFutureError',
     'TimeError',
     'DurationError',
     'HashableError',
@@ -95,6 +100,8 @@ __all__ = (
     'InvalidLengthForBrand',
     'InvalidByteSize',
     'InvalidByteSizeUnit',
+    'MissingDiscriminator',
+    'InvalidDiscriminator',
 )
 
 
@@ -320,6 +327,11 @@ class ListMaxLengthError(PydanticValueError):
         super().__init__(limit_value=limit_value)
 
 
+class ListUniqueItemsError(PydanticValueError):
+    code = 'list.unique_items'
+    msg_template = 'the list has duplicated items'
+
+
 class SetMinLengthError(PydanticValueError):
     code = 'set.min_items'
     msg_template = 'ensure this value has at least {limit_value} items'
@@ -330,6 +342,22 @@ class SetMinLengthError(PydanticValueError):
 
 class SetMaxLengthError(PydanticValueError):
     code = 'set.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMinLengthError(PydanticValueError):
+    code = 'frozenset.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMaxLengthError(PydanticValueError):
+    code = 'frozenset.max_items'
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
@@ -436,6 +464,16 @@ class DateTimeError(PydanticValueError):
 
 class DateError(PydanticValueError):
     msg_template = 'invalid date format'
+
+
+class DateNotInThePastError(PydanticValueError):
+    code = 'date.not_in_the_past'
+    msg_template = 'date is not in the past'
+
+
+class DateNotInTheFutureError(PydanticValueError):
+    code = 'date.not_in_the_future'
+    msg_template = 'date is not in the future'
 
 
 class TimeError(PydanticValueError):
@@ -581,3 +619,23 @@ class InvalidByteSize(PydanticValueError):
 
 class InvalidByteSizeUnit(PydanticValueError):
     msg_template = 'could not interpret byte unit: {unit}'
+
+
+class MissingDiscriminator(PydanticValueError):
+    code = 'discriminated_union.missing_discriminator'
+    msg_template = 'Discriminator {discriminator_key!r} is missing in value'
+
+
+class InvalidDiscriminator(PydanticValueError):
+    code = 'discriminated_union.invalid_discriminator'
+    msg_template = (
+        'No match for discriminator {discriminator_key!r} and value {discriminator_value!r} '
+        '(allowed values: {allowed_values})'
+    )
+
+    def __init__(self, *, discriminator_key: str, discriminator_value: Any, allowed_values: Sequence[Any]) -> None:
+        super().__init__(
+            discriminator_key=discriminator_key,
+            discriminator_value=discriminator_value,
+            allowed_values=', '.join(map(repr, allowed_values)),
+        )
