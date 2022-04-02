@@ -1,11 +1,11 @@
 import sys
 from collections import namedtuple
-from typing import Any, Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, NewType, Union
+from typing import Any, Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, NewType, Union  # noqa: F401
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated  # noqa: F401
 
-from pydantic import Field
+from pydantic import Field  # noqa: F401
 from pydantic.typing import Literal, convert_generics, is_namedtuple, is_none_type, is_typeddict
 
 try:
@@ -83,21 +83,21 @@ class Team:
 @pytest.mark.parametrize(
     ['type_', 'expectations'],
     [
-        (int, int),
-        (Union[list['Hero'], int], Union[list[ForwardRef('Hero')], int]),
-        (list['Hero'], list[ForwardRef('Hero')]),
-        (dict['Hero', 'Team'], dict[ForwardRef('Hero'), ForwardRef('Team')]),
-        (dict['Hero', list['Team']], dict[ForwardRef('Hero'), list[ForwardRef('Team')]]),
-        (dict['Hero', List['Team']], dict[ForwardRef('Hero'), List[ForwardRef('Team')]]),
-        (Dict['Hero', list['Team']], Dict[ForwardRef('Hero'), list[ForwardRef('Team')]]),
+        ('int', 'int'),
+        ('Union[list["Hero"], int]', 'Union[list[ForwardRef("Hero")], int]'),
+        ('list["Hero"]', 'list[ForwardRef("Hero")]'),
+        ('dict["Hero", "Team"]', 'dict[ForwardRef("Hero"), ForwardRef("Team")]'),
+        ('dict["Hero", list["Team"]]', 'dict[ForwardRef("Hero"), list[ForwardRef("Team")]]'),
+        ('dict["Hero", List["Team"]]', 'dict[ForwardRef("Hero"), List[ForwardRef("Team")]]'),
+        ('Dict["Hero", list["Team"]]', 'Dict[ForwardRef("Hero"), list[ForwardRef("Team")]]'),
         (
-            Annotated[list['Hero'], Field(min_length=2)],
-            Annotated[list[ForwardRef('Hero')], Field(min_length=2)],
+            'Annotated[list["Hero"], Field(min_length=2)]',
+            'Annotated[list[ForwardRef("Hero")], Field(min_length=2)]',
         ),
     ],
 )
 def test_convert_generics(type_, expectations):
-    assert str(convert_generics(type_)) == str(expectations)
+    assert str(convert_generics(eval(type_))) == str(eval(expectations))
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='NewType class was added in python 3.10.')
