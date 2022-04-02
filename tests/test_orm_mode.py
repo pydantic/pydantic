@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import Any, Dict, List
 
 import pytest
@@ -305,15 +306,14 @@ def test_custom_getter_dict_derived_model_class():
 
 
 def test_recursive_parsing():
-    from types import SimpleNamespace
-
     class Getter(GetterDict):
         # try to read the modified property name
         # either as an attribute or as a key
         def get(self, key, default):
             key = key + key
             try:
-                return self._obj[key]
+                v = self._obj[key]
+                return Getter(v) if isinstance(v, dict) else v
             except TypeError:
                 return getattr(self._obj, key, default)
             except KeyError:
@@ -337,3 +337,24 @@ def test_recursive_parsing():
     # test recursive parsing with dict keys
     obj = dict(bb=dict(aa=1))
     assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
+
+
+def test_nested_orm():
+    class User(BaseModel):
+        first_name: str
+        last_name: str
+
+        class Config:
+            orm_mode = True
+
+    class State(BaseModel):
+        user: User
+
+        class Config:
+            orm_mode = True
+
+    # Pass an "orm instance"
+    State.from_orm(SimpleNamespace(user=SimpleNamespace(first_name='John', last_name='Appleseed')))
+
+    # Pass dictionary data directly
+    State(**{'user': {'first_name': 'John', 'last_name': 'Appleseed'}})

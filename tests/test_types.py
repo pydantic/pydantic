@@ -27,7 +27,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from pydantic import (
     UUID1,
@@ -216,6 +216,39 @@ def test_constrained_list_too_short():
     ]
 
 
+def test_constrained_list_not_unique_hashable_items():
+    class ConListModelUnique(BaseModel):
+        v: conlist(int, unique_items=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelUnique(v=[1, 1, 2, 2, 2, 3])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'the list has duplicated items',
+            'type': 'value_error.list.unique_items',
+        }
+    ]
+
+
+def test_constrained_list_not_unique_unhashable_items():
+    class ConListModelUnique(BaseModel):
+        v: conlist(Set[int], unique_items=True)
+
+    m = ConListModelUnique(v=[{1}, {2}, {3}])
+    assert m.v == [{1}, {2}, {3}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelUnique(v=[{1}, {1}, {2}, {2}, {2}, {3}])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'the list has duplicated items',
+            'type': 'value_error.list.unique_items',
+        }
+    ]
+
+
 def test_constrained_list_optional():
     class Model(BaseModel):
         req: Optional[conlist(str, min_items=1)] = ...
@@ -296,8 +329,8 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4)
-        bar: conlist(str, min_items=1, max_items=4) = None
+        foo: List[int] = Field(..., min_items=2, max_items=4, unique_items=True)
+        bar: conlist(str, min_items=1, max_items=4, unique_items=False) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
@@ -307,12 +340,29 @@ def test_conlist():
     with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
         Model(foo=list(range(5)))
 
+    with pytest.raises(ValidationError, match='the list has duplicated items'):
+        Model(foo=[1, 1, 2, 2])
+
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
-            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'minItems': 2,
+                'maxItems': 4,
+                'uniqueItems': True,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'minItems': 1,
+                'maxItems': 4,
+                'uniqueItems': False,
+            },
         },
         'required': ['foo'],
     }
@@ -1094,7 +1144,7 @@ def test_dict():
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
         ({1, 2, '3'}, list({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), [0, 1, 4, 9, 16]),
+        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
@@ -1134,7 +1184,7 @@ def test_ordered_dict():
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
         ({1, 2, '3'}, tuple({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
@@ -1160,7 +1210,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i ** 2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
@@ -1200,7 +1250,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
         ({1, 2, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
-        ({i ** 2 for i in range(5)}, {0, 1, 4, 9, 16}),
+        ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
     ),
 )
 def test_set_success(value, result):
@@ -1790,11 +1840,11 @@ def test_anystr_lower_disabled():
 
 
 @pytest.mark.parametrize(
-    'type_,value,result',
+    'type_args,value,result',
     [
-        (condecimal(gt=Decimal('42.24')), Decimal('43'), Decimal('43')),
+        (dict(gt=Decimal('42.24')), Decimal('43'), Decimal('43')),
         (
-            condecimal(gt=Decimal('42.24')),
+            dict(gt=Decimal('42.24')),
             Decimal('42'),
             [
                 {
@@ -1805,9 +1855,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
+        (dict(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
         (
-            condecimal(lt=Decimal('42.24')),
+            dict(lt=Decimal('42.24')),
             Decimal('43'),
             [
                 {
@@ -1818,10 +1868,10 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(ge=Decimal('42.24')), Decimal('43'), Decimal('43')),
-        (condecimal(ge=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
+        (dict(ge=Decimal('42.24')), Decimal('43'), Decimal('43')),
+        (dict(ge=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
         (
-            condecimal(ge=Decimal('42.24')),
+            dict(ge=Decimal('42.24')),
             Decimal('42'),
             [
                 {
@@ -1832,10 +1882,10 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(le=Decimal('42.24')), Decimal('42'), Decimal('42')),
-        (condecimal(le=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
+        (dict(le=Decimal('42.24')), Decimal('42'), Decimal('42')),
+        (dict(le=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
         (
-            condecimal(le=Decimal('42.24')),
+            dict(le=Decimal('42.24')),
             Decimal('43'),
             [
                 {
@@ -1846,9 +1896,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
+        (dict(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
         (
-            condecimal(max_digits=2, decimal_places=1),
+            dict(max_digits=2, decimal_places=1),
             Decimal('0.99'),
             [
                 {
@@ -1860,7 +1910,7 @@ def test_anystr_lower_disabled():
             ],
         ),
         (
-            condecimal(max_digits=3, decimal_places=1),
+            dict(max_digits=3, decimal_places=1),
             Decimal('999'),
             [
                 {
@@ -1871,11 +1921,11 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
-        (condecimal(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
-        (condecimal(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
+        (dict(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
+        (dict(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
+        (dict(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
         (
-            condecimal(max_digits=20, decimal_places=2),
+            dict(max_digits=20, decimal_places=2),
             Decimal('7424742403889818000000'),
             [
                 {
@@ -1886,9 +1936,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
+        (dict(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
         (
-            condecimal(max_digits=5, decimal_places=2),
+            dict(max_digits=5, decimal_places=2),
             Decimal('7304E-3'),
             [
                 {
@@ -1899,9 +1949,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
+        (dict(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
         (
-            condecimal(max_digits=5, decimal_places=5),
+            dict(max_digits=5, decimal_places=5),
             Decimal('70E-6'),
             [
                 {
@@ -1914,7 +1964,7 @@ def test_anystr_lower_disabled():
         ),
         *[
             (
-                condecimal(decimal_places=2, max_digits=10),
+                dict(decimal_places=2, max_digits=10),
                 value,
                 [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
             )
@@ -1935,7 +1985,7 @@ def test_anystr_lower_disabled():
         ],
         *[
             (
-                condecimal(decimal_places=2, max_digits=10),
+                dict(decimal_places=2, max_digits=10),
                 Decimal(value),
                 [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
             )
@@ -1955,7 +2005,7 @@ def test_anystr_lower_disabled():
             )
         ],
         (
-            condecimal(multiple_of=Decimal('5')),
+            dict(multiple_of=Decimal('5')),
             Decimal('42'),
             [
                 {
@@ -1968,16 +2018,18 @@ def test_anystr_lower_disabled():
         ),
     ],
 )
-def test_decimal_validation(type_, value, result):
-    model = create_model('DecimalModel', foo=(type_, ...))
+def test_decimal_validation(type_args, value, result):
+    modela = create_model('DecimalModel', foo=(condecimal(**type_args), ...))
+    modelb = create_model('DecimalModel', foo=(Decimal, Field(..., **type_args)))
 
-    if not isinstance(result, Decimal):
-        with pytest.raises(ValidationError) as exc_info:
-            model(foo=value)
-        assert exc_info.value.errors() == result
-        assert exc_info.value.json().startswith('[')
-    else:
-        assert model(foo=value).foo == result
+    for model in (modela, modelb):
+        if not isinstance(result, Decimal):
+            with pytest.raises(ValidationError) as exc_info:
+                model(foo=value)
+            assert exc_info.value.errors() == result
+            assert exc_info.value.json().startswith('[')
+        else:
+            assert model(foo=value).foo == result
 
 
 @pytest.mark.parametrize('value,result', (('/test/path', Path('/test/path')), (Path('/test/path'), Path('/test/path'))))
@@ -2407,8 +2459,7 @@ def test_pattern():
         pattern: Pattern
 
     f = Foobar(pattern=r'^whatev.r\d$')
-    # SRE_Pattern for 3.6, Pattern for 3.7
-    assert f.pattern.__class__.__name__ in {'SRE_Pattern', 'Pattern'}
+    assert f.pattern.__class__.__name__ == 'Pattern'
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
@@ -2939,13 +2990,10 @@ def test_default_union_types():
     assert DefaultModel(v=1).dict() == {'v': 1}
     assert DefaultModel(v='1').dict() == {'v': 1}
 
-    # In 3.6, Union[int, bool, str] == Union[int, str]
-    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
-
     assert DefaultModel.schema() == {
         'title': 'DefaultModel',
         'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
         'required': ['v'],
     }
 
@@ -2961,13 +3009,10 @@ def test_smart_union_types():
     assert SmartModel(v=True).dict() == {'v': True}
     assert SmartModel(v='1').dict() == {'v': '1'}
 
-    # In 3.6, Union[int, bool, str] == Union[int, str]
-    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
-
     assert SmartModel.schema() == {
         'title': 'SmartModel',
         'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
         'required': ['v'],
     }
 
@@ -3066,6 +3111,22 @@ def test_smart_union_compouned_types_edge_case():
     assert Model(x=[1, 2]).x == ['1', '2']
     # still coerce if needed
     assert Model(x=[1, '2']).x == ['1', '2']
+
+
+def test_smart_union_typeddict():
+    class Dict1(TypedDict):
+        foo: str
+
+    class Dict2(TypedDict):
+        bar: str
+
+    class M(BaseModel):
+        d: Union[Dict2, Dict1]
+
+        class Config:
+            smart_union = True
+
+    assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
 
 @pytest.mark.parametrize(

@@ -28,13 +28,12 @@ from typing_extensions import Annotated
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
 from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, NoneIsNotAllowedError
+from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
-    NoneType,
     display_as_type,
     get_args,
     get_origin,
@@ -45,7 +44,17 @@ from .typing import (
     is_union,
     new_type_supertype,
 )
-from .utils import PyObjectStr, Representation, ValueItems, lenient_issubclass, sequence_like, smart_deepcopy
+from .utils import (
+    PyObjectStr,
+    Representation,
+    ValueItems,
+    get_discriminator_alias_and_values,
+    get_unique_discriminator_alias,
+    lenient_isinstance,
+    lenient_issubclass,
+    sequence_like,
+    smart_deepcopy,
+)
 from .validators import constant_validator, dict_validator, find_validators, validate_json
 
 Required: Any = Ellipsis
@@ -101,13 +110,17 @@ class FieldInfo(Representation):
         'lt',
         'le',
         'multiple_of',
+        'max_digits',
+        'decimal_places',
         'min_items',
         'max_items',
+        'unique_items',
         'min_length',
         'max_length',
         'allow_mutation',
         'repr',
         'regex',
+        'discriminator',
         'extra',
     )
 
@@ -121,8 +134,11 @@ class FieldInfo(Representation):
         'ge': None,
         'le': None,
         'multiple_of': None,
+        'max_digits': None,
+        'decimal_places': None,
         'min_items': None,
         'max_items': None,
+        'unique_items': None,
         'allow_mutation': True,
     }
 
@@ -141,12 +157,16 @@ class FieldInfo(Representation):
         self.lt = kwargs.pop('lt', None)
         self.le = kwargs.pop('le', None)
         self.multiple_of = kwargs.pop('multiple_of', None)
+        self.max_digits = kwargs.pop('max_digits', None)
+        self.decimal_places = kwargs.pop('decimal_places', None)
         self.min_items = kwargs.pop('min_items', None)
         self.max_items = kwargs.pop('max_items', None)
+        self.unique_items = kwargs.pop('unique_items', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
         self.regex = kwargs.pop('regex', None)
+        self.discriminator = kwargs.pop('discriminator', None)
         self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
 
@@ -206,12 +226,16 @@ def Field(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
+    max_digits: int = None,
+    decimal_places: int = None,
     min_items: int = None,
     max_items: int = None,
+    unique_items: bool = None,
     min_length: int = None,
     max_length: int = None,
     allow_mutation: bool = True,
     regex: str = None,
+    discriminator: str = None,
     repr: bool = True,
     **extra: Any,
 ) -> Any:
@@ -241,6 +265,16 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
       schema will have a ``multipleOf`` validation keyword
+    :param max_digits: only applies to Decimals, requires the field to have a maximum number
+      of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
+    :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
+      allowed. It does not include trailing decimal zeroes.
+    :param min_items: only applies to lists, requires the field to have a minimum number of
+      elements. The schema will have a ``minItems`` validation keyword
+    :param max_items: only applies to lists, requires the field to have a maximum number of
+      elements. The schema will have a ``maxItems`` validation keyword
+    :param max_items: only applies to lists, requires the field not to have duplicated
+      elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
@@ -249,6 +283,8 @@ def Field(
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
     :param regex: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
+    :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
+      The `discriminator` is the name of this common field to shorten validation and improve generated schema
     :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
@@ -266,12 +302,16 @@ def Field(
         lt=lt,
         le=le,
         multiple_of=multiple_of,
+        max_digits=max_digits,
+        decimal_places=decimal_places,
         min_items=min_items,
         max_items=max_items,
+        unique_items=unique_items,
         min_length=min_length,
         max_length=max_length,
         allow_mutation=allow_mutation,
         regex=regex,
+        discriminator=discriminator,
         repr=repr,
         **extra,
     )
@@ -315,6 +355,7 @@ class ModelField(Representation):
         'type_',
         'outer_type_',
         'sub_fields',
+        'sub_fields_mapping',
         'key_field',
         'validators',
         'pre_validators',
@@ -327,6 +368,8 @@ class ModelField(Representation):
         'alias',
         'has_alias',
         'field_info',
+        'discriminator_key',
+        'discriminator_alias',
         'validate_always',
         'allow_none',
         'shape',
@@ -359,10 +402,13 @@ class ModelField(Representation):
         self.required: 'BoolUndefined' = required
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
+        self.discriminator_key: Optional[str] = self.field_info.discriminator
+        self.discriminator_alias: Optional[str] = self.discriminator_key
 
         self.allow_none: bool = False
         self.validate_always: bool = False
         self.sub_fields: Optional[List[ModelField]] = None
+        self.sub_fields_mapping: Optional[Dict[str, 'ModelField']] = None  # used for discriminated union
         self.key_field: Optional[ModelField] = None
         self.validators: 'ValidatorsList' = []
         self.pre_validators: Optional['ValidatorsList'] = None
@@ -547,6 +593,15 @@ class ModelField(Representation):
             return
 
         origin = get_origin(self.type_)
+
+        if origin is Annotated:
+            self.type_ = get_args(self.type_)[0]
+            self._type_analysis()
+            return
+
+        if self.discriminator_key is not None and not is_union(origin):
+            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
+
         # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
         if origin is None or origin is CollectionsHashable:
             # field is not "typing" object eg. Union, Dict, List etc.
@@ -554,19 +609,16 @@ class ModelField(Representation):
             if isinstance(self.type_, type) and isinstance(None, self.type_):
                 self.allow_none = True
             return
-        if origin is Annotated:
-            self.type_ = get_args(self.type_)[0]
-            self._type_analysis()
+        elif origin is Callable:
             return
-        if origin is Callable:
-            return
-        if is_union(origin):
+        elif is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
-                if type_ is NoneType:
+                if is_none_type(type_) or type_ is Any or type_ is object:
                     if self.required is Undefined:
                         self.required = False
                     self.allow_none = True
+                if is_none_type(type_):
                     continue
                 types_.append(type_)
 
@@ -579,9 +631,11 @@ class ModelField(Representation):
                 self._type_analysis()
             else:
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
-            return
 
-        if issubclass(origin, Tuple):  # type: ignore
+                if self.discriminator_key is not None:
+                    self.prepare_discriminated_union_sub_fields()
+            return
+        elif issubclass(origin, Tuple):  # type: ignore
             # origin == Tuple without item type
             args = get_args(self.type_)
             if not args:  # plain tuple
@@ -599,8 +653,7 @@ class ModelField(Representation):
                 self.shape = SHAPE_TUPLE
                 self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
             return
-
-        if issubclass(origin, List):
+        elif issubclass(origin, List):
             # Create self validators
             get_validators = getattr(self.type_, '__get_validators__', None)
             if get_validators:
@@ -636,6 +689,11 @@ class ModelField(Representation):
         elif issubclass(origin, Sequence):
             self.type_ = get_args(self.type_)[0]
             self.shape = SHAPE_SEQUENCE
+        # priority to most common mapping: dict
+        elif origin is dict or origin is Dict:
+            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
+            self.type_ = get_args(self.type_)[1]
+            self.shape = SHAPE_DICT
         elif issubclass(origin, DefaultDict):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -644,10 +702,6 @@ class ModelField(Representation):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = int
             self.shape = SHAPE_COUNTER
-        elif issubclass(origin, Dict):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DICT
         elif issubclass(origin, Mapping):
             self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
             self.type_ = get_args(self.type_)[1]
@@ -673,6 +727,34 @@ class ModelField(Representation):
         # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
         self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
 
+    def prepare_discriminated_union_sub_fields(self) -> None:
+        """
+        Prepare the mapping <discriminator key> -> <ModelField> and update `sub_fields`
+        Note that this process can be aborted if a `ForwardRef` is encountered
+        """
+        assert self.discriminator_key is not None
+
+        if self.type_.__class__ is DeferredType:
+            return
+
+        assert self.sub_fields is not None
+        sub_fields_mapping: Dict[str, 'ModelField'] = {}
+        all_aliases: Set[str] = set()
+
+        for sub_field in self.sub_fields:
+            t = sub_field.type_
+            if t.__class__ is ForwardRef:
+                # Stopping everything...will need to call `update_forward_refs`
+                return
+
+            alias, discriminator_values = get_discriminator_alias_and_values(t, self.discriminator_key)
+            all_aliases.add(alias)
+            for discriminator_value in discriminator_values:
+                sub_fields_mapping[discriminator_value] = sub_field
+
+        self.sub_fields_mapping = sub_fields_mapping
+        self.discriminator_alias = get_unique_discriminator_alias(all_aliases, self.discriminator_key)
+
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
         if for_keys:
             class_validators = None
@@ -690,11 +772,15 @@ class ModelField(Representation):
                 for k, v in self.class_validators.items()
                 if v.each_item
             }
+
+        field_info, _ = self._get_field_info(name, type_, None, self.model_config)
+
         return self.__class__(
             type_=type_,
             name=name,
             class_validators=class_validators,
             model_config=self.model_config,
+            field_info=field_info,
         )
 
     def populate_validators(self) -> None:
@@ -941,6 +1027,9 @@ class ModelField(Representation):
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
     ) -> 'ValidateReturn':
         if self.sub_fields:
+            if self.discriminator_key is not None:
+                return self._validate_discriminated_union(v, values, loc, cls)
+
             errors = []
 
             if self.model_config.smart_union and is_union(get_origin(self.type_)):
@@ -964,7 +1053,7 @@ class ModelField(Representation):
                             return v, None
                     except TypeError:
                         # compound type
-                        if isinstance(v, get_origin(field.outer_type_)):
+                        if lenient_isinstance(v, get_origin(field.outer_type_)):
                             value, error = field.validate(v, values, loc=loc, cls=cls)
                             if not error:
                                 return value, None
@@ -980,6 +1069,46 @@ class ModelField(Representation):
             return v, errors
         else:
             return self._apply_validators(v, values, loc, cls, self.validators)
+
+    def _validate_discriminated_union(
+        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
+    ) -> 'ValidateReturn':
+        assert self.discriminator_key is not None
+        assert self.discriminator_alias is not None
+
+        try:
+            discriminator_value = v[self.discriminator_alias]
+        except KeyError:
+            return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
+        except TypeError:
+            try:
+                # BaseModel or dataclass
+                discriminator_value = getattr(v, self.discriminator_alias)
+            except (AttributeError, TypeError):
+                return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
+
+        try:
+            sub_field = self.sub_fields_mapping[discriminator_value]  # type: ignore[index]
+        except TypeError:
+            assert cls is not None
+            raise ConfigError(
+                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
+                f'you might need to call {cls.__name__}.update_forward_refs().'
+            )
+        except KeyError:
+            assert self.sub_fields_mapping is not None
+            return v, ErrorWrapper(
+                InvalidDiscriminator(
+                    discriminator_key=self.discriminator_key,
+                    discriminator_value=discriminator_value,
+                    allowed_values=list(self.sub_fields_mapping),
+                ),
+                loc,
+            )
+        else:
+            if not isinstance(loc, tuple):
+                loc = (loc,)
+            return sub_field.validate(v, values, loc=(*loc, display_as_type(sub_field.type_)), cls=cls)
 
     def _apply_validators(
         self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
@@ -1006,7 +1135,6 @@ class ModelField(Representation):
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
-        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape in MAPPING_LIKE_SHAPES:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:

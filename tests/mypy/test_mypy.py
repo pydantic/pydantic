@@ -7,8 +7,10 @@ import pytest
 
 try:
     from mypy import api as mypy_api
+    from mypy.version import __version__ as mypy_version
 except ImportError:
     mypy_api = None  # type: ignore
+    mypy_version = '0'
 
 try:
     import dotenv
@@ -71,7 +73,16 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
         output_path.write_text(actual_out)
         raise RuntimeError(f'wrote actual output to {output_path} since file did not exist')
 
-    expected_out = Path(output_path).read_text() if output_path else ''
+    expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
+
+    # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
+    if actual_out and float(mypy_version) < 0.930:
+        actual_out = actual_out.lower()
+        expected_out = expected_out.lower()
+        actual_out = actual_out.replace('variant:', 'variants:')
+        actual_out = re.sub(r'^(\d+: note: {4}).*', r'\1...', actual_out, flags=re.M)
+        expected_out = re.sub(r'^(\d+: note: {4}).*', r'\1...', expected_out, flags=re.M)
+
     assert actual_out == expected_out, actual_out
 
 

@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
 
@@ -40,10 +40,10 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.8
 
@@ -65,16 +65,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -131,19 +131,19 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos, windows]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
       COMPILED: no
       DEPS: yes
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -164,14 +164,55 @@ jobs:
         name: coverage
         path: coverage
 
+  test-old-mypy:
+    name: test mypy v${{ matrix.mypy-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mypy-version: ['0.910', '0.920', '0.921']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+
+    - name: install
+      run: |
+        make install-testing
+        pip freeze
+
+    - name: uninstall deps
+      run: pip uninstall -y mypy tomli toml
+
+    - name: install specific mypy version
+      run: pip install mypy==${{ matrix.mypy-version }}
+
+    - run: mkdir coverage
+
+    - name: run tests
+      run: pytest --cov=pydantic tests/mypy
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
+        CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v2
+      with:
+        name: coverage
+        path: coverage
+
   coverage-combine:
-    needs: [test-linux, test-windows-mac]
+    needs: [test-linux, test-windows-mac, test-old-mypy]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
@@ -198,12 +239,15 @@ jobs:
     name: test fastAPI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
-        python-version: '3.7'
+        python-version: '3.10'
+
+    - name: upgrade pip
+      run: pip install -U pip setuptools wheel
 
     - name: install
       run: make install-testing
@@ -218,10 +262,10 @@ jobs:
       BENCHMARK_REPEATS: 1
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
 
@@ -236,25 +280,25 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-fastapi, benchmark]
+    needs: [lint, test-linux, test-windows-mac, test-old-mypy, test-fastapi, benchmark]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['6', '7', '8', '9']
+        python-version: ['7', '8', '9', '10']
         include:
         - os: ubuntu
           platform: linux
         - os: windows
           ls: dir
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
 
@@ -279,6 +323,8 @@ jobs:
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
         CIBW_MANYLINUX_I686_IMAGE: 'manylinux2014'
+        CIBW_ARCHS_MACOS: 'x86_64 arm64'
+        CIBW_TEST_SKIP: '*-macosx_arm64'  # see https://cibuildwheel.readthedocs.io/en/stable/faq/#universal2
 
     # TODO build windows 32bit binaries
 
@@ -300,10 +346,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 

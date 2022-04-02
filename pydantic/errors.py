@@ -1,6 +1,6 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Set, Tuple, Type, Union
 
 from .typing import display_as_type
 
@@ -48,6 +48,7 @@ __all__ = (
     'TupleLengthError',
     'ListMinLengthError',
     'ListMaxLengthError',
+    'ListUniqueItemsError',
     'SetMinLengthError',
     'SetMaxLengthError',
     'FrozenSetMinLengthError',
@@ -99,6 +100,8 @@ __all__ = (
     'InvalidLengthForBrand',
     'InvalidByteSize',
     'InvalidByteSizeUnit',
+    'MissingDiscriminator',
+    'InvalidDiscriminator',
 )
 
 
@@ -322,6 +325,11 @@ class ListMaxLengthError(PydanticValueError):
 
     def __init__(self, *, limit_value: int) -> None:
         super().__init__(limit_value=limit_value)
+
+
+class ListUniqueItemsError(PydanticValueError):
+    code = 'list.unique_items'
+    msg_template = 'the list has duplicated items'
 
 
 class SetMinLengthError(PydanticValueError):
@@ -611,3 +619,23 @@ class InvalidByteSize(PydanticValueError):
 
 class InvalidByteSizeUnit(PydanticValueError):
     msg_template = 'could not interpret byte unit: {unit}'
+
+
+class MissingDiscriminator(PydanticValueError):
+    code = 'discriminated_union.missing_discriminator'
+    msg_template = 'Discriminator {discriminator_key!r} is missing in value'
+
+
+class InvalidDiscriminator(PydanticValueError):
+    code = 'discriminated_union.invalid_discriminator'
+    msg_template = (
+        'No match for discriminator {discriminator_key!r} and value {discriminator_value!r} '
+        '(allowed values: {allowed_values})'
+    )
+
+    def __init__(self, *, discriminator_key: str, discriminator_value: Any, allowed_values: Sequence[Any]) -> None:
+        super().__init__(
+            discriminator_key=discriminator_key,
+            discriminator_value=discriminator_value,
+            allowed_values=', '.join(map(repr, allowed_values)),
+        )
