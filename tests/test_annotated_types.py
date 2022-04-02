@@ -344,3 +344,36 @@ def test_typeddict_not_required():
             }
         },
     }
+
+
+def test_typed_dict_inheritance():
+    class DataTDBase(TypedDict, total=True):
+        a: NotRequired[int]
+        b: str
+
+    class DataTD(DataTDBase, total=False):
+        c: Required[int]
+        d: str
+
+    class Model(BaseModel):
+        t: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'t': {'$ref': '#/definitions/DataTD'}},
+        'required': ['t'],
+        'definitions': {
+            'DataTD': {
+                'title': 'DataTD',
+                'type': 'object',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'string'},
+                    'c': {'title': 'C', 'type': 'integer'},
+                    'd': {'title': 'D', 'type': 'string'},
+                },
+                'required': ['b', 'c'],
+            }
+        },
+    }
