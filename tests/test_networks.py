@@ -582,13 +582,7 @@ def test_build_url(kwargs, expected):
         (dict(scheme='https', host='example.net', port='1234'), 'https://example.net:1234'),
     ],
 )
-@pytest.mark.parametrize(
-    'klass',
-    [
-        AnyHttpUrl,
-        HttpUrl,
-    ],
-)
+@pytest.mark.parametrize('klass', [AnyHttpUrl, HttpUrl])
 def test_build_http_url(klass, kwargs, expected):
     assert klass(None, **kwargs) == expected
 
