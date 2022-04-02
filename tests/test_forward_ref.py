@@ -683,6 +683,7 @@ def test_pep585_self_referencing_generics():
         names: list['SelfReferencing']  # noqa: F821
 
     SelfReferencing.update_forward_refs()
+    SelfReferencing(names=[SelfReferencing(names=[])])
 
 
 @skip_until_39

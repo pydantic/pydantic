@@ -80,17 +80,24 @@ class Team:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above.')
-def test_convert_generics():
-    assert convert_generics(int) == int
-    assert convert_generics(Union[list['Hero'], int]) == Union[list[ForwardRef('Hero')], int]
-    assert convert_generics(list['Hero']) == list[ForwardRef('Hero')]
-    assert convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
-    assert convert_generics(dict['Hero', list['Team']]) == dict[ForwardRef('Hero'), list[ForwardRef('Team')]]
-    assert convert_generics(dict['Hero', List['Team']]) == dict[ForwardRef('Hero'), List[ForwardRef('Team')]]
-    assert convert_generics(Dict['Hero', list['Team']]) == Dict[ForwardRef('Hero'), list[ForwardRef('Team')]]
-    assert str(convert_generics(Annotated[list['Hero'], Field(min_length=2)])) == str(
-        Annotated[list[ForwardRef('Hero')], Field(min_length=2)]
-    )
+@pytest.mark.parametrize(
+    ['type_', 'expectations'],
+    [
+        (int, int),
+        (Union[list['Hero'], int], Union[list[ForwardRef('Hero')], int]),
+        (list['Hero'], list[ForwardRef('Hero')]),
+        (dict['Hero', 'Team'], dict[ForwardRef('Hero'), ForwardRef('Team')]),
+        (dict['Hero', list['Team']], dict[ForwardRef('Hero'), list[ForwardRef('Team')]]),
+        (dict['Hero', List['Team']], dict[ForwardRef('Hero'), List[ForwardRef('Team')]]),
+        (Dict['Hero', list['Team']], Dict[ForwardRef('Hero'), list[ForwardRef('Team')]]),
+        (
+            Annotated[list['Hero'], Field(min_length=2)],
+            Annotated[list[ForwardRef('Hero')], Field(min_length=2)],
+        ),
+    ],
+)
+def test_convert_generics(type_, expectations):
+    assert str(convert_generics(type_)) == str(expectations)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='NewType class was added in python 3.10.')
