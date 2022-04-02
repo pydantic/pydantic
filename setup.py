@@ -59,12 +59,12 @@ class ReplaceLinks:
 description = 'Data validation and settings management using python 3.6 type hinting'
 THIS_DIR = Path(__file__).resolve().parent
 try:
-    history = (THIS_DIR / 'HISTORY.md').read_text()
+    history = (THIS_DIR / 'HISTORY.md').read_text(encoding='utf-8')
     history = re.sub(r'#(\d+)', r'[#\1](https://github.com/samuelcolvin/pydantic/issues/\1)', history)
     history = re.sub(r'( +)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub('@@', '@', history)
 
-    long_description = (THIS_DIR / 'README.md').read_text() + '\n\n' + history
+    long_description = (THIS_DIR / 'README.md').read_text(encoding='utf-8') + '\n\n' + history
 except FileNotFoundError:
     long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
 
