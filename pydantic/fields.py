@@ -600,7 +600,7 @@ class ModelField(Representation):
             return
 
         if self.discriminator_key is not None and not is_union(origin):
-            raise TypeError('`discriminator` can only be used with `Union` type')
+            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
         # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
         if origin is None or origin is CollectionsHashable:
@@ -1135,7 +1135,6 @@ class ModelField(Representation):
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
-        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape in MAPPING_LIKE_SHAPES:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:

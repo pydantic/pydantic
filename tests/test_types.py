@@ -1144,7 +1144,7 @@ def test_dict():
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
         ({1, 2, '3'}, list({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), [0, 1, 4, 9, 16]),
+        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
@@ -1184,7 +1184,7 @@ def test_ordered_dict():
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
         ({1, 2, '3'}, tuple({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
@@ -1210,7 +1210,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i ** 2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
@@ -1250,7 +1250,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
         ({1, 2, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
-        ({i ** 2 for i in range(5)}, {0, 1, 4, 9, 16}),
+        ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
     ),
 )
 def test_set_success(value, result):
@@ -2459,8 +2459,7 @@ def test_pattern():
         pattern: Pattern
 
     f = Foobar(pattern=r'^whatev.r\d$')
-    # SRE_Pattern for 3.6, Pattern for 3.7
-    assert f.pattern.__class__.__name__ in {'SRE_Pattern', 'Pattern'}
+    assert f.pattern.__class__.__name__ == 'Pattern'
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
@@ -2991,13 +2990,10 @@ def test_default_union_types():
     assert DefaultModel(v=1).dict() == {'v': 1}
     assert DefaultModel(v='1').dict() == {'v': 1}
 
-    # In 3.6, Union[int, bool, str] == Union[int, str]
-    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
-
     assert DefaultModel.schema() == {
         'title': 'DefaultModel',
         'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
         'required': ['v'],
     }
 
@@ -3013,13 +3009,10 @@ def test_smart_union_types():
     assert SmartModel(v=True).dict() == {'v': True}
     assert SmartModel(v='1').dict() == {'v': '1'}
 
-    # In 3.6, Union[int, bool, str] == Union[int, str]
-    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
-
     assert SmartModel.schema() == {
         'title': 'SmartModel',
         'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
         'required': ['v'],
     }
 
