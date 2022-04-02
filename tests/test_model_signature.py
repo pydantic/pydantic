@@ -147,24 +147,24 @@ def test_optional_field():
         foo: Optional[int] = None
 
     assert signature(Model) == Signature(
-        [Parameter("foo", Parameter.KEYWORD_ONLY, default=None, annotation=Optional[int])], return_annotation=None
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Optional[int])], return_annotation=None
     )
 
 
 def test_annotated_field():
     class Model(BaseModel):
-        foo: Annotated[int, "foo"] = 1
+        foo: Annotated[int, 'foo'] = 1
 
     assert signature(Model) == Signature(
-        [Parameter("foo", Parameter.KEYWORD_ONLY, default=1, annotation=Annotated[int, "foo"])], return_annotation=None
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=1, annotation=Annotated[int, 'foo'])], return_annotation=None
     )
 
 
 def test_annotated_optional_field():
     class Model(BaseModel):
-        foo: Annotated[Optional[int], "foo"] = None
+        foo: Annotated[Optional[int], 'foo'] = None
 
     assert signature(Model) == Signature(
-        [Parameter("foo", Parameter.KEYWORD_ONLY, default=None, annotation=Annotated[Optional[int], "foo"])],
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Annotated[Optional[int], 'foo'])],
         return_annotation=None,
     )
