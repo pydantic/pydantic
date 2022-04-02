@@ -1,1 +1,1 @@
-fix mangling of inspect.signature for BaseModel
+fix mangling of `inspect.signature` for `BaseModel`
