@@ -325,7 +325,7 @@ def test_json_nested_encode_models():
     )
 
 
-def test_nested_models_with_inner_encoders():
+class TestNestedJSONEncoding:
     class WithCustomEncoders(BaseModel):
         dt: datetime.datetime
         diff: datetime.timedelta
@@ -336,63 +336,72 @@ def test_nested_models_with_inner_encoders():
                 datetime.timedelta: timedelta_isoformat,
             }
 
-    class ParentWithoutEncoders(BaseModel):
-        dt: datetime.datetime
-        child: WithCustomEncoders
+    @pytest.fixture()
+    def ides_of_march(self):
+        return datetime.datetime(44, 3, 15, tzinfo=datetime.timezone.utc)
 
-    class ParentWithVariableEncoders(ParentWithoutEncoders):
-        class Config:
-            json_encoders = {
-                datetime.datetime: lambda v: v.year,
-                datetime.timedelta: lambda v: v.total_seconds(),
-            }
+    @pytest.fixture()
+    def child(self):
+        return self.WithCustomEncoders(
+            dt=datetime.datetime(2032, 6, 1, tzinfo=datetime.timezone.utc),
+            diff=datetime.timedelta(hours=100),
+        )
 
-    class ParentWithClassEncoders(ParentWithoutEncoders):
-        class Config:
-            json_encoders = {
-                datetime.datetime: lambda v: v.timestamp(),
-                WithCustomEncoders: lambda v: {'dt': v.dt.year},
-            }
+    def test_inner_custom_encoding(self, child):
+        assert child.json() == r'{"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}'
 
-    # test child inner encoding
-    m = WithCustomEncoders(
-        dt=datetime.datetime(2032, 6, 1, tzinfo=datetime.timezone.utc),
-        diff=datetime.timedelta(hours=100),
-    )
-    assert m.json() == r'{"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}'
+    def test_encoding_in_parent_with_variable_encoders(self, child, ides_of_march):
+        class ParentWithVariableEncoders(BaseModel):
+            dt: datetime.datetime
+            child: self.WithCustomEncoders
 
-    ides = datetime.datetime(44, 3, 15, tzinfo=datetime.timezone.utc)
+            class Config:
+                json_encoders = {
+                    datetime.datetime: lambda v: v.year,
+                    datetime.timedelta: lambda v: v.total_seconds(),
+                }
 
-    p = ParentWithoutEncoders(child=m, dt=ides)
-    assert (
-        p.json()
-        == r'{"dt": "0044-03-15T00:00:00+00:00", "child": {"dt": "2032-06-01T00:00:00+00:00", "diff": 360000.0}}'
-    )
-    iso_format = r'{"dt": "0044-03-15T00:00:00+00:00", "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
-    assert p.json(use_nested_encoders=True) == iso_format
+        parent = ParentWithVariableEncoders(child=child, dt=ides_of_march)
 
-    p2 = ParentWithVariableEncoders(child=m, dt=ides)
-    default_child = r'{"dt": 44, "child": {"dt": 2032, "diff": 360000.0}}'
-    assert p2.json() == default_child
-    # Expected: ParentWithVariableEncoders.dt is year, ParentWithVariableEncoders.child.dt is timestamp
-    timestamped_child = r'{"dt": 44, "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
-    assert p2.json(use_nested_encoders=True) == timestamped_child
+        default = r'{"dt": 44, "child": {"dt": 2032, "diff": 360000.0}}'
+        assert parent.json() == default
+        # turning off models_as_dict defaults to top-level
+        assert parent.json(models_as_dict=False, use_nested_encoders=False) == default
+        assert parent.json(models_as_dict=False, use_nested_encoders=True) == default
 
-    # turning off models_as_dict defaults to top-level
-    assert p2.json(models_as_dict=False) == default_child
-    assert p2.json(models_as_dict=False, use_nested_encoders=True) == default_child
+        custom = (
+            r'{"dt": 44, '  # parent.dt still uses the year to encode
+            # child uses child.json_encoders to encode
+            r'"child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
+        )
+        assert parent.json(use_nested_encoders=True) == custom
 
-    p3 = ParentWithClassEncoders(child=m, dt=ides)
-    # default: all top-level variable format
-    assert p3.json() == r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": 360000.0}}'
-    # models_as_dict=True, use_nested_encoders=True, means top-level encoder has no effect on child
-    iso_format_child = r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
-    assert p3.json(use_nested_encoders=True) == iso_format_child
-    # models_as_dict=False, use_nested_encoders=False, means top-level encoder class swings into action
-    top_level_encoded = r'{"dt": -60772291200.0, "child": {"dt": 2032}}'
-    assert p3.json(models_as_dict=False) == top_level_encoded
-    # models_as_dict=False, use_nested_encoders=True still uses top-level encoder
-    assert p3.json(models_as_dict=False, use_nested_encoders=True) == top_level_encoded
+    def test_encoding_in_parent_with_class_encoders(self, child, ides_of_march):
+        class ParentWithClassEncoders(BaseModel):
+            dt: datetime.datetime
+            child: self.WithCustomEncoders
+
+            class Config:
+                json_encoders = {
+                    datetime.datetime: lambda v: v.timestamp(),
+                    self.WithCustomEncoders: lambda v: {'dt': v.dt.year},
+                }
+
+        parent = ParentWithClassEncoders(child=child, dt=ides_of_march)
+
+        # when models_as_dict=True, the `WithCustomEncoders` encoder is ignored
+        default = r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": 360000.0}}'
+        assert parent.json() == default
+
+        custom_child = r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
+        assert parent.json(use_nested_encoders=True) == custom_child
+
+        # when models_as_dict=False, the parent `WithCustomEncoders` is used
+        # regardless of whatever json_encoders are in WithCustomEncoders.Config
+
+        custom_parent = r'{"dt": -60772291200.0, "child": {"dt": 2032}}'
+        assert parent.json(models_as_dict=False, use_nested_encoders=False) == custom_parent
+        assert parent.json(models_as_dict=False, use_nested_encoders=True) == custom_parent
 
 
 def test_custom_encode_fallback_basemodel():
