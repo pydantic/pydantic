@@ -6,7 +6,10 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Counter, DefaultDict, Dict, Final, List,
+    Counter,
+    DefaultDict,
+    Dict,
+    List,
     Mapping,
     Optional,
     Type,
@@ -33,7 +36,7 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.typing import Literal
+from pydantic.typing import Final, Literal
 
 
 def test_success():
@@ -2155,18 +2158,17 @@ def test_new_union_origin():
     }
 
 
-@pytest.mark.parametrize('ann', [Final, Final[int]])
 @pytest.mark.parametrize(
-    'value,has_default',
-    [
-        (None, False),
-        (Field(), False),
-        (10, True),
-        (Field(default=10), True),
-        (Field(default_factory=lambda: 10), True),
-    ],
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
 )
-def test_final_field_decl(ann, value, has_default):
+@pytest.mark.parametrize(
+    'value',
+    [None, Field(...)],
+    ids=['none', 'field'],
+)
+def test_final_field_decl_withou_default_val(ann, value):
     class Model(BaseModel):
         a: ann
 
@@ -2178,10 +2180,22 @@ def test_final_field_decl(ann, value, has_default):
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.__fields__
 
-    field = Model.__fields__['a']
+    assert Model.__fields__['a'].final
 
-    assert field.final
-    assert field.required == (not has_default and ann is not Final)
+
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
+)
+def test_final_field_decl_with_default_val(ann):
+    class Model(BaseModel):
+        a: ann = 10
+
+    Model.update_forward_refs(ann=ann)
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.__fields__
 
 
 def test_final_field_reassignment():
@@ -2195,11 +2209,3 @@ def test_final_field_reassignment():
         match=r'^"Model" object "a" field is final and does not support reassignment$',
     ):
         obj.a = 20
-
-
-def test_final_field_init():
-    class Model(BaseModel):
-        a: Final[int] = 10
-
-    assert Model().a == 10
-    assert Model(a=20).a == 20

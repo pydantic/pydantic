@@ -38,6 +38,7 @@ from .typing import (
     get_args,
     get_origin,
     is_classvar,
+    is_finalvar,
     is_namedtuple,
     is_union,
     resolve_annotations,
@@ -183,11 +184,16 @@ class ModelMetaclass(ABCMeta):
         def is_untouched(v: Any) -> bool:
             return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
 
+        def is_finalvar_with_default_val(type_: Type[Any], val: Any) -> bool:
+            return is_finalvar(type_) and val is not Undefined and not isinstance(val, FieldInfo)
+
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
+                    class_vars.add(ann_name)
+                elif is_finalvar_with_default_val(ann_type, namespace.get(ann_name, Undefined)):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
