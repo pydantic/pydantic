@@ -1,0 +1,8 @@
+black==22.3.0
+flake8==4.0.1
+flake8-quotes==3.3.1
+isort[colors]==5.10.1
+mypy==0.940
+pycodestyle==2.8.0
+pyflakes==2.4.0
+trio==0.20.0
