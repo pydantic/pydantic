@@ -20,7 +20,14 @@ jobs:
         with:
           python-version: 3.9
 
+      - uses: actions/cache@v2
+        id: cache
+        with:
+          path: ${{ env.pythonLocation }}
+          key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('tests/requirements-linting.txt') }}
+
       - name: install
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           make install-linting
           pip freeze
@@ -45,9 +52,21 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v3
       with:
-        python-version: 3.8
+        python-version: 3.9
+
+    - uses: actions/cache@v2
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('docs/requirements.txt') }}
 
     - name: install
+      if: steps.cache.outputs.cache-hit != 'true'
       run: make install-docs
 
     - name: build site
