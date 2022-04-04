@@ -142,7 +142,7 @@ jobs:
         path: coverage
 
   test-not-compiled:
-    name: test py${{ matrix.python-version }} on ${{ runner.os }}
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -299,7 +299,7 @@ jobs:
       run: make test-fastapi
 
   build:
-    name: build py3.${{ matrix.python-version }} on ${{ runner.os }}
+    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     needs: [lint, test-linux-compiled, test-not-compiled, test-old-mypy, test-fastapi]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
@@ -308,6 +308,8 @@ jobs:
         os: [ubuntu , macos , windows]
         python-version: ['7', '8', '9', '10']
         include:
+        - os: ubuntu
+          platform: linux
         - os: windows
           ls: dir
 
@@ -329,13 +331,13 @@ jobs:
       env:
         SKIP_CYTHON: 1
 
-    - name: build ${{ runner.os }} binaries
+    - name: build ${{ matrix.platform || matrix.os }} binaries
       run: cibuildwheel --output-dir dist
       env:
         PIP: 'pip'
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
-        CIBW_PLATFORM: '${{ runner.os }}'
+        CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
         CIBW_BEFORE_BUILD: 'pip install -U cython'
         CIBW_TEST_REQUIRES: 'pytest==6.2.5 pytest-mock==3.6.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
