@@ -7,7 +7,7 @@ and all subclasses (including `BaseSettings`), see #2721.
 
 from typing import List
 
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel, BaseSettings, Field
 
 
 class MyModel(BaseModel):
@@ -20,6 +20,14 @@ m1 = MyModel(x='hello', y=[1, 2, 3])
 m2 = MyModel(x='hello')  # pyright: ignore
 
 
+class Knight(BaseModel):
+    title: str = Field(default='Sir Lancelot')  # this is okay
+    age: int = Field(23)  # this works fine at runtime but will case an error for pyright
+
+
+k = Knight()  # pyright: ignore
+
+
 class Settings(BaseSettings):
     x: str
     y: int
@@ -27,4 +35,4 @@ class Settings(BaseSettings):
 
 s1 = Settings.parse_obj({})
 
-s2 = Settings()  # pyright: ignore
+s2 = Settings()  # pyright: ignore[reportGeneralTypeIssues]
