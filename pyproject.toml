@@ -1,0 +1,41 @@
+[build-system]
+requires = ['setuptools', 'wheel', 'setuptools-rust']
+
+[tool.pytest.ini_options]
+testpaths = 'tests'
+log_format = '%(name)s %(levelname)s: %(message)s'
+filterwarnings = 'error'
+timeout = 10
+
+[tool.coverage.run]
+source = ['pydantic_core']
+branch = true
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    'pragma: no cover',
+    'raise NotImplementedError',
+    'raise NotImplemented',
+    'if TYPE_CHECKING:',
+    '@overload',
+]
+
+[tool.black]
+color = true
+line-length = 120
+target-version = ['py37', 'py38', 'py39', 'py310']
+skip-string-normalization = true
+
+[tool.isort]
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+combine_as_imports = true
+color_output = true
+
+[tool.mypy]
+strict = true
+warn_return_any = false
+show_error_codes = true
