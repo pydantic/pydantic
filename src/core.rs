@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::{PyKeyError, PyNotImplementedError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
@@ -11,6 +11,122 @@ macro_rules! dict_get {
             None => None,
         }
     };
+}
+
+pub fn parse_obj(py: Python, schema: &Schema, obj: &PyAny) -> PyResult<PyObject> {
+    match schema {
+        Schema::Object(object_schema) => object_schema.parse(py, obj),
+        Schema::String {
+            min_length,
+            max_length,
+            enum_: _,
+            const_: _,
+            pattern: _,
+        } => {
+            let s = String::extract(obj)?;
+            if let Some(min_length) = min_length {
+                if &s.len() < min_length {
+                    return Err(PyValueError::new_err(format!(
+                        "String is too short (min length: {})",
+                        min_length
+                    )));
+                }
+            }
+            if let Some(max_length) = max_length {
+                if &s.len() > max_length {
+                    return Err(PyValueError::new_err(format!(
+                        "String is too long (max length: {})",
+                        max_length
+                    )));
+                }
+            }
+            Ok(s.to_object(py))
+        }
+        _ => Err(PyNotImplementedError::new_err(format!("TODO: {:?}", schema))),
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct SchemaProperty {
+    pub key: String,
+    pub required: bool,
+    pub schema: Schema,
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct ObjectSchema {
+    // TODO what do enum and const mean here?
+    // https://json-schema.org/draft/2020-12/json-schema-core.html#rfc.section.10.3.2
+    pub properties: Vec<SchemaProperty>,
+    // missing patternProperties
+    additional_properties: Option<Box<Schema>>,
+    // missing propertyNames
+    // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.5
+    min_properties: Option<usize>,
+    max_properties: Option<usize>,
+    // missing dependentRequired
+}
+
+impl ObjectSchema {
+    pub fn build(dict: &PyDict) -> Result<ObjectSchema, PyErr> {
+        let required = match dict.get_item("required") {
+            Some(t) => {
+                let mut required = HashSet::new();
+                let list = <PyList as PyTryFrom>::try_from(t)?;
+                for item in list.iter() {
+                    required.insert(item.to_string());
+                }
+                required
+            }
+            None => HashSet::new(),
+        };
+
+        Ok(ObjectSchema {
+            properties: match dict.get_item("properties") {
+                Some(t) => {
+                    let mut properties: Vec<SchemaProperty> = Vec::with_capacity(5);
+                    let dict = <PyDict as PyTryFrom>::try_from(t)?;
+                    for (key, value) in dict.iter() {
+                        properties.push(SchemaProperty {
+                            key: key.to_string(),
+                            required: required.contains(&key.to_string()),
+                            schema: Schema::extract(value)?,
+                        });
+                    }
+                    properties
+                }
+                None => Vec::new(),
+            },
+            additional_properties: match dict.get_item("additional_properties") {
+                Some(t) => Some(Box::new(Schema::extract(t)?)),
+                None => None,
+            },
+            min_properties: dict_get!(dict, "min_properties", usize),
+            max_properties: dict_get!(dict, "max_properties", usize),
+        })
+    }
+
+    pub fn parse(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
+        let obj_dict = <PyDict as PyTryFrom>::try_from(obj)?;
+        let new_obj = PyDict::new(py);
+        let mut errors = Vec::new();
+        for property in &self.properties {
+            if let Some(value) = obj_dict.get_item(property.key.clone()) {
+                // let value = value.extract(py)?;
+                let value = parse_obj(py, &property.schema, value)?;
+                new_obj.set_item(property.key.clone(), value)?;
+            } else if property.required {
+                errors.push(format!("Missing property: {}", property.key));
+            }
+        }
+        if errors.is_empty() {
+            Ok(new_obj.into())
+        } else {
+            Err(PyValueError::new_err(errors))
+        }
+    }
 }
 
 #[allow(dead_code)]
@@ -64,26 +180,7 @@ pub enum Schema {
         min_contains: Option<usize>,
         max_contains: Option<usize>,
     },
-    Object {
-        // TODO what do enum and const mean here?
-        // https://json-schema.org/draft/2020-12/json-schema-core.html#rfc.section.10.3.2
-        properties: Vec<SchemaProperty>,
-        // missing patternProperties
-        additional_properties: Option<Box<Schema>>,
-        // missing propertyNames
-        // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.5
-        min_properties: Option<usize>,
-        max_properties: Option<usize>,
-        // missing dependentRequired
-    },
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-pub struct SchemaProperty {
-    pub key: String,
-    pub required: bool,
-    pub schema: Schema,
+    Object(ObjectSchema),
 }
 
 impl<'source> FromPyObject<'source> for Schema {
@@ -145,43 +242,7 @@ impl<'source> FromPyObject<'source> for Schema {
                 min_contains: dict_get!(dict, "min_contains", usize),
                 max_contains: dict_get!(dict, "max_contains", usize),
             }),
-            "object" => {
-                let required = match dict.get_item("required") {
-                    Some(t) => {
-                        let mut required = HashSet::new();
-                        let list = <PyList as PyTryFrom>::try_from(t)?;
-                        for item in list.iter() {
-                            required.insert(item.to_string());
-                        }
-                        required
-                    }
-                    None => HashSet::new(),
-                };
-
-                Ok(Schema::Object {
-                    properties: match dict.get_item("properties") {
-                        Some(t) => {
-                            let mut properties: Vec<SchemaProperty> = Vec::with_capacity(5);
-                            let dict = <PyDict as PyTryFrom>::try_from(t)?;
-                            for (key, value) in dict.iter() {
-                                properties.push(SchemaProperty {
-                                    key: key.to_string(),
-                                    required: required.contains(&key.to_string()),
-                                    schema: Schema::extract(value)?,
-                                });
-                            }
-                            properties
-                        }
-                        None => Vec::new(),
-                    },
-                    additional_properties: match dict.get_item("additional_properties") {
-                        Some(t) => Some(Box::new(Schema::extract(t)?)),
-                        None => None,
-                    },
-                    min_properties: dict_get!(dict, "min_properties", usize),
-                    max_properties: dict_get!(dict, "max_properties", usize),
-                })
-            }
+            "object" => Ok(Schema::Object(ObjectSchema::build(dict)?)),
             _ => Err(PyTypeError::new_err(format!("unknown type: '{}'", type_))),
         }
     }
