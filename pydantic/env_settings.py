@@ -188,12 +188,18 @@ class EnvSettingsSource:
                     if env_val_built:
                         d[field.alias] = env_val_built
                 else:
-                    # field is complex and there's a value, decode that as JSON, then add explode_env_vars
+                    # field is complex and there's a value, decode using the
+                    # parsing function passed via env_parse or json_loads, then
+                    # add explode_env_vars
+                    parse_func: Callable[[str], Any] = field.field_info.extra.get(
+                        'env_parse', settings.__config__.json_loads
+                    )
                     try:
-                        env_val = settings.__config__.json_loads(env_val)
+                        print(parse_func)
+                        env_val = parse_func(env_val)
                     except ValueError as e:
                         if not allow_json_failure:
-                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+                            raise SettingsError(f'error parsing envvar "{env_name}"') from e
 
                     if isinstance(env_val, dict):
                         d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars))
@@ -298,10 +304,13 @@ class SecretsSettingsSource:
                 if path.is_file():
                     secret_value = path.read_text().strip()
                     if field.is_complex():
+                        parse_func: Callable[[str], Any] = field.field_info.extra.get(
+                            'env_parse', settings.__config__.json_loads
+                        )
                         try:
-                            secret_value = settings.__config__.json_loads(secret_value)
+                            secret_value = parse_func(secret_value)
                         except ValueError as e:
-                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+                            raise SettingsError(f'error parsing envvar "{env_name}"') from e
 
                     secrets[field.alias] = secret_value
                 else:

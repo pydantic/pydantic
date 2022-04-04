@@ -3,11 +3,21 @@ import sys
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, Field, HttpUrl, NoneStr, SecretStr, ValidationError, dataclasses
+from pydantic import (
+    BaseModel,
+    BaseSettings,
+    Field,
+    HttpUrl,
+    NoneStr,
+    SecretStr,
+    ValidationError,
+    dataclasses,
+    validator,
+)
 from pydantic.env_settings import (
     EnvSettingsSource,
     InitSettingsSource,
@@ -221,7 +231,7 @@ def test_set_dict_model(env):
 
 def test_invalid_json(env):
     env.set('apples', '["russet", "granny smith",]')
-    with pytest.raises(SettingsError, match='error parsing JSON for "apples"'):
+    with pytest.raises(SettingsError, match='error parsing envvar "apples"'):
         ComplexSettings()
 
 
@@ -1054,7 +1064,7 @@ def test_secrets_path_invalid_json(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.raises(SettingsError, match='error parsing JSON for "foo"'):
+    with pytest.raises(SettingsError, match='error parsing envvar "foo"'):
         Settings()
 
 
@@ -1215,3 +1225,60 @@ def test_builtins_settings_source_repr():
         == "EnvSettingsSource(env_file='.env', env_file_encoding='utf-8', env_nested_delimiter=None)"
     )
     assert repr(SecretsSettingsSource(secrets_dir='/secrets')) == "SecretsSettingsSource(secrets_dir='/secrets')"
+
+
+def _parse_custom_dict(value: str) -> Callable[[str], Dict[int, str]]:
+    """A custom parsing function passed into env parsing test."""
+    res = {}
+    for part in value.split(','):
+        k, v = part.split('=')
+        res[int(k)] = v
+    return res
+
+
+def test_env_setting_source_custom_env_parse(env):
+    class Settings(BaseSettings):
+        top: Dict[int, str] = Field(env_parse=_parse_custom_dict)
+
+    with pytest.raises(ValidationError):
+        Settings()
+    env.set('top', '1=apple,2=banana')
+    s = Settings()
+    assert s.top == {1: 'apple', 2: 'banana'}
+
+
+def test_env_settings_source_custom_env_parse_is_bad(env):
+    class Settings(BaseSettings):
+        top: Dict[int, str] = Field(env_parse=int)
+
+    env.set('top', '1=apple,2=banana')
+    with pytest.raises(SettingsError, match='error parsing envvar "top"'):
+        Settings()
+
+
+def test_env_settings_source_custom_env_parse_validator(env):
+    class Settings(BaseSettings):
+        top: Dict[int, str] = Field(env_parse=str)
+
+        @validator('top', pre=True)
+        def val_top(cls, v):
+            assert isinstance(v, str)
+            return _parse_custom_dict(v)
+
+    env.set('top', '1=apple,2=banana')
+    s = Settings()
+    assert s.top == {1: 'apple', 2: 'banana'}
+
+
+def test_secret_settings_source_custom_env_parse(tmp_path):
+    p = tmp_path / 'top'
+    p.write_text('1=apple,2=banana')
+
+    class Settings(BaseSettings):
+        top: Dict[int, str] = Field(env_parse=_parse_custom_dict)
+
+        class Config:
+            secrets_dir = tmp_path
+
+    s = Settings()
+    assert s.top == {1: 'apple', 2: 'banana'}
