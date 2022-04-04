@@ -327,20 +327,21 @@ def resolve_conint(cls):  # type: ignore[no-untyped-def]
 
 @resolves(pydantic.ConstrainedDate)
 def resolve_condate(cls):  # type: ignore[no-untyped-def]
-    min_value = cls.ge
-    max_value = cls.le
-    if cls.gt is not None:
-        assert min_value is None, 'Set `gt` or `ge`, but not both'
-        min_value = cls.gt
-    if cls.lt is not None:
-        assert max_value is None, 'Set `lt` or `le`, but not both'
-        max_value = cls.lt
-    s = st.dates(min_value, max_value)
-    if cls.lt is not None:
-        s = s.filter(lambda d: d < cls.lt)
-    if cls.gt is not None:
-        s = s.filter(lambda d: cls.gt < d)
-    return s
+    if cls.ge is not None:
+        assert cls.gt is None, 'Set `gt` or `ge`, but not both'
+        min_value = cls.ge
+    elif cls.gt is not None:
+        min_value = cls.gt + datetime.timedelta(days=1)
+    else:
+        min_value = datetime.date.min
+    if cls.le is not None:
+        assert cls.lt is None, 'Set `lt` or `le`, but not both'
+        max_value = cls.le
+    elif cls.lt is not None:
+        max_value = cls.lt - datetime.timedelta(days=1)
+    else:
+        max_value = datetime.date.max
+    return st.dates(min_value, max_value)
 
 
 @resolves(pydantic.ConstrainedStr)
