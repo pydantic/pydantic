@@ -59,8 +59,8 @@ jobs:
         name: docs
         path: site
 
-  test-linux:
-    name: test py${{ matrix.python-version }} on linux
+  test-linux-compiled:
+    name: test py${{ matrix.python-version }} on linux compiled
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -78,10 +78,20 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - uses: actions/cache@v2
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('tests/requirements-testing.txt') }}
+
     - name: install
-      run: |
-        make install-testing
-        pip freeze
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: make install-testing
 
     - name: compile
       run: |
@@ -92,32 +102,11 @@ jobs:
 
     - run: mkdir coverage
 
-    - name: test compiled and deps
+    - name: test
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-yes
-
-    - name: uninstall deps
-      run: pip uninstall -y cython email-validator devtools python-dotenv
-
-    - name: test compiled without deps
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-no
-
-    - name: remove compiled binaries
-      run: |
-        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
-        ls -alh
-        ls -alh pydantic/
-
-    - name: test uncompiled without deps
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled-no-deps-no
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-compiled
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -125,13 +114,17 @@ jobs:
         name: coverage
         path: coverage
 
-  test-windows-mac:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+  test-uncompiled:
+    name: test py${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos, windows]
+        os: [ubuntu, macos, windows]
         python-version: ['3.7', '3.8', '3.9', '3.10']
+        include:
+        - os: ubuntu
+          platform: linux
+
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
@@ -147,16 +140,40 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - uses: actions/cache@v2
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('tests/requirements-testing.txt') }}
+
     - name: install
       run: make install-testing
+      if: steps.cache.outputs.cache-hit != 'true'
+
+    - run: pip freeze
+      if: steps.cache.outputs.cache-hit != 'true'
 
     - run: mkdir coverage
 
-    - name: test
+    - name: test with deps
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
-        CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
+        COVERAGE_FILE: coverage/.coverage.${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-with-deps
+        CONTEXT: ${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-with-deps
+
+    - name: uninstall deps
+      run: pip uninstall -y cython email-validator devtools python-dotenv
+
+    - name: test without deps
+      run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-without-deps
+        CONTEXT: ${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -224,7 +241,7 @@ jobs:
 
       - run: pip install coverage
 
-      - run: ls -la
+      - run: ls -la coverage
       - run: coverage combine coverage
       - run: coverage report
       - run: coverage html --show-contexts
