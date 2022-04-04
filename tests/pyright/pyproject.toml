@@ -1,0 +1,3 @@
+[tool.pyright]
+extraPaths = ['../..']
+reportUnnecessaryTypeIgnoreComment = true
