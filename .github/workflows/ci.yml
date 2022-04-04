@@ -20,11 +20,17 @@ jobs:
         with:
           python-version: 3.9
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache
         with:
-          path: ${{ env.pythonLocation }}
-          key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('tests/requirements-linting.txt') }}
+          path: |
+            ${{ env.pythonLocation }}
+            .mypy_cache
+          key: >
+            lint
+            ${{ runner.os }}
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements-linting.txt') }}
 
       - name: install
         if: steps.cache.outputs.cache-hit != 'true'
@@ -54,11 +60,12 @@ jobs:
       with:
         python-version: 3.9
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache
       with:
         path: ${{ env.pythonLocation }}
         key: >
+          docs-build
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -97,7 +104,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -109,8 +116,8 @@ jobs:
           ${{ hashFiles('tests/requirements-testing.txt') }}
 
     - name: install
-      if: steps.cache.outputs.cache-hit != 'true'
       run: make install-testing
+      if: steps.cache.outputs.cache-hit != 'true'
 
     - name: compile
       run: |
@@ -159,7 +166,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       id: cache
       with:
         path: ${{ env.pythonLocation }}
@@ -175,7 +182,6 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
 
     - run: pip freeze
-      if: steps.cache.outputs.cache-hit != 'true'
 
     - run: mkdir coverage
 
