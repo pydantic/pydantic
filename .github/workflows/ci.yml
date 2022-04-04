@@ -109,6 +109,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
+          test-linux-compiled
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -140,8 +141,8 @@ jobs:
         name: coverage
         path: coverage
 
-  test-uncompiled:
-    name: test py${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
+  test-not-compiled:
+    name: test py${{ matrix.python-version }} on ${{ runner.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -149,7 +150,6 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
         include:
         - os: ubuntu
-          platform: linux
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -171,6 +171,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
+          test-not-compiled
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -188,8 +189,8 @@ jobs:
     - name: test with deps
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-with-deps
-        CONTEXT: ${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-with-deps
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
+        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
 
     - name: uninstall deps
       run: pip uninstall -y cython email-validator devtools python-dotenv
@@ -197,8 +198,8 @@ jobs:
     - name: test without deps
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-without-deps
-        CONTEXT: ${{ matrix.platform || matrix.os }}-py${{ matrix.python-version }}-without-deps
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: store coverage files
       uses: actions/upload-artifact@v2
@@ -248,7 +249,7 @@ jobs:
         path: coverage
 
   coverage-combine:
-    needs: [test-linux-compiled, test-uncompiled, test-old-mypy]
+    needs: [test-linux-compiled, test-not-compiled, test-old-mypy]
     runs-on: ubuntu-latest
 
     steps:
@@ -298,8 +299,8 @@ jobs:
       run: make test-fastapi
 
   build:
-    name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux-compiled, test-uncompiled, test-old-mypy, test-fastapi]
+    name: build py3.${{ matrix.python-version }} on ${{ runner.os }}
+    needs: [lint, test-linux-compiled, test-not-compiled, test-old-mypy, test-fastapi]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
@@ -307,8 +308,6 @@ jobs:
         os: [ubuntu , macos , windows]
         python-version: ['7', '8', '9', '10']
         include:
-        - os: ubuntu
-          platform: linux
         - os: windows
           ls: dir
 
@@ -330,13 +329,13 @@ jobs:
       env:
         SKIP_CYTHON: 1
 
-    - name: build ${{ matrix.platform || matrix.os }} binaries
+    - name: build ${{ runner.os }} binaries
       run: cibuildwheel --output-dir dist
       env:
         PIP: 'pip'
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
-        CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
+        CIBW_PLATFORM: '${{ runner.os }}'
         CIBW_BEFORE_BUILD: 'pip install -U cython'
         CIBW_TEST_REQUIRES: 'pytest==6.2.5 pytest-mock==3.6.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
