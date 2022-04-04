@@ -56,7 +56,8 @@ So *pydantic* uses some cool new language features, but why should I actually go
   be read from environment variables, and more complex objects like DSNs and python objects are often required.
 
 **fast**
-: In [benchmarks](benchmarks.md) *pydantic* is faster than all other tested libraries.
+: *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,
+  it's generally as fast or faster than most similar libraries.
 
 **validate complex structures**
 : use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s 

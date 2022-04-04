@@ -21,10 +21,6 @@ install-testing: install-pydantic
 install-docs: install-pydantic
 	pip install -U -r docs/requirements.txt
 
-.PHONY: install-benchmarks
-install-benchmarks: install-pydantic
-	pip install -U -r benchmarks/requirements.txt
-
 .PHONY: install
 install: install-testing install-linting install-docs
 	@echo 'installed development requirements'
@@ -84,18 +80,6 @@ test-fastapi:
 
 .PHONY: all
 all: lint mypy testcov
-
-.PHONY: benchmark-all
-benchmark-all:
-	python benchmarks/run.py
-
-.PHONY: benchmark-pydantic
-benchmark-pydantic:
-	python benchmarks/run.py pydantic-only
-
-.PHONY: benchmark-json
-benchmark-json:
-	TEST_JSON=1 python benchmarks/run.py
 
 .PHONY: clean
 clean:
