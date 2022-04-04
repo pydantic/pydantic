@@ -1,23 +1,10 @@
-use indexmap::IndexMap;
 use std::collections::HashSet;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
-macro_rules! dict_get_required {
-    ($dict:ident, $key:expr, $type:ty) => {
-        match $dict.get_item($key) {
-            Some(t) => <$type>::extract(t)?,
-            None => {
-                let msg = format!("{} is required", $key);
-                return Err(PyKeyError::new_err(msg));
-            }
-        }
-    };
-}
-
-macro_rules! dict_get_optional {
+macro_rules! dict_get {
     ($dict:ident, $key:expr, $type:ty) => {
         match $dict.get_item($key) {
             Some(t) => Some(<$type>::extract(t)?),
@@ -28,7 +15,7 @@ macro_rules! dict_get_optional {
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub enum SchemaDef {
+pub enum Schema {
     // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6
     Null,
     Boolean {
@@ -60,16 +47,16 @@ pub enum SchemaDef {
         const_: Option<String>,
         // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.3
         pattern: Option<String>,
-        max_length: Option<i64>,
-        min_length: Option<i64>,
+        max_length: Option<usize>,
+        min_length: Option<usize>,
     },
     Array {
-        enum_: Option<Vec<SchemaDef>>,
+        enum_: Option<Vec<Schema>>,
         // TODO - const_
         // https://json-schema.org/draft/2020-12/json-schema-core.html#rfc.section.10.3.1
-        items: Option<Box<SchemaDef>>,
-        prefix_items: Option<Vec<SchemaDef>>,
-        contains: Option<Box<SchemaDef>>,
+        items: Option<Box<Schema>>,
+        prefix_items: Option<Vec<Schema>>,
+        contains: Option<Box<Schema>>,
         // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.4
         unique_items: bool,
         min_items: Option<usize>,
@@ -80,103 +67,122 @@ pub enum SchemaDef {
     Object {
         // TODO what do enum and const mean here?
         // https://json-schema.org/draft/2020-12/json-schema-core.html#rfc.section.10.3.2
-        properties: IndexMap<String, SchemaDef>,
-        // TODO patternProperties
-        additional_properties: Option<Box<SchemaDef>>,
-        // TODO propertyNames
+        properties: Vec<SchemaProperty>,
+        // missing patternProperties
+        additional_properties: Option<Box<Schema>>,
+        // missing propertyNames
         // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.5
         min_properties: Option<usize>,
         max_properties: Option<usize>,
-        required: Option<HashSet<String>>,
-        // TODO dependentRequired
+        // missing dependentRequired
     },
 }
 
-impl<'source> FromPyObject<'source> for SchemaDef {
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct SchemaProperty {
+    pub key: String,
+    pub required: bool,
+    pub schema: Schema,
+}
+
+impl<'source> FromPyObject<'source> for Schema {
     fn extract(obj: &'source PyAny) -> Result<Self, PyErr> {
         let dict = <PyDict as PyTryFrom>::try_from(obj)?;
-        let type_ = dict_get_required!(dict, "type", String);
+        let type_ = match dict_get!(dict, "type", String) {
+            Some(type_) => type_,
+            None => {
+                return Err(PyKeyError::new_err("'type' is required"));
+            }
+        };
         match type_.as_str() {
-            "null" => Ok(SchemaDef::Null),
-            "boolean" => Ok(SchemaDef::Boolean {
-                const_: dict_get_optional!(dict, "const", bool),
+            "null" => Ok(Schema::Null),
+            "boolean" => Ok(Schema::Boolean {
+                const_: dict_get!(dict, "const", bool),
             }),
-            "integer" => Ok(SchemaDef::Integer {
-                enum_: dict_get_optional!(dict, "enum", Vec<i64>),
-                const_: dict_get_optional!(dict, "const", i64),
-                multiple_of: dict_get_optional!(dict, "multiple_of", i64),
-                maximum: dict_get_optional!(dict, "maximum", i64),
-                exclusive_maximum: dict_get_optional!(dict, "exclusive_maximum", i64),
-                minimum: dict_get_optional!(dict, "minimum", i64),
-                exclusive_minimum: dict_get_optional!(dict, "exclusive_minimum", i64),
+            "integer" => Ok(Schema::Integer {
+                enum_: dict_get!(dict, "enum", Vec<i64>),
+                const_: dict_get!(dict, "const", i64),
+                multiple_of: dict_get!(dict, "multiple_of", i64),
+                maximum: dict_get!(dict, "maximum", i64),
+                exclusive_maximum: dict_get!(dict, "exclusive_maximum", i64),
+                minimum: dict_get!(dict, "minimum", i64),
+                exclusive_minimum: dict_get!(dict, "exclusive_minimum", i64),
             }),
-            "number" => Ok(SchemaDef::Number {
-                enum_: dict_get_optional!(dict, "enum", Vec<f64>),
-                const_: dict_get_optional!(dict, "const", f64),
-                multiple_of: dict_get_optional!(dict, "multiple_of", f64),
-                minimum: dict_get_optional!(dict, "minimum", f64),
-                exclusive_minimum: dict_get_optional!(dict, "exclusive_minimum", f64),
-                maximum: dict_get_optional!(dict, "maximum", f64),
-                exclusive_maximum: dict_get_optional!(dict, "exclusive_maximum", f64),
+            "number" => Ok(Schema::Number {
+                enum_: dict_get!(dict, "enum", Vec<f64>),
+                const_: dict_get!(dict, "const", f64),
+                multiple_of: dict_get!(dict, "multiple_of", f64),
+                minimum: dict_get!(dict, "minimum", f64),
+                exclusive_minimum: dict_get!(dict, "exclusive_minimum", f64),
+                maximum: dict_get!(dict, "maximum", f64),
+                exclusive_maximum: dict_get!(dict, "exclusive_maximum", f64),
             }),
-            "string" => Ok(SchemaDef::String {
-                enum_: dict_get_optional!(dict, "enum", Vec<String>),
-                const_: dict_get_optional!(dict, "const", String),
-                pattern: dict_get_optional!(dict, "pattern", String),
-                min_length: dict_get_optional!(dict, "min_length", i64),
-                max_length: dict_get_optional!(dict, "max_length", i64),
+            "string" => Ok(Schema::String {
+                enum_: dict_get!(dict, "enum", Vec<String>),
+                const_: dict_get!(dict, "const", String),
+                pattern: dict_get!(dict, "pattern", String),
+                min_length: dict_get!(dict, "min_length", usize),
+                max_length: dict_get!(dict, "max_length", usize),
             }),
-            "array" => Ok(SchemaDef::Array {
-                enum_: dict_get_optional!(dict, "enum", Vec<SchemaDef>),
+            "array" => Ok(Schema::Array {
+                enum_: dict_get!(dict, "enum", Vec<Schema>),
                 items: match dict.get_item("items") {
-                    Some(t) => Some(Box::new(SchemaDef::extract(t)?)),
+                    Some(t) => Some(Box::new(Schema::extract(t)?)),
                     None => None,
                 },
-                prefix_items: dict_get_optional!(dict, "prefix_items", Vec<SchemaDef>),
+                prefix_items: dict_get!(dict, "prefix_items", Vec<Schema>),
                 contains: match dict.get_item("contains") {
-                    Some(t) => Some(Box::new(SchemaDef::extract(t)?)),
+                    Some(t) => Some(Box::new(Schema::extract(t)?)),
                     None => None,
                 },
                 unique_items: match dict.get_item("unique_items") {
                     Some(t) => bool::extract(t)?,
                     None => false,
                 },
-                min_items: dict_get_optional!(dict, "min_items", usize),
-                max_items: dict_get_optional!(dict, "max_items", usize),
-                min_contains: dict_get_optional!(dict, "min_contains", usize),
-                max_contains: dict_get_optional!(dict, "max_contains", usize),
+                min_items: dict_get!(dict, "min_items", usize),
+                max_items: dict_get!(dict, "max_items", usize),
+                min_contains: dict_get!(dict, "min_contains", usize),
+                max_contains: dict_get!(dict, "max_contains", usize),
             }),
-            "object" => Ok(SchemaDef::Object {
-                properties: match dict.get_item("properties") {
-                    Some(t) => {
-                        let mut properties = IndexMap::new();
-                        let dict = <PyDict as PyTryFrom>::try_from(t)?;
-                        for (key, value) in dict.iter() {
-                            properties.insert(key.to_string(), SchemaDef::extract(value)?);
-                        }
-                        properties
-                    }
-                    None => IndexMap::new(),
-                },
-                additional_properties: match dict.get_item("additional_properties") {
-                    Some(t) => Some(Box::new(SchemaDef::extract(t)?)),
-                    None => None,
-                },
-                min_properties: dict_get_optional!(dict, "min_properties", usize),
-                max_properties: dict_get_optional!(dict, "max_properties", usize),
-                required: match dict.get_item("required") {
+            "object" => {
+                let required = match dict.get_item("required") {
                     Some(t) => {
                         let mut required = HashSet::new();
                         let list = <PyList as PyTryFrom>::try_from(t)?;
                         for item in list.iter() {
                             required.insert(item.to_string());
                         }
-                        Some(required)
+                        required
                     }
-                    None => None,
-                },
-            }),
-            _ => Err(PyTypeError::new_err(format!("unsupported type: {}", type_))),
+                    None => HashSet::new(),
+                };
+
+                Ok(Schema::Object {
+                    properties: match dict.get_item("properties") {
+                        Some(t) => {
+                            let mut properties: Vec<SchemaProperty> = Vec::with_capacity(5);
+                            let dict = <PyDict as PyTryFrom>::try_from(t)?;
+                            for (key, value) in dict.iter() {
+                                properties.push(SchemaProperty {
+                                    key: key.to_string(),
+                                    required: required.contains(&key.to_string()),
+                                    schema: Schema::extract(value)?,
+                                });
+                            }
+                            properties
+                        }
+                        None => Vec::new(),
+                    },
+                    additional_properties: match dict.get_item("additional_properties") {
+                        Some(t) => Some(Box::new(Schema::extract(t)?)),
+                        None => None,
+                    },
+                    min_properties: dict_get!(dict, "min_properties", usize),
+                    max_properties: dict_get!(dict, "max_properties", usize),
+                })
+            }
+            _ => Err(PyTypeError::new_err(format!("unknown type: '{}'", type_))),
         }
     }
 }

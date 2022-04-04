@@ -18,4 +18,4 @@ docs/_build/
 /target/
 /site/
 .rustfmt.toml
-/sandox/
+/sandbox/
