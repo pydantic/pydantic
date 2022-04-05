@@ -21,7 +21,7 @@ class Foo(str, Enum):
 s = check_str(b'hello ', 5, 50, True, False, True)
 print(f'rust: {s!r}')
 
-steps = 10_000
+steps = 1_000
 t = timeit.timeit(
     "check_str(b'hello ', 2, 50, True, False, True)",
     globals=globals(),
@@ -34,6 +34,7 @@ choices = [
     'this is another string',
     'this is a third string',
     b'hello ',
+    Foo.bar,
     123,
     123.456,
     Decimal('321.123'),
