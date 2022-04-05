@@ -68,9 +68,9 @@ pub fn check_list_str(
     to_upper: bool,
 ) -> PyResult<PyObject> {
     let items: &PyList = items.extract()?;
-    let mut new_items: Vec<String> = Vec::with_capacity(items.len());
+    let mut new_vec: Vec<String> = Vec::with_capacity(items.len());
     for item in items.iter() {
-        new_items.push(check_str(
+        new_vec.push(check_str(
             item,
             min_length,
             max_length,
@@ -79,5 +79,5 @@ pub fn check_list_str(
             to_upper,
         )?);
     }
-    Ok(new_items.to_object(py))
+    Ok(new_vec.to_object(py))
 }
