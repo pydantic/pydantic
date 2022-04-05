@@ -1,11 +1,13 @@
 import re
 
-from pydantic_core import __version__, parse
+from pydantic_core import SchemaValidator, __version__
 
 
 def test_main():
-    v = parse({'type': 'string'}, None)
-    assert v == 'String { enum_: None, const_: None, pattern: None, max_length: None, min_length: None }'
+    v = SchemaValidator({'type': 'string'})
+    assert repr(v).startswith('SchemaValidator(String(')
+
+    assert v.validate('foo') == 'foo'
 
 
 def test_version():
