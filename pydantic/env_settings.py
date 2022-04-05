@@ -195,7 +195,6 @@ class EnvSettingsSource:
                         'env_parse', settings.__config__.json_loads
                     )
                     try:
-                        print(parse_func)
                         env_val = parse_func(env_val)
                     except ValueError as e:
                         if not allow_json_failure:
