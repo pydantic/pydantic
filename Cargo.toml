@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-pyo3 = {version = "0.16.1", features = ["extension-module"]}
+pyo3 = {version = "0.16.3", features = ["extension-module"]}
 indexmap = "1.8.1"
 derivative = "2.2.0"
 
