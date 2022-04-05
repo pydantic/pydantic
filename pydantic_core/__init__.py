@@ -1,3 +1,3 @@
-from ._pydantic_core import __version__, parse
+from ._pydantic_core import SchemaValidator, __version__
 
-__all__ = '__version__', 'parse'
+__all__ = '__version__', 'SchemaValidator'

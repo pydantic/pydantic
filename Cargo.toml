@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 pyo3 = {version = "0.16.1", features = ["extension-module"]}
 indexmap = "1.8.1"
+derivative = "2.2.0"
 
 [lib]
 name = "_pydantic_core"

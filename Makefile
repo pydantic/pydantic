@@ -52,12 +52,8 @@ testcov: test
 	@echo "building coverage html"
 	@coverage html
 
-.PHONY: docs
-docs:
-	mkdocs build
-
 .PHONY: all
-all: lint mypy testcov docs
+all: lint mypy testcov
 
 .PHONY: clean
 clean:
