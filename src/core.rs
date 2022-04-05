@@ -235,7 +235,7 @@ impl SchemaType for ObjectSchema {
         let required = match dict.get_item("required") {
             Some(t) => {
                 let mut required = HashSet::new();
-                let list = <PyList as PyTryFrom>::try_from(t)?;
+                let list: &PyList = t.extract()?;
                 for item in list.iter() {
                     required.insert(item.to_string());
                 }
@@ -247,10 +247,10 @@ impl SchemaType for ObjectSchema {
         Ok(ObjectSchema {
             properties: match dict.get_item("properties") {
                 Some(t) => {
-                    let dict = <PyDict as PyTryFrom>::try_from(t)?;
+                    let dict: &PyDict = t.extract()?;
                     let mut properties: Vec<SchemaProperty> = Vec::with_capacity(dict.len());
                     for (key, value) in dict.iter() {
-                        let value_dict = <PyDict as PyTryFrom>::try_from(value)?;
+                        let value_dict: &PyDict = value.extract()?;
 
                         let validator: Option<PyObject> = match value_dict.get_item("validator") {
                             Some(t) => {
@@ -282,7 +282,7 @@ impl SchemaType for ObjectSchema {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
-        let obj_dict = <PyDict as PyTryFrom>::try_from(obj)?;
+        let obj_dict: &PyDict = obj.extract()?;
         let new_obj = PyDict::new(py);
         let mut errors = Vec::new();
         for property in &self.properties {
@@ -315,7 +315,7 @@ enum Schema {
     String(StringSchema),
     Array(ArraySchema),
     Object(ObjectSchema),
-    // TODO date, datetime, set, bytes, custom types, dict, enum only - e.g. literal
+    // TODO date, datetime, set, bytes, custom types, dict, union, enum only - e.g. literal
 }
 
 impl SchemaType for Schema {
@@ -354,7 +354,7 @@ impl SchemaType for Schema {
 
 impl<'source> FromPyObject<'source> for Schema {
     fn extract(obj: &'source PyAny) -> Result<Self, PyErr> {
-        let dict = <PyDict as PyTryFrom>::try_from(obj)?;
+        let dict: &PyDict = obj.extract()?;
         Schema::build(dict)
     }
 }
