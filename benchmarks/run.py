@@ -27,6 +27,7 @@ choices = [
     Decimal('321.123'),
     [1, 2, 3,  'this is a string', b'hello ', Foo.bar, 123, 123.456, Decimal('321.123')],
     {'a': 'this is a string', 'b': 123, 'c': Foo.baz},
+    object(),
 ]
 
 data = {

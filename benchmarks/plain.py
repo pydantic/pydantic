@@ -10,7 +10,8 @@ def validate_str(v: any) -> str:
     elif isinstance(v, (int, float, Decimal)):
         return str(v)
     else:
-        raise TypeError(f'{type(v)} is not a string')
+        return '[not a string]'
+        # raise TypeError(f'{type(v)} is not a string')
 
 
 def validate_str_full(

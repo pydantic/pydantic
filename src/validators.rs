@@ -1,32 +1,35 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyList, PyString};
+use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
 
 #[pyfunction]
 pub fn validate_str(v: &PyAny) -> PyResult<String> {
-    if let Ok(str) = v.downcast::<PyString>() {
+    if let Ok(str) = v.cast_as::<PyString>() {
         str.extract()
-    } else if let Ok(bytes) = v.downcast::<PyBytes>() {
+    } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
         Ok(std::str::from_utf8(bytes.as_bytes())?.to_string())
-    } else if let Ok(int) = i64::extract(v) {
-        Ok(int.to_string())
+    } else if let Ok(int) = v.cast_as::<PyInt>() {
+        Ok(i64::extract(int)?.to_string())
     } else if let Ok(float) = f64::extract(v) {
+        // don't downcast here so Decimals are covered
         Ok(float.to_string())
     } else {
-        Err(PyValueError::new_err(format!("{} is not a string", v)))
+        Ok("[not a string]".to_string())
+        // Err(PyValueError::new_err(format!("{} is not a string", v)))
     }
 }
 
 #[pyfunction]
-pub fn validate_str_full(
-    v: &PyAny,
+pub fn validate_str_full<'py>(
+    py: Python<'py>,
+    value: &PyAny,
     min_length: Option<usize>,
     max_length: Option<usize>,
     strip_whitespace: bool,
     to_lower: bool,
     to_upper: bool,
-) -> PyResult<String> {
-    let mut str = validate_str(v)?;
+) -> PyResult<&'py PyAny> {
+    let mut str = validate_str(value)?;
 
     if strip_whitespace {
         str = str.trim().to_string();
@@ -44,12 +47,12 @@ pub fn validate_str_full(
     }
 
     if to_lower {
-        Ok(str.to_lowercase())
+        str = str.to_lowercase()
     } else if to_upper {
-        Ok(str.to_uppercase())
-    } else {
-        Ok(str)
+        str = str.to_uppercase()
     }
+    let py_str = PyString::new(py, &str);
+    Ok(py_str)
 }
 
 fn validate_str_list<'py>(
@@ -98,13 +101,11 @@ pub fn validate_str_recursive<'py>(
     to_lower: bool,
     to_upper: bool,
 ) -> PyResult<&'py PyAny> {
-    if let Ok(list) = value.downcast::<PyList>() {
+    if let Ok(list) = value.cast_as::<PyList>() {
         validate_str_list(py, list, min_length, max_length, strip_whitespace, to_lower, to_upper)
-    } else if let Ok(dict) = value.downcast::<PyDict>() {
+    } else if let Ok(dict) = value.cast_as::<PyDict>() {
         validate_str_dict(py, dict, min_length, max_length, strip_whitespace, to_lower, to_upper)
     } else {
-        let s = validate_str_full(value, min_length, max_length, strip_whitespace, to_lower, to_upper)?;
-        let s = PyString::new(py, &s);
-        Ok(s)
+        validate_str_full(py, value, min_length, max_length, strip_whitespace, to_lower, to_upper)
     }
 }
