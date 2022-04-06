@@ -4,6 +4,16 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use regex::Regex;
 
+macro_rules! dict_get {
+    ($dict:ident, $key:expr, $type:ty) => {
+        match $dict.get_item($key) {
+            Some(t) => Some(<$type>::extract(t)?),
+            None => None,
+        }
+    };
+}
+pub(crate) use dict_get;
+
 #[pyclass]
 #[derive(Debug)]
 pub struct RegexPattern {

@@ -4,17 +4,8 @@ use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
-use crate::utils::RegexPattern;
-use crate::validators::validate_str_full;
-
-macro_rules! dict_get {
-    ($dict:ident, $key:expr, $type:ty) => {
-        match $dict.get_item($key) {
-            Some(t) => Some(<$type>::extract(t)?),
-            None => None,
-        }
-    };
-}
+use crate::utils::{dict_get, RegexPattern};
+use crate::validator_functions::validate_str_full;
 
 trait SchemaType {
     fn build(dict: &PyDict) -> PyResult<Self>
@@ -213,7 +204,7 @@ struct SchemaProperty {
 
 #[allow(dead_code)]
 #[derive(Debug)]
-struct ObjectSchema {
+struct ModelSchema {
     // TODO what do enum and const mean here?
     // https://json-schema.org/draft/2020-12/json-schema-core.html#rfc.section.10.3.2
     pub properties: Vec<SchemaProperty>,
@@ -226,7 +217,7 @@ struct ObjectSchema {
     // missing dependentRequired
 }
 
-impl SchemaType for ObjectSchema {
+impl SchemaType for ModelSchema {
     fn build(dict: &PyDict) -> PyResult<Self> {
         let required = match dict.get_item("required") {
             Some(t) => {
@@ -240,7 +231,7 @@ impl SchemaType for ObjectSchema {
             None => HashSet::new(),
         };
 
-        Ok(ObjectSchema {
+        Ok(ModelSchema {
             properties: match dict.get_item("properties") {
                 Some(t) => {
                     let dict: &PyDict = t.cast_as()?;
@@ -310,7 +301,7 @@ enum Schema {
     Number(NumberSchema),
     String(StringSchema),
     Array(ArraySchema),
-    Object(ObjectSchema),
+    Model(ModelSchema),
     // TODO date, datetime, set, bytes, custom types, dict, union, enum only - e.g. literal
 }
 
@@ -329,7 +320,7 @@ impl SchemaType for Schema {
             "number" => Schema::Number(NumberSchema::build(dict)?),
             "string" => Schema::String(StringSchema::build(dict)?),
             "array" => Schema::Array(ArraySchema::build(dict)?),
-            "object" => Schema::Object(ObjectSchema::build(dict)?),
+            "object" => Schema::Model(ModelSchema::build(dict)?),
             _ => return Err(PyTypeError::new_err(format!("unknown type: '{}'", type_))),
         };
         Ok(s)
@@ -343,7 +334,7 @@ impl SchemaType for Schema {
             Schema::Number(v) => v.validate(py, obj),
             Schema::String(v) => v.validate(py, obj),
             Schema::Array(v) => v.validate(py, obj),
-            Schema::Object(v) => v.validate(py, obj),
+            Schema::Model(v) => v.validate(py, obj),
         }
     }
 }

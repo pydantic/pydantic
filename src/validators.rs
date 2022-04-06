@@ -1,131 +1,125 @@
-use std::str::from_utf8;
-
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyAny, PyBool, PyDict, PyString};
 
-use crate::utils::RegexPattern;
+use crate::utils::{dict_get, RegexPattern};
+use crate::validator_functions::validate_str;
 
-#[pyfunction]
-pub fn validate_str(v: &PyAny) -> PyResult<String> {
-    if let Ok(str) = v.cast_as::<PyString>() {
-        str.extract()
-    } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
-        Ok(from_utf8(bytes.as_bytes())?.to_string())
-    } else if let Ok(int) = v.cast_as::<PyInt>() {
-        Ok(i64::extract(int)?.to_string())
-    } else if let Ok(float) = f64::extract(v) {
-        // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble
-        Ok(float.to_string())
-    } else {
-        let name = v.get_type().name().unwrap_or("<unknown type>");
-        Err(PyValueError::new_err(format!("{} is not a valid string", name)))
+trait Validator {
+    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject>;
+}
+
+#[derive(Debug)]
+struct NullValidator;
+
+impl Validator for NullValidator {
+    fn validate(&self, py: Python, _obj: PyObject) -> PyResult<PyObject> {
+        Ok(py.None())
     }
 }
 
-#[allow(clippy::too_many_arguments)]
-#[pyfunction]
-pub fn validate_str_full<'py>(
-    py: Python<'py>,
-    value: &PyAny,
-    min_length: Option<usize>,
+#[allow(dead_code)]
+fn schema_null(_dict: &PyDict) -> PyResult<Vec<Box<dyn Validator>>> {
+    Ok(vec![Box::new(NullValidator)])
+}
+
+#[derive(Debug)]
+struct BoolValidator;
+
+impl Validator for BoolValidator {
+    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
+        let obj: &PyBool = obj.extract(py)?;
+        Ok(obj.to_object(py))
+    }
+}
+
+#[allow(dead_code)]
+fn schema_bool(_dict: &PyDict) -> PyResult<Vec<Box<dyn Validator>>> {
+    Ok(vec![Box::new(BoolValidator)])
+}
+
+#[derive(Debug)]
+struct SimpleStringValidator;
+
+impl Validator for SimpleStringValidator {
+    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
+        let obj: &PyAny = obj.extract(py)?;
+        let s = validate_str(obj)?;
+        Ok(s.to_object(py))
+    }
+}
+
+#[derive(Debug)]
+struct FullStringValidator {
+    // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.3
+    pattern: Option<RegexPattern>,
     max_length: Option<usize>,
+    min_length: Option<usize>,
     strip_whitespace: bool,
     to_lower: bool,
     to_upper: bool,
-    pattern: Option<&RegexPattern>,
-) -> PyResult<&'py PyAny> {
-    let mut str = validate_str(value)?;
+}
 
-    if let Some(min_length) = min_length {
-        if str.len() < min_length {
-            return Err(PyValueError::new_err(format!("{} is shorter than {}", str, min_length)));
+impl Validator for FullStringValidator {
+    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
+        let mut str: String = obj.extract(py)?;
+        if let Some(min_length) = self.min_length {
+            if str.len() < min_length {
+                return Err(PyValueError::new_err(format!("{} is shorter than {}", str, min_length)));
+            }
         }
-    }
-    if let Some(max_length) = max_length {
-        if str.len() > max_length {
-            return Err(PyValueError::new_err(format!("{} is longer than {}", str, max_length)));
+        if let Some(max_length) = self.max_length {
+            if str.len() > max_length {
+                return Err(PyValueError::new_err(format!("{} is longer than {}", str, max_length)));
+            }
         }
-    }
-    if let Some(pattern) = pattern {
-        if !pattern.is_match(&str) {
-            return Err(PyValueError::new_err(format!("{} does not match {}", str, pattern)));
+        if let Some(pattern) = &self.pattern {
+            if !pattern.is_match(&str) {
+                return Err(PyValueError::new_err(format!("{} does not match {}", str, pattern)));
+            }
         }
-    }
 
-    if strip_whitespace {
-        str = str.trim().to_string();
-    }
+        if self.strip_whitespace {
+            str = str.trim().to_string();
+        }
 
-    if to_lower {
-        str = str.to_lowercase()
-    } else if to_upper {
-        str = str.to_uppercase()
+        if self.to_lower {
+            str = str.to_lowercase()
+        } else if self.to_upper {
+            str = str.to_uppercase()
+        }
+        let py_str = PyString::new(py, &str);
+        Ok(py_str.to_object(py))
     }
-    let py_str = PyString::new(py, &str);
-    Ok(py_str)
 }
 
-fn validate_str_list<'py>(
-    py: Python<'py>,
-    list: &PyList,
-    min_length: Option<usize>,
-    max_length: Option<usize>,
-    strip_whitespace: bool,
-    to_lower: bool,
-    to_upper: bool,
-) -> PyResult<&'py PyAny> {
-    let mut new_vec: Vec<&'py PyAny> = Vec::with_capacity(list.len());
-    for value in list.iter() {
-        let value = validate_str_recursive(py, value, min_length, max_length, strip_whitespace, to_lower, to_upper)?;
-        new_vec.push(value);
-    }
-    // Ok(new_list.to_object(py))
-    let new_list = PyList::new(py, &new_vec);
-    Ok(new_list)
-}
+#[allow(dead_code)]
+fn schema_string(dict: &PyDict) -> PyResult<Vec<Box<dyn Validator>>> {
+    let mut v: Vec<Box<dyn Validator>> = vec![Box::new(SimpleStringValidator)];
 
-fn validate_str_dict<'py>(
-    py: Python<'py>,
-    dict: &PyDict,
-    min_length: Option<usize>,
-    max_length: Option<usize>,
-    strip_whitespace: bool,
-    to_lower: bool,
-    to_upper: bool,
-) -> PyResult<&'py PyAny> {
-    let new_dict = PyDict::new(py);
-    for (key, value) in dict.iter() {
-        let value = validate_str_recursive(py, value, min_length, max_length, strip_whitespace, to_lower, to_upper)?;
-        new_dict.set_item(key, value)?;
-    }
-    Ok(new_dict)
-}
+    let pattern = dict_get!(dict, "pattern", RegexPattern);
+    let min_length = dict_get!(dict, "min_length", usize);
+    let max_length = dict_get!(dict, "max_length", usize);
+    let strip_whitespace = dict_get!(dict, "strip_whitespace", bool);
+    let to_lower = dict_get!(dict, "to_lower", bool);
+    let to_upper = dict_get!(dict, "to_upper", bool);
 
-#[pyfunction]
-pub fn validate_str_recursive<'py>(
-    py: Python<'py>,
-    value: &PyAny,
-    min_length: Option<usize>,
-    max_length: Option<usize>,
-    strip_whitespace: bool,
-    to_lower: bool,
-    to_upper: bool,
-) -> PyResult<&'py PyAny> {
-    if let Ok(list) = value.cast_as::<PyList>() {
-        validate_str_list(py, list, min_length, max_length, strip_whitespace, to_lower, to_upper)
-    } else if let Ok(dict) = value.cast_as::<PyDict>() {
-        validate_str_dict(py, dict, min_length, max_length, strip_whitespace, to_lower, to_upper)
-    } else {
-        validate_str_full(
-            py,
-            value,
+    if pattern.is_some()
+        || min_length.is_some()
+        || max_length.is_some()
+        || strip_whitespace.is_some()
+        || to_lower.is_some()
+        || to_upper.is_some()
+    {
+        v.push(Box::new(FullStringValidator {
+            pattern,
             min_length,
             max_length,
-            strip_whitespace,
-            to_lower,
-            to_upper,
-            None,
-        )
+            strip_whitespace: strip_whitespace.unwrap_or(false),
+            to_lower: to_lower.unwrap_or(false),
+            to_upper: to_upper.unwrap_or(false),
+        }));
     }
+
+    Ok(v)
 }
