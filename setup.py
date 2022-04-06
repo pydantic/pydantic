@@ -50,10 +50,6 @@ setup(
     author='Samuel Colvin',
     author_email='s@muelcolvin.com',
     url='https://github.com/samuelcolvin/pydantic_core',
-    entry_points="""
-        [console_scripts]
-        pydantic_core=pydantic_core.cli:cli
-    """,
     license='MIT',
     packages=['pydantic_core'],
     package_data={'pydantic_core': ['py.typed', '*.pyi']},
