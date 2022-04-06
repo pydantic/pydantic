@@ -1,10 +1,12 @@
 extern crate pyo3;
+extern crate regex;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
 
 mod core;
+mod utils;
 mod validators;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
