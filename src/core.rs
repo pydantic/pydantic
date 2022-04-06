@@ -4,6 +4,9 @@ use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
+use crate::utils::RegexPattern;
+use crate::validators::validate_str_full;
+
 macro_rules! dict_get {
     ($dict:ident, $key:expr, $type:ty) => {
         match $dict.get_item($key) {
@@ -122,7 +125,7 @@ struct StringSchema {
     enum_: Option<Vec<String>>,
     const_: Option<String>,
     // https://json-schema.org/draft/2020-12/json-schema-validation.html#rfc.section.6.3
-    pattern: Option<String>,
+    pattern: Option<RegexPattern>,
     max_length: Option<usize>,
     min_length: Option<usize>,
 }
@@ -132,30 +135,23 @@ impl SchemaType for StringSchema {
         Ok(StringSchema {
             enum_: dict_get!(dict, "enum", Vec<String>),
             const_: dict_get!(dict, "const", String),
-            pattern: dict_get!(dict, "pattern", String),
+            pattern: dict_get!(dict, "pattern", RegexPattern),
             min_length: dict_get!(dict, "min_length", usize),
             max_length: dict_get!(dict, "max_length", usize),
         })
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
-        let s = String::extract(obj)?;
-        if let Some(min_length) = self.min_length {
-            if s.len() < min_length {
-                return Err(PyValueError::new_err(format!(
-                    "String is too short (min length: {})",
-                    min_length
-                )));
-            }
-        }
-        if let Some(max_length) = self.max_length {
-            if s.len() > max_length {
-                return Err(PyValueError::new_err(format!(
-                    "String is too long (max length: {})",
-                    max_length
-                )));
-            }
-        }
+        let s = validate_str_full(
+            py,
+            obj,
+            self.min_length,
+            self.max_length,
+            false,
+            false,
+            false,
+            self.pattern.as_ref(),
+        )?;
         Ok(s.to_object(py))
     }
 }

@@ -1,3 +1,4 @@
+use crate::utils::RegexPattern;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
@@ -19,6 +20,7 @@ pub fn validate_str(v: &PyAny) -> PyResult<String> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 #[pyfunction]
 pub fn validate_str_full<'py>(
     py: Python<'py>,
@@ -28,12 +30,9 @@ pub fn validate_str_full<'py>(
     strip_whitespace: bool,
     to_lower: bool,
     to_upper: bool,
+    pattern: Option<&RegexPattern>,
 ) -> PyResult<&'py PyAny> {
     let mut str = validate_str(value)?;
-
-    if strip_whitespace {
-        str = str.trim().to_string();
-    }
 
     if let Some(min_length) = min_length {
         if str.len() < min_length {
@@ -44,6 +43,15 @@ pub fn validate_str_full<'py>(
         if str.len() > max_length {
             return Err(PyValueError::new_err(format!("{} is longer than {}", str, max_length)));
         }
+    }
+    if let Some(pattern) = pattern {
+        if !pattern.is_match(&str) {
+            return Err(PyValueError::new_err(format!("{} does not match {}", str, pattern)));
+        }
+    }
+
+    if strip_whitespace {
+        str = str.trim().to_string();
     }
 
     if to_lower {
@@ -106,6 +114,15 @@ pub fn validate_str_recursive<'py>(
     } else if let Ok(dict) = value.cast_as::<PyDict>() {
         validate_str_dict(py, dict, min_length, max_length, strip_whitespace, to_lower, to_upper)
     } else {
-        validate_str_full(py, value, min_length, max_length, strip_whitespace, to_lower, to_upper)
+        validate_str_full(
+            py,
+            value,
+            min_length,
+            max_length,
+            strip_whitespace,
+            to_lower,
+            to_upper,
+            None,
+        )
     }
 }
