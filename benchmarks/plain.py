@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 
 def validate_str(v: any) -> str:
@@ -10,8 +9,8 @@ def validate_str(v: any) -> str:
     elif isinstance(v, (int, float, Decimal)):
         return str(v)
     else:
-        return '[not a string]'
-        # raise TypeError(f'{type(v)} is not a string')
+        # return '[not a string]'
+        raise TypeError(f'{type(v)} is not a string')
 
 
 def validate_str_full(

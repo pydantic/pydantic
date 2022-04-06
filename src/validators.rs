@@ -11,11 +11,11 @@ pub fn validate_str(v: &PyAny) -> PyResult<String> {
     } else if let Ok(int) = v.cast_as::<PyInt>() {
         Ok(i64::extract(int)?.to_string())
     } else if let Ok(float) = f64::extract(v) {
-        // don't downcast here so Decimals are covered
+        // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble
         Ok(float.to_string())
     } else {
-        Ok("[not a string]".to_string())
-        // Err(PyValueError::new_err(format!("{} is not a string", v)))
+        let name = v.get_type().name().unwrap_or("<unknown type>");
+        Err(PyValueError::new_err(format!("{} is not a valid string", name)))
     }
 }
 
