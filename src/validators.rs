@@ -1,14 +1,17 @@
-use crate::utils::RegexPattern;
+use std::str::from_utf8;
+
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
+
+use crate::utils::RegexPattern;
 
 #[pyfunction]
 pub fn validate_str(v: &PyAny) -> PyResult<String> {
     if let Ok(str) = v.cast_as::<PyString>() {
         str.extract()
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
-        Ok(std::str::from_utf8(bytes.as_bytes())?.to_string())
+        Ok(from_utf8(bytes.as_bytes())?.to_string())
     } else if let Ok(int) = v.cast_as::<PyInt>() {
         Ok(i64::extract(int)?.to_string())
     } else if let Ok(float) = f64::extract(v) {
