@@ -235,7 +235,7 @@ impl SchemaType for ObjectSchema {
         let required = match dict.get_item("required") {
             Some(t) => {
                 let mut required = HashSet::new();
-                let list: &PyList = t.extract()?;
+                let list: &PyList = t.cast_as()?;
                 for item in list.iter() {
                     required.insert(item.to_string());
                 }
@@ -247,10 +247,10 @@ impl SchemaType for ObjectSchema {
         Ok(ObjectSchema {
             properties: match dict.get_item("properties") {
                 Some(t) => {
-                    let dict: &PyDict = t.extract()?;
+                    let dict: &PyDict = t.cast_as()?;
                     let mut properties: Vec<SchemaProperty> = Vec::with_capacity(dict.len());
                     for (key, value) in dict.iter() {
-                        let value_dict: &PyDict = value.extract()?;
+                        let value_dict: &PyDict = value.cast_as()?;
 
                         let validator: Option<PyObject> = match value_dict.get_item("validator") {
                             Some(t) => {
@@ -282,7 +282,7 @@ impl SchemaType for ObjectSchema {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
-        let obj_dict: &PyDict = obj.extract()?;
+        let obj_dict: &PyDict = obj.cast_as()?;
         let new_obj = PyDict::new(py);
         let mut errors = Vec::new();
         for property in &self.properties {
@@ -354,7 +354,7 @@ impl SchemaType for Schema {
 
 impl<'source> FromPyObject<'source> for Schema {
     fn extract(obj: &'source PyAny) -> Result<Self, PyErr> {
-        let dict: &PyDict = obj.extract()?;
+        let dict: &PyDict = obj.cast_as()?;
         Schema::build(dict)
     }
 }
@@ -372,10 +372,8 @@ impl SchemaValidator {
         Ok(Self { schema })
     }
 
-    fn validate(&self, py: Python, data: PyObject) -> PyResult<PyObject> {
-        let data: &PyAny = data.extract(py)?;
-        let result = self.schema.validate(py, data)?;
-        Ok(result)
+    fn validate(&self, py: Python, data: &PyAny) -> PyResult<PyObject> {
+        self.schema.validate(py, data)
     }
 
     fn __repr__(&self) -> PyResult<String> {
