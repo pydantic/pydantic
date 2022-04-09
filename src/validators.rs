@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::{PyValueError, PyKeyError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyBool, PyDict, PyString};
 use pyo3::ToPyObject;
@@ -9,7 +9,7 @@ use crate::utils::{dict_get, py_error, RegexPattern};
 use crate::validator_functions::validate_str;
 
 trait TypeValidator: Send + Debug {
-    fn is_match(type_: &str, dict_: &PyDict) -> bool
+    fn is_match(type_: &str, dict: &PyDict) -> bool
     where
         Self: Sized;
 
@@ -20,6 +20,12 @@ trait TypeValidator: Send + Debug {
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject>;
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator>;
+}
+
+impl Clone for Box<dyn TypeValidator> {
+    fn clone(&self) -> Self {
+        self.clone_dyn()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -167,6 +173,71 @@ impl TypeValidator for FullStringValidator {
     }
 }
 
+#[derive(Debug, Clone)]
+struct ModelField {
+    name: String,
+    // alias: Option<String>,
+    required: bool,
+    validator: Box<Validator>,
+}
+
+#[derive(Debug, Clone)]
+struct ModelValidator {
+    fields: Vec<ModelField>,
+}
+
+impl TypeValidator for ModelValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
+        type_ == "model"
+    }
+
+    fn build(dict: &PyDict) -> PyResult<Self> {
+        let fields_dict: &PyDict = match dict_get!(dict, "fields", &PyDict) {
+            Some(fields) => fields,
+            None => {
+                // allow an empty model, is this is a good idea?
+                return Ok(Self { fields: vec![] });
+            }
+        };
+        let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
+
+        for (key, value) in fields_dict.iter() {
+            let field_dict: &PyDict = value.cast_as()?;
+
+            fields.push(ModelField {
+                name: key.to_string(),
+                // alias: dict_get!(field_dict, "alias", String),
+                required: dict_get!(field_dict, "required", bool).unwrap_or(false),
+                validator: Box::new(Validator::py_new(field_dict)?),
+            });
+        }
+        return Ok(Self { fields });
+    }
+
+    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
+        let obj_dict: &PyDict = obj.cast_as(py)?;
+        let new_obj = PyDict::new(py);
+        let mut errors = Vec::new();
+        for field in &self.fields {
+            if let Some(value) = obj_dict.get_item(field.name.clone()) {
+                let value = field.validator.validate(py, value.to_object(py))?;
+                new_obj.set_item(field.name.clone(), value)?;
+            } else if field.required {
+                errors.push(format!("Missing field: {}", field.name));
+            }
+        }
+        if errors.is_empty() {
+            Ok(new_obj.into())
+        } else {
+            py_error!(PyValueError; "errors: {:?}", errors)
+        }
+    }
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+        Box::new(self.clone())
+    }
+}
+
 fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
     let type_: String = dict_get!(dict, "type", String).ok_or(PyKeyError::new_err("'type' is required"))?;
 
@@ -182,12 +253,20 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
     }
 
     macro_rules! all_validators {
+        // single validator - will be called last by variant below
         ($validator:ident) => {
             if_else!($validator else {
                 return py_error!("unknown type: '{}'", type_);
             })
         };
+        // without a trailing comma
         ($validator:ident, $($validators:ident),+) => {
+            if_else!($validator else {
+                all_validators!($($validators),+)
+            })
+        };
+        // with a trailing comma
+        ($validator:ident, $($validators:ident,)+) => {
             if_else!($validator else {
                 all_validators!($($validators),+)
             })
@@ -196,13 +275,13 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
 
     // order matters here!
     // e.g. SimpleStringValidator must come before FullStringValidator
-    all_validators!(NullValidator, BoolValidator, SimpleStringValidator, FullStringValidator)
-}
-
-impl Clone for Box<dyn TypeValidator> {
-    fn clone(&self) -> Self {
-        self.clone_dyn()
-    }
+    all_validators!(
+        NullValidator,
+        BoolValidator,
+        SimpleStringValidator,
+        FullStringValidator,
+        ModelValidator,
+    )
 }
 
 #[pyclass]
@@ -215,8 +294,8 @@ pub struct Validator {
 #[pymethods]
 impl Validator {
     #[new]
-    pub fn py_new(pattern: &PyAny) -> PyResult<Self> {
-        let dict: &PyDict = pattern.extract()?;
+    pub fn py_new(obj: &PyAny) -> PyResult<Self> {
+        let dict: &PyDict = obj.extract()?;
         let type_validator = find_type_validator(dict)?;
         let external_validator = match dict.get_item("external_validator") {
             Some(obj) => {
