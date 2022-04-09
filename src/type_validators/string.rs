@@ -6,11 +6,11 @@ use crate::standalone_validators::validate_str;
 use crate::utils::{dict_get, py_error, RegexPattern};
 
 #[derive(Debug, Clone)]
-pub struct SimpleStringValidator;
+pub struct SimpleStrValidator;
 
-impl TypeValidator for SimpleStringValidator {
+impl TypeValidator for SimpleStrValidator {
     fn is_match(type_: &str, dict: &PyDict) -> bool {
-        type_ == "string"
+        type_ == "str"
             && dict.get_item("pattern").is_none()
             && dict.get_item("min_length").is_none()
             && dict.get_item("max_length").is_none()
@@ -35,7 +35,7 @@ impl TypeValidator for SimpleStringValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct FullStringValidator {
+pub struct FullStrValidator {
     pattern: Option<RegexPattern>,
     max_length: Option<usize>,
     min_length: Option<usize>,
@@ -44,9 +44,9 @@ pub struct FullStringValidator {
     to_upper: bool,
 }
 
-impl TypeValidator for FullStringValidator {
+impl TypeValidator for FullStrValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "string"
+        type_ == "str"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {

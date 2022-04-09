@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::ToPyObject;
 
-use super::{TypeValidator, Validator};
+use super::{SchemaValidator, TypeValidator};
 use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
@@ -10,7 +10,7 @@ struct ModelField {
     name: String,
     // alias: Option<String>,
     required: bool,
-    validator: Box<Validator>,
+    validator: Box<SchemaValidator>,
 }
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl TypeValidator for ModelValidator {
                 name: key.to_string(),
                 // alias: dict_get!(field_dict, "alias", String),
                 required: dict_get!(field_dict, "required", bool).unwrap_or(false),
-                validator: Box::new(Validator::build(field_dict)?),
+                validator: Box::new(SchemaValidator::build(field_dict)?),
             });
         }
         Ok(Self { fields })

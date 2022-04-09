@@ -1,13 +1,13 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{TypeValidator, Validator};
+use super::{SchemaValidator, TypeValidator};
 use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {
-    key_validator: Option<Box<Validator>>,
-    value_validator: Option<Box<Validator>>,
+    key_validator: Option<Box<SchemaValidator>>,
+    value_validator: Option<Box<SchemaValidator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
@@ -20,11 +20,11 @@ impl TypeValidator for DictValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             key_validator: match dict_get!(dict, "keys", &PyDict) {
-                Some(d) => Some(Box::new(Validator::build(d)?)),
+                Some(d) => Some(Box::new(SchemaValidator::build(d)?)),
                 None => None,
             },
             value_validator: match dict_get!(dict, "values", &PyDict) {
-                Some(d) => Some(Box::new(Validator::build(d)?)),
+                Some(d) => Some(Box::new(SchemaValidator::build(d)?)),
                 None => None,
             },
             min_items: dict_get!(dict, "min_items", usize),
