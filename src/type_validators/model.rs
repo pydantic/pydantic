@@ -52,8 +52,15 @@ impl TypeValidator for ModelValidator {
         let mut errors = Vec::new();
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
-                let value = field.validator.validate(py, value.to_object(py))?;
-                output.set_item(field.name.clone(), value)?;
+                match field.validator.validate(py, value.to_object(py)) {
+                    Ok(value) => {
+                        output.set_item(field.name.clone(), value)?
+                    },
+                    Err(err) => {
+                        errors.push(format!("Field {} error: {:?}", field.name, err));
+                        continue;
+                    }
+                }
             } else if field.required {
                 errors.push(format!("Missing field: {}", field.name));
             }
