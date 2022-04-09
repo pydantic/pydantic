@@ -48,18 +48,18 @@ impl TypeValidator for ModelValidator {
 
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
         let obj_dict: &PyDict = obj.cast_as(py)?;
-        let new_obj = PyDict::new(py);
+        let output = PyDict::new(py);
         let mut errors = Vec::new();
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
                 let value = field.validator.validate(py, value.to_object(py))?;
-                new_obj.set_item(field.name.clone(), value)?;
+                output.set_item(field.name.clone(), value)?;
             } else if field.required {
                 errors.push(format!("Missing field: {}", field.name));
             }
         }
         if errors.is_empty() {
-            Ok(new_obj.into())
+            Ok(output.into())
         } else {
             py_error!("errors: {:?}", errors)
         }
