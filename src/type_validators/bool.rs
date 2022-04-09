@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyBool};
+use pyo3::types::{PyBool, PyDict};
 
 use super::TypeValidator;
 

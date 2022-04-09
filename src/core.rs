@@ -7,46 +7,6 @@ use pyo3::types::{PyAny, PyDict, PyList};
 use crate::utils::{dict_get, RegexPattern};
 use crate::standalone_validators::validate_str_full;
 
-trait SchemaType {
-    fn build(dict: &PyDict) -> PyResult<Self>
-    where
-        Self: Sized;
-
-    fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject>;
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-struct NullSchema {}
-
-impl SchemaType for NullSchema {
-    fn build(_dict: &PyDict) -> PyResult<Self> {
-        Ok(NullSchema {})
-    }
-
-    fn validate(&self, py: Python, _obj: &PyAny) -> PyResult<PyObject> {
-        Ok(py.None())
-    }
-}
-
-#[allow(dead_code)]
-#[derive(Debug)]
-struct BooleanSchema {
-    // enum_ makes no sense here
-    const_: Option<bool>,
-}
-
-impl SchemaType for BooleanSchema {
-    fn build(dict: &PyDict) -> PyResult<Self> {
-        Ok(BooleanSchema {
-            const_: dict_get!(dict, "const", bool),
-        })
-    }
-
-    fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
-        Ok(bool::extract(obj)?.to_object(py))
-    }
-}
 
 #[allow(dead_code)]
 #[derive(Debug)]

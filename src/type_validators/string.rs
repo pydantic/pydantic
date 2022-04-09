@@ -1,9 +1,9 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
-use crate::utils::{dict_get, py_error, RegexPattern};
-use crate::standalone_validators::validate_str;
 use super::TypeValidator;
+use crate::standalone_validators::validate_str;
+use crate::utils::{dict_get, py_error, RegexPattern};
 
 #[derive(Debug, Clone)]
 pub struct SimpleStringValidator;
