@@ -30,7 +30,7 @@ macro_rules! py_error {
 pub(crate) use py_error;
 
 #[pyclass]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RegexPattern {
     regex: Regex,
 }
@@ -44,21 +44,14 @@ impl RegexPattern {
 #[pymethods]
 impl RegexPattern {
     #[new]
-    fn py_new(py: Python, pattern: PyObject) -> PyResult<Self> {
-        let p: RegexPattern = pattern.extract(py)?;
-        Ok(p)
+    pub fn py_new(pattern: &PyAny) -> PyResult<Self> {
+        let pattern: &str = pattern.extract()?;
+        let regex = Regex::new(pattern).map_err(|e| PyValueError::new_err(e.to_string()))?;
+        Ok(Self { regex })
     }
 
     fn __repr__(&self) -> PyResult<String> {
         Ok(format!("RegexPattern({})", self))
-    }
-}
-
-impl<'source> FromPyObject<'source> for RegexPattern {
-    fn extract(obj: &'source PyAny) -> Result<Self, PyErr> {
-        let pattern: &str = obj.extract()?;
-        let regex = Regex::new(pattern).map_err(|e| PyValueError::new_err(e.to_string()))?;
-        Ok(Self { regex })
     }
 }
 

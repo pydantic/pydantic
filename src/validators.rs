@@ -1,11 +1,14 @@
+use std::fmt::Debug;
+
 use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyBool, PyDict, PyString};
+use pyo3::types::{IntoPyDict, PyAny, PyBool, PyDict, PyString};
+use pyo3::ToPyObject;
 
 use crate::utils::{dict_get, py_error, RegexPattern};
 use crate::validator_functions::validate_str;
 
-trait TypeValidator {
+trait TypeValidator: Send + Debug {
     fn is_match(type_: &str, dict_: &PyDict) -> bool
     where
         Self: Sized;
@@ -15,6 +18,8 @@ trait TypeValidator {
         Self: Sized;
 
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject>;
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator>;
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +36,10 @@ impl TypeValidator for NullValidator {
 
     fn validate(&self, py: Python, _obj: PyObject) -> PyResult<PyObject> {
         Ok(py.None())
+    }
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+        Box::new(self.clone())
     }
 }
 
@@ -49,6 +58,10 @@ impl TypeValidator for BoolValidator {
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
         let obj: &PyBool = obj.extract(py)?;
         Ok(obj.to_object(py))
+    }
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+        Box::new(self.clone())
     }
 }
 
@@ -75,9 +88,13 @@ impl TypeValidator for SimpleStringValidator {
         let s = validate_str(obj)?;
         Ok(s.to_object(py))
     }
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+        Box::new(self.clone())
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct FullStringValidator {
     pattern: Option<RegexPattern>,
     max_length: Option<usize>,
@@ -93,7 +110,10 @@ impl TypeValidator for FullStringValidator {
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
-        let pattern = dict_get!(dict, "pattern", RegexPattern);
+        let pattern = match dict.get_item("pattern") {
+            Some(s) => Some(RegexPattern::py_new(s)?.into()),
+            None => None,
+        };
         let min_length = dict_get!(dict, "min_length", usize);
         let max_length = dict_get!(dict, "max_length", usize);
         let strip_whitespace = dict_get!(dict, "strip_whitespace", bool);
@@ -141,8 +161,11 @@ impl TypeValidator for FullStringValidator {
         let py_str = PyString::new(py, &str);
         Ok(py_str.to_object(py))
     }
-}
 
+    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+        Box::new(self.clone())
+    }
+}
 
 fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
     let type_: String = dict_get!(dict, "type", String).ok_or(PyKeyError::new_err("'type' is required"))?;
@@ -173,28 +196,27 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
 
     // order matters here!
     // e.g. SimpleStringValidator must come before FullStringValidator
-    all_validators!(
-        NullValidator,
-        BoolValidator,
-        SimpleStringValidator,
-        FullStringValidator
-    )
+    all_validators!(NullValidator, BoolValidator, SimpleStringValidator, FullStringValidator)
 }
 
-// #[pyclass]
-// #[derive(Clone)]
+impl Clone for Box<dyn TypeValidator> {
+    fn clone(&self) -> Self {
+        self.clone_dyn()
+    }
+}
+
+#[pyclass]
+#[derive(Debug, Clone)]
 pub struct Validator {
     type_validator: Box<dyn TypeValidator>,
     external_validator: Option<PyObject>,
 }
 
-// TODO, is this necessary?
-impl TypeValidator for Validator {
-    fn is_match(_type: &str, _dict: &PyDict) -> bool where Self: Sized {
-        true
-    }
-
-    fn build(dict: &PyDict) -> PyResult<Self> {
+#[pymethods]
+impl Validator {
+    #[new]
+    pub fn py_new(pattern: &PyAny) -> PyResult<Self> {
+        let dict: &PyDict = pattern.extract()?;
         let type_validator = find_type_validator(dict)?;
         let external_validator = match dict.get_item("external_validator") {
             Some(obj) => {
@@ -202,7 +224,7 @@ impl TypeValidator for Validator {
                     return py_error!(PyTypeError; "'external_validator' must be callable");
                 }
                 Some(obj.to_object(obj.py()))
-            },
+            }
             None => None,
         };
         Ok(Self {
@@ -213,25 +235,39 @@ impl TypeValidator for Validator {
 
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
         if let Some(external_validator) = &self.external_validator {
-            let kwargs = PyDict::new(py);
-            // let validator_kwarg = *self.clone();
-            // kwargs.set_item("validator", validator_kwarg.to_object(py))?;
-            let result = external_validator.call(py, (), Some(kwargs))?;
+            let validator_kwarg = ValidatorCallable::new(self.type_validator.clone());
+            let kwargs = [("validator", validator_kwarg.into_py(py))];
+            let result = external_validator.call(py, (), Some(kwargs.into_py_dict(py)))?;
             Ok(result)
         } else {
             self.type_validator.validate(py, obj)
         }
     }
+
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(format!("Validator({:?})", self))
+    }
 }
 
-// #[pymethods]
-// impl Validator {
-//     fn __call__(&self, py: Python, arg: PyObject) -> PyResult<PyObject> {
-//         self.type_validator.validate(py, arg)
-//     }
-//
-//     fn __repr__(&self) -> PyResult<String> {
-//         // Ok(format!("Validator({:?})", self.func))
-//         Ok("Validator(...)".to_string())
-//     }
-// }
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct ValidatorCallable {
+    type_validator: Box<dyn TypeValidator>,
+}
+
+impl ValidatorCallable {
+    fn new(type_validator: Box<dyn TypeValidator>) -> Self {
+        Self { type_validator }
+    }
+}
+
+#[pymethods]
+impl ValidatorCallable {
+    fn __call__(&self, py: Python, arg: PyObject) -> PyResult<PyObject> {
+        self.type_validator.validate(py, arg)
+    }
+
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(format!("ValidatorCallable({:?})", self))
+    }
+}
