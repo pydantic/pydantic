@@ -1,9 +1,9 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict};
+use pyo3::types::PyDict;
 use pyo3::ToPyObject;
 
-use crate::utils::{dict_get, py_error};
 use super::{TypeValidator, Validator};
+use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
 struct ModelField {
