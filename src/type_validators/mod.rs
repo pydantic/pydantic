@@ -12,6 +12,7 @@ mod model;
 mod none;
 mod string;
 mod int;
+mod float;
 
 pub trait TypeValidator: Send + Debug {
     fn is_match(type_: &str, dict: &PyDict) -> bool
@@ -121,6 +122,8 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         self::string::FullStringValidator,
         self::int::SimpleIntValidator,
         self::int::FullIntValidator,
+        self::float::SimpleFloatValidator,
+        self::float::FullFloatValidator,
         self::model::ModelValidator,
     )
 }
