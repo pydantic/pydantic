@@ -3,7 +3,6 @@ use pyo3::types::PyDict;
 
 use super::TypeValidator;
 
-
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
 

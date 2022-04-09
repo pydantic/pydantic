@@ -5,9 +5,9 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
 
-mod utils;
 mod standalone_validators;
 mod type_validators;
+mod utils;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 

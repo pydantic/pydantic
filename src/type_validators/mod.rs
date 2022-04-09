@@ -7,10 +7,11 @@ use pyo3::ToPyObject;
 
 use crate::utils::{dict_get, py_error};
 
-mod none;
 mod bool;
-mod string;
 mod model;
+mod none;
+mod string;
+mod int;
 
 pub trait TypeValidator: Send + Debug {
     fn is_match(type_: &str, dict: &PyDict) -> bool
@@ -31,7 +32,6 @@ impl Clone for Box<dyn TypeValidator> {
         self.clone_dyn()
     }
 }
-
 
 #[pyclass]
 #[derive(Debug, Clone)]
@@ -119,6 +119,8 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         self::bool::BoolValidator,
         self::string::SimpleStringValidator,
         self::string::FullStringValidator,
+        self::int::SimpleIntValidator,
+        self::int::FullIntValidator,
         self::model::ModelValidator,
     )
 }
