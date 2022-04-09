@@ -1,12 +1,12 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use super::{TypeValidator, Validator};
+use super::{SchemaValidator, TypeValidator};
 use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
-    item_validator: Option<Box<Validator>>,
+    item_validator: Option<Box<SchemaValidator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
@@ -19,7 +19,7 @@ impl TypeValidator for ListValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             item_validator: match dict_get!(dict, "items", &PyDict) {
-                Some(items_dict) => Some(Box::new(Validator::build(items_dict)?)),
+                Some(d) => Some(Box::new(SchemaValidator::build(d)?)),
                 None => None,
             },
             min_items: dict_get!(dict, "min_items", usize),
