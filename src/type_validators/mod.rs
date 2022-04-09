@@ -5,16 +5,17 @@ use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyDict};
 use pyo3::ToPyObject;
 
+use crate::errors::{Location, ValResult};
 use crate::utils::{dict_get, py_error};
 
 mod bool;
-mod dict;
-mod float;
-mod int;
-mod list;
-mod model;
+// mod dict;
+// mod float;
+// mod int;
+// mod list;
+// mod model;
 mod none;
-mod string;
+// mod string;
 
 // TODO date, datetime, set, tuple, bytes, custom types, dict, union, literal
 
@@ -25,9 +26,12 @@ pub struct SchemaValidator {
     external_validator: Option<PyObject>,
 }
 
-impl SchemaValidator {
-    pub fn build(obj: &PyAny) -> PyResult<Self> {
-        let dict: &PyDict = obj.cast_as()?;
+impl TypeValidator for SchemaValidator {
+    fn is_match(_type: &str, _dict: &PyDict) -> bool {
+        false
+    }
+
+    fn build(dict: &PyDict) -> PyResult<Self> {
         let type_validator = find_type_validator(dict)?;
         let external_validator = match dict.get_item("external_validator") {
             Some(obj) => {
@@ -43,25 +47,43 @@ impl SchemaValidator {
             external_validator,
         })
     }
+
+    fn validate(&self, py: Python, obj: &PyAny, location: &Location) -> ValResult {
+        if let Some(external_validator) = &self.external_validator {
+            let validator_kwarg = ValidatorCallable {
+                type_validator: self.type_validator.clone(),
+                location: location.clone(),
+            };
+            let kwargs = [("validator", validator_kwarg.into_py(py))];
+            match external_validator.call(py, (), Some(kwargs.into_py_dict(py))) {
+                Ok(output) => ValResult::Ok(output),
+                // TODO this is wrong, we should check for errors which could as validation errors
+                Err(err) => ValResult::IErr(err),
+            }
+        } else {
+            self.type_validator.validate(py, obj, location)
+        }
+    }
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+        Box::new(self.clone())
+    }
 }
 
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    pub fn py_new(obj: &PyAny) -> PyResult<Self> {
-        Self::build(obj)
+    pub fn py_new(py: Python, obj: PyObject) -> PyResult<Self> {
+        let dict: &PyDict = obj.cast_as(py)?;
+        Self::build(dict)
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        if let Some(external_validator) = &self.external_validator {
-            let validator_kwarg = ValidatorCallable {
-                type_validator: self.type_validator.clone(),
-            };
-            let kwargs = [("validator", validator_kwarg.into_py(py))];
-            let output = external_validator.call(py, (), Some(kwargs.into_py_dict(py)))?;
-            Ok(output)
-        } else {
-            self.type_validator.validate(py, obj)
+    fn __call__(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
+        let location = Location::new();
+        match self.validate(py, obj, &location) {
+            ValResult::Ok(obj) => Ok(obj),
+            ValResult::VErr(err) => py_error!("TODO validation error: {:?}", err),
+            ValResult::IErr(err) => Err(err),
         }
     }
 
@@ -117,23 +139,23 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
     // e.g. SimpleStrValidator must come before FullStrValidator
     // also for performance reasons commonly used validators should be first
     validator_selection!(
-        // models e.g. heterogeneous dicts
-        self::model::ModelValidator,
-        // strings
-        self::string::SimpleStrValidator,
-        self::string::FullStrValidator,
-        // integers
-        self::int::SimpleIntValidator,
-        self::int::FullIntValidator,
+        // // models e.g. heterogeneous dicts
+        // self::model::ModelValidator,
+        // // strings
+        // self::string::SimpleStrValidator,
+        // self::string::FullStrValidator,
+        // // integers
+        // self::int::SimpleIntValidator,
+        // self::int::FullIntValidator,
         // boolean
         self::bool::BoolValidator,
-        // floats
-        self::float::SimpleFloatValidator,
-        self::float::FullFloatValidator,
-        // list/arrays (recursive)
-        self::list::ListValidator,
-        // dicts/objects (recursive)
-        self::dict::DictValidator,
+        // // floats
+        // self::float::SimpleFloatValidator,
+        // self::float::FullFloatValidator,
+        // // list/arrays (recursive)
+        // self::list::ListValidator,
+        // // dicts/objects (recursive)
+        // self::dict::DictValidator,
         // None/null
         self::none::NoneValidator,
     )
@@ -142,13 +164,18 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct ValidatorCallable {
+    location: Location,
     type_validator: Box<dyn TypeValidator>,
 }
 
 #[pymethods]
 impl ValidatorCallable {
-    fn __call__(&self, py: Python, arg: PyObject) -> PyResult<PyObject> {
-        self.type_validator.validate(py, arg)
+    fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
+        match self.type_validator.validate(py, arg, &self.location) {
+            ValResult::Ok(obj) => Ok(obj),
+            ValResult::VErr(err) => py_error!("TODO validation error: {:?}", err),
+            ValResult::IErr(err) => Err(err),
+        }
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -165,7 +192,7 @@ pub trait TypeValidator: Send + Debug {
     where
         Self: Sized;
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject>;
+    fn validate(&self, py: Python, obj: &PyAny, location: &Location) -> ValResult;
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator>;
 }

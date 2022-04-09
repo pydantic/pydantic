@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::TypeValidator;
+use crate::errors::Location;
 use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
@@ -21,8 +22,7 @@ impl TypeValidator for SimpleIntValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let obj = obj.extract(py)?;
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
         Ok(i64::extract(obj)?.to_object(py))
     }
 
@@ -55,8 +55,8 @@ impl TypeValidator for FullIntValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let value: i64 = obj.extract(py)?;
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
+        let value: i64 = obj.extract()?;
         if let Some(multiple_of) = self.multiple_of {
             if value % multiple_of != 0 {
                 return py_error!("Value is not multiple of the specified value");

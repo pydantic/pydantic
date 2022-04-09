@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::ToPyObject;
 
 use super::{SchemaValidator, TypeValidator};
+use crate::errors::{LocItem, Location};
 use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
@@ -46,13 +46,15 @@ impl TypeValidator for ModelValidator {
         Ok(Self { fields })
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let obj_dict: &PyDict = obj.cast_as(py)?;
+    fn validate(&self, py: Python, obj: &PyAny, loc: &Location) -> PyResult<PyObject> {
+        let obj_dict: &PyDict = obj.cast_as()?;
         let output = PyDict::new(py);
         let mut errors = Vec::new();
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
-                match field.validator.validate(py, value.to_object(py)) {
+                let mut field_loc = loc.clone();
+                field_loc.push(LocItem::Key(field.name.clone()));
+                match field.validator.validate(py, value, &field_loc) {
                     Ok(value) => output.set_item(field.name.clone(), value)?,
                     Err(err) => {
                         errors.push(format!("Field {} error: {:?}", field.name, err));
