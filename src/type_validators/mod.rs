@@ -8,13 +8,13 @@ use pyo3::ToPyObject;
 use crate::utils::{dict_get, py_error};
 
 mod bool;
+mod dict;
 mod float;
 mod int;
 mod list;
 mod model;
 mod none;
 mod string;
-mod dict;
 
 // TODO date, datetime, set, tuple, bytes, custom types, dict, union, literal
 
@@ -89,7 +89,10 @@ impl Validator {
 }
 
 fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
-    let type_: String = dict_get!(dict, "type", String).ok_or(PyKeyError::new_err("'type' is required"))?;
+    let type_: String = match dict_get!(dict, "type", String) {
+        Some(type_) => type_,
+        None => return py_error!(PyKeyError; "'type' is required"),
+    };
 
     macro_rules! if_else {
         ($validator:path, $else:tt) => {

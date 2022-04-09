@@ -51,7 +51,7 @@ impl TypeValidator for FullStringValidator {
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         let pattern = match dict.get_item("pattern") {
-            Some(s) => Some(RegexPattern::py_new(s)?.into()),
+            Some(s) => Some(RegexPattern::py_new(s)?),
             None => None,
         };
         let min_length = dict_get!(dict, "min_length", usize);
