@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyList};
 
 use crate::utils::{dict_get, RegexPattern};
-use crate::validator_functions::validate_str_full;
+use crate::standalone_validators::validate_str_full;
 
 trait SchemaType {
     fn build(dict: &PyDict) -> PyResult<Self>
