@@ -14,6 +14,9 @@ mod list;
 mod model;
 mod none;
 mod string;
+mod dict;
+
+// TODO date, datetime, set, tuple, bytes, custom types, dict, union, literal
 
 pub trait TypeValidator: Send + Debug {
     fn is_match(type_: &str, dict: &PyDict) -> bool
@@ -132,6 +135,7 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         self::float::SimpleFloatValidator,
         self::float::FullFloatValidator,
         self::list::ListValidator,
+        self::dict::DictValidator,
         self::model::ModelValidator,
     )
 }
