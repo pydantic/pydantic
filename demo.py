@@ -1,6 +1,9 @@
 from pydantic_core import SchemaValidator
 from devtools import debug
 
+from pydantic_core._pydantic_core import test_error, SubError
+test_error()
+
 v = SchemaValidator({
     'type': 'model',
     'fields': {
@@ -29,8 +32,8 @@ v = SchemaValidator({
     },
 })
 
-print(v)
-r = v.validate({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
-debug(r)
-r = v.validate({'age': 42, 'friends': [1, 2, '3'], 'settings': {'a': 1.0, 'b': 2.0}})
-debug(r)
+# print(v)
+# r = v.validate({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
+# debug(r)
+# r = v.validate({'age': 42, 'friends': [1, 2, '3'], 'settings': {'a': 1.0, 'b': 2.0}})
+# debug(r)
