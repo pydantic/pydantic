@@ -6,9 +6,9 @@ use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
+    item_validator: Option<Box<Validator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
-    item_validator: Option<Box<Validator>>,
 }
 
 impl TypeValidator for ListValidator {
