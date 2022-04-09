@@ -17,10 +17,20 @@ v = SchemaValidator({
                 'type': 'int',
             },
         },
+        'settings': {
+            'type': 'dict',
+            'keys': {
+                'type': 'str',
+            },
+            'values': {
+                'type': 'float',
+            }
+        }
     },
 })
 
-r = v.validate({'name': 'John', 'age': 42, 'friends': [1, 2, 3]})
+print(v)
+r = v.validate({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
 debug(r)
-r = v.validate({'name': 'John', 'age': 42, 'friends': [1, 2, '3']})
+r = v.validate({'age': 42, 'friends': [1, 2, '3'], 'settings': {'a': 1.0, 'b': 2.0}})
 debug(r)
