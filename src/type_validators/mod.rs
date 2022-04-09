@@ -54,7 +54,9 @@ impl SchemaValidator {
 
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
         if let Some(external_validator) = &self.external_validator {
-            let validator_kwarg = ValidatorCallable::new(self.type_validator.clone());
+            let validator_kwarg = ValidatorCallable {
+                type_validator: self.type_validator.clone(),
+            };
             let kwargs = [("validator", validator_kwarg.into_py(py))];
             let output = external_validator.call(py, (), Some(kwargs.into_py_dict(py)))?;
             Ok(output)
@@ -141,12 +143,6 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
 #[derive(Debug, Clone)]
 pub struct ValidatorCallable {
     type_validator: Box<dyn TypeValidator>,
-}
-
-impl ValidatorCallable {
-    fn new(type_validator: Box<dyn TypeValidator>) -> Self {
-        Self { type_validator }
-    }
 }
 
 #[pymethods]
