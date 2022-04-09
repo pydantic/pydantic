@@ -53,7 +53,7 @@ testcov: test
 	@coverage html
 
 .PHONY: all
-all: lint mypy testcov
+all: lint mypy build-dev testcov
 
 .PHONY: clean
 clean:
