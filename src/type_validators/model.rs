@@ -53,9 +53,7 @@ impl TypeValidator for ModelValidator {
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
                 match field.validator.validate(py, value.to_object(py)) {
-                    Ok(value) => {
-                        output.set_item(field.name.clone(), value)?
-                    },
+                    Ok(value) => output.set_item(field.name.clone(), value)?,
                     Err(err) => {
                         errors.push(format!("Field {} error: {:?}", field.name, err));
                         continue;
