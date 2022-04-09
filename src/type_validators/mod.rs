@@ -8,11 +8,12 @@ use pyo3::ToPyObject;
 use crate::utils::{dict_get, py_error};
 
 mod bool;
+mod float;
+mod int;
+mod list;
 mod model;
 mod none;
 mod string;
-mod int;
-mod float;
 
 pub trait TypeValidator: Send + Debug {
     fn is_match(type_: &str, dict: &PyDict) -> bool
@@ -41,10 +42,8 @@ pub struct Validator {
     external_validator: Option<PyObject>,
 }
 
-#[pymethods]
 impl Validator {
-    #[new]
-    pub fn py_new(obj: &PyAny) -> PyResult<Self> {
+    pub fn build(obj: &PyAny) -> PyResult<Self> {
         let dict: &PyDict = obj.extract()?;
         let type_validator = find_type_validator(dict)?;
         let external_validator = match dict.get_item("external_validator") {
@@ -60,6 +59,14 @@ impl Validator {
             type_validator,
             external_validator,
         })
+    }
+}
+
+#[pymethods]
+impl Validator {
+    #[new]
+    pub fn py_new(obj: &PyAny) -> PyResult<Self> {
+        Self::build(obj)
     }
 
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
@@ -124,6 +131,7 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         self::int::FullIntValidator,
         self::float::SimpleFloatValidator,
         self::float::FullFloatValidator,
+        self::list::ListValidator,
         self::model::ModelValidator,
     )
 }
