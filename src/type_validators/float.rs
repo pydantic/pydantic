@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict};
+use pyo3::types::PyDict;
 
-use crate::utils::{dict_get, py_error};
 use super::TypeValidator;
+use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
 pub struct SimpleFloatValidator;

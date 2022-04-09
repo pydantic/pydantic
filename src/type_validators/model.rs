@@ -40,7 +40,7 @@ impl TypeValidator for ModelValidator {
                 name: key.to_string(),
                 // alias: dict_get!(field_dict, "alias", String),
                 required: dict_get!(field_dict, "required", bool).unwrap_or(false),
-                validator: Box::new(Validator::py_new(field_dict)?),
+                validator: Box::new(Validator::build(field_dict)?),
             });
         }
         return Ok(Self { fields });
