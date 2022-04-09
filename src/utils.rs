@@ -14,6 +14,21 @@ macro_rules! dict_get {
 }
 pub(crate) use dict_get;
 
+macro_rules! py_error {
+    ($msg:expr, $( $msg_args:expr ),* ) => {
+        py_error!(pyo3::exceptions::PyValueError; $msg, $( $msg_args ),*)
+    };
+
+    ($error_type:ty; $msg:expr) => {
+        Err(<$error_type>::new_err($msg))
+    };
+
+    ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
+        Err(<$error_type>::new_err(format!($msg, $( $msg_args ),*)))
+    };
+}
+pub(crate) use py_error;
+
 #[pyclass]
 #[derive(Debug)]
 pub struct RegexPattern {
