@@ -40,14 +40,14 @@ impl Clone for Box<dyn TypeValidator> {
 
 #[pyclass]
 #[derive(Debug, Clone)]
-pub struct Validator {
+pub struct SchemaValidator {
     type_validator: Box<dyn TypeValidator>,
     external_validator: Option<PyObject>,
 }
 
-impl Validator {
+impl SchemaValidator {
     pub fn build(obj: &PyAny) -> PyResult<Self> {
-        let dict: &PyDict = obj.extract()?;
+        let dict: &PyDict = obj.cast_as()?;
         let type_validator = find_type_validator(dict)?;
         let external_validator = match dict.get_item("external_validator") {
             Some(obj) => {
@@ -66,7 +66,7 @@ impl Validator {
 }
 
 #[pymethods]
-impl Validator {
+impl SchemaValidator {
     #[new]
     pub fn py_new(obj: &PyAny) -> PyResult<Self> {
         Self::build(obj)
@@ -76,8 +76,8 @@ impl Validator {
         if let Some(external_validator) = &self.external_validator {
             let validator_kwarg = ValidatorCallable::new(self.type_validator.clone());
             let kwargs = [("validator", validator_kwarg.into_py(py))];
-            let result = external_validator.call(py, (), Some(kwargs.into_py_dict(py)))?;
-            Ok(result)
+            let output = external_validator.call(py, (), Some(kwargs.into_py_dict(py)))?;
+            Ok(output)
         } else {
             self.type_validator.validate(py, obj)
         }
@@ -94,6 +94,7 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         None => return py_error!(PyKeyError; "'type' is required"),
     };
 
+    // if_else is used in validator_selection
     macro_rules! if_else {
         ($validator:path, $else:tt) => {
             if <$validator>::is_match(&type_, dict) {
@@ -105,7 +106,8 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         };
     }
 
-    macro_rules! all_validators {
+    // macro to build a long if/else chain for validator selection
+    macro_rules! validator_selection {
         // single validator - will be called last by variant below
         ($validator:path) => {
             if_else!($validator, {
@@ -115,31 +117,40 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         // without a trailing comma
         ($validator:path, $($validators:path),+) => {
             if_else!($validator, {
-                all_validators!($($validators),+)
+                validator_selection!($($validators),+)
             })
         };
         // with a trailing comma
         ($validator:path, $($validators:path,)+) => {
             if_else!($validator, {
-                all_validators!($($validators),+)
+                validator_selection!($($validators),+)
             })
         };
     }
 
     // order matters here!
-    // e.g. SimpleStringValidator must come before FullStringValidator
-    all_validators!(
-        self::none::NoneValidator,
-        self::bool::BoolValidator,
-        self::string::SimpleStringValidator,
-        self::string::FullStringValidator,
+    // e.g. SimpleStrValidator must come before FullStrValidator
+    // also for performance reasons commonly used validators should be first
+    validator_selection!(
+        // models e.g. heterogeneous dicts
+        self::model::ModelValidator,
+        // strings
+        self::string::SimpleStrValidator,
+        self::string::FullStrValidator,
+        // integers
         self::int::SimpleIntValidator,
         self::int::FullIntValidator,
+        // boolean
+        self::bool::BoolValidator,
+        // floats
         self::float::SimpleFloatValidator,
         self::float::FullFloatValidator,
+        // list/arrays (recursive)
         self::list::ListValidator,
+        // dicts/objects (recursive)
         self::dict::DictValidator,
-        self::model::ModelValidator,
+        // None/null
+        self::none::NoneValidator,
     )
 }
 

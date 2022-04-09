@@ -18,6 +18,6 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("ValidationError", py.get_type::<ValidationError>())?;
     m.add("__version__", VERSION)?;
     m.add_wrapped(wrap_pyfunction!(standalone_validators::validate_str))?;
-    m.add_class::<type_validators::Validator>()?;
+    m.add_class::<type_validators::SchemaValidator>()?;
     Ok(())
 }
