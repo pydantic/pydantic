@@ -22,6 +22,6 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(validator_functions::validate_str_full))?;
     m.add_wrapped(wrap_pyfunction!(validator_functions::validate_str_recursive))?;
     m.add_class::<core::SchemaValidator>()?;
-    // m.add_class::<validators::Validator>()?;
+    m.add_class::<validators::Validator>()?;
     Ok(())
 }
