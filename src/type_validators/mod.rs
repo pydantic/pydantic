@@ -84,7 +84,10 @@ impl SchemaValidator {
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(format!("Validator({:?})", self))
+        Ok(format!(
+            "SchemaValidator(type_validator={:?}, external_validator={:?})",
+            self.type_validator, self.external_validator
+        ))
     }
 }
 
@@ -173,6 +176,6 @@ impl ValidatorCallable {
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(format!("ValidatorCallable({:?})", self))
+        Ok(format!("ValidatorCallable({:?})", self.type_validator))
     }
 }

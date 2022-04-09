@@ -4,8 +4,9 @@ from pydantic_core import SchemaValidator, __version__
 
 
 def test_main():
-    v = SchemaValidator({'type': 'string'})
-    assert repr(v).startswith('SchemaValidator(String(')
+    v = SchemaValidator({'type': 'str'})
+    debug(repr(v))
+    assert repr(v) == 'SchemaValidator(type_validator=SimpleStrValidator, external_validator=None)'
 
     assert v.validate('foo') == 'foo'
 
