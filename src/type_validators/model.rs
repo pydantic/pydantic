@@ -43,7 +43,7 @@ impl TypeValidator for ModelValidator {
                 validator: Box::new(Validator::build(field_dict)?),
             });
         }
-        return Ok(Self { fields });
+        Ok(Self { fields })
     }
 
     fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {

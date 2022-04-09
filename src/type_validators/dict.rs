@@ -54,7 +54,7 @@ impl TypeValidator for DictValidator {
                     Err(err) => {
                         errors.push(err);
                         None
-                    },
+                    }
                 },
                 None => Some(key.to_object(py)),
             };
@@ -64,7 +64,7 @@ impl TypeValidator for DictValidator {
                     Err(err) => {
                         errors.push(err);
                         None
-                    },
+                    }
                 },
                 None => Some(value.to_object(py)),
             };
