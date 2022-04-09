@@ -1,57 +1,71 @@
 import timeit
-from decimal import Decimal
-from enum import Enum
-from statistics import mean
+from typing import List, Dict
 
 from devtools import debug
 
 
-def benchmark_str_validation():
-    import plain_validators
-    from pydantic_core import _pydantic_core as rust
+def benchmark_simple_validation():
+    from pydantic import BaseModel
+    from pydantic_core import SchemaValidator
 
-    impls = plain_validators, rust
+    class PydanticModel(BaseModel):
+        name: str
+        age: int
+        friends: List[int]
+        settings: Dict[str, float]
 
-    class Foo(str, Enum):
-        bar = 'bar'
-        baz = 'baz'
-        qux = 'qux'
+    schema_validator = SchemaValidator({
+        'type': 'model',
+        'fields': {
+            'name': {
+                'type': 'str',
+                'required': True,
+            },
+            'age': {
+                'type': 'int',
+            },
+            'friends': {
+                'type': 'list',
+                'items': {
+                    'type': 'int',
+                },
+                'required': True,
+            },
+            'settings': {
+                'type': 'dict',
+                'keys': {
+                    'type': 'str',
+                },
+                'values': {
+                    'type': 'float',
+                }
+            }
+        },
+    })
 
-    choices = [
-        'this is a string',
-        'this is another string',
-        'this is a third string',
-        b'hello ',
-        Foo.bar,
-        123,
-        123.456,
-        Decimal('321.123'),
-        [1, 2, 3,  'this is a string', b'hello ', Foo.bar, 123, 123.456, Decimal('321.123')],
-        {'a': 'this is a string', 'b': 123, 'c': Foo.baz},
-        # object(),
-    ]
+    data = {'name': 'John', 'age': 42, 'friends': list(range(20)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
-    data = {
-        'str': 'this is a string',
-        'list': choices,
-        'dict': {'foo': 'bar', 'baz': choices},
-    }
+    def pydantic(d):
+        return PydanticModel.parse_obj(d)
 
+    def pydantic_core(d):
+        return schema_validator.validate(d)
+
+    impls = pydantic, pydantic_core
     old_result = None
     steps = 1_000
 
     for impl in impls:
-        print(f'{impl.__name__} validate_str_recursive:')
-        result = impl.validate_str_recursive(data, None, 50, True, False, True)
+        print(f'{impl.__name__}:')
+        result = impl(data)
         # debug(result)
         if old_result:
             assert result == old_result
         old_result = result
 
-        big_data = [data] * 100
         t = timeit.timeit(
-            'impl.validate_str_recursive(big_data, None, 50, True, False, True)',
-            globals={'impl': impl, 'big_data': big_data},
+            'impl(data)',
+            globals={'impl': impl, 'data': data},
             number=steps,
         )
         print(f'    {display_time(t / steps)}\n')
@@ -72,4 +86,4 @@ def display_time(seconds: float):
 
 
 if __name__ == '__main__':
-    benchmark_str_validation()
+    benchmark_simple_validation()

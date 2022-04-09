@@ -18,26 +18,6 @@ mod string;
 
 // TODO date, datetime, set, tuple, bytes, custom types, dict, union, literal
 
-pub trait TypeValidator: Send + Debug {
-    fn is_match(type_: &str, dict: &PyDict) -> bool
-    where
-        Self: Sized;
-
-    fn build(dict: &PyDict) -> PyResult<Self>
-    where
-        Self: Sized;
-
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject>;
-
-    fn clone_dyn(&self) -> Box<dyn TypeValidator>;
-}
-
-impl Clone for Box<dyn TypeValidator> {
-    fn clone(&self) -> Self {
-        self.clone_dyn()
-    }
-}
-
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
@@ -177,5 +157,25 @@ impl ValidatorCallable {
 
     fn __repr__(&self) -> PyResult<String> {
         Ok(format!("ValidatorCallable({:?})", self.type_validator))
+    }
+}
+
+pub trait TypeValidator: Send + Debug {
+    fn is_match(type_: &str, dict: &PyDict) -> bool
+    where
+        Self: Sized;
+
+    fn build(dict: &PyDict) -> PyResult<Self>
+    where
+        Self: Sized;
+
+    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject>;
+
+    fn clone_dyn(&self) -> Box<dyn TypeValidator>;
+}
+
+impl Clone for Box<dyn TypeValidator> {
+    fn clone(&self) -> Self {
+        self.clone_dyn()
     }
 }
