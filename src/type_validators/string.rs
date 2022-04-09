@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
 use super::TypeValidator;
+use crate::errors::Location;
 use crate::standalone_validators::validate_str;
 use crate::utils::{dict_get, py_error, RegexPattern};
 
@@ -23,8 +24,7 @@ impl TypeValidator for SimpleStrValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let obj: &PyAny = obj.extract(py)?;
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
         let s = validate_str(obj)?;
         Ok(s.to_object(py))
     }
@@ -70,8 +70,7 @@ impl TypeValidator for FullStrValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let obj: &PyAny = obj.extract(py)?;
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
         let mut str = validate_str(obj)?;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {

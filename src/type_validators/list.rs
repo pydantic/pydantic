@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 use super::{SchemaValidator, TypeValidator};
+use crate::errors::Location;
 use crate::utils::{dict_get, py_error};
 
 #[derive(Debug, Clone)]
@@ -27,8 +28,8 @@ impl TypeValidator for ListValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let list: &PyList = obj.extract(py)?;
+    fn validate(&self, py: Python, obj: &PyAny, loc: &Location) -> PyResult<PyObject> {
+        let list: &PyList = obj.cast_as()?;
         if let Some(min_length) = self.min_items {
             if list.len() < min_length {
                 return py_error!("list must have at least {} items", min_length);
@@ -41,9 +42,9 @@ impl TypeValidator for ListValidator {
         }
         let mut output: Vec<PyObject> = Vec::with_capacity(list.len());
         let mut errors = Vec::new();
-        for item in list.iter() {
+        for (index, item) in list.iter().enumerate() {
             match self.item_validator {
-                Some(ref validator) => match validator.validate(py, item.to_object(py)) {
+                Some(ref validator) => match validator.validate(py, item, loc) {
                     Ok(item) => output.push(item),
                     Err(err) => errors.push(err),
                 },
