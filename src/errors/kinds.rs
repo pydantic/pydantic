@@ -40,6 +40,11 @@ pub enum ErrorKind {
     ListTooShort,
     #[strum(message = "List must have at most {max_length} items")]
     ListTooLong,
+    // bool errors
+    #[strum(message = "Value must be a valid boolean")]
+    BoolType,
+    #[strum(message = "Value must be a valid boolean, unable to interpret as a boolean")]
+    BoolParsing,
     // int errors
     #[strum(message = "Value must be a valid integer")]
     IntType,

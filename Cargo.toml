@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 pyo3 = {version = "0.16.3", features = ["extension-module"]}
+lazy_static = "1.4.0"
 #indexmap = "1.8.1"
 regex = "1.5.5"
 strum = { version = "0.24", features = ["derive"] }
