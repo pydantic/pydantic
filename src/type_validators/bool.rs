@@ -1,8 +1,9 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyDict};
+use pyo3::types::PyDict;
 
 use super::TypeValidator;
-use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::errors::ValResult;
+use crate::standalone_validators::validate_bool;
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
@@ -17,11 +18,9 @@ impl TypeValidator for BoolValidator {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let obj: &PyBool = match obj.extract() {
-            Ok(obj) => obj,
-            Err(_e) => return err_val_error!(py, obj, kind = ErrorKind::Bool),
-        };
-        ValResult::Ok(obj.to_object(py))
+        // TODO in theory this could be quicker if we used PyBool rather than going to a bool
+        // and back again, might be worth profiling?
+        Ok(validate_bool(py, obj)?.to_object(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {

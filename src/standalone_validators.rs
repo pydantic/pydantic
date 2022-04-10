@@ -1,8 +1,11 @@
+use std::collections::HashSet;
 use std::str::from_utf8;
 
-use crate::errors::{err_val_error, ok_or_internal, ErrorKind, ValResult};
+use lazy_static::lazy_static;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
+
+use crate::errors::{err_val_error, ok_or_internal, ErrorKind, ValResult};
 
 pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
     if let Ok(str) = v.cast_as::<PyString>() {
@@ -34,19 +37,58 @@ pub fn validate_str_py(py: Python, v: &PyAny) -> PyResult<String> {
     }
 }
 
-pub fn validate_int<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<i64> {
-    if let Ok(int) = v.extract::<i64>() {
-        Ok(int)
-    } else if let Ok(str) = v.extract::<String>() {
-        match str.parse() {
-            Ok(i) => Ok(i),
-            Err(_) => err_val_error!(py, str, kind = ErrorKind::IntParsing),
+pub fn validate_bool(py: Python, v: &PyAny) -> ValResult<bool> {
+    if let Ok(bool) = v.extract::<bool>() {
+        Ok(bool)
+    } else if let Some(str) = _maybe_as_string(py, v, ErrorKind::BoolParsing)? {
+        let s_lower = str.to_lowercase();
+        if BOOL_FALSE_CELL.contains(s_lower.as_str()) {
+            Ok(false)
+        } else if BOOL_TRUE_CELL.contains(s_lower.as_str()) {
+            Ok(true)
+        } else {
+            err_val_error!(py, str, kind = ErrorKind::BoolParsing)
         }
+    } else if let Ok(int) = v.extract::<i64>() {
+        if int == 0 {
+            Ok(false)
+        } else if int == 1 {
+            Ok(true)
+        } else {
+            err_val_error!(py, int, kind = ErrorKind::BoolParsing)
+        }
+    } else {
+        err_val_error!(py, v, kind = ErrorKind::BoolType)
+    }
+}
+
+lazy_static! {
+    static ref BOOL_FALSE_CELL: HashSet<&'static str> = HashSet::from(["0", "off", "f", "false", "n", "no"]);
+}
+
+lazy_static! {
+    static ref BOOL_TRUE_CELL: HashSet<&'static str> = HashSet::from(["1", "on", "t", "true", "y", "yes"]);
+}
+
+/// Util
+fn _maybe_as_string(py: Python, v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<String>> {
+    if let Ok(str) = v.extract::<String>() {
+        Ok(Some(str))
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
         let str = match from_utf8(bytes.as_bytes()) {
             Ok(s) => s.to_string(),
-            Err(_) => return err_val_error!(py, bytes, kind = ErrorKind::IntParsing),
+            Err(_) => return err_val_error!(py, bytes, kind = unicode_error),
         };
+        Ok(Some(str))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn validate_int(py: Python, v: &PyAny) -> ValResult<i64> {
+    if let Ok(int) = v.extract::<i64>() {
+        Ok(int)
+    } else if let Some(str) = _maybe_as_string(py, v, ErrorKind::IntParsing)? {
         match str.parse() {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(py, str, kind = ErrorKind::IntParsing),
@@ -62,19 +104,10 @@ pub fn validate_int<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<i64> {
     }
 }
 
-pub fn validate_float<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<f64> {
+pub fn validate_float(py: Python, v: &PyAny) -> ValResult<f64> {
     if let Ok(int) = v.extract::<f64>() {
         Ok(int)
-    } else if let Ok(str) = v.extract::<String>() {
-        match str.parse() {
-            Ok(i) => Ok(i),
-            Err(_) => err_val_error!(py, str, kind = ErrorKind::FloatParsing),
-        }
-    } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
-        let str = match from_utf8(bytes.as_bytes()) {
-            Ok(s) => s.to_string(),
-            Err(_) => return err_val_error!(py, bytes, kind = ErrorKind::FloatParsing),
-        };
+    } else if let Some(str) = _maybe_as_string(py, v, ErrorKind::FloatParsing)? {
         match str.parse() {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(py, str, kind = ErrorKind::FloatParsing),
