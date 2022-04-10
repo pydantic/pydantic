@@ -11,19 +11,19 @@ v = SchemaValidator({
         'age': {
             'type': 'int',
         },
-        # 'friends': {
-        #     'type': 'list',
-        #     'items': {
-        #         'type': 'int',
-        #     },
-        # },
+        'friends': {
+            'type': 'list',
+            'items': {
+                'type': 'int',
+            },
+        },
         'settings': {
             'type': 'dict',
             'keys': {
                 'type': 'str',
             },
             'values': {
-                'type': 'int',
+                'type': 'float',
             }
         }
     },

@@ -12,7 +12,7 @@ mod bool;
 mod dict;
 mod float;
 mod int;
-// mod list;
+mod list;
 mod model;
 mod none;
 mod string;
@@ -149,8 +149,8 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         // floats
         self::float::SimpleFloatValidator,
         self::float::FullFloatValidator,
-        // // list/arrays (recursive)
-        // self::list::ListValidator,
+        // list/arrays (recursive)
+        self::list::ListValidator,
         // dicts/objects (recursive)
         self::dict::DictValidator,
         // None/null

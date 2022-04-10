@@ -2,7 +2,7 @@ use std::str::from_utf8;
 
 use crate::errors::{err_val_error, ok_or_internal, ErrorKind, ValResult};
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyInt, PyString};
+use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
 
 pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
     if let Ok(str) = v.cast_as::<PyString>() {
@@ -31,15 +31,6 @@ pub fn validate_str_py(py: Python, v: &PyAny) -> PyResult<String> {
     match validate_str(py, v) {
         Ok(s) => Ok(s),
         Err(_e) => todo!(),
-    }
-}
-
-pub fn validate_dict<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<&'py PyDict> {
-    if let Ok(dict) = v.cast_as::<PyDict>() {
-        Ok(dict)
-        // TODO we probably want to try and support mapping like things here too
-    } else {
-        err_val_error!(py, v, kind = ErrorKind::DictType)
     }
 }
 
@@ -90,5 +81,23 @@ pub fn validate_float<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<f64> {
         }
     } else {
         err_val_error!(py, v, kind = ErrorKind::FloatType)
+    }
+}
+
+pub fn validate_dict<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<&'py PyDict> {
+    if let Ok(dict) = v.cast_as::<PyDict>() {
+        Ok(dict)
+        // TODO we probably want to try and support mapping like things here too
+    } else {
+        err_val_error!(py, v, kind = ErrorKind::DictType)
+    }
+}
+
+pub fn validate_list<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<&'py PyList> {
+    if let Ok(list) = v.cast_as::<PyList>() {
+        Ok(list)
+        // TODO support sets, tuples, frozen set etc. like in pydantic
+    } else {
+        err_val_error!(py, v, kind = ErrorKind::ListType)
     }
 }
