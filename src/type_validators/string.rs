@@ -2,9 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
 use super::TypeValidator;
-use crate::errors::Location;
+use crate::errors::{new_dict, single_val_error, ErrorKind, Location, ValResult};
 use crate::standalone_validators::validate_str;
-use crate::utils::{dict_get, py_error, RegexPattern};
+use crate::utils::{dict_get, RegexPattern};
 
 #[derive(Debug, Clone)]
 pub struct SimpleStrValidator;
@@ -24,9 +24,9 @@ impl TypeValidator for SimpleStrValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
-        let s = validate_str(obj)?;
-        Ok(s.to_object(py))
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> ValResult<PyObject> {
+        let s = validate_str(py, obj)?;
+        ValResult::Ok(s.to_object(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {
@@ -70,21 +70,38 @@ impl TypeValidator for FullStrValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
-        let mut str = validate_str(obj)?;
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> ValResult<PyObject> {
+        // let mut str = validate_str(obj)?;
+        let mut str = validate_str(py, obj)?;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
-                return py_error!("{} is shorter than {}", str, min_length);
+                // return py_error!("{} is shorter than {}", str, min_length);
+                return single_val_error!(
+                    py,
+                    str,
+                    kind = ErrorKind::StrTooShort,
+                    context = Some(new_dict!(py, "min_length" => min_length))
+                );
             }
         }
         if let Some(max_length) = self.max_length {
             if str.len() > max_length {
-                return py_error!("{} is longer than {}", str, max_length);
+                return single_val_error!(
+                    py,
+                    str,
+                    kind = ErrorKind::StrTooLong,
+                    context = Some(new_dict!(py, "max_length" => max_length))
+                );
             }
         }
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(&str) {
-                return py_error!("{} does not match {}", str, pattern);
+                return single_val_error!(
+                    py,
+                    str,
+                    kind = ErrorKind::StrPatternMismatch,
+                    context = Some(new_dict!(py, "pattern" => pattern.to_string()))
+                );
             }
         }
 
@@ -98,7 +115,7 @@ impl TypeValidator for FullStrValidator {
             str = str.to_uppercase()
         }
         let py_str = PyString::new(py, &str);
-        Ok(py_str.to_object(py))
+        ValResult::Ok(py_str.to_object(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {
