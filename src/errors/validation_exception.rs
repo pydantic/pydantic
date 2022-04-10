@@ -1,9 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
-use pyo3::prelude::*;
-// use pyo3::create_exception;
 use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 
 use crate::errors::ValLineError;
 use pyo3::PyErrArguments;

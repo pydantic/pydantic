@@ -19,3 +19,4 @@ docs/_build/
 /site/
 .rustfmt.toml
 /sandbox/
+/.editorconfig
