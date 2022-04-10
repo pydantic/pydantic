@@ -4,7 +4,7 @@ use pyo3::types::{IntoPyDict, PyAny, PyDict};
 use super::{ValError, ValidationError, Validator};
 use crate::errors::ValResult;
 use crate::utils::{dict_get_required, py_error};
-use crate::validators::build_type_validator;
+use crate::validators::build_validator;
 
 #[derive(Debug, Clone)]
 pub struct PreDecoratorValidator {
@@ -19,7 +19,7 @@ impl Validator for PreDecoratorValidator {
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
-            validator: build_type_validator(dict_get_required!(dict, "field", &PyDict)?)?,
+            validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
             func: get_function(dict, "pre_decorator")?,
         })
     }
@@ -52,7 +52,7 @@ impl Validator for PostDecoratorValidator {
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
-            validator: build_type_validator(dict_get_required!(dict, "field", &PyDict)?)?,
+            validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
             func: get_function(dict, "post_decorator")?,
         })
     }
@@ -84,14 +84,14 @@ impl Validator for WrapDecoratorValidator {
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
-            validator: build_type_validator(dict_get_required!(dict, "field", &PyDict)?)?,
+            validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
             func: get_function(dict, "wrap_decorator")?,
         })
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
         let validator_kwarg = ValidatorCallable {
-            type_validator: self.validator.clone(),
+            validator: self.validator.clone(),
         };
         let kwargs = [("validator", validator_kwarg.into_py(py))];
         match self.func.call(py, (obj,), Some(kwargs.into_py_dict(py))) {
@@ -109,13 +109,13 @@ impl Validator for WrapDecoratorValidator {
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct ValidatorCallable {
-    type_validator: Box<dyn Validator>,
+    validator: Box<dyn Validator>,
 }
 
 #[pymethods]
 impl ValidatorCallable {
     fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
-        match self.type_validator.validate(py, arg) {
+        match self.validator.validate(py, arg) {
             Ok(obj) => Ok(obj),
             Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, "Model".to_string()))),
             Err(ValError::InternalErr(err)) => Err(err),
@@ -123,7 +123,7 @@ impl ValidatorCallable {
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(format!("ValidatorCallable({:?})", self.type_validator))
+        Ok(format!("ValidatorCallable({:?})", self.validator))
     }
 }
 

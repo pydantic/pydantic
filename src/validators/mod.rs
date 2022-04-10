@@ -21,29 +21,8 @@ mod string;
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    type_validator: Box<dyn Validator>,
+    validator: Box<dyn Validator>,
     model_name: Option<String>,
-}
-
-impl Validator for SchemaValidator {
-    fn is_match(_type: &str, _dict: &PyDict) -> bool {
-        false
-    }
-
-    fn build(dict: &PyDict) -> PyResult<Self> {
-        Ok(Self {
-            type_validator: build_type_validator(dict)?,
-            model_name: dict_get!(dict, "model_name", String),
-        })
-    }
-
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        self.type_validator.validate(py, obj)
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
 }
 
 #[pymethods]
@@ -51,11 +30,14 @@ impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, obj: PyObject) -> PyResult<Self> {
         let dict: &PyDict = obj.cast_as(py)?;
-        Self::build(dict)
+        Ok(Self {
+            validator: build_validator(dict)?,
+            model_name: dict_get!(dict, "model_name", String),
+        })
     }
 
     fn run(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
-        match self.validate(py, obj) {
+        match self.validator.validate(py, obj) {
             Ok(obj) => Ok(obj),
             Err(ValError::LineErrors(line_errors)) => {
                 let model_name = match self.model_name {
@@ -71,13 +53,13 @@ impl SchemaValidator {
 
     fn __repr__(&self) -> String {
         format!(
-            "SchemaValidator(type_validator={:?}, model_name={:?})",
-            self.type_validator, self.model_name
+            "SchemaValidator(validator={:?}, model_name={:?})",
+            self.validator, self.model_name
         )
     }
 }
 
-pub fn build_type_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
+pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
     let type_: String = dict_get_required!(dict, "type", String)?;
 
     // if_else is used in validator_selection
