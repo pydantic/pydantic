@@ -16,10 +16,10 @@ pub(crate) use dict_get;
 
 macro_rules! py_error {
     ($msg:expr) => {
-        py_error!(pyo3::exceptions::PyValueError; $msg)
+        py_error!(crate::SchemaError; $msg)
     };
     ($msg:expr, $( $msg_args:expr ),+ ) => {
-        py_error!(pyo3::exceptions::PyValueError; $msg, $( $msg_args ),+)
+        py_error!(crate::SchemaError; $msg, $( $msg_args ),+)
     };
 
     ($error_type:ty; $msg:expr) => {
@@ -31,6 +31,13 @@ macro_rules! py_error {
     };
 }
 pub(crate) use py_error;
+
+macro_rules! dict_create {
+    ($py:ident, $($k:expr => $v:expr),*) => {{
+        pyo3::types::IntoPyDict::into_py_dict([$(($k, $v),)*], $py).into()
+    }};
+}
+pub(crate) use dict_create;
 
 #[pyclass]
 #[derive(Debug, Clone)]
