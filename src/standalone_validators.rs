@@ -46,7 +46,6 @@ pub fn validate_dict<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<&'py PyDi
 pub fn validate_int<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<i64> {
     if let Ok(int) = v.extract::<i64>() {
         Ok(int)
-        // TODO we probably want to try and support mapping like things here too
     } else if let Ok(str) = v.extract::<String>() {
         match str.parse() {
             Ok(i) => Ok(i),
@@ -61,7 +60,35 @@ pub fn validate_int<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<i64> {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(py, str, kind = ErrorKind::IntParsing),
         }
+    } else if let Ok(float) = validate_float(py, v) {
+        if float % 1.0 == 0.0 {
+            Ok(float as i64)
+        } else {
+            err_val_error!(py, float, kind = ErrorKind::IntFromFloat)
+        }
     } else {
         err_val_error!(py, v, kind = ErrorKind::IntType)
+    }
+}
+
+pub fn validate_float<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<f64> {
+    if let Ok(int) = v.extract::<f64>() {
+        Ok(int)
+    } else if let Ok(str) = v.extract::<String>() {
+        match str.parse() {
+            Ok(i) => Ok(i),
+            Err(_) => err_val_error!(py, str, kind = ErrorKind::FloatParsing),
+        }
+    } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
+        let str = match from_utf8(bytes.as_bytes()) {
+            Ok(s) => s.to_string(),
+            Err(_) => return err_val_error!(py, bytes, kind = ErrorKind::FloatParsing),
+        };
+        match str.parse() {
+            Ok(i) => Ok(i),
+            Err(_) => err_val_error!(py, str, kind = ErrorKind::FloatParsing),
+        }
+    } else {
+        err_val_error!(py, v, kind = ErrorKind::FloatType)
     }
 }

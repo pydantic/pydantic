@@ -10,7 +10,7 @@ use crate::utils::{dict_get, py_error};
 
 mod bool;
 mod dict;
-// mod float;
+mod float;
 mod int;
 // mod list;
 mod model;
@@ -146,9 +146,9 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         self::int::FullIntValidator,
         // boolean
         self::bool::BoolValidator,
-        // // floats
-        // self::float::SimpleFloatValidator,
-        // self::float::FullFloatValidator,
+        // floats
+        self::float::SimpleFloatValidator,
+        self::float::FullFloatValidator,
         // // list/arrays (recursive)
         // self::list::ListValidator,
         // dicts/objects (recursive)

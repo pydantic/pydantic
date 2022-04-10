@@ -57,7 +57,7 @@ impl TypeValidator for FullIntValidator {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let int: i64 = validate_int(py, obj)?;
+        let int = validate_int(py, obj)?;
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return err_val_error!(
