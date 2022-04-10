@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
 use super::TypeValidator;
-use crate::errors::{single_val_error, ErrorKind, Location, ValResult};
+use crate::errors::{val_err, ErrorKind, Location, ValResult};
 use crate::standalone_validators::validate_str;
 use crate::utils::{dict_create, dict_get, RegexPattern};
 
@@ -76,7 +76,7 @@ impl TypeValidator for FullStrValidator {
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
-                return single_val_error!(
+                return val_err!(
                     py,
                     str,
                     kind = ErrorKind::StrTooShort,
@@ -86,7 +86,7 @@ impl TypeValidator for FullStrValidator {
         }
         if let Some(max_length) = self.max_length {
             if str.len() > max_length {
-                return single_val_error!(
+                return val_err!(
                     py,
                     str,
                     kind = ErrorKind::StrTooLong,
@@ -96,7 +96,7 @@ impl TypeValidator for FullStrValidator {
         }
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(&str) {
-                return single_val_error!(
+                return val_err!(
                     py,
                     str,
                     kind = ErrorKind::StrPatternMismatch,
