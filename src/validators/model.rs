@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{SchemaValidator, Validator};
+use super::{build_validator, Validator};
 use crate::errors::{ok_or_internal, val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::dict_get;
@@ -11,7 +11,7 @@ struct ModelField {
     name: String,
     // alias: Option<String>,
     required: bool,
-    validator: Box<SchemaValidator>,
+    validator: Box<dyn Validator>,
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +41,7 @@ impl Validator for ModelValidator {
                 name: key.to_string(),
                 // alias: dict_get!(field_dict, "alias", String),
                 required: dict_get!(field_dict, "required", bool).unwrap_or(false),
-                validator: Box::new(SchemaValidator::build(field_dict)?),
+                validator: build_validator(field_dict)?,
             });
         }
         Ok(Self { fields })
