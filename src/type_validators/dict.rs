@@ -1,9 +1,11 @@
 use pyo3::prelude::*;
-use pyo3::types::{IntoPyDict, PyDict};
+use pyo3::types::PyDict;
 
 use super::{SchemaValidator, TypeValidator};
-use crate::errors::{ErrorKind, LocItem, Location, ValLineError, ValResult, ValidationError};
-use crate::utils::{dict_get, py_error};
+use crate::errors::{
+    ok_or_internal, single_val_error, ErrorKind, LocItem, Location, ValError, ValLineError, ValResult,
+};
+use crate::utils::{dict_create, dict_get};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {
@@ -33,29 +35,39 @@ impl TypeValidator for DictValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, loc: &Location) -> PyResult<ValResult> {
-        let dict: &PyDict = obj.cast_as()?;
+    fn validate(&self, py: Python, obj: &PyAny, loc: &Location) -> ValResult<PyObject> {
+        let dict: &PyDict = match obj.cast_as() {
+            Ok(d) => d,
+            Err(_) => {
+                // need to make this a better error
+                return single_val_error!(py, obj);
+            }
+        };
         if let Some(min_length) = self.min_items {
             if dict.len() < min_length {
-                return Ok(Err(ValidationError::single(ValLineError {
-                    kind: ErrorKind::DictTooShort,
-                    value: Some(dict.to_object(py)),
-                    context: Some([("min_length", min_length)].into_py_dict(py).to_object(py)),
-                    ..Default::default()
-                })));
-                return py_error!("dict must have at least {} items", min_length);
+                return single_val_error!(
+                    py,
+                    dict,
+                    kind = ErrorKind::DictTooShort,
+                    context = Some(dict_create!(py, "min_length" => min_length))
+                );
             }
         }
         if let Some(max_length) = self.max_items {
             if dict.len() > max_length {
-                return py_error!("dict must have at most {} items", max_length);
+                return single_val_error!(
+                    py,
+                    dict,
+                    kind = ErrorKind::DictTooLong,
+                    context = Some(dict_create!(py, "max_length" => max_length))
+                );
             }
         }
         let output = PyDict::new(py);
-        let mut errors = Vec::new();
+        let mut errors: Vec<ValLineError> = Vec::new();
 
         for (key, value) in dict.iter() {
-            let get_key_loc = || -> PyResult<LocItem> {
+            let get_key_loc = || -> ValResult<LocItem> {
                 if let Ok(key_str) = key.extract::<String>() {
                     return Ok(LocItem::Key(key_str));
                 }
@@ -63,7 +75,8 @@ impl TypeValidator for DictValidator {
                     return Ok(LocItem::Index(key_int));
                 }
                 // best effort is to use repr
-                let repr: String = key.repr()?.extract()?;
+                let repr_result = ok_or_internal!(key.repr())?;
+                let repr: String = ok_or_internal!(repr_result.extract())?;
                 Ok(LocItem::Key(repr))
             };
             // just call this for now, should be lazy in future
@@ -78,8 +91,12 @@ impl TypeValidator for DictValidator {
                     match validator.validate(py, key, &field_loc) {
                         Ok(key) => Some(key),
                         Err(err) => {
-                            errors.push(err);
-                            None
+                            if let ValError::LineErrors(errs) = err {
+                                errors.extend(errs);
+                                None
+                            } else {
+                                return Err(err);
+                            }
                         }
                     }
                 }
@@ -92,22 +109,26 @@ impl TypeValidator for DictValidator {
                     match validator.validate(py, value, &field_loc) {
                         Ok(value) => Some(value),
                         Err(err) => {
-                            errors.push(err);
-                            None
+                            if let ValError::LineErrors(errs) = err {
+                                errors.extend(errs);
+                                None
+                            } else {
+                                return Err(err);
+                            }
                         }
                     }
                 }
                 None => Some(value.to_object(py)),
             };
             if let (Some(key), Some(value)) = (output_key, output_value) {
-                output.set_item(key, value)?;
+                ok_or_internal!(output.set_item(key, value))?;
             }
         }
 
         if errors.is_empty() {
             Ok(output.to_object(py))
         } else {
-            py_error!("errors: {:?}", errors)
+            Err(ValError::LineErrors(errors))
         }
     }
 
