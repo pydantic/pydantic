@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict};
 
 use super::TypeValidator;
-use crate::errors::{ErrorKind, Location, ValLineError, ValResult};
+use crate::errors::{single_val_error, ErrorKind, Location, ValResult};
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
@@ -16,16 +16,10 @@ impl TypeValidator for BoolValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> ValResult {
+    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> ValResult<PyObject> {
         let obj: &PyBool = match obj.extract() {
             Ok(obj) => obj,
-            Err(_e) => {
-                return ValResult::VErr(vec![ValLineError {
-                    kind: ErrorKind::Bool,
-                    value: Some(obj.to_object(py)),
-                    ..Default::default()
-                }])
-            }
+            Err(_e) => return single_val_error!(py, obj, kind = ErrorKind::Bool),
         };
         ValResult::Ok(obj.to_object(py))
     }

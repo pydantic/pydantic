@@ -1,6 +1,8 @@
-use pyo3::create_exception;
-use std::fmt::Debug;
+use std::error::Error;
+use std::fmt;
+use std::result::Result as StdResult;
 
+use pyo3::create_exception;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use strum::{Display, EnumMessage};
@@ -20,6 +22,14 @@ pub enum ErrorKind {
     NoneRequired,
     #[strum(message = "Value is not a valid boolean")]
     Bool,
+    #[strum(message = "Value is not a valid string")]
+    Str,
+    #[strum(message = "String must have at least {min_length} characters")]
+    StrTooShort,
+    #[strum(message = "String must have at most {max_length} characters")]
+    StrTooLong,
+    #[strum(message = "String does not match pattern '{pattern}'")]
+    StrPatternMismatch,
     #[strum(message = "Dictionary must have at least {min_length} items")]
     DictTooShort,
     #[strum(message = "Dictionary must have at most {max_length} items")]
@@ -31,6 +41,14 @@ impl Default for ErrorKind {
         ErrorKind::ValueError
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum LocItem {
+    Key(String),
+    Index(usize),
+}
+
+pub type Location = Vec<LocItem>;
 
 #[pyclass]
 #[derive(Debug, Default, Clone)]
@@ -96,19 +114,58 @@ impl ValLineError {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum LocItem {
-    Key(String),
-    Index(usize),
+macro_rules! single_val_error {
+    ($py:ident, $value:expr, $($key:ident = $val:expr),*) => {
+        Err(crate::errors::ValError::LineErrors(vec![crate::errors::ValLineError {
+            value: Some($value.to_object($py)),
+            $(
+                $key: $val,
+            )*
+            ..Default::default()
+        }]))
+    }
+}
+pub(crate) use single_val_error;
+
+macro_rules! ok_or_internal {
+    ($value:expr) => {
+        match $value {
+            Ok(v) => Ok(v),
+            Err(e) => Err(crate::errors::ValError::InternalErr(e)),
+        }
+    };
+}
+pub(crate) use ok_or_internal;
+
+macro_rules! new_dict {
+    ($py:ident, $($k:expr => $v:expr),*) => {{
+        pyo3::types::IntoPyDict::into_py_dict([$(($k, $v),)*], $py).into()
+    }};
+}
+pub(crate) use new_dict;
+
+#[derive(Debug)]
+pub enum ValError {
+    LineErrors(Vec<ValLineError>),
+    InternalErr(PyErr),
 }
 
-pub type Location = Vec<LocItem>;
+impl fmt::Display for ValError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ValError ...")
+    }
+}
+
+impl Error for ValError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            ValError::LineErrors(_errors) => None,
+            ValError::InternalErr(err) => Some(err),
+        }
+    }
+}
+
+pub type ValResult<T> = StdResult<T, ValError>;
 
 create_exception!(_pydantic_core, ValidationError, PyValueError);
 // TODO impl ValidationError methods
-
-pub enum ValResult {
-    Ok(PyObject),
-    VErr(Vec<ValLineError>),
-    IErr(PyErr),
-}
