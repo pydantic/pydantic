@@ -5,11 +5,11 @@ use lazy_static::lazy_static;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
 
-use crate::errors::{err_val_error, ok_or_internal, ErrorKind, ValResult};
+use crate::errors::{as_internal, err_val_error, ErrorKind, ValResult};
 
 pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
-    if let Ok(str) = v.cast_as::<PyString>() {
-        ok_or_internal!(str.extract())
+    if let Ok(py_str) = v.cast_as::<PyString>() {
+        py_str.extract().map_err(as_internal)
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
         let str = match from_utf8(bytes.as_bytes()) {
             Ok(s) => s.to_string(),
@@ -18,7 +18,7 @@ pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
         Ok(str)
     } else if let Ok(int) = v.cast_as::<PyInt>() {
         // TODO remove unwrap
-        let int = ok_or_internal!(i64::extract(int))?;
+        let int = i64::extract(int).map_err(as_internal)?;
         Ok(int.to_string())
     } else if let Ok(float) = f64::extract(v) {
         // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble

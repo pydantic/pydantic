@@ -43,6 +43,15 @@ impl Error for ValError {
     }
 }
 
+pub fn as_internal(err: PyErr) -> ValError {
+    ValError::InternalErr(err)
+}
+
+/// Utility for concisely creating a `ValLineError`
+/// can either take just `py` and a `value` (the given value) in which case kind `ErrorKind::ValueError` is used as kind
+/// e.g. `val_error!(py, "the value provided")`
+/// or, `py`, `value` and a mapping of other attributes for `ValLineError`
+/// e.g. `val_error!(py, "the value provided", kind=ErrorKind::ExtraForbidden, message="the message")`
 macro_rules! val_error {
     ($py:ident, $value:expr) => {
         crate::errors::ValLineError {
@@ -63,6 +72,8 @@ macro_rules! val_error {
 }
 pub(crate) use val_error;
 
+/// Utility for concisely creating a `Err(ValError::LineErrors([?]))` containing a single `ValLineError`
+/// Usage matches `val_error`
 macro_rules! err_val_error {
     ($py:ident, $value:expr) => {
         Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_error!($py, $value)]))
@@ -73,13 +84,3 @@ macro_rules! err_val_error {
     };
 }
 pub(crate) use err_val_error;
-
-macro_rules! ok_or_internal {
-    ($value:expr) => {
-        match $value {
-            Ok(v) => Ok(v),
-            Err(e) => Err(crate::errors::ValError::InternalErr(e)),
-        }
-    };
-}
-pub(crate) use ok_or_internal;
