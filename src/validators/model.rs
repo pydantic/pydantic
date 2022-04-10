@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{build_validator, Validator};
-use crate::errors::{ok_or_internal, val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{as_internal, val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::dict_get;
 
@@ -55,7 +55,7 @@ impl Validator for ModelValidator {
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
                 match field.validator.validate(py, value) {
-                    Ok(value) => ok_or_internal!(output.set_item(field.name.clone(), value))?,
+                    Ok(value) => output.set_item(field.name.clone(), value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![LocItem::S(field.name.clone())];
                         for err in line_errors {
