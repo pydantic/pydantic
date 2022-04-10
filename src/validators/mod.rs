@@ -7,9 +7,9 @@ use crate::errors::{ValError, ValResult, ValidationError};
 use crate::utils::{dict_get_required, py_error};
 
 mod bool;
-mod decorator;
 mod dict;
 mod float;
+mod function;
 mod int;
 mod list;
 mod model;
@@ -114,9 +114,9 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
         // None/null
         self::none::NoneValidator,
         // decorators
-        self::decorator::PreDecoratorValidator,
-        self::decorator::PostDecoratorValidator,
-        self::decorator::WrapDecoratorValidator,
+        self::function::PreDecoratorValidator,
+        self::function::PostDecoratorValidator,
+        self::function::WrapDecoratorValidator,
     )
 }
 
