@@ -53,7 +53,7 @@ impl TypeValidator for ModelValidator {
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
                 let mut field_loc = loc.clone();
-                field_loc.push(LocItem::Key(field.name.clone()));
+                field_loc.push(LocItem::K(field.name.clone()));
                 match field.validator.validate(py, value, &field_loc) {
                     Ok(value) => output.set_item(field.name.clone(), value)?,
                     Err(err) => {
