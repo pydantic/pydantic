@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{SchemaValidator, TypeValidator};
+use super::{SchemaValidator, Validator};
 use crate::errors::{err_val_error, ok_or_internal, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::{dict_create, dict_get};
@@ -14,7 +14,7 @@ pub struct DictValidator {
     max_items: Option<usize>,
 }
 
-impl TypeValidator for DictValidator {
+impl Validator for DictValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "dict"
     }
@@ -75,7 +75,7 @@ impl TypeValidator for DictValidator {
         }
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }

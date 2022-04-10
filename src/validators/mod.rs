@@ -21,11 +21,11 @@ mod string;
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    type_validator: Box<dyn TypeValidator>,
+    type_validator: Box<dyn Validator>,
     model_name: Option<String>,
 }
 
-impl TypeValidator for SchemaValidator {
+impl Validator for SchemaValidator {
     fn is_match(_type: &str, _dict: &PyDict) -> bool {
         false
     }
@@ -41,7 +41,7 @@ impl TypeValidator for SchemaValidator {
         self.type_validator.validate(py, obj)
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
@@ -77,7 +77,7 @@ impl SchemaValidator {
     }
 }
 
-pub fn build_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
+pub fn build_type_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
     let type_: String = dict_get_required!(dict, "type", String)?;
 
     // if_else is used in validator_selection
@@ -144,7 +144,7 @@ pub fn build_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
     )
 }
 
-pub trait TypeValidator: Send + Debug {
+pub trait Validator: Send + Debug {
     fn is_match(type_: &str, dict: &PyDict) -> bool
     where
         Self: Sized;
@@ -155,10 +155,10 @@ pub trait TypeValidator: Send + Debug {
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject>;
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator>;
+    fn clone_dyn(&self) -> Box<dyn Validator>;
 }
 
-impl Clone for Box<dyn TypeValidator> {
+impl Clone for Box<dyn Validator> {
     fn clone(&self) -> Self {
         self.clone_dyn()
     }

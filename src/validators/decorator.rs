@@ -1,18 +1,18 @@
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyDict};
 
-use super::{TypeValidator, ValError, ValidationError};
+use super::{ValError, ValidationError, Validator};
 use crate::errors::ValResult;
-use crate::type_validators::build_type_validator;
 use crate::utils::{dict_get_required, py_error};
+use crate::validators::build_type_validator;
 
 #[derive(Debug, Clone)]
 pub struct PreDecoratorValidator {
-    validator: Box<dyn TypeValidator>,
+    validator: Box<dyn Validator>,
     func: PyObject,
 }
 
-impl TypeValidator for PreDecoratorValidator {
+impl Validator for PreDecoratorValidator {
     fn is_match(type_: &str, dict: &PyDict) -> bool {
         type_ == "decorator" && dict.get_item("pre_decorator").is_some()
     }
@@ -34,18 +34,18 @@ impl TypeValidator for PreDecoratorValidator {
         self.validator.validate(py, v)
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct PostDecoratorValidator {
-    validator: Box<dyn TypeValidator>,
+    validator: Box<dyn Validator>,
     func: PyObject,
 }
 
-impl TypeValidator for PostDecoratorValidator {
+impl Validator for PostDecoratorValidator {
     fn is_match(type_: &str, dict: &PyDict) -> bool {
         type_ == "decorator" && dict.get_item("post_decorator").is_some()
     }
@@ -66,18 +66,18 @@ impl TypeValidator for PostDecoratorValidator {
         }
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct WrapDecoratorValidator {
-    validator: Box<dyn TypeValidator>,
+    validator: Box<dyn Validator>,
     func: PyObject,
 }
 
-impl TypeValidator for WrapDecoratorValidator {
+impl Validator for WrapDecoratorValidator {
     fn is_match(type_: &str, dict: &PyDict) -> bool {
         type_ == "decorator" && dict.get_item("wrap_decorator").is_some()
     }
@@ -101,7 +101,7 @@ impl TypeValidator for WrapDecoratorValidator {
         }
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
@@ -109,7 +109,7 @@ impl TypeValidator for WrapDecoratorValidator {
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct ValidatorCallable {
-    type_validator: Box<dyn TypeValidator>,
+    type_validator: Box<dyn Validator>,
 }
 
 #[pymethods]
