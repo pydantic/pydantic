@@ -10,6 +10,7 @@ mod validation_exception;
 
 pub use self::kinds::ErrorKind;
 pub use self::line_error::{LocItem, Location, ValLineError};
+use self::validation_exception::display_errors;
 pub use self::validation_exception::ValidationError;
 
 pub type ValResult<T> = StdResult<T, ValError>;
@@ -23,15 +24,8 @@ pub enum ValError {
 impl fmt::Display for ValError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ValError::LineErrors(errors) => {
-                let count = errors.len();
-                let plural = if count == 1 { "" } else { "s" };
-                let loc = errors
-                    .iter()
-                    .map(|i| i.to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n  ");
-                write!(f, "{} validation error{}\n  {}", count, plural, loc)
+            ValError::LineErrors(line_errors) => {
+                write!(f, "{}", display_errors(line_errors, "Model"))
             }
             ValError::InternalErr(err) => {
                 write!(f, "Internal error: {}", err)
