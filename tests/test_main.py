@@ -4,11 +4,10 @@ from pydantic_core import SchemaValidator, __version__
 
 
 def test_main():
-    v = SchemaValidator({'type': 'str'})
-    debug(repr(v))
-    assert repr(v) == 'SchemaValidator(type_validator=SimpleStrValidator, external_validator=None)'
+    v = SchemaValidator({'type': 'bool'})
+    assert repr(v) == 'SchemaValidator(type_validator=BoolValidator, external_validator=None)'
 
-    assert v.validate('foo') == 'foo'
+    assert v.run(True) is True
 
 
 def test_version():

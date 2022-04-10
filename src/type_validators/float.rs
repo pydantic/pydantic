@@ -2,7 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::TypeValidator;
-use crate::utils::{dict_get, py_error};
+use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::standalone_validators::validate_float;
+use crate::utils::{dict_create, dict_get};
 
 #[derive(Debug, Clone)]
 pub struct SimpleFloatValidator;
@@ -21,9 +23,8 @@ impl TypeValidator for SimpleFloatValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let obj = obj.extract(py)?;
-        Ok(f64::extract(obj)?.to_object(py))
+    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
+        Ok(validate_float(py, obj)?.to_object(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {
@@ -55,34 +56,59 @@ impl TypeValidator for FullFloatValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let value: f64 = obj.extract(py)?;
+    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
+        let float = validate_float(py, obj)?;
         if let Some(multiple_of) = self.multiple_of {
-            if value % multiple_of != 0.0 {
-                return py_error!("Value is not multiple of the specified value");
+            if float % multiple_of != 0.0 {
+                return err_val_error!(
+                    py,
+                    float,
+                    kind = ErrorKind::FloatMultiple,
+                    context = Some(dict_create!(py, "multiple_of" => multiple_of))
+                );
             }
         }
         if let Some(le) = self.le {
-            if value > le {
-                return py_error!("Value is greater than the specified value");
+            if float > le {
+                return err_val_error!(
+                    py,
+                    float,
+                    kind = ErrorKind::FloatLessThanEqual,
+                    context = Some(dict_create!(py, "le" => le))
+                );
             }
         }
         if let Some(lt) = self.lt {
-            if value >= lt {
-                return py_error!("Value is greater than or equal to the specified value");
+            if float >= lt {
+                return err_val_error!(
+                    py,
+                    float,
+                    kind = ErrorKind::FloatLessThan,
+                    context = Some(dict_create!(py, "lt" => lt))
+                );
             }
         }
         if let Some(ge) = self.ge {
-            if value < ge {
-                return py_error!("Value is less than the specified value");
+            if float < ge {
+                return err_val_error!(
+                    py,
+                    float,
+                    kind = ErrorKind::FloatGreaterThanEqual,
+                    context = Some(dict_create!(py, "ge" => ge))
+                );
             }
         }
         if let Some(gt) = self.gt {
-            if value <= gt {
-                return py_error!("Value is less than or equal to the specified value");
+            if float <= gt {
+                return err_val_error!(
+                    py,
+                    float,
+                    kind = ErrorKind::FloatGreaterThan,
+                    context = Some(dict_create!(py, "gt" => gt))
+                );
             }
         }
-        Ok(value.to_object(py))
+        Ok(float.to_object(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {
