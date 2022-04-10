@@ -15,6 +15,11 @@ repos:
     entry: make lint-python
     types: [python]
     language: system
+  - id: build
+    name: Build
+    entry: make build-dev
+    types: [rust]
+    language: system
   - id: lint-rust
     name: Lint Rust
     entry: make lint-rust

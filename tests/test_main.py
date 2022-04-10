@@ -7,7 +7,7 @@ def test_main():
     v = SchemaValidator({'type': 'bool'})
     assert repr(v) == 'SchemaValidator(type_validator=BoolValidator, external_validator=None)'
 
-    assert v(True) is True
+    assert v.run(True) is True
 
 
 def test_version():
