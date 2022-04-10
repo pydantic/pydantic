@@ -1,9 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::ToPyObject;
 
 use super::{SchemaValidator, TypeValidator};
-use crate::utils::{dict_get, py_error};
+use crate::errors::{ok_or_internal, val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
+use crate::standalone_validators::validate_dict;
+use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
 struct ModelField {
@@ -46,27 +47,38 @@ impl TypeValidator for ModelValidator {
         Ok(Self { fields })
     }
 
-    fn validate(&self, py: Python, obj: PyObject) -> PyResult<PyObject> {
-        let obj_dict: &PyDict = obj.cast_as(py)?;
+    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
+        let obj_dict: &PyDict = validate_dict(py, obj)?;
         let output = PyDict::new(py);
-        let mut errors = Vec::new();
+        let mut errors: Vec<ValLineError> = Vec::new();
+
         for field in &self.fields {
             if let Some(value) = obj_dict.get_item(field.name.clone()) {
-                match field.validator.validate(py, value.to_object(py)) {
-                    Ok(value) => output.set_item(field.name.clone(), value)?,
-                    Err(err) => {
-                        errors.push(format!("Field {} error: {:?}", field.name, err));
-                        continue;
+                match field.validator.validate(py, value) {
+                    Ok(value) => ok_or_internal!(output.set_item(field.name.clone(), value))?,
+                    Err(ValError::LineErrors(line_errors)) => {
+                        let loc = vec![LocItem::S(field.name.clone())];
+                        for err in line_errors {
+                            errors.push(err.with_location(&loc));
+                        }
                     }
+                    Err(err) => return Err(err),
                 }
             } else if field.required {
-                errors.push(format!("Missing field: {}", field.name));
+                errors.push(val_error!(
+                    py,
+                    obj_dict,
+                    kind = ErrorKind::Missing,
+                    location = vec![LocItem::S(field.name.clone())]
+                ));
             }
         }
+
         if errors.is_empty() {
             Ok(output.into())
         } else {
-            py_error!("errors: {:?}", errors)
+            println!("model got errors: {:?}", errors);
+            Err(ValError::LineErrors(errors))
         }
     }
 
