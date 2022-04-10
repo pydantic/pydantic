@@ -1,6 +1,6 @@
 use std::str::from_utf8;
 
-use crate::errors::{ok_or_internal, single_val_error, ErrorKind, ValResult};
+use crate::errors::{ok_or_internal, val_err, ErrorKind, ValResult};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyInt, PyString};
 
@@ -11,7 +11,7 @@ pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
         let str = match from_utf8(bytes.as_bytes()) {
             Ok(s) => s.to_string(),
             // TODO better error here
-            Err(_) => return single_val_error!(py, v, kind = ErrorKind::Str),
+            Err(_) => return val_err!(py, v, kind = ErrorKind::Str),
         };
         Ok(str)
     } else if let Ok(int) = v.cast_as::<PyInt>() {
@@ -23,7 +23,7 @@ pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
         Ok(float.to_string())
     } else {
         // let name = v.get_type().name().unwrap_or("<unknown type>");
-        single_val_error!(py, v, kind = ErrorKind::Str)
+        val_err!(py, v, kind = ErrorKind::Str)
     }
 }
 

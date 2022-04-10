@@ -2,9 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{SchemaValidator, TypeValidator};
-use crate::errors::{
-    ok_or_internal, single_val_error, ErrorKind, LocItem, Location, ValError, ValLineError, ValResult,
-};
+use crate::errors::{ok_or_internal, val_err, ErrorKind, LocItem, Location, ValError, ValLineError, ValResult};
 use crate::utils::{dict_create, dict_get};
 
 #[derive(Debug, Clone)]
@@ -40,12 +38,12 @@ impl TypeValidator for DictValidator {
             Ok(d) => d,
             Err(_) => {
                 // need to make this a better error
-                return single_val_error!(py, obj);
+                return val_err!(py, obj);
             }
         };
         if let Some(min_length) = self.min_items {
             if dict.len() < min_length {
-                return single_val_error!(
+                return val_err!(
                     py,
                     dict,
                     kind = ErrorKind::DictTooShort,
@@ -55,7 +53,7 @@ impl TypeValidator for DictValidator {
         }
         if let Some(max_length) = self.max_items {
             if dict.len() > max_length {
-                return single_val_error!(
+                return val_err!(
                     py,
                     dict,
                     kind = ErrorKind::DictTooLong,
