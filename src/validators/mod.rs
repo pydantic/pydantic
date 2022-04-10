@@ -16,8 +16,6 @@ mod model;
 mod none;
 mod string;
 
-// TODO date, datetime, set, tuple, bytes, custom types, dict, union, literal
-
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {

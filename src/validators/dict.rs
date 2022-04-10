@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{build_validator, Validator};
-use crate::errors::{err_val_error, ok_or_internal, ErrorKind, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{as_internal, err_val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::{dict_create, dict_get};
 
@@ -64,7 +64,7 @@ impl Validator for DictValidator {
             let output_value: Option<PyObject> =
                 apply_validator(py, &self.value_validator, &mut errors, value, key, false)?;
             if let (Some(key), Some(value)) = (output_key, output_value) {
-                ok_or_internal!(output.set_item(key, value))?;
+                output.set_item(key, value).map_err(as_internal)?;
             }
         }
 
@@ -116,7 +116,7 @@ fn get_loc(key: &PyAny) -> ValResult<LocItem> {
         return Ok(LocItem::I(key_int));
     }
     // best effort is to use repr
-    let repr_result = ok_or_internal!(key.repr())?;
-    let repr: String = ok_or_internal!(repr_result.extract())?;
+    let repr_result = key.repr().map_err(as_internal)?;
+    let repr: String = repr_result.extract().map_err(as_internal)?;
     Ok(LocItem::S(repr))
 }
