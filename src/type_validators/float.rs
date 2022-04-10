@@ -22,7 +22,7 @@ impl TypeValidator for SimpleFloatValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
+    fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
         Ok(f64::extract(obj)?.to_object(py))
     }
 
@@ -55,7 +55,7 @@ impl TypeValidator for FullFloatValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> PyResult<PyObject> {
+    fn validate(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
         let value: f64 = obj.extract()?;
         if let Some(multiple_of) = self.multiple_of {
             if value % multiple_of != 0.0 {

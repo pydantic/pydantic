@@ -7,16 +7,17 @@ use super::kinds::ErrorKind;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
+/// Note: ints are also used for keys of `Dict[int, ...]`
 #[derive(Debug, Clone)]
 pub enum LocItem {
-    K(String),
+    S(String),
     I(usize),
 }
 
 impl fmt::Display for LocItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            LocItem::K(s) => s.to_string(),
+            LocItem::S(s) => s.to_string(),
             LocItem::I(i) => i.to_string(),
         };
         write!(f, "{}", s)
@@ -57,6 +58,20 @@ impl fmt::Display for ValLineError {
     }
 }
 
+impl ValLineError {
+    // TODO in theory we could mutate the error since it won't be used again, but I
+    // couldn't get mut to work on the result err.
+    pub fn with_location(&self, location: &Location) -> ValLineError {
+        let mut new = self.clone();
+        if self.location.is_empty() {
+            new.location = location.clone();
+        } else {
+            new.location = [location.clone(), new.location].concat();
+        }
+        new
+    }
+}
+
 #[pymethods]
 impl ValLineError {
     #[getter]
@@ -69,7 +84,7 @@ impl ValLineError {
         let mut loc: Vec<PyObject> = Vec::with_capacity(self.location.len());
         for location in &self.location {
             let item: PyObject = match location {
-                LocItem::K(key) => key.to_object(py),
+                LocItem::S(key) => key.to_object(py),
                 LocItem::I(index) => index.to_object(py),
             };
             loc.push(item);
@@ -102,6 +117,8 @@ impl ValLineError {
 
     #[getter]
     pub fn value(&self, py: Python) -> Option<PyObject> {
+        // could use something like this to get the value type
+        // let name = v.get_type().name().unwrap_or("<unknown type>");
         self.value.as_ref().map(|v| v.to_object(py))
     }
 
