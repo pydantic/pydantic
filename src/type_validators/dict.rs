@@ -2,7 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{SchemaValidator, TypeValidator};
-use crate::errors::{ok_or_internal, val_err, ErrorKind, LocItem, Location, ValError, ValLineError, ValResult};
+use crate::errors::{err_val_error, ok_or_internal, ErrorKind, LocItem, ValError, ValLineError, ValResult};
+use crate::standalone_validators::validate_dict;
 use crate::utils::{dict_create, dict_get};
 
 #[derive(Debug, Clone)]
@@ -33,17 +34,11 @@ impl TypeValidator for DictValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, loc: &Location) -> ValResult<PyObject> {
-        let dict: &PyDict = match obj.cast_as() {
-            Ok(d) => d,
-            Err(_) => {
-                // need to make this a better error
-                return val_err!(py, obj);
-            }
-        };
+    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
+        let dict: &PyDict = validate_dict(py, obj)?;
         if let Some(min_length) = self.min_items {
             if dict.len() < min_length {
-                return val_err!(
+                return err_val_error!(
                     py,
                     dict,
                     kind = ErrorKind::DictTooShort,
@@ -53,7 +48,7 @@ impl TypeValidator for DictValidator {
         }
         if let Some(max_length) = self.max_items {
             if dict.len() > max_length {
-                return val_err!(
+                return err_val_error!(
                     py,
                     dict,
                     kind = ErrorKind::DictTooLong,
@@ -65,66 +60,16 @@ impl TypeValidator for DictValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
 
         for (key, value) in dict.iter() {
-            let get_key_loc = || -> ValResult<LocItem> {
-                if let Ok(key_str) = key.extract::<String>() {
-                    return Ok(LocItem::K(key_str));
-                }
-                if let Ok(key_int) = key.extract::<usize>() {
-                    return Ok(LocItem::I(key_int));
-                }
-                // best effort is to use repr
-                let repr_result = ok_or_internal!(key.repr())?;
-                let repr: String = ok_or_internal!(repr_result.extract())?;
-                Ok(LocItem::K(repr))
-            };
-            // just call this for now, should be lazy in future
-            let key_loc = get_key_loc()?;
-
-            let output_key: Option<PyObject> = match self.key_validator {
-                Some(ref validator) => {
-                    let mut field_loc = loc.clone();
-                    field_loc.push(key_loc.clone());
-                    field_loc.push(LocItem::K("[key]".to_string()));
-
-                    match validator.validate(py, key, &field_loc) {
-                        Ok(key) => Some(key),
-                        Err(err) => {
-                            if let ValError::LineErrors(errs) = err {
-                                errors.extend(errs);
-                                None
-                            } else {
-                                return Err(err);
-                            }
-                        }
-                    }
-                }
-                None => Some(key.to_object(py)),
-            };
-            let output_value: Option<PyObject> = match self.value_validator {
-                Some(ref validator) => {
-                    let mut field_loc = loc.clone();
-                    field_loc.push(key_loc);
-                    match validator.validate(py, value, &field_loc) {
-                        Ok(value) => Some(value),
-                        Err(err) => {
-                            if let ValError::LineErrors(errs) = err {
-                                errors.extend(errs);
-                                None
-                            } else {
-                                return Err(err);
-                            }
-                        }
-                    }
-                }
-                None => Some(value.to_object(py)),
-            };
+            let output_key: Option<PyObject> = apply_validator(py, &self.key_validator, &mut errors, key, key, true)?;
+            let output_value: Option<PyObject> =
+                apply_validator(py, &self.value_validator, &mut errors, value, key, false)?;
             if let (Some(key), Some(value)) = (output_key, output_value) {
                 ok_or_internal!(output.set_item(key, value))?;
             }
         }
 
         if errors.is_empty() {
-            Ok(output.to_object(py))
+            Ok(output.into())
         } else {
             Err(ValError::LineErrors(errors))
         }
@@ -133,4 +78,45 @@ impl TypeValidator for DictValidator {
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {
         Box::new(self.clone())
     }
+}
+
+fn apply_validator(
+    py: Python,
+    validator: &Option<Box<SchemaValidator>>,
+    errors: &mut Vec<ValLineError>,
+    val_value: &PyAny,
+    key: &PyAny,
+    key_loc: bool,
+) -> ValResult<Option<PyObject>> {
+    match validator {
+        Some(validator) => match validator.validate(py, val_value) {
+            Ok(value) => Ok(Some(value)),
+            Err(ValError::LineErrors(line_errors)) => {
+                let loc = if key_loc {
+                    vec![get_loc(key)?, LocItem::S("[key]".to_string())]
+                } else {
+                    vec![get_loc(key)?]
+                };
+                for err in line_errors {
+                    errors.push(err.with_location(&loc));
+                }
+                Ok(None)
+            }
+            Err(err) => Err(err),
+        },
+        None => Ok(Some(val_value.to_object(py))),
+    }
+}
+
+fn get_loc(key: &PyAny) -> ValResult<LocItem> {
+    if let Ok(key_str) = key.extract::<String>() {
+        return Ok(LocItem::S(key_str));
+    }
+    if let Ok(key_int) = key.extract::<usize>() {
+        return Ok(LocItem::I(key_int));
+    }
+    // best effort is to use repr
+    let repr_result = ok_or_internal!(key.repr())?;
+    let repr: String = ok_or_internal!(repr_result.extract())?;
+    Ok(LocItem::S(repr))
 }

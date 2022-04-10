@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
 use super::TypeValidator;
-use crate::errors::{val_err, ErrorKind, Location, ValResult};
+use crate::errors::{err_val_error, ErrorKind, ValResult};
 use crate::standalone_validators::validate_str;
 use crate::utils::{dict_create, dict_get, RegexPattern};
 
@@ -24,7 +24,7 @@ impl TypeValidator for SimpleStrValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
         let s = validate_str(py, obj)?;
         ValResult::Ok(s.to_object(py))
     }
@@ -70,13 +70,13 @@ impl TypeValidator for FullStrValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny, _loc: &Location) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
         // let mut str = validate_str(obj)?;
         let mut str = validate_str(py, obj)?;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
-                return val_err!(
+                return err_val_error!(
                     py,
                     str,
                     kind = ErrorKind::StrTooShort,
@@ -86,7 +86,7 @@ impl TypeValidator for FullStrValidator {
         }
         if let Some(max_length) = self.max_length {
             if str.len() > max_length {
-                return val_err!(
+                return err_val_error!(
                     py,
                     str,
                     kind = ErrorKind::StrTooLong,
@@ -96,7 +96,7 @@ impl TypeValidator for FullStrValidator {
         }
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(&str) {
-                return val_err!(
+                return err_val_error!(
                     py,
                     str,
                     kind = ErrorKind::StrPatternMismatch,

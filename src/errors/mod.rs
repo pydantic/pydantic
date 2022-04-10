@@ -12,35 +12,7 @@ pub use self::kinds::ErrorKind;
 pub use self::line_error::{LocItem, Location, ValLineError};
 pub use self::validation_exception::ValidationError;
 
-macro_rules! val_err {
-    ($py:ident, $value:expr) => {
-        Err(crate::errors::ValError::LineErrors(vec![crate::errors::ValLineError {
-            value: Some($value.to_object($py)),
-            ..Default::default()
-        }]))
-    };
-
-    ($py:ident, $value:expr, $($key:ident = $val:expr),+) => {
-        Err(crate::errors::ValError::LineErrors(vec![crate::errors::ValLineError {
-            value: Some($value.to_object($py)),
-            $(
-                $key: $val,
-            )+
-            ..Default::default()
-        }]))
-    };
-}
-pub(crate) use val_err;
-
-macro_rules! ok_or_internal {
-    ($value:expr) => {
-        match $value {
-            Ok(v) => Ok(v),
-            Err(e) => Err(crate::errors::ValError::InternalErr(e)),
-        }
-    };
-}
-pub(crate) use ok_or_internal;
+pub type ValResult<T> = StdResult<T, ValError>;
 
 #[derive(Debug)]
 pub enum ValError {
@@ -77,4 +49,43 @@ impl Error for ValError {
     }
 }
 
-pub type ValResult<T> = StdResult<T, ValError>;
+macro_rules! val_error {
+    ($py:ident, $value:expr) => {
+        crate::errors::ValLineError {
+            value: Some($value.to_object($py)),
+            ..Default::default()
+        }
+    };
+
+    ($py:ident, $value:expr, $($key:ident = $val:expr),+) => {
+        crate::errors::ValLineError {
+            value: Some($value.to_object($py)),
+            $(
+                $key: $val,
+            )+
+            ..Default::default()
+        }
+    };
+}
+pub(crate) use val_error;
+
+macro_rules! err_val_error {
+    ($py:ident, $value:expr) => {
+        Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_error!($py, $value)]))
+    };
+
+    ($py:ident, $value:expr, $($key:ident = $val:expr),+) => {
+        Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_error!($py, $value, $($key = $val),+)]))
+    };
+}
+pub(crate) use err_val_error;
+
+macro_rules! ok_or_internal {
+    ($value:expr) => {
+        match $value {
+            Ok(v) => Ok(v),
+            Err(e) => Err(crate::errors::ValError::InternalErr(e)),
+        }
+    };
+}
+pub(crate) use ok_or_internal;
