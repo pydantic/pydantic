@@ -1,15 +1,15 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{SchemaValidator, Validator};
+use super::{build_validator, Validator};
 use crate::errors::{err_val_error, ok_or_internal, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::{dict_create, dict_get};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {
-    key_validator: Option<Box<SchemaValidator>>,
-    value_validator: Option<Box<SchemaValidator>>,
+    key_validator: Option<Box<dyn Validator>>,
+    value_validator: Option<Box<dyn Validator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
@@ -22,11 +22,11 @@ impl Validator for DictValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             key_validator: match dict_get!(dict, "keys", &PyDict) {
-                Some(d) => Some(Box::new(SchemaValidator::build(d)?)),
+                Some(d) => Some(build_validator(d)?),
                 None => None,
             },
             value_validator: match dict_get!(dict, "values", &PyDict) {
-                Some(d) => Some(Box::new(SchemaValidator::build(d)?)),
+                Some(d) => Some(build_validator(d)?),
                 None => None,
             },
             min_items: dict_get!(dict, "min_items", usize),
@@ -82,7 +82,7 @@ impl Validator for DictValidator {
 
 fn apply_validator(
     py: Python,
-    validator: &Option<Box<SchemaValidator>>,
+    validator: &Option<Box<dyn Validator>>,
     errors: &mut Vec<ValLineError>,
     val_value: &PyAny,
     key: &PyAny,
