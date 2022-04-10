@@ -9,32 +9,37 @@ pub enum ErrorKind {
     Missing,
     #[strum(message = "Extra fields are not permitted")]
     ExtraForbidden,
-    #[strum(message = "'None' is not permitted")]
+    #[strum(message = "Value must not be None/null")]
     NoneForbidden,
-    #[strum(message = "Value must be 'None'")]
+    #[strum(message = "Value must be None/null")]
     NoneRequired,
-    #[strum(message = "Value is not a valid boolean")]
+    #[strum(message = "Value must be a valid boolean")]
     Bool,
-    #[strum(message = "Value is not a valid string")]
+    #[strum(message = "Value must be a valid string")]
+    // string errors
     StrType,
-    #[strum(message = "Error parsing bytes as utf8 string")]
+    #[strum(message = "Value must be a valid string, unable to parse raw data as a unicode string")]
     StrUnicode,
     #[strum(message = "String must have at least {min_length} characters")]
     StrTooShort,
     #[strum(message = "String must have at most {max_length} characters")]
     StrTooLong,
-    #[strum(message = "String does not match pattern '{pattern}'")]
+    #[strum(message = "String must match pattern '{pattern}'")]
     StrPatternMismatch,
-    #[strum(message = "Value is not a valid dictionary")]
+    // dict errors
+    #[strum(message = "Value must be a valid dictionary")]
     DictType,
     #[strum(message = "Dictionary must have at least {min_length} items")]
     DictTooShort,
     #[strum(message = "Dictionary must have at most {max_length} items")]
     DictTooLong,
-    #[strum(message = "Value is not a valid integer")]
+    // int errors
+    #[strum(message = "Value must be a valid integer")]
     IntType,
-    #[strum(message = "Unable to parse value as an integer")]
+    #[strum(message = "Value must be a valid integer, unable to parse string as an integer")]
     IntParsing,
+    #[strum(message = "Value must be a valid integer, got a number with a fractional part")]
+    IntFromFloat,
     #[strum(message = "Value must be a multiple of {multiple_of}")]
     IntMultiple,
     #[strum(message = "Value must be greater than {gt}")]
@@ -45,6 +50,21 @@ pub enum ErrorKind {
     IntLessThan,
     #[strum(message = "Value must be less than or equal to {le}")]
     IntLessThanEqual,
+    // float errors
+    #[strum(message = "Value must be a valid number")]
+    FloatType,
+    #[strum(message = "Value must be a valid number, unable to parse string as an number")]
+    FloatParsing,
+    #[strum(message = "Value must be a multiple of {multiple_of}")]
+    FloatMultiple,
+    #[strum(message = "Value must be greater than {gt}")]
+    FloatGreaterThan,
+    #[strum(message = "Value must be greater than or equal to {ge}")]
+    FloatGreaterThanEqual,
+    #[strum(message = "Value must be less than {lt}")]
+    FloatLessThan,
+    #[strum(message = "Value must be less than or equal to {le}")]
+    FloatLessThanEqual,
 }
 
 impl Default for ErrorKind {
