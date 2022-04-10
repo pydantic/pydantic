@@ -35,7 +35,7 @@ impl TypeValidator for DictValidator {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let dict: &PyDict = validate_dict(py, obj)?;
+        let dict = validate_dict(py, obj)?;
         if let Some(min_length) = self.min_items {
             if dict.len() < min_length {
                 return err_val_error!(

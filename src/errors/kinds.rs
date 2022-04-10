@@ -33,6 +33,13 @@ pub enum ErrorKind {
     DictTooShort,
     #[strum(message = "Dictionary must have at most {max_length} items")]
     DictTooLong,
+    // list errors
+    #[strum(message = "Value must be a valid list/array")]
+    ListType,
+    #[strum(message = "List must have at least {min_length} items")]
+    ListTooShort,
+    #[strum(message = "List must have at most {max_length} items")]
+    ListTooLong,
     // int errors
     #[strum(message = "Value must be a valid integer")]
     IntType,
