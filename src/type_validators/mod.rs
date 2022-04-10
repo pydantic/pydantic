@@ -9,7 +9,7 @@ use crate::errors::{Location, ValError, ValResult};
 use crate::utils::{dict_get, py_error};
 
 mod bool;
-// mod dict;
+mod dict;
 // mod float;
 // mod int;
 // mod list;

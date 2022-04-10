@@ -115,15 +115,22 @@ impl ValLineError {
 }
 
 macro_rules! single_val_error {
-    ($py:ident, $value:expr, $($key:ident = $val:expr),*) => {
+    ($py:ident, $value:expr) => {
+        Err(crate::errors::ValError::LineErrors(vec![crate::errors::ValLineError {
+            value: Some($value.to_object($py)),
+            ..Default::default()
+        }]))
+    };
+
+    ($py:ident, $value:expr, $($key:ident = $val:expr),+) => {
         Err(crate::errors::ValError::LineErrors(vec![crate::errors::ValLineError {
             value: Some($value.to_object($py)),
             $(
                 $key: $val,
-            )*
+            )+
             ..Default::default()
         }]))
-    }
+    };
 }
 pub(crate) use single_val_error;
 
@@ -136,13 +143,6 @@ macro_rules! ok_or_internal {
     };
 }
 pub(crate) use ok_or_internal;
-
-macro_rules! new_dict {
-    ($py:ident, $($k:expr => $v:expr),*) => {{
-        pyo3::types::IntoPyDict::into_py_dict([$(($k, $v),)*], $py).into()
-    }};
-}
-pub(crate) use new_dict;
 
 #[derive(Debug)]
 pub enum ValError {

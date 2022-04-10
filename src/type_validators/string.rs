@@ -2,9 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
 use super::TypeValidator;
-use crate::errors::{new_dict, single_val_error, ErrorKind, Location, ValResult};
+use crate::errors::{single_val_error, ErrorKind, Location, ValResult};
 use crate::standalone_validators::validate_str;
-use crate::utils::{dict_get, RegexPattern};
+use crate::utils::{dict_create, dict_get, RegexPattern};
 
 #[derive(Debug, Clone)]
 pub struct SimpleStrValidator;
@@ -80,7 +80,7 @@ impl TypeValidator for FullStrValidator {
                     py,
                     str,
                     kind = ErrorKind::StrTooShort,
-                    context = Some(new_dict!(py, "min_length" => min_length))
+                    context = Some(dict_create!(py, "min_length" => min_length))
                 );
             }
         }
@@ -90,7 +90,7 @@ impl TypeValidator for FullStrValidator {
                     py,
                     str,
                     kind = ErrorKind::StrTooLong,
-                    context = Some(new_dict!(py, "max_length" => max_length))
+                    context = Some(dict_create!(py, "max_length" => max_length))
                 );
             }
         }
@@ -100,7 +100,7 @@ impl TypeValidator for FullStrValidator {
                     py,
                     str,
                     kind = ErrorKind::StrPatternMismatch,
-                    context = Some(new_dict!(py, "pattern" => pattern.to_string()))
+                    context = Some(dict_create!(py, "pattern" => pattern.to_string()))
                 );
             }
         }
