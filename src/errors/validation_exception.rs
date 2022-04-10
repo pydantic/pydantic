@@ -32,6 +32,8 @@ impl fmt::Display for ValidationError {
 
 impl Error for ValidationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
+        // we could in theory set self.source as `ValError::LineErrors(line_errors.clone())`, then return that here
+        // source is not used, and I can't imagine why it would be
         None
     }
 }
