@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::TypeValidator;
-use crate::errors::{single_val_error, ErrorKind, Location, ValResult};
+use crate::errors::{val_err, ErrorKind, Location, ValResult};
 
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
@@ -20,7 +20,7 @@ impl TypeValidator for NoneValidator {
         if obj.is_none() {
             ValResult::Ok(obj.to_object(py))
         } else {
-            single_val_error!(py, obj, kind = ErrorKind::NoneRequired)
+            val_err!(py, obj, kind = ErrorKind::NoneRequired)
         }
     }
 
