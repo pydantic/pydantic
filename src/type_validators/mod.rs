@@ -1,14 +1,13 @@
 use std::fmt::Debug;
 
-use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{IntoPyDict, PyAny, PyDict};
-use pyo3::ToPyObject;
+use pyo3::types::{PyAny, PyDict};
 
 use crate::errors::{ValError, ValResult, ValidationError};
-use crate::utils::{dict_get, py_error};
+use crate::utils::{dict_get, dict_get_required, py_error};
 
 mod bool;
+mod decorator;
 mod dict;
 mod float;
 mod int;
@@ -24,7 +23,6 @@ mod string;
 pub struct SchemaValidator {
     type_validator: Box<dyn TypeValidator>,
     model_name: Option<String>,
-    external_validator: Option<PyObject>,
 }
 
 impl TypeValidator for SchemaValidator {
@@ -33,37 +31,14 @@ impl TypeValidator for SchemaValidator {
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
-        let type_validator = find_type_validator(dict)?;
-        let external_validator = match dict.get_item("external_validator") {
-            Some(obj) => {
-                if !obj.is_callable() {
-                    return py_error!(PyTypeError; "'external_validator' must be callable");
-                }
-                Some(obj.to_object(obj.py()))
-            }
-            None => None,
-        };
         Ok(Self {
-            type_validator,
-            external_validator,
+            type_validator: build_type_validator(dict)?,
             model_name: dict_get!(dict, "model_name", String),
         })
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        if let Some(external_validator) = &self.external_validator {
-            let validator_kwarg = ValidatorCallable {
-                type_validator: self.type_validator.clone(),
-            };
-            let kwargs = [("validator", validator_kwarg.into_py(py))];
-            match external_validator.call(py, (), Some(kwargs.into_py_dict(py))) {
-                Ok(output) => Ok(output),
-                // TODO this is wrong, we should check for errors which could as validation errors
-                Err(err) => Err(ValError::InternalErr(err)),
-            }
-        } else {
-            self.type_validator.validate(py, obj)
-        }
+        self.type_validator.validate(py, obj)
     }
 
     fn clone_dyn(&self) -> Box<dyn TypeValidator> {
@@ -94,16 +69,16 @@ impl SchemaValidator {
         }
     }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(format!(
-            "SchemaValidator(type_validator={:?}, external_validator={:?})",
-            self.type_validator, self.external_validator
-        ))
+    fn __repr__(&self) -> String {
+        format!(
+            "SchemaValidator(type_validator={:?}, model_name={:?})",
+            self.type_validator, self.model_name
+        )
     }
 }
 
-fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
-    let type_: String = dict_get!(dict, "type", String).ok_or_else(|| PyKeyError::new_err("'type' is required"))?;
+pub fn build_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
+    let type_: String = dict_get_required!(dict, "type", String)?;
 
     // if_else is used in validator_selection
     macro_rules! if_else {
@@ -162,28 +137,11 @@ fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
         self::dict::DictValidator,
         // None/null
         self::none::NoneValidator,
+        // decorators
+        self::decorator::PreDecoratorValidator,
+        self::decorator::PostDecoratorValidator,
+        self::decorator::WrapDecoratorValidator,
     )
-}
-
-#[pyclass]
-#[derive(Debug, Clone)]
-pub struct ValidatorCallable {
-    type_validator: Box<dyn TypeValidator>,
-}
-
-#[pymethods]
-impl ValidatorCallable {
-    fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
-        match self.type_validator.validate(py, arg) {
-            Ok(obj) => Ok(obj),
-            Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, "Model".to_string()))),
-            Err(ValError::InternalErr(err)) => Err(err),
-        }
-    }
-
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(format!("ValidatorCallable({:?})", self.type_validator))
-    }
 }
 
 pub trait TypeValidator: Send + Debug {

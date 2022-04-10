@@ -14,6 +14,16 @@ macro_rules! dict_get {
 }
 pub(crate) use dict_get;
 
+macro_rules! dict_get_required {
+    ($dict:ident, $key:expr, $type:ty) => {
+        match $dict.get_item($key) {
+            Some(t) => Ok(<$type>::extract(t)?),
+            None => py_error!(r#""{}" is required"#, $key),
+        }
+    };
+}
+pub(crate) use dict_get_required;
+
 macro_rules! py_error {
     ($msg:expr) => {
         py_error!(crate::SchemaError; $msg)
