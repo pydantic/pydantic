@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{SchemaValidator, TypeValidator};
+use super::{SchemaValidator, Validator};
 use crate::errors::{ok_or_internal, val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::dict_get;
@@ -19,7 +19,7 @@ pub struct ModelValidator {
     fields: Vec<ModelField>,
 }
 
-impl TypeValidator for ModelValidator {
+impl Validator for ModelValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "model"
     }
@@ -82,7 +82,7 @@ impl TypeValidator for ModelValidator {
         }
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }

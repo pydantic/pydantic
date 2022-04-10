@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{SchemaValidator, TypeValidator, ValResult};
+use super::{SchemaValidator, ValResult, Validator};
 use crate::errors::{err_val_error, ErrorKind, LocItem, ValError, ValLineError};
 use crate::standalone_validators::validate_list;
 use crate::utils::{dict_create, dict_get};
@@ -13,7 +13,7 @@ pub struct ListValidator {
     max_items: Option<usize>,
 }
 
-impl TypeValidator for ListValidator {
+impl Validator for ListValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "list"
     }
@@ -76,7 +76,7 @@ impl TypeValidator for ListValidator {
         }
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
