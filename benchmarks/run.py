@@ -15,6 +15,7 @@ def benchmark_simple_validation():
         settings: Dict[str, float]
 
     schema_validator = SchemaValidator({
+        'model_name': 'TestModel',
         'type': 'model',
         'fields': {
             'name': {
