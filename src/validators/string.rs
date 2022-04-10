@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
-use super::TypeValidator;
+use super::Validator;
 use crate::errors::{err_val_error, ErrorKind, ValResult};
 use crate::standalone_validators::validate_str;
 use crate::utils::{dict_create, dict_get, RegexPattern};
@@ -9,7 +9,7 @@ use crate::utils::{dict_create, dict_get, RegexPattern};
 #[derive(Debug, Clone)]
 pub struct SimpleStrValidator;
 
-impl TypeValidator for SimpleStrValidator {
+impl Validator for SimpleStrValidator {
     fn is_match(type_: &str, dict: &PyDict) -> bool {
         type_ == "str"
             && dict.get_item("pattern").is_none()
@@ -29,7 +29,7 @@ impl TypeValidator for SimpleStrValidator {
         ValResult::Ok(s.to_object(py))
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
@@ -44,7 +44,7 @@ pub struct FullStrValidator {
     to_upper: bool,
 }
 
-impl TypeValidator for FullStrValidator {
+impl Validator for FullStrValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "str"
     }
@@ -118,7 +118,7 @@ impl TypeValidator for FullStrValidator {
         ValResult::Ok(py_str.to_object(py))
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }

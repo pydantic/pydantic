@@ -1,14 +1,14 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::TypeValidator;
+use super::Validator;
 use crate::errors::ValResult;
 use crate::standalone_validators::validate_bool;
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
 
-impl TypeValidator for BoolValidator {
+impl Validator for BoolValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "bool"
     }
@@ -23,7 +23,7 @@ impl TypeValidator for BoolValidator {
         Ok(validate_bool(py, obj)?.to_object(py))
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }

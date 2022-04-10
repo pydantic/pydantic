@@ -1,17 +1,17 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::TypeValidator;
+use super::Validator;
 use crate::errors::{err_val_error, ErrorKind, ValResult};
-use crate::standalone_validators::validate_float;
+use crate::standalone_validators::validate_int;
 use crate::utils::{dict_create, dict_get};
 
 #[derive(Debug, Clone)]
-pub struct SimpleFloatValidator;
+pub struct SimpleIntValidator;
 
-impl TypeValidator for SimpleFloatValidator {
+impl Validator for SimpleIntValidator {
     fn is_match(type_: &str, dict: &PyDict) -> bool {
-        type_ == "float"
+        type_ == "int"
             && dict.get_item("multiple_of").is_none()
             && dict.get_item("le").is_none()
             && dict.get_item("lt").is_none()
@@ -24,94 +24,94 @@ impl TypeValidator for SimpleFloatValidator {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        Ok(validate_float(py, obj)?.to_object(py))
+        Ok(validate_int(py, obj)?.to_object(py))
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct FullFloatValidator {
-    multiple_of: Option<f64>,
-    le: Option<f64>,
-    lt: Option<f64>,
-    ge: Option<f64>,
-    gt: Option<f64>,
+pub struct FullIntValidator {
+    multiple_of: Option<i64>,
+    le: Option<i64>,
+    lt: Option<i64>,
+    ge: Option<i64>,
+    gt: Option<i64>,
 }
 
-impl TypeValidator for FullFloatValidator {
+impl Validator for FullIntValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "int"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
-            multiple_of: dict_get!(dict, "multiple_of", f64),
-            le: dict_get!(dict, "le", f64),
-            lt: dict_get!(dict, "lt", f64),
-            ge: dict_get!(dict, "ge", f64),
-            gt: dict_get!(dict, "gt", f64),
+            multiple_of: dict_get!(dict, "multiple_of", i64),
+            le: dict_get!(dict, "le", i64),
+            lt: dict_get!(dict, "lt", i64),
+            ge: dict_get!(dict, "ge", i64),
+            gt: dict_get!(dict, "gt", i64),
         })
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let float = validate_float(py, obj)?;
+        let int = validate_int(py, obj)?;
         if let Some(multiple_of) = self.multiple_of {
-            if float % multiple_of != 0.0 {
+            if int % multiple_of != 0 {
                 return err_val_error!(
                     py,
-                    float,
-                    kind = ErrorKind::FloatMultiple,
+                    int,
+                    kind = ErrorKind::IntMultiple,
                     context = Some(dict_create!(py, "multiple_of" => multiple_of))
                 );
             }
         }
         if let Some(le) = self.le {
-            if float > le {
+            if int > le {
                 return err_val_error!(
                     py,
-                    float,
-                    kind = ErrorKind::FloatLessThanEqual,
+                    int,
+                    kind = ErrorKind::IntLessThanEqual,
                     context = Some(dict_create!(py, "le" => le))
                 );
             }
         }
         if let Some(lt) = self.lt {
-            if float >= lt {
+            if int >= lt {
                 return err_val_error!(
                     py,
-                    float,
-                    kind = ErrorKind::FloatLessThan,
+                    int,
+                    kind = ErrorKind::IntLessThan,
                     context = Some(dict_create!(py, "lt" => lt))
                 );
             }
         }
         if let Some(ge) = self.ge {
-            if float < ge {
+            if int < ge {
                 return err_val_error!(
                     py,
-                    float,
-                    kind = ErrorKind::FloatGreaterThanEqual,
+                    int,
+                    kind = ErrorKind::IntGreaterThanEqual,
                     context = Some(dict_create!(py, "ge" => ge))
                 );
             }
         }
         if let Some(gt) = self.gt {
-            if float <= gt {
+            if int <= gt {
                 return err_val_error!(
                     py,
-                    float,
-                    kind = ErrorKind::FloatGreaterThan,
+                    int,
+                    kind = ErrorKind::IntGreaterThan,
                     context = Some(dict_create!(py, "gt" => gt))
                 );
             }
         }
-        Ok(float.to_object(py))
+        Ok(int.to_object(py))
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }

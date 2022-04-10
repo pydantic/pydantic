@@ -1,13 +1,13 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::TypeValidator;
+use super::Validator;
 use crate::errors::{err_val_error, ErrorKind, ValResult};
 
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
 
-impl TypeValidator for NoneValidator {
+impl Validator for NoneValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "null"
     }
@@ -24,7 +24,7 @@ impl TypeValidator for NoneValidator {
         }
     }
 
-    fn clone_dyn(&self) -> Box<dyn TypeValidator> {
+    fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
 }

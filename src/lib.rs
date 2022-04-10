@@ -9,8 +9,8 @@ use pyo3::{create_exception, wrap_pyfunction};
 
 mod errors;
 mod standalone_validators;
-mod type_validators;
 mod utils;
+mod validators;
 
 create_exception!(_pydantic_core, SchemaError, PyValueError);
 
@@ -22,6 +22,6 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("SchemaError", py.get_type::<SchemaError>())?;
     m.add("__version__", VERSION)?;
     m.add_wrapped(wrap_pyfunction!(standalone_validators::validate_str_py))?;
-    m.add_class::<type_validators::SchemaValidator>()?;
+    m.add_class::<validators::SchemaValidator>()?;
     Ok(())
 }
