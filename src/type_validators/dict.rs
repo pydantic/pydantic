@@ -67,15 +67,15 @@ impl TypeValidator for DictValidator {
         for (key, value) in dict.iter() {
             let get_key_loc = || -> ValResult<LocItem> {
                 if let Ok(key_str) = key.extract::<String>() {
-                    return Ok(LocItem::Key(key_str));
+                    return Ok(LocItem::K(key_str));
                 }
                 if let Ok(key_int) = key.extract::<usize>() {
-                    return Ok(LocItem::Index(key_int));
+                    return Ok(LocItem::I(key_int));
                 }
                 // best effort is to use repr
                 let repr_result = ok_or_internal!(key.repr())?;
                 let repr: String = ok_or_internal!(repr_result.extract())?;
-                Ok(LocItem::Key(repr))
+                Ok(LocItem::K(repr))
             };
             // just call this for now, should be lazy in future
             let key_loc = get_key_loc()?;
@@ -84,7 +84,7 @@ impl TypeValidator for DictValidator {
                 Some(ref validator) => {
                     let mut field_loc = loc.clone();
                     field_loc.push(key_loc.clone());
-                    field_loc.push(LocItem::Key("[key]".to_string()));
+                    field_loc.push(LocItem::K("[key]".to_string()));
 
                     match validator.validate(py, key, &field_loc) {
                         Ok(key) => Some(key),
