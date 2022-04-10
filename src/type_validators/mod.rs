@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyDict};
 use pyo3::ToPyObject;
 
-use crate::errors::{ValError, ValResult};
+use crate::errors::{ValError, ValResult, ValidationError};
 use crate::utils::{dict_get, py_error};
 
 mod bool;
@@ -23,6 +23,7 @@ mod string;
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
     type_validator: Box<dyn TypeValidator>,
+    model_name: Option<String>,
     external_validator: Option<PyObject>,
 }
 
@@ -45,6 +46,7 @@ impl TypeValidator for SchemaValidator {
         Ok(Self {
             type_validator,
             external_validator,
+            model_name: dict_get!(dict, "model_name", String),
         })
     }
 
@@ -80,7 +82,15 @@ impl SchemaValidator {
     fn run(&self, py: Python, obj: &PyAny) -> PyResult<PyObject> {
         match self.validate(py, obj) {
             Ok(obj) => Ok(obj),
-            Err(err) => py_error!(PyTypeError; "TODO validation error: {}", err),
+            Err(ValError::LineErrors(line_errors)) => {
+                let model_name = match self.model_name {
+                    Some(ref name) => name.clone(),
+                    None => "<unknown>".to_string(),
+                };
+                let args = (line_errors, model_name);
+                Err(ValidationError::new_err(args))
+            }
+            Err(ValError::InternalErr(err)) => Err(err),
         }
     }
 
@@ -93,10 +103,7 @@ impl SchemaValidator {
 }
 
 fn find_type_validator(dict: &PyDict) -> PyResult<Box<dyn TypeValidator>> {
-    let type_: String = match dict_get!(dict, "type", String) {
-        Some(type_) => type_,
-        None => return py_error!(PyKeyError; "'type' is required"),
-    };
+    let type_: String = dict_get!(dict, "type", String).ok_or_else(|| PyKeyError::new_err("'type' is required"))?;
 
     // if_else is used in validator_selection
     macro_rules! if_else {
@@ -169,7 +176,8 @@ impl ValidatorCallable {
     fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
         match self.type_validator.validate(py, arg) {
             Ok(obj) => Ok(obj),
-            Err(err) => py_error!(PyTypeError; "TODO validation error: {}", err),
+            Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, "Model".to_string()))),
+            Err(ValError::InternalErr(err)) => Err(err),
         }
     }
 

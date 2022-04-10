@@ -65,13 +65,19 @@ impl TypeValidator for ModelValidator {
                     Err(err) => return Err(err),
                 }
             } else if field.required {
-                errors.push(val_error!(py, obj_dict, kind = ErrorKind::Missing));
+                errors.push(val_error!(
+                    py,
+                    obj_dict,
+                    kind = ErrorKind::Missing,
+                    location = vec![LocItem::S(field.name.clone())]
+                ));
             }
         }
 
         if errors.is_empty() {
             Ok(output.into())
         } else {
+            println!("model got errors: {:?}", errors);
             Err(ValError::LineErrors(errors))
         }
     }

@@ -43,13 +43,13 @@ def benchmark_simple_validation():
         },
     })
 
-    data = {'name': 'John', 'age': 42, 'friends': list(range(20)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
+    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
     def pydantic(d):
         return PydanticModel.parse_obj(d)
 
     def pydantic_core(d):
-        return schema_validator.validate(d)
+        return schema_validator.run(d)
 
     impls = pydantic, pydantic_core
     old_result = None
