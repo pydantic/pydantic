@@ -19,17 +19,18 @@ mod string;
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    validator: Box<dyn Validator>,
     model_name: String,
+    validator: Box<dyn Validator>,
 }
 
 #[pymethods]
 impl SchemaValidator {
     #[new]
     pub fn py_new(dict: &PyDict) -> PyResult<Self> {
+        let model_name = dict_get_required!(dict, "model_name", String)?;
         Ok(Self {
+            model_name,
             validator: build_validator(dict)?,
-            model_name: dict_get_required!(dict, "model_name", String)?,
         })
     }
 

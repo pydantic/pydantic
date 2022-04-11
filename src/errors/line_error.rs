@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use strum::EnumMessage;
 
 use super::kinds::ErrorKind;
+use pyo3::types::PyDict;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -38,9 +39,8 @@ pub struct ValLineError {
     pub kind: ErrorKind,
     pub location: Location,
     pub message: Option<String>,
+    pub input_value: Option<PyObject>,
     pub context: Option<Context>,
-    pub expected: Option<PyObject>,
-    pub input: Option<PyObject>,
 }
 
 impl fmt::Display for ValLineError {
@@ -60,8 +60,8 @@ impl fmt::Display for ValLineError {
 
 impl ValLineError {
     // TODO in theory we could mutate the error since it won't be used again, but I
-    // couldn't get mut to work on the result err.
-    pub fn with_location(&self, location: &Location) -> ValLineError {
+    // couldn't get mut to work where this is called
+    pub fn prefix_location(&self, location: &Location) -> ValLineError {
         let mut new = self.clone();
         if self.location.is_empty() {
             new.location = location.clone();
@@ -70,16 +70,25 @@ impl ValLineError {
         }
         new
     }
-}
 
-#[pymethods]
-impl ValLineError {
-    #[getter]
+    pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
+        let dict = PyDict::new(py);
+        dict.set_item("kind", self.kind())?;
+        dict.set_item("loc", self.location(py))?;
+        dict.set_item("message", self.message())?;
+        if let Some(input_value) = &self.input_value {
+            dict.set_item("input_value", input_value)?;
+        }
+        if let Some(context) = &self.context {
+            dict.set_item("context", context)?;
+        }
+        Ok(dict.to_object(py))
+    }
+
     fn kind(&self) -> String {
         self.kind.to_string()
     }
 
-    #[getter]
     fn location(&self, py: Python) -> PyObject {
         let mut loc: Vec<PyObject> = Vec::with_capacity(self.location.len());
         for location in &self.location {
@@ -100,7 +109,6 @@ impl ValLineError {
         }
     }
 
-    #[getter]
     fn raw_message(&self) -> String {
         // TODO string substitution
         if let Some(ref message) = self.message {
@@ -112,30 +120,8 @@ impl ValLineError {
             }
         }
     }
-
-    // #[getter]
-    // fn context(&self, py: Python) -> Option<PyObject> {
-    //     self.context.as_ref().map(|c| c.to_object(py))
-    // }
-
-    #[getter]
-    fn expected(&self, py: Python) -> Option<PyObject> {
-        self.expected.as_ref().map(|e| e.to_object(py))
-    }
-
-    #[getter]
-    fn input_value(&self, py: Python) -> Option<PyObject> {
-        // could use something like this to get the input type
-        // let name = v.get_type().name().unwrap_or("<unknown type>");
-        self.input.as_ref().map(|v| v.to_object(py))
-    }
-
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(format!("{:?}", self))
-    }
 }
 
-#[pyclass]
 #[derive(Debug, Clone)]
 pub struct Context(Vec<(String, ContextValue)>);
 
@@ -164,8 +150,8 @@ pub enum ContextValue {
 impl fmt::Display for ContextValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ContextValue::S(s) => write!(f, "{}", s),
-            ContextValue::I(i) => write!(f, "{}", i),
+            ContextValue::S(v) => write!(f, "{}", v),
+            ContextValue::I(v) => write!(f, "{}", v),
             ContextValue::F(v) => write!(f, "{}", v),
         }
     }
@@ -192,5 +178,25 @@ impl From<usize> for ContextValue {
 impl From<f64> for ContextValue {
     fn from(f: f64) -> Self {
         Self::F(f)
+    }
+}
+
+impl ToPyObject for ContextValue {
+    fn to_object(&self, py: Python) -> PyObject {
+        match self {
+            ContextValue::S(v) => v.to_object(py),
+            ContextValue::I(v) => v.to_object(py),
+            ContextValue::F(v) => v.to_object(py),
+        }
+    }
+}
+
+impl ToPyObject for Context {
+    fn to_object(&self, py: Python<'_>) -> PyObject {
+        let dict = PyDict::new(py);
+        for (key, value) in &self.0 {
+            dict.set_item(key, value).unwrap();
+        }
+        dict.to_object(py)
     }
 }

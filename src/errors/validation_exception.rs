@@ -3,9 +3,9 @@ use std::fmt;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::PyErrArguments;
 
 use crate::errors::ValLineError;
-use pyo3::PyErrArguments;
 
 #[pyclass(extends=PyValueError)]
 #[derive(Debug)]
@@ -48,8 +48,21 @@ impl ValidationError {
         }
     }
 
-    fn errors(&self) -> Vec<ValLineError> {
-        self.line_errors.clone()
+    #[getter]
+    fn model_name(&self) -> String {
+        self.model_name.clone()
+    }
+
+    fn error_count(&self) -> usize {
+        self.line_errors.len()
+    }
+
+    fn errors(&self, py: Python) -> PyResult<PyObject> {
+        let mut errors: Vec<PyObject> = Vec::with_capacity(self.line_errors.len());
+        for line_error in &self.line_errors {
+            errors.push(line_error.as_dict(py)?);
+        }
+        Ok(errors.to_object(py))
     }
 
     fn __repr__(&self) -> String {

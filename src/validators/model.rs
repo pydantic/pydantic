@@ -59,7 +59,7 @@ impl Validator for ModelValidator {
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![LocItem::S(field.name.clone())];
                         for err in line_errors {
-                            errors.push(err.with_location(&loc));
+                            errors.push(err.prefix_location(&loc));
                         }
                     }
                     Err(err) => return Err(err),
