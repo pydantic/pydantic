@@ -102,7 +102,7 @@ __all__ = [
     'PastDate',
     'FutureDate',
     'ConstrainedDate',
-    'condate'
+    'condate',
 ]
 
 NoneStr = Optional[str]
@@ -1130,13 +1130,7 @@ class ConstrainedDate(datetime.date, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le
-        )
+        update_not_none(field_schema, exclusiveMinimum=cls.gt, exclusiveMaximum=cls.lt, minimum=cls.ge, maximum=cls.le)
 
     @classmethod
     def strict_date_validator(cls, value: Any) -> datetime.date:
