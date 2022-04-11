@@ -34,7 +34,7 @@ impl Validator for DictValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let dict = validate_dict(py, input)?;
         if let Some(min_length) = self.min_items {
             if dict.len() < min_length {
@@ -60,9 +60,10 @@ impl Validator for DictValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
 
         for (key, value) in dict.iter() {
-            let output_key: Option<PyObject> = apply_validator(py, &self.key_validator, &mut errors, key, key, true)?;
+            let output_key: Option<PyObject> =
+                apply_validator(py, &self.key_validator, &mut errors, key, key, data, true)?;
             let output_value: Option<PyObject> =
-                apply_validator(py, &self.value_validator, &mut errors, value, key, false)?;
+                apply_validator(py, &self.value_validator, &mut errors, value, key, data, false)?;
             if let (Some(key), Some(value)) = (output_key, output_value) {
                 output.set_item(key, value).map_err(as_internal)?;
             }
@@ -84,12 +85,13 @@ fn apply_validator(
     py: Python,
     validator: &Option<Box<dyn Validator>>,
     errors: &mut Vec<ValLineError>,
-    val_value: &PyAny,
+    input: &PyAny,
     key: &PyAny,
+    data: &PyDict,
     key_loc: bool,
 ) -> ValResult<Option<PyObject>> {
     match validator {
-        Some(validator) => match validator.validate(py, val_value) {
+        Some(validator) => match validator.validate(py, input, data) {
             Ok(value) => Ok(Some(value)),
             Err(ValError::LineErrors(line_errors)) => {
                 let loc = if key_loc {
@@ -104,7 +106,7 @@ fn apply_validator(
             }
             Err(err) => Err(err),
         },
-        None => Ok(Some(val_value.into_py(py))),
+        None => Ok(Some(input.into_py(py))),
     }
 }
 
