@@ -65,12 +65,12 @@ impl Validator for ListValidator {
                     }
                     Err(err) => return Err(err),
                 },
-                None => output.push(item.to_object(py)),
+                None => output.push(item.into_py(py)),
             }
         }
 
         if errors.is_empty() {
-            Ok(output.to_object(py))
+            Ok(output.into_py(py))
         } else {
             Err(ValError::LineErrors(errors))
         }

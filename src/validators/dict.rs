@@ -104,7 +104,7 @@ fn apply_validator(
             }
             Err(err) => Err(err),
         },
-        None => Ok(Some(val_value.to_object(py))),
+        None => Ok(Some(val_value.into_py(py))),
     }
 }
 

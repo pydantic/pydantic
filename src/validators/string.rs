@@ -26,7 +26,7 @@ impl Validator for SimpleStrValidator {
 
     fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
         let s = validate_str(py, input)?;
-        ValResult::Ok(s.to_object(py))
+        ValResult::Ok(s.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -114,7 +114,7 @@ impl Validator for FullStrValidator {
             str = str.to_uppercase()
         }
         let py_str = PyString::new(py, &str);
-        ValResult::Ok(py_str.to_object(py))
+        ValResult::Ok(py_str.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {

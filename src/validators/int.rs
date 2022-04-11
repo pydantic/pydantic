@@ -24,7 +24,7 @@ impl Validator for SimpleIntValidator {
     }
 
     fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
-        Ok(validate_int(py, input)?.to_object(py))
+        Ok(validate_int(py, input)?.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -103,7 +103,7 @@ impl Validator for FullIntValidator {
                 );
             }
         }
-        Ok(int.to_object(py))
+        Ok(int.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
