@@ -141,7 +141,7 @@ fn get_function(dict: &PyDict, key: &str) -> PyResult<PyObject> {
 }
 
 fn convert_err(py: Python, err: PyErr, input: &PyAny) -> ValError {
-    let error_kind = if err.is_instance_of::<PyValueError>(py) {
+    let kind = if err.is_instance_of::<PyValueError>(py) {
         ErrorKind::ValueError
     } else if err.is_instance_of::<PyTypeError>(py) {
         ErrorKind::TypeError
@@ -151,11 +151,12 @@ fn convert_err(py: Python, err: PyErr, input: &PyAny) -> ValError {
         return ValError::InternalErr(err);
     };
 
-    let error_message = match err.value(py).str() {
+    let message = match err.value(py).str() {
         Ok(s) => Some(s.to_string()),
         Err(err) => return ValError::InternalErr(err),
     };
-    let line_error = val_line_error!(py, input, kind = error_kind, message = error_message);
+    #[allow(clippy::redundant_field_names)]
+    let line_error = val_line_error!(py, input, kind = kind, message = message);
     ValError::LineErrors(vec![line_error])
 }
 
