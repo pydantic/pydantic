@@ -13,14 +13,14 @@ pub enum LocItem {
     S(String),
     I(usize),
 }
+// we could use the From trait to make creating Location's much easier, would it be worth it?
 
 impl fmt::Display for LocItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
-            LocItem::S(s) => s.to_string(),
-            LocItem::I(i) => i.to_string(),
-        };
-        write!(f, "{}", s)
+        match self {
+            LocItem::S(s) => write!(f, "{}", s),
+            LocItem::I(i) => write!(f, "{}", i),
+        }
     }
 }
 
