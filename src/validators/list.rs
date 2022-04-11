@@ -29,7 +29,7 @@ impl Validator for ListValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, data: &PyAny) -> ValResult<PyObject> {
         let list = validate_list(py, input)?;
         if let Some(min_length) = self.min_items {
             if list.len() < min_length {
@@ -55,7 +55,7 @@ impl Validator for ListValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         for (index, item) in list.iter().enumerate() {
             match self.item_validator {
-                Some(ref validator) => match validator.validate(py, item) {
+                Some(ref validator) => match validator.validate(py, item, data) {
                     Ok(item) => output.push(item),
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![LocItem::I(index)];
