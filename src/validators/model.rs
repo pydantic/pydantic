@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{build_validator, Validator};
-use crate::errors::{as_internal, val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{as_internal, val_line_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::dict_get;
 
@@ -65,7 +65,7 @@ impl Validator for ModelValidator {
                     Err(err) => return Err(err),
                 }
             } else if field.required {
-                errors.push(val_error!(
+                errors.push(val_line_error!(
                     py,
                     dict,
                     kind = ErrorKind::Missing,
