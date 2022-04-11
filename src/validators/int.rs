@@ -23,7 +23,7 @@ impl Validator for SimpleIntValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _data: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
         Ok(validate_int(py, input)?.into_py(py))
     }
 
@@ -56,7 +56,7 @@ impl Validator for FullIntValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _data: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
         let int = validate_int(py, input)?;
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {

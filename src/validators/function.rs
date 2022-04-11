@@ -25,10 +25,10 @@ impl Validator for PreDecoratorValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let value = self
             .func
-            .call(py, (input,), kwargs!(py, "data" => data))
+            .call(py, (input,), kwargs!(py, "data" => data.as_ref()))
             .map_err(|e| convert_err(py, e, input))?;
         let v: &PyAny = value.as_ref(py);
         self.validator.validate(py, v, data)
@@ -57,10 +57,10 @@ impl Validator for PostDecoratorValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let v = self.validator.validate(py, input, data)?;
         self.func
-            .call(py, (v,), kwargs!(py, "data" => data))
+            .call(py, (v,), kwargs!(py, "data" => data.as_ref()))
             .map_err(|e| convert_err(py, e, input))
     }
 
@@ -87,12 +87,12 @@ impl Validator for WrapDecoratorValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let validator_kwarg = ValidatorCallable {
             validator: self.validator.clone(),
             data: data.into_py(py),
         };
-        let kwargs = kwargs!(py, "validator" => validator_kwarg, "data" => data);
+        let kwargs = kwargs!(py, "validator" => validator_kwarg, "data" => data.as_ref());
         self.func
             .call(py, (input,), kwargs)
             .map_err(|e| convert_err(py, e, input))
@@ -107,7 +107,7 @@ impl Validator for WrapDecoratorValidator {
 #[derive(Debug, Clone)]
 pub struct ValidatorCallable {
     validator: Box<dyn Validator>,
-    data: PyObject,
+    data: Py<PyDict>,
 }
 
 #[pymethods]
