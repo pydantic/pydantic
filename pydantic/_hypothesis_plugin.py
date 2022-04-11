@@ -23,10 +23,10 @@ to generate instances of the builtin `int` type which match the constraints.
 """
 
 import contextlib
+import datetime
 import ipaddress
 import json
 import math
-import datetime
 from fractions import Fraction
 from typing import Callable, Dict, Type, Union, cast, overload
 

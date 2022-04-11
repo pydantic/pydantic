@@ -1,7 +1,7 @@
+import datetime
 import math
 import re
 import warnings
-import datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -1092,7 +1092,6 @@ class ByteSize(int):
 if TYPE_CHECKING:
     PastDate = datetime.date
     FutureDate = datetime.date
-    ConstrainedDate = datetime.date
 else:
 
     class PastDate(datetime.date):
@@ -1121,51 +1120,54 @@ else:
 
             return value
 
-    class ConstrainedDate(datetime.date, metaclass = ConstrainedNumberMeta):
-        strict_formats: Optional[List[str]] = None
-        gt: OptionalDate = None
-        ge: OptionalDate = None
-        lt: OptionalDate = None
-        le: OptionalDate = None
 
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            update_not_none(
-                field_schema,
-                exclusiveMinimum = cls.gt,
-                exclusiveMaximum = cls.lt,
-                minimum = cls.ge,
-                maximum = cls.le
-            )
+class ConstrainedDate(datetime.date, metaclass=ConstrainedNumberMeta):
+    strict_formats: Optional[List[str]] = None
+    gt: OptionalDate = None
+    ge: OptionalDate = None
+    lt: OptionalDate = None
+    le: OptionalDate = None
 
-        @classmethod
-        def strict_date_validator(cls, value: Any) -> datetime.date:
-            if isinstance(value, datetime.datetime):
-                return value.date()  # convert datetimes to date
-            if isinstance(value, datetime.date):
-                return value
-            elif isinstance(value, str):
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(
+            field_schema,
+            exclusiveMinimum=cls.gt,
+            exclusiveMaximum=cls.lt,
+            minimum=cls.ge,
+            maximum=cls.le
+        )
+
+    @classmethod
+    def strict_date_validator(cls, value: Any) -> datetime.date:
+        if isinstance(value, datetime.datetime):
+            return value.date()  # convert datetimes to date
+        if isinstance(value, datetime.date):
+            return value
+        elif isinstance(value, str):
+            if cls.strict_formats is not None:
                 for fmt in cls.strict_formats:
                     try:
                         return datetime.datetime.strptime(value, fmt).date()
                     except ValueError:
                         continue
 
-            raise errors.DateError()
+        raise errors.DateError()
 
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield cls.strict_date_validator if cls.strict_formats else parse_date
-            yield number_size_validator
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.strict_date_validator if cls.strict_formats else parse_date
+        yield number_size_validator
 
-    def condate(
-            *,
-            strict_formats: Optional[List[str]] = None,
-            gt: datetime.date = None,
-            ge: datetime.date = None,
-            lt: datetime.date = None,
-            le: datetime.date = None,
-    ) -> Type[datetime.date]:
-        # use kwargs then define conf in a dict to aid with IDE type hinting
-        namespace = dict(strict_formats = strict_formats, gt = gt, ge = ge, lt = lt, le = le)
-        return type('ConstrainedDateValue', (ConstrainedDate,), namespace)
+
+def condate(
+    *,
+    strict_formats: Optional[List[str]] = None,
+    gt: datetime.date = None,
+    ge: datetime.date = None,
+    lt: datetime.date = None,
+    le: datetime.date = None,
+) -> Type[datetime.date]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(strict_formats=strict_formats, gt=gt, ge=ge, lt=lt, le=le)
+    return type('ConstrainedDateValue', (ConstrainedDate,), namespace)
