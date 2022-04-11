@@ -35,7 +35,7 @@ impl SchemaValidator {
     }
 
     fn run(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
-        match self.validator.validate(py, input) {
+        match self.validator.validate(py, input, PyDict::new(py)) {
             Ok(obj) => Ok(obj),
             Err(ValError::LineErrors(line_errors)) => {
                 Err(ValidationError::new_err((line_errors, self.model_name.clone())))
@@ -128,7 +128,7 @@ pub trait Validator: Send + Debug {
     where
         Self: Sized;
 
-    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject>;
+    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject>;
 
     fn clone_dyn(&self) -> Box<dyn Validator>;
 }

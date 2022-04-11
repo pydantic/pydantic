@@ -23,7 +23,7 @@ impl Validator for SimpleFloatValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, obj: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
         Ok(validate_float(py, obj)?.into_py(py))
     }
 
@@ -56,7 +56,7 @@ impl Validator for FullFloatValidator {
         })
     }
 
-    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
         let float = validate_float(py, input)?;
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
