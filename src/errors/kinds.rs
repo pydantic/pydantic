@@ -3,8 +3,8 @@ use strum::{Display, EnumMessage};
 #[derive(Debug, Display, EnumMessage, Clone)]
 #[strum(serialize_all = "snake_case")]
 pub enum ErrorKind {
-    #[strum(message = "Invalid value")]
-    ValueError,
+    #[strum(message = "Invalid input")]
+    InvalidInput,
     #[strum(message = "Field required")]
     Missing,
     #[strum(message = "Extra fields are not permitted")]
@@ -81,6 +81,6 @@ pub enum ErrorKind {
 
 impl Default for ErrorKind {
     fn default() -> Self {
-        ErrorKind::ValueError
+        ErrorKind::InvalidInput
     }
 }

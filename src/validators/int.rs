@@ -23,8 +23,8 @@ impl Validator for SimpleIntValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        Ok(validate_int(py, obj)?.to_object(py))
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        Ok(validate_int(py, input)?.to_object(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -56,8 +56,8 @@ impl Validator for FullIntValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let int = validate_int(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let int = validate_int(py, input)?;
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return err_val_error!(

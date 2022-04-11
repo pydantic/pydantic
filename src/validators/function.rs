@@ -24,8 +24,8 @@ impl Validator for PreDecoratorValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let value = match self.func.call(py, (obj,), None) {
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let value = match self.func.call(py, (input,), None) {
             Ok(output) => Ok(output),
             // TODO this is wrong, we should check for errors which could as validation errors
             Err(err) => Err(ValError::InternalErr(err)),
@@ -57,8 +57,8 @@ impl Validator for PostDecoratorValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let v = self.validator.validate(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let v = self.validator.validate(py, input)?;
         match self.func.call(py, (v,), None) {
             Ok(output) => Ok(output),
             // TODO this is wrong, we should check for errors which could as validation errors
@@ -89,12 +89,12 @@ impl Validator for WrapDecoratorValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
         let validator_kwarg = ValidatorCallable {
             validator: self.validator.clone(),
         };
         let kwargs = [("validator", validator_kwarg.into_py(py))];
-        match self.func.call(py, (obj,), Some(kwargs.into_py_dict(py))) {
+        match self.func.call(py, (input,), Some(kwargs.into_py_dict(py))) {
             Ok(output) => Ok(output),
             // TODO this is wrong, we should check for errors which could as validation errors
             Err(err) => Err(ValError::InternalErr(err)),
@@ -116,7 +116,7 @@ pub struct ValidatorCallable {
 impl ValidatorCallable {
     fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
         match self.validator.validate(py, arg) {
-            Ok(obj) => Ok(obj),
+            Ok(output) => Ok(output),
             Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, "Model".to_string()))),
             Err(ValError::InternalErr(err)) => Err(err),
         }

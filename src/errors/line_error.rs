@@ -40,7 +40,7 @@ pub struct ValLineError {
     pub message: Option<String>,
     pub context: Option<Context>,
     pub expected: Option<PyObject>,
-    pub value: Option<PyObject>,
+    pub input: Option<PyObject>,
 }
 
 impl fmt::Display for ValLineError {
@@ -124,10 +124,10 @@ impl ValLineError {
     }
 
     #[getter]
-    fn value(&self, py: Python) -> Option<PyObject> {
-        // could use something like this to get the value type
+    fn input_value(&self, py: Python) -> Option<PyObject> {
+        // could use something like this to get the input type
         // let name = v.get_type().name().unwrap_or("<unknown type>");
-        self.value.as_ref().map(|v| v.to_object(py))
+        self.input.as_ref().map(|v| v.to_object(py))
     }
 
     fn __repr__(&self) -> PyResult<String> {

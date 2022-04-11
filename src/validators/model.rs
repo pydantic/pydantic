@@ -47,13 +47,13 @@ impl Validator for ModelValidator {
         Ok(Self { fields })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let obj_dict: &PyDict = validate_dict(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let dict: &PyDict = validate_dict(py, input)?;
         let output = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
 
         for field in &self.fields {
-            if let Some(value) = obj_dict.get_item(field.name.clone()) {
+            if let Some(value) = dict.get_item(field.name.clone()) {
                 match field.validator.validate(py, value) {
                     Ok(value) => output.set_item(field.name.clone(), value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
@@ -67,7 +67,7 @@ impl Validator for ModelValidator {
             } else if field.required {
                 errors.push(val_error!(
                     py,
-                    obj_dict,
+                    dict,
                     kind = ErrorKind::Missing,
                     location = vec![LocItem::S(field.name.clone())]
                 ));

@@ -16,11 +16,11 @@ impl Validator for NoneValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        if obj.is_none() {
-            ValResult::Ok(obj.to_object(py))
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        if input.is_none() {
+            ValResult::Ok(input.to_object(py))
         } else {
-            err_val_error!(py, obj, kind = ErrorKind::NoneRequired)
+            err_val_error!(py, input, kind = ErrorKind::NoneRequired)
         }
     }
 
