@@ -77,6 +77,13 @@ pub enum ErrorKind {
     FloatLessThan,
     #[strum(message = "Value must be less than or equal to {le}")]
     FloatLessThanEqual,
+    // python errors from functions (the messages here will not be used as we sett message in these cases)
+    #[strum(message = "Invalid value")]
+    ValueError,
+    #[strum(message = "Invalid type")]
+    TypeError,
+    #[strum(message = "Assertion failed")]
+    AssertionError,
 }
 
 impl Default for ErrorKind {
