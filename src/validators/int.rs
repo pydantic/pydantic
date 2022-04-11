@@ -2,9 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::Validator;
-use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::standalone_validators::validate_int;
-use crate::utils::{dict_create, dict_get};
+use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
 pub struct SimpleIntValidator;
@@ -64,7 +64,7 @@ impl Validator for FullIntValidator {
                     py,
                     int,
                     kind = ErrorKind::IntMultiple,
-                    context = Some(dict_create!(py, "multiple_of" => multiple_of))
+                    context = context!("multiple_of" => multiple_of)
                 );
             }
         }
@@ -74,18 +74,13 @@ impl Validator for FullIntValidator {
                     py,
                     int,
                     kind = ErrorKind::IntLessThanEqual,
-                    context = Some(dict_create!(py, "le" => le))
+                    context = context!("le" => le)
                 );
             }
         }
         if let Some(lt) = self.lt {
             if int >= lt {
-                return err_val_error!(
-                    py,
-                    int,
-                    kind = ErrorKind::IntLessThan,
-                    context = Some(dict_create!(py, "lt" => lt))
-                );
+                return err_val_error!(py, int, kind = ErrorKind::IntLessThan, context = context!("lt" => lt));
             }
         }
         if let Some(ge) = self.ge {
@@ -94,7 +89,7 @@ impl Validator for FullIntValidator {
                     py,
                     int,
                     kind = ErrorKind::IntGreaterThanEqual,
-                    context = Some(dict_create!(py, "ge" => ge))
+                    context = context!("ge" => ge)
                 );
             }
         }
@@ -104,7 +99,7 @@ impl Validator for FullIntValidator {
                     py,
                     int,
                     kind = ErrorKind::IntGreaterThan,
-                    context = Some(dict_create!(py, "gt" => gt))
+                    context = context!("gt" => gt)
                 );
             }
         }

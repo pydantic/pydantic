@@ -9,7 +9,7 @@ mod line_error;
 mod validation_exception;
 
 pub use self::kinds::ErrorKind;
-pub use self::line_error::{LocItem, Location, ValLineError};
+pub use self::line_error::{Context, LocItem, Location, ValLineError};
 use self::validation_exception::display_errors;
 pub use self::validation_exception::ValidationError;
 
@@ -84,3 +84,10 @@ macro_rules! err_val_error {
     };
 }
 pub(crate) use err_val_error;
+
+macro_rules! context {
+    ($($k:expr => $v:expr),*) => {{
+        Some(crate::errors::Context::new([$(($k, $v),)*]))
+    }};
+}
+pub(crate) use context;

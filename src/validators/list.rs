@@ -2,9 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{build_validator, ValResult, Validator};
-use crate::errors::{err_val_error, ErrorKind, LocItem, ValError, ValLineError};
+use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
 use crate::standalone_validators::validate_list;
-use crate::utils::{dict_create, dict_get};
+use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
@@ -37,7 +37,7 @@ impl Validator for ListValidator {
                     py,
                     list,
                     kind = ErrorKind::ListTooShort,
-                    context = Some(dict_create!(py, "min_length" => min_length))
+                    context = context!("min_length" => min_length)
                 );
             }
         }
@@ -47,7 +47,7 @@ impl Validator for ListValidator {
                     py,
                     list,
                     kind = ErrorKind::ListTooLong,
-                    context = Some(dict_create!(py, "max_length" => max_length))
+                    context = context!("max_length" => max_length)
                 );
             }
         }

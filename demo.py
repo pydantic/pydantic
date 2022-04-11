@@ -11,6 +11,7 @@ v = SchemaValidator({
         },
         'age': {
             'type': 'int',
+            'ge': 18,
         },
         'is_employer': {
             'type': 'bool',
@@ -19,6 +20,7 @@ v = SchemaValidator({
             'type': 'list',
             'items': {
                 'type': 'int',
+                'gt': 0,
             },
         },
         'settings': {
@@ -36,8 +38,6 @@ v = SchemaValidator({
 
 r = v.run({'name': 'John', 'age': 42, 'is_employer': 'true', 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
 debug(r)
-r = v.run({'name': 'John', 'age': 42, 'friends': [1.5, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
+
+r = v.run({'name': 'John', 'age': 16, 'friends': [-1, 2, 3, -1], 'settings': {'a': 1.0, 'b': 2.0}})
 debug(r)
-# try:
-# except ValueError as e:
-#     debug(e, e.errors())
