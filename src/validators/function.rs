@@ -131,7 +131,7 @@ fn get_function(dict: &PyDict, key: &str) -> PyResult<PyObject> {
             if !obj.is_callable() {
                 return py_error!(r#""{}" must be callable"#, key);
             }
-            Ok(obj.to_object(obj.py()))
+            Ok(obj.into_py(obj.py()))
         }
         None => py_error!(r#""{}" is required"#, key),
     }

@@ -55,14 +55,14 @@ pub fn as_internal(err: PyErr) -> ValError {
 macro_rules! val_line_error {
     ($py:ident, $input:expr) => {
         crate::errors::ValLineError {
-            input_value: Some($input.to_object($py)),
+            input_value: Some($input.into_py($py)),
             ..Default::default()
         }
     };
 
     ($py:ident, $input:expr, $($key:ident = $val:expr),+) => {
         crate::errors::ValLineError {
-            input_value: Some($input.to_object($py)),
+            input_value: Some($input.into_py($py)),
             $(
                 $key: $val,
             )+
