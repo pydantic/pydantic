@@ -98,7 +98,7 @@ fn apply_validator(
                     vec![get_loc(key)?]
                 };
                 for err in line_errors {
-                    errors.push(err.with_location(&loc));
+                    errors.push(err.prefix_location(&loc));
                 }
                 Ok(None)
             }

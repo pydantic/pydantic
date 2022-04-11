@@ -26,10 +26,10 @@ impl Validator for PreDecoratorValidator {
     }
 
     fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
-        let value = match self.func.call(py, (input,), None) {
-            Ok(output) => Ok(output),
-            Err(err) => Err(convert_type(py, err, input)),
-        }?;
+        let value = self
+            .func
+            .call(py, (input,), None)
+            .map_err(|e| convert_err(py, e, input))?;
         let v: &PyAny = value.as_ref(py);
         self.validator.validate(py, v)
     }
@@ -59,10 +59,7 @@ impl Validator for PostDecoratorValidator {
 
     fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
         let v = self.validator.validate(py, input)?;
-        match self.func.call(py, (v,), None) {
-            Ok(output) => Ok(output),
-            Err(err) => Err(convert_type(py, err, input)),
-        }
+        self.func.call(py, (v,), None).map_err(|e| convert_err(py, e, input))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -93,10 +90,10 @@ impl Validator for WrapDecoratorValidator {
             validator: self.validator.clone(),
         };
         let kwargs = [("validator", validator_kwarg.into_py(py))];
-        match self.func.call(py, (input,), Some(kwargs.into_py_dict(py))) {
-            Ok(output) => Ok(output),
-            Err(err) => Err(convert_type(py, err, input)),
-        }
+        let kwargs = Some(kwargs.into_py_dict(py));
+        self.func
+            .call(py, (input,), kwargs)
+            .map_err(|e| convert_err(py, e, input))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -140,7 +137,7 @@ fn get_function(dict: &PyDict, key: &str) -> PyResult<PyObject> {
     }
 }
 
-fn convert_type(py: Python, err: PyErr, input: &PyAny) -> ValError {
+fn convert_err(py: Python, err: PyErr, input: &PyAny) -> ValError {
     let error_kind = if err.is_instance_of::<PyValueError>(py) {
         ErrorKind::ValueError
     } else if err.is_instance_of::<PyTypeError>(py) {
@@ -151,6 +148,10 @@ fn convert_type(py: Python, err: PyErr, input: &PyAny) -> ValError {
         return ValError::InternalErr(err);
     };
 
-    let line_error = val_line_error!(py, input, kind = error_kind, message = Some(err.to_string()));
+    let error_message = match err.value(py).str() {
+        Ok(s) => Some(s.to_string()),
+        Err(err) => return ValError::InternalErr(err),
+    };
+    let line_error = val_line_error!(py, input, kind = error_kind, message = error_message);
     ValError::LineErrors(vec![line_error])
 }
