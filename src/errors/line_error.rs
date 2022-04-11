@@ -82,7 +82,7 @@ impl ValLineError {
         if let Some(context) = &self.context {
             dict.set_item("context", context)?;
         }
-        Ok(dict.to_object(py))
+        Ok(dict.into_py(py))
     }
 
     fn kind(&self) -> String {
@@ -93,12 +93,12 @@ impl ValLineError {
         let mut loc: Vec<PyObject> = Vec::with_capacity(self.location.len());
         for location in &self.location {
             let item: PyObject = match location {
-                LocItem::S(key) => key.to_object(py),
-                LocItem::I(index) => index.to_object(py),
+                LocItem::S(key) => key.into_py(py),
+                LocItem::I(index) => index.into_py(py),
             };
             loc.push(item);
         }
-        loc.to_object(py)
+        loc.into_py(py)
     }
 
     fn message(&self) -> String {
@@ -184,9 +184,9 @@ impl From<f64> for ContextValue {
 impl ToPyObject for ContextValue {
     fn to_object(&self, py: Python) -> PyObject {
         match self {
-            ContextValue::S(v) => v.to_object(py),
-            ContextValue::I(v) => v.to_object(py),
-            ContextValue::F(v) => v.to_object(py),
+            ContextValue::S(v) => v.into_py(py),
+            ContextValue::I(v) => v.into_py(py),
+            ContextValue::F(v) => v.into_py(py),
         }
     }
 }
@@ -197,6 +197,6 @@ impl ToPyObject for Context {
         for (key, value) in &self.0 {
             dict.set_item(key, value).unwrap();
         }
-        dict.to_object(py)
+        dict.into_py(py)
     }
 }

@@ -24,7 +24,7 @@ impl Validator for SimpleFloatValidator {
     }
 
     fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        Ok(validate_float(py, obj)?.to_object(py))
+        Ok(validate_float(py, obj)?.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -108,7 +108,7 @@ impl Validator for FullFloatValidator {
                 );
             }
         }
-        Ok(float.to_object(py))
+        Ok(float.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {

@@ -62,7 +62,7 @@ impl ValidationError {
         for line_error in &self.line_errors {
             errors.push(line_error.as_dict(py)?);
         }
-        Ok(errors.to_object(py))
+        Ok(errors.into_py(py))
     }
 
     fn __repr__(&self) -> String {
