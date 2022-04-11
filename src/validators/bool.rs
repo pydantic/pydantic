@@ -17,7 +17,7 @@ impl Validator for BoolValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _data: &PyAny) -> ValResult<PyObject> {
         // TODO in theory this could be quicker if we used PyBool rather than going to a bool
         // and back again, might be worth profiling?
         Ok(validate_bool(py, input)?.into_py(py))

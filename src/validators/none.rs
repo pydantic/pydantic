@@ -16,7 +16,7 @@ impl Validator for NoneValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _data: &PyAny) -> ValResult<PyObject> {
         if input.is_none() {
             ValResult::Ok(input.into_py(py))
         } else {
