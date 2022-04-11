@@ -49,10 +49,10 @@ pub fn as_internal(err: PyErr) -> ValError {
 
 /// Utility for concisely creating a `ValLineError`
 /// can either take just `py` and a `value` (the given value) in which case kind `ErrorKind::ValueError` is used as kind
-/// e.g. `val_error!(py, "the value provided")`
+/// e.g. `val_line_error!(py, "the value provided")`
 /// or, `py`, `value` and a mapping of other attributes for `ValLineError`
-/// e.g. `val_error!(py, "the value provided", kind=ErrorKind::ExtraForbidden, message="the message")`
-macro_rules! val_error {
+/// e.g. `val_line_error!(py, "the value provided", kind=ErrorKind::ExtraForbidden, message="the message")`
+macro_rules! val_line_error {
     ($py:ident, $input:expr) => {
         crate::errors::ValLineError {
             input: Some($input.to_object($py)),
@@ -70,17 +70,17 @@ macro_rules! val_error {
         }
     };
 }
-pub(crate) use val_error;
+pub(crate) use val_line_error;
 
 /// Utility for concisely creating a `Err(ValError::LineErrors([?]))` containing a single `ValLineError`
-/// Usage matches `val_error`
+/// Usage matches `val_line_error`
 macro_rules! err_val_error {
     ($py:ident, $input:expr) => {
-        Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_error!($py, $input)]))
+        Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_line_error!($py, $input)]))
     };
 
     ($py:ident, $input:expr, $($key:ident = $val:expr),+) => {
-        Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_error!($py, $input, $($key = $val),+)]))
+        Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_line_error!($py, $input, $($key = $val),+)]))
     };
 }
 pub(crate) use err_val_error;

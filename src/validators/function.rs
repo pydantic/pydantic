@@ -1,8 +1,9 @@
+use pyo3::exceptions::{PyAssertionError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{IntoPyDict, PyAny, PyDict};
 
 use super::{ValError, ValidationError, Validator};
-use crate::errors::ValResult;
+use crate::errors::{val_line_error, ErrorKind, ValResult};
 use crate::utils::{dict_get_required, py_error};
 use crate::validators::build_validator;
 
@@ -27,8 +28,7 @@ impl Validator for PreDecoratorValidator {
     fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
         let value = match self.func.call(py, (input,), None) {
             Ok(output) => Ok(output),
-            // TODO this is wrong, we should check for errors which could as validation errors
-            Err(err) => Err(ValError::InternalErr(err)),
+            Err(err) => Err(convert_type(py, err, input)),
         }?;
         let v: &PyAny = value.as_ref(py);
         self.validator.validate(py, v)
@@ -61,8 +61,7 @@ impl Validator for PostDecoratorValidator {
         let v = self.validator.validate(py, input)?;
         match self.func.call(py, (v,), None) {
             Ok(output) => Ok(output),
-            // TODO this is wrong, we should check for errors which could as validation errors
-            Err(err) => Err(ValError::InternalErr(err)),
+            Err(err) => Err(convert_type(py, err, input)),
         }
     }
 
@@ -96,8 +95,7 @@ impl Validator for WrapDecoratorValidator {
         let kwargs = [("validator", validator_kwarg.into_py(py))];
         match self.func.call(py, (input,), Some(kwargs.into_py_dict(py))) {
             Ok(output) => Ok(output),
-            // TODO this is wrong, we should check for errors which could as validation errors
-            Err(err) => Err(ValError::InternalErr(err)),
+            Err(err) => Err(convert_type(py, err, input)),
         }
     }
 
@@ -140,4 +138,19 @@ fn get_function(dict: &PyDict, key: &str) -> PyResult<PyObject> {
         }
         None => py_error!(r#""{}" is required"#, key),
     }
+}
+
+fn convert_type(py: Python, err: PyErr, input: &PyAny) -> ValError {
+    let error_kind = if err.is_instance_of::<PyValueError>(py) {
+        ErrorKind::ValueError
+    } else if err.is_instance_of::<PyTypeError>(py) {
+        ErrorKind::TypeError
+    } else if err.is_instance_of::<PyAssertionError>(py) {
+        ErrorKind::AssertionError
+    } else {
+        return ValError::InternalErr(err);
+    };
+
+    let line_error = val_line_error!(py, input, kind = error_kind, message = Some(err.to_string()));
+    ValError::LineErrors(vec![line_error])
 }
