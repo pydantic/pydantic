@@ -38,7 +38,7 @@ pub struct ValLineError {
     pub kind: ErrorKind,
     pub location: Location,
     pub message: Option<String>,
-    pub context: Option<PyObject>,
+    pub context: Option<Context>,
     pub expected: Option<PyObject>,
     pub value: Option<PyObject>,
 }
@@ -75,12 +75,12 @@ impl ValLineError {
 #[pymethods]
 impl ValLineError {
     #[getter]
-    pub fn kind(&self) -> String {
+    fn kind(&self) -> String {
         self.kind.to_string()
     }
 
     #[getter]
-    pub fn location(&self, py: Python) -> PyObject {
+    fn location(&self, py: Python) -> PyObject {
         let mut loc: Vec<PyObject> = Vec::with_capacity(self.location.len());
         for location in &self.location {
             let item: PyObject = match location {
@@ -92,8 +92,16 @@ impl ValLineError {
         loc.to_object(py)
     }
 
+    fn message(&self) -> String {
+        let raw = self.raw_message();
+        match self.context {
+            Some(ref context) => context.render(raw),
+            None => raw,
+        }
+    }
+
     #[getter]
-    pub fn message(&self) -> String {
+    fn raw_message(&self) -> String {
         // TODO string substitution
         if let Some(ref message) = self.message {
             message.to_string()
@@ -105,18 +113,18 @@ impl ValLineError {
         }
     }
 
-    #[getter]
-    pub fn context(&self, py: Python) -> Option<PyObject> {
-        self.context.as_ref().map(|c| c.to_object(py))
-    }
+    // #[getter]
+    // fn context(&self, py: Python) -> Option<PyObject> {
+    //     self.context.as_ref().map(|c| c.to_object(py))
+    // }
 
     #[getter]
-    pub fn expected(&self, py: Python) -> Option<PyObject> {
+    fn expected(&self, py: Python) -> Option<PyObject> {
         self.expected.as_ref().map(|e| e.to_object(py))
     }
 
     #[getter]
-    pub fn value(&self, py: Python) -> Option<PyObject> {
+    fn value(&self, py: Python) -> Option<PyObject> {
         // could use something like this to get the value type
         // let name = v.get_type().name().unwrap_or("<unknown type>");
         self.value.as_ref().map(|v| v.to_object(py))
@@ -124,5 +132,65 @@ impl ValLineError {
 
     fn __repr__(&self) -> PyResult<String> {
         Ok(format!("{:?}", self))
+    }
+}
+
+#[pyclass]
+#[derive(Debug, Clone)]
+pub struct Context(Vec<(String, ContextValue)>);
+
+impl Context {
+    pub fn new<K: Into<String>, V: Into<ContextValue>, I: IntoIterator<Item = (K, V)>>(raw: I) -> Self {
+        Self(raw.into_iter().map(|(k, v)| (k.into(), v.into())).collect())
+    }
+
+    pub fn render(&self, template: String) -> String {
+        let mut rendered = template;
+        for (key, value) in &self.0 {
+            rendered = rendered.replace(&format!("{{{}}}", key), &value.to_string());
+        }
+        rendered
+    }
+}
+
+// maybe this is overkill and we should just use fmt::Display an convert to string when creating Context?
+#[derive(Debug, Clone)]
+pub enum ContextValue {
+    S(String),
+    I(i64),
+    F(f64),
+}
+
+impl fmt::Display for ContextValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ContextValue::S(s) => write!(f, "{}", s),
+            ContextValue::I(i) => write!(f, "{}", i),
+            ContextValue::F(v) => write!(f, "{}", v),
+        }
+    }
+}
+
+impl From<String> for ContextValue {
+    fn from(str: String) -> Self {
+        Self::S(str)
+    }
+}
+
+impl From<i64> for ContextValue {
+    fn from(int: i64) -> Self {
+        Self::I(int)
+    }
+}
+
+impl From<usize> for ContextValue {
+    fn from(u: usize) -> Self {
+        Self::I(u as i64)
+    }
+}
+
+impl From<f64> for ContextValue {
+    fn from(f: f64) -> Self {
+        Self::F(f)
     }
 }

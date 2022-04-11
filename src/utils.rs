@@ -42,13 +42,6 @@ macro_rules! py_error {
 }
 pub(crate) use py_error;
 
-macro_rules! dict_create {
-    ($py:ident, $($k:expr => $v:expr),*) => {{
-        pyo3::types::IntoPyDict::into_py_dict([$(($k, $v),)*], $py).into()
-    }};
-}
-pub(crate) use dict_create;
-
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct RegexPattern {

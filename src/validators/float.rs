@@ -2,9 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::Validator;
-use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::standalone_validators::validate_float;
-use crate::utils::{dict_create, dict_get};
+use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
 pub struct SimpleFloatValidator;
@@ -43,7 +43,7 @@ pub struct FullFloatValidator {
 
 impl Validator for FullFloatValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "int"
+        type_ == "float"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
@@ -64,7 +64,7 @@ impl Validator for FullFloatValidator {
                     py,
                     float,
                     kind = ErrorKind::FloatMultiple,
-                    context = Some(dict_create!(py, "multiple_of" => multiple_of))
+                    context = context!("multiple_of" => multiple_of)
                 );
             }
         }
@@ -74,7 +74,7 @@ impl Validator for FullFloatValidator {
                     py,
                     float,
                     kind = ErrorKind::FloatLessThanEqual,
-                    context = Some(dict_create!(py, "le" => le))
+                    context = context!("le" => le)
                 );
             }
         }
@@ -84,7 +84,7 @@ impl Validator for FullFloatValidator {
                     py,
                     float,
                     kind = ErrorKind::FloatLessThan,
-                    context = Some(dict_create!(py, "lt" => lt))
+                    context = context!("lt" => lt)
                 );
             }
         }
@@ -94,7 +94,7 @@ impl Validator for FullFloatValidator {
                     py,
                     float,
                     kind = ErrorKind::FloatGreaterThanEqual,
-                    context = Some(dict_create!(py, "ge" => ge))
+                    context = context!("ge" => ge)
                 );
             }
         }
@@ -104,7 +104,7 @@ impl Validator for FullFloatValidator {
                     py,
                     float,
                     kind = ErrorKind::FloatGreaterThan,
-                    context = Some(dict_create!(py, "gt" => gt))
+                    context = context!("gt" => gt)
                 );
             }
         }

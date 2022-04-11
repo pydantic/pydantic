@@ -1,4 +1,3 @@
-* error substitution
 * fix functions error handling
 * `Union`
 * config
