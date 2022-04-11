@@ -24,8 +24,8 @@ impl Validator for SimpleStrValidator {
         Ok(Self)
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let s = validate_str(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let s = validate_str(py, input)?;
         ValResult::Ok(s.to_object(py))
     }
 
@@ -70,9 +70,8 @@ impl Validator for FullStrValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        // let mut str = validate_str(obj)?;
-        let mut str = validate_str(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let mut str = validate_str(py, input)?;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);

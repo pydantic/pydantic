@@ -29,8 +29,8 @@ impl Validator for ListValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let list = validate_list(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let list = validate_list(py, input)?;
         if let Some(min_length) = self.min_items {
             if list.len() < min_length {
                 return err_val_error!(

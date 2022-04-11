@@ -56,8 +56,8 @@ impl Validator for FullFloatValidator {
         })
     }
 
-    fn validate(&self, py: Python, obj: &PyAny) -> ValResult<PyObject> {
-        let float = validate_float(py, obj)?;
+    fn validate(&self, py: Python, input: &PyAny) -> ValResult<PyObject> {
+        let float = validate_float(py, input)?;
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
                 return err_val_error!(
