@@ -1,10 +1,10 @@
 use std::fmt;
 
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use strum::EnumMessage;
 
 use super::kinds::ErrorKind;
-use pyo3::types::PyDict;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -33,6 +33,8 @@ pub type Location = Vec<LocItem>;
 /// A `ValLineError` is a single error that occurred during validation which
 /// combine to eventually form a `ValidationError`. I don't like the name `ValLineError`,
 /// but it's the best I could come up with (for now).
+/// `#[pyclass]` is required to allow `ValidationError::new_err((line_errors, name))` - the lines are converted to
+/// a python type to create the validation error.
 #[pyclass]
 #[derive(Debug, Default, Clone)]
 pub struct ValLineError {
@@ -192,7 +194,7 @@ impl ToPyObject for ContextValue {
 }
 
 impl ToPyObject for Context {
-    fn to_object(&self, py: Python<'_>) -> PyObject {
+    fn to_object(&self, py: Python) -> PyObject {
         let dict = PyDict::new(py);
         for (key, value) in &self.0 {
             dict.set_item(key, value).unwrap();
