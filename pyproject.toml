@@ -26,6 +26,7 @@ color = true
 line-length = 120
 target-version = ['py37', 'py38', 'py39', 'py310']
 skip-string-normalization = true
+skip-magic-trailing-comma = true
 
 [tool.isort]
 line_length = 120
