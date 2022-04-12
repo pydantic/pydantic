@@ -15,12 +15,12 @@ macro_rules! kwargs {
 
 macro_rules! build {
     () => {
-        fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
-            Ok(Self {
+        fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+            Ok(Box::new(Self {
                 validator: build_validator(dict_get_required!(dict, "field", &PyDict)?, config)?,
                 func: get_function(dict)?,
                 config: config.map(|c| c.into()),
-            })
+            }))
         }
     };
 }
@@ -90,11 +90,11 @@ impl FunctionPlainValidator {
 }
 
 impl Validator for FunctionPlainValidator {
-    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
-        Ok(Self {
+    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self {
             func: get_function(dict)?,
             config: config.map(|c| c.into()),
-        })
+        }))
     }
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
