@@ -1,6 +1,15 @@
 from pydantic_core import SchemaValidator
 from devtools import debug
-
+v = SchemaValidator({
+    'model_name': 'MyTestModel',
+    'type': 'model',
+    'fields': {
+        'age': {
+            'type': 'int-constrained',
+            'ge': 'not-int',
+        },
+    },
+})
 v = SchemaValidator({
     'model_name': 'MyTestModel',
     'type': 'model',
@@ -10,7 +19,7 @@ v = SchemaValidator({
             'required': True,
         },
         'age': {
-            'type': 'int',
+            'type': 'int-constrained',
             'ge': 18,
         },
         'is_employer': {
