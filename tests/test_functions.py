@@ -58,10 +58,10 @@ def test_function_after_data():
         }
     )
 
-    assert v.run({'field_a': '123', 'field_b': 321}) == {
-        'fields_set': {'field_b', 'field_a'},
-        'values': {'field_a': 123, 'field_b': '321 Changed'},
-    }
+    assert v.run({'field_a': '123', 'field_b': 321}) == (
+        {'field_a': 123, 'field_b': '321 Changed'},
+        {'field_b', 'field_a'},
+    )
     assert f_kwargs == {'data': {'field_a': 123}, 'config': None}
 
 
@@ -82,7 +82,7 @@ def test_function_after_config():
         }
     )
 
-    assert v.run({'test_field': 321}) == {'fields_set': {'test_field'}, 'values': {'test_field': '321 Changed'}}
+    assert v.run({'test_field': 321}) == ({'test_field': '321 Changed'}, {'test_field'})
     assert f_kwargs == {'data': {}, 'config': {'foo': 'bar'}}
 
 
