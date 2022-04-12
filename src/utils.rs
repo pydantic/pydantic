@@ -24,6 +24,13 @@ macro_rules! dict_get_required {
 }
 pub(crate) use dict_get_required;
 
+macro_rules! dict {
+    ($py:ident, $($k:expr => $v:expr),*) => {{
+        pyo3::types::IntoPyDict::into_py_dict([$(($k, $v.into_py($py)),)*], $py).into()
+    }};
+}
+pub(crate) use dict;
+
 macro_rules! py_error {
     ($msg:expr) => {
         py_error!(crate::SchemaError; $msg)

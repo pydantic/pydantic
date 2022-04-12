@@ -5,7 +5,7 @@ from pydantic_core import SchemaError, SchemaValidator
 
 def test_build_error_type():
     with pytest.raises(SchemaError, match='Unknown schema type: "foobar"'):
-        SchemaValidator({'type': 'foobar', 'model_name': 'TestModel'})
+        SchemaValidator({'type': 'foobar', 'title': 'TestModel'})
 
 
 def test_build_error_internal():
@@ -14,7 +14,7 @@ def test_build_error_internal():
         '  TypeError: \'str\' object cannot be interpreted as an integer'  # noqa Q003
     )
     with pytest.raises(SchemaError, match=msg):
-        SchemaValidator({'type': 'str-constrained', 'min_length': 'xxx', 'model_name': 'TestModel'})
+        SchemaValidator({'type': 'str-constrained', 'min_length': 'xxx', 'title': 'TestModel'})
 
 
 def test_build_error_deep():
@@ -25,9 +25,5 @@ def test_build_error_deep():
     )
     with pytest.raises(SchemaError, match=msg):
         SchemaValidator(
-            {
-                'model_name': 'MyTestModel',
-                'type': 'model',
-                'fields': {'age': {'type': 'int-constrained', 'ge': 'not-int'}},
-            }
+            {'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'type': 'int-constrained', 'ge': 'not-int'}}}
         )
