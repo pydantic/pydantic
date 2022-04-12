@@ -14,7 +14,7 @@ impl FloatValidator {
 }
 
 impl Validator for FloatValidator {
-    fn build(_dict: &PyDict) -> PyResult<Self> {
+    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self)
     }
 
@@ -41,7 +41,7 @@ impl FloatConstrainedValidator {
 }
 
 impl Validator for FloatConstrainedValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self {
             multiple_of: dict_get!(dict, "multiple_of", f64),
             le: dict_get!(dict, "le", f64),

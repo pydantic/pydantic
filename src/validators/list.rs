@@ -18,10 +18,10 @@ impl ListValidator {
 }
 
 impl Validator for ListValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self {
             item_validator: match dict_get!(dict, "items", &PyDict) {
-                Some(d) => Some(build_validator(d)?),
+                Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
             min_items: dict_get!(dict, "min_items", usize),

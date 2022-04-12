@@ -12,7 +12,7 @@ impl NoneValidator {
 }
 
 impl Validator for NoneValidator {
-    fn build(_dict: &PyDict) -> PyResult<Self> {
+    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self)
     }
 

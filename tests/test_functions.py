@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
@@ -38,11 +40,11 @@ def test_function_wrap():
 
 
 def test_function_after_data():
-    f_data = None
+    f_kwargs = None
 
-    def f(input_value, data, **kwargs):
-        nonlocal f_data
-        f_data = data.copy()
+    def f(input_value, **kwargs):
+        nonlocal f_kwargs
+        f_kwargs = deepcopy(kwargs)
         return input_value + ' Changed'
 
     v = SchemaValidator(
@@ -57,7 +59,28 @@ def test_function_after_data():
     )
 
     assert v.run({'field_a': '123', 'field_b': 321}) == {'field_a': 123, 'field_b': '321 Changed'}
-    assert f_data == {'field_a': 123}
+    assert f_kwargs == {'data': {'field_a': 123}, 'config': None}
+
+
+def test_function_after_config():
+    f_kwargs = None
+
+    def f(input_value, **kwargs):
+        nonlocal f_kwargs
+        f_kwargs = deepcopy(kwargs)
+        return input_value + ' Changed'
+
+    v = SchemaValidator(
+        {
+            'model_name': 'Test',
+            'type': 'model',
+            'fields': {'test_field': {'type': 'function-after', 'function': f, 'field': {'type': 'str'}}},
+            'config': {'foo': 'bar'},
+        }
+    )
+
+    assert v.run({'test_field': 321}) == {'test_field': '321 Changed'}
+    assert f_kwargs == {'data': {}, 'config': {'foo': 'bar'}}
 
 
 def test_function_plain():
