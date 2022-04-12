@@ -14,6 +14,12 @@ pub struct ValidationError {
     model_name: String,
 }
 
+impl fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", display_errors(&self.line_errors, &self.model_name))
+    }
+}
+
 impl ValidationError {
     #[inline]
     pub fn new_err<A>(args: A) -> PyErr
@@ -21,12 +27,6 @@ impl ValidationError {
         A: PyErrArguments + Send + Sync + 'static,
     {
         PyErr::new::<ValidationError, A>(args)
-    }
-}
-
-impl fmt::Display for ValidationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", display_errors(&self.line_errors, &self.model_name))
     }
 }
 

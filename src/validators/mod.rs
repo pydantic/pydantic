@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
@@ -58,10 +58,15 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
         ($type:ident, $($validator:path,)+) => {
             match $type {
                 $(
-                    <$validator>::EXPECTED_TYPE => Ok(Box::new(<$validator>::build(dict)?)),
+                    <$validator>::EXPECTED_TYPE => {
+                        let val = <$validator>::build(dict).map_err(|err| {
+                            crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
+                        })?;
+                        Ok(Box::new(val))
+                    },
                 )+
                 _ => {
-                    return py_error!(r#"unknown schema type: "{}""#, $type)
+                    return py_error!(r#"Unknown schema type: "{}""#, $type)
                 },
             }
         };
@@ -97,7 +102,7 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
     )
 }
 
-pub trait Validator: Send + Debug {
+pub trait Validator: Send + fmt::Debug {
     fn build(dict: &PyDict) -> PyResult<Self>
     where
         Self: Sized;

@@ -3,7 +3,7 @@ extern crate pyo3;
 extern crate regex;
 extern crate strum;
 
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::{create_exception, wrap_pyfunction};
 
@@ -12,7 +12,7 @@ mod standalone_validators;
 mod utils;
 mod validators;
 
-create_exception!(_pydantic_core, SchemaError, PyValueError);
+create_exception!(_pydantic_core, SchemaError, PyException);
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
