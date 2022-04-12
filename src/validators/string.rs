@@ -14,8 +14,8 @@ impl StrValidator {
 }
 
 impl Validator for StrValidator {
-    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
-        Ok(Self)
+    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self))
     }
 
     fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
@@ -43,7 +43,7 @@ impl StrConstrainedValidator {
 }
 
 impl Validator for StrConstrainedValidator {
-    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         let pattern = match dict.get_item("pattern") {
             Some(s) => Some(RegexPattern::py_new(s)?),
             None => None,
@@ -54,14 +54,14 @@ impl Validator for StrConstrainedValidator {
         let to_lower = dict_get!(dict, "to_lower", bool).unwrap_or(false);
         let to_upper = dict_get!(dict, "to_upper", bool).unwrap_or(false);
 
-        Ok(Self {
+        Ok(Box::new(Self {
             pattern,
             min_length,
             max_length,
             strip_whitespace,
             to_lower,
             to_upper,
-        })
+        }))
     }
 
     fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {

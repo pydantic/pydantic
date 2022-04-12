@@ -59,7 +59,7 @@ macro_rules! validator_match {
                     let val = <$validator>::build($dict, $config).map_err(|err| {
                         crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
                     })?;
-                    Ok(Box::new(val))
+                    Ok(val)
                 },
             )+
             _ => {
@@ -103,7 +103,7 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
 }
 
 pub trait Validator: Send + fmt::Debug {
-    fn build(dict: &PyDict, schema: Option<&PyDict>) -> PyResult<Self>
+    fn build(dict: &PyDict, schema: Option<&PyDict>) -> PyResult<Box<dyn Validator>>
     where
         Self: Sized;
 
