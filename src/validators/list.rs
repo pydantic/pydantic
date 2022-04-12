@@ -18,15 +18,15 @@ impl ListValidator {
 }
 
 impl Validator for ListValidator {
-    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
-        Ok(Self {
+    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self {
             item_validator: match dict_get!(dict, "items", &PyDict) {
                 Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
             min_items: dict_get!(dict, "min_items", usize),
             max_items: dict_get!(dict, "max_items", usize),
-        })
+        }))
     }
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {

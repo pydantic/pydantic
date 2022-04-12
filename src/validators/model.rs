@@ -27,7 +27,7 @@ impl ModelValidator {
 }
 
 impl Validator for ModelValidator {
-    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         let config = dict_get!(dict, "config", &PyDict);
 
         let extra_behavior = ExtraBehavior::from_config(config)?;
@@ -43,11 +43,11 @@ impl Validator for ModelValidator {
             Some(fields) => fields,
             None => {
                 // allow an empty model, is this is a good idea?
-                return Ok(Self {
+                return Ok(Box::new(Self {
                     fields: vec![],
                     extra_behavior,
                     extra_validator,
-                });
+                }));
             }
         };
         let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
@@ -62,11 +62,11 @@ impl Validator for ModelValidator {
                 default: dict_get!(field_dict, "default", PyAny),
             });
         }
-        Ok(Self {
+        Ok(Box::new(Self {
             fields,
             extra_behavior,
             extra_validator,
-        })
+        }))
     }
 
     fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {

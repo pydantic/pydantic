@@ -14,8 +14,8 @@ impl IntValidator {
 }
 
 impl Validator for IntValidator {
-    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
-        Ok(Self)
+    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self))
     }
 
     fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
@@ -41,14 +41,14 @@ impl IntConstrainedValidator {
 }
 
 impl Validator for IntConstrainedValidator {
-    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
-        Ok(Self {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self {
             multiple_of: dict_get!(dict, "multiple_of", i64),
             le: dict_get!(dict, "le", i64),
             lt: dict_get!(dict, "lt", i64),
             ge: dict_get!(dict, "ge", i64),
             gt: dict_get!(dict, "gt", i64),
-        })
+        }))
     }
 
     fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
