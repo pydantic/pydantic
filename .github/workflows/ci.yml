@@ -1,0 +1,112 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '**'
+  pull_request: {}
+
+jobs:
+  test:
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+
+    runs-on: ${{ matrix.os }}-latest
+
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - id: cache-py
+      name: cache python
+      uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          py
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('tests/requirements.txt') }}
+          ${{ hashFiles('setup.py') }}
+
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    - name: cache rust
+      uses: Swatinem/rust-cache@v1
+
+    - run: pip install -r tests/requirements.txt
+      if: steps.cache-py.outputs.cache-hit != 'true'
+
+    - run: pip install -e .
+    - run: pip freeze
+
+    - run: make test
+
+    - run: coverage xml
+
+    - uses: codecov/codecov-action@v1.0.13
+      with:
+        file: ./coverage.xml
+        env_vars: PYTHON,OS
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+
+    - uses: actions/cache@v2
+      id: cache-py
+      name: cache python
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          py
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('tests/requirements-linting.txt') }}
+          ${{ hashFiles('setup.py') }}
+
+    - run: pip install -r tests/requirements-linting.txt
+      if: steps.cache-py.outputs.cache-hit != 'true'
+
+    - run: SKIP_RUST_EXTENSION=1 pip install .
+      if: steps.cache-py.outputs.cache-hit != 'true'
+
+    - run: pip freeze
+
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
+
+    - name: cache rust
+      uses: Swatinem/rust-cache@v1
+
+    - run: make lint
+    - run: make mypy
