@@ -5,14 +5,19 @@ use strum::{Display, EnumMessage};
 pub enum ErrorKind {
     #[strum(message = "Invalid input")]
     InvalidInput,
+    // model specific errors
     #[strum(message = "Field required")]
     Missing,
-    #[strum(message = "Extra fields are not permitted")]
+    #[strum(message = "Extra values are not permitted")]
     ExtraForbidden,
+    #[strum(message = "Model keys must be strings")]
+    InvalidKey,
+    // None errors
     #[strum(message = "Value must not be None/null")]
     NoneForbidden,
     #[strum(message = "Value must be None/null")]
     NoneRequired,
+    // boolean errors
     #[strum(message = "Value must be a valid boolean")]
     Bool,
     #[strum(message = "Value must be a valid string")]

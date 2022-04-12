@@ -1,15 +1,15 @@
 use pyo3::exceptions::{PyAssertionError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{IntoPyDict, PyAny, PyDict};
+use pyo3::types::{PyAny, PyDict};
 
 use super::{ValError, ValidationError, Validator};
 use crate::errors::{val_line_error, ErrorKind, ValResult};
-use crate::utils::{dict_get_required, py_error};
+use crate::utils::{dict, dict_get_required, py_error};
 use crate::validators::build_validator;
 
 macro_rules! kwargs {
     ($py:ident, $($k:expr => $v:expr),*) => {{
-        Some([$(($k, $v.into_py($py)),)*].into_py_dict($py))
+        Some(dict!($py, $($k => $v),*))
     }};
 }
 
@@ -40,13 +40,10 @@ impl Validator for FunctionBeforeValidator {
     build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
+        let kwargs = kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref());
         let value = self
             .func
-            .call(
-                py,
-                (input,),
-                kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref()),
-            )
+            .call(py, (input,), kwargs)
             .map_err(|e| convert_err(py, e, input))?;
         let v: &PyAny = value.as_ref(py);
         self.validator.validate(py, v, data)

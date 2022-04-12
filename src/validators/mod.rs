@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::errors::{ValError, ValResult, ValidationError};
-use crate::utils::{dict_get_required, py_error};
+use crate::utils::{dict_get, dict_get_required, py_error};
 
 mod bool;
 mod dict;
@@ -19,7 +19,7 @@ mod string;
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    model_name: String,
+    title: String,
     validator: Box<dyn Validator>,
 }
 
@@ -27,9 +27,9 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(dict: &PyDict) -> PyResult<Self> {
-        let model_name = dict_get_required!(dict, "model_name", String)?;
+        let title = dict_get!(dict, "title", String).unwrap_or("Model".to_string());
         Ok(Self {
-            model_name,
+            title,
             validator: build_validator(dict, None)?,
         })
     }
@@ -37,17 +37,15 @@ impl SchemaValidator {
     fn run(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
         match self.validator.validate(py, input, PyDict::new(py)) {
             Ok(obj) => Ok(obj),
-            Err(ValError::LineErrors(line_errors)) => {
-                Err(ValidationError::new_err((line_errors, self.model_name.clone())))
-            }
+            Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, self.title.clone()))),
             Err(ValError::InternalErr(err)) => Err(err),
         }
     }
 
     fn __repr__(&self) -> String {
         format!(
-            "SchemaValidator(validator={:?}, model_name={:?})",
-            self.validator, self.model_name
+            "SchemaValidator(validator={:?}, title={:?})",
+            self.validator, self.title
         )
     }
 }

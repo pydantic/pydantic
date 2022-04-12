@@ -1,17 +1,8 @@
 from pydantic_core import SchemaValidator
 from devtools import debug
+
 v = SchemaValidator({
-    'model_name': 'MyTestModel',
-    'type': 'model',
-    'fields': {
-        'age': {
-            'type': 'int-constrained',
-            'ge': 'not-int',
-        },
-    },
-})
-v = SchemaValidator({
-    'model_name': 'MyTestModel',
+    'title': 'MyTestModel',
     'type': 'model',
     'fields': {
         'name': {
