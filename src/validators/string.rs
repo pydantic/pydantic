@@ -14,7 +14,7 @@ impl StrValidator {
 }
 
 impl Validator for StrValidator {
-    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self))
     }
 
@@ -43,16 +43,16 @@ impl StrConstrainedValidator {
 }
 
 impl Validator for StrConstrainedValidator {
-    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let pattern = match dict.get_item("pattern") {
+    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        let pattern = match schema.get_item("pattern") {
             Some(s) => Some(RegexPattern::py_new(s)?),
             None => None,
         };
-        let min_length = dict_get!(dict, "min_length", usize);
-        let max_length = dict_get!(dict, "max_length", usize);
-        let strip_whitespace = dict_get!(dict, "strip_whitespace", bool).unwrap_or(false);
-        let to_lower = dict_get!(dict, "to_lower", bool).unwrap_or(false);
-        let to_upper = dict_get!(dict, "to_upper", bool).unwrap_or(false);
+        let min_length = dict_get!(schema, "min_length", usize);
+        let max_length = dict_get!(schema, "max_length", usize);
+        let strip_whitespace = dict_get!(schema, "strip_whitespace", bool).unwrap_or(false);
+        let to_lower = dict_get!(schema, "to_lower", bool).unwrap_or(false);
+        let to_upper = dict_get!(schema, "to_upper", bool).unwrap_or(false);
 
         Ok(Box::new(Self {
             pattern,

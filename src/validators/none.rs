@@ -12,7 +12,7 @@ impl NoneValidator {
 }
 
 impl Validator for NoneValidator {
-    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self))
     }
 

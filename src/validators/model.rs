@@ -27,19 +27,20 @@ impl ModelValidator {
 }
 
 impl Validator for ModelValidator {
-    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let config = dict_get!(dict, "config", &PyDict);
+    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        // models ignore the parent config and always use the config from this model
+        let config = dict_get!(schema, "config", &PyDict);
 
         let extra_behavior = ExtraBehavior::from_config(config)?;
         let extra_validator = match extra_behavior {
-            ExtraBehavior::Allow => match dict_get!(dict, "extra_validator", &PyDict) {
+            ExtraBehavior::Allow => match dict_get!(schema, "extra_validator", &PyDict) {
                 Some(v) => Some(build_validator(v, config)?),
                 None => None,
             },
             _ => None,
         };
 
-        let fields_dict: &PyDict = match dict_get!(dict, "fields", &PyDict) {
+        let fields_dict: &PyDict = match dict_get!(schema, "fields", &PyDict) {
             Some(fields) => fields,
             None => {
                 // allow an empty model, is this is a good idea?
