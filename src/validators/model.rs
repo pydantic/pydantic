@@ -77,9 +77,9 @@ impl Validator for ModelValidator {
         let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.len());
 
         for field in &self.fields {
-            if let Some(value) = dict.get_item(field.name.clone()) {
+            if let Some(value) = dict.get_item(&field.name) {
                 match field.validator.validate(py, value, output_dict) {
-                    Ok(value) => output_dict.set_item(field.name.clone(), value).map_err(as_internal)?,
+                    Ok(value) => output_dict.set_item(&field.name, value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![LocItem::S(field.name.clone())];
                         for err in line_errors {
@@ -105,21 +105,24 @@ impl Validator for ModelValidator {
             ExtraBehavior::Forbid => (true, true),
         };
         if check_extra {
-            for (key, value) in dict.iter() {
-                let key_str: String = match key.extract() {
-                    Ok(key) => key,
+            for (raw_kwy, value) in dict.iter() {
+                let key: String = match raw_kwy.extract() {
+                    Ok(k) => k,
                     Err(_) => {
                         errors.push(val_line_error!(
                             py,
                             dict,
                             kind = ErrorKind::InvalidKey,
-                            location = vec![LocItem::from_py_repr(key)?]
+                            location = vec![LocItem::from_py_repr(raw_kwy)?]
                         ));
                         continue;
                     }
                 };
-                fields_set.insert(key_str.clone());
-                let loc = vec![LocItem::S(key_str)];
+                if fields_set.contains(&key) {
+                    continue;
+                }
+                fields_set.insert(key.clone());
+                let loc = vec![LocItem::S(key.clone())];
 
                 if forbid {
                     errors.push(val_line_error!(
@@ -130,7 +133,7 @@ impl Validator for ModelValidator {
                     ));
                 } else if let Some(ref validator) = self.extra_validator {
                     match validator.validate(py, value, output_dict) {
-                        Ok(value) => output_dict.set_item(key.clone(), value).map_err(as_internal)?,
+                        Ok(value) => output_dict.set_item(&key, value).map_err(as_internal)?,
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
                                 // TODO I don't think this clone is necessary, but the compiler disagrees
@@ -140,7 +143,7 @@ impl Validator for ModelValidator {
                         Err(err) => return Err(err),
                     }
                 } else {
-                    output_dict.set_item(key.clone(), value.clone()).map_err(as_internal)?;
+                    output_dict.set_item(&key, value).map_err(as_internal)?;
                 }
             }
         }
@@ -168,7 +171,7 @@ impl ExtraBehavior {
     pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
         match config {
             Some(dict) => {
-                let b = dict_get!(dict, "behaviour", String);
+                let b = dict_get!(dict, "extra", String);
                 match b {
                     Some(s) => match s.as_str() {
                         "allow" => Ok(ExtraBehavior::Allow),
