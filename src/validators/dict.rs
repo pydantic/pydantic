@@ -19,14 +19,14 @@ impl DictValidator {
 }
 
 impl Validator for DictValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self {
             key_validator: match dict_get!(dict, "keys", &PyDict) {
-                Some(d) => Some(build_validator(d)?),
+                Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
             value_validator: match dict_get!(dict, "values", &PyDict) {
-                Some(d) => Some(build_validator(d)?),
+                Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
             min_items: dict_get!(dict, "min_items", usize),

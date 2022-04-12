@@ -30,7 +30,7 @@ impl SchemaValidator {
         let model_name = dict_get_required!(dict, "model_name", String)?;
         Ok(Self {
             model_name,
-            validator: build_validator(dict)?,
+            validator: build_validator(dict, None)?,
         })
     }
 
@@ -52,29 +52,31 @@ impl SchemaValidator {
     }
 }
 
-pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
-    // macro to build the match statement validator selection
-    macro_rules! validator_match {
-        ($type:ident, $($validator:path,)+) => {
-            match $type {
-                $(
-                    <$validator>::EXPECTED_TYPE => {
-                        let val = <$validator>::build(dict).map_err(|err| {
-                            crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
-                        })?;
-                        Ok(Box::new(val))
-                    },
-                )+
-                _ => {
-                    return py_error!(r#"Unknown schema type: "{}""#, $type)
+// macro to build the match statement for validator selection
+macro_rules! validator_match {
+    ($type:ident, $dict:ident, $config:ident, $($validator:path,)+) => {
+        match $type {
+            $(
+                <$validator>::EXPECTED_TYPE => {
+                    let val = <$validator>::build($dict, $config).map_err(|err| {
+                        crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
+                    })?;
+                    Ok(Box::new(val))
                 },
-            }
-        };
-    }
+            )+
+            _ => {
+                return py_error!(r#"Unknown schema type: "{}""#, $type)
+            },
+        }
+    };
+}
 
+pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
     let type_: &str = dict_get_required!(dict, "type", &str)?;
     validator_match!(
         type_,
+        dict,
+        config,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
         // strings
@@ -103,7 +105,7 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
 }
 
 pub trait Validator: Send + fmt::Debug {
-    fn build(dict: &PyDict) -> PyResult<Self>
+    fn build(dict: &PyDict, schema: Option<&PyDict>) -> PyResult<Self>
     where
         Self: Sized;
 

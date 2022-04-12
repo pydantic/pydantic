@@ -14,7 +14,7 @@ impl IntValidator {
 }
 
 impl Validator for IntValidator {
-    fn build(_dict: &PyDict) -> PyResult<Self> {
+    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self)
     }
 
@@ -41,7 +41,7 @@ impl IntConstrainedValidator {
 }
 
 impl Validator for IntConstrainedValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self {
             multiple_of: dict_get!(dict, "multiple_of", i64),
             le: dict_get!(dict, "le", i64),

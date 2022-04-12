@@ -14,7 +14,7 @@ impl StrValidator {
 }
 
 impl Validator for StrValidator {
-    fn build(_dict: &PyDict) -> PyResult<Self> {
+    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self)
     }
 
@@ -43,7 +43,7 @@ impl StrConstrainedValidator {
 }
 
 impl Validator for StrConstrainedValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
         let pattern = match dict.get_item("pattern") {
             Some(s) => Some(RegexPattern::py_new(s)?),
             None => None,

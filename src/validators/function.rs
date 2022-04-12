@@ -15,10 +15,11 @@ macro_rules! kwargs {
 
 macro_rules! build {
     () => {
-        fn build(dict: &PyDict) -> PyResult<Self> {
+        fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
             Ok(Self {
-                validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
+                validator: build_validator(dict_get_required!(dict, "field", &PyDict)?, config)?,
                 func: get_function(dict)?,
+                config: config.map(|c| c.into()),
             })
         }
     };
@@ -28,6 +29,7 @@ macro_rules! build {
 pub struct FunctionBeforeValidator {
     validator: Box<dyn Validator>,
     func: PyObject,
+    config: Option<Py<PyDict>>,
 }
 
 impl FunctionBeforeValidator {
@@ -40,7 +42,11 @@ impl Validator for FunctionBeforeValidator {
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let value = self
             .func
-            .call(py, (input,), kwargs!(py, "data" => data.as_ref()))
+            .call(
+                py,
+                (input,),
+                kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref()),
+            )
             .map_err(|e| convert_err(py, e, input))?;
         let v: &PyAny = value.as_ref(py);
         self.validator.validate(py, v, data)
@@ -55,6 +61,7 @@ impl Validator for FunctionBeforeValidator {
 pub struct FunctionAfterValidator {
     validator: Box<dyn Validator>,
     func: PyObject,
+    config: Option<Py<PyDict>>,
 }
 
 impl FunctionAfterValidator {
@@ -66,9 +73,8 @@ impl Validator for FunctionAfterValidator {
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let v = self.validator.validate(py, input, data)?;
-        self.func
-            .call(py, (v,), kwargs!(py, "data" => data.as_ref()))
-            .map_err(|e| convert_err(py, e, input))
+        let kwargs = kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref());
+        self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -79,6 +85,7 @@ impl Validator for FunctionAfterValidator {
 #[derive(Debug, Clone)]
 pub struct FunctionPlainValidator {
     func: PyObject,
+    config: Option<Py<PyDict>>,
 }
 
 impl FunctionPlainValidator {
@@ -86,15 +93,17 @@ impl FunctionPlainValidator {
 }
 
 impl Validator for FunctionPlainValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         Ok(Self {
             func: get_function(dict)?,
+            config: config.map(|c| c.into()),
         })
     }
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
+        let kwargs = kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref());
         self.func
-            .call(py, (input,), kwargs!(py, "data" => data.as_ref()))
+            .call(py, (input,), kwargs)
             .map_err(|e| convert_err(py, e, input))
     }
 
@@ -107,6 +116,7 @@ impl Validator for FunctionPlainValidator {
 pub struct FunctionWrapValidator {
     validator: Box<dyn Validator>,
     func: PyObject,
+    config: Option<Py<PyDict>>,
 }
 
 impl FunctionWrapValidator {
@@ -121,7 +131,12 @@ impl Validator for FunctionWrapValidator {
             validator: self.validator.clone(),
             data: data.into_py(py),
         };
-        let kwargs = kwargs!(py, "validator" => validator_kwarg, "data" => data.as_ref());
+        let kwargs = kwargs!(
+            py,
+            "validator" => validator_kwarg,
+            "data" => data.as_ref(),
+            "config" => self.config.as_ref()
+        );
         self.func
             .call(py, (input,), kwargs)
             .map_err(|e| convert_err(py, e, input))
