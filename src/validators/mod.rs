@@ -102,6 +102,8 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
     )
 }
 
+/// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
+/// they also need `EXPECTED_TYPE` as a const, but that can't be part of the trait.
 pub trait Validator: Send + fmt::Debug {
     /// Build a new validator from the schema, the return type is a trait to provide an escape hatch for validators
     /// to return other validators, currently only used by StrValidator
