@@ -9,11 +9,11 @@ use crate::utils::dict_get;
 #[derive(Debug, Clone)]
 pub struct IntValidator;
 
-impl Validator for IntValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "int"
-    }
+impl IntValidator {
+    pub const EXPECTED_TYPE: &'static str = "int";
+}
 
+impl Validator for IntValidator {
     fn build(_dict: &PyDict) -> PyResult<Self> {
         Ok(Self)
     }
@@ -36,11 +36,11 @@ pub struct IntConstrainedValidator {
     gt: Option<i64>,
 }
 
-impl Validator for IntConstrainedValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "int-constrained"
-    }
+impl IntConstrainedValidator {
+    pub const EXPECTED_TYPE: &'static str = "int-constrained";
+}
 
+impl Validator for IntConstrainedValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             multiple_of: dict_get!(dict, "multiple_of", i64),

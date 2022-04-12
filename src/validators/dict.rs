@@ -14,11 +14,11 @@ pub struct DictValidator {
     max_items: Option<usize>,
 }
 
-impl Validator for DictValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "dict"
-    }
+impl DictValidator {
+    pub const EXPECTED_TYPE: &'static str = "dict";
+}
 
+impl Validator for DictValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             key_validator: match dict_get!(dict, "keys", &PyDict) {

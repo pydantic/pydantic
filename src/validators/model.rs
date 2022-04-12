@@ -19,11 +19,11 @@ pub struct ModelValidator {
     fields: Vec<ModelField>,
 }
 
-impl Validator for ModelValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "model"
-    }
+impl ModelValidator {
+    pub const EXPECTED_TYPE: &'static str = "model";
+}
 
+impl Validator for ModelValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         let fields_dict: &PyDict = match dict_get!(dict, "fields", &PyDict) {
             Some(fields) => fields,
