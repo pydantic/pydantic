@@ -96,16 +96,16 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
         // strings
-        self::string::SimpleStrValidator,
-        self::string::FullStrValidator,
+        self::string::StrValidator,
+        self::string::StrConstrainedValidator,
         // integers
-        self::int::SimpleIntValidator,
-        self::int::FullIntValidator,
+        self::int::IntValidator,
+        self::int::IntConstrainedValidator,
         // boolean
         self::bool::BoolValidator,
         // floats
-        self::float::SimpleFloatValidator,
-        self::float::FullFloatValidator,
+        self::float::FloatValidator,
+        self::float::FloatConstrainedValidator,
         // list/arrays (recursive)
         self::list::ListValidator,
         // dicts/objects (recursive)

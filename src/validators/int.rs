@@ -7,16 +7,11 @@ use crate::standalone_validators::validate_int;
 use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
-pub struct SimpleIntValidator;
+pub struct IntValidator;
 
-impl Validator for SimpleIntValidator {
-    fn is_match(type_: &str, dict: &PyDict) -> bool {
+impl Validator for IntValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "int"
-            && dict.get_item("multiple_of").is_none()
-            && dict.get_item("le").is_none()
-            && dict.get_item("lt").is_none()
-            && dict.get_item("ge").is_none()
-            && dict.get_item("gt").is_none()
     }
 
     fn build(_dict: &PyDict) -> PyResult<Self> {
@@ -33,7 +28,7 @@ impl Validator for SimpleIntValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct FullIntValidator {
+pub struct IntConstrainedValidator {
     multiple_of: Option<i64>,
     le: Option<i64>,
     lt: Option<i64>,
@@ -41,9 +36,9 @@ pub struct FullIntValidator {
     gt: Option<i64>,
 }
 
-impl Validator for FullIntValidator {
+impl Validator for IntConstrainedValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "int"
+        type_ == "int-constrained"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {

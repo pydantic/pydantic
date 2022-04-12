@@ -7,17 +7,11 @@ use crate::standalone_validators::validate_str;
 use crate::utils::{dict_get, RegexPattern};
 
 #[derive(Debug, Clone)]
-pub struct SimpleStrValidator;
+pub struct StrValidator;
 
-impl Validator for SimpleStrValidator {
-    fn is_match(type_: &str, dict: &PyDict) -> bool {
+impl Validator for StrValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "str"
-            && dict.get_item("pattern").is_none()
-            && dict.get_item("min_length").is_none()
-            && dict.get_item("max_length").is_none()
-            && dict.get_item("strip_whitespace").is_none()
-            && dict.get_item("to_lower").is_none()
-            && dict.get_item("to_upper").is_none()
     }
 
     fn build(_dict: &PyDict) -> PyResult<Self> {
@@ -35,7 +29,7 @@ impl Validator for SimpleStrValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct FullStrValidator {
+pub struct StrConstrainedValidator {
     pattern: Option<RegexPattern>,
     max_length: Option<usize>,
     min_length: Option<usize>,
@@ -44,9 +38,9 @@ pub struct FullStrValidator {
     to_upper: bool,
 }
 
-impl Validator for FullStrValidator {
+impl Validator for StrConstrainedValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "str"
+        type_ == "str-constrained"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
