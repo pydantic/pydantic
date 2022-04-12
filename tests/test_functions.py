@@ -3,20 +3,20 @@ import pytest
 from pydantic_core import SchemaValidator, ValidationError
 
 
-def test_pre_decorator():
+def test_function_before():
     def f(input_value, **kwargs):
         return input_value + ' Changed'
 
-    v = SchemaValidator({'model_name': 'Test', 'type': 'decorator', 'pre_decorator': f, 'field': {'type': 'str'}})
+    v = SchemaValidator({'model_name': 'Test', 'type': 'function-before', 'function': f, 'field': {'type': 'str'}})
 
     assert v.run('input value') == 'input value Changed'
 
 
-def test_pre_decorator_raise():
+def test_function_before_raise():
     def f(input_value, **kwargs):
         raise ValueError('foobar')
 
-    v = SchemaValidator({'model_name': 'Test', 'type': 'decorator', 'pre_decorator': f, 'field': {'type': 'str'}})
+    v = SchemaValidator({'model_name': 'Test', 'type': 'function-before', 'function': f, 'field': {'type': 'str'}})
 
     with pytest.raises(ValidationError) as exc_info:
         assert v.run('input value') == 'input value Changed'
@@ -26,18 +26,18 @@ def test_pre_decorator_raise():
     ]
 
 
-def test_wrap_decorator():
+def test_function_wrap():
     def f(input_value, *, validator, **kwargs):
         return validator(input_value) + ' Changed'
 
-    v = SchemaValidator({'model_name': 'Test', 'type': 'decorator', 'wrap_decorator': f, 'field': {'type': 'str'}})
+    v = SchemaValidator({'model_name': 'Test', 'type': 'function-wrap', 'function': f, 'field': {'type': 'str'}})
 
     # with pytest.raises(ValidationError) as exc_info:
     assert v.run('input value') == 'input value Changed'
     # print(exc_info.value)
 
 
-def test_post_decorator_data():
+def test_function_after_data():
     f_data = None
 
     def f(input_value, data, **kwargs):
@@ -51,7 +51,7 @@ def test_post_decorator_data():
             'type': 'model',
             'fields': {
                 'field_a': {'type': 'int'},
-                'field_b': {'type': 'decorator', 'post_decorator': f, 'field': {'type': 'str'}},
+                'field_b': {'type': 'function-after', 'function': f, 'field': {'type': 'str'}},
             },
         }
     )
