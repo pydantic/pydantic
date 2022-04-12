@@ -44,8 +44,8 @@ impl SchemaValidator {
 
     fn __repr__(&self) -> String {
         format!(
-            "SchemaValidator(validator={:?}, title={:?})",
-            self.validator, self.title
+            "SchemaValidator(title={:?}, validator={:#?})",
+            self.title, self.validator
         )
     }
 }

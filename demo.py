@@ -7,7 +7,6 @@ v = SchemaValidator({
     'fields': {
         'name': {
             'type': 'str',
-            'required': True,
         },
         'age': {
             'type': 'int-constrained',
@@ -15,6 +14,7 @@ v = SchemaValidator({
         },
         'is_employer': {
             'type': 'bool',
+            'default': True,
         },
         'friends': {
             'type': 'list',
@@ -34,9 +34,9 @@ v = SchemaValidator({
         }
     },
 })
-# print(v)
+print(repr(v))
 
-r = v.run({'name': 'John', 'age': 42, 'is_employer': 'true', 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
+r = v.run({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
 debug(r)
 
 r = v.run({'name': 'John', 'age': 16, 'friends': [-1, 2, 3, -1], 'settings': {'a': 1.0, 'b': 2.0}})

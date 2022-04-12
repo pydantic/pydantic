@@ -17,11 +17,6 @@ repos:
     entry: make lint-python
     types: [python]
     language: system
-  - id: build
-    name: Build
-    entry: make build-dev
-    types: [rust]
-    language: system
   - id: lint-rust
     name: Lint Rust
     entry: make lint-rust
@@ -31,4 +26,14 @@ repos:
     name: Mypy
     entry: make mypy
     types: [python]
+    language: system
+  - id: build
+    name: Build
+    entry: make build-dev
+    types: [rust]
+    language: system
+  - id: run-tests
+    name: Run Tests
+    entry: make testcov
+    types: [rust, python]
     language: system
