@@ -1,0 +1,9 @@
+coverage:
+  precision: 2
+  range: [90, 100]
+  status:
+    patch: false
+    project: false
+
+comment:
+  layout: 'header, diff, flags, files, footer'

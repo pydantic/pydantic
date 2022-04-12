@@ -20,3 +20,4 @@ docs/_build/
 .rustfmt.toml
 /sandbox/
 /.editorconfig
+/*.lcov

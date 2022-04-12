@@ -26,6 +26,25 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+
+    - id: cache-rust
+      name: cache rust
+      uses: Swatinem/rust-cache@v1
+
+    - run: cargo install rustfilt
+      if: steps.cache-rust.outputs.cache-hit != 'true'
+
+    - run: cargo install cargo-binutils
+      if: steps.cache-rust.outputs.cache-hit != 'true'
+
+    - run: rustup component add llvm-tools-preview
+
     - name: set up python
       uses: actions/setup-python@v3
       with:
@@ -43,30 +62,25 @@ jobs:
           ${{ hashFiles('tests/requirements.txt') }}
           ${{ hashFiles('setup.py') }}
 
-    - name: install rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-
-    - name: cache rust
-      uses: Swatinem/rust-cache@v1
-
     - run: pip install -r tests/requirements.txt
       if: steps.cache-py.outputs.cache-hit != 'true'
 
     - run: pip install -e .
+      env:
+        RUST_BACKTRACE: 1
+        RUSTFLAGS: '-C instrument-coverage'
+
     - run: pip freeze
 
     - run: make test
 
     - run: coverage xml
 
+    - run: ./tests/prepare_rust_coverage.sh
+
     - uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
         env_vars: PYTHON,OS
 
   lint:
