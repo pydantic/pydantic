@@ -6,6 +6,9 @@ class SchemaValidator:
     def __init__(self, schema: Dict[str, Any]) -> None: ...
     def run(self, data: Any) -> Dict[str, Any]: ...
 
+class SchemaError(ValueError):
+    pass
+
 class ValidationError(ValueError):
     model_name: str
 

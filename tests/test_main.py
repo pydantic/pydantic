@@ -17,13 +17,13 @@ from pydantic_core import SchemaValidator, ValidationError
     ],
 )
 def test_bool(input_value, output_value):
-    v = SchemaValidator({'type': 'bool', 'model_name': 'TestModel'})
+    v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
     assert v.run(input_value) == output_value
 
 
 def test_bool_error():
-    v = SchemaValidator({'type': 'bool', 'model_name': 'TestModel'})
-    assert repr(v) == 'SchemaValidator(validator=BoolValidator, model_name="TestModel")'
+    v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
+    assert repr(v) == 'SchemaValidator(validator=BoolValidator, title="TestModel")'
 
     with pytest.raises(ValidationError) as exc_info:
         v.run('wrong')
@@ -35,12 +35,12 @@ def test_bool_error():
 
 
 def test_str():
-    v = SchemaValidator({'type': 'str', 'model_name': 'TestModel'})
+    v = SchemaValidator({'type': 'str', 'title': 'TestModel'})
     assert v.run('test') == 'test'
 
 
 def test_str_constrained():
-    v = SchemaValidator({'type': 'str-constrained', 'max_length': 5, 'model_name': 'TestModel'})
+    v = SchemaValidator({'type': 'str-constrained', 'max_length': 5, 'title': 'TestModel'})
     assert v.run('test') == 'test'
 
     with pytest.raises(ValidationError, match='String must have at most 5 characters'):

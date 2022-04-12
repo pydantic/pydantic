@@ -19,19 +19,19 @@ impl DictValidator {
 }
 
 impl Validator for DictValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
-        Ok(Self {
-            key_validator: match dict_get!(dict, "keys", &PyDict) {
-                Some(d) => Some(build_validator(d)?),
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self {
+            key_validator: match dict_get!(schema, "keys", &PyDict) {
+                Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
-            value_validator: match dict_get!(dict, "values", &PyDict) {
-                Some(d) => Some(build_validator(d)?),
+            value_validator: match dict_get!(schema, "values", &PyDict) {
+                Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
-            min_items: dict_get!(dict, "min_items", usize),
-            max_items: dict_get!(dict, "max_items", usize),
-        })
+            min_items: dict_get!(schema, "min_items", usize),
+            max_items: dict_get!(schema, "max_items", usize),
+        }))
     }
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
@@ -95,9 +95,9 @@ fn apply_validator(
             Ok(value) => Ok(Some(value)),
             Err(ValError::LineErrors(line_errors)) => {
                 let loc = if key_loc {
-                    vec![get_loc(key)?, LocItem::S("[key]".to_string())]
+                    vec![LocItem::from_py(key)?, LocItem::S("[key]".to_string())]
                 } else {
-                    vec![get_loc(key)?]
+                    vec![LocItem::from_py(key)?]
                 };
                 for err in line_errors {
                     errors.push(err.prefix_location(&loc));
@@ -108,17 +108,4 @@ fn apply_validator(
         },
         None => Ok(Some(input.into_py(py))),
     }
-}
-
-fn get_loc(key: &PyAny) -> ValResult<LocItem> {
-    if let Ok(key_str) = key.extract::<String>() {
-        return Ok(LocItem::S(key_str));
-    }
-    if let Ok(key_int) = key.extract::<usize>() {
-        return Ok(LocItem::I(key_int));
-    }
-    // best effort is to use repr
-    let repr_result = key.repr().map_err(as_internal)?;
-    let repr: String = repr_result.extract().map_err(as_internal)?;
-    Ok(LocItem::S(repr))
 }
