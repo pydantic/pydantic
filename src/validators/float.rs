@@ -14,7 +14,7 @@ impl FloatValidator {
 }
 
 impl Validator for FloatValidator {
-    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self))
     }
 
@@ -41,13 +41,13 @@ impl FloatConstrainedValidator {
 }
 
 impl Validator for FloatConstrainedValidator {
-    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
-            multiple_of: dict_get!(dict, "multiple_of", f64),
-            le: dict_get!(dict, "le", f64),
-            lt: dict_get!(dict, "lt", f64),
-            ge: dict_get!(dict, "ge", f64),
-            gt: dict_get!(dict, "gt", f64),
+            multiple_of: dict_get!(schema, "multiple_of", f64),
+            le: dict_get!(schema, "le", f64),
+            lt: dict_get!(schema, "lt", f64),
+            ge: dict_get!(schema, "ge", f64),
+            gt: dict_get!(schema, "gt", f64),
         }))
     }
 

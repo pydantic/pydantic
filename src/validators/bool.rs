@@ -13,7 +13,7 @@ impl BoolValidator {
 }
 
 impl Validator for BoolValidator {
-    fn build(_dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self))
     }
 

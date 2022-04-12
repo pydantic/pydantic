@@ -103,12 +103,17 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
 }
 
 pub trait Validator: Send + fmt::Debug {
-    fn build(dict: &PyDict, schema: Option<&PyDict>) -> PyResult<Box<dyn Validator>>
+    /// Build a new validator from the schema, the return type is a trait to provide an escape hatch for validators
+    /// to return other validators, currently only used by StrValidator
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>>
     where
         Self: Sized;
 
+    /// Do the actual validation for this schema/type
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject>;
 
+    /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
+    /// cloning is required to allow the SchemaValidator to be passed around in python
     fn clone_dyn(&self) -> Box<dyn Validator>;
 }
 

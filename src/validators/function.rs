@@ -15,10 +15,10 @@ macro_rules! kwargs {
 
 macro_rules! build {
     () => {
-        fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
             Ok(Box::new(Self {
-                validator: build_validator(dict_get_required!(dict, "field", &PyDict)?, config)?,
-                func: get_function(dict)?,
+                validator: build_validator(dict_get_required!(schema, "field", &PyDict)?, config)?,
+                func: get_function(schema)?,
                 config: config.map(|c| c.into()),
             }))
         }
@@ -90,9 +90,9 @@ impl FunctionPlainValidator {
 }
 
 impl Validator for FunctionPlainValidator {
-    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
-            func: get_function(dict)?,
+            func: get_function(schema)?,
             config: config.map(|c| c.into()),
         }))
     }
@@ -169,8 +169,8 @@ impl ValidatorCallable {
     }
 }
 
-fn get_function(dict: &PyDict) -> PyResult<PyObject> {
-    match dict.get_item("function") {
+fn get_function(schema: &PyDict) -> PyResult<PyObject> {
+    match schema.get_item("function") {
         Some(obj) => {
             if obj.is_callable() {
                 Ok(obj.into_py(obj.py()))
