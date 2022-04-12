@@ -23,7 +23,7 @@ def test_bool(input_value, output_value):
 
 def test_bool_error():
     v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
-    assert repr(v) == 'SchemaValidator(validator=BoolValidator, title="TestModel")'
+    assert repr(v) == 'SchemaValidator(title="TestModel", validator=BoolValidator)'
 
     with pytest.raises(ValidationError) as exc_info:
         v.run('wrong')
@@ -32,6 +32,11 @@ def test_bool_error():
         '1 validation error for TestModel\n'
         '  Value must be a valid boolean, unable to interpret input (kind=bool_parsing)'
     )
+
+
+def test_repr():
+    v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
+    assert repr(v) == 'SchemaValidator(title="TestModel", validator=BoolValidator)'
 
 
 def test_str():

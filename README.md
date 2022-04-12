@@ -1,5 +1,9 @@
 # pydantic-core
 
+[![CI](https://github.com/samuelcolvin/pydantic-core/workflows/ci/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic-core/actions?query=event%3Apush+branch%3Amain+workflow%3Aci)
+[![Coverage](https://codecov.io/gh/samuelcolvin/pydantic-core/branch/main/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/pydantic-core)
+
+
 This package provides the core functionality for pydantic.
 
 The package is currently a work in progress and subject to significant change.
@@ -8,6 +12,8 @@ There is, as yet, no integration with pydantic, so schemas can only be defined v
 
 The plan is to generate this schema definition from type hints in pydantic, then create a `SchemaValidator`
 upon model creation.
+
+`pydantic-core` will be a separate package, required by `pydantic`.
 
 Example of usage:
 
