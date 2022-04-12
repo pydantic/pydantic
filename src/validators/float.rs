@@ -7,16 +7,11 @@ use crate::standalone_validators::validate_float;
 use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
-pub struct SimpleFloatValidator;
+pub struct FloatValidator;
 
-impl Validator for SimpleFloatValidator {
-    fn is_match(type_: &str, dict: &PyDict) -> bool {
+impl Validator for FloatValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
         type_ == "float"
-            && dict.get_item("multiple_of").is_none()
-            && dict.get_item("le").is_none()
-            && dict.get_item("lt").is_none()
-            && dict.get_item("ge").is_none()
-            && dict.get_item("gt").is_none()
     }
 
     fn build(_dict: &PyDict) -> PyResult<Self> {
@@ -33,7 +28,7 @@ impl Validator for SimpleFloatValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct FullFloatValidator {
+pub struct FloatConstrainedValidator {
     multiple_of: Option<f64>,
     le: Option<f64>,
     lt: Option<f64>,
@@ -41,9 +36,9 @@ pub struct FullFloatValidator {
     gt: Option<f64>,
 }
 
-impl Validator for FullFloatValidator {
+impl Validator for FloatConstrainedValidator {
     fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "float"
+        type_ == "float-constrained"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
