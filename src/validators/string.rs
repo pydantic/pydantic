@@ -50,17 +50,17 @@ impl Validator for StrConstrainedValidator {
         };
         let min_length = dict_get!(dict, "min_length", usize);
         let max_length = dict_get!(dict, "max_length", usize);
-        let strip_whitespace = dict_get!(dict, "strip_whitespace", bool);
-        let to_lower = dict_get!(dict, "to_lower", bool);
-        let to_upper = dict_get!(dict, "to_upper", bool);
+        let strip_whitespace = dict_get!(dict, "strip_whitespace", bool).unwrap_or(false);
+        let to_lower = dict_get!(dict, "to_lower", bool).unwrap_or(false);
+        let to_upper = dict_get!(dict, "to_upper", bool).unwrap_or(false);
 
         Ok(Self {
             pattern,
             min_length,
             max_length,
-            strip_whitespace: strip_whitespace.unwrap_or(false),
-            to_lower: to_lower.unwrap_or(false),
-            to_upper: to_upper.unwrap_or(false),
+            strip_whitespace,
+            to_lower,
+            to_upper,
         })
     }
 

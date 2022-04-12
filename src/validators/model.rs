@@ -4,14 +4,14 @@ use pyo3::types::PyDict;
 use super::{build_validator, Validator};
 use crate::errors::{as_internal, val_line_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
-use crate::utils::{dict, dict_get, py_error};
+use crate::utils::{dict_get, py_error};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 struct ModelField {
     name: String,
     // alias: Option<String>,
-    required: bool,
+    default: Option<PyObject>,
     validator: Box<dyn Validator>,
 }
 
@@ -20,7 +20,6 @@ pub struct ModelValidator {
     fields: Vec<ModelField>,
     extra_behavior: ExtraBehavior,
     extra_validator: Option<Box<dyn Validator>>,
-    // config: Option<Py<PyDict>>,
 }
 
 impl ModelValidator {
@@ -59,8 +58,8 @@ impl Validator for ModelValidator {
             fields.push(ModelField {
                 name: key.to_string(),
                 // alias: dict_get!(field_dict, "alias", String),
-                required: dict_get!(field_dict, "required", bool).unwrap_or(false),
                 validator: build_validator(field_dict, config)?,
+                default: dict_get!(field_dict, "default", PyAny),
             });
         }
         Ok(Self {
@@ -89,7 +88,11 @@ impl Validator for ModelValidator {
                     Err(err) => return Err(err),
                 }
                 fields_set.insert(field.name.clone());
-            } else if field.required {
+            } else if let Some(ref default) = field.default {
+                output_dict
+                    .set_item(&field.name, default.clone())
+                    .map_err(as_internal)?;
+            } else {
                 errors.push(val_line_error!(
                     py,
                     dict,
@@ -149,7 +152,7 @@ impl Validator for ModelValidator {
         }
 
         if errors.is_empty() {
-            Ok(dict!(py, "values" => output_dict, "fields_set" => fields_set))
+            Ok((output_dict, fields_set).to_object(py))
         } else {
             Err(ValError::LineErrors(errors))
         }
