@@ -11,7 +11,13 @@ use crate::errors::ValLineError;
 #[derive(Debug)]
 pub struct ValidationError {
     line_errors: Vec<ValLineError>,
-    model_name: String,
+    title: String,
+}
+
+impl fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", display_errors(&self.line_errors, &self.title))
+    }
 }
 
 impl ValidationError {
@@ -21,12 +27,6 @@ impl ValidationError {
         A: PyErrArguments + Send + Sync + 'static,
     {
         PyErr::new::<ValidationError, A>(args)
-    }
-}
-
-impl fmt::Display for ValidationError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", display_errors(&self.line_errors, &self.model_name))
     }
 }
 
@@ -41,16 +41,13 @@ impl Error for ValidationError {
 #[pymethods]
 impl ValidationError {
     #[new]
-    fn py_new(line_errors: Vec<ValLineError>, model_name: String) -> Self {
-        Self {
-            line_errors,
-            model_name,
-        }
+    fn py_new(line_errors: Vec<ValLineError>, title: String) -> Self {
+        Self { line_errors, title }
     }
 
     #[getter]
-    fn model_name(&self) -> String {
-        self.model_name.clone()
+    fn title(&self) -> String {
+        self.title.clone()
     }
 
     fn error_count(&self) -> usize {
@@ -66,7 +63,7 @@ impl ValidationError {
     }
 
     fn __repr__(&self) -> String {
-        display_errors(&self.line_errors, &self.model_name)
+        display_errors(&self.line_errors, &self.title)
     }
 
     fn __str__(&self) -> String {
@@ -74,7 +71,7 @@ impl ValidationError {
     }
 }
 
-pub fn display_errors(errors: &[ValLineError], model_name: &str) -> String {
+pub fn display_errors(errors: &[ValLineError], title: &str) -> String {
     let count = errors.len();
     let plural = if count == 1 { "" } else { "s" };
     let loc = errors
@@ -82,5 +79,5 @@ pub fn display_errors(errors: &[ValLineError], model_name: &str) -> String {
         .map(|i| i.to_string())
         .collect::<Vec<String>>()
         .join("\n  ");
-    format!("{} validation error{} for {}\n  {}", count, plural, model_name, loc)
+    format!("{} validation error{} for {}\n  {}", count, plural, title, loc)
 }
