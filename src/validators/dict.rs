@@ -19,18 +19,18 @@ impl DictValidator {
 }
 
 impl Validator for DictValidator {
-    fn build(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
-            key_validator: match dict_get!(dict, "keys", &PyDict) {
+            key_validator: match dict_get!(schema, "keys", &PyDict) {
                 Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
-            value_validator: match dict_get!(dict, "values", &PyDict) {
+            value_validator: match dict_get!(schema, "values", &PyDict) {
                 Some(d) => Some(build_validator(d, config)?),
                 None => None,
             },
-            min_items: dict_get!(dict, "min_items", usize),
-            max_items: dict_get!(dict, "max_items", usize),
+            min_items: dict_get!(schema, "min_items", usize),
+            max_items: dict_get!(schema, "max_items", usize),
         }))
     }
 
