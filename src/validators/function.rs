@@ -7,6 +7,23 @@ use crate::errors::{val_line_error, ErrorKind, ValResult};
 use crate::utils::{dict_get_required, py_error};
 use crate::validators::build_validator;
 
+macro_rules! kwargs {
+    ($py:ident, $($k:expr => $v:expr),*) => {{
+        Some([$(($k, $v.into_py($py)),)*].into_py_dict($py))
+    }};
+}
+
+macro_rules! build {
+    () => {
+        fn build(dict: &PyDict) -> PyResult<Self> {
+            Ok(Self {
+                validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
+                func: get_function(dict)?,
+            })
+        }
+    };
+}
+
 #[derive(Debug, Clone)]
 pub struct FunctionBeforeValidator {
     validator: Box<dyn Validator>,
@@ -18,12 +35,7 @@ impl Validator for FunctionBeforeValidator {
         type_ == "function-before"
     }
 
-    fn build(dict: &PyDict) -> PyResult<Self> {
-        Ok(Self {
-            validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
-            func: get_function(dict)?,
-        })
-    }
+    build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let value = self
@@ -50,17 +62,39 @@ impl Validator for FunctionAfterValidator {
         type_ == "function-after"
     }
 
-    fn build(dict: &PyDict) -> PyResult<Self> {
-        Ok(Self {
-            validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
-            func: get_function(dict)?,
-        })
-    }
+    build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let v = self.validator.validate(py, input, data)?;
         self.func
             .call(py, (v,), kwargs!(py, "data" => data.as_ref()))
+            .map_err(|e| convert_err(py, e, input))
+    }
+
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FunctionPlainValidator {
+    func: PyObject,
+}
+
+impl Validator for FunctionPlainValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
+        type_ == "function-plain"
+    }
+
+    fn build(dict: &PyDict) -> PyResult<Self> {
+        Ok(Self {
+            func: get_function(dict)?,
+        })
+    }
+
+    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
+        self.func
+            .call(py, (input,), kwargs!(py, "data" => data.as_ref()))
             .map_err(|e| convert_err(py, e, input))
     }
 
@@ -80,12 +114,7 @@ impl Validator for FunctionWrapValidator {
         type_ == "function-wrap"
     }
 
-    fn build(dict: &PyDict) -> PyResult<Self> {
-        Ok(Self {
-            validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
-            func: get_function(dict)?,
-        })
-    }
+    build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
         let validator_kwarg = ValidatorCallable {
@@ -160,10 +189,3 @@ fn convert_err(py: Python, err: PyErr, input: &PyAny) -> ValError {
     let line_error = val_line_error!(py, input, kind = kind, message = message);
     ValError::LineErrors(vec![line_error])
 }
-
-macro_rules! kwargs {
-    ($py:ident, $($k:expr => $v:expr),*) => {{
-        Some([$(($k, $v.into_py($py)),)*].into_py_dict($py))
-    }};
-}
-pub(crate) use kwargs;

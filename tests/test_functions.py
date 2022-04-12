@@ -58,3 +58,13 @@ def test_function_after_data():
 
     assert v.run({'field_a': '123', 'field_b': 321}) == {'field_a': 123, 'field_b': '321 Changed'}
     assert f_data == {'field_a': 123}
+
+
+def test_function_plain():
+    def f(input_value, **kwargs):
+        return input_value * 2
+
+    v = SchemaValidator({'model_name': 'Test', 'type': 'function-plain', 'function': f})
+
+    assert v.run(1) == 2
+    assert v.run('x') == 'xx'
