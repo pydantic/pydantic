@@ -8,20 +8,20 @@ use crate::utils::{dict_get_required, py_error};
 use crate::validators::build_validator;
 
 #[derive(Debug, Clone)]
-pub struct PreDecoratorValidator {
+pub struct FunctionBeforeValidator {
     validator: Box<dyn Validator>,
     func: PyObject,
 }
 
-impl Validator for PreDecoratorValidator {
-    fn is_match(type_: &str, dict: &PyDict) -> bool {
-        type_ == "decorator" && dict.get_item("pre_decorator").is_some()
+impl Validator for FunctionBeforeValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
+        type_ == "function-before"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
-            func: get_function(dict, "pre_decorator")?,
+            func: get_function(dict)?,
         })
     }
 
@@ -40,20 +40,20 @@ impl Validator for PreDecoratorValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct PostDecoratorValidator {
+pub struct FunctionAfterValidator {
     validator: Box<dyn Validator>,
     func: PyObject,
 }
 
-impl Validator for PostDecoratorValidator {
-    fn is_match(type_: &str, dict: &PyDict) -> bool {
-        type_ == "decorator" && dict.get_item("post_decorator").is_some()
+impl Validator for FunctionAfterValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
+        type_ == "function-after"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
-            func: get_function(dict, "post_decorator")?,
+            func: get_function(dict)?,
         })
     }
 
@@ -70,20 +70,20 @@ impl Validator for PostDecoratorValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct WrapDecoratorValidator {
+pub struct FunctionWrapValidator {
     validator: Box<dyn Validator>,
     func: PyObject,
 }
 
-impl Validator for WrapDecoratorValidator {
-    fn is_match(type_: &str, dict: &PyDict) -> bool {
-        type_ == "decorator" && dict.get_item("wrap_decorator").is_some()
+impl Validator for FunctionWrapValidator {
+    fn is_match(type_: &str, _dict: &PyDict) -> bool {
+        type_ == "function-wrap"
     }
 
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             validator: build_validator(dict_get_required!(dict, "field", &PyDict)?)?,
-            func: get_function(dict, "wrap_decorator")?,
+            func: get_function(dict)?,
         })
     }
 
@@ -128,15 +128,16 @@ impl ValidatorCallable {
     }
 }
 
-fn get_function(dict: &PyDict, key: &str) -> PyResult<PyObject> {
-    match dict.get_item(key) {
+fn get_function(dict: &PyDict) -> PyResult<PyObject> {
+    match dict.get_item("function") {
         Some(obj) => {
-            if !obj.is_callable() {
-                return py_error!(r#""{}" must be callable"#, key);
+            if obj.is_callable() {
+                Ok(obj.into_py(obj.py()))
+            } else {
+                return py_error!("function must be callable");
             }
-            Ok(obj.into_py(obj.py()))
         }
-        None => py_error!(r#""{}" is required"#, key),
+        None => py_error!(r#""function" key is required"#),
     }
 }
 

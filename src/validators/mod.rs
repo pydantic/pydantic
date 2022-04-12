@@ -113,9 +113,9 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
         // None/null
         self::none::NoneValidator,
         // decorators
-        self::function::PreDecoratorValidator,
-        self::function::PostDecoratorValidator,
-        self::function::WrapDecoratorValidator,
+        self::function::FunctionBeforeValidator,
+        self::function::FunctionAfterValidator,
+        self::function::FunctionWrapValidator,
     )
 }
 
