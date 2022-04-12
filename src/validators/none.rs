@@ -7,11 +7,11 @@ use crate::errors::{err_val_error, ErrorKind, ValResult};
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
 
-impl Validator for NoneValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "null"
-    }
+impl NoneValidator {
+    pub const EXPECTED_TYPE: &'static str = "none";
+}
 
+impl Validator for NoneValidator {
     fn build(_dict: &PyDict) -> PyResult<Self> {
         Ok(Self)
     }

@@ -9,11 +9,11 @@ use crate::utils::{dict_get, RegexPattern};
 #[derive(Debug, Clone)]
 pub struct StrValidator;
 
-impl Validator for StrValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "str"
-    }
+impl StrValidator {
+    pub const EXPECTED_TYPE: &'static str = "str";
+}
 
+impl Validator for StrValidator {
     fn build(_dict: &PyDict) -> PyResult<Self> {
         Ok(Self)
     }
@@ -38,11 +38,11 @@ pub struct StrConstrainedValidator {
     to_upper: bool,
 }
 
-impl Validator for StrConstrainedValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "str-constrained"
-    }
+impl StrConstrainedValidator {
+    pub const EXPECTED_TYPE: &'static str = "str-constrained";
+}
 
+impl Validator for StrConstrainedValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         let pattern = match dict.get_item("pattern") {
             Some(s) => Some(RegexPattern::py_new(s)?),
