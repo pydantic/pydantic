@@ -14,8 +14,24 @@ impl StrValidator {
 }
 
 impl Validator for StrValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        let use_con_str = match config {
+            Some(config) => {
+                config.get_item("str_pattern").is_some()
+                    || config.get_item("str_max_length").is_some()
+                    || config.get_item("str_min_length").is_some()
+                    || config.get_item("str_strip_whitespace").is_some()
+                    || config.get_item("str_to_lower").is_some()
+                    || config.get_item("str_to_upper").is_some()
+            }
+            None => false,
+        };
+
+        if use_con_str {
+            StrConstrainedValidator::build(schema, config)
+        } else {
+            Ok(Box::new(Self))
+        }
     }
 
     fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
@@ -42,17 +58,45 @@ impl StrConstrainedValidator {
     pub const EXPECTED_TYPE: &'static str = "str-constrained";
 }
 
+macro_rules! optional_dict_get {
+    ($optional_dict:ident, $key:expr, $type:ty) => {
+        match $optional_dict {
+            Some(d) => dict_get!(d, $key, $type),
+            None => None,
+        }
+    };
+}
+
 impl Validator for StrConstrainedValidator {
-    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         let pattern = match schema.get_item("pattern") {
             Some(s) => Some(RegexPattern::py_new(s)?),
-            None => None,
+            None => match schema.get_item("str_pattern") {
+                Some(s) => Some(RegexPattern::py_new(s)?),
+                None => None,
+            },
         };
-        let min_length = dict_get!(schema, "min_length", usize);
-        let max_length = dict_get!(schema, "max_length", usize);
-        let strip_whitespace = dict_get!(schema, "strip_whitespace", bool).unwrap_or(false);
-        let to_lower = dict_get!(schema, "to_lower", bool).unwrap_or(false);
-        let to_upper = dict_get!(schema, "to_upper", bool).unwrap_or(false);
+        let min_length = match dict_get!(schema, "min_length", usize) {
+            Some(v) => Some(v),
+            None => optional_dict_get!(config, "str_min_length", usize),
+        };
+        let max_length = match dict_get!(schema, "max_length", usize) {
+            Some(v) => Some(v),
+            None => optional_dict_get!(config, "str_max_length", usize),
+        };
+
+        let strip_whitespace = match dict_get!(schema, "strip_whitespace", bool) {
+            Some(v) => v,
+            None => optional_dict_get!(config, "str_strip_whitespace", bool).unwrap_or(false),
+        };
+        let to_lower = match dict_get!(schema, "to_lower", bool) {
+            Some(v) => v,
+            None => optional_dict_get!(config, "str_to_lower", bool).unwrap_or(false),
+        };
+        let to_upper = match dict_get!(schema, "to_upper", bool) {
+            Some(v) => v,
+            None => optional_dict_get!(config, "str_to_upper", bool).unwrap_or(false),
+        };
 
         Ok(Box::new(Self {
             pattern,
