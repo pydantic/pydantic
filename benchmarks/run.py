@@ -20,7 +20,6 @@ def benchmark_simple_validation():
         'fields': {
             'name': {
                 'type': 'str',
-                'required': True,
             },
             'age': {
                 'type': 'int',
@@ -30,7 +29,6 @@ def benchmark_simple_validation():
                 'items': {
                     'type': 'int',
                 },
-                'required': True,
             },
             'settings': {
                 'type': 'dict',
@@ -50,19 +48,20 @@ def benchmark_simple_validation():
         return PydanticModel.parse_obj(d)
 
     def pydantic_core(d):
-        return schema_validator.run(d)
+        output, fields_set = schema_validator.run(d)
+        return output
 
     impls = pydantic, pydantic_core
-    old_result = None
+    reference_result = None
     steps = 1_000
 
     for impl in impls:
         print(f'{impl.__name__}:')
         result = impl(data)
         # debug(result)
-        if old_result:
-            assert result == old_result
-        old_result = result
+        if reference_result:
+            assert reference_result == result
+        reference_result = result
 
         t = timeit.timeit(
             'impl(data)',
