@@ -17,6 +17,7 @@ struct ModelField {
 #[derive(Debug, Clone)]
 pub struct ModelValidator {
     fields: Vec<ModelField>,
+    // config: Option<Py<PyDict>>,
 }
 
 impl ModelValidator {
@@ -24,7 +25,14 @@ impl ModelValidator {
 }
 
 impl Validator for ModelValidator {
-    fn build(dict: &PyDict) -> PyResult<Self> {
+    fn build(dict: &PyDict, _config: Option<&PyDict>) -> PyResult<Self> {
+        let config = dict_get!(dict, "config", &PyDict);
+
+        // let config: Option<Py<PyDict>> = match build_config {
+        //     Some(c) => Some(c.into()),
+        //     None => None,
+        // };
+
         let fields_dict: &PyDict = match dict_get!(dict, "fields", &PyDict) {
             Some(fields) => fields,
             None => {
@@ -41,7 +49,7 @@ impl Validator for ModelValidator {
                 name: key.to_string(),
                 // alias: dict_get!(field_dict, "alias", String),
                 required: dict_get!(field_dict, "required", bool).unwrap_or(false),
-                validator: build_validator(field_dict)?,
+                validator: build_validator(field_dict, config)?,
             });
         }
         Ok(Self { fields })
