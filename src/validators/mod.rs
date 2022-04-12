@@ -27,7 +27,7 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(dict: &PyDict) -> PyResult<Self> {
-        let title = dict_get!(dict, "title", String).unwrap_or("Model".to_string());
+        let title = dict_get!(dict, "title", String).unwrap_or_else(|| "Model".to_string());
         Ok(Self {
             title,
             validator: build_validator(dict, None)?,
