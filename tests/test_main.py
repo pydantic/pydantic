@@ -1,14 +1,47 @@
-import re
+import pytest
 
-from pydantic_core import SchemaValidator, __version__
+from pydantic_core import SchemaValidator, ValidationError
 
 
-def test_main():
+@pytest.mark.parametrize(
+    'input_value,output_value',
+    [
+        (False, False),
+        (True, True),
+        (0, False),
+        (1, True),
+        ('yes', True),
+        ('no', False),
+        ('true', True),
+        ('false', False),
+    ],
+)
+def test_bool(input_value, output_value):
+    v = SchemaValidator({'type': 'bool', 'model_name': 'TestModel'})
+    assert v.run(input_value) == output_value
+
+
+def test_bool_error():
     v = SchemaValidator({'type': 'bool', 'model_name': 'TestModel'})
     assert repr(v) == 'SchemaValidator(validator=BoolValidator, model_name="TestModel")'
 
-    assert v.run(True) is True
+    with pytest.raises(ValidationError) as exc_info:
+        v.run('wrong')
+
+    assert str(exc_info.value) == (
+        '1 validation error for TestModel\n'
+        '  Value must be a valid boolean, unable to interpret input (kind=bool_parsing)'
+    )
 
 
-def test_version():
-    assert re.fullmatch(r'\d+\.\d+\.\d+', __version__)
+def test_str():
+    v = SchemaValidator({'type': 'str', 'model_name': 'TestModel'})
+    assert v.run('test') == 'test'
+
+
+def test_str_constrained():
+    v = SchemaValidator({'type': 'str-constrained', 'max_length': 5, 'model_name': 'TestModel'})
+    assert v.run('test') == 'test'
+
+    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
+        v.run('test long')
