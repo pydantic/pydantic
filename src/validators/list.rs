@@ -13,11 +13,11 @@ pub struct ListValidator {
     max_items: Option<usize>,
 }
 
-impl Validator for ListValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "list"
-    }
+impl ListValidator {
+    pub const EXPECTED_TYPE: &'static str = "list";
+}
 
+impl Validator for ListValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             item_validator: match dict_get!(dict, "items", &PyDict) {

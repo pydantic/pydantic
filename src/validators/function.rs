@@ -30,11 +30,11 @@ pub struct FunctionBeforeValidator {
     func: PyObject,
 }
 
-impl Validator for FunctionBeforeValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "function-before"
-    }
+impl FunctionBeforeValidator {
+    pub const EXPECTED_TYPE: &'static str = "function-before";
+}
 
+impl Validator for FunctionBeforeValidator {
     build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
@@ -57,11 +57,11 @@ pub struct FunctionAfterValidator {
     func: PyObject,
 }
 
-impl Validator for FunctionAfterValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "function-after"
-    }
+impl FunctionAfterValidator {
+    pub const EXPECTED_TYPE: &'static str = "function-after";
+}
 
+impl Validator for FunctionAfterValidator {
     build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
@@ -81,11 +81,11 @@ pub struct FunctionPlainValidator {
     func: PyObject,
 }
 
-impl Validator for FunctionPlainValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "function-plain"
-    }
+impl FunctionPlainValidator {
+    pub const EXPECTED_TYPE: &'static str = "function-plain";
+}
 
+impl Validator for FunctionPlainValidator {
     fn build(dict: &PyDict) -> PyResult<Self> {
         Ok(Self {
             func: get_function(dict)?,
@@ -109,11 +109,11 @@ pub struct FunctionWrapValidator {
     func: PyObject,
 }
 
-impl Validator for FunctionWrapValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "function-wrap"
-    }
+impl FunctionWrapValidator {
+    pub const EXPECTED_TYPE: &'static str = "function-wrap";
+}
 
+impl Validator for FunctionWrapValidator {
     build!();
 
     fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {

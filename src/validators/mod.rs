@@ -53,46 +53,23 @@ impl SchemaValidator {
 }
 
 pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
-    let type_: String = dict_get_required!(dict, "type", String)?;
-
-    // if_else is used in validator_selection
-    macro_rules! if_else {
-        ($validator:path, $else:tt) => {
-            if <$validator>::is_match(&type_, dict) {
-                let val = <$validator>::build(dict)?;
-                return Ok(Box::new(val));
-            } else {
-                $else
+    // macro to build the match statement validator selection
+    macro_rules! validator_match {
+        ($type:ident, $($validator:path,)+) => {
+            match $type {
+                $(
+                    <$validator>::EXPECTED_TYPE => Ok(Box::new(<$validator>::build(dict)?)),
+                )+
+                _ => {
+                    return py_error!(r#"unknown schema type: "{}""#, $type)
+                },
             }
         };
     }
 
-    // macro to build a long if/else chain for validator selection
-    macro_rules! validator_selection {
-        // single validator - will be called last by variant below
-        ($validator:path) => {
-            if_else!($validator, {
-                return py_error!(r#"unknown schema type: "{}""#, type_);
-            })
-        };
-        // without a trailing comma
-        ($validator:path, $($validators:path),+) => {
-            if_else!($validator, {
-                validator_selection!($($validators),+)
-            })
-        };
-        // with a trailing comma
-        ($validator:path, $($validators:path,)+) => {
-            if_else!($validator, {
-                validator_selection!($($validators),+)
-            })
-        };
-    }
-
-    // order matters here!
-    // e.g. SimpleStrValidator must come before FullStrValidator
-    // also for performance reasons commonly used validators should be first
-    validator_selection!(
+    let type_: &str = dict_get_required!(dict, "type", &str)?;
+    validator_match!(
+        type_,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
         // strings
@@ -121,10 +98,6 @@ pub fn build_validator(dict: &PyDict) -> PyResult<Box<dyn Validator>> {
 }
 
 pub trait Validator: Send + Debug {
-    fn is_match(type_: &str, dict: &PyDict) -> bool
-    where
-        Self: Sized;
-
     fn build(dict: &PyDict) -> PyResult<Self>
     where
         Self: Sized;

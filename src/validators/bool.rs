@@ -8,11 +8,11 @@ use crate::standalone_validators::validate_bool;
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
 
-impl Validator for BoolValidator {
-    fn is_match(type_: &str, _dict: &PyDict) -> bool {
-        type_ == "bool"
-    }
+impl BoolValidator {
+    pub const EXPECTED_TYPE: &'static str = "bool";
+}
 
+impl Validator for BoolValidator {
     fn build(_dict: &PyDict) -> PyResult<Self> {
         Ok(Self)
     }
