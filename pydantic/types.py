@@ -36,6 +36,8 @@ from .validators import (
     constr_lower,
     constr_strip_whitespace,
     decimal_validator,
+    float_inf_validator,
+    float_nan_validator,
     float_validator,
     frozenset_validator,
     int_validator,
@@ -81,6 +83,9 @@ __all__ = [
     'NegativeFloat',
     'NonNegativeFloat',
     'NonPositiveFloat',
+    'NonNanFloat',
+    'NonInfFloat',
+    'JSONFloat',
     'ConstrainedDecimal',
     'condecimal',
     'UUID1',
@@ -257,6 +262,8 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     lt: OptionalIntFloat = None
     le: OptionalIntFloat = None
     multiple_of: OptionalIntFloat = None
+    allow_nan: Optional[bool] = None
+    allow_inf: Optional[bool] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -283,6 +290,8 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
         yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
+        yield float_nan_validator
+        yield float_inf_validator
 
 
 def confloat(
@@ -293,9 +302,13 @@ def confloat(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
+    allow_nan: bool = None,
+    allow_inf: bool = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(
+        strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of, allow_nan=allow_nan, allow_inf=allow_inf
+    )
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -305,6 +318,9 @@ if TYPE_CHECKING:
     NonPositiveFloat = float
     NonNegativeFloat = float
     StrictFloat = float
+    NonNanFloat = float
+    NonInfFloat = float
+    JSONFloat = float
 else:
 
     class PositiveFloat(ConstrainedFloat):
@@ -321,6 +337,16 @@ else:
 
     class StrictFloat(ConstrainedFloat):
         strict = True
+
+    class NonNanFloat(ConstrainedFloat):
+        allow_nan = False
+
+    class NonInfFloat(ConstrainedFloat):
+        allow_inf = False
+
+    class JSONFloat(ConstrainedFloat):
+        allow_nan = False
+        allow_inf = False
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

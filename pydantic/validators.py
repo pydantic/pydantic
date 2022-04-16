@@ -1,3 +1,4 @@
+import math
 import re
 from collections import OrderedDict, deque
 from collections.abc import Hashable as CollectionsHashable
@@ -149,6 +150,20 @@ def strict_float_validator(v: Any) -> float:
     if isinstance(v, float):
         return v
     raise errors.FloatError()
+
+
+def float_nan_validator(v: 'Number', field: 'ModelField') -> 'Number':
+    field_type: ConstrainedFloat = field.type_
+    if field_type.allow_nan is False and math.isnan(v):
+        raise errors.NumberIsNanError()
+    return v
+
+
+def float_inf_validator(v: 'Number', field: 'ModelField') -> 'Number':
+    field_type: ConstrainedFloat = field.type_
+    if field_type.allow_inf is False and math.isinf(v):
+        raise errors.NumberIsInfError()
+    return v
 
 
 def number_multiple_validator(v: 'Number', field: 'ModelField') -> 'Number':
