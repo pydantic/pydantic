@@ -29,14 +29,6 @@ pub fn validate_str(py: Python, v: &PyAny) -> ValResult<String> {
     }
 }
 
-#[pyfunction]
-pub fn validate_str_py(py: Python, v: &PyAny) -> PyResult<String> {
-    match validate_str(py, v) {
-        Ok(s) => Ok(s),
-        Err(_e) => todo!(),
-    }
-}
-
 pub fn validate_bool(py: Python, v: &PyAny) -> ValResult<bool> {
     if let Ok(bool) = v.extract::<bool>() {
         Ok(bool)
@@ -68,21 +60,6 @@ lazy_static! {
 
 lazy_static! {
     static ref BOOL_TRUE_CELL: HashSet<&'static str> = HashSet::from(["1", "on", "t", "true", "y", "yes"]);
-}
-
-/// Util
-fn _maybe_as_string(py: Python, v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<String>> {
-    if let Ok(str) = v.extract::<String>() {
-        Ok(Some(str))
-    } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
-        let str = match from_utf8(bytes.as_bytes()) {
-            Ok(s) => s.to_string(),
-            Err(_) => return err_val_error!(py, bytes, kind = unicode_error),
-        };
-        Ok(Some(str))
-    } else {
-        Ok(None)
-    }
 }
 
 pub fn validate_int(py: Python, v: &PyAny) -> ValResult<i64> {
@@ -132,5 +109,20 @@ pub fn validate_list<'py>(py: Python<'py>, v: &'py PyAny) -> ValResult<&'py PyLi
         // TODO support sets, tuples, frozen set etc. like in pydantic
     } else {
         err_val_error!(py, v, kind = ErrorKind::ListType)
+    }
+}
+
+/// Utility for extracting a string from a PyAny, if possible.
+fn _maybe_as_string(py: Python, v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<String>> {
+    if let Ok(str) = v.extract::<String>() {
+        Ok(Some(str))
+    } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
+        let str = match from_utf8(bytes.as_bytes()) {
+            Ok(s) => s.to_string(),
+            Err(_) => return err_val_error!(py, bytes, kind = unicode_error),
+        };
+        Ok(Some(str))
+    } else {
+        Ok(None)
     }
 }
