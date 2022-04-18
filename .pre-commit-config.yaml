@@ -32,8 +32,3 @@ repos:
     entry: make build-dev
     types: [rust]
     language: system
-  - id: run-tests
-    name: Run Tests
-    entry: make testcov
-    types: [rust, python]
-    language: system

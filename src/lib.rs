@@ -1,3 +1,4 @@
+extern crate core;
 extern crate lazy_static;
 extern crate pyo3;
 extern crate regex;

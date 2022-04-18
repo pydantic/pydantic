@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::Validator;
+use super::{Extra, Validator};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::standalone_validators::validate_int;
 use crate::utils::dict_get;
@@ -18,7 +18,7 @@ impl Validator for IntValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _extra: &Extra) -> ValResult<PyObject> {
         Ok(validate_int(py, input)?.into_py(py))
     }
 
@@ -51,7 +51,7 @@ impl Validator for IntConstrainedValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, _extra: &Extra) -> ValResult<PyObject> {
         let int = validate_int(py, input)?;
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {

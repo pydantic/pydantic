@@ -37,10 +37,7 @@ jobs:
       name: cache rust
       uses: Swatinem/rust-cache@v1
 
-    - run: cargo install rustfilt
-      if: steps.cache-rust.outputs.cache-hit != 'true'
-
-    - run: cargo install cargo-binutils
+    - run: cargo install rustfilt cargo-binutils
       if: steps.cache-rust.outputs.cache-hit != 'true'
 
     - run: rustup component add llvm-tools-preview
@@ -76,7 +73,7 @@ jobs:
 
     - run: coverage xml
 
-    - run: ./tests/prepare_rust_coverage.sh
+    - run: ./tests/rust_coverage_export.sh
 
     - uses: codecov/codecov-action@v2
       with:

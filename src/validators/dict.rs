@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{build_validator, Validator};
+use super::{build_validator, Extra, Validator};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
 use crate::standalone_validators::validate_dict;
 use crate::utils::dict_get;
@@ -34,7 +34,7 @@ impl Validator for DictValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
         let dict = validate_dict(py, input)?;
         if let Some(min_length) = self.min_items {
             if dict.len() < min_length {
@@ -61,9 +61,9 @@ impl Validator for DictValidator {
 
         for (key, value) in dict.iter() {
             let output_key: Option<PyObject> =
-                apply_validator(py, &self.key_validator, &mut errors, key, key, data, true)?;
+                apply_validator(py, &self.key_validator, &mut errors, key, key, extra, true)?;
             let output_value: Option<PyObject> =
-                apply_validator(py, &self.value_validator, &mut errors, value, key, data, false)?;
+                apply_validator(py, &self.value_validator, &mut errors, value, key, extra, false)?;
             if let (Some(key), Some(value)) = (output_key, output_value) {
                 output.set_item(key, value).map_err(as_internal)?;
             }
@@ -87,11 +87,11 @@ fn apply_validator(
     errors: &mut Vec<ValLineError>,
     input: &PyAny,
     key: &PyAny,
-    data: &PyDict,
+    extra: &Extra,
     key_loc: bool,
 ) -> ValResult<Option<PyObject>> {
     match validator {
-        Some(validator) => match validator.validate(py, input, data) {
+        Some(validator) => match validator.validate(py, input, extra) {
             Ok(value) => Ok(Some(value)),
             Err(ValError::LineErrors(line_errors)) => {
                 let loc = if key_loc {

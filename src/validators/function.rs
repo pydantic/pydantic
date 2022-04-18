@@ -2,8 +2,8 @@ use pyo3::exceptions::{PyAssertionError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use super::{ValError, ValidationError, Validator};
-use crate::errors::{val_line_error, ErrorKind, ValResult};
+use super::{Extra, ValError, Validator};
+use crate::errors::{map_validation_error, val_line_error, ErrorKind, ValResult};
 use crate::utils::{dict, dict_get_required, py_error};
 use crate::validators::build_validator;
 
@@ -39,14 +39,14 @@ impl FunctionBeforeValidator {
 impl Validator for FunctionBeforeValidator {
     build!();
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
-        let kwargs = kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref());
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+        let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         let value = self
             .func
             .call(py, (input,), kwargs)
             .map_err(|e| convert_err(py, e, input))?;
         let v: &PyAny = value.as_ref(py);
-        self.validator.validate(py, v, data)
+        self.validator.validate(py, v, extra)
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -68,9 +68,9 @@ impl FunctionAfterValidator {
 impl Validator for FunctionAfterValidator {
     build!();
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
-        let v = self.validator.validate(py, input, data)?;
-        let kwargs = kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref());
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+        let v = self.validator.validate(py, input, extra)?;
+        let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
 
@@ -97,8 +97,8 @@ impl Validator for FunctionPlainValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
-        let kwargs = kwargs!(py, "data" => data.as_ref(), "config" => self.config.as_ref());
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+        let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func
             .call(py, (input,), kwargs)
             .map_err(|e| convert_err(py, e, input))
@@ -123,15 +123,16 @@ impl FunctionWrapValidator {
 impl Validator for FunctionWrapValidator {
     build!();
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
         let validator_kwarg = ValidatorCallable {
             validator: self.validator.clone(),
-            data: data.into_py(py),
+            data: extra.data.map(|d| d.into_py(py)),
+            field: extra.field.map(|f| f.to_string()),
         };
         let kwargs = kwargs!(
             py,
             "validator" => validator_kwarg,
-            "data" => data.as_ref(),
+            "data" => extra.data,
             "config" => self.config.as_ref()
         );
         self.func
@@ -148,17 +149,20 @@ impl Validator for FunctionWrapValidator {
 #[derive(Debug, Clone)]
 pub struct ValidatorCallable {
     validator: Box<dyn Validator>,
-    data: Py<PyDict>,
+    data: Option<Py<PyDict>>,
+    field: Option<String>,
 }
 
 #[pymethods]
 impl ValidatorCallable {
     fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
-        match self.validator.validate(py, arg, self.data.as_ref(py)) {
-            Ok(output) => Ok(output),
-            Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, "Model".to_string()))),
-            Err(ValError::InternalErr(err)) => Err(err),
-        }
+        let extra = Extra {
+            data: self.data.as_ref().map(|data| data.as_ref(py)),
+            field: self.field.as_deref(),
+        };
+        self.validator
+            .validate(py, arg, &extra)
+            .map_err(|e| map_validation_error("Model", e))
     }
 
     fn __repr__(&self) -> String {
