@@ -3,7 +3,7 @@ use std::fmt;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use crate::errors::{ValError, ValResult, ValidationError};
+use crate::errors::{map_validation_error, ValError, ValResult};
 use crate::utils::{dict_get, dict_get_required, py_error};
 
 mod bool;
@@ -35,11 +35,21 @@ impl SchemaValidator {
     }
 
     fn run(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
-        match self.validator.validate(py, input, PyDict::new(py)) {
-            Ok(obj) => Ok(obj),
-            Err(ValError::LineErrors(line_errors)) => Err(ValidationError::new_err((line_errors, self.title.clone()))),
-            Err(ValError::InternalErr(err)) => Err(err),
-        }
+        let extra = Extra {
+            data: None,
+            field: None,
+        };
+        let r = self.validator.validate(py, input, &extra);
+        r.map_err(|e| map_validation_error(&self.title, e))
+    }
+
+    fn run_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
+        let extra = Extra {
+            data: Some(data),
+            field: Some(field.as_str()),
+        };
+        let r = self.validator.validate(py, input, &extra);
+        r.map_err(|e| map_validation_error(&self.title, e))
     }
 
     fn __repr__(&self) -> String {
@@ -102,6 +112,17 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
     )
 }
 
+/// More (mostly immutable) data to pass between validators, should probably be class `Context`,
+/// but that would confuse it with context as per samuelcolvin/pydantic#1549
+#[derive(Debug)]
+pub struct Extra<'a> {
+    /// This is used as the `data` kwargs to validator functions, it's also represents the current model
+    /// data when validating assignment
+    pub data: Option<&'a PyDict>,
+    /// The field being assigned to when validating assignment
+    pub field: Option<&'a str>,
+}
+
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
 /// they also need `EXPECTED_TYPE` as a const, but that can't be part of the trait.
 pub trait Validator: Send + fmt::Debug {
@@ -112,7 +133,7 @@ pub trait Validator: Send + fmt::Debug {
         Self: Sized;
 
     /// Do the actual validation for this schema/type
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject>;
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject>;
 
     /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
     /// cloning is required to allow the SchemaValidator to be passed around in python

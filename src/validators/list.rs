@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{build_validator, ValResult, Validator};
+use super::{build_validator, Extra, ValResult, Validator};
 use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
 use crate::standalone_validators::validate_list;
 use crate::utils::dict_get;
@@ -29,7 +29,7 @@ impl Validator for ListValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, data: &PyDict) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
         let list = validate_list(py, input)?;
         if let Some(min_length) = self.min_items {
             if list.len() < min_length {
@@ -55,7 +55,7 @@ impl Validator for ListValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         for (index, item) in list.iter().enumerate() {
             match self.item_validator {
-                Some(ref validator) => match validator.validate(py, item, data) {
+                Some(ref validator) => match validator.validate(py, item, extra) {
                     Ok(item) => output.push(item),
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![LocItem::I(index)];
