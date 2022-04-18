@@ -1,8 +1,10 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PySet};
 
-use super::{build_validator, Validator};
-use crate::errors::{as_internal, val_line_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
+use super::{build_validator, Extra, Validator};
+use crate::errors::{
+    as_internal, err_val_error, val_line_error, ErrorKind, LocItem, ValError, ValLineError, ValResult,
+};
 use crate::standalone_validators::validate_dict;
 use crate::utils::{dict_get, py_error};
 use std::collections::HashSet;
@@ -70,15 +72,25 @@ impl Validator for ModelValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _data: &PyDict) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+        if let Some(field) = extra.field {
+            // we're validating assignment, completely different logic
+            return self.validate_assignment(py, field, input, extra);
+        }
+
         let dict: &PyDict = validate_dict(py, input)?;
         let output_dict = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.len());
 
+        let extra = Extra {
+            data: Some(output_dict),
+            field: None,
+        };
+
         for field in &self.fields {
             if let Some(value) = dict.get_item(&field.name) {
-                match field.validator.validate(py, value, output_dict) {
+                match field.validator.validate(py, value, &extra) {
                     Ok(value) => output_dict.set_item(&field.name, value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![LocItem::S(field.name.clone())];
@@ -136,11 +148,10 @@ impl Validator for ModelValidator {
                         location = loc
                     ));
                 } else if let Some(ref validator) = self.extra_validator {
-                    match validator.validate(py, value, output_dict) {
+                    match validator.validate(py, value, &extra) {
                         Ok(value) => output_dict.set_item(&key, value).map_err(as_internal)?,
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
-                                // TODO I don't think this clone is necessary, but the compiler disagrees
                                 errors.push(err.prefix_location(&loc));
                             }
                         }
@@ -161,6 +172,53 @@ impl Validator for ModelValidator {
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
+    }
+}
+
+impl ModelValidator {
+    fn validate_assignment(&self, py: Python, field: &str, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+        // TODO probably we should set location on errors here
+        let field_name = field.to_string();
+
+        let data = match extra.data {
+            Some(data) => data,
+            None => panic!("data is required when validating assignment"),
+        };
+
+        let prepare_tuple = |output: PyObject| {
+            data.set_item(field_name.clone(), output).map_err(as_internal)?;
+            let fields_set = PySet::new(py, &vec![field_name.clone()][..]).map_err(as_internal)?;
+            Ok((data, fields_set).to_object(py))
+        };
+
+        let prepare_result = |result: ValResult<PyObject>| match result {
+            Ok(output) => prepare_tuple(output),
+            Err(ValError::LineErrors(line_errors)) => {
+                let loc = vec![LocItem::S(field_name.clone())];
+                let errors = line_errors.iter().map(|e| e.prefix_location(&loc)).collect();
+                Err(ValError::LineErrors(errors))
+            }
+            Err(err) => Err(err),
+        };
+
+        if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+            prepare_result(field.validator.validate(py, input, extra))
+        } else {
+            match self.extra_behavior {
+                // with allow we either want to set the value
+                ExtraBehavior::Allow => match self.extra_validator {
+                    Some(ref validator) => prepare_result(validator.validate(py, input, extra)),
+                    None => prepare_tuple(input.to_object(py)),
+                },
+                // otherwise we raise an error:
+                // - with forbid this is obvious
+                // - with ignore the model should never be overloaded, so an error is the clearest option
+                _ => {
+                    let loc = vec![LocItem::S(field_name.clone())];
+                    err_val_error!(py, input, location = loc, kind = ErrorKind::ExtraForbidden)
+                }
+            }
+        }
     }
 }
 

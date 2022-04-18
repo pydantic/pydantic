@@ -10,10 +10,20 @@ install:
 	pip install -e .
 	pre-commit install
 
+.PHONY: install-rust-coverage
+install-rust-coverage:
+	cargo install rustfilt cargo-binutils
+	rustup component add llvm-tools-preview
+
 .PHONY: build-dev
 build-dev:
 	rm -f pydantic_core/*.so
 	python setup.py develop
+
+.PHONY: build-coverage
+build-coverage:
+	rm -f pydantic_core/*.so
+	RUSTFLAGS='-C instrument-coverage' python setup.py develop
 
 .PHONY: format
 format:
@@ -48,12 +58,14 @@ test:
 	coverage run -m pytest
 
 .PHONY: testcov
-testcov: test
-	@echo "building coverage html"
-	@coverage html
+testcov: build-coverage test
+	@rm -rf htmlcov
+	@mkdir -p htmlcov
+	coverage html -d htmlcov/python
+	./tests/rust_coverage_html.sh
 
 .PHONY: all
-all: lint mypy build-dev testcov
+all: format lint mypy testcov
 
 .PHONY: clean
 clean:

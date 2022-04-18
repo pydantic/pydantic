@@ -47,6 +47,13 @@ pub fn as_internal(err: PyErr) -> ValError {
     ValError::InternalErr(err)
 }
 
+pub fn map_validation_error(model_name: &str, error: ValError) -> PyErr {
+    match error {
+        ValError::LineErrors(line_errors) => ValidationError::new_err((line_errors, model_name.to_string())),
+        ValError::InternalErr(err) => err,
+    }
+}
+
 /// Utility for concisely creating a `ValLineError`
 /// can either take just `py` and a `value` (the given value) in which case kind `ErrorKind::ValueError` is used as kind
 /// e.g. `val_line_error!(py, "the value provided")`

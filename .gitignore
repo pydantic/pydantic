@@ -21,3 +21,4 @@ docs/_build/
 /sandbox/
 /.editorconfig
 /*.lcov
+/*.profraw
