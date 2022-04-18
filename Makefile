@@ -65,7 +65,7 @@ testcov: build-coverage test
 	./tests/rust_coverage_html.sh
 
 .PHONY: all
-all: format lint mypy testcov
+all: format lint mypy test
 
 .PHONY: clean
 clean:
