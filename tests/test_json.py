@@ -16,6 +16,13 @@ def test_null():
     assert SchemaValidator({'type': 'none'}).validate_json('null') is None
 
 
+def test_str():
+    assert SchemaValidator({'type': 'str'}).validate_json('"foobar"') == 'foobar'
+    assert SchemaValidator({'type': 'str'}).validate_json('123') == '123'
+    with pytest.raises(ValidationError, match=r'Value must be a valid string \(kind=str_type\)'):
+        SchemaValidator({'type': 'str'}).validate_json('false')
+
+
 @pytest.mark.parametrize(
     'input_value,output_value',
     [('123.4', 123.4), ('123.0', 123.0), ('123', 123.0), ('"123.4"', 123.4), ('"123.0"', 123.0), ('"123"', 123.0)],

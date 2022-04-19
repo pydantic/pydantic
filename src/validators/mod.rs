@@ -4,9 +4,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::{from_str as parse_json, Value as JsonValue};
 
+use crate::build_macros::{dict_get, dict_get_required, py_error};
 use crate::errors::{err_val_error, map_validation_error, ErrorKind, ValError, ValResult};
 use crate::input::{Input, ToPy};
-use crate::utils::{dict_get, dict_get_required, py_error};
 
 mod bool;
 mod dict;

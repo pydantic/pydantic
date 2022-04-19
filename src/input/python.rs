@@ -59,6 +59,10 @@ impl Input for PyAny {
                 Err(_) => return err_val_error!(py, self, kind = ErrorKind::StrUnicode),
             };
             Ok(str)
+        } else if self.extract::<bool>().is_ok() {
+            // do this before int and float parsing as `False` is cast to `0` and we don't want False to
+            // be returned as a string
+            err_val_error!(py, self, kind = ErrorKind::StrType)
         } else if let Ok(int) = self.cast_as::<PyInt>() {
             let int = i64::extract(int).map_err(as_internal)?;
             Ok(int.to_string())

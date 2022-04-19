@@ -9,9 +9,9 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
+mod build_macros;
 mod errors;
 mod input;
-mod utils;
 mod validators;
 
 create_exception!(_pydantic_core, SchemaError, PyException);
