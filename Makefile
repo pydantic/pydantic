@@ -64,6 +64,9 @@ testcov: build-coverage test
 	coverage html -d htmlcov/python
 	./tests/rust_coverage_html.sh
 
+.PHONY: all
+all: format lint mypy test
+
 .PHONY: flame
 flame:
 	@rm -rf perf.data*

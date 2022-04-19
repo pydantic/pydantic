@@ -1,10 +1,12 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
+use regex::Regex;
 
-use super::{Extra, Validator};
+use crate::build_macros::{dict_get, py_error};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{Input, ToPy};
-use crate::utils::{dict_get, RegexPattern};
+
+use super::{Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct StrValidator;
@@ -46,7 +48,7 @@ impl Validator for StrValidator {
 
 #[derive(Debug, Clone)]
 pub struct StrConstrainedValidator {
-    pattern: Option<RegexPattern>,
+    pattern: Option<Regex>,
     max_length: Option<usize>,
     min_length: Option<usize>,
     strip_whitespace: bool,
@@ -69,10 +71,10 @@ macro_rules! optional_dict_get {
 
 impl Validator for StrConstrainedValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let pattern = match schema.get_item("pattern") {
-            Some(s) => Some(RegexPattern::py_new(s)?),
-            None => match schema.get_item("str_pattern") {
-                Some(s) => Some(RegexPattern::py_new(s)?),
+        let pattern = match dict_get!(schema, "pattern", &str) {
+            Some(s) => Some(build_regex(s)?),
+            None => match optional_dict_get!(config, "str_pattern", &str) {
+                Some(s) => Some(build_regex(s)?),
                 None => None,
             },
         };
@@ -157,5 +159,12 @@ impl Validator for StrConstrainedValidator {
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
+    }
+}
+
+fn build_regex(pattern: &str) -> PyResult<Regex> {
+    match Regex::new(pattern) {
+        Ok(r) => Ok(r),
+        Err(e) => py_error!("{}", e.to_string()),
     }
 }
