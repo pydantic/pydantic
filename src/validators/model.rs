@@ -1,13 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
+use std::collections::HashSet;
 
 use super::{build_validator, Extra, Validator};
-use crate::errors::{
-    as_internal, err_val_error, val_line_error, ErrorKind, LocItem, ValError, ValLineError, ValResult,
-};
-use crate::standalone_validators::validate_dict;
+use crate::errors::{as_internal, err_val_error, val_line_error, ErrorKind, ValError, ValLineError, ValResult};
+use crate::input::{Input, ToLocItem};
 use crate::utils::{dict_get, py_error};
-use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 struct ModelField {
@@ -72,16 +70,16 @@ impl Validator for ModelValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
         if let Some(field) = extra.field {
             // we're validating assignment, completely different logic
             return self.validate_assignment(py, field, input, extra);
         }
 
-        let dict: &PyDict = validate_dict(py, input)?;
+        let dict = input.validate_dict(py)?;
         let output_dict = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.len());
+        let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.input_len());
 
         let extra = Extra {
             data: Some(output_dict),
@@ -89,11 +87,11 @@ impl Validator for ModelValidator {
         };
 
         for field in &self.fields {
-            if let Some(value) = dict.get_item(&field.name) {
+            if let Some(value) = dict.input_get(&field.name) {
                 match field.validator.validate(py, value, &extra) {
                     Ok(value) => output_dict.set_item(&field.name, value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
-                        let loc = vec![LocItem::S(field.name.clone())];
+                        let loc = vec![field.name.to_loc()?];
                         for err in line_errors {
                             errors.push(err.prefix_location(&loc));
                         }
@@ -110,7 +108,7 @@ impl Validator for ModelValidator {
                     py,
                     dict,
                     kind = ErrorKind::Missing,
-                    location = vec![LocItem::S(field.name.clone())]
+                    location = vec![field.name.to_loc()?]
                 ));
             }
         }
@@ -121,24 +119,23 @@ impl Validator for ModelValidator {
             ExtraBehavior::Forbid => (true, true),
         };
         if check_extra {
-            for (raw_kwy, value) in dict.iter() {
-                let key: String = match raw_kwy.extract() {
+            for (raw_key, value) in dict.input_iter() {
+                let key: String = match raw_key.validate_str(py) {
                     Ok(k) => k,
-                    Err(_) => {
-                        errors.push(val_line_error!(
-                            py,
-                            dict,
-                            kind = ErrorKind::InvalidKey,
-                            location = vec![LocItem::from_py_repr(raw_kwy)?]
-                        ));
+                    Err(ValError::LineErrors(line_errors)) => {
+                        let loc = vec![raw_key.to_loc()?];
+                        for err in line_errors {
+                            errors.push(err.prefix_location(&loc));
+                        }
                         continue;
                     }
+                    Err(err) => return Err(err),
                 };
                 if fields_set.contains(&key) {
                     continue;
                 }
                 fields_set.insert(key.clone());
-                let loc = vec![LocItem::S(key.clone())];
+                let loc = vec![key.to_loc()?];
 
                 if forbid {
                     errors.push(val_line_error!(
@@ -158,7 +155,7 @@ impl Validator for ModelValidator {
                         Err(err) => return Err(err),
                     }
                 } else {
-                    output_dict.set_item(&key, value).map_err(as_internal)?;
+                    output_dict.set_item(&key, value.to_py(py)).map_err(as_internal)?;
                 }
             }
         }
@@ -176,7 +173,7 @@ impl Validator for ModelValidator {
 }
 
 impl ModelValidator {
-    fn validate_assignment(&self, py: Python, field: &str, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_assignment(&self, py: Python, field: &str, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
         // TODO probably we should set location on errors here
         let field_name = field.to_string();
 
@@ -194,7 +191,7 @@ impl ModelValidator {
         let prepare_result = |result: ValResult<PyObject>| match result {
             Ok(output) => prepare_tuple(output),
             Err(ValError::LineErrors(line_errors)) => {
-                let loc = vec![LocItem::S(field_name.clone())];
+                let loc = vec![field_name.to_loc()?];
                 let errors = line_errors.iter().map(|e| e.prefix_location(&loc)).collect();
                 Err(ValError::LineErrors(errors))
             }
@@ -208,13 +205,13 @@ impl ModelValidator {
                 // with allow we either want to set the value
                 ExtraBehavior::Allow => match self.extra_validator {
                     Some(ref validator) => prepare_result(validator.validate(py, input, extra)),
-                    None => prepare_tuple(input.to_object(py)),
+                    None => prepare_tuple(input.to_py(py)),
                 },
                 // otherwise we raise an error:
                 // - with forbid this is obvious
                 // - with ignore the model should never be overloaded, so an error is the clearest option
                 _ => {
-                    let loc = vec![LocItem::S(field_name.clone())];
+                    let loc = vec![field_name.to_loc()?];
                     err_val_error!(py, input, location = loc, kind = ErrorKind::ExtraForbidden)
                 }
             }

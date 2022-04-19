@@ -2,6 +2,7 @@ extern crate core;
 extern crate lazy_static;
 extern crate pyo3;
 extern crate regex;
+extern crate serde_json;
 extern crate strum;
 
 use pyo3::create_exception;
@@ -9,7 +10,7 @@ use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
 mod errors;
-mod standalone_validators;
+mod input;
 mod utils;
 mod validators;
 

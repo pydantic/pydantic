@@ -1,4 +1,4 @@
-from pydantic_core import SchemaValidator
+from pydantic_core import SchemaValidator, ValidationError
 from devtools import debug
 
 v = SchemaValidator({
@@ -36,8 +36,10 @@ v = SchemaValidator({
 })
 print(repr(v))
 
-r = v.run({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
+r = v.validate_python({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
 debug(r)
 
-r = v.run({'name': 'John', 'age': 16, 'friends': [-1, 2, 3, -1], 'settings': {'a': 1.0, 'b': 2.0}})
-debug(r)
+try:
+    r = v.validate_python({'name': 'John', 'age': 16, 'friends': [-1, 2, 3, -1], 'settings': {'a': 1.0, 'b': 2.0}})
+except ValidationError as e:
+    print(e)

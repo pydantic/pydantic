@@ -18,7 +18,7 @@ from pydantic_core import SchemaValidator, ValidationError
 )
 def test_bool(input_value, output_value):
     v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
-    assert v.run(input_value) == output_value
+    assert v.validate_python(input_value) == output_value
 
 
 def test_bool_error():
@@ -26,7 +26,7 @@ def test_bool_error():
     assert repr(v) == 'SchemaValidator(title="TestModel", validator=BoolValidator)'
 
     with pytest.raises(ValidationError) as exc_info:
-        v.run('wrong')
+        v.validate_python('wrong')
 
     assert str(exc_info.value) == (
         '1 validation error for TestModel\n'
@@ -41,12 +41,12 @@ def test_repr():
 
 def test_str():
     v = SchemaValidator({'type': 'str', 'title': 'TestModel'})
-    assert v.run('test') == 'test'
+    assert v.validate_python('test') == 'test'
 
 
 def test_str_constrained():
     v = SchemaValidator({'type': 'str-constrained', 'max_length': 5, 'title': 'TestModel'})
-    assert v.run('test') == 'test'
+    assert v.validate_python('test') == 'test'
 
     with pytest.raises(ValidationError, match='String must have at most 5 characters'):
-        v.run('test long')
+        v.validate_python('test long')
