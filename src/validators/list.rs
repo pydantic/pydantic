@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use super::{build_validator, Extra, ValResult, Validator};
 use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
-use crate::standalone_validators::validate_list;
+use crate::input::Input;
 use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
@@ -29,10 +29,11 @@ impl Validator for ListValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
-        let list = validate_list(py, input)?;
+    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        let list = input.validate_list(py)?;
+        let length = list.input_len();
         if let Some(min_length) = self.min_items {
-            if list.len() < min_length {
+            if length < min_length {
                 return err_val_error!(
                     py,
                     list,
@@ -42,7 +43,7 @@ impl Validator for ListValidator {
             }
         }
         if let Some(max_length) = self.max_items {
-            if list.len() > max_length {
+            if length > max_length {
                 return err_val_error!(
                     py,
                     list,
@@ -51,9 +52,9 @@ impl Validator for ListValidator {
                 );
             }
         }
-        let mut output: Vec<PyObject> = Vec::with_capacity(list.len());
+        let mut output: Vec<PyObject> = Vec::with_capacity(length);
         let mut errors: Vec<ValLineError> = Vec::new();
-        for (index, item) in list.iter().enumerate() {
+        for (index, item) in list.input_iter().enumerate() {
             match self.item_validator {
                 Some(ref validator) => match validator.validate(py, item, extra) {
                     Ok(item) => output.push(item),
@@ -65,7 +66,7 @@ impl Validator for ListValidator {
                     }
                     Err(err) => return Err(err),
                 },
-                None => output.push(item.into_py(py)),
+                None => output.push(item.to_py(py)),
             }
         }
 

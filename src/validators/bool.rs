@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use super::{Extra, Validator};
 use crate::errors::ValResult;
-use crate::standalone_validators::validate_bool;
+use crate::input::Input;
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
@@ -17,10 +17,10 @@ impl Validator for BoolValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
         // TODO in theory this could be quicker if we used PyBool rather than going to a bool
         // and back again, might be worth profiling?
-        Ok(validate_bool(py, input)?.into_py(py))
+        Ok(input.validate_bool(py)?.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {

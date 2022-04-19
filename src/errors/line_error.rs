@@ -5,7 +5,6 @@ use pyo3::types::PyDict;
 use strum::EnumMessage;
 
 use super::kinds::ErrorKind;
-use super::{as_internal, ValResult};
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -16,27 +15,6 @@ pub enum LocItem {
     I(usize),
 }
 // we could use the From trait to make creating Location's much easier, would it be worth it?
-
-impl LocItem {
-    #[inline]
-    pub fn from_py(key: &PyAny) -> ValResult<Self> {
-        if let Ok(key_str) = key.extract::<String>() {
-            Ok(Self::S(key_str))
-        } else if let Ok(key_int) = key.extract::<usize>() {
-            Ok(Self::I(key_int))
-        } else {
-            Self::from_py_repr(key)
-        }
-    }
-
-    #[inline]
-    pub fn from_py_repr(key: &PyAny) -> ValResult<Self> {
-        // best effort is to use repr
-        let repr_result = key.repr().map_err(as_internal)?;
-        let repr: String = repr_result.extract().map_err(as_internal)?;
-        Ok(Self::S(repr))
-    }
-}
 
 impl fmt::Display for LocItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -79,6 +57,11 @@ impl fmt::Display for ValLineError {
             write!(f, "{} | ", loc)?;
         }
         write!(f, "{} (kind={})", self.message(), self.kind())
+        // TODO
+        // match self.input_value {
+        //     Some(ref input_value) => write!(f, "\n    input={}", input_value),
+        //     None => Ok(()),
+        // }
     }
 }
 

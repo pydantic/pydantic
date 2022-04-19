@@ -64,8 +64,20 @@ testcov: build-coverage test
 	coverage html -d htmlcov/python
 	./tests/rust_coverage_html.sh
 
-.PHONY: all
-all: format lint mypy test
+.PHONY: flame
+flame:
+	@rm -rf perf.data*
+	@rm -rf flame
+	@mkdir -p flame
+	perf record -g benchmarks/minimal.py
+	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/python.svg
+	perf script --max-stack 20 | stackcollapse-perf.pl > flame/python.txt
+	@rm perf.data
+	JSON=1 perf record -g benchmarks/minimal.py
+	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/json.svg
+	perf script --max-stack 20 | stackcollapse-perf.pl > flame/json.txt
+	@rm perf.data
+
 
 .PHONY: clean
 clean:
@@ -74,6 +86,7 @@ clean:
 	rm -f `find . -type f -name '*~' `
 	rm -f `find . -type f -name '.*~' `
 	rm -rf .cache
+	rm -rf flame
 	rm -rf htmlcov
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
@@ -81,4 +94,5 @@ clean:
 	rm -f .coverage
 	rm -f .coverage.*
 	rm -rf build
+	rm -rf perf.data*
 	python setup.py clean

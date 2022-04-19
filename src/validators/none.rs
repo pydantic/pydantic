@@ -2,7 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{Extra, Validator};
-use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::errors::ValResult;
+use crate::input::Input;
 
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
@@ -16,12 +17,9 @@ impl Validator for NoneValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _extra: &Extra) -> ValResult<PyObject> {
-        if input.is_none() {
-            ValResult::Ok(input.into_py(py))
-        } else {
-            err_val_error!(py, input, kind = ErrorKind::NoneRequired)
-        }
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        input.validate_none(py)?;
+        ValResult::Ok(py.None())
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {

@@ -5,6 +5,8 @@ use strum::{Display, EnumMessage};
 pub enum ErrorKind {
     #[strum(message = "Invalid input")]
     InvalidInput,
+    #[strum(message = "Invalid JSON")]
+    InvalidJson,
     // model specific errors
     #[strum(message = "Field required")]
     Missing,
