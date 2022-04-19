@@ -2,8 +2,10 @@ use std::fmt;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
+use serde_json::{from_str as parse_json, Value as JsonValue};
 
-use crate::errors::{map_validation_error, ValError, ValResult};
+use crate::errors::{err_val_error, map_validation_error, ErrorKind, ValError, ValResult};
+use crate::input::{Input, ToPy};
 use crate::utils::{dict_get, dict_get_required, py_error};
 
 mod bool;
@@ -34,7 +36,7 @@ impl SchemaValidator {
         })
     }
 
-    fn run(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
+    fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
         let extra = Extra {
             data: None,
             field: None,
@@ -43,7 +45,22 @@ impl SchemaValidator {
         r.map_err(|e| map_validation_error(&self.title, e))
     }
 
-    fn run_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
+    fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
+        let result: ValResult<PyObject> = match parse_json::<JsonValue>(input.as_str()) {
+            Ok(input) => {
+                let extra = Extra {
+                    data: None,
+                    field: None,
+                };
+                self.validator.validate(py, &input, &extra)
+            }
+            Err(e) => err_val_error!(py, input, message = Some(e.to_string()), kind = ErrorKind::InvalidJson),
+        };
+
+        result.map_err(|e| map_validation_error(&self.title, e))
+    }
+
+    fn validate_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
         let extra = Extra {
             data: Some(data),
             field: Some(field.as_str()),
@@ -133,7 +150,7 @@ pub trait Validator: Send + fmt::Debug {
         Self: Sized;
 
     /// Do the actual validation for this schema/type
-    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject>;
+    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject>;
 
     /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
     /// cloning is required to allow the SchemaValidator to be passed around in python

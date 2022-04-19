@@ -6,7 +6,10 @@ from pydantic_core import SchemaValidator, ValidationError
 def test_simple():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
 
-    assert v.run({'field_a': 123, 'field_b': 1}) == ({'field_a': '123', 'field_b': 1}, {'field_b', 'field_a'})
+    assert v.validate_python({'field_a': 123, 'field_b': 1}) == (
+        {'field_a': '123', 'field_b': 1},
+        {'field_b', 'field_a'},
+    )
 
 
 def test_with_default():
@@ -14,20 +17,23 @@ def test_with_default():
         {'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int', 'default': 666}}}
     )
 
-    assert v.run({'field_a': 123}) == ({'field_a': '123', 'field_b': 666}, {'field_a'})
-    assert v.run({'field_a': 123, 'field_b': 1}) == ({'field_a': '123', 'field_b': 1}, {'field_b', 'field_a'})
+    assert v.validate_python({'field_a': 123}) == ({'field_a': '123', 'field_b': 666}, {'field_a'})
+    assert v.validate_python({'field_a': 123, 'field_b': 1}) == (
+        {'field_a': '123', 'field_b': 1},
+        {'field_b', 'field_a'},
+    )
 
 
 def test_missing_error():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
     with pytest.raises(ValidationError, match='field_b | Missing data for required field'):
-        v.run({'field_a': 123})
+        v.validate_python({'field_a': 123})
 
 
 def test_ignore_extra():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
 
-    assert v.run({'field_a': 123, 'field_b': 1, 'field_c': 123}) == (
+    assert v.validate_python({'field_a': 123, 'field_b': 1, 'field_c': 123}) == (
         {'field_a': '123', 'field_b': 1},
         {'field_b', 'field_a'},
     )
@@ -37,13 +43,16 @@ def test_forbid_extra():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'extra': 'forbid'}})
 
     with pytest.raises(ValidationError, match='field_b | Extra values are not permitted'):
-        v.run({'field_a': 123, 'field_b': 1})
+        v.validate_python({'field_a': 123, 'field_b': 1})
 
 
 def test_allow_extra():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'extra': 'allow'}})
 
-    assert v.run({'field_a': 123, 'field_b': (1, 2)}) == ({'field_a': '123', 'field_b': (1, 2)}, {'field_a', 'field_b'})
+    assert v.validate_python({'field_a': 123, 'field_b': (1, 2)}) == (
+        {'field_a': '123', 'field_b': (1, 2)},
+        {'field_a', 'field_b'},
+    )
 
 
 def test_allow_extra_validate():
@@ -56,13 +65,13 @@ def test_allow_extra_validate():
         }
     )
 
-    assert v.run({'field_a': 'test', 'other_value': '123'}) == (
+    assert v.validate_python({'field_a': 'test', 'other_value': '123'}) == (
         {'field_a': 'test', 'other_value': 123},
         {'field_a', 'other_value'},
     )
 
     with pytest.raises(ValidationError) as exc_info:
-        v.run({'field_a': 'test', 'other_value': 12.5})
+        v.validate_python({'field_a': 'test', 'other_value': 12.5})
     assert exc_info.value.errors() == [
         {
             'kind': 'int_from_float',
@@ -75,18 +84,18 @@ def test_allow_extra_validate():
 
 def test_str_config():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'str_max_length': 5}})
-    assert v.run({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
     with pytest.raises(ValidationError, match='String must have at most 5 characters'):
-        v.run({'field_a': 'test long'})
+        v.validate_python({'field_a': 'test long'})
 
 
 def test_validate_assignment():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}})
 
-    assert v.run({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
-    assert v.run_assignment('field_a', 456, {'field_a': 'test'}) == ({'field_a': '456'}, {'field_a'})
+    assert v.validate_assignment('field_a', 456, {'field_a': 'test'}) == ({'field_a': '456'}, {'field_a'})
 
 
 def test_validate_assignment_functions():
@@ -110,7 +119,7 @@ def test_validate_assignment_functions():
         }
     )
 
-    assert v.run({'field_a': 'test', 'field_b': 12.0}) == (
+    assert v.validate_python({'field_a': 'test', 'field_b': 12.0}) == (
         {'field_a': 'testtest', 'field_b': 6},
         {'field_a', 'field_b'},
     )
@@ -118,7 +127,7 @@ def test_validate_assignment_functions():
     assert calls == ['func_a', 'func_b']
     calls.clear()
 
-    assert v.run_assignment('field_a', 'new-val', {'field_a': 'testtest', 'field_b': 6}) == (
+    assert v.validate_assignment('field_a', 'new-val', {'field_a': 'testtest', 'field_b': 6}) == (
         {'field_a': 'new-valnew-val', 'field_b': 6},
         {'field_a'},
     )
@@ -128,10 +137,10 @@ def test_validate_assignment_functions():
 def test_validate_assignment_ignore_extra():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}})
 
-    assert v.run({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
     with pytest.raises(ValidationError) as exc_info:
-        v.run_assignment('other_field', 456, {'field_a': 'test'})
+        v.validate_assignment('other_field', 456, {'field_a': 'test'})
 
     assert exc_info.value.errors() == [
         {
@@ -146,9 +155,9 @@ def test_validate_assignment_ignore_extra():
 def test_validate_assignment_allow_extra():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'extra': 'allow'}})
 
-    assert v.run({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
-    assert v.run_assignment('other_field', 456, {'field_a': 'test'}) == (
+    assert v.validate_assignment('other_field', 456, {'field_a': 'test'}) == (
         {'field_a': 'test', 'other_field': 456},
         {'other_field'},
     )
@@ -164,12 +173,12 @@ def test_validate_assignment_allow_extra_validate():
         }
     )
 
-    assert v.run_assignment('other_field', '456', {'field_a': 'test'}) == (
+    assert v.validate_assignment('other_field', '456', {'field_a': 'test'}) == (
         {'field_a': 'test', 'other_field': 456},
         {'other_field'},
     )
     with pytest.raises(ValidationError) as exc_info:
-        assert v.run_assignment('other_field', 'xyz', {'field_a': 'test'})
+        assert v.validate_assignment('other_field', 'xyz', {'field_a': 'test'})
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',

@@ -22,3 +22,4 @@ docs/_build/
 /.editorconfig
 /*.lcov
 /*.profraw
+/flame/

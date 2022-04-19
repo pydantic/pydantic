@@ -1,9 +1,9 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDict, PyString};
+use pyo3::types::{PyDict, PyString};
 
 use super::{Extra, Validator};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
-use crate::standalone_validators::validate_str;
+use crate::input::{Input, ToPy};
 use crate::utils::{dict_get, RegexPattern};
 
 #[derive(Debug, Clone)]
@@ -34,8 +34,8 @@ impl Validator for StrValidator {
         }
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _extra: &Extra) -> ValResult<PyObject> {
-        let s = validate_str(py, input)?;
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        let s = input.validate_str(py)?;
         ValResult::Ok(s.into_py(py))
     }
 
@@ -108,8 +108,8 @@ impl Validator for StrConstrainedValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, _extra: &Extra) -> ValResult<PyObject> {
-        let mut str = validate_str(py, input)?;
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        let mut str = input.validate_str(py)?;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);

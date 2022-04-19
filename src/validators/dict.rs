@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{build_validator, Extra, Validator};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, LocItem, ValError, ValLineError, ValResult};
-use crate::standalone_validators::validate_dict;
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValLineError, ValResult};
+use crate::input::{Input, ToLocItem};
 use crate::utils::dict_get;
 
 #[derive(Debug, Clone)]
@@ -34,10 +34,10 @@ impl Validator for DictValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &PyAny, extra: &Extra) -> ValResult<PyObject> {
-        let dict = validate_dict(py, input)?;
+    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        let dict = input.validate_dict(py)?;
         if let Some(min_length) = self.min_items {
-            if dict.len() < min_length {
+            if dict.input_len() < min_length {
                 return err_val_error!(
                     py,
                     dict,
@@ -47,7 +47,7 @@ impl Validator for DictValidator {
             }
         }
         if let Some(max_length) = self.max_items {
-            if dict.len() > max_length {
+            if dict.input_len() > max_length {
                 return err_val_error!(
                     py,
                     dict,
@@ -59,7 +59,7 @@ impl Validator for DictValidator {
         let output = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
 
-        for (key, value) in dict.iter() {
+        for (key, value) in dict.input_iter() {
             let output_key: Option<PyObject> =
                 apply_validator(py, &self.key_validator, &mut errors, key, key, extra, true)?;
             let output_value: Option<PyObject> =
@@ -85,8 +85,8 @@ fn apply_validator(
     py: Python,
     validator: &Option<Box<dyn Validator>>,
     errors: &mut Vec<ValLineError>,
-    input: &PyAny,
-    key: &PyAny,
+    input: &dyn Input,
+    key: &dyn Input,
     extra: &Extra,
     key_loc: bool,
 ) -> ValResult<Option<PyObject>> {
@@ -95,9 +95,9 @@ fn apply_validator(
             Ok(value) => Ok(Some(value)),
             Err(ValError::LineErrors(line_errors)) => {
                 let loc = if key_loc {
-                    vec![LocItem::from_py(key)?, LocItem::S("[key]".to_string())]
+                    vec![key.to_loc()?, "[key]".to_loc()?]
                 } else {
-                    vec![LocItem::from_py(key)?]
+                    vec![key.to_loc()?]
                 };
                 for err in line_errors {
                     errors.push(err.prefix_location(&loc));
@@ -106,6 +106,6 @@ fn apply_validator(
             }
             Err(err) => Err(err),
         },
-        None => Ok(Some(input.into_py(py))),
+        None => Ok(Some(input.to_py(py))),
     }
 }

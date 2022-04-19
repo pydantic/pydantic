@@ -40,7 +40,7 @@ v = SchemaValidator({
 })
 print(repr(v))
 
-r = v.run({'name': 'John', 'age': 42})
+r = v.validate_python({'name': 'John', 'age': 42})
 debug(r)
 ```
 

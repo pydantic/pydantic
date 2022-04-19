@@ -69,7 +69,7 @@ macro_rules! val_line_error {
 
     ($py:ident, $input:expr, $($key:ident = $val:expr),+) => {
         crate::errors::ValLineError {
-            input_value: Some($input.into_py($py)),
+            input_value: Some($input.to_py($py)),
             $(
                 $key: $val,
             )+
