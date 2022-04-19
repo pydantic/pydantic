@@ -3,9 +3,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use super::{Extra, ValError, Validator};
+use crate::build_macros::{dict, dict_get_required, py_error};
 use crate::errors::{map_validation_error, val_line_error, ErrorKind, ValResult};
 use crate::input::Input;
-use crate::utils::{dict, dict_get_required, py_error};
 use crate::validators::build_validator;
 
 macro_rules! kwargs {
