@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{build_validator, Extra, Validator};
 use crate::build_macros::dict_get;
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{Input, ToLocItem};
+
+use super::{build_validator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {

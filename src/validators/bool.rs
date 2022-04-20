@@ -1,9 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{Extra, Validator};
 use crate::errors::ValResult;
 use crate::input::Input;
+
+use super::{Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;

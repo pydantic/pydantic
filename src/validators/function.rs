@@ -2,11 +2,12 @@ use pyo3::exceptions::{PyAssertionError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use super::{Extra, ValError, Validator};
 use crate::build_macros::{dict, dict_get_required, py_error};
-use crate::errors::{map_validation_error, val_line_error, ErrorKind, ValResult};
+use crate::errors::{map_validation_error, val_line_error, ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::validators::build_validator;
+
+use super::{Extra, Validator};
 
 macro_rules! kwargs {
     ($py:ident, $($k:expr => $v:expr),*) => {{
