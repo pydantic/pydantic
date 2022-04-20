@@ -28,8 +28,15 @@ def test_with_default():
 
 def test_missing_error():
     v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
-    with pytest.raises(ValidationError, match='field_b | Missing data for required field'):
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': 123})
+    assert (
+        str(exc_info.value)
+        == """\
+1 validation error for Model
+field_b
+  Field required [kind=missing, input_value={'field_a': 123}, input_type=dict]"""
+    )
 
 
 def test_ignore_extra():
