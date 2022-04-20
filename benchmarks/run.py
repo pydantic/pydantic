@@ -7,11 +7,11 @@ import json
 
 from devtools import debug
 
+from pydantic import BaseModel
+from pydantic_core import SchemaValidator
+
 
 def benchmark_simple_validation(from_json: bool = False):
-    from pydantic import BaseModel
-    from pydantic_core import SchemaValidator
-
     class PydanticModel(BaseModel):
         name: str
         age: int
@@ -48,59 +48,67 @@ def benchmark_simple_validation(from_json: bool = False):
 
     data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
-    benchmark_functions = []
-
-    def benchmark(f):
-        benchmark_functions.append(f)
-        return f
-
     if from_json:
         data = json.dumps(data)
 
-        @benchmark
-        def pydantic_json(d):
+        def pydantic(d):
             obj = json.loads(d)
             return PydanticModel.parse_obj(obj)
 
-        @benchmark
-        def core_json(d):
-            schema_validator.validate_json(d)
-            # output, fields_set = schema_validator.validate_json(d)
-            # return output
+        def pydantic_core(d):
+            output, fields_set = schema_validator.validate_json(d)
+            return output
 
-        # @benchmark
-        # def core_json_external(d):
-        #     obj = json.loads(d)
-        #     output, fields_set = schema_validator.validate_python(obj)
-        #     return output
-
+        run_benchmarks('simple model from JSON', [pydantic, pydantic_core], [data])
     else:
-        @benchmark
-        def pydantic_py(d):
+        def pydantic(d):
             return PydanticModel.parse_obj(d)
 
-        @benchmark
-        def core_py(d):
+        def pydantic_core(d):
             output, fields_set = schema_validator.validate_python(d)
             return output
 
-    reference_result = None
-    steps = 1_000
+        run_benchmarks('simple model from py', [pydantic, pydantic_core], [data])
 
+
+def benchmark_bool():
+
+    class PydanticModel(BaseModel):
+        value: bool
+
+    schema_validator = SchemaValidator({'type': 'bool'})
+
+    def pydantic(d):
+        m = PydanticModel(value=d)
+        return m.value
+
+    def pydantic_core(d):
+        return schema_validator.validate_python(d)
+
+    data = [True, False, 0, 1, 'true', 'True', 'false', 'False', 'yes', 'no']
+
+    run_benchmarks('bool', [pydantic, pydantic_core], data)
+
+
+def run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
+    reference_result = None
+
+    print(f'\n#################\n{name}')
     for func in benchmark_functions:
         print(f'{func.__name__}:')
-        result = func(data)
+        outputs = [func(data) for data in input_values]
+        result = list(zip(input_values, outputs))
         # debug(result)
-        # if reference_result:
-        #     assert reference_result == result
-        # reference_result = result
+        if reference_result:
+            assert reference_result == result, (func.__name__, reference_result, result)
+        reference_result = result
 
         t = timeit.timeit(
-            'func(data)',
-            globals={'func': func, 'data': data},
+            '[func(data) for data in input_values]',
+            globals={'func': func, 'input_values': input_values},
             number=steps,
         )
-        print(f'    {display_time(t / steps)}\n')
+        print(f'    {display_time(t / steps)}')
 
 
 def display_time(seconds: float):
@@ -120,3 +128,4 @@ def display_time(seconds: float):
 if __name__ == '__main__':
     benchmark_simple_validation()
     benchmark_simple_validation(from_json=True)
+    benchmark_bool()

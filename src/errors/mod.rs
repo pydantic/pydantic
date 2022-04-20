@@ -8,9 +8,10 @@ mod kinds;
 mod line_error;
 mod validation_exception;
 
+use self::validation_exception::display_errors;
+
 pub use self::kinds::ErrorKind;
 pub use self::line_error::{Context, LocItem, Location, ValLineError};
-use self::validation_exception::display_errors;
 pub use self::validation_exception::ValidationError;
 
 pub type ValResult<T> = StdResult<T, ValError>;

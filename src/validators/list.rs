@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{build_validator, Extra, ValResult, Validator};
 use crate::build_macros::dict_get;
 use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
 use crate::input::Input;
+
+use super::{build_validator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {

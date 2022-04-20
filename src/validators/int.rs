@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use super::{Extra, Validator};
 use crate::build_macros::dict_get;
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{Input, ToPy};
+
+use super::{Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IntValidator;
