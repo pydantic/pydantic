@@ -1,6 +1,6 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyType};
 use serde_json::{Map, Value};
 
 use crate::build_macros::py_error;
@@ -10,6 +10,10 @@ use super::shared::{int_as_bool, str_as_bool};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for Value {
+    fn is_direct_instance_of(&self, _class: &PyType) -> ValResult<bool> {
+        Ok(false)
+    }
+
     fn validate_none(&self, py: Python) -> ValResult<()> {
         match self {
             Value::Null => Ok(()),
@@ -80,7 +84,7 @@ impl Input for Value {
         }
     }
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn validate_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
         match self {
             Value::Object(dict) => Ok(Box::new(dict)),
             _ => err_val_error!(py, self, kind = ErrorKind::DictType),
@@ -178,6 +182,10 @@ impl ToLocItem for Value {
 
 /// Required for Dict keys so the string can behave like an Input
 impl Input for String {
+    fn is_direct_instance_of(&self, _class: &PyType) -> ValResult<bool> {
+        Ok(false)
+    }
+
     fn validate_none(&self, py: Python) -> ValResult<()> {
         err_val_error!(py, self, kind = ErrorKind::NoneRequired)
     }
@@ -204,7 +212,7 @@ impl Input for String {
         }
     }
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn validate_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
         err_val_error!(py, self, kind = ErrorKind::DictType)
     }
 

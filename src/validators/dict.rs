@@ -13,6 +13,7 @@ pub struct DictValidator {
     value_validator: Option<Box<dyn Validator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
+    try_instance_as_dict: bool,
 }
 
 impl DictValidator {
@@ -32,11 +33,12 @@ impl Validator for DictValidator {
             },
             min_items: dict_get!(schema, "min_items", usize),
             max_items: dict_get!(schema, "max_items", usize),
+            try_instance_as_dict: dict_get!(schema, "try_instance_as_dict", bool).unwrap_or(false),
         }))
     }
 
     fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
-        let dict = input.validate_dict(py)?;
+        let dict = input.validate_dict(py, self.try_instance_as_dict)?;
         if let Some(min_length) = self.min_items {
             if dict.input_len() < min_length {
                 return err_val_error!(
