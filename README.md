@@ -81,7 +81,7 @@ but shouldn't change more.
 
 The aim is to remain 10x faster than current pydantic for common use cases.
 
-## Why not JSONSchema directly?
+## Why not JSONSchema?
 
 Looking at the above schema passed to `SchemaValidator` it would seem reasonable to ask "why not use JSONSchema?".
 
