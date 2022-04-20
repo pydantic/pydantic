@@ -2,10 +2,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
 use std::collections::HashSet;
 
-use super::{build_validator, Extra, Validator};
 use crate::build_macros::{dict_get, py_error};
 use crate::errors::{as_internal, err_val_error, val_line_error, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{Input, ToLocItem};
+
+use super::{build_validator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 struct ModelField {

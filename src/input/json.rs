@@ -120,6 +120,7 @@ impl<'py> ListInput<'py> for &Vec<Value> {
 }
 
 impl ToPy for Value {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         match self {
             Value::Null => py.None(),
@@ -141,6 +142,7 @@ impl ToPy for Value {
 }
 
 impl ToPy for &Map<String, Value> {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         let dict = PyDict::new(py);
         for (k, v) in self.iter() {
@@ -150,6 +152,7 @@ impl ToPy for &Map<String, Value> {
     }
 }
 impl ToPy for &Vec<Value> {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.iter().map(|v| v.to_py(py)).collect::<Vec<_>>().into_py(py)
     }

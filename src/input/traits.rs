@@ -10,24 +10,28 @@ pub trait ToPy {
 
 /// special cases of standard types that need to implement ToPy
 impl ToPy for String {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.into_py(py)
     }
 }
 
 impl ToPy for &str {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.into_py(py)
     }
 }
 
 impl ToPy for i64 {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.into_py(py)
     }
 }
 
 impl ToPy for f64 {
+    #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.into_py(py)
     }
