@@ -1,8 +1,7 @@
 from pydantic_core import SchemaValidator, ValidationError
-from devtools import debug
 
 v = SchemaValidator({
-    'title': 'MyTestModel',
+    'title': 'MyModel',
     'type': 'model',
     'fields': {
         'name': {
@@ -12,34 +11,37 @@ v = SchemaValidator({
             'type': 'int-constrained',
             'ge': 18,
         },
-        'is_employer': {
+        'is_developer': {
             'type': 'bool',
             'default': True,
         },
-        'friends': {
-            'type': 'list',
-            'items': {
-                'type': 'int',
-                'gt': 0,
-            },
-        },
-        'settings': {
-            'type': 'dict',
-            'keys': {
-                'type': 'str',
-            },
-            'values': {
-                'type': 'float',
-            }
-        }
     },
 })
-print(repr(v))
+print(v)
+"""
+SchemaValidator(title="MyModel", validator=ModelValidator ...
+"""
 
-r = v.validate_python({'name': 'John', 'age': 42, 'friends': [1, 2, 3], 'settings': {'a': 1.0, 'b': 2.0}})
-debug(r)
+r1 = v.validate_python({'name': 'Samuel', 'age': 35})
+print(r1)
+"""
+(
+  {'name': 'Samuel', 'age': 35, 'is_developer': True}, <- validated data
+  {'age', 'name'} <- fields set
+)
+"""
+
+# pydantic-core can also validate JSON directly
+r2 = v.validate_json('{"name": "Samuel", "age": 35}')
+assert r1 == r2
 
 try:
-    r = v.validate_python({'name': 'John', 'age': 16, 'friends': [-1, 2, 3, -1], 'settings': {'a': 1.0, 'b': 2.0}})
+    v.validate_python({'name': 'Samuel', 'age': 11})
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for MyModel
+    age
+      Value must be greater than or equal to 18
+      [kind=int_greater_than_equal, context={ge: 18}, input_value=11, input_type=int]
+    """

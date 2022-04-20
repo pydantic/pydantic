@@ -16,7 +16,7 @@ pub struct ValidationError {
 
 impl fmt::Display for ValidationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", display_errors(&self.line_errors, &self.title))
+        write!(f, "{}", display_errors(&self.line_errors, &self.title, None))
     }
 }
 
@@ -62,22 +62,18 @@ impl ValidationError {
         Ok(errors.into_py(py))
     }
 
-    fn __repr__(&self) -> String {
-        display_errors(&self.line_errors, &self.title)
+    fn __repr__(&self, py: Python) -> String {
+        display_errors(&self.line_errors, &self.title, Some(py))
     }
 
-    fn __str__(&self) -> String {
-        self.__repr__()
+    fn __str__(&self, py: Python) -> String {
+        self.__repr__(py)
     }
 }
 
-pub fn display_errors(errors: &[ValLineError], title: &str) -> String {
+pub fn display_errors(errors: &[ValLineError], title: &str, py: Option<Python>) -> String {
     let count = errors.len();
     let plural = if count == 1 { "" } else { "s" };
-    let loc = errors
-        .iter()
-        .map(|i| i.to_string())
-        .collect::<Vec<String>>()
-        .join("\n  ");
-    format!("{} validation error{} for {}\n  {}", count, plural, title, loc)
+    let loc = errors.iter().map(|i| i.pretty(py)).collect::<Vec<String>>().join("\n");
+    format!("{} validation error{} for {}\n{}", count, plural, title, loc)
 }

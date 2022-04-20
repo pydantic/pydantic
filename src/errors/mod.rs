@@ -26,7 +26,7 @@ impl fmt::Display for ValError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ValError::LineErrors(line_errors) => {
-                write!(f, "{}", display_errors(line_errors, "Model"))
+                write!(f, "{}", display_errors(line_errors, "Model", None))
             }
             ValError::InternalErr(err) => {
                 write!(f, "Internal error: {}", err)
