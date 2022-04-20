@@ -1,6 +1,7 @@
 use std::fmt;
 
 use pyo3::prelude::*;
+use pyo3::types::PyType;
 
 use crate::errors::{LocItem, ValResult};
 
@@ -54,6 +55,8 @@ impl ToLocItem for &str {
 }
 
 pub trait Input: fmt::Debug + ToPy + ToLocItem {
+    fn is_direct_instance_of(&self, class: &PyType) -> ValResult<bool>;
+
     fn validate_none(&self, py: Python) -> ValResult<()>;
 
     fn validate_str(&self, py: Python) -> ValResult<String>;
@@ -64,7 +67,7 @@ pub trait Input: fmt::Debug + ToPy + ToLocItem {
 
     fn validate_float(&self, py: Python) -> ValResult<f64>;
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
+    fn validate_dict<'py>(&'py self, py: Python<'py>, try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
 
     fn validate_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>>;
 }

@@ -2,7 +2,7 @@ use std::os::raw::c_int;
 
 use pyo3::conversion::AsPyPointer;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTuple};
+use pyo3::types::{PyDict, PyTuple, PyType};
 use pyo3::{ffi, intern, ToBorrowedObject};
 
 use super::{build_validator, Extra, ValResult, Validator};
@@ -13,7 +13,7 @@ use crate::input::Input;
 #[derive(Debug, Clone)]
 pub struct ModelClassValidator {
     validator: Box<dyn Validator>,
-    class: PyObject,
+    class: Py<PyType>,
     new_method: PyObject,
 }
 
@@ -23,7 +23,7 @@ impl ModelClassValidator {
 
 impl Validator for ModelClassValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let class = dict_get_required!(schema, "class", &PyAny)?;
+        let class = dict_get_required!(schema, "class", &PyType)?;
         let new_method = class.getattr("__new__")?;
         // `__new__` always exists and is always callable, no point checking `is_callable` here
 
@@ -41,8 +41,12 @@ impl Validator for ModelClassValidator {
     }
 
     fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
-        let output = self.validator.validate(py, input, extra)?;
-        self.create_class(py, output).map_err(as_internal)
+        if input.is_direct_instance_of(self.class.as_ref(py))? {
+            Ok(input.to_py(py))
+        } else {
+            let output = self.validator.validate(py, input, extra)?;
+            self.create_class(py, output).map_err(as_internal)
+        }
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -59,8 +63,8 @@ impl ModelClassValidator {
         let fields_set = t.get_item(1)?;
 
         // TODO would be great if we could create `instance` without resorting to calling `__new__`,
-        // if we could convert `self.class` (a `PyObject`) to a `PyClass`, we could use `Py::new(...)`, but
-        // I can't find a way to do that.
+        // if we could convert `self.class` (a `PyType`) to a `PyClass`, we could use `Py::new(...)`, but
+        // I can't find a way to do that. `PyObject_New` might be our friend, but I can't find an example of its use.
         let instance = self.new_method.call(py, (&self.class,), None)?;
 
         force_setattr(&instance, py, intern!(py, "__dict__"), model_dict)?;

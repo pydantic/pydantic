@@ -271,3 +271,57 @@ def test_model_class_bad_model():
 
     with pytest.raises(SchemaError, match=re.escape("model-class expected a 'model' schema, got 'str'")):
         SchemaValidator({'type': 'model-class', 'class': MyModel, 'model': {'type': 'str'}})
+
+
+def test_model_class_not_type():
+    with pytest.raises(SchemaError, match=re.escape("TypeError: 'int' object cannot be converted to 'PyType'")):
+        SchemaValidator({'type': 'model-class', 'class': 123})
+
+
+def test_model_class_instance_direct():
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+        field_a: str
+
+        def __init__(self):
+            self.field_a = 'init'
+
+    v = SchemaValidator(
+        {'type': 'model-class', 'class': MyModel, 'model': {'type': 'model', 'fields': {'field_a': {'type': 'str'}}}}
+    )
+    m1 = v.validate_python({'field_a': 'test'})
+    assert isinstance(m1, MyModel)
+    assert m1.field_a == 'test'
+    assert m1.__fields_set__ == {'field_a'}
+
+    m2 = MyModel()
+    m3 = v.validate_python(m2)
+    assert m2 == m3
+    assert m3.field_a == 'init'
+
+
+def test_model_class_instance_subclass():
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+        field_a: str
+
+        def __init__(self):
+            self.field_a = 'init_a'
+
+    class MySubModel(MyModel):
+        field_b: str
+
+        def __init__(self):
+            super().__init__()
+            self.field_b = 'init_b'
+
+    v = SchemaValidator(
+        {'type': 'model-class', 'class': MyModel, 'model': {'type': 'model', 'fields': {'field_a': {'type': 'str'}}}}
+    )
+
+    m2 = MySubModel()
+    assert m2.field_a
+    m3 = v.validate_python(m2)
+    assert m2 != m3
+    assert m3.field_a == 'init_a'
+    assert not hasattr(m3, 'field_b')

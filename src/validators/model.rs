@@ -77,7 +77,7 @@ impl Validator for ModelValidator {
             return self.validate_assignment(py, field, input, extra);
         }
 
-        let dict = input.validate_dict(py)?;
+        let dict = input.validate_dict(py, true)?;
         let output_dict = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.input_len());
