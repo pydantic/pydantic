@@ -12,7 +12,7 @@ macro_rules! dict_get_required {
     ($dict:ident, $key:expr, $type:ty) => {
         match $dict.get_item($key) {
             Some(t) => Ok(<$type>::extract(t)?),
-            None => py_error!(r#""{}" is required"#, $key),
+            None => crate::build_macros::py_error!(r#""{}" is required"#, $key),
         }
     };
 }
@@ -27,10 +27,10 @@ pub(crate) use dict;
 
 macro_rules! py_error {
     ($msg:expr) => {
-        py_error!(crate::SchemaError; $msg)
+        crate::build_macros::py_error!(crate::SchemaError; $msg)
     };
     ($msg:expr, $( $msg_args:expr ),+ ) => {
-        py_error!(crate::SchemaError; $msg, $( $msg_args ),+)
+        crate::build_macros::py_error!(crate::SchemaError; $msg, $( $msg_args ),+)
     };
 
     ($error_type:ty; $msg:expr) => {
