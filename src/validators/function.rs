@@ -179,7 +179,7 @@ fn get_function(schema: &PyDict) -> PyResult<PyObject> {
     match schema.get_item("function") {
         Some(obj) => {
             if obj.is_callable() {
-                Ok(obj.into_py(obj.py()))
+                Ok(obj.into())
             } else {
                 return py_error!("function must be callable");
             }

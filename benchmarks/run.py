@@ -59,7 +59,7 @@ def benchmark_simple_validation(from_json: bool = False):
             output, fields_set = schema_validator.validate_json(d)
             return output
 
-        run_benchmarks('simple model from JSON', [pydantic, pydantic_core], [data])
+        _run_benchmarks('simple model from JSON', [pydantic, pydantic_core], [data])
     else:
         def pydantic(d):
             return PydanticModel.parse_obj(d)
@@ -68,7 +68,7 @@ def benchmark_simple_validation(from_json: bool = False):
             output, fields_set = schema_validator.validate_python(d)
             return output
 
-        run_benchmarks('simple model from py', [pydantic, pydantic_core], [data])
+        _run_benchmarks('simple model from py', [pydantic, pydantic_core], [data])
 
 
 def benchmark_bool():
@@ -87,10 +87,58 @@ def benchmark_bool():
 
     data = [True, False, 0, 1, 'true', 'True', 'false', 'False', 'yes', 'no']
 
-    run_benchmarks('bool', [pydantic, pydantic_core], data)
+    _run_benchmarks('bool', [pydantic, pydantic_core], data, steps=10_000)
 
 
-def run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
+def benchmark_model_create():
+    class PydanticModel(BaseModel):
+        name: str
+        age: int
+
+    model_schema = {
+        'type': 'model',
+        'fields': {
+            'name': {
+                'type': 'str',
+            },
+            'age': {
+                'type': 'int',
+            }
+        },
+    }
+    dict_schema_validator = SchemaValidator(model_schema)
+
+    class MyCoreModel:
+        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__fields_set__'
+        # these are here just as decoration
+        name: str
+        age: int
+
+    model_schema_validator = SchemaValidator({
+        'type': 'model-class',
+        'class': MyCoreModel,
+        'model': model_schema
+    })
+
+    def pydantic(d):
+        m = PydanticModel(**d)
+        return m.__dict__
+
+    def pydantic_core_dict(d):
+        output, fields_set = dict_schema_validator.validate_python(d)
+        return output
+
+    def pydantic_core_model(d):
+        m = model_schema_validator.validate_python(d)
+        return m.__dict__
+
+    data = {'name': 'John', 'age': 42}
+
+    _run_benchmarks('model_create', [pydantic, pydantic_core_dict, pydantic_core_model], [data], steps=10_000)
+
+
+def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
     reference_result = None
 
     print(f'\n#################\n{name}')
@@ -108,10 +156,10 @@ def run_benchmarks(name: str, benchmark_functions: list, input_values: list, ste
             globals={'func': func, 'input_values': input_values},
             number=steps,
         )
-        print(f'    {display_time(t / steps)}')
+        print(f'    {_display_time(t / steps)}')
 
 
-def display_time(seconds: float):
+def _display_time(seconds: float):
     ns = seconds * 1_000_000_000
     if ns < 1000:
         return f'{ns:.2f}ns'
@@ -129,3 +177,4 @@ if __name__ == '__main__':
     benchmark_simple_validation()
     benchmark_simple_validation(from_json=True)
     benchmark_bool()
+    benchmark_model_create()

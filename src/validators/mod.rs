@@ -15,6 +15,7 @@ mod function;
 mod int;
 mod list;
 mod model;
+mod model_create;
 mod none;
 mod string;
 
@@ -104,6 +105,7 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
         config,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
+        self::model_create::ModelClassValidator,
         // strings
         self::string::StrValidator,
         self::string::StrConstrainedValidator,
