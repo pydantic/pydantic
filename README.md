@@ -10,10 +10,13 @@ The package is currently a work in progress and subject to significant change.
 
 There is, as yet, no integration with pydantic, so schemas can only be defined via dictionaries.
 
-The plan is to generate this schema definition from type hints in pydantic, then create a `SchemaValidator`
-upon model creation.
+The plan is for pydantic to adopt `pydantic-core` in v2 and to generate the schema definition from type hints in
+pydantic, then create a `SchemaValidator` upon model creation.
 
 `pydantic-core` will be a separate package, required by `pydantic`.
+
+The public interface to pydantic shouldn't change too much as a result of this switch
+(though I intend to clean up quite a lot in the public API in v2 as well).
 
 Example of usage:
 
@@ -78,5 +81,25 @@ but shouldn't change more.
 
 The aim is to remain 10x faster than current pydantic for common use cases.
 
-The current implementation only deals with parsing/validation of the schema, in future this package could be
-used to improve the performance of `.dict()` and `.json()` methods.
+## Why not JSONSchema directly?
+
+Looking at the above schema passed to `SchemaValidator` it would seem reasonable to ask "why not use JSONSchema?".
+
+And if we could use JSONSchema, why not use an existing rust library to do validation?
+
+In fact, in the very early commits to pydantic-core, I did try to use JSONSchema,
+however I quickly realized it wouldn't work.
+
+JSONSchema does not match the schema for pydantic that closely:
+* there are lots of extra checks which pydantic wants to do and aren't covered by JSONSchema
+* there are configurations which are possible in JSONSchema but are hard or impossible to imagine in pydantic
+* pydantic has the concept of parsing or coercion at it's core, JSONSchema doesn't -
+  it assumes you either accept or reject the input, never change it
+* There are whole classes of problem pydantic has to deal with (like python class instance validation) which JSONSchema
+  has no idea about since it's dedicated to JSON
+
+Even if we could use JSONSchema, it wouldn't help much since rust JSONSchema validators expect to know the
+schema at compile time, pydantic-core has no knowledge of the schema until `SchemaValidator` is initialised.
+
+Still, it wouldn't be that hard to implement a conversion layer (either in python or rust) to convert JSONSchema
+to "pydantic schema" and thereby achieve partial JSONSchema validation.
