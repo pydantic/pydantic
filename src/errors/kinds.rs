@@ -36,6 +36,10 @@ pub enum ErrorKind {
     // dict errors
     #[strum(message = "Value must be a valid dictionary")]
     DictType,
+    #[strum(message = "Unable to convert mapping to a dictionary")]
+    DictFromMapping,
+    #[strum(message = "Unable extract dict from object")]
+    DictFromObject,
     #[strum(message = "Dictionary must have at least {min_length} items")]
     DictTooShort,
     #[strum(message = "Dictionary must have at most {max_length} items")]

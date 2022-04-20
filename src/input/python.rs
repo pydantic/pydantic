@@ -1,7 +1,7 @@
 use std::str::from_utf8;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyString};
+use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyMapping, PyString, PyTuple, PyType};
 
 use crate::errors::{as_internal, err_val_error, ErrorKind, LocItem, ValResult};
 
@@ -9,6 +9,10 @@ use super::shared::{int_as_bool, str_as_bool};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for PyAny {
+    fn is_direct_instance_of(&self, class: &PyType) -> ValResult<bool> {
+        self.get_type().eq(class).map_err(as_internal)
+    }
+
     fn validate_none(&self, py: Python) -> ValResult<()> {
         if self.is_none() {
             Ok(())
@@ -86,10 +90,37 @@ impl Input for PyAny {
         }
     }
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn validate_dict<'py>(&'py self, py: Python<'py>, try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(Box::new(dict))
-            // TODO we probably want to try and support mapping like things here too
+        } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
+            // this is ugly, but we'd have to do it in `input_iter` anyway
+            // we could perhaps use an indexmap instead of a python dict?
+            let dict = match mapping_as_dict(py, mapping) {
+                Ok(dict) => dict,
+                Err(err) => {
+                    return err_val_error!(
+                        py,
+                        self,
+                        message = Some(err.to_string()),
+                        kind = ErrorKind::DictFromMapping
+                    )
+                }
+            };
+            Ok(Box::new(dict))
+        } else if try_instance {
+            let inner_dict = match instance_as_dict(py, self) {
+                Ok(dict) => dict,
+                Err(err) => {
+                    return err_val_error!(
+                        py,
+                        self,
+                        message = Some(err.to_string()),
+                        kind = ErrorKind::DictFromObject
+                    )
+                }
+            };
+            inner_dict.validate_dict(py, false)
         } else {
             err_val_error!(py, self, kind = ErrorKind::DictType)
         }
@@ -103,6 +134,31 @@ impl Input for PyAny {
             err_val_error!(py, self, kind = ErrorKind::ListType)
         }
     }
+}
+
+fn mapping_as_dict<'py>(py: Python<'py>, mapping: &'py PyMapping) -> PyResult<&'py PyDict> {
+    let seq = mapping.items()?;
+    let dict = PyDict::new(py);
+    for r in seq.iter()? {
+        let t: &PyTuple = r?.extract()?;
+        let k = t.get_item(0)?;
+        let v = t.get_item(1)?;
+        dict.set_item(k, v)?;
+    }
+    Ok(dict)
+}
+
+/// This is equivalent to `GetterDict` in pydantic v1
+fn instance_as_dict<'py>(py: Python<'py>, instance: &'py PyAny) -> PyResult<&'py PyDict> {
+    let dict = PyDict::new(py);
+    for k_any in instance.dir() {
+        let k_str: &str = k_any.extract()?;
+        if !k_str.starts_with('_') {
+            let v = instance.getattr(k_any)?;
+            dict.set_item(k_any, v)?;
+        }
+    }
+    Ok(dict)
 }
 
 impl<'py> DictInput<'py> for &'py PyDict {
@@ -166,6 +222,13 @@ impl ToPy for PyAny {
 }
 
 impl ToPy for &PyDict {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        self.into_py(py)
+    }
+}
+
+impl ToPy for &PyMapping {
     #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.into_py(py)
