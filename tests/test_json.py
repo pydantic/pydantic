@@ -19,7 +19,7 @@ def test_null():
 def test_str():
     assert SchemaValidator({'type': 'str'}).validate_json('"foobar"') == 'foobar'
     assert SchemaValidator({'type': 'str'}).validate_json('123') == '123'
-    with pytest.raises(ValidationError, match=r'Value must be a valid string \(kind=str_type\)'):
+    with pytest.raises(ValidationError, match=r'Value must be a valid string \[kind=str_type,'):
         SchemaValidator({'type': 'str'}).validate_json('false')
 
 

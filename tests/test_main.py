@@ -32,7 +32,8 @@ def test_bool_error():
 
     assert str(exc_info.value) == (
         '1 validation error for TestModel\n'
-        '  Value must be a valid boolean, unable to interpret input (kind=bool_parsing)'
+        '  Value must be a valid boolean, '
+        'unable to interpret input [kind=bool_parsing, input_value=wrong, input_type=str]'
     )
 
 
@@ -51,7 +52,7 @@ def test_str_constrained():
 
 @pytest.mark.parametrize(
     'input_value,output_value,error_msg',
-    [('foobar', 'foobar', None), (123, '123', None), (False, None, 'Value must be a valid string (kind=str_type)')],
+    [('foobar', 'foobar', None), (123, '123', None), (False, None, 'Value must be a valid string [kind=str_type')],
 )
 def test_str(input_value, output_value, error_msg):
     v = SchemaValidator({'type': 'str'})
@@ -72,12 +73,12 @@ def test_str(input_value, output_value, error_msg):
         ({'strip_whitespace': True}, ' foobar  ', 'foobar', None),
         ({'strip_whitespace': True, 'to_upper': True}, ' fooBar', 'FOOBAR', None),
         ({'min_length': 5}, '12345', '12345', None),
-        ({'min_length': 5}, '1234', None, 'String must have at least 5 characters (kind=str_too_short)'),
+        ({'min_length': 5}, '1234', None, 'String must have at least 5 characters [kind=str_too_short'),
         ({'max_length': 5}, '12345', '12345', None),
-        ({'max_length': 5}, '123456', None, 'String must have at most 5 characters (kind=str_too_long)'),
+        ({'max_length': 5}, '123456', None, 'String must have at most 5 characters [kind=str_too_long'),
         ({'pattern': r'^\d+$'}, '12345', '12345', None),
         ({'pattern': r'\d+$'}, 'foobar 123', 'foobar 123', None),
-        ({'pattern': r'^\d+$'}, '12345a', None, "String must match pattern '^\\d+$' (kind=str_pattern_mismatch)"),
+        ({'pattern': r'^\d+$'}, '12345a', None, "String must match pattern '^\\d+$' [kind=str_pattern_mismatch"),
         # strip comes after length check
         ({'max_length': 5, 'strip_whitespace': True}, '1234  ', None, 'String must have at most 5 characters'),
         # to_upper and strip comes after pattern check

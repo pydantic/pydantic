@@ -47,6 +47,12 @@ pub struct ValLineError {
 
 impl fmt::Display for ValLineError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.format_pretty(f, None)
+    }
+}
+
+impl ValLineError {
+    fn format_pretty(&self, f: &mut fmt::Formatter<'_>, py: Option<Python>) -> fmt::Result {
         if !self.location.is_empty() {
             let loc = self
                 .location
@@ -54,14 +60,39 @@ impl fmt::Display for ValLineError {
                 .map(|i| i.to_string())
                 .collect::<Vec<String>>()
                 .join(" -> ");
-            write!(f, "{} | ", loc)?;
+            writeln!(f, "{}", loc)?;
         }
-        write!(f, "{} (kind={})", self.message(), self.kind())
-        // TODO
-        // match self.input_value {
-        //     Some(ref input_value) => write!(f, "\n    input={}", input_value),
-        //     None => Ok(()),
-        // }
+        write!(f, "  {} [kind={}", self.message(), self.kind())?;
+        if let Some(ctx) = &self.context {
+            write!(f, ", context={}", ctx)?;
+        }
+        if let Some(input_value) = &self.input_value {
+            write!(f, ", input_value={}", input_value)?;
+            if let Some(py) = py {
+                if let Ok(type_) = input_value.as_ref(py).get_type().name() {
+                    write!(f, ", input_type={}", type_)?;
+                }
+            }
+        }
+        write!(f, "]")
+    }
+
+    pub fn pretty(&self, py: Option<Python>) -> String {
+        format!("{}", Fmt(|f| self.format_pretty(f, py)))
+    }
+}
+
+// hack from https://users.rust-lang.org/t/reusing-an-fmt-formatter/8531/4
+struct Fmt<F>(pub F)
+where
+    F: Fn(&mut fmt::Formatter) -> fmt::Result;
+
+impl<F> fmt::Display for Fmt<F>
+where
+    F: Fn(&mut fmt::Formatter) -> fmt::Result,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        (self.0)(f)
     }
 }
 
@@ -143,6 +174,18 @@ impl Context {
             rendered = rendered.replace(&format!("{{{}}}", key), &value.to_string());
         }
         rendered
+    }
+}
+
+impl fmt::Display for Context {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let loc = self
+            .0
+            .iter()
+            .map(|(k, v)| format!("{}: {}", k, v))
+            .collect::<Vec<String>>()
+            .join(", ");
+        write!(f, "{{{}}}", loc)
     }
 }
 
