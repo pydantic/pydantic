@@ -87,7 +87,7 @@ def benchmark_bool():
 
     data = [True, False, 0, 1, 'true', 'True', 'false', 'False', 'yes', 'no']
 
-    _run_benchmarks('bool', [pydantic, pydantic_core], data, steps=10_000)
+    _run_benchmarks('bool', [pydantic, pydantic_core], data, steps=50_000)
 
 
 def benchmark_model_create():
