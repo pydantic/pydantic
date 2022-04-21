@@ -1,30 +1,16 @@
-use std::collections::HashSet;
-
-use lazy_static::lazy_static;
-
 use pyo3::prelude::*;
 
 use crate::errors::{err_val_error, ErrorKind, ValResult};
 
 use super::traits::ToPy;
 
-lazy_static! {
-    static ref BOOL_FALSE_CELL: HashSet<&'static str> = HashSet::from(["0", "off", "f", "false", "n", "no"]);
-}
-
-lazy_static! {
-    static ref BOOL_TRUE_CELL: HashSet<&'static str> = HashSet::from(["1", "on", "t", "true", "y", "yes"]);
-}
-
 #[inline]
 pub fn str_as_bool(py: Python, str: &str) -> ValResult<bool> {
-    let s_lower = str.to_lowercase();
-    if BOOL_FALSE_CELL.contains(s_lower.as_str()) {
-        Ok(false)
-    } else if BOOL_TRUE_CELL.contains(s_lower.as_str()) {
-        Ok(true)
-    } else {
-        err_val_error!(py, str, kind = ErrorKind::BoolParsing)
+    let s_lower: String = str.chars().map(|c| c.to_ascii_lowercase()).collect();
+    match s_lower.as_str() {
+        "0" | "off" | "f" | "false" | "n" | "no" => Ok(false),
+        "1" | "on" | "t" | "true" | "y" | "yes" => Ok(true),
+        _ => err_val_error!(py, str, kind = ErrorKind::BoolParsing),
     }
 }
 
