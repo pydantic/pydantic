@@ -77,7 +77,7 @@ impl Validator for ModelValidator {
             return self.validate_assignment(py, field, input, extra);
         }
 
-        let dict = input.validate_dict(py, true)?;
+        let dict = input.lax_dict(py, true)?;
         let output_dict = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.input_len());
@@ -121,7 +121,7 @@ impl Validator for ModelValidator {
         };
         if check_extra {
             for (raw_key, value) in dict.input_iter() {
-                let key: String = match raw_key.validate_str(py) {
+                let key: String = match raw_key.lax_str(py) {
                     Ok(k) => k,
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![raw_key.to_loc()?];

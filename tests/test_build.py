@@ -10,20 +10,18 @@ def test_build_error_type():
 
 def test_build_error_internal():
     msg = (
-        'Error building "str-constrained" validator:\n'
+        'Error building "str" validator:\n'
         '  TypeError: \'str\' object cannot be interpreted as an integer'  # noqa Q003
     )
     with pytest.raises(SchemaError, match=msg):
-        SchemaValidator({'type': 'str-constrained', 'min_length': 'xxx', 'title': 'TestModel'})
+        SchemaValidator({'type': 'str', 'min_length': 'xxx', 'title': 'TestModel'})
 
 
 def test_build_error_deep():
     msg = (
         'Error building "model" validator:\n'
-        '  SchemaError: Error building "int-constrained" validator:\n'
+        '  SchemaError: Error building "int" validator:\n'
         '  TypeError: \'str\' object cannot be interpreted as an integer'  # noqa Q003
     )
     with pytest.raises(SchemaError, match=msg):
-        SchemaValidator(
-            {'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'type': 'int-constrained', 'ge': 'not-int'}}}
-        )
+        SchemaValidator({'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'type': 'int', 'ge': 'not-int'}}})

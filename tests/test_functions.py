@@ -9,7 +9,9 @@ def test_function_before():
     def f(input_value, **kwargs):
         return input_value + ' Changed'
 
-    v = SchemaValidator({'title': 'Test', 'type': 'function-before', 'function': f, 'field': {'type': 'str'}})
+    v = SchemaValidator(
+        {'title': 'Test', 'type': 'function', 'mode': 'before', 'function': f, 'field': {'type': 'str'}}
+    )
 
     assert v.validate_python('input value') == 'input value Changed'
 
@@ -18,7 +20,9 @@ def test_function_before_raise():
     def f(input_value, **kwargs):
         raise ValueError('foobar')
 
-    v = SchemaValidator({'title': 'Test', 'type': 'function-before', 'function': f, 'field': {'type': 'str'}})
+    v = SchemaValidator(
+        {'title': 'Test', 'type': 'function', 'mode': 'before', 'function': f, 'field': {'type': 'str'}}
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python('input value') == 'input value Changed'
@@ -32,7 +36,7 @@ def test_function_wrap():
     def f(input_value, *, validator, **kwargs):
         return validator(input_value) + ' Changed'
 
-    v = SchemaValidator({'title': 'Test', 'type': 'function-wrap', 'function': f, 'field': {'type': 'str'}})
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'field': {'type': 'str'}})
 
     # with pytest.raises(ValidationError) as exc_info:
     assert v.validate_python('input value') == 'input value Changed'
@@ -53,7 +57,7 @@ def test_function_after_data():
             'type': 'model',
             'fields': {
                 'field_a': {'type': 'int'},
-                'field_b': {'type': 'function-after', 'function': f, 'field': {'type': 'str'}},
+                'field_b': {'type': 'function', 'mode': 'after', 'function': f, 'field': {'type': 'str'}},
             },
         }
     )
@@ -77,7 +81,7 @@ def test_function_after_config():
         {
             'title': 'Test',
             'type': 'model',
-            'fields': {'test_field': {'type': 'function-after', 'function': f, 'field': {'type': 'str'}}},
+            'fields': {'test_field': {'type': 'function', 'mode': 'after', 'function': f, 'field': {'type': 'str'}}},
             'config': {'foo': 'bar'},
         }
     )
@@ -94,7 +98,7 @@ def test_config_no_model():
         f_kwargs = deepcopy(kwargs)
         return input_value + ' Changed'
 
-    v = SchemaValidator({'type': 'function-after', 'function': f, 'field': {'type': 'str'}, 'title': 'Test'})
+    v = SchemaValidator({'type': 'function', 'mode': 'after', 'function': f, 'field': {'type': 'str'}, 'title': 'Test'})
 
     assert v.validate_python(123) == '123 Changed'
     assert f_kwargs == {'data': None, 'config': None}
@@ -104,7 +108,7 @@ def test_function_plain():
     def f(input_value, **kwargs):
         return input_value * 2
 
-    v = SchemaValidator({'title': 'Test', 'type': 'function-plain', 'function': f})
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'plain', 'function': f})
 
     assert v.validate_python(1) == 2
     assert v.validate_python('x') == 'xx'
@@ -117,7 +121,12 @@ def test_validate_assignment():
         return input_value
 
     v = SchemaValidator(
-        {'type': 'function-after', 'function': f, 'field': {'type': 'model', 'fields': {'field_a': {'type': 'str'}}}}
+        {
+            'type': 'function',
+            'mode': 'after',
+            'function': f,
+            'field': {'type': 'model', 'fields': {'field_a': {'type': 'str'}}},
+        }
     )
 
     m = {'field_a': 'test', 'more': 'foobar'}

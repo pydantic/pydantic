@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_macros::dict_get;
+use crate::build_macros::{dict_get, is_strict};
 use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
 use crate::input::Input;
 
@@ -9,6 +9,7 @@ use super::{build_validator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
+    strict: bool,
     item_validator: Option<Box<dyn Validator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
@@ -21,6 +22,7 @@ impl ListValidator {
 impl Validator for ListValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
+            strict: is_strict!(schema, config),
             item_validator: match dict_get!(schema, "items", &PyDict) {
                 Some(d) => Some(build_validator(d, config)?),
                 None => None,
@@ -31,7 +33,10 @@ impl Validator for ListValidator {
     }
 
     fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
-        let list = input.validate_list(py)?;
+        let list = match self.strict {
+            true => input.strict_list(py)?,
+            false => input.lax_list(py)?,
+        };
         let length = list.input_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {

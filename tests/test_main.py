@@ -23,9 +23,16 @@ def test_bool(input_value, output_value):
     assert v.validate_python(input_value) == output_value
 
 
+def test_bool_strict():
+    v = SchemaValidator({'type': 'bool', 'strict': True, 'title': 'TestModel'})
+    assert v.validate_python(True) is True
+    error_message = 'Value must be a valid boolean [kind=bool_type, input_value=true, input_type=str]'
+    with pytest.raises(ValidationError, match=re.escape(error_message)):
+        v.validate_python('true')
+
+
 def test_bool_error():
     v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
-    assert repr(v) == 'SchemaValidator(title="TestModel", validator=BoolValidator)'
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('wrong')
@@ -37,13 +44,15 @@ def test_bool_error():
     )
 
 
-def test_repr():
+def test_bool_repr():
     v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
     assert repr(v) == 'SchemaValidator(title="TestModel", validator=BoolValidator)'
+    v = SchemaValidator({'type': 'bool', 'strict': True, 'title': 'TestModel'})
+    assert repr(v) == 'SchemaValidator(title="TestModel", validator=StrictBoolValidator)'
 
 
 def test_str_constrained():
-    v = SchemaValidator({'type': 'str-constrained', 'max_length': 5, 'title': 'TestModel'})
+    v = SchemaValidator({'type': 'str', 'max_length': 5, 'title': 'TestModel'})
     assert v.validate_python('test') == 'test'
 
     with pytest.raises(ValidationError, match='String must have at most 5 characters'):
@@ -87,7 +96,7 @@ def test_str(input_value, output_value, error_msg):
     ],
 )
 def test_constrained_str(kwargs, input_value, output_value, error_msg):
-    v = SchemaValidator({'type': 'str-constrained', **kwargs})
+    v = SchemaValidator({'type': 'str', **kwargs})
     if error_msg:
         assert output_value is None, 'output_value should be None if error_msg is set'
 
@@ -99,14 +108,14 @@ def test_constrained_str(kwargs, input_value, output_value, error_msg):
 
 def test_invalid_regex():
     with pytest.raises(SchemaError) as exc_info:
-        SchemaValidator({'type': 'str-constrained', 'pattern': 123})
+        SchemaValidator({'type': 'str', 'pattern': 123})
     assert exc_info.value.args[0] == (
-        'Error building "str-constrained" validator:\n' "  TypeError: 'int' object cannot be converted to 'PyString'"
+        'Error building "str" validator:\n  TypeError: \'int\' object cannot be converted to \'PyString\''
     )
     with pytest.raises(SchemaError) as exc_info:
-        SchemaValidator({'type': 'str-constrained', 'pattern': '(abc'})
+        SchemaValidator({'type': 'str', 'pattern': '(abc'})
     assert exc_info.value.args[0] == (
-        'Error building "str-constrained" validator:\n'
+        'Error building "str" validator:\n'
         '  SchemaError: regex parse error:\n'
         '    (abc\n'
         '    ^\n'
