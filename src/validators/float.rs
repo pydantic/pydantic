@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_macros::dict_get;
+use crate::build_macros::{dict_get, is_strict};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{Input, ToPy};
 
@@ -15,12 +15,23 @@ impl FloatValidator {
 }
 
 impl Validator for FloatValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        let use_constrained = schema.get_item("multiple_of").is_some()
+            || schema.get_item("le").is_some()
+            || schema.get_item("lt").is_some()
+            || schema.get_item("ge").is_some()
+            || schema.get_item("gt").is_some();
+        if use_constrained {
+            ConstrainedFloatValidator::build(schema, config)
+        } else if is_strict!(schema, config) {
+            StrictFloatValidator::build(schema, config)
+        } else {
+            Ok(Box::new(Self))
+        }
     }
 
     fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        Ok(input.validate_float(py)?.into_py(py))
+        Ok(input.lax_float(py)?.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -29,7 +40,25 @@ impl Validator for FloatValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct FloatConstrainedValidator {
+struct StrictFloatValidator;
+
+impl Validator for StrictFloatValidator {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self))
+    }
+
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        Ok(input.strict_float(py)?.into_py(py))
+    }
+
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ConstrainedFloatValidator {
+    strict: bool,
     multiple_of: Option<f64>,
     le: Option<f64>,
     lt: Option<f64>,
@@ -37,13 +66,10 @@ pub struct FloatConstrainedValidator {
     gt: Option<f64>,
 }
 
-impl FloatConstrainedValidator {
-    pub const EXPECTED_TYPE: &'static str = "float-constrained";
-}
-
-impl Validator for FloatConstrainedValidator {
-    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+impl Validator for ConstrainedFloatValidator {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
+            strict: is_strict!(schema, config),
             multiple_of: dict_get!(schema, "multiple_of", f64),
             le: dict_get!(schema, "le", f64),
             lt: dict_get!(schema, "lt", f64),
@@ -53,7 +79,10 @@ impl Validator for FloatConstrainedValidator {
     }
 
     fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        let float = input.validate_float(py)?;
+        let float = match self.strict {
+            true => input.strict_float(py)?,
+            false => input.lax_float(py)?,
+        };
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
                 return err_val_error!(

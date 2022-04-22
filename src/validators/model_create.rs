@@ -6,12 +6,13 @@ use pyo3::types::{PyDict, PyTuple, PyType};
 use pyo3::{ffi, intern, ToBorrowedObject};
 
 use super::{build_validator, Extra, ValResult, Validator};
-use crate::build_macros::{dict_get_required, py_error};
-use crate::errors::as_internal;
+use crate::build_macros::{dict_get, dict_get_required, py_error};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind};
 use crate::input::Input;
 
 #[derive(Debug, Clone)]
 pub struct ModelClassValidator {
+    strict: bool,
     validator: Box<dyn Validator>,
     class: Py<PyType>,
     new_method: PyObject,
@@ -34,6 +35,9 @@ impl Validator for ModelClassValidator {
         }
 
         Ok(Box::new(Self {
+            // we don't use is_strict here since we don't wan validation to be strict in this case if
+            // `config.strict` is set, only if this specific field is strict
+            strict: dict_get!(schema, "strict", bool).unwrap_or(false),
             validator: build_validator(model_schema, config)?,
             class: class.into(),
             new_method: new_method.into(),
@@ -41,8 +45,16 @@ impl Validator for ModelClassValidator {
     }
 
     fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
-        if input.is_direct_instance_of(self.class.as_ref(py))? {
+        let class = self.class.as_ref(py);
+        if input.strict_model_check(class)? {
             Ok(input.to_py(py))
+        } else if self.strict {
+            err_val_error!(
+                py,
+                input,
+                kind = ErrorKind::ModelType,
+                context = context!("class_name" => class_name(py, class)?)
+            )
         } else {
             let output = self.validator.validate(py, input, extra)?;
             self.create_class(py, output).map_err(as_internal)
@@ -52,6 +64,13 @@ impl Validator for ModelClassValidator {
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
+}
+
+/// Get the class's `__name__`, not using `class.name()` since it uses `__qualname__` which is not what we want here
+#[inline]
+fn class_name(py: Python, class: &PyType) -> ValResult<String> {
+    let name = class.getattr(intern!(py, "__name__")).map_err(as_internal)?;
+    name.extract().map_err(as_internal)
 }
 
 impl ModelClassValidator {

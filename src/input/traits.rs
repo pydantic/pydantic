@@ -24,6 +24,13 @@ impl ToPy for &str {
     }
 }
 
+impl ToPy for bool {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        self.into_py(py)
+    }
+}
+
 impl ToPy for i64 {
     #[inline]
     fn to_py(&self, py: Python) -> PyObject {
@@ -55,21 +62,33 @@ impl ToLocItem for &str {
 }
 
 pub trait Input: fmt::Debug + ToPy + ToLocItem {
-    fn is_direct_instance_of(&self, class: &PyType) -> ValResult<bool>;
+    fn is_none(&self, py: Python) -> bool;
 
-    fn validate_none(&self, py: Python) -> ValResult<()>;
+    fn strict_str(&self, py: Python) -> ValResult<String>;
 
-    fn validate_str(&self, py: Python) -> ValResult<String>;
+    fn lax_str(&self, py: Python) -> ValResult<String>;
 
-    fn validate_bool(&self, py: Python) -> ValResult<bool>;
+    fn strict_bool(&self, py: Python) -> ValResult<bool>;
 
-    fn validate_int(&self, py: Python) -> ValResult<i64>;
+    fn lax_bool(&self, py: Python) -> ValResult<bool>;
 
-    fn validate_float(&self, py: Python) -> ValResult<f64>;
+    fn strict_int(&self, py: Python) -> ValResult<i64>;
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>, try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
+    fn lax_int(&self, py: Python) -> ValResult<i64>;
 
-    fn validate_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>>;
+    fn strict_float(&self, py: Python) -> ValResult<f64>;
+
+    fn lax_float(&self, py: Python) -> ValResult<f64>;
+
+    fn strict_model_check(&self, class: &PyType) -> ValResult<bool>;
+
+    fn strict_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
+
+    fn lax_dict<'py>(&'py self, py: Python<'py>, try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
+
+    fn strict_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>>;
+
+    fn lax_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>>;
 }
 
 // these are ugly, is there any way to avoid the maps in iter, one of the boxes and/or the duplication?

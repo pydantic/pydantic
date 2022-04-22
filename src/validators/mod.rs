@@ -105,29 +105,24 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
         config,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
+        // model classes
         self::model_create::ModelClassValidator,
         // strings
         self::string::StrValidator,
-        self::string::StrConstrainedValidator,
         // integers
         self::int::IntValidator,
-        self::int::IntConstrainedValidator,
         // boolean
         self::bool::BoolValidator,
         // floats
         self::float::FloatValidator,
-        self::float::FloatConstrainedValidator,
         // list/arrays (recursive)
         self::list::ListValidator,
         // dicts/objects (recursive)
         self::dict::DictValidator,
         // None/null
         self::none::NoneValidator,
-        // decorators
-        self::function::FunctionBeforeValidator,
-        self::function::FunctionAfterValidator,
-        self::function::FunctionPlainValidator,
-        self::function::FunctionWrapValidator,
+        // functions - before, after, plain & wrap
+        self::function::FunctionValidator,
     )
 }
 
