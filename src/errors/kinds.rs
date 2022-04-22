@@ -7,6 +7,7 @@ pub enum ErrorKind {
     InvalidInput,
     #[strum(message = "Invalid JSON")]
     InvalidJson,
+    // ---------------------
     // model specific errors
     #[strum(message = "Field required")]
     Missing,
@@ -14,15 +15,17 @@ pub enum ErrorKind {
     ExtraForbidden,
     #[strum(message = "Model keys must be strings")]
     InvalidKey,
+    #[strum(message = "Value must be an instance of {class_name}")]
+    ModelType,
+    // ---------------------
     // None errors
     #[strum(message = "Value must not be None/null")]
-    NoneForbidden,
-    #[strum(message = "Value must be None/null")]
     NoneRequired,
     // boolean errors
     #[strum(message = "Value must be a valid boolean")]
     Bool,
     #[strum(message = "Value must be a valid string")]
+    // ---------------------
     // string errors
     StrType,
     #[strum(message = "Value must be a valid string, unable to parse raw data as a unicode string")]
@@ -33,6 +36,7 @@ pub enum ErrorKind {
     StrTooLong,
     #[strum(message = "String must match pattern '{pattern}'")]
     StrPatternMismatch,
+    // ---------------------
     // dict errors
     #[strum(message = "Value must be a valid dictionary")]
     DictType,
@@ -44,6 +48,7 @@ pub enum ErrorKind {
     DictTooShort,
     #[strum(message = "Dictionary must have at most {max_length} items")]
     DictTooLong,
+    // ---------------------
     // list errors
     #[strum(message = "Value must be a valid list/array")]
     ListType,
@@ -51,11 +56,13 @@ pub enum ErrorKind {
     ListTooShort,
     #[strum(message = "List must have at most {max_length} items")]
     ListTooLong,
+    // ---------------------
     // bool errors
     #[strum(message = "Value must be a valid boolean")]
     BoolType,
     #[strum(message = "Value must be a valid boolean, unable to interpret input")]
     BoolParsing,
+    // ---------------------
     // int errors
     #[strum(message = "Value must be a valid integer")]
     IntType,
@@ -73,6 +80,7 @@ pub enum ErrorKind {
     IntLessThan,
     #[strum(message = "Value must be less than or equal to {le}")]
     IntLessThanEqual,
+    // ---------------------
     // float errors
     #[strum(message = "Value must be a valid number")]
     FloatType,
@@ -88,6 +96,7 @@ pub enum ErrorKind {
     FloatLessThan,
     #[strum(message = "Value must be less than or equal to {le}")]
     FloatLessThanEqual,
+    // ---------------------
     // python errors from functions (the messages here will not be used as we sett message in these cases)
     #[strum(message = "Invalid value")]
     ValueError,

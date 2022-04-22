@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_macros::{dict_get, py_error};
+use crate::build_macros::{dict_get, is_strict, optional_dict_get, py_error};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{Input, ToPy};
 
@@ -17,28 +17,34 @@ impl StrValidator {
 
 impl Validator for StrValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let use_con_str = match config {
-            Some(config) => {
-                config.get_item("str_pattern").is_some()
-                    || config.get_item("str_max_length").is_some()
-                    || config.get_item("str_min_length").is_some()
-                    || config.get_item("str_strip_whitespace").is_some()
-                    || config.get_item("str_to_lower").is_some()
-                    || config.get_item("str_to_upper").is_some()
-            }
-            None => false,
-        };
-
-        if use_con_str {
+        let use_constrained = schema.get_item("pattern").is_some()
+            || schema.get_item("max_length").is_some()
+            || schema.get_item("min_length").is_some()
+            || schema.get_item("strip_whitespace").is_some()
+            || schema.get_item("to_lower").is_some()
+            || schema.get_item("to_upper").is_some()
+            || match config {
+                Some(config) => {
+                    config.get_item("str_pattern").is_some()
+                        || config.get_item("str_max_length").is_some()
+                        || config.get_item("str_min_length").is_some()
+                        || config.get_item("str_strip_whitespace").is_some()
+                        || config.get_item("str_to_lower").is_some()
+                        || config.get_item("str_to_upper").is_some()
+                }
+                None => false,
+            };
+        if use_constrained {
             StrConstrainedValidator::build(schema, config)
+        } else if is_strict!(schema, config) {
+            StrictStrValidator::build(schema, config)
         } else {
             Ok(Box::new(Self))
         }
     }
 
     fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        let s = input.validate_str(py)?;
-        ValResult::Ok(s.into_py(py))
+        Ok(input.lax_str(py)?.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -47,26 +53,31 @@ impl Validator for StrValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct StrConstrainedValidator {
+struct StrictStrValidator;
+
+impl Validator for StrictStrValidator {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self))
+    }
+
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        Ok(input.strict_str(py)?.into_py(py))
+    }
+
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct StrConstrainedValidator {
+    strict: bool,
     pattern: Option<Regex>,
     max_length: Option<usize>,
     min_length: Option<usize>,
     strip_whitespace: bool,
     to_lower: bool,
     to_upper: bool,
-}
-
-impl StrConstrainedValidator {
-    pub const EXPECTED_TYPE: &'static str = "str-constrained";
-}
-
-macro_rules! optional_dict_get {
-    ($optional_dict:ident, $key:expr, $type:ty) => {
-        match $optional_dict {
-            Some(d) => dict_get!(d, $key, $type),
-            None => None,
-        }
-    };
 }
 
 impl Validator for StrConstrainedValidator {
@@ -101,6 +112,7 @@ impl Validator for StrConstrainedValidator {
         };
 
         Ok(Box::new(Self {
+            strict: is_strict!(schema, config),
             pattern,
             min_length,
             max_length,
@@ -111,7 +123,10 @@ impl Validator for StrConstrainedValidator {
     }
 
     fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        let mut str = input.validate_str(py)?;
+        let mut str = match self.strict {
+            true => input.strict_str(py)?,
+            false => input.lax_str(py)?,
+        };
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);

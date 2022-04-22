@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_macros::dict_get;
+use crate::build_macros::{dict_get, is_strict};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{Input, ToPy};
 
@@ -15,12 +15,23 @@ impl IntValidator {
 }
 
 impl Validator for IntValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        let use_constrained = schema.get_item("multiple_of").is_some()
+            || schema.get_item("le").is_some()
+            || schema.get_item("lt").is_some()
+            || schema.get_item("ge").is_some()
+            || schema.get_item("gt").is_some();
+        if use_constrained {
+            ConstrainedIntValidator::build(schema, config)
+        } else if is_strict!(schema, config) {
+            StrictIntValidator::build(schema, config)
+        } else {
+            Ok(Box::new(Self))
+        }
     }
 
     fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        Ok(input.validate_int(py)?.into_py(py))
+        Ok(input.lax_int(py)?.into_py(py))
     }
 
     fn clone_dyn(&self) -> Box<dyn Validator> {
@@ -29,7 +40,25 @@ impl Validator for IntValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct IntConstrainedValidator {
+struct StrictIntValidator;
+
+impl Validator for StrictIntValidator {
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+        Ok(Box::new(Self))
+    }
+
+    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        Ok(input.strict_int(py)?.into_py(py))
+    }
+
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ConstrainedIntValidator {
+    strict: bool,
     multiple_of: Option<i64>,
     le: Option<i64>,
     lt: Option<i64>,
@@ -37,13 +66,10 @@ pub struct IntConstrainedValidator {
     gt: Option<i64>,
 }
 
-impl IntConstrainedValidator {
-    pub const EXPECTED_TYPE: &'static str = "int-constrained";
-}
-
-impl Validator for IntConstrainedValidator {
-    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+impl Validator for ConstrainedIntValidator {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
+            strict: is_strict!(schema, config),
             multiple_of: dict_get!(schema, "multiple_of", i64),
             le: dict_get!(schema, "le", i64),
             lt: dict_get!(schema, "lt", i64),
@@ -53,7 +79,10 @@ impl Validator for IntConstrainedValidator {
     }
 
     fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        let int = input.validate_int(py)?;
+        let int = match self.strict {
+            true => input.strict_int(py)?,
+            false => input.lax_int(py)?,
+        };
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return err_val_error!(

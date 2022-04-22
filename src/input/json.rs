@@ -10,18 +10,18 @@ use super::shared::{int_as_bool, str_as_bool};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for Value {
-    fn is_direct_instance_of(&self, _class: &PyType) -> ValResult<bool> {
-        Ok(false)
+    fn is_none(&self, _py: Python) -> bool {
+        matches!(self, Value::Null)
     }
 
-    fn validate_none(&self, py: Python) -> ValResult<()> {
+    fn strict_str(&self, py: Python) -> ValResult<String> {
         match self {
-            Value::Null => Ok(()),
-            _ => err_val_error!(py, self, kind = ErrorKind::NoneRequired),
+            Value::String(s) => Ok(s.to_string()),
+            _ => err_val_error!(py, self, kind = ErrorKind::StrType),
         }
     }
 
-    fn validate_str(&self, py: Python) -> ValResult<String> {
+    fn lax_str(&self, py: Python) -> ValResult<String> {
         match self {
             Value::String(s) => Ok(s.to_string()),
             Value::Number(n) => Ok(n.to_string()),
@@ -29,7 +29,14 @@ impl Input for Value {
         }
     }
 
-    fn validate_bool(&self, py: Python) -> ValResult<bool> {
+    fn strict_bool(&self, py: Python) -> ValResult<bool> {
+        match self {
+            Value::Bool(b) => Ok(*b),
+            _ => err_val_error!(py, self, kind = ErrorKind::BoolType),
+        }
+    }
+
+    fn lax_bool(&self, py: Python) -> ValResult<bool> {
         match self {
             Value::Bool(b) => Ok(*b),
             Value::String(s) => str_as_bool(py, s),
@@ -44,7 +51,20 @@ impl Input for Value {
         }
     }
 
-    fn validate_int(&self, py: Python) -> ValResult<i64> {
+    fn strict_int(&self, py: Python) -> ValResult<i64> {
+        match self {
+            Value::Number(n) => {
+                if let Some(int) = n.as_i64() {
+                    Ok(int)
+                } else {
+                    err_val_error!(py, self, kind = ErrorKind::IntType)
+                }
+            }
+            _ => err_val_error!(py, self, kind = ErrorKind::IntType),
+        }
+    }
+
+    fn lax_int(&self, py: Python) -> ValResult<i64> {
         match self {
             Value::Number(n) => {
                 if let Some(int) = n.as_i64() {
@@ -67,7 +87,20 @@ impl Input for Value {
         }
     }
 
-    fn validate_float(&self, py: Python) -> ValResult<f64> {
+    fn strict_float(&self, py: Python) -> ValResult<f64> {
+        match self {
+            Value::Number(n) => {
+                if let Some(float) = n.as_f64() {
+                    Ok(float)
+                } else {
+                    err_val_error!(py, self, kind = ErrorKind::FloatParsing)
+                }
+            }
+            _ => err_val_error!(py, self, kind = ErrorKind::FloatType),
+        }
+    }
+
+    fn lax_float(&self, py: Python) -> ValResult<f64> {
         match self {
             Value::Number(n) => {
                 if let Some(float) = n.as_f64() {
@@ -84,18 +117,30 @@ impl Input for Value {
         }
     }
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn strict_model_check(&self, _class: &PyType) -> ValResult<bool> {
+        Ok(false)
+    }
+
+    fn strict_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
         match self {
             Value::Object(dict) => Ok(Box::new(dict)),
             _ => err_val_error!(py, self, kind = ErrorKind::DictType),
         }
     }
 
-    fn validate_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+    fn lax_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+        self.strict_dict(py)
+    }
+
+    fn strict_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
         match self {
             Value::Array(a) => Ok(Box::new(a)),
             _ => err_val_error!(py, self, kind = ErrorKind::ListType),
         }
+    }
+
+    fn lax_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+        self.strict_list(py)
     }
 }
 
@@ -182,41 +227,65 @@ impl ToLocItem for Value {
 
 /// Required for Dict keys so the string can behave like an Input
 impl Input for String {
-    fn is_direct_instance_of(&self, _class: &PyType) -> ValResult<bool> {
-        Ok(false)
+    fn is_none(&self, _py: Python) -> bool {
+        false
     }
 
-    fn validate_none(&self, py: Python) -> ValResult<()> {
-        err_val_error!(py, self, kind = ErrorKind::NoneRequired)
-    }
-
-    fn validate_str(&self, _py: Python) -> ValResult<String> {
+    fn strict_str(&self, _py: Python) -> ValResult<String> {
         Ok(self.clone())
     }
 
-    fn validate_bool(&self, py: Python) -> ValResult<bool> {
+    fn lax_str(&self, _py: Python) -> ValResult<String> {
+        Ok(self.clone())
+    }
+
+    fn strict_bool(&self, py: Python) -> ValResult<bool> {
+        err_val_error!(py, self, kind = ErrorKind::BoolType)
+    }
+
+    fn lax_bool(&self, py: Python) -> ValResult<bool> {
         str_as_bool(py, self)
     }
 
-    fn validate_int(&self, py: Python) -> ValResult<i64> {
+    fn strict_int(&self, py: Python) -> ValResult<i64> {
+        err_val_error!(py, self, kind = ErrorKind::IntType)
+    }
+
+    fn lax_int(&self, py: Python) -> ValResult<i64> {
         match self.parse() {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(py, self, kind = ErrorKind::IntParsing),
         }
     }
 
-    fn validate_float(&self, py: Python) -> ValResult<f64> {
+    fn strict_float(&self, py: Python) -> ValResult<f64> {
+        err_val_error!(py, self, kind = ErrorKind::FloatType)
+    }
+
+    fn lax_float(&self, py: Python) -> ValResult<f64> {
         match self.parse() {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(py, self, kind = ErrorKind::FloatParsing),
         }
     }
 
-    fn validate_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn strict_model_check(&self, _class: &PyType) -> ValResult<bool> {
+        Ok(false)
+    }
+
+    fn strict_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
         err_val_error!(py, self, kind = ErrorKind::DictType)
     }
 
-    fn validate_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+    fn lax_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+        err_val_error!(py, self, kind = ErrorKind::DictType)
+    }
+
+    fn strict_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+        err_val_error!(py, self, kind = ErrorKind::ListType)
+    }
+
+    fn lax_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
         err_val_error!(py, self, kind = ErrorKind::ListType)
     }
 }

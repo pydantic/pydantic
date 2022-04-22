@@ -8,6 +8,8 @@ from pydantic_core import SchemaValidator, ValidationError
 def test_dict():
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
     assert v.validate_python({'1': 2, '3': 4}) == {1: 2, 3: 4}
+    v = SchemaValidator({'type': 'dict', 'strict': True, 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    assert v.validate_python({'1': 2, '3': 4}) == {1: 2, 3: 4}
 
 
 def test_dict_any_value():
@@ -31,6 +33,9 @@ def test_mapping():
 
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
     assert v.validate_python(MyMapping({'1': 2, 3: '4'})) == {1: 2, 3: 4}
+    v = SchemaValidator({'type': 'dict', 'strict': True, 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
+        v.validate_python(MyMapping({'1': 2, 3: '4'}))
 
 
 def test_dict_mapping():

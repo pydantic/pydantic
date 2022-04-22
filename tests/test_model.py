@@ -14,6 +14,27 @@ def test_simple():
     )
 
 
+def test_strict():
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'config': {'strict': True},
+            'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}},
+        }
+    )
+
+    assert v.validate_python({'field_a': 'hello', 'field_b': 12}) == (
+        {'field_a': 'hello', 'field_b': 12},
+        {'field_b', 'field_a'},
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        assert v.validate_python({'field_a': 123, 'field_b': '123'})
+    assert exc_info.value.errors() == [
+        {'kind': 'str_type', 'loc': ['field_a'], 'message': 'Value must be a valid string', 'input_value': 123},
+        {'kind': 'int_type', 'loc': ['field_b'], 'message': 'Value must be a valid integer', 'input_value': '123'},
+    ]
+
+
 def test_with_default():
     v = SchemaValidator(
         {'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int', 'default': 666}}}
@@ -122,8 +143,8 @@ def test_validate_assignment_functions():
         {
             'type': 'model',
             'fields': {
-                'field_a': {'type': 'function-after', 'function': func_a, 'field': {'type': 'str'}},
-                'field_b': {'type': 'function-after', 'function': func_b, 'field': {'type': 'int'}},
+                'field_a': {'type': 'function', 'mode': 'after', 'function': func_a, 'field': {'type': 'str'}},
+                'field_b': {'type': 'function', 'mode': 'after', 'function': func_b, 'field': {'type': 'int'}},
             },
         }
     )
@@ -258,7 +279,8 @@ def test_model_class_root_validator():
     v = SchemaValidator(
         {
             'title': 'Test',
-            'type': 'function-wrap',
+            'type': 'function',
+            'mode': 'wrap',
             'function': f,
             'field': {
                 'type': 'model-class',
@@ -332,3 +354,37 @@ def test_model_class_instance_subclass():
     assert m2 != m3
     assert m3.field_a == 'init_a'
     assert not hasattr(m3, 'field_b')
+
+
+def test_model_class_strict():
+    class MyModel:
+        def __init__(self):
+            self.field_a = 'init_a'
+            self.field_b = 'init_b'
+
+    v = SchemaValidator(
+        {
+            'type': 'model-class',
+            'strict': True,
+            'class': MyModel,
+            'model': {'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}},
+        }
+    )
+    m = MyModel()
+    m2 = v.validate_python(m)
+    assert isinstance(m, MyModel)
+    assert m is m2
+    assert m.field_a == 'init_a'
+    # note that since dict validation was not run here, there has been no check this is an int
+    assert m.field_b == 'init_b'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'model_type',
+            'loc': [],
+            'message': 'Value must be an instance of MyModel',
+            'input_value': {'field_a': 'test', 'field_b': 12},
+            'context': {'class_name': 'MyModel'},
+        }
+    ]
