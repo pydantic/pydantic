@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use crate::build_macros::{dict_get, is_strict};
 use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
-use crate::input::Input;
+use crate::input::{Input, ListInput};
 
 use super::{build_validator, Extra, ValResult, Validator};
 
@@ -37,6 +37,30 @@ impl Validator for ListValidator {
             true => input.strict_list(py)?,
             false => input.lax_list(py)?,
         };
+        self._validation_logic(py, list, extra)
+    }
+
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self._validation_logic(py, input.strict_list(py)?, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
+
+    #[no_coverage]
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+impl ListValidator {
+    fn _validation_logic<'py>(
+        &self,
+        py: Python<'py>,
+        list: Box<dyn ListInput<'py> + 'py>,
+        extra: &Extra,
+    ) -> ValResult<PyObject> {
         let length = list.input_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {
@@ -81,9 +105,5 @@ impl Validator for ListValidator {
         } else {
             Err(ValError::LineErrors(errors))
         }
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }

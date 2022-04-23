@@ -34,6 +34,15 @@ impl Validator for IntValidator {
         Ok(input.lax_int(py)?.into_py(py))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        Ok(input.strict_int(py)?.into_py(py))
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -51,6 +60,15 @@ impl Validator for StrictIntValidator {
         Ok(input.strict_int(py)?.into_py(py))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "strict-int".to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -83,6 +101,25 @@ impl Validator for ConstrainedIntValidator {
             true => input.strict_int(py)?,
             false => input.lax_int(py)?,
         };
+        self._validation_logic(py, int)
+    }
+
+    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        self._validation_logic(py, input.strict_int(py)?)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "constrained-int".to_string()
+    }
+
+    #[no_coverage]
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+impl ConstrainedIntValidator {
+    fn _validation_logic(&self, py: Python, int: i64) -> ValResult<PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return err_val_error!(
@@ -129,9 +166,5 @@ impl Validator for ConstrainedIntValidator {
             }
         }
         Ok(int.into_py(py))
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }

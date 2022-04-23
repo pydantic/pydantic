@@ -19,7 +19,7 @@ pub enum ErrorKind {
     ModelType,
     // ---------------------
     // None errors
-    #[strum(message = "Value must not be None/null")]
+    #[strum(message = "Value must be None/null")]
     NoneRequired,
     // boolean errors
     #[strum(message = "Value must be a valid boolean")]

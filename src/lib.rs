@@ -1,3 +1,5 @@
+#![feature(no_coverage)]
+
 extern crate core;
 extern crate pyo3;
 extern crate regex;
