@@ -15,9 +15,10 @@ mod function;
 mod int;
 mod list;
 mod model;
-mod model_create;
+mod model_class;
 mod none;
 mod string;
+mod union;
 
 #[pyclass]
 #[derive(Debug, Clone)]
@@ -105,8 +106,10 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
         config,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
+        // unions
+        self::union::UnionValidator,
         // model classes
-        self::model_create::ModelClassValidator,
+        self::model_class::ModelClassValidator,
         // strings
         self::string::StrValidator,
         // integers
@@ -149,8 +152,13 @@ pub trait Validator: Send + fmt::Debug {
     /// Do the actual validation for this schema/type
     fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject>;
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject>;
+
+    fn get_name(&self, py: Python) -> String;
+
     /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
     /// cloning is required to allow the SchemaValidator to be passed around in python
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator>;
 }
 

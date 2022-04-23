@@ -4,7 +4,7 @@ black = black pydantic_core tests setup.py
 
 .PHONY: install
 install:
-	pip install -U pip wheel setuptools pre-commit
+	pip install -U pip wheel setuptools setuptools_rust pre-commit
 	pip install -r tests/requirements.txt
 	pip install -r tests/requirements-linting.txt
 	pip install -e .

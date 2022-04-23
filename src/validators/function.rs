@@ -32,6 +32,15 @@ impl Validator for FunctionValidator {
         unimplemented!("FunctionValidator is never used directly")
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -75,6 +84,15 @@ impl Validator for FunctionBeforeValidator {
         self.validator.validate(py, v, extra)
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "function-before".to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -96,6 +114,15 @@ impl Validator for FunctionAfterValidator {
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "function-after".to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -122,6 +149,15 @@ impl Validator for FunctionPlainValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "function-plain".to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -154,6 +190,15 @@ impl Validator for FunctionWrapValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "function-wrap".to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
