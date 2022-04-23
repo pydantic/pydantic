@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use crate::build_macros::{dict_get, is_strict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{Input, ToLocItem};
+use crate::input::{DictInput, Input, ToLocItem};
 
 use super::{build_validator, Extra, Validator};
 
@@ -44,6 +44,30 @@ impl Validator for DictValidator {
             true => input.strict_dict(py)?,
             false => input.lax_dict(py, self.try_instance_as_dict)?,
         };
+        self._validation_logic(py, dict, extra)
+    }
+
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self._validation_logic(py, input.strict_dict(py)?, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
+
+    #[no_coverage]
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+impl DictValidator {
+    fn _validation_logic<'py>(
+        &self,
+        py: Python<'py>,
+        dict: Box<dyn DictInput<'py> + 'py>,
+        extra: &Extra,
+    ) -> ValResult<PyObject> {
         if let Some(min_length) = self.min_items {
             if dict.input_len() < min_length {
                 return err_val_error!(
@@ -82,10 +106,6 @@ impl Validator for DictValidator {
         } else {
             Err(ValError::LineErrors(errors))
         }
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }
 

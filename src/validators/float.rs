@@ -34,6 +34,15 @@ impl Validator for FloatValidator {
         Ok(input.lax_float(py)?.into_py(py))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        Ok(input.strict_float(py)?.into_py(py))
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -51,6 +60,15 @@ impl Validator for StrictFloatValidator {
         Ok(input.strict_float(py)?.into_py(py))
     }
 
+    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+        self.validate(py, input, extra)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "strict-float".to_string()
+    }
+
+    #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator> {
         Box::new(self.clone())
     }
@@ -83,6 +101,25 @@ impl Validator for ConstrainedFloatValidator {
             true => input.strict_float(py)?,
             false => input.lax_float(py)?,
         };
+        self._validation_logic(py, float)
+    }
+
+    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+        self._validation_logic(py, input.strict_float(py)?)
+    }
+
+    fn get_name(&self, _py: Python) -> String {
+        "constrained-float".to_string()
+    }
+
+    #[no_coverage]
+    fn clone_dyn(&self) -> Box<dyn Validator> {
+        Box::new(self.clone())
+    }
+}
+
+impl ConstrainedFloatValidator {
+    fn _validation_logic(&self, py: Python, float: f64) -> ValResult<PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
                 return err_val_error!(
@@ -134,9 +171,5 @@ impl Validator for ConstrainedFloatValidator {
             }
         }
         Ok(float.into_py(py))
-    }
-
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }
