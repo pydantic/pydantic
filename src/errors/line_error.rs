@@ -2,7 +2,8 @@ use std::fmt;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use strum::EnumMessage;
+
+use crate::input::ToPy;
 
 use super::kinds::ErrorKind;
 
@@ -30,142 +31,64 @@ impl fmt::Display for LocItem {
 /// the location would be `["foo", 2]`.
 pub type Location = Vec<LocItem>;
 
-/// A `ValLineError` is a single error that occurred during validation which
-/// combine to eventually form a `ValidationError`. I don't like the name `ValLineError`,
-/// but it's the best I could come up with (for now).
-/// `#[pyclass]` is required to allow `ValidationError::new_err((line_errors, name))` - the lines are converted to
-/// a python type to create the validation error.
-#[pyclass]
-#[derive(Debug, Default, Clone)]
-pub struct ValLineError {
+/// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`
+/// to eventually form a `ValidationError`.
+/// I don't like the name `ValLineError`, but it's the best I could come up with (for now).
+#[derive(Debug, Default)]
+pub struct ValLineError<'a> {
     pub kind: ErrorKind,
     pub location: Location,
     pub message: Option<String>,
-    pub input_value: Option<PyObject>,
-    pub context: Option<Context>,
+    pub input_value: InputValue<'a>,
+    pub context: Context,
 }
 
-impl fmt::Display for ValLineError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.format_pretty(f, None)
-    }
-}
-
-impl ValLineError {
-    fn format_pretty(&self, f: &mut fmt::Formatter<'_>, py: Option<Python>) -> fmt::Result {
-        if !self.location.is_empty() {
-            let loc = self
-                .location
-                .iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>()
-                .join(" -> ");
-            writeln!(f, "{}", loc)?;
-        }
-        write!(f, "  {} [kind={}", self.message(), self.kind())?;
-        if let Some(ctx) = &self.context {
-            write!(f, ", context={}", ctx)?;
-        }
-        if let Some(input_value) = &self.input_value {
-            write!(f, ", input_value={}", input_value)?;
-            if let Some(py) = py {
-                if let Ok(type_) = input_value.as_ref(py).get_type().name() {
-                    write!(f, ", input_type={}", type_)?;
-                }
-            }
-        }
-        write!(f, "]")
-    }
-
-    pub fn pretty(&self, py: Option<Python>) -> String {
-        format!("{}", Fmt(|f| self.format_pretty(f, py)))
-    }
-}
-
-// hack from https://users.rust-lang.org/t/reusing-an-fmt-formatter/8531/4
-struct Fmt<F>(pub F)
-where
-    F: Fn(&mut fmt::Formatter) -> fmt::Result;
-
-impl<F> fmt::Display for Fmt<F>
-where
-    F: Fn(&mut fmt::Formatter) -> fmt::Result,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        (self.0)(f)
-    }
-}
-
-impl ValLineError {
-    // TODO in theory we could mutate the error since it won't be used again, but I
-    // couldn't get mut to work where this is called
-    pub fn prefix_location(&self, location: &Location) -> ValLineError {
-        let mut new = self.clone();
+impl<'a> ValLineError<'a> {
+    pub fn with_prefix_location(mut self, location: &Location) -> Self {
         if self.location.is_empty() {
-            new.location = location.clone();
+            self.location = location.clone();
         } else {
-            new.location = [location.clone(), new.location].concat();
+            // TODO we could perhaps instead store "reverse_location" in the ValLineError, then reverse it in
+            // `PyLineError` so we could just extend here.
+            self.location = [location.clone(), self.location].concat();
         }
-        new
+        self
     }
+}
 
-    pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
-        let dict = PyDict::new(py);
-        dict.set_item("kind", self.kind())?;
-        dict.set_item("loc", self.location(py))?;
-        dict.set_item("message", self.message())?;
-        if let Some(input_value) = &self.input_value {
-            dict.set_item("input_value", input_value)?;
-        }
-        if let Some(context) = &self.context {
-            dict.set_item("context", context)?;
-        }
-        Ok(dict.into_py(py))
+#[derive(Debug)]
+pub enum InputValue<'a> {
+    None,
+    InputRef(&'a dyn ToPy),
+    PyObject(PyObject),
+}
+
+impl Default for InputValue<'_> {
+    fn default() -> Self {
+        Self::None
     }
+}
 
-    fn kind(&self) -> String {
-        self.kind.to_string()
-    }
-
-    fn location(&self, py: Python) -> PyObject {
-        let mut loc: Vec<PyObject> = Vec::with_capacity(self.location.len());
-        for location in &self.location {
-            let item: PyObject = match location {
-                LocItem::S(key) => key.into_py(py),
-                LocItem::I(index) => index.into_py(py),
-            };
-            loc.push(item);
-        }
-        loc.into_py(py)
-    }
-
-    fn message(&self) -> String {
-        let raw = self.raw_message();
-        match self.context {
-            Some(ref context) => context.render(raw),
-            None => raw,
-        }
-    }
-
-    fn raw_message(&self) -> String {
-        // TODO string substitution
-        if let Some(ref message) = self.message {
-            message.to_string()
-        } else {
-            match self.kind.get_message() {
-                Some(message) => message.to_string(),
-                None => self.kind(),
-            }
+impl<'a> InputValue<'a> {
+    pub fn to_py(&self, py: Python) -> PyObject {
+        match self {
+            Self::None => py.None(),
+            Self::InputRef(input) => input.to_py(py),
+            Self::PyObject(py_obj) => py_obj.into_py(py),
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Context(Vec<(String, ContextValue)>);
 
 impl Context {
     pub fn new<K: Into<String>, V: Into<ContextValue>, I: IntoIterator<Item = (K, V)>>(raw: I) -> Self {
         Self(raw.into_iter().map(|(k, v)| (k.into(), v.into())).collect())
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn render(&self, template: String) -> String {

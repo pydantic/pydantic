@@ -7,7 +7,7 @@ use pyo3::{ffi, intern, ToBorrowedObject};
 
 use super::{build_validator, Extra, Validator};
 use crate::build_macros::{dict_get, dict_get_required, py_error};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValResult};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValError, ValResult};
 use crate::input::Input;
 
 #[derive(Debug, Clone)]
@@ -44,14 +44,13 @@ impl Validator for ModelClassValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         let class = self.class.as_ref(py);
         if input.strict_model_check(class)? {
             Ok(input.to_py(py))
         } else if self.strict {
             err_val_error!(
-                py,
-                input,
+                input_value = InputValue::InputRef(input),
                 kind = ErrorKind::ModelType,
                 context = context!("class_name" => self.get_name(py))
             )
@@ -61,7 +60,7 @@ impl Validator for ModelClassValidator {
         }
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         if input.strict_model_check(self.class.as_ref(py))? {
             Ok(input.to_py(py))
         } else {
