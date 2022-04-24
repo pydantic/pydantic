@@ -18,12 +18,12 @@ install-rust-coverage:
 .PHONY: build-dev
 build-dev:
 	rm -f pydantic_core/*.so
-	python setup.py develop
+	RUSTFLAGS='-A incomplete_features' python setup.py develop
 
 .PHONY: build-coverage
 build-coverage:
 	rm -f pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage' python setup.py develop
+	RUSTFLAGS='-C instrument-coverage -A incomplete_features' python setup.py develop
 
 .PHONY: format
 format:
@@ -44,7 +44,7 @@ lint-rust:
 	@echo 'max_width = 120' > .rustfmt.toml
 	cargo fmt --all -- --check
 	cargo clippy --version
-	cargo clippy -- -D warnings
+	cargo clippy -- -D warnings -A incomplete_features
 
 .PHONY: lint
 lint: lint-python lint-rust

@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_macros::{dict_get, is_strict};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
-use crate::input::{Input, ToPy};
+use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::input::Input;
 
 use super::{Extra, Validator};
 
@@ -30,11 +30,11 @@ impl Validator for IntValidator {
         }
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.lax_int(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_int(py)?.into_py(py))
     }
 
@@ -56,11 +56,11 @@ impl Validator for StrictIntValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_int(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -96,16 +96,16 @@ impl Validator for ConstrainedIntValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         let int = match self.strict {
             true => input.strict_int(py)?,
             false => input.lax_int(py)?,
         };
-        self._validation_logic(py, int)
+        self._validation_logic(py, input, int)
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        self._validation_logic(py, input.strict_int(py)?)
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+        self._validation_logic(py, input, input.strict_int(py)?)
     }
 
     fn get_name(&self, _py: Python) -> String {
@@ -119,12 +119,11 @@ impl Validator for ConstrainedIntValidator {
 }
 
 impl ConstrainedIntValidator {
-    fn _validation_logic(&self, py: Python, int: i64) -> ValResult<PyObject> {
+    fn _validation_logic<'a>(&self, py: Python<'a>, input: &'a dyn Input, int: i64) -> ValResult<'a, PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return err_val_error!(
-                    py,
-                    int,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::IntMultiple,
                     context = context!("multiple_of" => multiple_of)
                 );
@@ -133,8 +132,7 @@ impl ConstrainedIntValidator {
         if let Some(le) = self.le {
             if int > le {
                 return err_val_error!(
-                    py,
-                    int,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::IntLessThanEqual,
                     context = context!("le" => le)
                 );
@@ -142,14 +140,17 @@ impl ConstrainedIntValidator {
         }
         if let Some(lt) = self.lt {
             if int >= lt {
-                return err_val_error!(py, int, kind = ErrorKind::IntLessThan, context = context!("lt" => lt));
+                return err_val_error!(
+                    input_value = InputValue::InputRef(input),
+                    kind = ErrorKind::IntLessThan,
+                    context = context!("lt" => lt)
+                );
             }
         }
         if let Some(ge) = self.ge {
             if int < ge {
                 return err_val_error!(
-                    py,
-                    int,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::IntGreaterThanEqual,
                     context = context!("ge" => ge)
                 );
@@ -158,8 +159,7 @@ impl ConstrainedIntValidator {
         if let Some(gt) = self.gt {
             if int <= gt {
                 return err_val_error!(
-                    py,
-                    int,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::IntGreaterThan,
                     context = context!("gt" => gt)
                 );

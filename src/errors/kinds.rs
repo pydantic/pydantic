@@ -100,8 +100,6 @@ pub enum ErrorKind {
     // python errors from functions (the messages here will not be used as we sett message in these cases)
     #[strum(message = "Invalid value")]
     ValueError,
-    #[strum(message = "Invalid type")]
-    TypeError,
     #[strum(message = "Assertion failed")]
     AssertionError,
 }

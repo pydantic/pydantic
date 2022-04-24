@@ -27,7 +27,7 @@ impl Validator for UnionValidator {
         Ok(Box::new(Self { choices }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         // 1st pass: check if the value is an exact instance of one of the Union types
         for validator in &self.choices {
             if let Ok(output) = validator.validate_strict(py, input, extra) {
@@ -46,13 +46,13 @@ impl Validator for UnionValidator {
 
             let loc = vec![LocItem::S(validator.get_name(py))];
             for err in line_errors {
-                errors.push(err.prefix_location(&loc));
+                errors.push(err.with_prefix_location(&loc));
             }
         }
         Err(ValError::LineErrors(errors))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         self.validate(py, input, extra)
     }
 

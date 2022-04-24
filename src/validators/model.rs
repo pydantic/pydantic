@@ -3,7 +3,9 @@ use pyo3::types::{PyDict, PySet};
 use std::collections::HashSet;
 
 use crate::build_macros::{dict_get, py_error};
-use crate::errors::{as_internal, err_val_error, val_line_error, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{
+    as_internal, err_val_error, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult,
+};
 use crate::input::{Input, ToLocItem};
 
 use super::{build_validator, Extra, Validator};
@@ -71,7 +73,7 @@ impl Validator for ModelValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         if let Some(field) = extra.field {
             // we're validating assignment, completely different logic
             return self.validate_assignment(py, field, input, extra);
@@ -92,9 +94,9 @@ impl Validator for ModelValidator {
                 match field.validator.validate(py, value, &extra) {
                     Ok(value) => output_dict.set_item(&field.name, value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
-                        let loc = vec![field.name.to_loc()?];
+                        let loc = vec![field.name.to_loc()];
                         for err in line_errors {
-                            errors.push(err.prefix_location(&loc));
+                            errors.push(err.with_prefix_location(&loc));
                         }
                     }
                     Err(err) => return Err(err),
@@ -106,10 +108,9 @@ impl Validator for ModelValidator {
                     .map_err(as_internal)?;
             } else {
                 errors.push(val_line_error!(
-                    py,
-                    dict,
+                    input_value = InputValue::InputRef(input), // TODO use dict?
                     kind = ErrorKind::Missing,
-                    location = vec![field.name.to_loc()?]
+                    location = vec![field.name.to_loc()]
                 ));
             }
         }
@@ -124,9 +125,9 @@ impl Validator for ModelValidator {
                 let key: String = match raw_key.lax_str(py) {
                     Ok(k) => k,
                     Err(ValError::LineErrors(line_errors)) => {
-                        let loc = vec![raw_key.to_loc()?];
+                        let loc = vec![raw_key.to_loc()];
                         for err in line_errors {
-                            errors.push(err.prefix_location(&loc));
+                            errors.push(err.with_prefix_location(&loc));
                         }
                         continue;
                     }
@@ -136,12 +137,11 @@ impl Validator for ModelValidator {
                     continue;
                 }
                 fields_set.insert(key.clone());
-                let loc = vec![key.to_loc()?];
+                let loc = vec![key.to_loc()];
 
                 if forbid {
                     errors.push(val_line_error!(
-                        py,
-                        dict,
+                        input_value = InputValue::InputRef(input),
                         kind = ErrorKind::ExtraForbidden,
                         location = loc
                     ));
@@ -150,7 +150,7 @@ impl Validator for ModelValidator {
                         Ok(value) => output_dict.set_item(&key, value).map_err(as_internal)?,
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
-                                errors.push(err.prefix_location(&loc));
+                                errors.push(err.with_prefix_location(&loc));
                             }
                         }
                         Err(err) => return Err(err),
@@ -168,7 +168,7 @@ impl Validator for ModelValidator {
         }
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -183,7 +183,13 @@ impl Validator for ModelValidator {
 }
 
 impl ModelValidator {
-    fn validate_assignment(&self, py: Python, field: &str, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_assignment<'a>(
+        &'a self,
+        py: Python<'a>,
+        field: &str,
+        input: &'a dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'a, PyObject> {
         // TODO probably we should set location on errors here
         let field_name = field.to_string();
 
@@ -198,11 +204,11 @@ impl ModelValidator {
             Ok((data, fields_set).to_object(py))
         };
 
-        let prepare_result = |result: ValResult<PyObject>| match result {
+        let prepare_result = |result: ValResult<'a, PyObject>| match result {
             Ok(output) => prepare_tuple(output),
             Err(ValError::LineErrors(line_errors)) => {
-                let loc = vec![field_name.to_loc()?];
-                let errors = line_errors.iter().map(|e| e.prefix_location(&loc)).collect();
+                let loc = vec![field_name.to_loc()];
+                let errors = line_errors.into_iter().map(|e| e.with_prefix_location(&loc)).collect();
                 Err(ValError::LineErrors(errors))
             }
             Err(err) => Err(err),
@@ -221,8 +227,12 @@ impl ModelValidator {
                 // - with forbid this is obvious
                 // - with ignore the model should never be overloaded, so an error is the clearest option
                 _ => {
-                    let loc = vec![field_name.to_loc()?];
-                    err_val_error!(py, input, location = loc, kind = ErrorKind::ExtraForbidden)
+                    let loc = vec![field_name.to_loc()];
+                    err_val_error!(
+                        input_value = InputValue::InputRef(input),
+                        location = loc,
+                        kind = ErrorKind::ExtraForbidden
+                    )
                 }
             }
         }

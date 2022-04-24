@@ -1,4 +1,5 @@
 #![feature(no_coverage)]
+#![feature(trait_upcasting)]
 
 extern crate core;
 extern crate pyo3;

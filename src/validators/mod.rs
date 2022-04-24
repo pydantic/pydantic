@@ -5,8 +5,8 @@ use pyo3::types::{PyAny, PyDict};
 use serde_json::{from_str as parse_json, Value as JsonValue};
 
 use crate::build_macros::{dict_get, dict_get_required, py_error};
-use crate::errors::{err_val_error, map_validation_error, ErrorKind, ValResult};
-use crate::input::{Input, ToPy};
+use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValResult};
+use crate::input::Input;
 
 mod bool;
 mod dict;
@@ -44,22 +44,29 @@ impl SchemaValidator {
             field: None,
         };
         let r = self.validator.validate(py, input, &extra);
-        r.map_err(|e| map_validation_error(&self.title, e))
+        r.map_err(|e| as_validation_err(py, &self.title, e))
     }
 
     fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
-        let result: ValResult<PyObject> = match parse_json::<JsonValue>(input.as_str()) {
+        match parse_json::<JsonValue>(input.as_str()) {
             Ok(input) => {
                 let extra = Extra {
                     data: None,
                     field: None,
                 };
-                self.validator.validate(py, &input, &extra)
+                let r = self.validator.validate(py, &input, &extra);
+                r.map_err(|e| as_validation_err(py, &self.title, e))
             }
-            Err(e) => err_val_error!(py, input, message = Some(e.to_string()), kind = ErrorKind::InvalidJson),
-        };
-
-        result.map_err(|e| map_validation_error(&self.title, e))
+            Err(e) => {
+                let line_err = val_line_error!(
+                    input_value = InputValue::InputRef(&input),
+                    message = Some(e.to_string()),
+                    kind = ErrorKind::InvalidJson
+                );
+                let err = ValError::LineErrors(vec![line_err]);
+                Err(as_validation_err(py, &self.title, err))
+            }
+        }
     }
 
     fn validate_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
@@ -68,7 +75,7 @@ impl SchemaValidator {
             field: Some(field.as_str()),
         };
         let r = self.validator.validate(py, input, &extra);
-        r.map_err(|e| map_validation_error(&self.title, e))
+        r.map_err(|e| as_validation_err(py, &self.title, e))
     }
 
     fn __repr__(&self) -> String {
@@ -150,9 +157,9 @@ pub trait Validator: Send + fmt::Debug {
         Self: Sized;
 
     /// Do the actual validation for this schema/type
-    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject>;
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject>;
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject>;
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject>;
 
     fn get_name(&self, py: Python) -> String;
 
