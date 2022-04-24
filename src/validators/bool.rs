@@ -23,13 +23,13 @@ impl Validator for BoolValidator {
         }
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         // TODO in theory this could be quicker if we used PyBool rather than going to a bool
         // and back again, might be worth profiling?
         Ok(input.lax_bool(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_bool(py)?.into_py(py))
     }
 
@@ -51,11 +51,11 @@ impl Validator for StrictBoolValidator {
         Ok(Box::new(Self {}))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_bool(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         self.validate(py, input, extra)
     }
 

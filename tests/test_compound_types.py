@@ -1,3 +1,4 @@
+import re
 from collections.abc import Mapping
 
 import pytest
@@ -51,3 +52,18 @@ def test_dict_mapping():
 
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}, 'try_instance_as_dict': True})
     assert v.validate_python(ClassWithDict()) == {'a': 1, 'b': 2, 'c': 'ham'}
+
+
+def test_key_error():
+    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    assert v.validate_python({'1': True}) == {1: 1}
+    with pytest.raises(ValidationError, match=re.escape('x -> [key]\n  Value must be a valid integer')) as exc_info:
+        v.validate_python({'x': 1})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['x', '[key]'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'x',
+        }
+    ]

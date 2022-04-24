@@ -26,7 +26,7 @@ class Err:
             'cheese',
             Err(
                 'Value must be a valid boolean, '
-                'unable to interpret input [kind=bool_parsing, input_value=cheese, input_type=str]'
+                "unable to interpret input [kind=bool_parsing, input_value='cheese', input_type=str]"
             ),
         ),
     ],
@@ -43,7 +43,7 @@ def test_bool(input_value, expected):
 def test_bool_strict():
     v = SchemaValidator({'type': 'bool', 'strict': True, 'title': 'TestModel'})
     assert v.validate_python(True) is True
-    error_message = 'Value must be a valid boolean [kind=bool_type, input_value=true, input_type=str]'
+    error_message = "Value must be a valid boolean [kind=bool_type, input_value='true', input_type=str]"
     with pytest.raises(ValidationError, match=re.escape(error_message)):
         v.validate_python('true')
 
@@ -57,7 +57,7 @@ def test_bool_error():
     assert str(exc_info.value) == (
         '1 validation error for TestModel\n'
         '  Value must be a valid boolean, '
-        'unable to interpret input [kind=bool_parsing, input_value=wrong, input_type=str]'
+        "unable to interpret input [kind=bool_parsing, input_value='wrong', input_type=str]"
     )
     assert exc_info.value.errors() == [
         {

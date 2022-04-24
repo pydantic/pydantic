@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_macros::{dict_get, is_strict};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
-use crate::input::{Input, ToPy};
+use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::input::Input;
 
 use super::{Extra, Validator};
 
@@ -30,11 +30,11 @@ impl Validator for FloatValidator {
         }
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.lax_float(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_float(py)?.into_py(py))
     }
 
@@ -56,11 +56,11 @@ impl Validator for StrictFloatValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_float(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -96,16 +96,16 @@ impl Validator for ConstrainedFloatValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         let float = match self.strict {
             true => input.strict_float(py)?,
             false => input.lax_float(py)?,
         };
-        self._validation_logic(py, float)
+        self._validation_logic(py, input, float)
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        self._validation_logic(py, input.strict_float(py)?)
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+        self._validation_logic(py, input, input.strict_float(py)?)
     }
 
     fn get_name(&self, _py: Python) -> String {
@@ -119,12 +119,11 @@ impl Validator for ConstrainedFloatValidator {
 }
 
 impl ConstrainedFloatValidator {
-    fn _validation_logic(&self, py: Python, float: f64) -> ValResult<PyObject> {
+    fn _validation_logic<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, float: f64) -> ValResult<'a, PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
                 return err_val_error!(
-                    py,
-                    float,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::FloatMultiple,
                     context = context!("multiple_of" => multiple_of)
                 );
@@ -133,8 +132,7 @@ impl ConstrainedFloatValidator {
         if let Some(le) = self.le {
             if float > le {
                 return err_val_error!(
-                    py,
-                    float,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::FloatLessThanEqual,
                     context = context!("le" => le)
                 );
@@ -143,8 +141,7 @@ impl ConstrainedFloatValidator {
         if let Some(lt) = self.lt {
             if float >= lt {
                 return err_val_error!(
-                    py,
-                    float,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::FloatLessThan,
                     context = context!("lt" => lt)
                 );
@@ -153,8 +150,7 @@ impl ConstrainedFloatValidator {
         if let Some(ge) = self.ge {
             if float < ge {
                 return err_val_error!(
-                    py,
-                    float,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::FloatGreaterThanEqual,
                     context = context!("ge" => ge)
                 );
@@ -163,8 +159,7 @@ impl ConstrainedFloatValidator {
         if let Some(gt) = self.gt {
             if float <= gt {
                 return err_val_error!(
-                    py,
-                    float,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::FloatGreaterThan,
                     context = context!("gt" => gt)
                 );

@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_macros::{dict_get, is_strict};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::input::{DictInput, Input, ToLocItem};
 
 use super::{build_validator, Extra, Validator};
@@ -39,16 +39,16 @@ impl Validator for DictValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         let dict = match self.strict {
             true => input.strict_dict(py)?,
             false => input.lax_dict(py, self.try_instance_as_dict)?,
         };
-        self._validation_logic(py, dict, extra)
+        self._validation_logic(py, input, dict, extra)
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
-        self._validation_logic(py, input.strict_dict(py)?, extra)
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+        self._validation_logic(py, input, input.strict_dict(py)?, extra)
     }
 
     fn get_name(&self, _py: Python) -> String {
@@ -63,16 +63,16 @@ impl Validator for DictValidator {
 
 impl DictValidator {
     fn _validation_logic<'py>(
-        &self,
+        &'py self,
         py: Python<'py>,
+        input: &'py dyn Input,
         dict: Box<dyn DictInput<'py> + 'py>,
         extra: &Extra,
-    ) -> ValResult<PyObject> {
+    ) -> ValResult<'py, PyObject> {
         if let Some(min_length) = self.min_items {
             if dict.input_len() < min_length {
                 return err_val_error!(
-                    py,
-                    dict,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::DictTooShort,
                     context = context!("min_length" => min_length)
                 );
@@ -81,8 +81,7 @@ impl DictValidator {
         if let Some(max_length) = self.max_items {
             if dict.input_len() > max_length {
                 return err_val_error!(
-                    py,
-                    dict,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::DictTooLong,
                     context = context!("max_length" => max_length)
                 );
@@ -109,26 +108,26 @@ impl DictValidator {
     }
 }
 
-fn apply_validator(
-    py: Python,
-    validator: &Option<Box<dyn Validator>>,
-    errors: &mut Vec<ValLineError>,
-    input: &dyn Input,
-    key: &dyn Input,
+fn apply_validator<'py>(
+    py: Python<'py>,
+    validator: &'py Option<Box<dyn Validator>>,
+    errors: &mut Vec<ValLineError<'py>>,
+    input: &'py dyn Input,
+    key: &'py dyn Input,
     extra: &Extra,
     key_loc: bool,
-) -> ValResult<Option<PyObject>> {
+) -> ValResult<'py, Option<PyObject>> {
     match validator {
         Some(validator) => match validator.validate(py, input, extra) {
             Ok(value) => Ok(Some(value)),
             Err(ValError::LineErrors(line_errors)) => {
                 let loc = if key_loc {
-                    vec![key.to_loc()?, "[key]".to_loc()?]
+                    vec![key.to_loc(), "[key]".to_loc()]
                 } else {
-                    vec![key.to_loc()?]
+                    vec![key.to_loc()]
                 };
                 for err in line_errors {
-                    errors.push(err.prefix_location(&loc));
+                    errors.push(err.with_prefix_location(&loc));
                 }
                 Ok(None)
             }

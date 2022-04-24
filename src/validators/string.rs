@@ -3,8 +3,8 @@ use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
 use crate::build_macros::{dict_get, is_strict, optional_dict_get, py_error};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
-use crate::input::{Input, ToPy};
+use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::input::Input;
 
 use super::{Extra, Validator};
 
@@ -43,11 +43,11 @@ impl Validator for StrValidator {
         }
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.lax_str(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_str(py)?.into_py(py))
     }
 
@@ -69,11 +69,11 @@ impl Validator for StrictStrValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         Ok(input.strict_str(py)?.into_py(py))
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, extra: &Extra) -> ValResult<PyObject> {
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -140,16 +140,16 @@ impl Validator for StrConstrainedValidator {
         }))
     }
 
-    fn validate(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
         let str = match self.strict {
             true => input.strict_str(py)?,
             false => input.lax_str(py)?,
         };
-        self._validation_logic(py, str)
+        self._validation_logic(py, input, str)
     }
 
-    fn validate_strict(&self, py: Python, input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
-        self._validation_logic(py, input.strict_str(py)?)
+    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+        self._validation_logic(py, input, input.strict_str(py)?)
     }
 
     fn get_name(&self, _py: Python) -> String {
@@ -163,14 +163,13 @@ impl Validator for StrConstrainedValidator {
 }
 
 impl StrConstrainedValidator {
-    fn _validation_logic(&self, py: Python, str: String) -> ValResult<PyObject> {
+    fn _validation_logic<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, str: String) -> ValResult<'a, PyObject> {
         let mut str = str;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
                 return err_val_error!(
-                    py,
-                    str,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::StrTooShort,
                     context = context!("min_length" => min_length)
                 );
@@ -179,8 +178,7 @@ impl StrConstrainedValidator {
         if let Some(max_length) = self.max_length {
             if str.len() > max_length {
                 return err_val_error!(
-                    py,
-                    str,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::StrTooLong,
                     context = context!("max_length" => max_length)
                 );
@@ -189,8 +187,7 @@ impl StrConstrainedValidator {
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(&str) {
                 return err_val_error!(
-                    py,
-                    str,
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::StrPatternMismatch,
                     context = context!("pattern" => pattern.to_string())
                 );
