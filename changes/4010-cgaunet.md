@@ -1,0 +1,1 @@
+Pin email-validator in setup.py due to a recent breaking change in 1.2.0 version
