@@ -1,3 +1,4 @@
+import keyword
 import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
@@ -56,6 +57,7 @@ __all__ = (
     'lenient_isinstance',
     'lenient_issubclass',
     'in_ipython',
+    'is_valid_identifier',
     'deep_update',
     'update_not_none',
     'almost_equal_floats',
@@ -192,6 +194,15 @@ def in_ipython() -> bool:
         return True
 
 
+def is_valid_identifier(identifier: str) -> bool:
+    """
+    Checks that a string is a valid identifier and not a reserved word.
+    :param identifier: The identifier to test.
+    :return: True if the identifier is valid.
+    """
+    return identifier.isidentifier() and not keyword.iskeyword(identifier)
+
+
 KeyType = TypeVar('KeyType')
 
 
@@ -244,8 +255,8 @@ def generate_model_signature(
             param_name = field.alias
             if field_name in merged_params or param_name in merged_params:
                 continue
-            elif not param_name.isidentifier():
-                if allow_names and field_name.isidentifier():
+            elif not is_valid_identifier(param_name):
+                if allow_names and is_valid_identifier(field_name):
                     param_name = field_name
                 else:
                     use_var_kw = True
