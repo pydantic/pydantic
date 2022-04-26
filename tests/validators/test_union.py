@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 
 @pytest.mark.parametrize(
@@ -152,7 +152,7 @@ class TestModelClassSimilar:
         assert m2.c == 2.0
 
 
-def test_optional():
+def test_optional_via_union():
     v = SchemaValidator({'type': 'union', 'choices': [{'type': 'none'}, {'type': 'int'}]})
     assert v.validate_python(None) is None
     assert v.validate_python(1) == 1
@@ -167,3 +167,38 @@ def test_optional():
             'input_value': 'hello',
         },
     ]
+
+
+def test_union_list_bool_int():
+    v = SchemaValidator(
+        {
+            'type': 'union',
+            'choices': [{'type': 'list', 'items': {'type': 'bool'}}, {'type': 'list', 'items': {'type': 'int'}}],
+        }
+    )
+    assert v.validate_python(['true', True, 'no']) == [True, True, False]
+    assert v.validate_python([5, 6, '789']) == [5, 6, 789]
+    assert v.validate_python(['1', '0']) == [1, 0]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([3, 'true'])
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'bool_parsing',
+            'loc': ['list-bool', 0],
+            'message': 'Value must be a valid boolean, unable to interpret input',
+            'input_value': 3,
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['list-int', 1],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'true',
+        },
+    ]
+
+
+def test_no_choices():
+    with pytest.raises(SchemaError) as exc_info:
+        SchemaValidator({'type': 'union'})
+
+    assert exc_info.value.args[0] == ('Error building "union" validator:\n' '  KeyError: \'"choices" is required\'')

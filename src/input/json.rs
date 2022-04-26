@@ -4,7 +4,7 @@ use serde_json::{Map, Value};
 
 use crate::errors::{err_val_error, ErrorKind, InputValue, LocItem, ValResult};
 
-use super::shared::{int_as_bool, str_as_bool};
+use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for Value {
@@ -64,23 +64,20 @@ impl Input for Value {
 
     fn lax_int<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, i64> {
         match self {
+            Value::Bool(b) => match *b {
+                true => Ok(1),
+                false => Ok(0),
+            },
             Value::Number(n) => {
                 if let Some(int) = n.as_i64() {
                     Ok(int)
                 } else if let Some(float) = n.as_f64() {
-                    if float % 1.0 == 0.0 {
-                        Ok(float as i64)
-                    } else {
-                        err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntFromFloat)
-                    }
+                    float_as_int(self, float)
                 } else {
                     err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
                 }
             }
-            Value::String(str) => match str.parse() {
-                Ok(i) => Ok(i),
-                Err(_) => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntParsing),
-            },
+            Value::String(str) => str_as_int(self, str),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType),
         }
     }
@@ -100,6 +97,10 @@ impl Input for Value {
 
     fn lax_float<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, f64> {
         match self {
+            Value::Bool(b) => match *b {
+                true => Ok(1.0),
+                false => Ok(0.0),
+            },
             Value::Number(n) => {
                 if let Some(float) = n.as_f64() {
                     Ok(float)

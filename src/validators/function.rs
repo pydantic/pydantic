@@ -2,12 +2,12 @@ use pyo3::exceptions::{PyAssertionError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use crate::build_macros::{dict, dict_get_required, py_error};
+use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::input::Input;
 use crate::validators::build_validator;
 
-use super::{Extra, Validator};
+use super::{Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct FunctionValidator;
@@ -18,7 +18,7 @@ impl FunctionValidator {
 
 impl Validator for FunctionValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let mode = dict_get_required!(schema, "mode", &str)?;
+        let mode: &str = schema.get_as_req("mode")?;
         match mode {
             "before" => FunctionBeforeValidator::build(schema, config),
             "after" => FunctionAfterValidator::build(schema, config),
@@ -28,13 +28,27 @@ impl Validator for FunctionValidator {
         }
     }
 
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
+
     #[no_coverage]
-    fn validate(&self, _py: Python, _input: &dyn Input, _extra: &Extra) -> ValResult<PyObject> {
+    fn validate<'s, 'data>(
+        &'s self,
+        _py: Python<'data>,
+        _input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         unimplemented!("FunctionValidator is never used directly")
     }
 
     #[no_coverage]
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -51,18 +65,22 @@ impl Validator for FunctionValidator {
 
 macro_rules! kwargs {
     ($py:ident, $($k:expr => $v:expr),*) => {{
-        Some(dict!($py, $($k => $v),*))
+        Some(pyo3::types::IntoPyDict::into_py_dict([$(($k, $v.into_py($py)),)*], $py).into())
     }};
 }
 
-macro_rules! build {
+macro_rules! build_set_ref {
     () => {
         fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
             Ok(Box::new(Self {
-                validator: build_validator(dict_get_required!(schema, "field", &PyDict)?, config)?,
+                validator: build_validator(schema.get_as_req("field")?, config)?.0,
                 func: get_function(schema)?,
                 config: config.map(|c| c.into()),
             }))
+        }
+
+        fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+            self.validator.set_ref(name, validator_arc)
         }
     };
 }
@@ -75,9 +93,14 @@ struct FunctionBeforeValidator {
 }
 
 impl Validator for FunctionBeforeValidator {
-    build!();
+    build_set_ref!();
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         let value = self
             .func
@@ -106,7 +129,12 @@ impl Validator for FunctionBeforeValidator {
         }
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -128,15 +156,25 @@ struct FunctionAfterValidator {
 }
 
 impl Validator for FunctionAfterValidator {
-    build!();
+    build_set_ref!();
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let v = self.validator.validate(py, input, extra)?;
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -164,14 +202,28 @@ impl Validator for FunctionPlainValidator {
         }))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func
             .call(py, (input.to_py(py),), kwargs)
             .map_err(|e| convert_err(py, e, input))
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -193,9 +245,14 @@ struct FunctionWrapValidator {
 }
 
 impl Validator for FunctionWrapValidator {
-    build!();
+    build_set_ref!();
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let validator_kwarg = ValidatorCallable {
             validator: self.validator.clone(),
             data: extra.data.map(|d| d.into_py(py)),
@@ -212,7 +269,12 @@ impl Validator for FunctionWrapValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 

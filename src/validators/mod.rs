@@ -4,9 +4,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::{from_str as parse_json, Value as JsonValue};
 
-use crate::build_macros::{dict_get, dict_get_required, py_error};
+use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValResult};
 use crate::input::Input;
+
+use self::recursive::ValidatorArc;
 
 mod bool;
 mod dict;
@@ -17,24 +19,23 @@ mod list;
 mod model;
 mod model_class;
 mod none;
+mod optional;
+mod recursive;
 mod string;
 mod union;
 
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    title: String,
     validator: Box<dyn Validator>,
 }
 
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    pub fn py_new(dict: &PyDict) -> PyResult<Self> {
-        let title = dict_get!(dict, "title", String).unwrap_or_else(|| "Model".to_string());
+    pub fn py_new(schema: &PyAny) -> PyResult<Self> {
         Ok(Self {
-            title,
-            validator: build_validator(dict, None)?,
+            validator: build_validator(schema, None)?.0,
         })
     }
 
@@ -44,7 +45,7 @@ impl SchemaValidator {
             field: None,
         };
         let r = self.validator.validate(py, input, &extra);
-        r.map_err(|e| as_validation_err(py, &self.title, e))
+        r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
     }
 
     fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
@@ -55,7 +56,7 @@ impl SchemaValidator {
                     field: None,
                 };
                 let r = self.validator.validate(py, &input, &extra);
-                r.map_err(|e| as_validation_err(py, &self.title, e))
+                r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
             }
             Err(e) => {
                 let line_err = val_line_error!(
@@ -64,7 +65,7 @@ impl SchemaValidator {
                     kind = ErrorKind::InvalidJson
                 );
                 let err = ValError::LineErrors(vec![line_err]);
-                Err(as_validation_err(py, &self.title, err))
+                Err(as_validation_err(py, &self.validator.get_name(py), err))
             }
         }
     }
@@ -75,13 +76,14 @@ impl SchemaValidator {
             field: Some(field.as_str()),
         };
         let r = self.validator.validate(py, input, &extra);
-        r.map_err(|e| as_validation_err(py, &self.title, e))
+        r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
     }
 
-    fn __repr__(&self) -> String {
+    fn __repr__(&self, py: Python) -> String {
         format!(
-            "SchemaValidator(title={:?}, validator={:#?})",
-            self.title, self.validator
+            "SchemaValidator(name={:?}, validator={:#?})",
+            self.validator.get_name(py),
+            self.validator
         )
     }
 }
@@ -95,7 +97,7 @@ macro_rules! validator_match {
                     let val = <$validator>::build($dict, $config).map_err(|err| {
                         crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
                     })?;
-                    Ok(val)
+                    Ok((val, $dict))
                 },
             )+
             _ => {
@@ -105,8 +107,19 @@ macro_rules! validator_match {
     };
 }
 
-pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-    let type_: &str = dict_get_required!(dict, "type", &str)?;
+pub fn build_validator<'a>(
+    schema: &'a PyAny,
+    config: Option<&'a PyDict>,
+) -> PyResult<(Box<dyn Validator>, &'a PyDict)> {
+    let dict: &PyDict = match schema.cast_as() {
+        Ok(s) => s,
+        Err(_) => {
+            let dict = PyDict::new(schema.py());
+            dict.set_item("type", schema)?;
+            dict
+        }
+    };
+    let type_: &str = dict.get_as_req("type")?;
     validator_match!(
         type_,
         dict,
@@ -115,6 +128,7 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
         self::model::ModelValidator,
         // unions
         self::union::UnionValidator,
+        self::optional::OptionalValidator,
         // model classes
         self::model_class::ModelClassValidator,
         // strings
@@ -133,6 +147,9 @@ pub fn build_validator(dict: &PyDict, config: Option<&PyDict>) -> PyResult<Box<d
         self::none::NoneValidator,
         // functions - before, after, plain & wrap
         self::function::FunctionValidator,
+        // recursive (self-referencing) models
+        self::recursive::RecursiveValidator,
+        self::recursive::RecursiveRefValidator,
     )
 }
 
@@ -149,17 +166,29 @@ pub struct Extra<'a> {
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
 /// they also need `EXPECTED_TYPE` as a const, but that can't be part of the trait.
-pub trait Validator: Send + fmt::Debug {
+pub trait Validator: Send + Sync + fmt::Debug {
     /// Build a new validator from the schema, the return type is a trait to provide an escape hatch for validators
     /// to return other validators, currently only used by StrValidator
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>>
     where
         Self: Sized;
 
-    /// Do the actual validation for this schema/type
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject>;
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()>;
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject>;
+    /// Do the actual validation for this schema/type
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject>;
+
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject>;
 
     fn get_name(&self, py: Python) -> String;
 

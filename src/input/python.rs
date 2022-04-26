@@ -5,7 +5,7 @@ use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyMapping, PyString, PyTuple, 
 
 use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, LocItem, ValResult};
 
-use super::shared::{int_as_bool, str_as_bool};
+use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for PyAny {
@@ -82,24 +82,19 @@ impl Input for PyAny {
         if let Ok(int) = self.extract::<i64>() {
             Ok(int)
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::IntParsing)? {
-            match str.parse() {
-                Ok(i) => Ok(i),
-                Err(_) => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntParsing),
-            }
+            str_as_int(self, &str)
         } else if let Ok(float) = self.lax_float(py) {
-            if float % 1.0 == 0.0 {
-                Ok(float as i64)
-            } else {
-                err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntFromFloat)
-            }
+            float_as_int(self, float)
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
         }
     }
 
     fn strict_float(&self, _py: Python) -> ValResult<f64> {
-        if let Ok(int) = self.extract::<f64>() {
-            Ok(int)
+        if self.extract::<bool>().is_ok() {
+            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
+        } else if let Ok(float) = self.extract::<f64>() {
+            Ok(float)
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
         }

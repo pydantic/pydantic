@@ -2,11 +2,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_macros::{dict_get, is_strict, optional_dict_get, py_error};
+use crate::build_tools::{is_strict, py_error, schema_or_config};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{Extra, Validator};
+use super::{Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct StrValidator;
@@ -36,18 +36,32 @@ impl Validator for StrValidator {
             };
         if use_constrained {
             StrConstrainedValidator::build(schema, config)
-        } else if is_strict!(schema, config) {
+        } else if is_strict(schema, config)? {
             StrictStrValidator::build(schema, config)
         } else {
             Ok(Box::new(Self))
         }
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         Ok(input.lax_str(py)?.into_py(py))
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         Ok(input.strict_str(py)?.into_py(py))
     }
 
@@ -69,11 +83,25 @@ impl Validator for StrictStrValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         Ok(input.strict_str(py)?.into_py(py))
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 
@@ -100,37 +128,21 @@ struct StrConstrainedValidator {
 
 impl Validator for StrConstrainedValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let pattern = match dict_get!(schema, "pattern", &str) {
+        let pattern_str: Option<&str> = schema_or_config(schema, config, "pattern", "str_pattern")?;
+        let pattern = match pattern_str {
             Some(s) => Some(build_regex(s)?),
-            None => match optional_dict_get!(config, "str_pattern", &str) {
-                Some(s) => Some(build_regex(s)?),
-                None => None,
-            },
+            None => None,
         };
-        let min_length = match dict_get!(schema, "min_length", usize) {
-            Some(v) => Some(v),
-            None => optional_dict_get!(config, "str_min_length", usize),
-        };
-        let max_length = match dict_get!(schema, "max_length", usize) {
-            Some(v) => Some(v),
-            None => optional_dict_get!(config, "str_max_length", usize),
-        };
+        let min_length: Option<usize> = schema_or_config(schema, config, "min_length", "str_min_length")?;
+        let max_length: Option<usize> = schema_or_config(schema, config, "max_length", "str_max_length")?;
 
-        let strip_whitespace = match dict_get!(schema, "strip_whitespace", bool) {
-            Some(v) => v,
-            None => optional_dict_get!(config, "str_strip_whitespace", bool).unwrap_or(false),
-        };
-        let to_lower = match dict_get!(schema, "to_lower", bool) {
-            Some(v) => v,
-            None => optional_dict_get!(config, "str_to_lower", bool).unwrap_or(false),
-        };
-        let to_upper = match dict_get!(schema, "to_upper", bool) {
-            Some(v) => v,
-            None => optional_dict_get!(config, "str_to_upper", bool).unwrap_or(false),
-        };
+        let strip_whitespace: bool =
+            schema_or_config(schema, config, "strip_whitespace", "str_strip_whitespace")?.unwrap_or(false);
+        let to_lower: bool = schema_or_config(schema, config, "to_lower", "str_to_lower")?.unwrap_or(false);
+        let to_upper: bool = schema_or_config(schema, config, "to_upper", "str_to_upper")?.unwrap_or(false);
 
         Ok(Box::new(Self {
-            strict: is_strict!(schema, config),
+            strict: is_strict(schema, config)?,
             pattern,
             min_length,
             max_length,
@@ -140,7 +152,16 @@ impl Validator for StrConstrainedValidator {
         }))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let str = match self.strict {
             true => input.strict_str(py)?,
             false => input.lax_str(py)?,
@@ -148,7 +169,12 @@ impl Validator for StrConstrainedValidator {
         self._validation_logic(py, input, str)
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_str(py)?)
     }
 
@@ -163,7 +189,12 @@ impl Validator for StrConstrainedValidator {
 }
 
 impl StrConstrainedValidator {
-    fn _validation_logic<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, str: String) -> ValResult<'a, PyObject> {
+    fn _validation_logic<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        str: String,
+    ) -> ValResult<'data, PyObject> {
         let mut str = str;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
