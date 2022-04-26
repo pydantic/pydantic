@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use super::{build_validator, Extra, ValResult, Validator};
-use crate::build_macros::dict_get_required;
+use crate::build_tools::SchemaDict;
 use crate::errors::{LocItem, ValError, ValLineError};
 use crate::input::Input;
+
+use super::{build_validator, Extra, ValResult, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
@@ -18,16 +19,27 @@ impl UnionValidator {
 impl Validator for UnionValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         let mut choices: Vec<Box<dyn Validator>> = vec![];
-        let choice_schemas: &PyList = dict_get_required!(schema, "choices", &PyList)?;
+        let choice_schemas: &PyList = schema.get_as_req("choices")?;
         for choice in choice_schemas.iter() {
-            let choice_dict: &PyDict = choice.extract()?;
-            choices.push(build_validator(choice_dict, config)?);
+            choices.push(build_validator(choice, config)?.0);
         }
 
         Ok(Box::new(Self { choices }))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        for validator in self.choices.iter_mut() {
+            validator.set_ref(name, validator_arc)?;
+        }
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         // 1st pass: check if the value is an exact instance of one of the Union types
         for validator in &self.choices {
             if let Ok(output) = validator.validate_strict(py, input, extra) {
@@ -52,7 +64,12 @@ impl Validator for UnionValidator {
         Err(ValError::LineErrors(errors))
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 

@@ -4,7 +4,7 @@ use pyo3::types::PyDict;
 use crate::errors::{err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{Extra, Validator};
+use super::{Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
@@ -18,7 +18,16 @@ impl Validator for NoneValidator {
         Ok(Box::new(Self))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         match input.is_none(py) {
             true => Ok(py.None()),
             false => err_val_error!(
@@ -28,7 +37,12 @@ impl Validator for NoneValidator {
         }
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 

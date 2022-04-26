@@ -5,10 +5,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyType};
 use pyo3::{ffi, intern, ToBorrowedObject};
 
-use super::{build_validator, Extra, Validator};
-use crate::build_macros::{dict_get, dict_get_required, py_error};
+use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValError, ValResult};
 use crate::input::Input;
+
+use super::{build_validator, Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct ModelClassValidator {
@@ -24,12 +25,13 @@ impl ModelClassValidator {
 
 impl Validator for ModelClassValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let class = dict_get_required!(schema, "class", &PyType)?;
+        let class: &PyType = schema.get_as_req("class")?;
         let new_method = class.getattr("__new__")?;
         // `__new__` always exists and is always callable, no point checking `is_callable` here
 
-        let model_schema = dict_get_required!(schema, "model", &PyDict)?;
-        let model_type = dict_get_required!(model_schema, "type", String)?;
+        let model_schema_raw: &PyAny = schema.get_as_req("model")?;
+        let (validator, model_schema) = build_validator(model_schema_raw, config)?;
+        let model_type: String = model_schema.get_as_req("type")?;
         if &model_type != "model" {
             return py_error!("model-class expected a 'model' schema, got '{}'", model_type);
         }
@@ -37,14 +39,24 @@ impl Validator for ModelClassValidator {
         Ok(Box::new(Self {
             // we don't use is_strict here since we don't wan validation to be strict in this case if
             // `config.strict` is set, only if this specific field is strict
-            strict: dict_get!(schema, "strict", bool).unwrap_or(false),
-            validator: build_validator(model_schema, config)?,
+            strict: schema.get_as("strict")?.unwrap_or(false),
+            validator,
             class: class.into(),
             new_method: new_method.into(),
         }))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        self.validator.set_ref(name, validator_arc)?;
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let class = self.class.as_ref(py);
         if input.strict_model_check(class)? {
             Ok(input.to_py(py))
@@ -60,7 +72,12 @@ impl Validator for ModelClassValidator {
         }
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, _extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        _extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         if input.strict_model_check(self.class.as_ref(py))? {
             Ok(input.to_py(py))
         } else {
@@ -77,7 +94,7 @@ impl Validator for ModelClassValidator {
             Ok(name) => name.extract(),
             Err(e) => Err(e),
         };
-        name_result.unwrap_or("UnknownClass").to_string()
+        name_result.unwrap_or("ModelClass").to_string()
     }
 
     #[no_coverage]

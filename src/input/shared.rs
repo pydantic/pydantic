@@ -21,3 +21,25 @@ pub fn int_as_bool(input: &dyn Input, int: i64) -> ValResult<bool> {
         err_val_error!(input_value = InputValue::InputRef(input), kind = ErrorKind::BoolParsing)
     }
 }
+
+#[inline]
+pub fn str_as_int<'s, 'l>(input: &'s dyn Input, str: &'l str) -> ValResult<'s, i64> {
+    if let Ok(i) = str.parse::<i64>() {
+        Ok(i)
+    } else if let Ok(f) = str.parse::<f64>() {
+        float_as_int(input, f)
+    } else {
+        err_val_error!(input_value = InputValue::InputRef(input), kind = ErrorKind::IntParsing)
+    }
+}
+
+pub fn float_as_int(input: &dyn Input, float: f64) -> ValResult<i64> {
+    if float % 1.0 == 0.0 {
+        Ok(float as i64)
+    } else {
+        err_val_error!(
+            input_value = InputValue::InputRef(input),
+            kind = ErrorKind::IntFromFloat
+        )
+    }
+}

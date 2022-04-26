@@ -1,11 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_macros::{dict_get, is_strict};
+use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, LocItem, ValError, ValLineError};
 use crate::input::{Input, ListInput};
 
-use super::{build_validator, Extra, ValResult, Validator};
+use super::{build_validator, Extra, ValResult, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
@@ -22,17 +22,29 @@ impl ListValidator {
 impl Validator for ListValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {
-            strict: is_strict!(schema, config),
-            item_validator: match dict_get!(schema, "items", &PyDict) {
-                Some(d) => Some(build_validator(d, config)?),
+            strict: is_strict(schema, config)?,
+            item_validator: match schema.get_item("items") {
+                Some(d) => Some(build_validator(d, config)?.0),
                 None => None,
             },
-            min_items: dict_get!(schema, "min_items", usize),
-            max_items: dict_get!(schema, "max_items", usize),
+            min_items: schema.get_as("min_items")?,
+            max_items: schema.get_as("max_items")?,
         }))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        match self.item_validator {
+            Some(ref mut item_validator) => item_validator.set_ref(name, validator_arc),
+            None => Ok(()),
+        }
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         let list = match self.strict {
             true => input.strict_list(py)?,
             false => input.lax_list(py)?,
@@ -40,12 +52,20 @@ impl Validator for ListValidator {
         self._validation_logic(py, input, list, extra)
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_list(py)?, extra)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self, py: Python) -> String {
+        match &self.item_validator {
+            Some(v) => format!("{}-{}", Self::EXPECTED_TYPE, v.get_name(py)),
+            None => Self::EXPECTED_TYPE.to_string(),
+        }
     }
 
     #[no_coverage]
@@ -55,13 +75,13 @@ impl Validator for ListValidator {
 }
 
 impl ListValidator {
-    fn _validation_logic<'py>(
-        &'py self,
-        py: Python<'py>,
-        input: &'py dyn Input,
-        list: Box<dyn ListInput<'py> + 'py>,
+    fn _validation_logic<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        list: Box<dyn ListInput<'data> + 'data>,
         extra: &Extra,
-    ) -> ValResult<'py, PyObject> {
+    ) -> ValResult<'data, PyObject> {
         let length = list.input_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {

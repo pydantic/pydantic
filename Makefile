@@ -17,6 +17,7 @@ install-rust-coverage:
 
 .PHONY: build-dev
 build-dev:
+	pip uninstall -y pydantic_core
 	rm -f pydantic_core/*.so
 	RUSTFLAGS='-A incomplete_features' python setup.py develop
 
@@ -65,7 +66,7 @@ testcov: build-coverage test
 	./tests/rust_coverage_html.sh
 
 .PHONY: all
-all: format lint mypy test
+all: format lint mypy build-dev test
 
 .PHONY: flame
 flame:

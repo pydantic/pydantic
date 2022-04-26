@@ -11,7 +11,7 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
-mod build_macros;
+mod build_tools;
 mod errors;
 mod input;
 mod validators;
