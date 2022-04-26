@@ -25,6 +25,8 @@ from ..conftest import Err
                 "unable to interpret input [kind=bool_parsing, input_value='cheese', input_type=str]"
             ),
         ),
+        (2, Err('Value must be a valid boolean, unable to interpret input [kind=bool_parsing, input_value=2')),
+        ([], Err('Value must be a valid boolean [kind=bool_type, input_value=[], input_type=list]')),
     ],
 )
 def test_bool(py_or_json, input_value, expected):
@@ -36,12 +38,12 @@ def test_bool(py_or_json, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
-def test_bool_strict():
-    v = SchemaValidator({'type': 'bool', 'strict': True})
-    assert v.validate_python(True) is True
+def test_bool_strict(py_or_json):
+    v = py_or_json({'type': 'bool', 'strict': True})
+    assert v.validate_test(True) is True
     error_message = "Value must be a valid boolean [kind=bool_type, input_value='true', input_type=str]"
     with pytest.raises(ValidationError, match=re.escape(error_message)):
-        v.validate_python('true')
+        v.validate_test('true')
 
 
 def test_bool_error():
