@@ -38,6 +38,9 @@ def test_str(input_value, expected):
 @pytest.mark.parametrize(
     'kwargs,input_value,expected',
     [
+        ({}, 123, '123'),
+        ({'strict': True}, 'Foobar', 'Foobar'),
+        ({'strict': True}, 123, Err('Value must be a valid string [kind=str_type, input_value=123, input_type=int]')),
         ({'to_upper': True}, 'fooBar', 'FOOBAR'),
         ({'to_lower': True}, 'fooBar', 'foobar'),
         ({'strip_whitespace': True}, ' foobar  ', 'foobar'),
