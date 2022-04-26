@@ -2,13 +2,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
 use std::collections::HashSet;
 
-use crate::build_macros::{dict_get, py_error};
+use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{
     as_internal, err_val_error, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult,
 };
 use crate::input::{Input, ToLocItem};
 
-use super::{build_validator, Extra, Validator};
+use super::{build_validator, Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 struct ModelField {
@@ -20,6 +20,7 @@ struct ModelField {
 
 #[derive(Debug, Clone)]
 pub struct ModelValidator {
+    name: String,
     fields: Vec<ModelField>,
     extra_behavior: ExtraBehavior,
     extra_validator: Option<Box<dyn Validator>>,
@@ -32,22 +33,24 @@ impl ModelValidator {
 impl Validator for ModelValidator {
     fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         // models ignore the parent config and always use the config from this model
-        let config = dict_get!(schema, "config", &PyDict);
+        let config: Option<&PyDict> = schema.get_as("config")?;
 
         let extra_behavior = ExtraBehavior::from_config(config)?;
         let extra_validator = match extra_behavior {
-            ExtraBehavior::Allow => match dict_get!(schema, "extra_validator", &PyDict) {
-                Some(v) => Some(build_validator(v, config)?),
+            ExtraBehavior::Allow => match schema.get_item("extra_validator") {
+                Some(v) => Some(build_validator(v, config)?.0),
                 None => None,
             },
             _ => None,
         };
 
-        let fields_dict: &PyDict = match dict_get!(schema, "fields", &PyDict) {
+        let name: String = schema.get_as("name")?.unwrap_or_else(|| "Model".to_string());
+        let fields_dict: &PyDict = match schema.get_as("fields")? {
             Some(fields) => fields,
             None => {
                 // allow an empty model, is this is a good idea?
                 return Ok(Box::new(Self {
+                    name,
                     fields: vec![],
                     extra_behavior,
                     extra_validator,
@@ -57,23 +60,42 @@ impl Validator for ModelValidator {
         let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict.iter() {
-            let field_dict: &PyDict = value.cast_as()?;
+            let (validator, field_dict) = match build_validator(value, config) {
+                Ok(v) => v,
+                Err(err) => return py_error!("Key \"{}\":\n  {}", key, err),
+            };
 
             fields.push(ModelField {
                 name: key.to_string(),
-                // alias: dict_get!(field_dict, "alias", String),
-                validator: build_validator(field_dict, config)?,
-                default: dict_get!(field_dict, "default", PyAny),
+                // alias: field_dict.get_as("alias"),
+                validator,
+                default: field_dict.get_as("default")?,
             });
         }
         Ok(Box::new(Self {
+            name,
             fields,
             extra_behavior,
             extra_validator,
         }))
     }
 
-    fn validate<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        if let Some(ref mut extra_validator) = self.extra_validator {
+            extra_validator.set_ref(name, validator_arc)?;
+        }
+        for field in self.fields.iter_mut() {
+            field.validator.set_ref(name, validator_arc)?;
+        }
+        Ok(())
+    }
+
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         if let Some(field) = extra.field {
             // we're validating assignment, completely different logic
             return self.validate_assignment(py, field, input, extra);
@@ -168,12 +190,17 @@ impl Validator for ModelValidator {
         }
     }
 
-    fn validate_strict<'a>(&'a self, py: Python<'a>, input: &'a dyn Input, extra: &Extra) -> ValResult<'a, PyObject> {
+    fn validate_strict<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data dyn Input,
+        extra: &Extra,
+    ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
     }
 
     fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+        self.name.clone()
     }
 
     #[no_coverage]
@@ -183,13 +210,16 @@ impl Validator for ModelValidator {
 }
 
 impl ModelValidator {
-    fn validate_assignment<'a>(
-        &'a self,
-        py: Python<'a>,
+    fn validate_assignment<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
         field: &str,
-        input: &'a dyn Input,
+        input: &'data dyn Input,
         extra: &Extra,
-    ) -> ValResult<'a, PyObject> {
+    ) -> ValResult<'data, PyObject>
+    where
+        'data: 's,
+    {
         // TODO probably we should set location on errors here
         let field_name = field.to_string();
 
@@ -204,7 +234,7 @@ impl ModelValidator {
             Ok((data, fields_set).to_object(py))
         };
 
-        let prepare_result = |result: ValResult<'a, PyObject>| match result {
+        let prepare_result = |result: ValResult<'data, PyObject>| match result {
             Ok(output) => prepare_tuple(output),
             Err(ValError::LineErrors(line_errors)) => {
                 let loc = vec![field_name.to_loc()];
@@ -250,7 +280,7 @@ impl ExtraBehavior {
     pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
         match config {
             Some(dict) => {
-                let b = dict_get!(dict, "extra", String);
+                let b: Option<String> = dict.get_as("extra")?;
                 match b {
                     Some(s) => match s.as_str() {
                         "allow" => Ok(ExtraBehavior::Allow),

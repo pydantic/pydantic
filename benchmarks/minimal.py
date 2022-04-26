@@ -19,14 +19,13 @@ from pydantic_core import SchemaValidator, ValidationError
 import json
 
 size = 5
-v = SchemaValidator({
-    'title': 'MyTestModel',
-    'type': 'list',
-    'items': {
-        'type': 'model',
-        'fields': {f'f_{i}': {'type': 'str'} for i in range(size)}
+v = SchemaValidator(
+    {
+        'title': 'MyTestModel',
+        'type': 'list',
+        'items': {'type': 'model', 'fields': {f'f_{i}': {'type': 'str'} for i in range(size)}},
     }
-})
+)
 # print(repr(v))
 
 d = [{f'f_{i}': f'foobar_{i}' for i in range(size)} for _ in range(50)]
