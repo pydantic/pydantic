@@ -7,6 +7,7 @@ use serde_json::{from_str as parse_json, Value as JsonValue};
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValResult};
 use crate::input::Input;
+use crate::SchemaError;
 
 use self::recursive::ValidatorArc;
 
@@ -34,10 +35,18 @@ pub struct SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    pub fn py_new(schema: &PyAny) -> PyResult<Self> {
-        Ok(Self {
-            validator: build_validator(schema, None)?.0,
-        })
+    pub fn py_new(py: Python, schema: &PyAny) -> PyResult<Self> {
+        let validator = match build_validator(schema, None) {
+            Ok((v, _)) => v,
+            Err(err) => {
+                return Err(match err.is_instance_of::<SchemaError>(py) {
+                    true => err,
+                    false => SchemaError::new_err(format!("Schema build error:\n  {}", err)),
+                });
+            }
+        };
+
+        Ok(Self { validator })
     }
 
     fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
