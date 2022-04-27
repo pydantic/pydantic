@@ -28,14 +28,14 @@ pub(crate) use val_line_error;
 /// Utility for concisely creating a `Err(ValError::LineErrors([?]))` containing a single `ValLineError`
 /// Usage matches `val_line_error`
 macro_rules! err_val_error {
-    ($($key:ident = $val:expr),+) => {
+    ($($key:ident = $val:expr),+ $(,)?) => {
         Err(crate::errors::ValError::LineErrors(vec![crate::errors::val_line_error!($($key = $val),+)]))
     };
 }
 pub(crate) use err_val_error;
 
 macro_rules! context {
-    ($($k:expr => $v:expr),*) => {{
+    ($($k:expr => $v:expr),* $(,)?) => {{
         crate::errors::Context::new([$(($k, $v),)*])
     }};
 }

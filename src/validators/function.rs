@@ -9,7 +9,7 @@ use crate::validators::build_validator;
 
 use super::{unused_validator, validator_boilerplate, Extra, Validator, ValidatorArc};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FunctionValidator;
 
 impl FunctionValidator {
@@ -28,11 +28,11 @@ impl Validator for FunctionValidator {
         }
     }
 
-    unused_validator!(Self::EXPECTED_TYPE);
+    unused_validator!("FunctionValidator");
 }
 
 macro_rules! kwargs {
-    ($py:ident, $($k:expr => $v:expr),*) => {{
+    ($py:ident, $($k:expr => $v:expr),* $(,)?) => {{
         Some(pyo3::types::IntoPyDict::into_py_dict([$(($k, $v.into_py($py)),)*], $py).into())
     }};
 }
