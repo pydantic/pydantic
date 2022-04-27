@@ -102,6 +102,12 @@ pub enum ErrorKind {
     ValueError,
     #[strum(message = "Assertion failed")]
     AssertionError,
+    // ---------------------
+    // literals
+    #[strum(message = "Value must be {expected}")]
+    LiteralSingleError,
+    #[strum(message = "Value must be one of {expected:,}")]
+    LiteralMultipleError,
 }
 
 impl Default for ErrorKind {

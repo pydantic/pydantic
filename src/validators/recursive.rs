@@ -56,15 +56,6 @@ impl Validator for RecursiveValidator {
         }
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     fn get_name(&self, _py: Python) -> String {
         self.name.clone()
     }
@@ -113,15 +104,6 @@ impl Validator for RecursiveRefValidator {
             None => "ref not yet set".to_string(),
         };
         py_error!(PyRuntimeError; "Recursive reference error: {}", error_msg).map_err(as_internal)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {

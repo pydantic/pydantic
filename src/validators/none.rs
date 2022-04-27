@@ -33,14 +33,5 @@ impl Validator for NoneValidator {
         }
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     validator_boilerplate!(Self::EXPECTED_TYPE);
 }

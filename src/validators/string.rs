@@ -81,15 +81,6 @@ impl Validator for StrictStrValidator {
         Ok(input.strict_str(py)?.into_py(py))
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     validator_boilerplate!("strict-str");
 }
 

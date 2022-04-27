@@ -57,15 +57,6 @@ impl Validator for UnionValidator {
         Err(ValError::LineErrors(errors))
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
         for validator in self.choices.iter_mut() {
             validator.set_ref(name, validator_arc)?;
