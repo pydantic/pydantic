@@ -97,15 +97,6 @@ impl Validator for FunctionBeforeValidator {
         }
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     fn get_name(&self, _py: Python) -> String {
         "function-before".to_string()
     }
@@ -135,15 +126,6 @@ impl Validator for FunctionAfterValidator {
         let v = self.validator.validate(py, input, extra)?;
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
     }
 
     fn get_name(&self, _py: Python) -> String {
@@ -182,15 +164,6 @@ impl Validator for FunctionPlainValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     validator_boilerplate!("function-plain");
 }
 
@@ -224,15 +197,6 @@ impl Validator for FunctionWrapValidator {
         self.func
             .call(py, (input.to_py(py),), kwargs)
             .map_err(|e| convert_err(py, e, input))
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
     }
 
     fn get_name(&self, _py: Python) -> String {

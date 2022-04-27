@@ -180,15 +180,6 @@ impl Validator for ModelValidator {
         }
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
         if let Some(ref mut extra_validator) = self.extra_validator {
             extra_validator.set_ref(name, validator_arc)?;
