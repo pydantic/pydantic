@@ -5,7 +5,7 @@ use crate::build_tools::is_strict;
 use crate::errors::ValResult;
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator, ValidatorArc};
+use super::{validator_boilerplate, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;

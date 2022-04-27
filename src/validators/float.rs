@@ -5,7 +5,7 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator, ValidatorArc};
+use super::{validator_boilerplate, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct FloatValidator;

@@ -66,7 +66,7 @@ testcov: build-coverage test
 	./tests/rust_coverage_html.sh
 
 .PHONY: all
-all: format lint mypy build-dev test
+all: format build-dev lint mypy test
 
 .PHONY: flame
 flame:

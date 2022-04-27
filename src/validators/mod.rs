@@ -188,7 +188,9 @@ pub trait Validator: Send + Sync + fmt::Debug {
         extra: &Extra,
     ) -> ValResult<'data, PyObject>;
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()>;
+    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+        Ok(())
+    }
 
     fn get_name(&self, py: Python) -> String;
 
@@ -206,17 +208,10 @@ impl Clone for Box<dyn Validator> {
 
 macro_rules! validator_boilerplate {
     ($name:expr) => {
-        #[no_coverage]
-        fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-            Ok(())
-        }
-
-        #[no_coverage]
         fn get_name(&self, _py: Python) -> String {
             $name.to_string()
         }
 
-        #[no_coverage]
         fn clone_dyn(&self) -> Box<dyn Validator> {
             Box::new(self.clone())
         }
