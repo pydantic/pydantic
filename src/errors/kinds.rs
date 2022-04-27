@@ -104,9 +104,9 @@ pub enum ErrorKind {
     AssertionError,
     // ---------------------
     // literals
-    #[strum(message = "Value must be {expected}")]
+    #[strum(serialize = "literal_error", message = "Value must be {expected}")]
     LiteralSingleError,
-    #[strum(message = "Value must be one of {expected:,}")]
+    #[strum(serialize = "literal_error", message = "Value must be one of: {expected}")]
     LiteralMultipleError,
 }
 
