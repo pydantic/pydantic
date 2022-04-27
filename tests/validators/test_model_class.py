@@ -68,7 +68,7 @@ def test_model_class_root_validator():
             'type': 'function',
             'mode': 'wrap',
             'function': f,
-            'field': {
+            'schema': {
                 'type': 'model-class',
                 'class': MyModel,
                 'model': {'type': 'model', 'fields': {'field_a': {'type': 'str'}}},
