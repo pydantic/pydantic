@@ -6,7 +6,7 @@ use crate::build_tools::{is_strict, py_error, schema_or_config};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{Extra, Validator, ValidatorArc};
+use super::{validator_boilerplate, Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct StrValidator;
@@ -43,10 +43,6 @@ impl Validator for StrValidator {
         }
     }
 
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -65,14 +61,7 @@ impl Validator for StrValidator {
         Ok(input.strict_str(py)?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!(Self::EXPECTED_TYPE);
 }
 
 #[derive(Debug, Clone)]
@@ -81,10 +70,6 @@ struct StrictStrValidator;
 impl Validator for StrictStrValidator {
     fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self))
-    }
-
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
     }
 
     fn validate<'s, 'data>(
@@ -105,14 +90,7 @@ impl Validator for StrictStrValidator {
         self.validate(py, input, extra)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "strict-str".to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!("strict-str");
 }
 
 #[derive(Debug, Clone)]
@@ -152,10 +130,6 @@ impl Validator for StrConstrainedValidator {
         }))
     }
 
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -178,14 +152,7 @@ impl Validator for StrConstrainedValidator {
         self._validation_logic(py, input, input.strict_str(py)?)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "constrained-str".to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!("constrained-str");
 }
 
 impl StrConstrainedValidator {

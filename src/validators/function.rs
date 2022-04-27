@@ -7,7 +7,7 @@ use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, Va
 use crate::input::Input;
 use crate::validators::build_validator;
 
-use super::{Extra, Validator, ValidatorArc};
+use super::{unused_validator, validator_boilerplate, Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct FunctionValidator;
@@ -28,39 +28,7 @@ impl Validator for FunctionValidator {
         }
     }
 
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
-    }
-
-    #[no_coverage]
-    fn validate<'s, 'data>(
-        &'s self,
-        _py: Python<'data>,
-        _input: &'data dyn Input,
-        _extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        unimplemented!("FunctionValidator is never used directly")
-    }
-
-    #[no_coverage]
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data dyn Input,
-        extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
-    #[no_coverage]
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    unused_validator!("FunctionValidator");
 }
 
 macro_rules! kwargs {
@@ -202,10 +170,6 @@ impl Validator for FunctionPlainValidator {
         }))
     }
 
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -227,14 +191,7 @@ impl Validator for FunctionPlainValidator {
         self.validate(py, input, extra)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-plain".to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!("function-plain");
 }
 
 #[derive(Debug, Clone)]

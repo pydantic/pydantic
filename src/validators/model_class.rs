@@ -46,11 +46,6 @@ impl Validator for ModelClassValidator {
         }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        self.validator.set_ref(name, validator_arc)?;
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -84,6 +79,11 @@ impl Validator for ModelClassValidator {
             // errors from `validate_strict` are never used used, so we can keep this simple
             Err(ValError::LineErrors(vec![]))
         }
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        self.validator.set_ref(name, validator_arc)?;
+        Ok(())
     }
 
     fn get_name(&self, py: Python) -> String {

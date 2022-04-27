@@ -173,8 +173,6 @@ pub trait Validator: Send + Sync + fmt::Debug {
     where
         Self: Sized;
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()>;
-
     /// Do the actual validation for this schema/type
     fn validate<'s, 'data>(
         &'s self,
@@ -190,6 +188,8 @@ pub trait Validator: Send + Sync + fmt::Debug {
         extra: &Extra,
     ) -> ValResult<'data, PyObject>;
 
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()>;
+
     fn get_name(&self, py: Python) -> String;
 
     /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
@@ -203,3 +203,50 @@ impl Clone for Box<dyn Validator> {
         self.clone_dyn()
     }
 }
+
+macro_rules! validator_boilerplate {
+    ($name:expr) => {
+        #[no_coverage]
+        fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
+            Ok(())
+        }
+
+        #[no_coverage]
+        fn get_name(&self, _py: Python) -> String {
+            $name.to_string()
+        }
+
+        #[no_coverage]
+        fn clone_dyn(&self) -> Box<dyn Validator> {
+            Box::new(self.clone())
+        }
+    };
+}
+pub(crate) use validator_boilerplate;
+
+macro_rules! unused_validator {
+    ($name:expr) => {
+        #[no_coverage]
+        fn validate<'s, 'data>(
+            &'s self,
+            _py: Python<'data>,
+            _input: &'data dyn Input,
+            _extra: &Extra,
+        ) -> ValResult<'data, PyObject> {
+            unimplemented!("{} is never used directly", $name)
+        }
+
+        #[no_coverage]
+        fn validate_strict<'s, 'data>(
+            &'s self,
+            py: Python<'data>,
+            input: &'data dyn Input,
+            extra: &Extra,
+        ) -> ValResult<'data, PyObject> {
+            self.validate(py, input, extra)
+        }
+
+        super::validator_boilerplate!($name);
+    };
+}
+pub(crate) use unused_validator;

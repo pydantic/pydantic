@@ -80,16 +80,6 @@ impl Validator for ModelValidator {
         }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        if let Some(ref mut extra_validator) = self.extra_validator {
-            extra_validator.set_ref(name, validator_arc)?;
-        }
-        for field in self.fields.iter_mut() {
-            field.validator.set_ref(name, validator_arc)?;
-        }
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -197,6 +187,16 @@ impl Validator for ModelValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        if let Some(ref mut extra_validator) = self.extra_validator {
+            extra_validator.set_ref(name, validator_arc)?;
+        }
+        for field in self.fields.iter_mut() {
+            field.validator.set_ref(name, validator_arc)?;
+        }
+        Ok(())
     }
 
     fn get_name(&self, _py: Python) -> String {

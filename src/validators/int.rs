@@ -5,7 +5,7 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{Extra, Validator, ValidatorArc};
+use super::{validator_boilerplate, Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct IntValidator;
@@ -30,10 +30,6 @@ impl Validator for IntValidator {
         }
     }
 
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -52,14 +48,7 @@ impl Validator for IntValidator {
         Ok(input.strict_int(py)?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!(Self::EXPECTED_TYPE);
 }
 
 #[derive(Debug, Clone)]
@@ -68,10 +57,6 @@ struct StrictIntValidator;
 impl Validator for StrictIntValidator {
     fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self))
-    }
-
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
     }
 
     fn validate<'s, 'data>(
@@ -92,14 +77,7 @@ impl Validator for StrictIntValidator {
         self.validate(py, input, extra)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "strict-int".to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!("strict-int");
 }
 
 #[derive(Debug, Clone)]
@@ -124,10 +102,6 @@ impl Validator for ConstrainedIntValidator {
         }))
     }
 
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -150,14 +124,7 @@ impl Validator for ConstrainedIntValidator {
         self._validation_logic(py, input, input.strict_int(py)?)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "constrained-int".to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!("constrained-int");
 }
 
 impl ConstrainedIntValidator {

@@ -32,13 +32,6 @@ impl Validator for ListValidator {
         }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        match self.item_validator {
-            Some(ref mut item_validator) => item_validator.set_ref(name, validator_arc),
-            None => Ok(()),
-        }
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -59,6 +52,13 @@ impl Validator for ListValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_list(py)?, extra)
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        match self.item_validator {
+            Some(ref mut item_validator) => item_validator.set_ref(name, validator_arc),
+            None => Ok(()),
+        }
     }
 
     fn get_name(&self, py: Python) -> String {
