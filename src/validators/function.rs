@@ -28,7 +28,7 @@ impl Validator for FunctionValidator {
         }
     }
 
-    unused_validator!("FunctionValidator");
+    unused_validator!(Self::EXPECTED_TYPE);
 }
 
 macro_rules! kwargs {

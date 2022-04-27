@@ -6,7 +6,7 @@ use crate::build_tools::{is_strict, py_error, schema_or_config};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator, ValidatorArc};
+use super::{validator_boilerplate, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct StrValidator;
