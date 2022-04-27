@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal
 
 import pytest
 
@@ -26,7 +27,17 @@ def test_str_constrained():
         ([], Err('Value must be a valid string [kind=str_type, input_value=[], input_type=list]')),
     ],
 )
-def test_str(input_value, expected):
+def test_str(py_or_json, input_value, expected):
+    v = py_or_json({'type': 'str'})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        assert v.validate_test(input_value) == expected
+
+
+@pytest.mark.parametrize('input_value,expected', [(123, '123'), (Decimal('123'), '123')])
+def test_str_not_json(input_value, expected):
     v = SchemaValidator({'type': 'str'})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
