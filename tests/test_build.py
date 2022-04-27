@@ -34,5 +34,8 @@ def test_schema_as_string():
 
 
 def test_schema_wrong_type():
-    with pytest.raises(TypeError, match="'list' object cannot be converted to 'PyString'"):
-        SchemaValidator([1, 2])
+    with pytest.raises(SchemaError) as exc_info:
+        SchemaValidator(1)
+    assert exc_info.value.args[0] == (
+        "Schema build error:\n  TypeError: 'int' object cannot be converted to 'PyString'"
+    )
