@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal
 
 import pytest
 
@@ -148,3 +149,15 @@ def test_float_repr():
     assert repr(v) == 'SchemaValidator(name="strict-float", validator=StrictFloatValidator)'
     v = SchemaValidator({'type': 'float', 'multiple_of': 7})
     assert repr(v).startswith('SchemaValidator(name="constrained-float", validator=ConstrainedFloatValidator {\n')
+
+
+@pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), 1.23), (Decimal('1'), 1.0)])
+def test_float_not_json(input_value, expected):
+    v = SchemaValidator({'type': 'float'})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        output = v.validate_python(input_value)
+        assert output == expected
+        assert isinstance(output, float)
