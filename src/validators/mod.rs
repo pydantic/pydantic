@@ -16,6 +16,7 @@ mod float;
 mod function;
 mod int;
 mod list;
+mod literal;
 mod model;
 mod model_class;
 mod none;
@@ -150,6 +151,8 @@ pub fn build_validator<'a>(
         // recursive (self-referencing) models
         self::recursive::RecursiveValidator,
         self::recursive::RecursiveRefValidator,
+        // literals
+        self::literal::LiteralValidator,
     )
 }
 
@@ -233,7 +236,15 @@ macro_rules! unused_validator {
             unimplemented!("{} is never used directly", $name)
         }
 
-        super::validator_boilerplate!($name);
+        #[no_coverage]
+        fn get_name(&self, _py: Python) -> String {
+            unimplemented!()
+        }
+
+        #[no_coverage]
+        fn clone_dyn(&self) -> Box<dyn Validator> {
+            unimplemented!()
+        }
     };
 }
 pub(crate) use unused_validator;
