@@ -27,13 +27,6 @@ impl Validator for UnionValidator {
         Ok(Box::new(Self { choices }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        for validator in self.choices.iter_mut() {
-            validator.set_ref(name, validator_arc)?;
-        }
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -71,6 +64,13 @@ impl Validator for UnionValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         self.validate(py, input, extra)
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        for validator in self.choices.iter_mut() {
+            validator.set_ref(name, validator_arc)?;
+        }
+        Ok(())
     }
 
     fn get_name(&self, _py: Python) -> String {

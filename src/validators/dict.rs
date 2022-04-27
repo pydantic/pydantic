@@ -39,16 +39,6 @@ impl Validator for DictValidator {
         }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        if let Some(ref mut key_validator) = self.key_validator {
-            key_validator.set_ref(name, validator_arc)?;
-        }
-        if let Some(ref mut value_validator) = self.value_validator {
-            value_validator.set_ref(name, validator_arc)?;
-        }
-        Ok(())
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -69,6 +59,16 @@ impl Validator for DictValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_dict(py)?, extra)
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        if let Some(ref mut key_validator) = self.key_validator {
+            key_validator.set_ref(name, validator_arc)?;
+        }
+        if let Some(ref mut value_validator) = self.value_validator {
+            value_validator.set_ref(name, validator_arc)?;
+        }
+        Ok(())
     }
 
     fn get_name(&self, _py: Python) -> String {

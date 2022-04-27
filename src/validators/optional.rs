@@ -23,10 +23,6 @@ impl Validator for OptionalValidator {
         }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        self.validator.set_ref(name, validator_arc)
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -49,6 +45,10 @@ impl Validator for OptionalValidator {
             true => Ok(py.None()),
             false => self.validator.validate_strict(py, input, extra),
         }
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        self.validator.set_ref(name, validator_arc)
     }
 
     fn get_name(&self, _py: Python) -> String {

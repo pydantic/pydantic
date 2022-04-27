@@ -5,7 +5,7 @@ use crate::build_tools::is_strict;
 use crate::errors::ValResult;
 use crate::input::Input;
 
-use super::{Extra, Validator, ValidatorArc};
+use super::{validator_boilerplate, Extra, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
@@ -21,10 +21,6 @@ impl Validator for BoolValidator {
         } else {
             Ok(Box::new(Self {}))
         }
-    }
-
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
     }
 
     fn validate<'s, 'data>(
@@ -47,14 +43,7 @@ impl Validator for BoolValidator {
         Ok(input.strict_bool(py)?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!(Self::EXPECTED_TYPE);
 }
 
 #[derive(Debug, Clone)]
@@ -63,10 +52,6 @@ struct StrictBoolValidator;
 impl Validator for StrictBoolValidator {
     fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
         Ok(Box::new(Self {}))
-    }
-
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
     }
 
     fn validate<'s, 'data>(
@@ -87,12 +72,5 @@ impl Validator for StrictBoolValidator {
         self.validate(py, input, extra)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "strict-bool".to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!("strict-bool");
 }
