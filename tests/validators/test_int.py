@@ -1,4 +1,5 @@
 import re
+from decimal import Decimal
 
 import pytest
 
@@ -46,11 +47,21 @@ def test_int_py_or_json(py_or_json, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
+        (Decimal('1'), 1),
+        (Decimal('1.0'), 1),
+        pytest.param(
+            Decimal('1.001'),
+            Err(
+                'Value must be a valid integer, got a number with a fractional part '
+                "[kind=int_from_float, input_value=Decimal('1.001'), input_type=Decimal]"
+            ),
+            id='decimal-remainder',
+        ),
         pytest.param(
             (1, 2),
             Err('Value must be a valid integer [kind=int_type, input_value=(1, 2), input_type=tuple]'),
             id='tuple',
-        )
+        ),
     ],
 )
 def test_int(input_value, expected):
@@ -59,7 +70,7 @@ def test_int(input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
     else:
-        output = v.validate_test(input_value)
+        output = v.validate_python(input_value)
         assert output == expected
         assert isinstance(output, int)
 
