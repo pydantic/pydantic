@@ -186,7 +186,9 @@ pub trait Validator: Send + Sync + fmt::Debug {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
-    ) -> ValResult<'data, PyObject>;
+    ) -> ValResult<'data, PyObject> {
+        self.validate(py, input, extra)
+    }
 
     fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
         Ok(())
@@ -229,16 +231,6 @@ macro_rules! unused_validator {
             _extra: &Extra,
         ) -> ValResult<'data, PyObject> {
             unimplemented!("{} is never used directly", $name)
-        }
-
-        #[no_coverage]
-        fn validate_strict<'s, 'data>(
-            &'s self,
-            py: Python<'data>,
-            input: &'data dyn Input,
-            extra: &Extra,
-        ) -> ValResult<'data, PyObject> {
-            self.validate(py, input, extra)
         }
 
         super::validator_boilerplate!($name);
