@@ -141,8 +141,8 @@ def test_validate_assignment_functions():
         {
             'type': 'model',
             'fields': {
-                'field_a': {'type': 'function', 'mode': 'after', 'function': func_a, 'field': {'type': 'str'}},
-                'field_b': {'type': 'function', 'mode': 'after', 'function': func_b, 'field': {'type': 'int'}},
+                'field_a': {'type': 'function', 'mode': 'after', 'function': func_a, 'schema': {'type': 'str'}},
+                'field_b': {'type': 'function', 'mode': 'after', 'function': func_b, 'schema': {'type': 'int'}},
             },
         }
     )

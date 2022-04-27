@@ -34,5 +34,5 @@ def test_schema_as_string():
 
 
 def test_schema_wrong_type():
-    v = SchemaValidator('bool')
-    assert v.validate_python('tRuE') is True
+    with pytest.raises(TypeError, match="'list' object cannot be converted to 'PyString'"):
+        SchemaValidator([1, 2])
