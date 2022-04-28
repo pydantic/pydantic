@@ -9,11 +9,11 @@ use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for PyAny {
-    fn is_none(&self, _py: Python) -> bool {
+    fn is_none(&self) -> bool {
         self.is_none()
     }
 
-    fn strict_str(&self, _py: Python) -> ValResult<String> {
+    fn strict_str(&self) -> ValResult<String> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             py_str.extract().map_err(as_internal)
         } else {
@@ -21,7 +21,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_str(&self, _py: Python) -> ValResult<String> {
+    fn lax_str(&self) -> ValResult<String> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             py_str.extract().map_err(as_internal)
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
@@ -47,7 +47,7 @@ impl Input for PyAny {
         }
     }
 
-    fn strict_bool(&self, _py: Python) -> ValResult<bool> {
+    fn strict_bool(&self) -> ValResult<bool> {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
         } else {
@@ -55,7 +55,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_bool(&self, _py: Python) -> ValResult<bool> {
+    fn lax_bool(&self) -> ValResult<bool> {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::BoolParsing)? {
@@ -67,7 +67,7 @@ impl Input for PyAny {
         }
     }
 
-    fn strict_int(&self, _py: Python) -> ValResult<i64> {
+    fn strict_int(&self) -> ValResult<i64> {
         // bool check has to come before int check as bools would be cast to ints below
         if self.extract::<bool>().is_ok() {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
@@ -78,19 +78,19 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_int(&self, py: Python) -> ValResult<i64> {
+    fn lax_int(&self) -> ValResult<i64> {
         if let Ok(int) = self.extract::<i64>() {
             Ok(int)
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::IntParsing)? {
             str_as_int(self, &str)
-        } else if let Ok(float) = self.lax_float(py) {
+        } else if let Ok(float) = self.lax_float() {
             float_as_int(self, float)
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
         }
     }
 
-    fn strict_float(&self, _py: Python) -> ValResult<f64> {
+    fn strict_float(&self) -> ValResult<f64> {
         if self.extract::<bool>().is_ok() {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
         } else if let Ok(float) = self.extract::<f64>() {
@@ -100,7 +100,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_float(&self, _py: Python) -> ValResult<f64> {
+    fn lax_float(&self) -> ValResult<f64> {
         if let Ok(int) = self.extract::<f64>() {
             Ok(int)
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::FloatParsing)? {
@@ -117,7 +117,7 @@ impl Input for PyAny {
         self.get_type().eq(class).map_err(as_internal)
     }
 
-    fn strict_dict<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(Box::new(dict))
         } else {
@@ -125,17 +125,13 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_dict<'data>(
-        &'data self,
-        py: Python<'data>,
-        try_instance: bool,
-    ) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(Box::new(dict))
         } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
             // this is ugly, but we'd have to do it in `input_iter` anyway
             // we could perhaps use an indexmap instead of a python dict?
-            let dict = match mapping_as_dict(py, mapping) {
+            let dict = match mapping_as_dict(mapping) {
                 Ok(dict) => dict,
                 Err(err) => {
                     return err_val_error!(
@@ -147,7 +143,7 @@ impl Input for PyAny {
             };
             Ok(Box::new(dict))
         } else if try_instance {
-            let inner_dict = match instance_as_dict(py, self) {
+            let inner_dict = match instance_as_dict(self) {
                 Ok(dict) => dict,
                 Err(err) => {
                     return err_val_error!(
@@ -157,13 +153,13 @@ impl Input for PyAny {
                     )
                 }
             };
-            inner_dict.lax_dict(py, false)
+            inner_dict.lax_dict(false)
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
         }
     }
 
-    fn strict_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput + 'data>> {
+    fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput + 'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(Box::new(list))
         } else {
@@ -171,7 +167,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput + 'data>> {
+    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput + 'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(Box::new(list))
             // TODO support sets, tuples, frozen set etc. like in pydantic
@@ -181,9 +177,9 @@ impl Input for PyAny {
     }
 }
 
-fn mapping_as_dict<'data>(py: Python<'data>, mapping: &'data PyMapping) -> PyResult<&'data PyDict> {
+fn mapping_as_dict(mapping: &PyMapping) -> PyResult<&PyDict> {
     let seq = mapping.items()?;
-    let dict = PyDict::new(py);
+    let dict = PyDict::new(mapping.py());
     for r in seq.iter()? {
         let t: &PyTuple = r?.extract()?;
         let k = t.get_item(0)?;
@@ -194,8 +190,8 @@ fn mapping_as_dict<'data>(py: Python<'data>, mapping: &'data PyMapping) -> PyRes
 }
 
 /// This is equivalent to `GetterDict` in pydantic v1
-fn instance_as_dict<'data>(py: Python<'data>, instance: &'data PyAny) -> PyResult<&'data PyDict> {
-    let dict = PyDict::new(py);
+fn instance_as_dict(instance: &PyAny) -> PyResult<&PyDict> {
+    let dict = PyDict::new(instance.py());
     for k_any in instance.dir() {
         let k_str: &str = k_any.extract()?;
         if !k_str.starts_with('_') {

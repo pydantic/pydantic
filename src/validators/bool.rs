@@ -31,7 +31,7 @@ impl Validator for BoolValidator {
     ) -> ValResult<'data, PyObject> {
         // TODO in theory this could be quicker if we used PyBool rather than going to a bool
         // and back again, might be worth profiling?
-        Ok(input.lax_bool(py)?.into_py(py))
+        Ok(input.lax_bool()?.into_py(py))
     }
 
     fn validate_strict<'s, 'data>(
@@ -40,7 +40,7 @@ impl Validator for BoolValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_bool(py)?.into_py(py))
+        Ok(input.strict_bool()?.into_py(py))
     }
 
     validator_boilerplate!(Self::EXPECTED_TYPE);
@@ -60,7 +60,7 @@ impl Validator for StrictBoolValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_bool(py)?.into_py(py))
+        Ok(input.strict_bool()?.into_py(py))
     }
 
     validator_boilerplate!("strict-bool");

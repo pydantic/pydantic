@@ -49,7 +49,7 @@ impl Validator for StrValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.lax_str(py)?.into_py(py))
+        Ok(input.lax_str()?.into_py(py))
     }
 
     fn validate_strict<'s, 'data>(
@@ -58,7 +58,7 @@ impl Validator for StrValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_str(py)?.into_py(py))
+        Ok(input.strict_str()?.into_py(py))
     }
 
     validator_boilerplate!(Self::EXPECTED_TYPE);
@@ -78,7 +78,7 @@ impl Validator for StrictStrValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_str(py)?.into_py(py))
+        Ok(input.strict_str()?.into_py(py))
     }
 
     validator_boilerplate!("strict-str");
@@ -128,8 +128,8 @@ impl Validator for StrConstrainedValidator {
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let str = match self.strict {
-            true => input.strict_str(py)?,
-            false => input.lax_str(py)?,
+            true => input.strict_str()?,
+            false => input.lax_str()?,
         };
         self._validation_logic(py, input, str)
     }
@@ -140,7 +140,7 @@ impl Validator for StrConstrainedValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_str(py)?)
+        self._validation_logic(py, input, input.strict_str()?)
     }
 
     validator_boilerplate!("constrained-str");

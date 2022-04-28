@@ -24,7 +24,7 @@ impl Validator for NoneValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        match input.is_none(py) {
+        match input.is_none() {
             true => Ok(py.None()),
             false => err_val_error!(
                 input_value = InputValue::InputRef(input),

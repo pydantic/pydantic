@@ -29,7 +29,7 @@ impl Validator for OptionalValidator {
         input: &'data dyn Input,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        match input.is_none(py) {
+        match input.is_none() {
             true => Ok(py.None()),
             false => self.validator.validate(py, input, extra),
         }
@@ -41,7 +41,7 @@ impl Validator for OptionalValidator {
         input: &'data dyn Input,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        match input.is_none(py) {
+        match input.is_none() {
             true => Ok(py.None()),
             false => self.validator.validate_strict(py, input, extra),
         }

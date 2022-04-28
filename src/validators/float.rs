@@ -36,7 +36,7 @@ impl Validator for FloatValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.lax_float(py)?.into_py(py))
+        Ok(input.lax_float()?.into_py(py))
     }
 
     fn validate_strict<'s, 'data>(
@@ -45,7 +45,7 @@ impl Validator for FloatValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_float(py)?.into_py(py))
+        Ok(input.strict_float()?.into_py(py))
     }
 
     validator_boilerplate!(Self::EXPECTED_TYPE);
@@ -65,7 +65,7 @@ impl Validator for StrictFloatValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_float(py)?.into_py(py))
+        Ok(input.strict_float()?.into_py(py))
     }
 
     validator_boilerplate!("strict-float");
@@ -100,8 +100,8 @@ impl Validator for ConstrainedFloatValidator {
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let float = match self.strict {
-            true => input.strict_float(py)?,
-            false => input.lax_float(py)?,
+            true => input.strict_float()?,
+            false => input.lax_float()?,
         };
         self._validation_logic(py, input, float)
     }
@@ -112,7 +112,7 @@ impl Validator for ConstrainedFloatValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_float(py)?)
+        self._validation_logic(py, input, input.strict_float()?)
     }
 
     validator_boilerplate!("constrained-float");
