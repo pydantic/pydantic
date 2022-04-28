@@ -82,8 +82,7 @@ impl Validator for ModelClassValidator {
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        self.validator.set_ref(name, validator_arc)?;
-        Ok(())
+        self.validator.set_ref(name, validator_arc)
     }
 
     fn get_name(&self, py: Python) -> String {
