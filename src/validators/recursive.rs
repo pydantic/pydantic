@@ -35,13 +35,6 @@ impl Validator for RecursiveValidator {
         Ok(Box::new(Self { validator_arc, name }))
     }
 
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        match self.validator_arc.write() {
-            Ok(mut validator_guard) => validator_guard.set_ref(name, validator_arc),
-            Err(err) => py_error!("Recursive container set_ref error: {}", err),
-        }
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -53,6 +46,13 @@ impl Validator for RecursiveValidator {
             Err(err) => {
                 py_error!(PyRuntimeError; "Recursive container error: {}", err.to_string()).map_err(as_internal)
             }
+        }
+    }
+
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        match self.validator_arc.write() {
+            Ok(mut validator_guard) => validator_guard.set_ref(name, validator_arc),
+            Err(err) => py_error!("Recursive container set_ref error: {}", err),
         }
     }
 
@@ -91,16 +91,13 @@ impl Validator for RecursiveRefValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let error_msg: String = match self.validator_ref {
-            Some(ref validator_ref) => {
-                if let Some(validator_arc) = validator_ref.upgrade() {
-                    match validator_arc.read() {
-                        Ok(validator) => return validator.validate(py, input, extra),
-                        Err(err) => format!("PoisonError: {}", err),
-                    }
-                } else {
-                    "unable to upgrade weak reference".to_string()
-                }
-            }
+            Some(ref validator_ref) => match validator_ref.upgrade() {
+                Some(validator_arc) => match validator_arc.read() {
+                    Ok(validator) => return validator.validate(py, input, extra),
+                    Err(err) => format!("PoisonError: {}", err),
+                },
+                None => "unable to upgrade weak reference".to_string(),
+            },
             None => "ref not yet set".to_string(),
         };
         py_error!(PyRuntimeError; "Recursive reference error: {}", error_msg).map_err(as_internal)
