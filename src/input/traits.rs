@@ -39,36 +39,40 @@ pub trait Input: fmt::Debug + ToPy + ToLocItem {
 
     fn strict_int(&self, py: Python) -> ValResult<i64>;
 
-    fn lax_int<'a>(&'a self, py: Python<'a>) -> ValResult<'a, i64>;
+    fn lax_int(&self, py: Python) -> ValResult<i64>;
 
     fn strict_float(&self, py: Python) -> ValResult<f64>;
 
-    fn lax_float<'a>(&'a self, py: Python<'a>) -> ValResult<'a, f64>;
+    fn lax_float(&self, py: Python) -> ValResult<f64>;
 
     fn strict_model_check(&self, class: &PyType) -> ValResult<bool>;
 
-    fn strict_dict<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
+    fn strict_dict<'data>(&'data self, py: Python<'data>) -> ValResult<Box<dyn DictInput<'data> + 'data>>;
 
-    fn lax_dict<'py>(&'py self, py: Python<'py>, try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>>;
+    fn lax_dict<'data>(
+        &'data self,
+        py: Python<'data>,
+        try_instance: bool,
+    ) -> ValResult<Box<dyn DictInput<'data> + 'data>>;
 
-    fn strict_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>>;
+    fn strict_list<'data>(&'data self, py: Python<'data>) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
 
-    fn lax_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>>;
+    fn lax_list<'data>(&'data self, py: Python<'data>) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
 }
 
 // these are ugly, is there any way to avoid the maps in iter, one of the boxes and/or the duplication?
 // is this harming performance, particularly the .map(|item| item)?
 // https://stackoverflow.com/a/47156134/949890
-pub trait DictInput<'py>: ToPy {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'py dyn Input, &'py dyn Input)> + 'py>;
+pub trait DictInput<'data>: ToPy {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data>;
 
-    fn input_get(&self, key: &str) -> Option<&'py dyn Input>;
+    fn input_get(&self, key: &str) -> Option<&'data dyn Input>;
 
     fn input_len(&self) -> usize;
 }
 
-pub trait ListInput<'py>: ToPy {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'py dyn Input> + 'py>;
+pub trait ListInput<'data>: ToPy {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data>;
 
     fn input_len(&self) -> usize;
 }

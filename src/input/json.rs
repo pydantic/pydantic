@@ -62,7 +62,7 @@ impl Input for Value {
         }
     }
 
-    fn lax_int<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, i64> {
+    fn lax_int(&self, _py: Python) -> ValResult<i64> {
         match self {
             Value::Bool(b) => match *b {
                 true => Ok(1),
@@ -95,7 +95,7 @@ impl Input for Value {
         }
     }
 
-    fn lax_float<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, f64> {
+    fn lax_float(&self, _py: Python) -> ValResult<f64> {
         match self {
             Value::Bool(b) => match *b {
                 true => Ok(1.0),
@@ -120,35 +120,39 @@ impl Input for Value {
         Ok(false)
     }
 
-    fn strict_dict<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn strict_dict<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         match self {
             Value::Object(dict) => Ok(Box::new(dict)),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType),
         }
     }
 
-    fn lax_dict<'py>(&'py self, py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn lax_dict<'data>(
+        &'data self,
+        py: Python<'data>,
+        _try_instance: bool,
+    ) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         self.strict_dict(py)
     }
 
-    fn strict_list<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+    fn strict_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         match self {
             Value::Array(a) => Ok(Box::new(a)),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType),
         }
     }
 
-    fn lax_list<'py>(&'py self, py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+    fn lax_list<'data>(&'data self, py: Python<'data>) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         self.strict_list(py)
     }
 }
 
-impl<'py> DictInput<'py> for &'py Map<String, Value> {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'py dyn Input, &'py dyn Input)> + 'py> {
+impl<'data> DictInput<'data> for &'data Map<String, Value> {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data> {
         Box::new(self.iter().map(|(k, v)| (k as &dyn Input, v as &dyn Input)))
     }
 
-    fn input_get(&self, key: &str) -> Option<&'py dyn Input> {
+    fn input_get(&self, key: &str) -> Option<&'data dyn Input> {
         self.get(key).map(|item| item as &dyn Input)
     }
 
@@ -157,8 +161,8 @@ impl<'py> DictInput<'py> for &'py Map<String, Value> {
     }
 }
 
-impl<'py> ListInput<'py> for &'py Vec<Value> {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'py dyn Input> + 'py> {
+impl<'data> ListInput<'data> for &'data Vec<Value> {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
         Box::new(self.iter().map(|item| item as &dyn Input))
     }
 
@@ -258,7 +262,7 @@ impl Input for String {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
     }
 
-    fn lax_int<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, i64> {
+    fn lax_int(&self, _py: Python) -> ValResult<i64> {
         match self.parse() {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntParsing),
@@ -269,7 +273,7 @@ impl Input for String {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
     }
 
-    fn lax_float<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, f64> {
+    fn lax_float(&self, _py: Python) -> ValResult<f64> {
         match self.parse() {
             Ok(i) => Ok(i),
             Err(_) => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatParsing),
@@ -280,19 +284,23 @@ impl Input for String {
         Ok(false)
     }
 
-    fn strict_dict<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn strict_dict<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
     }
 
-    fn lax_dict<'py>(&'py self, _py: Python<'py>, _try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn lax_dict<'data>(
+        &'data self,
+        _py: Python<'data>,
+        _try_instance: bool,
+    ) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
     }
 
-    fn strict_list<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+    fn strict_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
     }
 
-    fn lax_list<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn ListInput<'py> + 'py>> {
+    fn lax_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
     }
 }
