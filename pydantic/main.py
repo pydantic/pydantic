@@ -607,6 +607,16 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         return m
 
+    def shallow_copy(self, **kwargs) -> "Model":
+        # This a method where the mypy plugin will check that the type of arguments are correct
+        # TODO: validate at runtime?
+        return self.copy(update=kwargs)
+
+    def deep_copy(self, **kwargs) -> "Model":
+        # This a method where the mypy plugin will check that the type of arguments are correct
+        # TODO: validate at runtime?
+        return self.copy(update=kwargs, deep=True)
+
     def copy(
         self: 'Model',
         *,
