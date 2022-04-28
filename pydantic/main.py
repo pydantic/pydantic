@@ -607,15 +607,22 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         return m
 
-    def shallow_copy(self, **kwargs) -> "Model":
-        # This a method where the mypy plugin will check that the type of arguments are correct
+    def shallow_copy(self, **kwargs) -> "Model":  # type: ignore
+        """
+        Shallow copy a model by specifying new values for the fields.
+        mypy plugin will check that the type of arguments are correct
+        """
+        # This a method where the
         # TODO: validate at runtime?
-        return self.copy(update=kwargs)
+        return self.copy(update=kwargs)  # type: ignore[return-value]
 
-    def deep_copy(self, **kwargs) -> "Model":
-        # This a method where the mypy plugin will check that the type of arguments are correct
+    def deep_copy(self, **kwargs) -> "Model":  # type: ignore
+        """
+        Deep copy a model by specifying new values for the fields.
+        mypy plugin will check that the type of arguments are correct
+        """
         # TODO: validate at runtime?
-        return self.copy(update=kwargs, deep=True)
+        return self.copy(update=kwargs, deep=True)  # type: ignore[return-value]
 
     def copy(
         self: 'Model',

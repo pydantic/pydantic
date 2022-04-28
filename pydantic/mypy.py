@@ -341,8 +341,8 @@ class PydanticModelTransformer:
             force_all_optional=True,
             use_alias=use_alias,
         )
-        add_method(ctx, "shallow_copy", copy_arguments, fill_typevars(ctx.cls.info))
-        add_method(ctx, "deep_copy", copy_arguments, fill_typevars(ctx.cls.info))
+        add_method(ctx, 'shallow_copy', copy_arguments, fill_typevars(ctx.cls.info))
+        add_method(ctx, 'deep_copy', copy_arguments, fill_typevars(ctx.cls.info))
 
     def add_construct_method(self, fields: List['PydanticModelField']) -> None:
         """
