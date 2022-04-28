@@ -160,7 +160,7 @@ def benchmark_recursive_model():
         _data['branch'] = {'width': i}
         _data = _data['branch']
 
-    _run_benchmarks('model_create', [pydantic, pydantic_core], [data])
+    _run_benchmarks('benchmark_recursive_model', [pydantic, pydantic_core], [data])
 
 
 def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
@@ -197,8 +197,8 @@ def _display_time(seconds: float):
 
 
 if __name__ == '__main__':
-    # benchmark_simple_validation()
-    # benchmark_simple_validation(from_json=True)
-    # benchmark_bool()
-    # benchmark_model_create()
+    benchmark_simple_validation()
+    benchmark_simple_validation(from_json=True)
+    benchmark_bool()
+    benchmark_model_create()
     benchmark_recursive_model()

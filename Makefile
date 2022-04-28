@@ -19,12 +19,17 @@ install-rust-coverage:
 build-dev:
 	pip uninstall -y pydantic_core
 	rm -f pydantic_core/*.so
-	RUSTFLAGS='-A incomplete_features' python setup.py develop
+	cargo build
+	@rm -f target/debug/lib_pydantic_core.d
+	mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
 
 .PHONY: build-coverage
 build-coverage:
+	pip uninstall -y pydantic_core
 	rm -f pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage -A incomplete_features' python setup.py develop
+	RUSTFLAGS='-C instrument-coverage -A incomplete_features -C link-arg=-undefined -C link-arg=dynamic_lookup' cargo build
+	@rm -f target/debug/lib_pydantic_core.d
+	mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
 
 .PHONY: format
 format:
