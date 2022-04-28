@@ -78,7 +78,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_int<'a>(&'a self, py: Python<'a>) -> ValResult<'a, i64> {
+    fn lax_int(&self, py: Python) -> ValResult<i64> {
         if let Ok(int) = self.extract::<i64>() {
             Ok(int)
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::IntParsing)? {
@@ -100,7 +100,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_float<'a>(&'a self, _py: Python<'a>) -> ValResult<'a, f64> {
+    fn lax_float(&self, _py: Python) -> ValResult<f64> {
         if let Ok(int) = self.extract::<f64>() {
             Ok(int)
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::FloatParsing)? {
@@ -117,7 +117,7 @@ impl Input for PyAny {
         self.get_type().eq(class).map_err(as_internal)
     }
 
-    fn strict_dict<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn strict_dict<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(Box::new(dict))
         } else {
@@ -125,7 +125,11 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_dict<'py>(&'py self, py: Python<'py>, try_instance: bool) -> ValResult<Box<dyn DictInput<'py> + 'py>> {
+    fn lax_dict<'data>(
+        &'data self,
+        py: Python<'data>,
+        try_instance: bool,
+    ) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(Box::new(dict))
         } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
@@ -159,7 +163,7 @@ impl Input for PyAny {
         }
     }
 
-    fn strict_list<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn ListInput + 'py>> {
+    fn strict_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput + 'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(Box::new(list))
         } else {
@@ -167,7 +171,7 @@ impl Input for PyAny {
         }
     }
 
-    fn lax_list<'py>(&'py self, _py: Python<'py>) -> ValResult<Box<dyn ListInput + 'py>> {
+    fn lax_list<'data>(&'data self, _py: Python<'data>) -> ValResult<Box<dyn ListInput + 'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(Box::new(list))
             // TODO support sets, tuples, frozen set etc. like in pydantic
@@ -177,7 +181,7 @@ impl Input for PyAny {
     }
 }
 
-fn mapping_as_dict<'py>(py: Python<'py>, mapping: &'py PyMapping) -> PyResult<&'py PyDict> {
+fn mapping_as_dict<'data>(py: Python<'data>, mapping: &'data PyMapping) -> PyResult<&'data PyDict> {
     let seq = mapping.items()?;
     let dict = PyDict::new(py);
     for r in seq.iter()? {
@@ -190,7 +194,7 @@ fn mapping_as_dict<'py>(py: Python<'py>, mapping: &'py PyMapping) -> PyResult<&'
 }
 
 /// This is equivalent to `GetterDict` in pydantic v1
-fn instance_as_dict<'py>(py: Python<'py>, instance: &'py PyAny) -> PyResult<&'py PyDict> {
+fn instance_as_dict<'data>(py: Python<'data>, instance: &'data PyAny) -> PyResult<&'data PyDict> {
     let dict = PyDict::new(py);
     for k_any in instance.dir() {
         let k_str: &str = k_any.extract()?;
@@ -202,12 +206,12 @@ fn instance_as_dict<'py>(py: Python<'py>, instance: &'py PyAny) -> PyResult<&'py
     Ok(dict)
 }
 
-impl<'py> DictInput<'py> for &'py PyDict {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'py dyn Input, &'py dyn Input)> + 'py> {
+impl<'data> DictInput<'data> for &'data PyDict {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data> {
         Box::new(self.iter().map(|(k, v)| (k as &dyn Input, v as &dyn Input)))
     }
 
-    fn input_get(&self, key: &str) -> Option<&'py dyn Input> {
+    fn input_get(&self, key: &str) -> Option<&'data dyn Input> {
         self.get_item(key).map(|item| item as &dyn Input)
     }
 
@@ -216,8 +220,8 @@ impl<'py> DictInput<'py> for &'py PyDict {
     }
 }
 
-impl<'py> ListInput<'py> for &'py PyList {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'py dyn Input> + 'py> {
+impl<'data> ListInput<'data> for &'data PyList {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
         Box::new(self.iter().map(|item| item as &dyn Input))
     }
 
