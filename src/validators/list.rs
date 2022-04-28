@@ -39,8 +39,8 @@ impl Validator for ListValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let list = match self.strict {
-            true => input.strict_list(py)?,
-            false => input.lax_list(py)?,
+            true => input.strict_list()?,
+            false => input.lax_list()?,
         };
         self._validation_logic(py, input, list, extra)
     }
@@ -51,7 +51,7 @@ impl Validator for ListValidator {
         input: &'data dyn Input,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_list(py)?, extra)
+        self._validation_logic(py, input, input.strict_list()?, extra)
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {

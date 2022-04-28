@@ -68,7 +68,7 @@ impl Validator for SingleStringValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let str = input.strict_str(py)?;
+        let str = input.strict_str()?;
         if str == self.expected {
             Ok(input.to_py(py))
         } else {
@@ -106,7 +106,7 @@ impl Validator for SingleIntValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let str = input.strict_int(py)?;
+        let str = input.strict_int()?;
         if str == self.expected {
             Ok(input.to_py(py))
         } else {
@@ -159,7 +159,7 @@ impl Validator for MultipleStringsValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let str = input.strict_str(py)?;
+        let str = input.strict_str()?;
         if self.expected.contains(&str) {
             Ok(input.to_py(py))
         } else {
@@ -212,7 +212,7 @@ impl Validator for MultipleIntsValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let int = input.strict_int(py)?;
+        let int = input.strict_int()?;
         if self.expected.contains(&int) {
             Ok(input.to_py(py))
         } else {
@@ -274,14 +274,14 @@ impl Validator for GeneralValidator {
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         if !self.expected_int.is_empty() {
-            if let Ok(int) = input.strict_int(py) {
+            if let Ok(int) = input.strict_int() {
                 if self.expected_int.contains(&int) {
                     return Ok(input.to_py(py));
                 }
             }
         }
         if !self.expected_str.is_empty() {
-            if let Ok(str) = input.strict_str(py) {
+            if let Ok(str) = input.strict_str() {
                 if self.expected_str.contains(&str) {
                     return Ok(input.to_py(py));
                 }

@@ -36,7 +36,7 @@ impl Validator for IntValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.lax_int(py)?.into_py(py))
+        Ok(input.lax_int()?.into_py(py))
     }
 
     fn validate_strict<'s, 'data>(
@@ -45,7 +45,7 @@ impl Validator for IntValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_int(py)?.into_py(py))
+        Ok(input.strict_int()?.into_py(py))
     }
 
     validator_boilerplate!(Self::EXPECTED_TYPE);
@@ -65,7 +65,7 @@ impl Validator for StrictIntValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_int(py)?.into_py(py))
+        Ok(input.strict_int()?.into_py(py))
     }
 
     validator_boilerplate!("strict-int");
@@ -100,8 +100,8 @@ impl Validator for ConstrainedIntValidator {
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let int = match self.strict {
-            true => input.strict_int(py)?,
-            false => input.lax_int(py)?,
+            true => input.strict_int()?,
+            false => input.lax_int()?,
         };
         self._validation_logic(py, input, int)
     }
@@ -112,7 +112,7 @@ impl Validator for ConstrainedIntValidator {
         input: &'data dyn Input,
         _extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_int(py)?)
+        self._validation_logic(py, input, input.strict_int()?)
     }
 
     validator_boilerplate!("constrained-int");

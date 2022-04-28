@@ -46,8 +46,8 @@ impl Validator for DictValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let dict = match self.strict {
-            true => input.strict_dict(py)?,
-            false => input.lax_dict(py, self.try_instance_as_dict)?,
+            true => input.strict_dict()?,
+            false => input.lax_dict(self.try_instance_as_dict)?,
         };
         self._validation_logic(py, input, dict, extra)
     }
@@ -58,7 +58,7 @@ impl Validator for DictValidator {
         input: &'data dyn Input,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_dict(py)?, extra)
+        self._validation_logic(py, input, input.strict_dict()?, extra)
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
