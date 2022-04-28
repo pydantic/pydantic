@@ -335,6 +335,15 @@ class PydanticModelTransformer:
             init_arguments.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
         add_method(ctx, '__init__', init_arguments, NoneType())
 
+        copy_arguments = self.get_field_arguments(
+            fields,
+            typed=typed,
+            force_all_optional=True,
+            use_alias=use_alias,
+        )
+        add_method(ctx, 'shallow_copy', copy_arguments, fill_typevars(ctx.cls.info))
+        add_method(ctx, 'deep_copy', copy_arguments, fill_typevars(ctx.cls.info))
+
     def add_construct_method(self, fields: List['PydanticModelField']) -> None:
         """
         Adds a fully typed `construct` classmethod to the class.

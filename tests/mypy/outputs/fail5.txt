@@ -1,0 +1,6 @@
+22: error: Unexpected keyword argument "weq" for "shallow_copy" of "MyModel"  [call-arg]
+23: error: Argument "postal" to "shallow_copy" of "MyModel" has incompatible type "str"; expected "Optional[int]"  [arg-type]
+24: error: Argument "name" to "shallow_copy" of "MyModel" has incompatible type "int"; expected "str"  [arg-type]
+25: error: Unexpected keyword argument "weq" for "deep_copy" of "MyModel"  [call-arg]
+26: error: Argument "postal" to "deep_copy" of "MyModel" has incompatible type "str"; expected "Optional[int]"  [arg-type]
+27: error: Argument "name" to "deep_copy" of "MyModel" has incompatible type "int"; expected "str"  [arg-type]
