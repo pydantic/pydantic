@@ -1,3 +1,4 @@
+import math
 import re
 from decimal import Decimal
 
@@ -161,3 +162,11 @@ def test_float_not_json(input_value, expected):
         output = v.validate_python(input_value)
         assert output == expected
         assert isinstance(output, float)
+
+
+def test_float_nan(py_or_json):
+    v = py_or_json({'type': 'float'})
+    assert v.validate_test('1' * 800) == float('inf')
+    assert v.validate_test('-' + '1' * 800) == float('-inf')
+    r = v.validate_test('nan')
+    assert math.isnan(r)

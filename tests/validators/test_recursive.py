@@ -212,3 +212,24 @@ def test_model_class():
     assert isinstance(m2.branch, Branch)
     assert m2.branch.width == 20
     assert m2.branch.branch is None
+
+
+def test_invalid_schema():
+    v = SchemaValidator(
+        {
+            'type': 'list',
+            'items': {
+                'type': 'model',
+                'fields': {
+                    'width': {'type': 'int'},
+                    'branch': {
+                        'type': 'optional',
+                        'default': None,
+                        'schema': {'type': 'recursive-ref', 'name': 'Branch'},
+                    },
+                },
+            },
+        }
+    )
+    with pytest.raises(RuntimeError, match='Recursive reference error: ref not yet set'):
+        v.validate_python([{'width': 1, 'branch': 4}])

@@ -136,6 +136,12 @@ impl From<String> for ContextValue {
     }
 }
 
+impl From<&str> for ContextValue {
+    fn from(str: &str) -> Self {
+        Self::S(str.to_string())
+    }
+}
+
 impl From<i64> for ContextValue {
     fn from(int: i64) -> Self {
         Self::I(int)

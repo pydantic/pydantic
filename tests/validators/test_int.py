@@ -192,3 +192,36 @@ def test_int_repr():
     assert repr(v) == 'SchemaValidator(name="strict-int", validator=StrictIntValidator)'
     v = SchemaValidator({'type': 'int', 'multiple_of': 7})
     assert repr(v).startswith('SchemaValidator(name="constrained-int", validator=ConstrainedIntValidator {\n')
+
+
+def test_long_int(py_or_json):
+    v = py_or_json({'type': 'int'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_test('1' * 400)
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_nan',
+            'loc': [],
+            'message': 'Value must be a valid integer, got infinity',
+            'input_value': '1' * 400,
+            'context': {'nan_value': 'infinity'},
+        }
+    ]
+    assert repr(exc_info.value) == (
+        '1 validation error for int\n'
+        '  Value must be a valid integer, got infinity '
+        '[kind=int_nan, context={nan_value: infinity}, '
+        "input_value='111111111111111111111111...11111111111111111111111', input_type=str]"
+    )
+
+
+def test_int_nan(py_or_json):
+    v = py_or_json({'type': 'int'})
+
+    with pytest.raises(ValidationError, match='Value must be a valid integer, got negative infinity'):
+        v.validate_test('-' + '1' * 400)
+
+    with pytest.raises(ValidationError, match='Value must be a valid integer, got NaN'):
+        v.validate_test('nan')
