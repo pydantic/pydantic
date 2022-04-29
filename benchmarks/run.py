@@ -163,6 +163,61 @@ def benchmark_recursive_model():
     _run_benchmarks('benchmark_recursive_model', [pydantic, pydantic_core], [data])
 
 
+def benchmark_list_of_dict_models():
+    class PydanticBranch(BaseModel):
+        width: int
+
+    class PydanticTree(BaseModel):
+        __root__: List[PydanticBranch]
+
+    v = SchemaValidator(
+        {
+            'type': 'list',
+            'name': 'Branch',
+            'items': {
+                'type': 'model',
+                'fields': {
+                    'width': {'type': 'int'},
+                },
+            },
+        }
+    )
+    # debug(v)
+
+    def pydantic(d):
+        m = PydanticTree.parse_obj(d)
+        return [m.dict() for m in m.__root__]
+
+    def pydantic_core(d):
+        return [d for d, f in v.validate_python(d)]
+
+    data = [{'width': i} for i in range(100)]
+
+    _run_benchmarks('benchmark_list_of_dict_models', [pydantic, pydantic_core], [data])
+
+
+def benchmark_list_of_ints():
+    class PydanticTree(BaseModel):
+        __root__: List[int]
+
+    v = SchemaValidator(
+        {
+            'type': 'list',
+            'name': 'Branch',
+            'items': {'type': 'int'},
+        }
+    )
+
+    def pydantic(d):
+        return PydanticTree.parse_obj(d).__root__
+
+    def pydantic_core(d):
+        return v.validate_python(d)
+
+    data = [i for i in range(1000)]
+    _run_benchmarks('benchmark_list_of_ints', [pydantic, pydantic_core], [data], steps=1_000)
+
+
 def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
     reference_result = None
 
@@ -173,7 +228,7 @@ def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, st
         result = list(zip(input_values, outputs))
         # debug(result)
         if reference_result:
-            assert reference_result == result, (func.__name__, reference_result, result)
+            assert reference_result == result, debug.format(result, reference_result, result)
         reference_result = result
 
         t = timeit.timeit(
@@ -202,3 +257,5 @@ if __name__ == '__main__':
     benchmark_bool()
     benchmark_model_create()
     benchmark_recursive_model()
+    benchmark_list_of_dict_models()
+    benchmark_list_of_ints()
