@@ -70,6 +70,8 @@ pub enum ErrorKind {
     IntParsing,
     #[strum(message = "Value must be a valid integer, got a number with a fractional part")]
     IntFromFloat,
+    #[strum(message = "Value must be a valid integer, got {nan_value}")]
+    IntNan,
     #[strum(message = "Value must be a multiple of {multiple_of}")]
     IntMultiple,
     #[strum(message = "Value must be greater than {gt}")]

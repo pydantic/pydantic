@@ -1,6 +1,5 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
-use std::collections::HashSet;
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{
@@ -91,10 +90,11 @@ impl Validator for ModelValidator {
             return self.validate_assignment(py, field, input, extra);
         }
 
+        // TODO we shouldn't always use try_instance=true here
         let dict = input.lax_dict(true)?;
         let output_dict = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut fields_set: HashSet<String> = HashSet::with_capacity(dict.input_len());
+        let fields_set = PySet::empty(py).map_err(as_internal)?;
 
         let extra = Extra {
             data: Some(output_dict),
@@ -113,14 +113,14 @@ impl Validator for ModelValidator {
                     }
                     Err(err) => return Err(err),
                 }
-                fields_set.insert(field.name.clone());
+                fields_set.add(field.name.clone()).map_err(as_internal)?;
             } else if let Some(ref default) = field.default {
                 output_dict
                     .set_item(&field.name, default.clone())
                     .map_err(as_internal)?;
             } else {
                 errors.push(val_line_error!(
-                    input_value = InputValue::InputRef(input), // TODO use dict?
+                    input_value = InputValue::InputRef(input),
                     kind = ErrorKind::Missing,
                     location = vec![field.name.to_loc()]
                 ));
@@ -145,10 +145,10 @@ impl Validator for ModelValidator {
                     }
                     Err(err) => return Err(err),
                 };
-                if fields_set.contains(&key) {
+                if fields_set.contains(&key).map_err(as_internal)? {
                     continue;
                 }
-                fields_set.insert(key.clone());
+                fields_set.add(key.clone()).map_err(as_internal)?;
                 let loc = vec![key.to_loc()];
 
                 if forbid {

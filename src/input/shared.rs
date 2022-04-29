@@ -1,5 +1,5 @@
 use super::Input;
-use crate::errors::{err_val_error, ErrorKind, InputValue, ValResult};
+use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 
 #[inline]
 pub fn str_as_bool<'a>(input: &'a dyn Input, str: &str) -> ValResult<'a, bool> {
@@ -34,12 +34,30 @@ pub fn str_as_int<'s, 'l>(input: &'s dyn Input, str: &'l str) -> ValResult<'s, i
 }
 
 pub fn float_as_int(input: &dyn Input, float: f64) -> ValResult<i64> {
-    if float % 1.0 == 0.0 {
-        Ok(float as i64)
-    } else {
+    if float == f64::INFINITY {
+        err_val_error!(
+            input_value = InputValue::InputRef(input),
+            kind = ErrorKind::IntNan,
+            context = context!("nan_value" => "infinity")
+        )
+    } else if float == f64::NEG_INFINITY {
+        err_val_error!(
+            input_value = InputValue::InputRef(input),
+            kind = ErrorKind::IntNan,
+            context = context!("nan_value" => "negative infinity")
+        )
+    } else if float.is_nan() {
+        err_val_error!(
+            input_value = InputValue::InputRef(input),
+            kind = ErrorKind::IntNan,
+            context = context!("nan_value" => "NaN")
+        )
+    } else if float % 1.0 != 0.0 {
         err_val_error!(
             input_value = InputValue::InputRef(input),
             kind = ErrorKind::IntFromFloat
         )
+    } else {
+        Ok(float as i64)
     }
 }
