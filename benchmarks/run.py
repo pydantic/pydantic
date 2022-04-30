@@ -18,6 +18,14 @@ def benchmark_simple_validation(from_json: bool = False):
         friends: List[int]
         settings: Dict[str, float]
 
+    class MyCoreModel:
+        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__fields_set__'
+        name: str
+        age: int
+        friends: List[int]
+        settings: Dict[str, float]
+
     schema_validator = SchemaValidator(
         {
             'model_name': 'TestModel',
@@ -41,8 +49,8 @@ def benchmark_simple_validation(from_json: bool = False):
             return PydanticModel.parse_obj(obj)
 
         def pydantic_core(d):
-            output, fields_set = schema_validator.validate_json(d)
-            return output
+            output = schema_validator.validate_json(d)
+            return output.__dict__
 
         _run_benchmarks('simple model from JSON', [pydantic, pydantic_core], [data])
     else:
@@ -51,8 +59,8 @@ def benchmark_simple_validation(from_json: bool = False):
             return PydanticModel.parse_obj(d)
 
         def pydantic_core(d):
-            output, fields_set = schema_validator.validate_python(d)
-            return output
+            output = schema_validator.validate_python(d)
+            return output.__dict__
 
         _run_benchmarks('simple model from py', [pydantic, pydantic_core], [data])
 
@@ -196,7 +204,7 @@ def benchmark_list_of_dict_models():
     _run_benchmarks('benchmark_list_of_dict_models', [pydantic, pydantic_core], [data])
 
 
-def benchmark_list_of_ints():
+def benchmark_list_of_ints(json_data):
     class PydanticTree(BaseModel):
         __root__: List[int]
 
@@ -207,19 +215,29 @@ def benchmark_list_of_ints():
             'items': {'type': 'int'},
         }
     )
-
-    def pydantic(d):
-        return PydanticTree.parse_obj(d).__root__
-
-    def pydantic_core(d):
-        return v.validate_python(d)
-
     data = [i for i in range(1000)]
-    _run_benchmarks('benchmark_list_of_ints', [pydantic, pydantic_core], [data], steps=1_000)
+    if json_data:
+        data = json.dumps(data)
+
+        def pydantic(d):
+            obj = json.loads(d)
+            return PydanticTree.parse_obj(obj).__root__
+
+        def pydantic_core(d):
+            return v.validate_json(d)
+    else:
+        def pydantic(d):
+            return PydanticTree.parse_obj(d).__root__
+
+        def pydantic_core(d):
+            return v.validate_python(d)
+
+    _run_benchmarks(f'benchmark_list_of_ints_json_{json_data}', [pydantic, pydantic_core], [data], steps=1_000)
 
 
 def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
     reference_result = None
+    reference_speed = None
 
     print(f'\n#################\n{name}')
     for func in benchmark_functions:
@@ -234,7 +252,12 @@ def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, st
         t = timeit.timeit(
             '[func(data) for data in input_values]', globals={'func': func, 'input_values': input_values}, number=steps
         )
-        print(f'    {_display_time(t / steps)}')
+        speed = t / steps
+        if reference_speed is None:
+            print(f'    {_display_time(speed)}')
+            reference_speed = speed
+        else:
+            print(f'    {_display_time(speed)} {reference_speed / speed:.2f}x')
 
 
 def _display_time(seconds: float):
@@ -258,4 +281,5 @@ if __name__ == '__main__':
     benchmark_model_create()
     benchmark_recursive_model()
     benchmark_list_of_dict_models()
-    benchmark_list_of_ints()
+    benchmark_list_of_ints(True)
+    benchmark_list_of_ints(False)

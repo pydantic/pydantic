@@ -4,7 +4,7 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::input::Input;
 
-use super::{build_validator, Extra, ValResult, Validator, ValidatorArc};
+use super::{build_validator, validator_boilerplate, Extra, ValResult, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct OptionalValidator {
@@ -51,12 +51,5 @@ impl Validator for OptionalValidator {
         self.validator.set_ref(name, validator_arc)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
-    }
+    validator_boilerplate!(Self::EXPECTED_TYPE);
 }
