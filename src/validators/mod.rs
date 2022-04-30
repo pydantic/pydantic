@@ -177,10 +177,10 @@ pub struct Extra<'a> {
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
-/// they also need `EXPECTED_TYPE` as a const, but that can't be part of the trait.
+/// validators defined in `build_validator` also need `EXPECTED_TYPE` as a const, but that can't be part of the trait
 pub trait Validator: Send + Sync + fmt::Debug {
-    /// Build a new validator from the schema, the return type is a trait to provide an escape hatch for validators
-    /// to return other validators, currently only used by StrValidator
+    /// Build a new validator from the schema, the return type is a trait to provide a way for validators
+    /// to return other validators, see `string.rs`, `int.rs`, `float.rs` and `function.rs` for examples
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>>
     where
         Self: Sized;
@@ -193,6 +193,8 @@ pub trait Validator: Send + Sync + fmt::Debug {
         extra: &Extra,
     ) -> ValResult<'data, PyObject>;
 
+    /// This is used in unions for the first pass to see if we have an "exact match",
+    /// implementations should generally use the same logic as with `config.strict = true`
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -202,14 +204,18 @@ pub trait Validator: Send + Sync + fmt::Debug {
         self.validate(py, input, extra)
     }
 
+    /// `set_ref` is used in recursive models to set the weak reference in the `RecursiveRefValidator`,
+    /// I can't imagine any other use, but then maybe I'm not very imaginative...
     fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
         Ok(())
     }
 
+    /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
+    /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self, py: Python) -> String;
 
     /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
-    /// cloning is required to allow the SchemaValidator to be passed around in python
+    /// cloning is required to allow the `SchemaValidator` to be passed around in python
     #[no_coverage]
     fn clone_dyn(&self) -> Box<dyn Validator>;
 }
