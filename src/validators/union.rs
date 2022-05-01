@@ -18,12 +18,11 @@ impl UnionValidator {
 
 impl Validator for UnionValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let mut choices: Vec<Box<dyn Validator>> = vec![];
-        let choice_schemas: &PyList = schema.get_as_req("choices")?;
-        for choice in choice_schemas.iter() {
-            choices.push(build_validator(choice, config)?.0);
-        }
-
+        let choices: Vec<Box<dyn Validator>> = schema
+            .get_as_req::<&PyList>("choices")?
+            .iter()
+            .map(|choice| build_validator(choice, config).map(|result| result.0))
+            .collect::<PyResult<Vec<Box<dyn Validator>>>>()?;
         Ok(Box::new(Self { choices }))
     }
 
@@ -34,34 +33,35 @@ impl Validator for UnionValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         // 1st pass: check if the value is an exact instance of one of the Union types
-        for validator in &self.choices {
-            if let Ok(output) = validator.validate_strict(py, input, extra) {
-                return Ok(output);
-            }
+        if let Some(res) = self
+            .choices
+            .iter()
+            .map(|validator| validator.validate_strict(py, input, extra))
+            .find(ValResult::is_ok)
+        {
+            return res;
         }
+
         let mut errors: Vec<ValLineError> = Vec::with_capacity(self.choices.len());
 
         // 3rd pass: check if the value can be coerced into one of the Union types
         for validator in &self.choices {
             let line_errors = match validator.validate(py, input, extra) {
-                Ok(item) => return Ok(item),
                 Err(ValError::LineErrors(line_errors)) => line_errors,
-                Err(err) => return Err(err),
+                otherwise => return otherwise,
             };
 
             let loc = vec![LocItem::S(validator.get_name(py))];
-            for err in line_errors {
-                errors.push(err.with_prefix_location(&loc));
-            }
+            errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
         }
+
         Err(ValError::LineErrors(errors))
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        for validator in self.choices.iter_mut() {
-            validator.set_ref(name, validator_arc)?;
-        }
-        Ok(())
+        self.choices
+            .iter_mut()
+            .try_for_each(|validator| validator.set_ref(name, validator_arc))
     }
 
     fn get_name(&self, _py: Python) -> String {
