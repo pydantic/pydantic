@@ -49,11 +49,21 @@ pub trait Input: fmt::Debug + ToPy + ToLocItem {
 
     fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>>;
 
-    fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>>;
+    fn lax_dict<'data>(&'data self, _try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+        self.strict_dict()
+    }
 
     fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
 
-    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
+    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+        self.strict_list()
+    }
+
+    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
+
+    fn lax_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+        self.strict_set()
+    }
 }
 
 // these are ugly, is there any way to avoid the maps in iter, one of the boxes and/or the duplication?

@@ -57,6 +57,14 @@ pub enum ErrorKind {
     #[strum(message = "List must have at most {max_length} items")]
     ListTooLong,
     // ---------------------
+    // set errors
+    #[strum(message = "Value must be a valid list/array")]
+    SetType,
+    #[strum(message = "Set must have at least {min_length} items")]
+    SetTooShort,
+    #[strum(message = "Set must have at most {max_length} items")]
+    SetTooLong,
+    // ---------------------
     // bool errors
     #[strum(message = "Value must be a valid boolean")]
     BoolType,

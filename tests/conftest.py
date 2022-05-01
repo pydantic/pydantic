@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 
@@ -11,6 +12,7 @@ __all__ = ('Err',)
 @dataclass
 class Err:
     message: str
+    errors: Any = None
 
 
 @pytest.fixture(params=['python', 'json'])

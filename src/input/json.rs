@@ -127,10 +127,6 @@ impl Input for Value {
         }
     }
 
-    fn lax_dict<'data>(&'data self, _try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
-        self.strict_dict()
-    }
-
     fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         match self {
             Value::Array(a) => Ok(Box::new(a)),
@@ -138,8 +134,12 @@ impl Input for Value {
         }
     }
 
-    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
-        self.strict_list()
+    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+        // we allow a list here since otherwise it would be impossible to create a set from JSON
+        match self {
+            Value::Array(a) => Ok(Box::new(a)),
+            _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType),
+        }
     }
 }
 
@@ -284,15 +284,11 @@ impl Input for String {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
     }
 
-    fn lax_dict<'data>(&'data self, _try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
-        err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
-    }
-
     fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
     }
 
-    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
-        err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
+    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+        err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
     }
 }

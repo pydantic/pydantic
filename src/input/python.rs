@@ -1,7 +1,7 @@
 use std::str::from_utf8;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyInt, PyList, PyMapping, PyString, PyTuple, PyType};
+use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySet, PyString, PyTuple, PyType};
 
 use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, LocItem, ValResult};
 
@@ -170,9 +170,36 @@ impl Input for PyAny {
     fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput + 'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(Box::new(list))
-            // TODO support sets, tuples, frozen set etc. like in pydantic
+        } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(Box::new(tuple))
+        } else if let Ok(set) = self.cast_as::<PySet>() {
+            Ok(Box::new(set))
+        } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
+            Ok(Box::new(frozen_set))
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
+        }
+    }
+
+    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+        if let Ok(set) = self.cast_as::<PySet>() {
+            Ok(Box::new(set))
+        } else {
+            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
+        }
+    }
+
+    fn lax_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+        if let Ok(set) = self.cast_as::<PySet>() {
+            Ok(Box::new(set))
+        } else if let Ok(list) = self.cast_as::<PyList>() {
+            Ok(Box::new(list))
+        } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(Box::new(tuple))
+        } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
+            Ok(Box::new(frozen_set))
+        } else {
+            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
         }
     }
 }
@@ -226,6 +253,36 @@ impl<'data> ListInput<'data> for &'data PyList {
     }
 }
 
+impl<'data> ListInput<'data> for &'data PyTuple {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
+        Box::new(self.iter().map(|item| item as &dyn Input))
+    }
+
+    fn input_len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<'data> ListInput<'data> for &'data PySet {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
+        Box::new(self.iter().map(|item| item as &dyn Input))
+    }
+
+    fn input_len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl<'data> ListInput<'data> for &'data PyFrozenSet {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
+        Box::new(self.iter().map(|item| item as &dyn Input))
+    }
+
+    fn input_len(&self) -> usize {
+        self.len()
+    }
+}
+
 /// Utility for extracting a string from a PyAny, if possible.
 fn _maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<String>> {
     if let Ok(str) = v.extract::<String>() {
@@ -256,6 +313,27 @@ impl ToPy for &PyDict {
 }
 
 impl ToPy for &PyList {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        self.into_py(py)
+    }
+}
+
+impl ToPy for &PyTuple {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        self.into_py(py)
+    }
+}
+
+impl ToPy for &PySet {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        self.into_py(py)
+    }
+}
+
+impl ToPy for &PyFrozenSet {
     #[inline]
     fn to_py(&self, py: Python) -> PyObject {
         self.into_py(py)
