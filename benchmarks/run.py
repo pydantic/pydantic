@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import timeit
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 
 # import ujson as json
 import json
@@ -28,14 +28,17 @@ def benchmark_simple_validation(from_json: bool = False):
 
     schema_validator = SchemaValidator(
         {
-            'model_name': 'TestModel',
-            'type': 'model',
-            'fields': {
-                'name': {'type': 'str'},
-                'age': {'type': 'int'},
-                'friends': {'type': 'list', 'items': {'type': 'int'}},
-                'settings': {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'float'}},
-            },
+            'type': 'model-class',
+            'class': MyCoreModel,
+            'model': {
+                'type': 'model',
+                'fields': {
+                    'name': {'type': 'str'},
+                    'age': {'type': 'int'},
+                    'friends': {'type': 'list', 'items': {'type': 'int'}},
+                    'settings': {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'float'}},
+                },
+            }
         }
     )
 
@@ -208,16 +211,13 @@ def benchmark_list_of_ints(json_data):
     class PydanticTree(BaseModel):
         __root__: List[int]
 
-    v = SchemaValidator(
-        {
-            'type': 'list',
-            'name': 'Branch',
-            'items': {'type': 'int'},
-        }
-    )
-    data = [i for i in range(1000)]
+    v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
+    data = [
+        [i for i in range(1000)],
+        [str(i) for i in range(1000)],
+    ]
     if json_data:
-        data = json.dumps(data)
+        data = [json.dumps(d) for d in data]
 
         def pydantic(d):
             obj = json.loads(d)
@@ -232,7 +232,35 @@ def benchmark_list_of_ints(json_data):
         def pydantic_core(d):
             return v.validate_python(d)
 
-    _run_benchmarks(f'benchmark_list_of_ints_json_{json_data}', [pydantic, pydantic_core], [data], steps=1_000)
+    _run_benchmarks(f'benchmark_list_of_ints_{"json" if json_data else "py"}', [pydantic, pydantic_core], data)
+
+
+def benchmark_set_of_ints(json_data):
+    class PydanticTree(BaseModel):
+        __root__: Set[int]
+
+    v = SchemaValidator({'type': 'set', 'items': {'type': 'int'}})
+    data = [
+        {i for i in range(1000)},
+        {str(i) for i in range(1000)},
+    ]
+    if json_data:
+        data = [json.dumps(list(d)) for d in data]
+
+        def pydantic(d):
+            obj = json.loads(d)
+            return PydanticTree.parse_obj(obj).__root__
+
+        def pydantic_core(d):
+            return v.validate_json(d)
+    else:
+        def pydantic(d):
+            return PydanticTree.parse_obj(d).__root__
+
+        def pydantic_core(d):
+            return v.validate_python(d)
+
+    _run_benchmarks(f'benchmark_set_of_ints_{"json" if json_data else "py"}', [pydantic, pydantic_core], data)
 
 
 def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
@@ -283,3 +311,5 @@ if __name__ == '__main__':
     benchmark_list_of_dict_models()
     benchmark_list_of_ints(True)
     benchmark_list_of_ints(False)
+    benchmark_set_of_ints(True)
+    benchmark_set_of_ints(False)

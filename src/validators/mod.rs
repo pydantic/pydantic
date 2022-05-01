@@ -23,6 +23,7 @@ mod model_class;
 mod none;
 mod optional;
 mod recursive;
+mod set;
 mod string;
 mod union;
 
@@ -149,8 +150,10 @@ pub fn build_validator<'a>(
         self::bool::BoolValidator,
         // floats
         self::float::FloatValidator,
-        // list/arrays (recursive)
+        // list/arrays
         self::list::ListValidator,
+        // list/arrays
+        self::set::SetValidator,
         // dicts/objects (recursive)
         self::dict::DictValidator,
         // None/null

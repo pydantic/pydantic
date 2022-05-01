@@ -1,6 +1,6 @@
 coverage==6.3.2
-dirty-equals==0.2
-pytest==7.1.1
+dirty-equals==0.4
+pytest==7.1.2
 pytest-mock==3.7.0
 pytest-sugar==0.9.4
 pytest-timeout==2.1.0
