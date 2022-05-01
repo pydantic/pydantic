@@ -3,11 +3,24 @@ use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 
 #[inline]
 pub fn str_as_bool<'a>(input: &'a dyn Input, str: &str) -> ValResult<'a, bool> {
-    let s_lower: String = str.chars().map(|c| c.to_ascii_lowercase()).collect();
-    match s_lower.as_str() {
-        "0" | "off" | "f" | "false" | "n" | "no" => Ok(false),
-        "1" | "on" | "t" | "true" | "y" | "yes" => Ok(true),
-        _ => err_val_error!(input_value = InputValue::InputRef(input), kind = ErrorKind::BoolParsing),
+    if str == "0"
+        || str.eq_ignore_ascii_case("f")
+        || str.eq_ignore_ascii_case("n")
+        || str.eq_ignore_ascii_case("no")
+        || str.eq_ignore_ascii_case("off")
+        || str.eq_ignore_ascii_case("false")
+    {
+        Ok(false)
+    } else if str == "1"
+        || str.eq_ignore_ascii_case("t")
+        || str.eq_ignore_ascii_case("y")
+        || str.eq_ignore_ascii_case("on")
+        || str.eq_ignore_ascii_case("yes")
+        || str.eq_ignore_ascii_case("true")
+    {
+        Ok(true)
+    } else {
+        err_val_error!(input_value = InputValue::InputRef(input), kind = ErrorKind::BoolParsing)
     }
 }
 
