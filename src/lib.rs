@@ -2,6 +2,7 @@
 #![feature(trait_upcasting)]
 
 extern crate core;
+extern crate enum_dispatch;
 extern crate pyo3;
 extern crate regex;
 extern crate serde_json;

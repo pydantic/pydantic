@@ -4,25 +4,26 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::input::Input;
 
-use super::{build_validator, validator_boilerplate, Extra, ValResult, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, Extra, ValResult, ValidateEnum, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct OptionalValidator {
-    validator: Box<dyn Validator>,
+    validator: Box<ValidateEnum>,
 }
 
-impl OptionalValidator {
-    pub const EXPECTED_TYPE: &'static str = "optional";
+impl BuildValidator for OptionalValidator {
+    const EXPECTED_TYPE: &'static str = "optional";
+
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        let schema: &PyAny = schema.get_as_req("schema")?;
+        Ok(Self {
+            validator: Box::new(build_validator(schema, config)?.0),
+        }
+        .into())
+    }
 }
 
 impl Validator for OptionalValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let schema: &PyAny = schema.get_as_req("schema")?;
-        Ok(Box::new(Self {
-            validator: build_validator(schema, config)?.0,
-        }))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -51,5 +52,7 @@ impl Validator for OptionalValidator {
         self.validator.set_ref(name, validator_arc)
     }
 
-    validator_boilerplate!(Self::EXPECTED_TYPE);
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
 }

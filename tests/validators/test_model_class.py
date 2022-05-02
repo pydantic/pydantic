@@ -19,7 +19,7 @@ def test_model_class():
             'model': {'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}},
         }
     )
-    assert repr(v).startswith('SchemaValidator(name="MyModel", validator=ModelClassValidator {\n')
+    assert repr(v).startswith('SchemaValidator(name="MyModel", validator=ModelClass(\n')
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'

@@ -187,11 +187,11 @@ def test_union_int_simple(py_or_json):
 
 def test_int_repr():
     v = SchemaValidator({'type': 'int'})
-    assert repr(v) == 'SchemaValidator(name="int", validator=IntValidator)'
+    assert repr(v) == 'SchemaValidator(name="int", validator=Int(\n    IntValidator,\n))'
     v = SchemaValidator({'type': 'int', 'strict': True})
-    assert repr(v) == 'SchemaValidator(name="strict-int", validator=StrictIntValidator)'
+    assert repr(v) == 'SchemaValidator(name="strict-int", validator=StrictInt(\n    StrictIntValidator,\n))'
     v = SchemaValidator({'type': 'int', 'multiple_of': 7})
-    assert repr(v).startswith('SchemaValidator(name="constrained-int", validator=ConstrainedIntValidator {\n')
+    assert repr(v).startswith('SchemaValidator(name="constrained-int", validator=ConstrainedInt(\n')
 
 
 def test_long_int(py_or_json):

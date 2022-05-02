@@ -69,6 +69,6 @@ def test_bool_error():
 
 def test_bool_repr():
     v = SchemaValidator({'type': 'bool'})
-    assert repr(v) == 'SchemaValidator(name="bool", validator=BoolValidator)'
+    assert repr(v) == 'SchemaValidator(name="bool", validator=Bool(\n    BoolValidator,\n))'
     v = SchemaValidator({'type': 'bool', 'strict': True})
-    assert repr(v) == 'SchemaValidator(name="strict-bool", validator=StrictBoolValidator)'
+    assert repr(v) == 'SchemaValidator(name="strict-bool", validator=StrictBool(\n    StrictBoolValidator,\n))'

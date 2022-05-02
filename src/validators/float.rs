@@ -5,17 +5,15 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator};
+use super::{BuildValidator, Extra, ValidateEnum, Validator};
 
 #[derive(Debug, Clone)]
 pub struct FloatValidator;
 
-impl FloatValidator {
-    pub const EXPECTED_TYPE: &'static str = "float";
-}
+impl BuildValidator for FloatValidator {
+    const EXPECTED_TYPE: &'static str = "float";
 
-impl Validator for FloatValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         let use_constrained = schema.get_item("multiple_of").is_some()
             || schema.get_item("le").is_some()
             || schema.get_item("lt").is_some()
@@ -24,12 +22,14 @@ impl Validator for FloatValidator {
         if use_constrained {
             ConstrainedFloatValidator::build(schema, config)
         } else if is_strict(schema, config)? {
-            StrictFloatValidator::build(schema, config)
+            StrictFloatValidator::build()
         } else {
-            Ok(Box::new(Self))
+            Ok(Self.into())
         }
     }
+}
 
+impl Validator for FloatValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -48,17 +48,21 @@ impl Validator for FloatValidator {
         Ok(input.strict_float()?.into_py(py))
     }
 
-    validator_boilerplate!(Self::EXPECTED_TYPE);
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct StrictFloatValidator;
+pub struct StrictFloatValidator;
+
+impl StrictFloatValidator {
+    pub fn build() -> PyResult<ValidateEnum> {
+        Ok(Self.into())
+    }
+}
 
 impl Validator for StrictFloatValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -68,11 +72,13 @@ impl Validator for StrictFloatValidator {
         Ok(input.strict_float()?.into_py(py))
     }
 
-    validator_boilerplate!("strict-float");
+    fn get_name(&self, _py: Python) -> String {
+        "strict-float".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct ConstrainedFloatValidator {
+pub struct ConstrainedFloatValidator {
     strict: bool,
     multiple_of: Option<f64>,
     le: Option<f64>,
@@ -82,17 +88,6 @@ struct ConstrainedFloatValidator {
 }
 
 impl Validator for ConstrainedFloatValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self {
-            strict: is_strict(schema, config)?,
-            multiple_of: schema.get_as("multiple_of")?,
-            le: schema.get_as("le")?,
-            lt: schema.get_as("lt")?,
-            ge: schema.get_as("ge")?,
-            gt: schema.get_as("gt")?,
-        }))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -115,10 +110,24 @@ impl Validator for ConstrainedFloatValidator {
         self._validation_logic(py, input, input.strict_float()?)
     }
 
-    validator_boilerplate!("constrained-float");
+    fn get_name(&self, _py: Python) -> String {
+        "constrained-float".to_string()
+    }
 }
 
 impl ConstrainedFloatValidator {
+    pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            multiple_of: schema.get_as("multiple_of")?,
+            le: schema.get_as("le")?,
+            lt: schema.get_as("lt")?,
+            ge: schema.get_as("ge")?,
+            gt: schema.get_as("gt")?,
+        }
+        .into())
+    }
+
     fn _validation_logic<'s, 'data>(
         &'s self,
         py: Python<'data>,

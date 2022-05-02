@@ -145,11 +145,11 @@ def test_union_float_simple(py_or_json):
 
 def test_float_repr():
     v = SchemaValidator({'type': 'float'})
-    assert repr(v) == 'SchemaValidator(name="float", validator=FloatValidator)'
+    assert repr(v) == 'SchemaValidator(name="float", validator=Float(\n    FloatValidator,\n))'
     v = SchemaValidator({'type': 'float', 'strict': True})
-    assert repr(v) == 'SchemaValidator(name="strict-float", validator=StrictFloatValidator)'
+    assert repr(v) == 'SchemaValidator(name="strict-float", validator=StrictFloat(\n    StrictFloatValidator,\n))'
     v = SchemaValidator({'type': 'float', 'multiple_of': 7})
-    assert repr(v).startswith('SchemaValidator(name="constrained-float", validator=ConstrainedFloatValidator {\n')
+    assert repr(v).startswith('SchemaValidator(name="constrained-float", validator=ConstrainedFloat(\n')
 
 
 @pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), 1.23), (Decimal('1'), 1.0)])
