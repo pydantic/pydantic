@@ -5,27 +5,27 @@ use crate::build_tools::SchemaDict;
 use crate::errors::{LocItem, ValError, ValLineError};
 use crate::input::Input;
 
-use super::{build_validator, Extra, ValResult, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, Extra, ValResult, ValidateEnum, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
-    choices: Vec<Box<dyn Validator>>,
+    choices: Vec<ValidateEnum>,
 }
 
-impl UnionValidator {
-    pub const EXPECTED_TYPE: &'static str = "union";
-}
+impl BuildValidator for UnionValidator {
+    const EXPECTED_TYPE: &'static str = "union";
 
-impl Validator for UnionValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let choices: Vec<Box<dyn Validator>> = schema
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        let choices: Vec<ValidateEnum> = schema
             .get_as_req::<&PyList>("choices")?
             .iter()
             .map(|choice| build_validator(choice, config).map(|result| result.0))
-            .collect::<PyResult<Vec<Box<dyn Validator>>>>()?;
-        Ok(Box::new(Self { choices }))
+            .collect::<PyResult<Vec<ValidateEnum>>>()?;
+        Ok(Self { choices }.into())
     }
+}
 
+impl Validator for UnionValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -66,10 +66,5 @@ impl Validator for UnionValidator {
 
     fn get_name(&self, _py: Python) -> String {
         Self::EXPECTED_TYPE.to_string()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }

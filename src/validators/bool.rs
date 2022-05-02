@@ -5,24 +5,24 @@ use crate::build_tools::is_strict;
 use crate::errors::ValResult;
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator};
+use super::{BuildValidator, Extra, ValidateEnum, Validator};
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator;
 
-impl BoolValidator {
-    pub const EXPECTED_TYPE: &'static str = "bool";
+impl BuildValidator for BoolValidator {
+    const EXPECTED_TYPE: &'static str = "bool";
+
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        if is_strict(schema, config)? {
+            StrictBoolValidator::build()
+        } else {
+            Ok(Self.into())
+        }
+    }
 }
 
 impl Validator for BoolValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        if is_strict(schema, config)? {
-            StrictBoolValidator::build(schema, config)
-        } else {
-            Ok(Box::new(Self {}))
-        }
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -43,17 +43,21 @@ impl Validator for BoolValidator {
         Ok(input.strict_bool()?.into_py(py))
     }
 
-    validator_boilerplate!(Self::EXPECTED_TYPE);
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct StrictBoolValidator;
+pub struct StrictBoolValidator;
+
+impl StrictBoolValidator {
+    pub fn build() -> PyResult<ValidateEnum> {
+        Ok(Self.into())
+    }
+}
 
 impl Validator for StrictBoolValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self {}))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -63,5 +67,7 @@ impl Validator for StrictBoolValidator {
         Ok(input.strict_bool()?.into_py(py))
     }
 
-    validator_boilerplate!("strict-bool");
+    fn get_name(&self, _py: Python) -> String {
+        "strict-bool".to_string()
+    }
 }

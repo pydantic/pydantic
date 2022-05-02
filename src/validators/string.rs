@@ -6,17 +6,15 @@ use crate::build_tools::{is_strict, py_error, schema_or_config};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator};
+use super::{BuildValidator, Extra, ValidateEnum, Validator};
 
 #[derive(Debug, Clone)]
 pub struct StrValidator;
 
-impl StrValidator {
-    pub const EXPECTED_TYPE: &'static str = "str";
-}
+impl BuildValidator for StrValidator {
+    const EXPECTED_TYPE: &'static str = "str";
 
-impl Validator for StrValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         let use_constrained = schema.get_item("pattern").is_some()
             || schema.get_item("max_length").is_some()
             || schema.get_item("min_length").is_some()
@@ -37,12 +35,14 @@ impl Validator for StrValidator {
         if use_constrained {
             StrConstrainedValidator::build(schema, config)
         } else if is_strict(schema, config)? {
-            StrictStrValidator::build(schema, config)
+            StrictStrValidator::build()
         } else {
-            Ok(Box::new(Self))
+            Ok(Self.into())
         }
     }
+}
 
+impl Validator for StrValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -61,17 +61,21 @@ impl Validator for StrValidator {
         Ok(input.strict_str()?.into_py(py))
     }
 
-    validator_boilerplate!(Self::EXPECTED_TYPE);
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct StrictStrValidator;
+pub struct StrictStrValidator;
+
+impl StrictStrValidator {
+    fn build() -> PyResult<ValidateEnum> {
+        Ok(Self.into())
+    }
+}
 
 impl Validator for StrictStrValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -81,11 +85,13 @@ impl Validator for StrictStrValidator {
         Ok(input.strict_str()?.into_py(py))
     }
 
-    validator_boilerplate!("strict-str");
+    fn get_name(&self, _py: Python) -> String {
+        "strict-str".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct StrConstrainedValidator {
+pub struct StrConstrainedValidator {
     strict: bool,
     pattern: Option<Regex>,
     max_length: Option<usize>,
@@ -96,31 +102,6 @@ struct StrConstrainedValidator {
 }
 
 impl Validator for StrConstrainedValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        let pattern_str: Option<&str> = schema_or_config(schema, config, "pattern", "str_pattern")?;
-        let pattern = match pattern_str {
-            Some(s) => Some(build_regex(s)?),
-            None => None,
-        };
-        let min_length: Option<usize> = schema_or_config(schema, config, "min_length", "str_min_length")?;
-        let max_length: Option<usize> = schema_or_config(schema, config, "max_length", "str_max_length")?;
-
-        let strip_whitespace: bool =
-            schema_or_config(schema, config, "strip_whitespace", "str_strip_whitespace")?.unwrap_or(false);
-        let to_lower: bool = schema_or_config(schema, config, "to_lower", "str_to_lower")?.unwrap_or(false);
-        let to_upper: bool = schema_or_config(schema, config, "to_upper", "str_to_upper")?.unwrap_or(false);
-
-        Ok(Box::new(Self {
-            strict: is_strict(schema, config)?,
-            pattern,
-            min_length,
-            max_length,
-            strip_whitespace,
-            to_lower,
-            to_upper,
-        }))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -143,10 +124,38 @@ impl Validator for StrConstrainedValidator {
         self._validation_logic(py, input, input.strict_str()?)
     }
 
-    validator_boilerplate!("constrained-str");
+    fn get_name(&self, _py: Python) -> String {
+        "constrained-str".to_string()
+    }
 }
 
 impl StrConstrainedValidator {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        let pattern_str: Option<&str> = schema_or_config(schema, config, "pattern", "str_pattern")?;
+        let pattern = match pattern_str {
+            Some(s) => Some(build_regex(s)?),
+            None => None,
+        };
+        let min_length: Option<usize> = schema_or_config(schema, config, "min_length", "str_min_length")?;
+        let max_length: Option<usize> = schema_or_config(schema, config, "max_length", "str_max_length")?;
+
+        let strip_whitespace: bool =
+            schema_or_config(schema, config, "strip_whitespace", "str_strip_whitespace")?.unwrap_or(false);
+        let to_lower: bool = schema_or_config(schema, config, "to_lower", "str_to_lower")?.unwrap_or(false);
+        let to_upper: bool = schema_or_config(schema, config, "to_upper", "str_to_upper")?.unwrap_or(false);
+
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            pattern,
+            min_length,
+            max_length,
+            strip_whitespace,
+            to_lower,
+            to_upper,
+        }
+        .into())
+    }
+
     fn _validation_logic<'s, 'data>(
         &'s self,
         py: Python<'data>,

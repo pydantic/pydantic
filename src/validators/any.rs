@@ -4,21 +4,21 @@ use pyo3::types::PyDict;
 use crate::errors::ValResult;
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator};
+use super::{BuildValidator, Extra, ValidateEnum, Validator};
 
 /// This might seem useless, but it's useful in DictValidator to avoid Option<Validator> a lot
 #[derive(Debug, Clone)]
 pub struct AnyValidator;
 
-impl AnyValidator {
-    pub const EXPECTED_TYPE: &'static str = "any";
+impl BuildValidator for AnyValidator {
+    const EXPECTED_TYPE: &'static str = "any";
+
+    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        Ok(Self.into())
+    }
 }
 
 impl Validator for AnyValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -28,5 +28,7 @@ impl Validator for AnyValidator {
         Ok(input.to_py(py))
     }
 
-    validator_boilerplate!(Self::EXPECTED_TYPE);
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
 }

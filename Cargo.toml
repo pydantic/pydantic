@@ -9,6 +9,7 @@ regex = "1.5.5"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 serde_json = {version = "1.0.79", features = ["preserve_order"]}
+enum_dispatch = "0.3.8"
 
 [lib]
 name = "_pydantic_core"
