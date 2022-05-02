@@ -7,14 +7,14 @@ use crate::errors::{
 };
 use crate::input::{Input, ToLocItem};
 
-use super::{build_validator, Extra, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, Extra, ValidateEnum, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 struct ModelField {
     name: String,
     // alias: Option<String>,
     default: Option<PyObject>,
-    validator: Box<dyn Validator>,
+    validator: ValidateEnum,
 }
 
 #[derive(Debug, Clone)]
@@ -22,22 +22,20 @@ pub struct ModelValidator {
     name: String,
     fields: Vec<ModelField>,
     extra_behavior: ExtraBehavior,
-    extra_validator: Option<Box<dyn Validator>>,
+    extra_validator: Option<Box<ValidateEnum>>,
 }
 
-impl ModelValidator {
-    pub const EXPECTED_TYPE: &'static str = "model";
-}
+impl BuildValidator for ModelValidator {
+    const EXPECTED_TYPE: &'static str = "model";
 
-impl Validator for ModelValidator {
-    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         // models ignore the parent config and always use the config from this model
         let config: Option<&PyDict> = schema.get_as("config")?;
 
         let extra_behavior = ExtraBehavior::from_config(config)?;
         let extra_validator = match extra_behavior {
             ExtraBehavior::Allow => match schema.get_item("extra_validator") {
-                Some(v) => Some(build_validator(v, config)?.0),
+                Some(v) => Some(Box::new(build_validator(v, config)?.0)),
                 None => None,
             },
             _ => None,
@@ -48,12 +46,13 @@ impl Validator for ModelValidator {
             Some(fields) => fields,
             None => {
                 // allow an empty model, is this is a good idea?
-                return Ok(Box::new(Self {
+                return Ok(Self {
                     name,
                     fields: vec![],
                     extra_behavior,
                     extra_validator,
-                }));
+                }
+                .into());
             }
         };
         let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
@@ -71,14 +70,17 @@ impl Validator for ModelValidator {
                 default: field_dict.get_as("default")?,
             });
         }
-        Ok(Box::new(Self {
+        Ok(Self {
             name,
             fields,
             extra_behavior,
             extra_validator,
-        }))
+        }
+        .into())
     }
+}
 
+impl Validator for ModelValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -192,11 +194,6 @@ impl Validator for ModelValidator {
 
     fn get_name(&self, _py: Python) -> String {
         self.name.clone()
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }
 

@@ -5,17 +5,15 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{validator_boilerplate, Extra, Validator};
+use super::{BuildValidator, Extra, ValidateEnum, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IntValidator;
 
-impl IntValidator {
-    pub const EXPECTED_TYPE: &'static str = "int";
-}
+impl BuildValidator for IntValidator {
+    const EXPECTED_TYPE: &'static str = "int";
 
-impl Validator for IntValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         let use_constrained = schema.get_item("multiple_of").is_some()
             || schema.get_item("le").is_some()
             || schema.get_item("lt").is_some()
@@ -24,12 +22,14 @@ impl Validator for IntValidator {
         if use_constrained {
             ConstrainedIntValidator::build(schema, config)
         } else if is_strict(schema, config)? {
-            StrictIntValidator::build(schema, config)
+            StrictIntValidator::build()
         } else {
-            Ok(Box::new(Self))
+            Ok(Self.into())
         }
     }
+}
 
+impl Validator for IntValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -48,17 +48,21 @@ impl Validator for IntValidator {
         Ok(input.strict_int()?.into_py(py))
     }
 
-    validator_boilerplate!(Self::EXPECTED_TYPE);
+    fn get_name(&self, _py: Python) -> String {
+        Self::EXPECTED_TYPE.to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct StrictIntValidator;
+pub struct StrictIntValidator;
+
+impl StrictIntValidator {
+    fn build() -> PyResult<ValidateEnum> {
+        Ok(Self.into())
+    }
+}
 
 impl Validator for StrictIntValidator {
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -68,11 +72,13 @@ impl Validator for StrictIntValidator {
         Ok(input.strict_int()?.into_py(py))
     }
 
-    validator_boilerplate!("strict-int");
+    fn get_name(&self, _py: Python) -> String {
+        "strict-int".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct ConstrainedIntValidator {
+pub struct ConstrainedIntValidator {
     strict: bool,
     multiple_of: Option<i64>,
     le: Option<i64>,
@@ -82,17 +88,6 @@ struct ConstrainedIntValidator {
 }
 
 impl Validator for ConstrainedIntValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self {
-            strict: is_strict(schema, config)?,
-            multiple_of: schema.get_as("multiple_of")?,
-            le: schema.get_as("le")?,
-            lt: schema.get_as("lt")?,
-            ge: schema.get_as("ge")?,
-            gt: schema.get_as("gt")?,
-        }))
-    }
-
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -115,10 +110,24 @@ impl Validator for ConstrainedIntValidator {
         self._validation_logic(py, input, input.strict_int()?)
     }
 
-    validator_boilerplate!("constrained-int");
+    fn get_name(&self, _py: Python) -> String {
+        "constrained-int".to_string()
+    }
 }
 
 impl ConstrainedIntValidator {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            multiple_of: schema.get_as("multiple_of")?,
+            le: schema.get_as("le")?,
+            lt: schema.get_as("lt")?,
+            ge: schema.get_as("ge")?,
+            gt: schema.get_as("gt")?,
+        }
+        .into())
+    }
+
     fn _validation_logic<'a>(&self, py: Python<'a>, input: &'a dyn Input, int: i64) -> ValResult<'a, PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {

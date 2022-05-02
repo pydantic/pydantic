@@ -7,61 +7,52 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{unused_validator, validator_boilerplate, Extra, Validator};
+use super::{BuildValidator, Extra, ValidateEnum, Validator};
 
 #[derive(Debug)]
-pub struct LiteralValidator;
+pub struct LiteralBuilder;
 
-impl LiteralValidator {
-    pub const EXPECTED_TYPE: &'static str = "literal";
-}
+impl BuildValidator for LiteralBuilder {
+    const EXPECTED_TYPE: &'static str = "literal";
 
-impl Validator for LiteralValidator {
-    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, _config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         let expected: &PyList = schema.get_as_req("expected")?;
         if expected.is_empty() {
             return py_error!(r#""expected" must have length > 0"#);
         } else if expected.len() == 1 {
             let first = expected.get_item(0)?;
             if let Ok(str) = first.extract::<String>() {
-                return Ok(Box::new(SingleStringValidator::new(str)));
+                return Ok(LiteralSingleStringValidator::new(str).into());
             }
             if let Ok(int) = first.extract::<i64>() {
-                return Ok(Box::new(SingleIntValidator::new(int)));
+                return Ok(LiteralSingleIntValidator::new(int).into());
             }
         }
 
-        if let Some(v) = MultipleStringsValidator::new(expected) {
-            Ok(Box::new(v))
-        } else if let Some(v) = MultipleIntsValidator::new(expected) {
-            Ok(Box::new(v))
+        if let Some(v) = LiteralMultipleStringsValidator::new(expected) {
+            Ok(v.into())
+        } else if let Some(v) = LiteralMultipleIntsValidator::new(expected) {
+            Ok(v.into())
         } else {
-            Ok(Box::new(GeneralValidator::new(expected)?))
+            Ok(LiteralGeneralValidator::new(expected)?.into())
         }
     }
-
-    unused_validator!("LiteralValidator");
 }
 
 #[derive(Debug, Clone)]
-struct SingleStringValidator {
+pub struct LiteralSingleStringValidator {
     expected: String,
     repr: String,
 }
 
-impl SingleStringValidator {
+impl LiteralSingleStringValidator {
     fn new(expected: String) -> Self {
         let repr = format!("'{}'", expected);
         Self { expected, repr }
     }
 }
 
-impl Validator for SingleStringValidator {
-    #[no_coverage]
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        unimplemented!("use ::new(value) instead")
-    }
-
+impl Validator for LiteralSingleStringValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -80,26 +71,23 @@ impl Validator for SingleStringValidator {
         }
     }
 
-    validator_boilerplate!("literal-single-string");
+    fn get_name(&self, _py: Python) -> String {
+        "literal-single-string".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct SingleIntValidator {
+pub struct LiteralSingleIntValidator {
     expected: i64,
 }
 
-impl SingleIntValidator {
+impl LiteralSingleIntValidator {
     fn new(expected: i64) -> Self {
         Self { expected }
     }
 }
 
-impl Validator for SingleIntValidator {
-    #[no_coverage]
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        unimplemented!("use ::new(value) instead")
-    }
-
+impl Validator for LiteralSingleIntValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -118,16 +106,18 @@ impl Validator for SingleIntValidator {
         }
     }
 
-    validator_boilerplate!("literal-single-int");
+    fn get_name(&self, _py: Python) -> String {
+        "literal-single-int".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct MultipleStringsValidator {
+pub struct LiteralMultipleStringsValidator {
     expected: HashSet<String>,
     repr: String,
 }
 
-impl MultipleStringsValidator {
+impl LiteralMultipleStringsValidator {
     fn new(expected_list: &PyList) -> Option<Self> {
         let mut expected: HashSet<String> = HashSet::new();
         let mut repr_args = Vec::new();
@@ -147,12 +137,7 @@ impl MultipleStringsValidator {
     }
 }
 
-impl Validator for MultipleStringsValidator {
-    #[no_coverage]
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        unimplemented!("use ::new(value) instead")
-    }
-
+impl Validator for LiteralMultipleStringsValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -171,16 +156,18 @@ impl Validator for MultipleStringsValidator {
         }
     }
 
-    validator_boilerplate!("literal-multiple-strings");
+    fn get_name(&self, _py: Python) -> String {
+        "literal-multiple-strings".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct MultipleIntsValidator {
+pub struct LiteralMultipleIntsValidator {
     expected: HashSet<i64>,
     repr: String,
 }
 
-impl MultipleIntsValidator {
+impl LiteralMultipleIntsValidator {
     fn new(expected_list: &PyList) -> Option<Self> {
         let mut expected: HashSet<i64> = HashSet::new();
         let mut repr_args = Vec::new();
@@ -200,12 +187,7 @@ impl MultipleIntsValidator {
     }
 }
 
-impl Validator for MultipleIntsValidator {
-    #[no_coverage]
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        unimplemented!("use ::new(value) instead")
-    }
-
+impl Validator for LiteralMultipleIntsValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -224,18 +206,20 @@ impl Validator for MultipleIntsValidator {
         }
     }
 
-    validator_boilerplate!("literal-multiple-ints");
+    fn get_name(&self, _py: Python) -> String {
+        "literal-multiple-ints".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct GeneralValidator {
+pub struct LiteralGeneralValidator {
     expected_int: HashSet<i64>,
     expected_str: HashSet<String>,
     expected_py: Py<PyList>,
     repr: String,
 }
 
-impl GeneralValidator {
+impl LiteralGeneralValidator {
     fn new(expected: &PyList) -> PyResult<Self> {
         let mut expected_int = HashSet::new();
         let mut expected_str = HashSet::new();
@@ -261,12 +245,7 @@ impl GeneralValidator {
     }
 }
 
-impl Validator for GeneralValidator {
-    #[no_coverage]
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        unimplemented!("use ::new(value) instead")
-    }
-
+impl Validator for LiteralGeneralValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -302,5 +281,7 @@ impl Validator for GeneralValidator {
         )
     }
 
-    validator_boilerplate!("literal-general");
+    fn get_name(&self, _py: Python) -> String {
+        "literal-general".to_string()
+    }
 }

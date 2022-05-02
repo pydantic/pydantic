@@ -5,33 +5,34 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, LocItem, ValError, ValLineError};
 use crate::input::{Input, ListInput};
 
-use super::{build_validator, Extra, ValResult, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, Extra, ValResult, ValidateEnum, Validator, ValidatorArc};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
     strict: bool,
-    item_validator: Option<Box<dyn Validator>>,
+    item_validator: Option<Box<ValidateEnum>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
 
-impl ListValidator {
-    pub const EXPECTED_TYPE: &'static str = "list";
-}
+impl BuildValidator for ListValidator {
+    const EXPECTED_TYPE: &'static str = "list";
 
-impl Validator for ListValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        Ok(Self {
             strict: is_strict(schema, config)?,
             item_validator: match schema.get_item("items") {
-                Some(d) => Some(build_validator(d, config)?.0),
+                Some(d) => Some(Box::new(build_validator(d, config)?.0)),
                 None => None,
             },
             min_items: schema.get_as("min_items")?,
             max_items: schema.get_as("max_items")?,
-        }))
+        }
+        .into())
     }
+}
 
+impl Validator for ListValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -66,11 +67,6 @@ impl Validator for ListValidator {
             Some(v) => format!("{}-{}", Self::EXPECTED_TYPE, v.get_name(py)),
             None => Self::EXPECTED_TYPE.to_string(),
         }
-    }
-
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
     }
 }
 

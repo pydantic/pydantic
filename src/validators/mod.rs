@@ -1,5 +1,6 @@
-use std::fmt;
+use std::fmt::Debug;
 
+use enum_dispatch::enum_dispatch;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::{from_str as parse_json, Value as JsonValue};
@@ -8,8 +9,6 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValResult};
 use crate::input::Input;
 use crate::SchemaError;
-
-use self::recursive::ValidatorArc;
 
 mod any;
 mod bool;
@@ -28,10 +27,12 @@ mod set;
 mod string;
 mod union;
 
+use self::recursive::ValidatorArc;
+
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    validator: Box<dyn Validator>,
+    validator: ValidateEnum,
 }
 
 #[pymethods]
@@ -100,6 +101,14 @@ impl SchemaValidator {
     }
 }
 
+pub trait BuildValidator: Sized {
+    const EXPECTED_TYPE: &'static str;
+
+    /// Build a new validator from the schema, the return type is a trait to provide a way for validators
+    /// to return other validators, see `string.rs`, `int.rs`, `float.rs` and `function.rs` for examples
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum>;
+}
+
 // macro to build the match statement for validator selection
 macro_rules! validator_match {
     ($type:ident, $dict:ident, $config:ident, $($validator:path,)+) => {
@@ -119,10 +128,7 @@ macro_rules! validator_match {
     };
 }
 
-pub fn build_validator<'a>(
-    schema: &'a PyAny,
-    config: Option<&'a PyDict>,
-) -> PyResult<(Box<dyn Validator>, &'a PyDict)> {
+pub fn build_validator<'a>(schema: &'a PyAny, config: Option<&'a PyDict>) -> PyResult<(ValidateEnum, &'a PyDict)> {
     let dict: &PyDict = match schema.cast_as() {
         Ok(s) => s,
         Err(_) => {
@@ -140,6 +146,7 @@ pub fn build_validator<'a>(
         self::model::ModelValidator,
         // unions
         self::union::UnionValidator,
+        // optional e.g. nullable
         self::optional::OptionalValidator,
         // model classes
         self::model_class::ModelClassValidator,
@@ -153,19 +160,19 @@ pub fn build_validator<'a>(
         self::float::FloatValidator,
         // list/arrays
         self::list::ListValidator,
-        // list/arrays
+        // sets - unique lists
         self::set::SetValidator,
         // dicts/objects (recursive)
         self::dict::DictValidator,
         // None/null
         self::none::NoneValidator,
         // functions - before, after, plain & wrap
-        self::function::FunctionValidator,
+        self::function::FunctionBuilder,
         // recursive (self-referencing) models
         self::recursive::RecursiveValidator,
         self::recursive::RecursiveRefValidator,
         // literals
-        self::literal::LiteralValidator,
+        self::literal::LiteralBuilder,
         // any
         self::any::AnyValidator,
     )
@@ -182,15 +189,62 @@ pub struct Extra<'a> {
     pub field: Option<&'a str>,
 }
 
+#[derive(Debug, Clone)]
+#[enum_dispatch]
+pub enum ValidateEnum {
+    // models e.g. heterogeneous dicts
+    Model(self::model::ModelValidator),
+    // unions
+    Union(self::union::UnionValidator),
+    // optional e.g. nullable
+    Optional(self::optional::OptionalValidator),
+    // model classes
+    ModelClass(self::model_class::ModelClassValidator),
+    // strings
+    Str(self::string::StrValidator),
+    StrictStr(self::string::StrictStrValidator),
+    StrConstrained(self::string::StrConstrainedValidator),
+    // integers
+    Int(self::int::IntValidator),
+    StrictInt(self::int::StrictIntValidator),
+    ConstrainedInt(self::int::ConstrainedIntValidator),
+    // booleans
+    Bool(self::bool::BoolValidator),
+    StrictBool(self::bool::StrictBoolValidator),
+    // floats
+    Float(self::float::FloatValidator),
+    StrictFloat(self::float::StrictFloatValidator),
+    ConstrainedFloat(self::float::ConstrainedFloatValidator),
+    // lists
+    List(self::list::ListValidator),
+    // sets - unique lists
+    Set(self::set::SetValidator),
+    // dicts/objects (recursive)
+    Dict(self::dict::DictValidator),
+    // None/null
+    None(self::none::NoneValidator),
+    // functions
+    FunctionBefore(self::function::FunctionBeforeValidator),
+    FunctionAfter(self::function::FunctionAfterValidator),
+    FunctionPlain(self::function::FunctionPlainValidator),
+    FunctionWrap(self::function::FunctionWrapValidator),
+    // recursive (self-referencing) models
+    Recursive(self::recursive::RecursiveValidator),
+    RecursiveRef(self::recursive::RecursiveRefValidator),
+    // literals
+    LiteralSingleString(self::literal::LiteralSingleStringValidator),
+    LiteralSingleInt(self::literal::LiteralSingleIntValidator),
+    LiteralMultipleStrings(self::literal::LiteralMultipleStringsValidator),
+    LiteralMultipleInts(self::literal::LiteralMultipleIntsValidator),
+    LiteralGeneral(self::literal::LiteralGeneralValidator),
+    // any
+    Any(self::any::AnyValidator),
+}
+
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
 /// validators defined in `build_validator` also need `EXPECTED_TYPE` as a const, but that can't be part of the trait
-pub trait Validator: Send + Sync + fmt::Debug {
-    /// Build a new validator from the schema, the return type is a trait to provide a way for validators
-    /// to return other validators, see `string.rs`, `int.rs`, `float.rs` and `function.rs` for examples
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>>
-    where
-        Self: Sized;
-
+#[enum_dispatch(ValidateEnum)]
+pub trait Validator: Send + Sync + Clone + Debug {
     /// Do the actual validation for this schema/type
     fn validate<'s, 'data>(
         &'s self,
@@ -219,53 +273,4 @@ pub trait Validator: Send + Sync + fmt::Debug {
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self, py: Python) -> String;
-
-    /// Ugly, but this has to be duplicated on all types to allow for cloning of validators,
-    /// cloning is required to allow the `SchemaValidator` to be passed around in python
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator>;
 }
-
-impl Clone for Box<dyn Validator> {
-    fn clone(&self) -> Self {
-        self.clone_dyn()
-    }
-}
-
-macro_rules! validator_boilerplate {
-    ($name:expr) => {
-        fn get_name(&self, _py: Python) -> String {
-            $name.to_string()
-        }
-
-        fn clone_dyn(&self) -> Box<dyn Validator> {
-            Box::new(self.clone())
-        }
-    };
-}
-pub(crate) use validator_boilerplate;
-
-macro_rules! unused_validator {
-    ($name:expr) => {
-        #[no_coverage]
-        fn validate<'s, 'data>(
-            &'s self,
-            _py: Python<'data>,
-            _input: &'data dyn Input,
-            _extra: &Extra,
-        ) -> ValResult<'data, PyObject> {
-            unimplemented!("{} is never used directly", $name)
-        }
-
-        #[no_coverage]
-        fn get_name(&self, _py: Python) -> String {
-            unimplemented!()
-        }
-
-        #[no_coverage]
-        fn clone_dyn(&self) -> Box<dyn Validator> {
-            unimplemented!()
-        }
-    };
-}
-pub(crate) use unused_validator;

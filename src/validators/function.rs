@@ -5,19 +5,16 @@ use pyo3::types::{PyAny, PyDict};
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::input::Input;
-use crate::validators::build_validator;
 
-use super::{unused_validator, validator_boilerplate, Extra, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, Extra, ValidateEnum, Validator, ValidatorArc};
 
 #[derive(Debug)]
-pub struct FunctionValidator;
+pub struct FunctionBuilder;
 
-impl FunctionValidator {
-    pub const EXPECTED_TYPE: &'static str = "function";
-}
+impl BuildValidator for FunctionBuilder {
+    const EXPECTED_TYPE: &'static str = "function";
 
-impl Validator for FunctionValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         let mode: &str = schema.get_as_req("mode")?;
         match mode {
             "before" => FunctionBeforeValidator::build(schema, config),
@@ -27,8 +24,6 @@ impl Validator for FunctionValidator {
             _ => py_error!("Unexpected function mode {:?}", mode),
         }
     }
-
-    unused_validator!("FunctionValidator");
 }
 
 macro_rules! kwargs {
@@ -37,32 +32,31 @@ macro_rules! kwargs {
     }};
 }
 
-macro_rules! build_set_ref {
-    () => {
-        fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-            Ok(Box::new(Self {
-                validator: build_validator(schema.get_as_req("schema")?, config)?.0,
-                func: get_function(schema)?,
-                config: config.map(|c| c.into()),
-            }))
-        }
-
-        fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-            self.validator.set_ref(name, validator_arc)
+macro_rules! impl_build {
+    ($name:ident) => {
+        impl $name {
+            pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+                Ok(Self {
+                    validator: Box::new(build_validator(schema.get_as_req("schema")?, config)?.0),
+                    func: get_function(schema)?,
+                    config: config.map(|c| c.into()),
+                }
+                .into())
+            }
         }
     };
 }
 
 #[derive(Debug, Clone)]
-struct FunctionBeforeValidator {
-    validator: Box<dyn Validator>,
+pub struct FunctionBeforeValidator {
+    validator: Box<ValidateEnum>,
     func: PyObject,
     config: Option<Py<PyDict>>,
 }
 
-impl Validator for FunctionBeforeValidator {
-    build_set_ref!();
+impl_build!(FunctionBeforeValidator);
 
+impl Validator for FunctionBeforeValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -97,26 +91,25 @@ impl Validator for FunctionBeforeValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-before".to_string()
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        self.validator.set_ref(name, validator_arc)
     }
 
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
+    fn get_name(&self, _py: Python) -> String {
+        "function-before".to_string()
     }
 }
 
 #[derive(Debug, Clone)]
-struct FunctionAfterValidator {
-    validator: Box<dyn Validator>,
+pub struct FunctionAfterValidator {
+    validator: Box<ValidateEnum>,
     func: PyObject,
     config: Option<Py<PyDict>>,
 }
 
-impl Validator for FunctionAfterValidator {
-    build_set_ref!();
+impl_build!(FunctionAfterValidator);
 
+impl Validator for FunctionAfterValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -128,30 +121,32 @@ impl Validator for FunctionAfterValidator {
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-after".to_string()
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        self.validator.set_ref(name, validator_arc)
     }
 
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
+    fn get_name(&self, _py: Python) -> String {
+        "function-after".to_string()
     }
 }
 
 #[derive(Debug, Clone)]
-struct FunctionPlainValidator {
+pub struct FunctionPlainValidator {
     func: PyObject,
     config: Option<Py<PyDict>>,
 }
 
-impl Validator for FunctionPlainValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Box<dyn Validator>> {
-        Ok(Box::new(Self {
+impl FunctionPlainValidator {
+    pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+        Ok(Self {
             func: get_function(schema)?,
             config: config.map(|c| c.into()),
-        }))
+        }
+        .into())
     }
+}
 
+impl Validator for FunctionPlainValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -164,19 +159,21 @@ impl Validator for FunctionPlainValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
-    validator_boilerplate!("function-plain");
+    fn get_name(&self, _py: Python) -> String {
+        "function-plain".to_string()
+    }
 }
 
 #[derive(Debug, Clone)]
-struct FunctionWrapValidator {
-    validator: Box<dyn Validator>,
+pub struct FunctionWrapValidator {
+    validator: Box<ValidateEnum>,
     func: PyObject,
     config: Option<Py<PyDict>>,
 }
 
-impl Validator for FunctionWrapValidator {
-    build_set_ref!();
+impl_build!(FunctionWrapValidator);
 
+impl Validator for FunctionWrapValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -199,20 +196,19 @@ impl Validator for FunctionWrapValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-wrap".to_string()
+    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
+        self.validator.set_ref(name, validator_arc)
     }
 
-    #[no_coverage]
-    fn clone_dyn(&self) -> Box<dyn Validator> {
-        Box::new(self.clone())
+    fn get_name(&self, _py: Python) -> String {
+        "function-wrap".to_string()
     }
 }
 
 #[pyclass]
 #[derive(Debug, Clone)]
 struct ValidatorCallable {
-    validator: Box<dyn Validator>,
+    validator: Box<ValidateEnum>,
     data: Option<Py<PyDict>>,
     field: Option<String>,
 }
