@@ -236,7 +236,7 @@ def benchmark_list_of_ints(json_data):
 
 
 def benchmark_set_of_ints(json_data):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: Set[int]
 
     v = SchemaValidator({'type': 'set', 'items': {'type': 'int'}})
@@ -249,18 +249,43 @@ def benchmark_set_of_ints(json_data):
 
         def pydantic(d):
             obj = json.loads(d)
-            return PydanticTree.parse_obj(obj).__root__
+            return PydanticModel.parse_obj(obj).__root__
 
         def pydantic_core(d):
             return v.validate_json(d)
     else:
         def pydantic(d):
-            return PydanticTree.parse_obj(d).__root__
+            return PydanticModel.parse_obj(d).__root__
 
         def pydantic_core(d):
             return v.validate_python(d)
 
     _run_benchmarks(f'benchmark_set_of_ints_{"json" if json_data else "py"}', [pydantic, pydantic_core], data)
+
+
+def benchmark_dict_of_ints(json_data):
+    class PydanticModel(BaseModel):
+        __root__: Dict[str, int]
+
+    v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'int'})
+    data = {str(i): i for i in range(1000)}
+    if json_data:
+        data = json.dumps(data)
+
+        def pydantic(d):
+            obj = json.loads(d)
+            return PydanticModel.parse_obj(obj).__root__
+
+        def pydantic_core(d):
+            return v.validate_json(d)
+    else:
+        def pydantic(d):
+            return PydanticModel.parse_obj(d).__root__
+
+        def pydantic_core(d):
+            return v.validate_python(d)
+
+    _run_benchmarks(f'benchmark_dict_of_ints_{"json" if json_data else "py"}', [pydantic, pydantic_core], [data])
 
 
 def _run_benchmarks(name: str, benchmark_functions: list, input_values: list, steps: int = 1_000):
@@ -303,13 +328,15 @@ def _display_time(seconds: float):
 
 
 if __name__ == '__main__':
-    benchmark_simple_validation()
-    benchmark_simple_validation(from_json=True)
-    benchmark_bool()
-    benchmark_model_create()
-    benchmark_recursive_model()
-    benchmark_list_of_dict_models()
-    benchmark_list_of_ints(True)
-    benchmark_list_of_ints(False)
-    benchmark_set_of_ints(True)
-    benchmark_set_of_ints(False)
+    # benchmark_simple_validation()
+    # benchmark_simple_validation(from_json=True)
+    # benchmark_bool()
+    # benchmark_model_create()
+    # benchmark_recursive_model()
+    # benchmark_list_of_dict_models()
+    # benchmark_list_of_ints(True)
+    # benchmark_list_of_ints(False)
+    # benchmark_set_of_ints(True)
+    # benchmark_set_of_ints(False)
+    benchmark_dict_of_ints(True)
+    benchmark_dict_of_ints(False)
