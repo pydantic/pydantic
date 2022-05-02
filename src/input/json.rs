@@ -182,7 +182,7 @@ impl ToPy for Value {
                     panic!("{:?} is not a valid number", n)
                 }
             }
-            Value::String(s) => s.clone().into_py(py),
+            Value::String(s) => s.into_py(py),
             Value::Array(v) => v.to_py(py),
             Value::Object(m) => m.to_py(py),
         }
