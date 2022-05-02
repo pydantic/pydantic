@@ -11,6 +11,7 @@ use crate::SchemaError;
 
 use self::recursive::ValidatorArc;
 
+mod any;
 mod bool;
 mod dict;
 mod float;
@@ -165,6 +166,8 @@ pub fn build_validator<'a>(
         self::recursive::RecursiveRefValidator,
         // literals
         self::literal::LiteralValidator,
+        // any
+        self::any::AnyValidator,
     )
 }
 
