@@ -43,9 +43,7 @@ impl Validator for RecursiveValidator {
     ) -> ValResult<'data, PyObject> {
         match self.validator_arc.read() {
             Ok(validator) => validator.validate(py, input, extra),
-            Err(err) => {
-                py_error!(PyRuntimeError; "Recursive container error: {}", err.to_string()).map_err(as_internal)
-            }
+            Err(err) => py_error!(PyRuntimeError; "Recursive container error: {}", err).map_err(as_internal),
         }
     }
 
@@ -90,17 +88,18 @@ impl Validator for RecursiveRefValidator {
         input: &'data dyn Input,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let error_msg: String = match self.validator_ref {
+        match self.validator_ref {
             Some(ref validator_ref) => match validator_ref.upgrade() {
                 Some(validator_arc) => match validator_arc.read() {
-                    Ok(validator) => return validator.validate(py, input, extra),
-                    Err(err) => format!("PoisonError: {}", err),
+                    Ok(validator) => validator.validate(py, input, extra),
+                    Err(err) => py_error!(PyRuntimeError; "Recursive reference error: PoisonError: {}", err)
+                        .map_err(as_internal),
                 },
-                None => "unable to upgrade weak reference".to_string(),
+                None => py_error!(PyRuntimeError; "Recursive reference error: unable to upgrade weak reference")
+                    .map_err(as_internal),
             },
-            None => "ref not yet set".to_string(),
-        };
-        py_error!(PyRuntimeError; "Recursive reference error: {}", error_msg).map_err(as_internal)
+            None => py_error!(PyRuntimeError; "Recursive reference error: ref not yet set").map_err(as_internal),
+        }
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {

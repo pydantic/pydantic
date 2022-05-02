@@ -200,6 +200,6 @@ impl StrConstrainedValidator {
 fn build_regex(pattern: &str) -> PyResult<Regex> {
     match Regex::new(pattern) {
         Ok(r) => Ok(r),
-        Err(e) => py_error!("{}", e.to_string()),
+        Err(e) => py_error!("{}", e),
     }
 }

@@ -212,30 +212,28 @@ impl ModelValidator {
         'data: 's,
     {
         // TODO probably we should set location on errors here
-        let field_name = field.to_string();
-
         let data = match extra.data {
             Some(data) => data,
             None => panic!("data is required when validating assignment"),
         };
 
         let prepare_tuple = |output: PyObject| {
-            data.set_item(field_name.clone(), output).map_err(as_internal)?;
-            let fields_set = PySet::new(py, &vec![field_name.clone()][..]).map_err(as_internal)?;
+            data.set_item(field, output).map_err(as_internal)?;
+            let fields_set = PySet::new(py, &[field]).map_err(as_internal)?;
             Ok((data, fields_set).to_object(py))
         };
 
         let prepare_result = |result: ValResult<'data, PyObject>| match result {
             Ok(output) => prepare_tuple(output),
             Err(ValError::LineErrors(line_errors)) => {
-                let loc = vec![field_name.to_loc()];
+                let loc = vec![field.to_loc()];
                 let errors = line_errors.into_iter().map(|e| e.with_prefix_location(&loc)).collect();
                 Err(ValError::LineErrors(errors))
             }
             Err(err) => Err(err),
         };
 
-        if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+        if let Some(field) = self.fields.iter().find(|f| f.name == field) {
             prepare_result(field.validator.validate(py, input, extra))
         } else {
             match self.extra_behavior {
@@ -248,7 +246,7 @@ impl ModelValidator {
                 // - with forbid this is obvious
                 // - with ignore the model should never be overloaded, so an error is the clearest option
                 _ => {
-                    let loc = vec![field_name.to_loc()];
+                    let loc = vec![field.to_loc()];
                     err_val_error!(
                         input_value = InputValue::InputRef(input),
                         location = loc,
