@@ -350,3 +350,42 @@ def test_dict_of_ints_core_json(benchmark):
     def t():
         v.validate_json(json_data[0])
         v.validate_json(json_data[1])
+
+
+many_models_data = [{'age': i} for i in range(1000)]
+
+
+@pytest.mark.benchmark(group='many models')
+def test_many_models_pyd(benchmark):
+    class SimpleMode(BaseModel):
+        age: int
+
+    class PydanticModel(BaseModel):
+        __root__: List[SimpleMode]
+
+    benchmark(PydanticModel.parse_obj, many_models_data)
+
+
+@pytest.mark.benchmark(group='many models')
+def test_many_models_core_dict(benchmark):
+    model_schema = {'type': 'list', 'items': {'type': 'model', 'fields': {'age': 'int'}}}
+    v = SchemaValidator(model_schema)
+    benchmark(v.validate_python, many_models_data)
+
+
+@pytest.mark.benchmark(group='many models')
+def test_many_models_core_model(benchmark):
+    class MyCoreModel:
+        __slots__ = '__dict__', '__fields_set__'
+
+    v = SchemaValidator(
+        {
+            'type': 'list',
+            'items': {
+                'type': 'model-class',
+                'class': MyCoreModel,
+                'model': {'type': 'model', 'fields': {'age': 'int'}},
+            },
+        }
+    )
+    benchmark(v.validate_python, many_models_data)
