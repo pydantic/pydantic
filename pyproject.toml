@@ -8,7 +8,7 @@ filterwarnings = 'error'
 timeout = 10
 # min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
 addopts = [
-    '--benchmark-columns', 'min,mean,stddev,outliers,ops,rounds,iterations',
+    '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
     '--benchmark-group-by', 'group',
     '--benchmark-disable',  # this is enable by `make benchmark` when you actually want to run benchmarks
 ]

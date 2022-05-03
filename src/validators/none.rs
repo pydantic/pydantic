@@ -4,7 +4,7 @@ use pyo3::types::PyDict;
 use crate::errors::{err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{BuildValidator, Extra, ValidateEnum, Validator};
+use super::{BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
@@ -12,7 +12,11 @@ pub struct NoneValidator;
 impl BuildValidator for NoneValidator {
     const EXPECTED_TYPE: &'static str = "none";
 
-    fn build(_schema: &PyDict, _config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+    fn build(
+        _schema: &PyDict,
+        _config: Option<&PyDict>,
+        _slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator> {
         Ok(Self.into())
     }
 }
@@ -23,6 +27,7 @@ impl Validator for NoneValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),

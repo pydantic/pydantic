@@ -4,20 +4,24 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::input::Input;
 
-use super::{build_validator, BuildValidator, Extra, ValResult, ValidateEnum, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct OptionalValidator {
-    validator: Box<ValidateEnum>,
+    validator: Box<CombinedValidator>,
 }
 
 impl BuildValidator for OptionalValidator {
     const EXPECTED_TYPE: &'static str = "optional";
 
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator> {
         let schema: &PyAny = schema.get_as_req("schema")?;
         Ok(Self {
-            validator: Box::new(build_validator(schema, config)?.0),
+            validator: Box::new(build_validator(schema, config, slots_builder)?.0),
         }
         .into())
     }
@@ -29,10 +33,11 @@ impl Validator for OptionalValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),
-            false => self.validator.validate(py, input, extra),
+            false => self.validator.validate(py, input, extra, slots),
         }
     }
 
@@ -41,15 +46,12 @@ impl Validator for OptionalValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),
-            false => self.validator.validate_strict(py, input, extra),
+            false => self.validator.validate_strict(py, input, extra, slots),
         }
-    }
-
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        self.validator.set_ref(name, validator_arc)
     }
 
     fn get_name(&self, _py: Python) -> String {

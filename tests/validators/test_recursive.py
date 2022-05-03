@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 
 def test_branch_optional():
@@ -75,7 +75,7 @@ def test_optional_error():
         },
         {
             'kind': 'int_parsing',
-            'loc': ['sub_branch', 'Branch', 'width'],
+            'loc': ['sub_branch', 'recursive-ref', 'width'],
             'message': 'Value must be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         },
@@ -215,21 +215,20 @@ def test_model_class():
 
 
 def test_invalid_schema():
-    v = SchemaValidator(
-        {
-            'type': 'list',
-            'items': {
-                'type': 'model',
-                'fields': {
-                    'width': {'type': 'int'},
-                    'branch': {
-                        'type': 'optional',
-                        'default': None,
-                        'schema': {'type': 'recursive-ref', 'name': 'Branch'},
+    with pytest.raises(SchemaError, match="Recursive reference error: ref 'Branch' not found"):
+        SchemaValidator(
+            {
+                'type': 'list',
+                'items': {
+                    'type': 'model',
+                    'fields': {
+                        'width': {'type': 'int'},
+                        'branch': {
+                            'type': 'optional',
+                            'default': None,
+                            'schema': {'type': 'recursive-ref', 'name': 'Branch'},
+                        },
                     },
                 },
-            },
-        }
-    )
-    with pytest.raises(RuntimeError, match='Recursive reference error: ref not yet set'):
-        v.validate_python([{'width': 1, 'branch': 4}])
+            }
+        )
