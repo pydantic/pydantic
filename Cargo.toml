@@ -10,6 +10,8 @@ strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 serde_json = {version = "1.0.79", features = ["preserve_order"]}
 enum_dispatch = "0.3.8"
+serde = "1.0.137"
+indexmap = "1.8.1"
 
 [lib]
 name = "_pydantic_core"

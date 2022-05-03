@@ -3,11 +3,11 @@ use std::fmt::Debug;
 use enum_dispatch::enum_dispatch;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
-use serde_json::{from_str as parse_json, Value as JsonValue};
+use serde_json::from_str as parse_json;
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{Input, JsonInput};
 use crate::SchemaError;
 
 mod any;
@@ -62,7 +62,7 @@ impl SchemaValidator {
     }
 
     fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
-        match parse_json::<JsonValue>(input.as_str()) {
+        match parse_json::<JsonInput>(input.as_str()) {
             Ok(input) => {
                 let extra = Extra {
                     data: None,
