@@ -5,12 +5,12 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, LocItem, ValError, ValLineError};
 use crate::input::{Input, ListInput};
 
-use super::{build_validator, BuildValidator, Extra, ValResult, ValidateEnum, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
     strict: bool,
-    item_validator: Option<Box<ValidateEnum>>,
+    item_validator: Option<Box<CombinedValidator>>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
@@ -18,11 +18,15 @@ pub struct ListValidator {
 impl BuildValidator for ListValidator {
     const EXPECTED_TYPE: &'static str = "list";
 
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator> {
         Ok(Self {
             strict: is_strict(schema, config)?,
             item_validator: match schema.get_item("items") {
-                Some(d) => Some(Box::new(build_validator(d, config)?.0)),
+                Some(d) => Some(Box::new(build_validator(d, config, slots_builder)?.0)),
                 None => None,
             },
             min_items: schema.get_as("min_items")?,
@@ -38,12 +42,13 @@ impl Validator for ListValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         let list = match self.strict {
             true => input.strict_list()?,
             false => input.lax_list()?,
         };
-        self._validation_logic(py, input, list, extra)
+        self._validation_logic(py, input, list, extra, slots)
     }
 
     fn validate_strict<'s, 'data>(
@@ -51,15 +56,9 @@ impl Validator for ListValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_list()?, extra)
-    }
-
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        match self.item_validator {
-            Some(ref mut item_validator) => item_validator.set_ref(name, validator_arc),
-            None => Ok(()),
-        }
+        self._validation_logic(py, input, input.strict_list()?, extra, slots)
     }
 
     fn get_name(&self, py: Python) -> String {
@@ -77,6 +76,7 @@ impl ListValidator {
         input: &'data dyn Input,
         list: Box<dyn ListInput<'data> + 'data>,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         let length = list.input_len();
         if let Some(min_length) = self.min_items {
@@ -103,7 +103,7 @@ impl ListValidator {
                 let mut output: Vec<PyObject> = Vec::with_capacity(length);
                 let mut errors: Vec<ValLineError> = Vec::new();
                 for (index, item) in list.input_iter().enumerate() {
-                    match validator.validate(py, item, extra) {
+                    match validator.validate(py, item, extra, slots) {
                         Ok(item) => output.push(item),
                         Err(ValError::LineErrors(line_errors)) => {
                             let loc = vec![LocItem::I(index)];

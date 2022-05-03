@@ -17,7 +17,6 @@ install-rust-coverage:
 
 .PHONY: build-dev
 build-dev:
-	pip uninstall -y pydantic_core
 	@rm -f pydantic_core/*.so
 	cargo build
 	@rm -f target/debug/lib_pydantic_core.d
@@ -25,7 +24,6 @@ build-dev:
 
 .PHONY: build-fast
 build-fast:
-	pip uninstall -y pydantic_core
 	@rm -f pydantic_core/*.so
 	cargo build --release
 	@rm -f target/release/lib_pydantic_core.d
@@ -116,4 +114,5 @@ clean:
 	rm -f .coverage.*
 	rm -rf build
 	rm -rf perf.data*
+	rm -rf pydantic_core/*.so
 	python setup.py clean

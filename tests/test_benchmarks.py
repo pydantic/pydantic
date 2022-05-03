@@ -210,13 +210,13 @@ list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 @pytest.mark.benchmark(group='list of ints')
 def test_list_of_ints_pyd_py(benchmark):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: List[int]
 
     @benchmark
     def t():
-        PydanticTree.parse_obj(list_of_ints_data[0])
-        PydanticTree.parse_obj(list_of_ints_data[1])
+        PydanticModel.parse_obj(list_of_ints_data[0])
+        PydanticModel.parse_obj(list_of_ints_data[1])
 
 
 @pytest.mark.benchmark(group='list of ints')
@@ -231,15 +231,15 @@ def test_list_of_ints_core_py(benchmark):
 
 @pytest.mark.benchmark(group='list of ints')
 def test_list_of_ints_pyd_json(benchmark):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: List[int]
 
     json_data = [json.dumps(d) for d in list_of_ints_data]
 
     @benchmark
     def t():
-        PydanticTree.parse_obj(json.loads(json_data[0]))
-        PydanticTree.parse_obj(json.loads(json_data[1]))
+        PydanticModel.parse_obj(json.loads(json_data[0]))
+        PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
 @pytest.mark.benchmark(group='list of ints')
@@ -259,13 +259,13 @@ set_of_ints_data = ({i for i in range(1000)}, {str(i) for i in range(1000)})
 
 @pytest.mark.benchmark(group='set of ints')
 def test_set_of_ints_pyd(benchmark):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: Set[int]
 
     @benchmark
     def t():
-        PydanticTree.parse_obj(set_of_ints_data[0])
-        PydanticTree.parse_obj(set_of_ints_data[1])
+        PydanticModel.parse_obj(set_of_ints_data[0])
+        PydanticModel.parse_obj(set_of_ints_data[1])
 
 
 @pytest.mark.benchmark(group='set of ints')
@@ -280,15 +280,15 @@ def test_set_of_ints_core(benchmark):
 
 @pytest.mark.benchmark(group='set of ints')
 def test_set_of_ints_pyd_json(benchmark):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: Set[int]
 
     json_data = [json.dumps(list(d)) for d in set_of_ints_data]
 
     @benchmark
     def t():
-        PydanticTree.parse_obj(json.loads(json_data[0]))
-        PydanticTree.parse_obj(json.loads(json_data[1]))
+        PydanticModel.parse_obj(json.loads(json_data[0]))
+        PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
 @pytest.mark.benchmark(group='set of ints')
@@ -308,13 +308,13 @@ dict_of_ints_data = ({i: i for i in range(1000)}, {i: str(i) for i in range(1000
 
 @pytest.mark.benchmark(group='dict of ints')
 def test_dict_of_ints_pyd(benchmark):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: Dict[str, int]
 
     @benchmark
     def t():
-        PydanticTree.parse_obj(dict_of_ints_data[0])
-        PydanticTree.parse_obj(dict_of_ints_data[1])
+        PydanticModel.parse_obj(dict_of_ints_data[0])
+        PydanticModel.parse_obj(dict_of_ints_data[1])
 
 
 @pytest.mark.benchmark(group='dict of ints')
@@ -329,15 +329,15 @@ def test_dict_of_ints_core(benchmark):
 
 @pytest.mark.benchmark(group='dict of ints')
 def test_dict_of_ints_pyd_json(benchmark):
-    class PydanticTree(BaseModel):
+    class PydanticModel(BaseModel):
         __root__: Dict[str, int]
 
     json_data = [json.dumps(d) for d in dict_of_ints_data]
 
     @benchmark
     def t():
-        PydanticTree.parse_obj(json.loads(json_data[0]))
-        PydanticTree.parse_obj(json.loads(json_data[1]))
+        PydanticModel.parse_obj(json.loads(json_data[0]))
+        PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
 @pytest.mark.benchmark(group='dict of ints')
@@ -389,3 +389,21 @@ def test_many_models_core_model(benchmark):
         }
     )
     benchmark(v.validate_python, many_models_data)
+
+
+list_of_optional_data = [None if i % 2 else i for i in range(1000)]
+
+
+@pytest.mark.benchmark(group='list of optional')
+def test_list_of_optional_pyd(benchmark):
+    class PydanticModel(BaseModel):
+        __root__: List[Optional[int]]
+
+    benchmark(PydanticModel.parse_obj, list_of_optional_data)
+
+
+@pytest.mark.benchmark(group='list of optional')
+def test_list_of_optional_core(benchmark):
+    v = SchemaValidator({'type': 'list', 'items': {'type': 'optional', 'schema': 'int'}})
+
+    benchmark(v.validate_python, list_of_optional_data)

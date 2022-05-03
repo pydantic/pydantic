@@ -5,22 +5,26 @@ use crate::build_tools::SchemaDict;
 use crate::errors::{LocItem, ValError, ValLineError};
 use crate::input::Input;
 
-use super::{build_validator, BuildValidator, Extra, ValResult, ValidateEnum, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
-    choices: Vec<ValidateEnum>,
+    choices: Vec<CombinedValidator>,
 }
 
 impl BuildValidator for UnionValidator {
     const EXPECTED_TYPE: &'static str = "union";
 
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
-        let choices: Vec<ValidateEnum> = schema
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator> {
+        let choices: Vec<CombinedValidator> = schema
             .get_as_req::<&PyList>("choices")?
             .iter()
-            .map(|choice| build_validator(choice, config).map(|result| result.0))
-            .collect::<PyResult<Vec<ValidateEnum>>>()?;
+            .map(|choice| build_validator(choice, config, slots_builder).map(|result| result.0))
+            .collect::<PyResult<Vec<CombinedValidator>>>()?;
         Ok(Self { choices }.into())
     }
 }
@@ -31,12 +35,13 @@ impl Validator for UnionValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         // 1st pass: check if the value is an exact instance of one of the Union types
         if let Some(res) = self
             .choices
             .iter()
-            .map(|validator| validator.validate_strict(py, input, extra))
+            .map(|validator| validator.validate_strict(py, input, extra, slots))
             .find(ValResult::is_ok)
         {
             return res;
@@ -46,7 +51,7 @@ impl Validator for UnionValidator {
 
         // 3rd pass: check if the value can be coerced into one of the Union types
         for validator in &self.choices {
-            let line_errors = match validator.validate(py, input, extra) {
+            let line_errors = match validator.validate(py, input, extra, slots) {
                 Err(ValError::LineErrors(line_errors)) => line_errors,
                 otherwise => return otherwise,
             };
@@ -56,12 +61,6 @@ impl Validator for UnionValidator {
         }
 
         Err(ValError::LineErrors(errors))
-    }
-
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        self.choices
-            .iter_mut()
-            .try_for_each(|validator| validator.set_ref(name, validator_arc))
     }
 
     fn get_name(&self, _py: Python) -> String {
