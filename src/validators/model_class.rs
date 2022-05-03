@@ -1,6 +1,8 @@
 use std::os::raw::c_int;
+use std::ptr::null_mut;
 
-use pyo3::conversion::AsPyPointer;
+use pyo3::conversion::{AsPyPointer, FromPyPointer};
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple, PyType};
 use pyo3::{ffi, intern, ToBorrowedObject};
@@ -16,7 +18,6 @@ pub struct ModelClassValidator {
     strict: bool,
     validator: Box<ValidateEnum>,
     class: Py<PyType>,
-    new_method: PyObject,
 }
 
 impl BuildValidator for ModelClassValidator {
@@ -24,8 +25,6 @@ impl BuildValidator for ModelClassValidator {
 
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
         let class: &PyType = schema.get_as_req("class")?;
-        let new_method = class.getattr("__new__")?;
-        // `__new__` always exists and is always callable, no point checking `is_callable` here
 
         let model_schema_raw: &PyAny = schema.get_as_req("model")?;
         let (validator, model_schema) = build_validator(model_schema_raw, config)?;
@@ -40,7 +39,6 @@ impl BuildValidator for ModelClassValidator {
             strict: schema.get_as("strict")?.unwrap_or(false),
             validator: Box::new(validator),
             class: class.into(),
-            new_method: new_method.into(),
         }
         .into())
     }
@@ -64,7 +62,7 @@ impl Validator for ModelClassValidator {
             )
         } else {
             let output = self.validator.validate(py, input, extra)?;
-            self.create_class(py, output).map_err(as_internal)
+            unsafe { self.create_class(py, output).map_err(as_internal) }
         }
     }
 
@@ -99,22 +97,34 @@ impl Validator for ModelClassValidator {
 }
 
 impl ModelClassValidator {
-    /// utility used to avoid lots of `.map_err(as_internal)` in `validate()`
-    #[inline]
-    fn create_class(&self, py: Python, output: PyObject) -> PyResult<PyObject> {
+    unsafe fn create_class(&self, py: Python, output: PyObject) -> PyResult<PyObject> {
         let t: &PyTuple = output.extract(py)?;
         let model_dict = t.get_item(0)?;
         let fields_set = t.get_item(1)?;
 
-        // TODO would be great if we could create `instance` without resorting to calling `__new__`,
-        // if we could convert `self.class` (a `PyType`) to a `PyClass`, we could use `Py::new(...)`, but
-        // I can't find a way to do that. `PyObject_New` might be our friend, but I can't find an example of its use.
-        let instance = self.new_method.call(py, (&self.class,), None)?;
+        // based on the following but with the second argument of new_func set to an empty tuple as required
+        // https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
+        let args = PyTuple::empty(py);
+        let raw_type = self.class.as_ref(py).as_type_ptr();
+        let instance_ptr = match (*raw_type).tp_new {
+            Some(new_func) => {
+                let obj = new_func(raw_type, args.as_ptr(), null_mut());
+                if obj.is_null() {
+                    return Err(PyErr::fetch(py));
+                } else {
+                    obj
+                }
+            }
+            None => return Err(PyTypeError::new_err("base type without tp_new")),
+        };
 
-        force_setattr(&instance, py, intern!(py, "__dict__"), model_dict)?;
-        force_setattr(&instance, py, intern!(py, "__fields_set__"), fields_set)?;
+        force_setattr(instance_ptr, py, intern!(py, "__dict__"), model_dict)?;
+        force_setattr(instance_ptr, py, intern!(py, "__fields_set__"), fields_set)?;
 
-        Ok(instance)
+        match PyAny::from_borrowed_ptr_or_opt(py, instance_ptr) {
+            Some(instance) => Ok(instance.into()),
+            None => Err(PyTypeError::new_err("failed to create instance of class")),
+        }
     }
 }
 
@@ -122,14 +132,14 @@ impl ModelClassValidator {
 /// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/instance.rs#L587-L597
 /// to use `PyObject_GenericSetAttr` thereby bypassing `__setattr__` methods on the instance,
 /// see https://github.com/PyO3/pyo3/discussions/2321 for discussion
-pub fn force_setattr<N, V>(obj: &PyObject, py: Python<'_>, attr_name: N, value: V) -> PyResult<()>
+pub fn force_setattr<N, V>(obj: *mut ffi::PyObject, py: Python<'_>, attr_name: N, value: V) -> PyResult<()>
 where
     N: ToPyObject,
     V: ToPyObject,
 {
     attr_name.with_borrowed_ptr(py, move |attr_name| {
         value.with_borrowed_ptr(py, |value| unsafe {
-            error_on_minusone(py, ffi::PyObject_GenericSetAttr(obj.as_ptr(), attr_name, value))
+            error_on_minusone(py, ffi::PyObject_GenericSetAttr(obj, attr_name, value))
         })
     })
 }
