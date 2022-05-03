@@ -23,3 +23,4 @@ docs/_build/
 /*.lcov
 /*.profraw
 /flame/
+/.benchmarks/
