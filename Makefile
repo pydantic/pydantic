@@ -23,6 +23,14 @@ build-dev:
 	@rm -f target/debug/lib_pydantic_core.d
 	@mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
 
+.PHONY: build-fast
+build-fast:
+	pip uninstall -y pydantic_core
+	@rm -f pydantic_core/*.so
+	cargo build --release
+	@rm -f target/release/lib_pydantic_core.d
+	@mv target/release/lib_pydantic_core.* pydantic_core/_pydantic_core.so
+
 .PHONY: build-coverage
 build-coverage:
 	pip uninstall -y pydantic_core
@@ -62,6 +70,10 @@ mypy:
 .PHONY: test
 test:
 	coverage run -m pytest
+
+.PHONY: benchmark
+benchmark:
+	pytest tests/test_benchmarks.py --benchmark-enable
 
 .PHONY: testcov
 testcov: build-coverage test
