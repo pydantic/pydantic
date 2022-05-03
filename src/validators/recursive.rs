@@ -27,7 +27,7 @@ impl BuildValidator for RecursiveValidator {
         let name: String = schema.get_as_req("name")?;
         let validator_arc = Arc::new(RwLock::new(validator));
         match validator_arc.write() {
-            Ok(mut validator_guard) => validator_guard.set_ref(name.as_str(), &validator_arc),
+            Ok(mut validator_guard) => validator_guard.set_ref(&name, &validator_arc),
             Err(err) => py_error!("Recursive container build error: {}", err),
         }?;
         Ok(Self { validator_arc, name }.into())
@@ -99,7 +99,7 @@ impl Validator for RecursiveRefValidator {
     }
 
     fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        if self.validator_ref.is_none() && name == self.name.as_str() {
+        if self.validator_ref.is_none() && name == self.name {
             self.validator_ref = Some(Arc::downgrade(validator_arc));
         }
         Ok(())

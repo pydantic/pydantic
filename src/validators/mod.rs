@@ -62,7 +62,7 @@ impl SchemaValidator {
     }
 
     fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
-        match parse_json::<JsonInput>(input.as_str()) {
+        match parse_json::<JsonInput>(&input) {
             Ok(input) => {
                 let extra = Extra {
                     data: None,
