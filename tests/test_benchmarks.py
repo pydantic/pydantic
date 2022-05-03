@@ -22,6 +22,7 @@ class TestBenchmarkSimpleModel:
             age: int
             friends: List[int]
             settings: Dict[str, float]
+
         return PydanticModel
 
     @pytest.fixture(scope='class')
@@ -147,7 +148,7 @@ def recursive_model_data():
 def test_recursive_model_pyd(recursive_model_data, benchmark):
     class PydanticBranch(BaseModel):
         width: int
-        branch: Optional['PydanticBranch'] = None
+        branch: Optional['PydanticBranch'] = None  # noqa: F821
 
     benchmark(PydanticBranch.parse_obj, recursive_model_data)
 
@@ -197,26 +198,14 @@ def test_list_of_dict_models_pyd(benchmark):
 @pytest.mark.benchmark(group='list of dict models')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
-        {
-            'type': 'list',
-            'name': 'Branch',
-            'items': {
-                'type': 'model',
-                'fields': {
-                    'width': {'type': 'int'},
-                },
-            },
-        }
+        {'type': 'list', 'name': 'Branch', 'items': {'type': 'model', 'fields': {'width': {'type': 'int'}}}}
     )
 
     data = [{'width': i} for i in range(100)]
     benchmark(v.validate_python, data)
 
 
-list_of_ints_data = (
-    [i for i in range(1000)],
-    [str(i) for i in range(1000)],
-)
+list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 
 @pytest.mark.benchmark(group='list of ints')
@@ -265,10 +254,7 @@ def test_list_of_ints_core_json(benchmark):
         v.validate_json(json_data[1])
 
 
-set_of_ints_data = (
-    {i for i in range(1000)},
-    {str(i) for i in range(1000)},
-)
+set_of_ints_data = ({i for i in range(1000)}, {str(i) for i in range(1000)})
 
 
 @pytest.mark.benchmark(group='set of ints')
@@ -317,10 +303,7 @@ def test_set_of_ints_core_json(benchmark):
         v.validate_json(json_data[1])
 
 
-dict_of_ints_data = (
-    {i: i for i in range(1000)},
-    {i: str(i) for i in range(1000)},
-)
+dict_of_ints_data = ({i: i for i in range(1000)}, {i: str(i) for i in range(1000)})
 
 
 @pytest.mark.benchmark(group='dict of ints')
