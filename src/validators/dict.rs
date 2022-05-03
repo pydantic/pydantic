@@ -104,9 +104,9 @@ impl DictValidator {
 
         for (key, value) in dict.input_iter() {
             let output_key: Option<PyObject> =
-                apply_validator(py, &*self.key_validator, &mut errors, key, key, extra, true)?;
+                apply_validator(py, &self.key_validator, &mut errors, key, key, extra, true)?;
             let output_value: Option<PyObject> =
-                apply_validator(py, &*self.value_validator, &mut errors, value, key, extra, false)?;
+                apply_validator(py, &self.value_validator, &mut errors, value, key, extra, false)?;
             if let (Some(key), Some(value)) = (output_key, output_value) {
                 output.set_item(key, value).map_err(as_internal)?;
             }
