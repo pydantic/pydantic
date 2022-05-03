@@ -186,7 +186,7 @@ impl Validator for ModelValidator {
         if let Some(ref mut extra_validator) = self.extra_validator {
             extra_validator.set_ref(name, validator_arc)?;
         }
-        for field in self.fields.iter_mut() {
+        for field in &mut self.fields {
             field.validator.set_ref(name, validator_arc)?;
         }
         Ok(())
