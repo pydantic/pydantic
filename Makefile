@@ -90,11 +90,11 @@ flame:
 	@rm -rf perf.data*
 	@rm -rf flame
 	@mkdir -p flame
-	perf record -g benchmarks/minimal.py
+	perf record -g benchmarks/dict_model.py
 	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/python.svg
 	perf script --max-stack 20 | stackcollapse-perf.pl > flame/python.txt
 	@rm perf.data
-	JSON=1 perf record -g benchmarks/minimal.py
+	JSON=1 perf record -g benchmarks/dict_model.py
 	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/json.svg
 	perf script --max-stack 20 | stackcollapse-perf.pl > flame/json.txt
 	@rm perf.data
