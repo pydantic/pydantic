@@ -1,114 +1,87 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
-use serde_json::{Map, Value};
 
 use crate::errors::{err_val_error, ErrorKind, InputValue, LocItem, ValResult};
 
+use super::parse_json::{JsonArray, JsonInput, JsonObject};
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
-impl Input for Value {
+impl Input for JsonInput {
     fn is_none(&self) -> bool {
-        matches!(self, Value::Null)
+        matches!(self, JsonInput::Null)
     }
 
     fn strict_str(&self) -> ValResult<String> {
         match self {
-            Value::String(s) => Ok(s.to_string()),
+            JsonInput::String(s) => Ok(s.to_string()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::StrType),
         }
     }
 
     fn lax_str(&self) -> ValResult<String> {
         match self {
-            Value::String(s) => Ok(s.to_string()),
-            Value::Number(n) => Ok(n.to_string()),
+            JsonInput::String(s) => Ok(s.to_string()),
+            JsonInput::Int(int) => Ok(int.to_string()),
+            JsonInput::Float(float) => Ok(float.to_string()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::StrType),
         }
     }
 
     fn strict_bool(&self) -> ValResult<bool> {
         match self {
-            Value::Bool(b) => Ok(*b),
+            JsonInput::Bool(b) => Ok(*b),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BoolType),
         }
     }
 
     fn lax_bool(&self) -> ValResult<bool> {
         match self {
-            Value::Bool(b) => Ok(*b),
-            Value::String(s) => str_as_bool(self, s),
-            Value::Number(n) => {
-                if let Some(int) = n.as_i64() {
-                    int_as_bool(self, int)
-                } else {
-                    err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BoolParsing)
-                }
-            }
+            JsonInput::Bool(b) => Ok(*b),
+            JsonInput::String(s) => str_as_bool(self, s),
+            JsonInput::Int(int) => int_as_bool(self, *int),
+            // TODO float??
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BoolType),
         }
     }
 
     fn strict_int(&self) -> ValResult<i64> {
         match self {
-            Value::Number(n) => {
-                if let Some(int) = n.as_i64() {
-                    Ok(int)
-                } else {
-                    err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
-                }
-            }
+            JsonInput::Int(i) => Ok(*i),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType),
         }
     }
 
     fn lax_int(&self) -> ValResult<i64> {
         match self {
-            Value::Bool(b) => match *b {
+            JsonInput::Bool(b) => match *b {
                 true => Ok(1),
                 false => Ok(0),
             },
-            Value::Number(n) => {
-                if let Some(int) = n.as_i64() {
-                    Ok(int)
-                } else if let Some(float) = n.as_f64() {
-                    float_as_int(self, float)
-                } else {
-                    err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
-                }
-            }
-            Value::String(str) => str_as_int(self, str),
+            JsonInput::Int(i) => Ok(*i),
+            JsonInput::Float(f) => float_as_int(self, *f),
+            JsonInput::String(str) => str_as_int(self, str),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType),
         }
     }
 
     fn strict_float(&self) -> ValResult<f64> {
         match self {
-            Value::Number(n) => {
-                if let Some(float) = n.as_f64() {
-                    Ok(float)
-                } else {
-                    err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatParsing)
-                }
-            }
+            JsonInput::Float(f) => Ok(*f),
+            JsonInput::Int(i) => Ok(*i as f64),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType),
         }
     }
 
     fn lax_float(&self) -> ValResult<f64> {
         match self {
-            Value::Bool(b) => match *b {
+            JsonInput::Bool(b) => match *b {
                 true => Ok(1.0),
                 false => Ok(0.0),
             },
-            Value::Number(n) => {
-                if let Some(float) = n.as_f64() {
-                    Ok(float)
-                } else {
-                    err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatParsing)
-                }
-            }
-            Value::String(str) => match str.parse() {
+            JsonInput::Float(f) => Ok(*f),
+            JsonInput::Int(i) => Ok(*i as f64),
+            JsonInput::String(str) => match str.parse() {
                 Ok(i) => Ok(i),
                 Err(_) => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatParsing),
             },
@@ -122,14 +95,14 @@ impl Input for Value {
 
     fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
         match self {
-            Value::Object(dict) => Ok(Box::new(dict)),
+            JsonInput::Object(dict) => Ok(Box::new(dict)),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType),
         }
     }
 
     fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         match self {
-            Value::Array(a) => Ok(Box::new(a)),
+            JsonInput::Array(a) => Ok(Box::new(a)),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType),
         }
     }
@@ -137,13 +110,41 @@ impl Input for Value {
     fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
-            Value::Array(a) => Ok(Box::new(a)),
+            JsonInput::Array(a) => Ok(Box::new(a)),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType),
         }
     }
 }
 
-impl<'data> DictInput<'data> for &'data Map<String, Value> {
+impl ToPy for &JsonArray {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        self.iter().map(|v| v.to_py(py)).collect::<Vec<_>>().into_py(py)
+    }
+}
+
+impl<'data> ListInput<'data> for &'data JsonArray {
+    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
+        Box::new(self.iter().map(|item| item as &dyn Input))
+    }
+
+    fn input_len(&self) -> usize {
+        self.len()
+    }
+}
+
+impl ToPy for &JsonObject {
+    #[inline]
+    fn to_py(&self, py: Python) -> PyObject {
+        let dict = PyDict::new(py);
+        for (k, v) in self.iter() {
+            dict.set_item(k, v.to_py(py)).unwrap();
+        }
+        dict.into_py(py)
+    }
+}
+
+impl<'data> DictInput<'data> for &'data JsonObject {
     fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data> {
         Box::new(self.iter().map(|(k, v)| (k as &dyn Input, v as &dyn Input)))
     }
@@ -157,69 +158,25 @@ impl<'data> DictInput<'data> for &'data Map<String, Value> {
     }
 }
 
-impl<'data> ListInput<'data> for &'data Vec<Value> {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
-        Box::new(self.iter().map(|item| item as &dyn Input))
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl ToPy for Value {
-    #[inline]
+impl ToPy for JsonInput {
     fn to_py(&self, py: Python) -> PyObject {
         match self {
-            Value::Null => py.None(),
-            Value::Bool(b) => b.into_py(py),
-            Value::Number(n) => {
-                if let Some(int) = n.as_i64() {
-                    int.into_py(py)
-                } else if let Some(float) = n.as_f64() {
-                    float.into_py(py)
-                } else {
-                    panic!("{:?} is not a valid number", n)
-                }
-            }
-            Value::String(s) => s.into_py(py),
-            Value::Array(v) => v.to_py(py),
-            Value::Object(m) => m.to_py(py),
+            JsonInput::Null => py.None(),
+            JsonInput::Bool(b) => b.into_py(py),
+            JsonInput::Int(i) => i.into_py(py),
+            JsonInput::Float(f) => f.into_py(py),
+            JsonInput::String(s) => s.into_py(py),
+            JsonInput::Array(v) => v.to_py(py),
+            JsonInput::Object(o) => o.to_py(py),
         }
     }
 }
 
-impl ToPy for &Map<String, Value> {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        let dict = PyDict::new(py);
-        for (k, v) in self.iter() {
-            dict.set_item(k, v.to_py(py)).unwrap();
-        }
-        dict.into_py(py)
-    }
-}
-impl ToPy for &Vec<Value> {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.iter().map(|v| v.to_py(py)).collect::<Vec<_>>().into_py(py)
-    }
-}
-
-impl ToLocItem for Value {
+impl ToLocItem for JsonInput {
     fn to_loc(&self) -> LocItem {
         match self {
-            Value::Number(n) => {
-                if let Some(int) = n.as_i64() {
-                    LocItem::I(int as usize)
-                } else if let Some(float) = n.as_f64() {
-                    LocItem::I(float as usize)
-                } else {
-                    // something's gone wrong, best effort
-                    LocItem::S(format!("{:?}", n))
-                }
-            }
-            Value::String(s) => LocItem::S(s.to_string()),
+            JsonInput::Int(i) => LocItem::I(*i as usize),
+            JsonInput::String(s) => LocItem::S(s.to_string()),
             v => LocItem::S(format!("{:?}", v)),
         }
     }

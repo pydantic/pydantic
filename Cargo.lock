@@ -154,8 +154,10 @@ name = "pydantic-core"
 version = "0.0.1"
 dependencies = [
  "enum_dispatch",
+ "indexmap",
  "pyo3",
  "regex",
+ "serde",
  "serde_json",
  "strum",
  "strum_macros",
@@ -275,9 +277,9 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "serde"
-version = "1.0.136"
+version = "1.0.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce31e24b01e1e524df96f1c2fdd054405f8d7376249a5110886fb4b658484789"
+checksum = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1"
 
 [[package]]
 name = "serde_json"
