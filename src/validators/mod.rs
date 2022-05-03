@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
+
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::from_str as parse_json;
@@ -27,19 +28,19 @@ mod set;
 mod string;
 mod union;
 
-use self::recursive::ValidatorArc;
-
 #[pyclass]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
-    validator: ValidateEnum,
+    validator: CombinedValidator,
+    slots: Vec<CombinedValidator>,
 }
 
 #[pymethods]
 impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, schema: &PyAny) -> PyResult<Self> {
-        let validator = match build_validator(schema, None) {
+        let mut slots_builder = SlotsBuilder::new();
+        let validator = match build_validator(schema, None, &mut slots_builder) {
             Ok((v, _)) => v,
             Err(err) => {
                 return Err(match err.is_instance_of::<SchemaError>(py) {
@@ -48,8 +49,8 @@ impl SchemaValidator {
                 });
             }
         };
-
-        Ok(Self { validator })
+        let slots = slots_builder.into_slots()?;
+        Ok(Self { validator, slots })
     }
 
     fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
@@ -57,7 +58,7 @@ impl SchemaValidator {
             data: None,
             field: None,
         };
-        let r = self.validator.validate(py, input, &extra);
+        let r = self.validator.validate(py, input, &extra, &self.slots);
         r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
     }
 
@@ -68,7 +69,7 @@ impl SchemaValidator {
                     data: None,
                     field: None,
                 };
-                let r = self.validator.validate(py, &input, &extra);
+                let r = self.validator.validate(py, &input, &extra, &self.slots);
                 r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
             }
             Err(e) => {
@@ -88,7 +89,7 @@ impl SchemaValidator {
             data: Some(data),
             field: Some(field.as_str()),
         };
-        let r = self.validator.validate(py, input, &extra);
+        let r = self.validator.validate(py, input, &extra, &self.slots);
         r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
     }
 
@@ -106,16 +107,20 @@ pub trait BuildValidator: Sized {
 
     /// Build a new validator from the schema, the return type is a trait to provide a way for validators
     /// to return other validators, see `string.rs`, `int.rs`, `float.rs` and `function.rs` for examples
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum>;
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        _slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator>;
 }
 
 // macro to build the match statement for validator selection
 macro_rules! validator_match {
-    ($type:ident, $dict:ident, $config:ident, $($validator:path,)+) => {
+    ($type:ident, $dict:ident, $config:ident, $slots_builder:ident, $($validator:path,)+) => {
         match $type {
             $(
                 <$validator>::EXPECTED_TYPE => {
-                    let val = <$validator>::build($dict, $config).map_err(|err| {
+                    let val = <$validator>::build($dict, $config, $slots_builder).map_err(|err| {
                         crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
                     })?;
                     Ok((val, $dict))
@@ -128,7 +133,11 @@ macro_rules! validator_match {
     };
 }
 
-pub fn build_validator<'a>(schema: &'a PyAny, config: Option<&'a PyDict>) -> PyResult<(ValidateEnum, &'a PyDict)> {
+pub fn build_validator<'a>(
+    schema: &'a PyAny,
+    config: Option<&'a PyDict>,
+    slots_builder: &mut SlotsBuilder,
+) -> PyResult<(CombinedValidator, &'a PyDict)> {
     let dict: &PyDict = match schema.cast_as() {
         Ok(s) => s,
         Err(_) => {
@@ -142,6 +151,7 @@ pub fn build_validator<'a>(schema: &'a PyAny, config: Option<&'a PyDict>) -> PyR
         type_,
         dict,
         config,
+        slots_builder,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
         // unions
@@ -191,7 +201,7 @@ pub struct Extra<'a> {
 
 #[derive(Debug, Clone)]
 #[enum_dispatch]
-pub enum ValidateEnum {
+pub enum CombinedValidator {
     // models e.g. heterogeneous dicts
     Model(self::model::ModelValidator),
     // unions
@@ -243,7 +253,7 @@ pub enum ValidateEnum {
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
 /// validators defined in `build_validator` also need `EXPECTED_TYPE` as a const, but that can't be part of the trait
-#[enum_dispatch(ValidateEnum)]
+#[enum_dispatch(CombinedValidator)]
 pub trait Validator: Send + Sync + Clone + Debug {
     /// Do the actual validation for this schema/type
     fn validate<'s, 'data>(
@@ -251,6 +261,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject>;
 
     /// This is used in unions for the first pass to see if we have an "exact match",
@@ -260,17 +271,52 @@ pub trait Validator: Send + Sync + Clone + Debug {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra)
-    }
-
-    /// `set_ref` is used in recursive models to set the weak reference in the `RecursiveRefValidator`,
-    /// I can't imagine any other use, but then maybe I'm not very imaginative...
-    fn set_ref(&mut self, _name: &str, _validator_arc: &ValidatorArc) -> PyResult<()> {
-        Ok(())
+        self.validate(py, input, extra, slots)
     }
 
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self, py: Python) -> String;
+}
+
+pub struct SlotsBuilder {
+    named_slots: Vec<(Option<String>, Option<CombinedValidator>)>,
+}
+
+impl SlotsBuilder {
+    pub fn new() -> Self {
+        let named_slots: Vec<(Option<String>, Option<CombinedValidator>)> = Vec::new();
+        SlotsBuilder { named_slots }
+    }
+
+    pub fn build_add_named(&mut self, name: String, schema: &PyAny, config: Option<&PyDict>) -> PyResult<usize> {
+        let id = self.named_slots.len();
+        self.named_slots.push((Some(name), None));
+        let validator = build_validator(schema, config, self)?.0;
+        self.named_slots[id] = (None, Some(validator));
+        Ok(id)
+    }
+
+    pub fn find_id(&self, name: &str) -> PyResult<usize> {
+        let is_match = |(n, _): &(Option<String>, Option<CombinedValidator>)| match n {
+            Some(n) => n == name,
+            None => false,
+        };
+        match self.named_slots.iter().position(is_match) {
+            Some(id) => Ok(id),
+            None => py_error!("Recursive reference error: ref '{}' not found", name),
+        }
+    }
+
+    pub fn into_slots(self) -> PyResult<Vec<CombinedValidator>> {
+        self.named_slots
+            .into_iter()
+            .map(|(_, opt_validator)| match opt_validator {
+                Some(validator) => Ok(validator),
+                None => py_error!("Schema build error: missing named slot"),
+            })
+            .collect()
+    }
 }

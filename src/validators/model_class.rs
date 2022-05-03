@@ -11,23 +11,27 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValError, ValResult};
 use crate::input::Input;
 
-use super::{build_validator, BuildValidator, Extra, ValidateEnum, Validator, ValidatorArc};
+use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ModelClassValidator {
     strict: bool,
-    validator: Box<ValidateEnum>,
+    validator: Box<CombinedValidator>,
     class: Py<PyType>,
 }
 
 impl BuildValidator for ModelClassValidator {
     const EXPECTED_TYPE: &'static str = "model-class";
 
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator> {
         let class: &PyType = schema.get_as_req("class")?;
 
         let model_schema_raw: &PyAny = schema.get_as_req("model")?;
-        let (validator, model_schema) = build_validator(model_schema_raw, config)?;
+        let (validator, model_schema) = build_validator(model_schema_raw, config, slots_builder)?;
         let model_type: String = model_schema.get_as_req("type")?;
         if &model_type != "model" {
             return py_error!("model-class expected a 'model' schema, got '{}'", model_type);
@@ -50,6 +54,7 @@ impl Validator for ModelClassValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         extra: &Extra,
+        slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         let class = self.class.as_ref(py);
         if input.strict_model_check(class)? {
@@ -61,7 +66,7 @@ impl Validator for ModelClassValidator {
                 context = context!("class_name" => self.get_name(py))
             )
         } else {
-            let output = self.validator.validate(py, input, extra)?;
+            let output = self.validator.validate(py, input, extra, slots)?;
             unsafe { self.create_class(py, output).map_err(as_internal) }
         }
     }
@@ -71,6 +76,7 @@ impl Validator for ModelClassValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         if input.strict_model_check(self.class.as_ref(py))? {
             Ok(input.to_py(py))
@@ -78,10 +84,6 @@ impl Validator for ModelClassValidator {
             // errors from `validate_strict` are never used used, so we can keep this simple
             Err(ValError::LineErrors(vec![]))
         }
-    }
-
-    fn set_ref(&mut self, name: &str, validator_arc: &ValidatorArc) -> PyResult<()> {
-        self.validator.set_ref(name, validator_arc)
     }
 
     fn get_name(&self, py: Python) -> String {

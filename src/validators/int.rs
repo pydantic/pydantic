@@ -5,7 +5,7 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{BuildValidator, Extra, ValidateEnum, Validator};
+use super::{BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IntValidator;
@@ -13,7 +13,11 @@ pub struct IntValidator;
 impl BuildValidator for IntValidator {
     const EXPECTED_TYPE: &'static str = "int";
 
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        _slots_builder: &mut SlotsBuilder,
+    ) -> PyResult<CombinedValidator> {
         let use_constrained = schema.get_item("multiple_of").is_some()
             || schema.get_item("le").is_some()
             || schema.get_item("lt").is_some()
@@ -35,6 +39,7 @@ impl Validator for IntValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         Ok(input.lax_int()?.into_py(py))
     }
@@ -44,6 +49,7 @@ impl Validator for IntValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         Ok(input.strict_int()?.into_py(py))
     }
@@ -57,7 +63,7 @@ impl Validator for IntValidator {
 pub struct StrictIntValidator;
 
 impl StrictIntValidator {
-    fn build() -> PyResult<ValidateEnum> {
+    fn build() -> PyResult<CombinedValidator> {
         Ok(Self.into())
     }
 }
@@ -68,6 +74,7 @@ impl Validator for StrictIntValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         Ok(input.strict_int()?.into_py(py))
     }
@@ -93,6 +100,7 @@ impl Validator for ConstrainedIntValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         let int = match self.strict {
             true => input.strict_int()?,
@@ -106,6 +114,7 @@ impl Validator for ConstrainedIntValidator {
         py: Python<'data>,
         input: &'data dyn Input,
         _extra: &Extra,
+        _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_int()?)
     }
@@ -116,7 +125,7 @@ impl Validator for ConstrainedIntValidator {
 }
 
 impl ConstrainedIntValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<ValidateEnum> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
         Ok(Self {
             strict: is_strict(schema, config)?,
             multiple_of: schema.get_as("multiple_of")?,
