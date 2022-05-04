@@ -1,30 +1,10 @@
 use std::fmt;
-use std::fmt::Debug;
 
-use pyo3::prelude::*;
 use pyo3::types::PyType;
 
-use crate::errors::{LocItem, ValResult};
+use crate::errors::ValResult;
 
-pub trait ToPy: Debug {
-    fn to_py(&self, py: Python) -> PyObject;
-}
-
-pub trait ToLocItem {
-    fn to_loc(&self) -> LocItem;
-}
-
-impl ToLocItem for String {
-    fn to_loc(&self) -> LocItem {
-        LocItem::S(self.clone())
-    }
-}
-
-impl ToLocItem for &str {
-    fn to_loc(&self) -> LocItem {
-        LocItem::S(self.to_string())
-    }
-}
+use super::{DictInput, ListInput, ToLocItem, ToPy};
 
 pub trait Input: fmt::Debug + ToPy + ToLocItem {
     fn is_none(&self) -> bool;
@@ -64,21 +44,4 @@ pub trait Input: fmt::Debug + ToPy + ToLocItem {
     fn lax_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
         self.strict_set()
     }
-}
-
-// these are ugly, is there any way to avoid the maps in iter, one of the boxes and/or the duplication?
-// is this harming performance, particularly the .map(|item| item)?
-// https://stackoverflow.com/a/47156134/949890
-pub trait DictInput<'data>: ToPy {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data>;
-
-    fn input_get(&self, key: &str) -> Option<&'data dyn Input>;
-
-    fn input_len(&self) -> usize;
-}
-
-pub trait ListInput<'data>: ToPy {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data>;
-
-    fn input_len(&self) -> usize;
 }

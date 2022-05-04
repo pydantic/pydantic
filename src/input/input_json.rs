@@ -1,11 +1,11 @@
-use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyType};
+use pyo3::types::PyType;
 
-use crate::errors::{err_val_error, ErrorKind, InputValue, LocItem, ValResult};
+use crate::errors::{err_val_error, ErrorKind, InputValue, ValResult};
 
-use super::parse_json::{JsonArray, JsonInput, JsonObject};
+use super::generics::{DictInput, ListInput};
+use super::input_abstract::Input;
+use super::parse_json::JsonInput;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
-use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for JsonInput {
     fn is_none(&self) -> bool {
@@ -113,79 +113,6 @@ impl Input for JsonInput {
             JsonInput::Array(a) => Ok(Box::new(a)),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType),
         }
-    }
-}
-
-impl ToPy for &JsonArray {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.iter().map(|v| v.to_py(py)).collect::<Vec<_>>().into_py(py)
-    }
-}
-
-impl<'data> ListInput<'data> for &'data JsonArray {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
-        Box::new(self.iter().map(|item| item as &dyn Input))
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl ToPy for &JsonObject {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        let dict = PyDict::new(py);
-        for (k, v) in self.iter() {
-            dict.set_item(k, v.to_py(py)).unwrap();
-        }
-        dict.into_py(py)
-    }
-}
-
-impl<'data> DictInput<'data> for &'data JsonObject {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data> {
-        Box::new(self.iter().map(|(k, v)| (k as &dyn Input, v as &dyn Input)))
-    }
-
-    fn input_get(&self, key: &str) -> Option<&'data dyn Input> {
-        self.get(key).map(|item| item as &dyn Input)
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl ToPy for JsonInput {
-    fn to_py(&self, py: Python) -> PyObject {
-        match self {
-            JsonInput::Null => py.None(),
-            JsonInput::Bool(b) => b.into_py(py),
-            JsonInput::Int(i) => i.into_py(py),
-            JsonInput::Float(f) => f.into_py(py),
-            JsonInput::String(s) => s.into_py(py),
-            JsonInput::Array(v) => v.to_py(py),
-            JsonInput::Object(o) => o.to_py(py),
-        }
-    }
-}
-
-impl ToLocItem for JsonInput {
-    fn to_loc(&self) -> LocItem {
-        match self {
-            JsonInput::Int(i) => LocItem::I(*i as usize),
-            JsonInput::String(s) => LocItem::S(s.to_string()),
-            v => LocItem::S(format!("{:?}", v)),
-        }
-    }
-}
-
-impl ToPy for String {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
     }
 }
 
