@@ -3,10 +3,11 @@ use std::str::from_utf8;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySet, PyString, PyTuple, PyType};
 
-use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, LocItem, ValResult};
+use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, ValResult};
 
+use super::generics::{DictInput, ListInput};
+use super::input_abstract::Input;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
-use super::traits::{DictInput, Input, ListInput, ToLocItem, ToPy};
 
 impl Input for PyAny {
     fn is_none(&self) -> bool {
@@ -229,60 +230,6 @@ fn instance_as_dict(instance: &PyAny) -> PyResult<&PyDict> {
     Ok(dict)
 }
 
-impl<'data> DictInput<'data> for &'data PyDict {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = (&'data dyn Input, &'data dyn Input)> + 'data> {
-        Box::new(self.iter().map(|(k, v)| (k as &dyn Input, v as &dyn Input)))
-    }
-
-    fn input_get(&self, key: &str) -> Option<&'data dyn Input> {
-        self.get_item(key).map(|item| item as &dyn Input)
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl<'data> ListInput<'data> for &'data PyList {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
-        Box::new(self.iter().map(|item| item as &dyn Input))
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl<'data> ListInput<'data> for &'data PyTuple {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
-        Box::new(self.iter().map(|item| item as &dyn Input))
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl<'data> ListInput<'data> for &'data PySet {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
-        Box::new(self.iter().map(|item| item as &dyn Input))
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
-impl<'data> ListInput<'data> for &'data PyFrozenSet {
-    fn input_iter(&self) -> Box<dyn Iterator<Item = &'data dyn Input> + 'data> {
-        Box::new(self.iter().map(|item| item as &dyn Input))
-    }
-
-    fn input_len(&self) -> usize {
-        self.len()
-    }
-}
-
 /// Utility for extracting a string from a PyAny, if possible.
 fn _maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<String>> {
     if let Ok(str) = v.extract::<String>() {
@@ -296,68 +243,4 @@ fn _maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Str
     } else {
         Ok(None)
     }
-}
-
-impl ToPy for PyAny {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
-    }
-}
-
-impl ToPy for &PyDict {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
-    }
-}
-
-impl ToPy for &PyList {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
-    }
-}
-
-impl ToPy for &PyTuple {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
-    }
-}
-
-impl ToPy for &PySet {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
-    }
-}
-
-impl ToPy for &PyFrozenSet {
-    #[inline]
-    fn to_py(&self, py: Python) -> PyObject {
-        self.into_py(py)
-    }
-}
-
-impl ToLocItem for PyAny {
-    fn to_loc(&self) -> LocItem {
-        if let Ok(key_str) = self.extract::<String>() {
-            LocItem::S(key_str)
-        } else if let Ok(key_int) = self.extract::<usize>() {
-            LocItem::I(key_int)
-        } else {
-            // best effort is to use repr
-            match repr_string(self) {
-                Ok(s) => LocItem::S(s),
-                Err(_) => LocItem::S(format!("{:?}", self)),
-            }
-        }
-    }
-}
-
-fn repr_string(py_any: &PyAny) -> PyResult<String> {
-    let repr_result = py_any.repr()?;
-    let repr: String = repr_result.extract()?;
-    Ok(repr)
 }
