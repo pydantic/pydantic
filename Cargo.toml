@@ -12,7 +12,12 @@ serde_json = {version = "1.0.79", features = ["preserve_order"]}
 enum_dispatch = "0.3.8"
 serde = "1.0.137"
 indexmap = "1.8.1"
+mimalloc = { version = "0.1.29", default-features = false }
 
 [lib]
 name = "_pydantic_core"
 crate-type = ["cdylib"]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
