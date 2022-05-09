@@ -88,11 +88,12 @@ impl ValidationError {
     }
 
     fn errors(&self, py: Python) -> PyResult<PyObject> {
-        let mut errors: Vec<PyObject> = Vec::with_capacity(self.line_errors.len());
-        for line_error in &self.line_errors {
-            errors.push(line_error.as_dict(py)?);
-        }
-        Ok(errors.into_py(py))
+        Ok(self
+            .line_errors
+            .iter()
+            .map(|e| e.as_dict(py))
+            .collect::<PyResult<Vec<PyObject>>>()?
+            .into_py(py))
     }
 
     fn __repr__(&self, py: Python) -> String {
