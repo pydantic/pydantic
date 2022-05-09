@@ -104,12 +104,17 @@ impl ValidationError {
     }
 }
 
-macro_rules! truncate {
-    ($out:expr, $prefix:expr, $value:expr) => {
+macro_rules! truncate_input_value {
+    ($out:expr, $value:expr) => {
         if $value.len() > 50 {
-            write!($out, "{}{}...{}", $prefix, &$value[0..25], &$value[$value.len() - 24..])?;
+            write!(
+                $out,
+                ", input_value={}...{}",
+                &$value[0..25],
+                &$value[$value.len() - 24..]
+            )?;
         } else {
-            write!($out, "{}{}", $prefix, $value)?;
+            write!($out, ", input_value={}", $value)?;
         }
     };
 }
@@ -208,13 +213,13 @@ impl PyLineError {
                 Ok(s) => s,
                 Err(_) => input_value.to_string(),
             };
-            truncate!(output, ", input_value=", input_str);
+            truncate_input_value!(output, input_str);
 
             if let Ok(type_) = input_value.get_type().name() {
                 write!(output, ", input_type={}", type_)?;
             }
         } else {
-            truncate!(output, "input_value=", self.input_value.to_string());
+            truncate_input_value!(output, self.input_value.to_string());
         }
         output.push(']');
         Ok(output)
