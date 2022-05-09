@@ -2166,4 +2166,4 @@ def test_nest_alias():
     assert Model.parse_obj({'nest': {'a': 1}}).dict(by_alias=True) == {'nest': {'a': 1}}
 
     with pytest.raises(ValidationError):
-        Model.parse_obj({"nest": {"b": 1}})
+        Model.parse_obj({'nest': {'b': 1}})
