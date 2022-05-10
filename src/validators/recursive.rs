@@ -23,7 +23,7 @@ impl BuildValidator for RecursiveValidator {
     ) -> PyResult<CombinedValidator> {
         let sub_schema: &PyAny = schema.get_as_req("schema")?;
         let name: String = schema.get_as_req("name")?;
-        let validator_id = slots_builder.build_add_named(name, sub_schema, config)?;
+        let validator_id = slots_builder.add_named(name, sub_schema, config)?;
         Ok(Self { validator_id }.into())
     }
 }

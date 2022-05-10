@@ -291,7 +291,7 @@ impl SlotsBuilder {
         SlotsBuilder { named_slots }
     }
 
-    pub fn build_add_named(&mut self, name: String, schema: &PyAny, config: Option<&PyDict>) -> PyResult<usize> {
+    pub fn add_named(&mut self, name: String, schema: &PyAny, config: Option<&PyDict>) -> PyResult<usize> {
         let id = self.named_slots.len();
         self.named_slots.push((Some(name), None));
         let validator = build_validator(schema, config, self)?.0;
