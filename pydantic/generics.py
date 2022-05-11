@@ -98,6 +98,7 @@ class GenericModel(BaseModel):
                 __base__=(cls,) + tuple(cls.__parameterized_bases__(typevars_map)),
                 __config__=None,
                 __validators__=validators,
+                __cls_kwargs__=None,
                 **fields,
             ),
         )
