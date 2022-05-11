@@ -2884,3 +2884,34 @@ def test_alias_same():
             },
         },
     }
+
+
+def test_nested_python_dataclasses():
+    """
+    Test schema generation for nested python dataclasses
+    """
+
+    from dataclasses import dataclass as python_dataclass
+
+    @python_dataclass
+    class ChildModel:
+        name: str
+
+    @python_dataclass
+    class NestedModel:
+        child: List[ChildModel]
+
+    assert model_schema(dataclass(NestedModel)) == {
+        'title': 'NestedModel',
+        'type': 'object',
+        'properties': {'child': {'title': 'Child', 'type': 'array', 'items': {'$ref': '#/definitions/ChildModel'}}},
+        'required': ['child'],
+        'definitions': {
+            'ChildModel': {
+                'title': 'ChildModel',
+                'type': 'object',
+                'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                'required': ['name'],
+            }
+        },
+    }
