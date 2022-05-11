@@ -3,7 +3,7 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, ClassVar
 
 import pytest
 
@@ -1932,3 +1932,17 @@ def test_int_subclass():
 
     m = MyModel(my_int=IntSubclass(123))
     assert m.my_int.__class__ == IntSubclass
+
+
+def test_class_var_forward_ref(create_module):
+    create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import ClassVar
+from pydantic import BaseModel
+
+class WithClassVar(BaseModel):
+    Instances: ClassVar[dict[str, WithClassVar]] = {}
+"""
+    )
