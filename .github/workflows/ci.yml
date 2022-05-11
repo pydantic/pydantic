@@ -217,7 +217,7 @@ jobs:
           python-version: '3.8'
 
       - name: get coverage files
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: coverage
           path: coverage
@@ -328,13 +328,13 @@ jobs:
           python-version: '3.8'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: pypi_files
           path: dist
 
       - name: get docs
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docs
           path: site
