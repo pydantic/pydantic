@@ -54,6 +54,10 @@ check-dist:
 mypy:
 	mypy pydantic
 
+.PHONY: pyright
+pyright:
+	cd tests/pyright && pyright
+
 .PHONY: test
 test:
 	pytest --cov=pydantic
