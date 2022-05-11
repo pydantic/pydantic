@@ -51,3 +51,18 @@ def test_pickle(pickle_protocol: int) -> None:
     v2 = pickle.loads(p)
     assert v2.validate_python('tRuE') is True
     assert repr(v1) == repr(v2)
+
+
+def test_schema_recursive_error():
+    schema = {'type': 'union', 'choices': []}
+    schema['choices'].append(schema)
+    with pytest.raises(
+        SchemaError, match='RecursionError: Recursive detected, depth exceeded max allowed value of 100'
+    ):
+        SchemaValidator(schema)
+
+
+def test_not_schema_recursive_error():
+    schema = {'type': 'model', 'fields': {f'f_{i}': {'type': 'optional', 'schema': 'int'} for i in range(101)}}
+    v = SchemaValidator(schema)
+    assert repr(v).count('ModelField') == 101

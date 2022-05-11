@@ -4,7 +4,7 @@ use pyo3::types::PyDict;
 use crate::errors::ValResult;
 use crate::input::Input;
 
-use super::{BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
+use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 /// This might seem useless, but it's useful in DictValidator to avoid Option<Validator> a lot
 #[derive(Debug, Clone)]
@@ -16,7 +16,7 @@ impl BuildValidator for AnyValidator {
     fn build(
         _schema: &PyDict,
         _config: Option<&PyDict>,
-        _slots_builder: &mut SlotsBuilder,
+        _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         Ok(Self.into())
     }

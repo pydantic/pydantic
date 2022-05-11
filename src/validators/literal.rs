@@ -7,7 +7,7 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
+use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug)]
 pub struct LiteralBuilder;
@@ -18,7 +18,7 @@ impl BuildValidator for LiteralBuilder {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        _slots_builder: &mut SlotsBuilder,
+        _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let expected: &PyList = schema.get_as_req("expected")?;
         if expected.is_empty() {

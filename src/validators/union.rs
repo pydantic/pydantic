@@ -5,7 +5,7 @@ use crate::build_tools::SchemaDict;
 use crate::errors::{LocItem, ValError, ValLineError};
 use crate::input::Input;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
@@ -18,12 +18,12 @@ impl BuildValidator for UnionValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        slots_builder: &mut SlotsBuilder,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let choices: Vec<CombinedValidator> = schema
             .get_as_req::<&PyList>("choices")?
             .iter()
-            .map(|choice| build_validator(choice, config, slots_builder).map(|result| result.0))
+            .map(|choice| build_validator(choice, config, build_context).map(|result| result.0))
             .collect::<PyResult<Vec<CombinedValidator>>>()?;
         Ok(Self { choices }.into())
     }
