@@ -1,0 +1,62 @@
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  deployments: write
+  contents: write
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - uses: actions/cache@v2
+        id: cache-py
+        name: cache python
+        with:
+          path: ${{ env.pythonLocation }}
+          key: >
+            py
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements.txt') }}
+            ${{ hashFiles('setup.py') }}
+
+      - run: pip install -r tests/requirements.txt
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
+      - name: install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v1
+
+      - run: pip install .
+
+      # this is required so that pytest uses the installed package
+      - run: rm tests/__init__.py
+
+      - run: >
+          pytest tests/test_benchmarks.py
+          --benchmark-enable
+          --benchmark-warmup=on
+          --benchmark-warmup-iterations=10000
+          --benchmark-json output.json
+
+      - uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: pytest
+          output-file-path: output.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
