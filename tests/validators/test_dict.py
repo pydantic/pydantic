@@ -13,6 +13,21 @@ def test_dict(py_or_json):
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
 
 
+def test_dict_value_error(py_or_json):
+    v = py_or_json({'type': 'dict', 'values': 'int'})
+    assert v.validate_test({'a': 2, 'b': '4'}) == {'a': 2, 'b': 4}
+    with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
+        v.validate_test({'a': 2, 'b': 'wrong'})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['b'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'wrong',
+        }
+    ]
+
+
 def test_dict_any_value():
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
     assert v.validate_python({'1': 1, '2': 'a', '3': None}) == {'1': 1, '2': 'a', '3': None}

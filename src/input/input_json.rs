@@ -2,7 +2,7 @@ use pyo3::types::PyType;
 
 use crate::errors::{err_val_error, ErrorKind, InputValue, ValResult};
 
-use super::generics::{DictInput, ListInput};
+use super::generics::{GenericMapping, GenericSequence};
 use super::input_abstract::Input;
 use super::parse_json::JsonInput;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
@@ -93,24 +93,24 @@ impl Input for JsonInput {
         Ok(false)
     }
 
-    fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         match self {
-            JsonInput::Object(dict) => Ok(Box::new(dict)),
+            JsonInput::Object(dict) => Ok(dict.into()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType),
         }
     }
 
-    fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         match self {
-            JsonInput::Array(a) => Ok(Box::new(a)),
+            JsonInput::Array(a) => Ok(a.into()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType),
         }
     }
 
-    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
-            JsonInput::Array(a) => Ok(Box::new(a)),
+            JsonInput::Array(a) => Ok(a.into()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType),
         }
     }
@@ -164,15 +164,15 @@ impl Input for String {
         Ok(false)
     }
 
-    fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
     }
 
-    fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
     }
 
-    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
     }
 }

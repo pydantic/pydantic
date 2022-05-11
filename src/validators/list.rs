@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyList};
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, LocItem, ValError, ValLineError};
-use crate::input::{Input, ListInput};
+use crate::input::{GenericSequence, Input, SequenceLenIter};
 
 use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
 
@@ -74,11 +74,11 @@ impl ListValidator {
         &'s self,
         py: Python<'data>,
         input: &'data dyn Input,
-        list: Box<dyn ListInput<'data> + 'data>,
+        list: GenericSequence<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let length = list.input_len();
+        let length = list.generic_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {
                 return err_val_error!(
@@ -102,7 +102,7 @@ impl ListValidator {
             Some(ref validator) => {
                 let mut output: Vec<PyObject> = Vec::with_capacity(length);
                 let mut errors: Vec<ValLineError> = Vec::new();
-                for (index, item) in list.input_iter().enumerate() {
+                for (index, item) in list.generic_iter() {
                     match validator.validate(py, item, extra, slots) {
                         Ok(item) => output.push(item),
                         Err(ValError::LineErrors(line_errors)) => {
@@ -119,7 +119,7 @@ impl ListValidator {
                 }
             }
             None => {
-                let output: Vec<PyObject> = list.input_iter().map(|item| item.to_py(py)).collect();
+                let output: Vec<PyObject> = list.generic_iter().map(|(_, item)| item.to_py(py)).collect();
                 Ok(PyList::new(py, &output).into_py(py))
             }
         }
