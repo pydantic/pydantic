@@ -6,7 +6,7 @@ use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, 
 use crate::input::{GenericMapping, Input, MappingLenIter, ToLocItem};
 
 use super::any::AnyValidator;
-use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {
@@ -24,17 +24,17 @@ impl BuildValidator for DictValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        slots_builder: &mut SlotsBuilder,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         Ok(Self {
             strict: is_strict(schema, config)?,
             key_validator: match schema.get_item("keys") {
-                Some(schema) => Box::new(build_validator(schema, config, slots_builder)?.0),
-                None => Box::new(AnyValidator::build(schema, config, slots_builder)?),
+                Some(schema) => Box::new(build_validator(schema, config, build_context)?.0),
+                None => Box::new(AnyValidator::build(schema, config, build_context)?),
             },
             value_validator: match schema.get_item("values") {
-                Some(d) => Box::new(build_validator(d, config, slots_builder)?.0),
-                None => Box::new(AnyValidator::build(schema, config, slots_builder)?),
+                Some(d) => Box::new(build_validator(d, config, build_context)?.0),
+                None => Box::new(AnyValidator::build(schema, config, build_context)?),
             },
             min_items: schema.get_as("min_items")?,
             max_items: schema.get_as("max_items")?,

@@ -4,7 +4,7 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::input::Input;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct OptionalValidator {
@@ -17,11 +17,11 @@ impl BuildValidator for OptionalValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        slots_builder: &mut SlotsBuilder,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let schema: &PyAny = schema.get_as_req("schema")?;
         Ok(Self {
-            validator: Box::new(build_validator(schema, config, slots_builder)?.0),
+            validator: Box::new(build_validator(schema, config, build_context)?.0),
         }
         .into())
     }

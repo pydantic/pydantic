@@ -5,7 +5,7 @@ use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::Input;
 
-use super::{BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
+use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IntValidator;
@@ -16,7 +16,7 @@ impl BuildValidator for IntValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _slots_builder: &mut SlotsBuilder,
+        _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let use_constrained = schema.get_item("multiple_of").is_some()
             || schema.get_item("le").is_some()

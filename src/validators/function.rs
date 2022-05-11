@@ -6,7 +6,7 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::input::Input;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug)]
 pub struct FunctionBuilder;
@@ -17,14 +17,14 @@ impl BuildValidator for FunctionBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        slots_builder: &mut SlotsBuilder,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let mode: &str = schema.get_as_req("mode")?;
         match mode {
-            "before" => FunctionBeforeValidator::build(schema, config, slots_builder),
-            "after" => FunctionAfterValidator::build(schema, config, slots_builder),
+            "before" => FunctionBeforeValidator::build(schema, config, build_context),
+            "after" => FunctionAfterValidator::build(schema, config, build_context),
             "plain" => FunctionPlainValidator::build(schema, config),
-            "wrap" => FunctionWrapValidator::build(schema, config, slots_builder),
+            "wrap" => FunctionWrapValidator::build(schema, config, build_context),
             _ => py_error!("Unexpected function mode {:?}", mode),
         }
     }
@@ -42,10 +42,10 @@ macro_rules! impl_build {
             pub fn build(
                 schema: &PyDict,
                 config: Option<&PyDict>,
-                slots_builder: &mut SlotsBuilder,
+                build_context: &mut BuildContext,
             ) -> PyResult<CombinedValidator> {
                 Ok(Self {
-                    validator: Box::new(build_validator(schema.get_as_req("schema")?, config, slots_builder)?.0),
+                    validator: Box::new(build_validator(schema.get_as_req("schema")?, config, build_context)?.0),
                     func: get_function(schema)?,
                     config: config.map(|c| c.into()),
                 }

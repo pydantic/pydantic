@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
 
+use pyo3::exceptions::PyRecursionError;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::from_str as parse_json;
@@ -40,8 +41,8 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, schema: &PyAny) -> PyResult<Self> {
-        let mut slots_builder = SlotsBuilder::new();
-        let validator = match build_validator(schema, None, &mut slots_builder) {
+        let mut build_context = BuildContext::new();
+        let validator = match build_validator(schema, None, &mut build_context) {
             Ok((v, _)) => v,
             Err(err) => {
                 return Err(match err.is_instance_of::<SchemaError>(py) {
@@ -50,7 +51,7 @@ impl SchemaValidator {
                 });
             }
         };
-        let slots = slots_builder.into_slots()?;
+        let slots = build_context.into_slots()?;
         Ok(Self {
             validator,
             slots,
@@ -121,19 +122,21 @@ pub trait BuildValidator: Sized {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _slots_builder: &mut SlotsBuilder,
+        _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator>;
 }
 
 // macro to build the match statement for validator selection
 macro_rules! validator_match {
-    ($type:ident, $dict:ident, $config:ident, $slots_builder:ident, $($validator:path,)+) => {
+    ($type:ident, $dict:ident, $config:ident, $build_context:ident, $($validator:path,)+) => {
         match $type {
             $(
                 <$validator>::EXPECTED_TYPE => {
-                    let val = <$validator>::build($dict, $config, $slots_builder).map_err(|err| {
+                    $build_context.incr_check_depth()?;
+                    let val = <$validator>::build($dict, $config, $build_context).map_err(|err| {
                         crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
                     })?;
+                    $build_context.decr_depth();
                     Ok((val, $dict))
                 },
             )+
@@ -147,7 +150,7 @@ macro_rules! validator_match {
 pub fn build_validator<'a>(
     schema: &'a PyAny,
     config: Option<&'a PyDict>,
-    slots_builder: &mut SlotsBuilder,
+    build_context: &mut BuildContext,
 ) -> PyResult<(CombinedValidator, &'a PyDict)> {
     let dict: &PyDict = match schema.cast_as() {
         Ok(s) => s,
@@ -162,7 +165,7 @@ pub fn build_validator<'a>(
         type_,
         dict,
         config,
-        slots_builder,
+        build_context,
         // models e.g. heterogeneous dicts
         self::model::ModelValidator,
         // unions
@@ -292,22 +295,38 @@ pub trait Validator: Send + Sync + Clone + Debug {
     fn get_name(&self, py: Python) -> String;
 }
 
-pub struct SlotsBuilder {
+pub struct BuildContext {
     named_slots: Vec<(Option<String>, Option<CombinedValidator>)>,
+    depth: usize,
 }
 
-impl SlotsBuilder {
+const MAX_DEPTH: usize = 100;
+
+impl BuildContext {
     pub fn new() -> Self {
         let named_slots: Vec<(Option<String>, Option<CombinedValidator>)> = Vec::new();
-        SlotsBuilder { named_slots }
+        BuildContext { named_slots, depth: 0 }
     }
 
-    pub fn add_named(&mut self, name: String, schema: &PyAny, config: Option<&PyDict>) -> PyResult<usize> {
+    pub fn add_named_slot(&mut self, name: String, schema: &PyAny, config: Option<&PyDict>) -> PyResult<usize> {
         let id = self.named_slots.len();
         self.named_slots.push((Some(name), None));
         let validator = build_validator(schema, config, self)?.0;
         self.named_slots[id] = (None, Some(validator));
         Ok(id)
+    }
+
+    pub fn incr_check_depth(&mut self) -> PyResult<()> {
+        self.depth += 1;
+        if self.depth > MAX_DEPTH {
+            py_error!(PyRecursionError; "Recursive detected, depth exceeded max allowed value of {}", MAX_DEPTH)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn decr_depth(&mut self) {
+        self.depth -= 1;
     }
 
     pub fn find_id(&self, name: &str) -> PyResult<usize> {
