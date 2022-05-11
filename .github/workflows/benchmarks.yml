@@ -2,10 +2,11 @@ name: benchmarks
 
 on:
   push:
-#    paths:
-#      - 'src/**.rs'
-#      - 'tests/test_benchmarks.py'
-#      - 'Cargo.toml'
+    paths:
+      - 'src/**.rs'
+      - 'tests/test_benchmarks.py'
+      - 'Cargo.toml'
+      - '.github/workflows/benchmarks.yml'
     branches:
       - main
 
@@ -48,7 +49,7 @@ jobs:
       - name: cache rust
         uses: Swatinem/rust-cache@v1
 
-      - run: pip install .
+      - run: pip install . -v
 
       # this is required so that pytest uses the installed package
       - run: rm tests/__init__.py
@@ -57,7 +58,7 @@ jobs:
           pytest tests/test_benchmarks.py
           --benchmark-enable
           --benchmark-warmup=on
-          --benchmark-warmup-iterations=10000
+          --benchmark-warmup-iterations=1000
           --benchmark-json output.json
 
       - uses: benchmark-action/github-action-benchmark@v1
