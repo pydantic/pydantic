@@ -6,7 +6,7 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, ValResult};
 use crate::input::Input;
 
-use super::{BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
+use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct RecursiveValidator {
@@ -19,11 +19,11 @@ impl BuildValidator for RecursiveValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        slots_builder: &mut SlotsBuilder,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let sub_schema: &PyAny = schema.get_as_req("schema")?;
         let name: String = schema.get_as_req("name")?;
-        let validator_id = slots_builder.add_named(name, sub_schema, config)?;
+        let validator_id = build_context.add_named_slot(name, sub_schema, config)?;
         Ok(Self { validator_id }.into())
     }
 }
@@ -56,10 +56,10 @@ impl BuildValidator for RecursiveRefValidator {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        slots_builder: &mut SlotsBuilder,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let name: String = schema.get_as_req("name")?;
-        let validator_id = slots_builder.find_id(&name)?;
+        let validator_id = build_context.find_id(&name)?;
         Ok(Self { validator_id }.into())
     }
 }
