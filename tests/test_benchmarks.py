@@ -1,17 +1,20 @@
 import json
+import os
 from typing import Dict, List, Optional, Set
 
 import pytest
 
 from pydantic_core import SchemaValidator
 
-try:
-    from pydantic import BaseModel
-except ImportError:
+if os.getenv('BENCHMARK_VS_PYDANTIC'):
+    try:
+        from pydantic import BaseModel
+    except ImportError:
+        BaseModel = None
+else:
     BaseModel = None
 
-
-pytestmark = pytest.mark.skipif(BaseModel is None, reason='pydantic not installed; tests fail on 3.7')
+skip_pydantic = pytest.mark.skipif(BaseModel is None, reason='skipping benchmarks vs. pydantic')
 
 
 class TestBenchmarkSimpleModel:
@@ -48,6 +51,7 @@ class TestBenchmarkSimpleModel:
 
     data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
+    @skip_pydantic
     @pytest.mark.benchmark(group='simple model - python')
     def test_pyd_python(self, pydantic_model, benchmark):
         benchmark(pydantic_model.parse_obj, self.data)
@@ -56,6 +60,7 @@ class TestBenchmarkSimpleModel:
     def test_core_python(self, core_validator, benchmark):
         benchmark(core_validator.validate_python, self.data)
 
+    @skip_pydantic
     @pytest.mark.benchmark(group='simple model - JSON')
     def test_pyd_json(self, pydantic_model, benchmark):
         json_data = json.dumps(self.data)
@@ -74,6 +79,7 @@ class TestBenchmarkSimpleModel:
 bool_cases = [True, False, 0, 1, '0', '1', 'true', 'false', 'True', 'False']
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='bool')
 def test_bool_pyd(benchmark):
     class PydanticModel(BaseModel):
@@ -98,6 +104,7 @@ def test_bool_core(benchmark):
 small_class_data = {'name': 'John', 'age': 42}
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='create small model')
 def test_small_class_pyd(benchmark):
     class PydanticModel(BaseModel):
@@ -144,6 +151,7 @@ def recursive_model_data():
     return data
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='recursive model')
 def test_recursive_model_pyd(recursive_model_data, benchmark):
     class PydanticBranch(BaseModel):
@@ -183,6 +191,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
     benchmark(v.validate_python, recursive_model_data)
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='list of dict models')
 def test_list_of_dict_models_pyd(benchmark):
     class PydanticBranch(BaseModel):
@@ -208,6 +217,7 @@ def test_list_of_dict_models_core(benchmark):
 list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='list of ints')
 def test_list_of_ints_pyd_py(benchmark):
     class PydanticModel(BaseModel):
@@ -229,6 +239,7 @@ def test_list_of_ints_core_py(benchmark):
         v.validate_python(list_of_ints_data[1])
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='list of ints')
 def test_list_of_ints_pyd_json(benchmark):
     class PydanticModel(BaseModel):
@@ -257,6 +268,7 @@ def test_list_of_ints_core_json(benchmark):
 set_of_ints_data = ({i for i in range(1000)}, {str(i) for i in range(1000)})
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='set of ints')
 def test_set_of_ints_pyd(benchmark):
     class PydanticModel(BaseModel):
@@ -278,6 +290,7 @@ def test_set_of_ints_core(benchmark):
         v.validate_python(set_of_ints_data[1])
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='set of ints')
 def test_set_of_ints_pyd_json(benchmark):
     class PydanticModel(BaseModel):
@@ -306,6 +319,7 @@ def test_set_of_ints_core_json(benchmark):
 dict_of_ints_data = ({i: i for i in range(1000)}, {i: str(i) for i in range(1000)})
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='dict of ints')
 def test_dict_of_ints_pyd(benchmark):
     class PydanticModel(BaseModel):
@@ -327,6 +341,7 @@ def test_dict_of_ints_core(benchmark):
         v.validate_python(dict_of_ints_data[1])
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='dict of ints')
 def test_dict_of_ints_pyd_json(benchmark):
     class PydanticModel(BaseModel):
@@ -355,6 +370,7 @@ def test_dict_of_ints_core_json(benchmark):
 many_models_data = [{'age': i} for i in range(1000)]
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='many models')
 def test_many_models_pyd(benchmark):
     class SimpleMode(BaseModel):
@@ -394,6 +410,7 @@ def test_many_models_core_model(benchmark):
 list_of_optional_data = [None if i % 2 else i for i in range(1000)]
 
 
+@skip_pydantic
 @pytest.mark.benchmark(group='list of optional')
 def test_list_of_optional_pyd(benchmark):
     class PydanticModel(BaseModel):

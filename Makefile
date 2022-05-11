@@ -71,7 +71,7 @@ test:
 
 .PHONY: benchmark
 benchmark:
-	pytest tests/test_benchmarks.py --benchmark-enable
+	pytest tests/test_benchmarks.py --benchmark-enable --benchmark-autosave
 
 .PHONY: testcov
 testcov: build-coverage test

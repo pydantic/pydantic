@@ -70,6 +70,8 @@ jobs:
     - run: pip freeze
 
     - run: make test
+      env:
+        BENCHMARK_VS_PYDANTIC: 1
 
     - run: coverage xml
 
