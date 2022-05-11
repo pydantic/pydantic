@@ -5,7 +5,7 @@ use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{
     as_internal, err_val_error, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult,
 };
-use crate::input::{Input, ToLocItem};
+use crate::input::{Input, MappingLenIter, ToLocItem};
 
 use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, Validator};
 
@@ -109,7 +109,7 @@ impl Validator for ModelValidator {
         };
 
         for field in &self.fields {
-            if let Some(value) = dict.input_get(&field.name) {
+            if let Some(value) = dict.generic_get(&field.name) {
                 match field.validator.validate(py, value, &extra, slots) {
                     Ok(value) => output_dict.set_item(&field.name, value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
@@ -140,7 +140,7 @@ impl Validator for ModelValidator {
             ExtraBehavior::Forbid => (true, true),
         };
         if check_extra {
-            for (raw_key, value) in dict.input_iter() {
+            for (raw_key, value) in dict.generic_iter() {
                 let key: String = match raw_key.lax_str() {
                     Ok(k) => k,
                     Err(ValError::LineErrors(line_errors)) => {

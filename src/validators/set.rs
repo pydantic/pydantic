@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PySet};
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, LocItem, ValError, ValLineError};
-use crate::input::{Input, ListInput};
+use crate::input::{GenericSequence, Input, SequenceLenIter};
 
 use super::{build_validator, BuildValidator, CombinedValidator, Extra, SlotsBuilder, ValResult, Validator};
 
@@ -74,11 +74,11 @@ impl SetValidator {
         &'s self,
         py: Python<'data>,
         input: &'data dyn Input,
-        set: Box<dyn ListInput<'data> + 'data>,
+        set: GenericSequence<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let length = set.input_len();
+        let length = set.generic_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {
                 return err_val_error!(
@@ -102,7 +102,7 @@ impl SetValidator {
             Some(ref validator) => {
                 let mut errors: Vec<ValLineError> = Vec::new();
                 let mut output: Vec<PyObject> = Vec::with_capacity(length);
-                for (index, item) in set.input_iter().enumerate() {
+                for (index, item) in set.generic_iter() {
                     match validator.validate(py, item, extra, slots) {
                         Ok(item) => output.push(item),
                         Err(ValError::LineErrors(line_errors)) => {
@@ -119,7 +119,7 @@ impl SetValidator {
                 }
             }
             None => {
-                let output: Vec<PyObject> = set.input_iter().map(|item| item.to_py(py)).collect();
+                let output: Vec<PyObject> = set.generic_iter().map(|(_, item)| item.to_py(py)).collect();
                 Ok(PySet::new(py, &output).map_err(as_internal)?.into_py(py))
             }
         }

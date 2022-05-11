@@ -5,7 +5,7 @@ use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySet,
 
 use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, ValResult};
 
-use super::generics::{DictInput, ListInput};
+use super::generics::{GenericMapping, GenericSequence};
 use super::input_abstract::Input;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 
@@ -118,17 +118,17 @@ impl Input for PyAny {
         self.get_type().eq(class).map_err(as_internal)
     }
 
-    fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
-            Ok(Box::new(dict))
+            Ok(dict.into())
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
         }
     }
 
-    fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<GenericMapping<'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
-            Ok(Box::new(dict))
+            Ok(dict.into())
         } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
             // this is ugly, but we'd have to do it in `input_iter` anyway
             // we could perhaps use an indexmap instead of a python dict?
@@ -142,7 +142,7 @@ impl Input for PyAny {
                     )
                 }
             };
-            Ok(Box::new(dict))
+            Ok(dict.into())
         } else if try_instance {
             let inner_dict = match instance_as_dict(self) {
                 Ok(dict) => dict,
@@ -160,45 +160,45 @@ impl Input for PyAny {
         }
     }
 
-    fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput + 'data>> {
+    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
-            Ok(Box::new(list))
+            Ok(list.into())
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
         }
     }
 
-    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput + 'data>> {
+    fn lax_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         if let Ok(list) = self.cast_as::<PyList>() {
-            Ok(Box::new(list))
+            Ok(list.into())
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
-            Ok(Box::new(tuple))
+            Ok(tuple.into())
         } else if let Ok(set) = self.cast_as::<PySet>() {
-            Ok(Box::new(set))
+            Ok(set.into())
         } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
-            Ok(Box::new(frozen_set))
+            Ok(frozen_set.into())
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
         }
     }
 
-    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         if let Ok(set) = self.cast_as::<PySet>() {
-            Ok(Box::new(set))
+            Ok(set.into())
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
         }
     }
 
-    fn lax_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn lax_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         if let Ok(set) = self.cast_as::<PySet>() {
-            Ok(Box::new(set))
+            Ok(set.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
-            Ok(Box::new(list))
+            Ok(list.into())
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
-            Ok(Box::new(tuple))
+            Ok(tuple.into())
         } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
-            Ok(Box::new(frozen_set))
+            Ok(frozen_set.into())
         } else {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
         }
