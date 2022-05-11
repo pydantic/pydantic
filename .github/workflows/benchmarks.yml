@@ -1,5 +1,11 @@
+name: benchmarks
+
 on:
   push:
+    paths:
+      - 'src/**.rs'
+      - 'tests/test_benchmarks.py'
+      - 'Cargo.toml'
     branches:
       - main
 
