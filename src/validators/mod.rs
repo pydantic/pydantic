@@ -28,11 +28,12 @@ mod set;
 mod string;
 mod union;
 
-#[pyclass]
+#[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
     validator: CombinedValidator,
     slots: Vec<CombinedValidator>,
+    schema: PyObject,
 }
 
 #[pymethods]
@@ -50,7 +51,17 @@ impl SchemaValidator {
             }
         };
         let slots = slots_builder.into_slots()?;
-        Ok(Self { validator, slots })
+        Ok(Self {
+            validator,
+            slots,
+            schema: schema.into_py(py),
+        })
+    }
+
+    fn __reduce__(&self, py: Python) -> PyResult<PyObject> {
+        let args = (self.schema.as_ref(py),);
+        let cls = Py::new(py, self.to_owned())?.getattr(py, "__class__")?;
+        Ok((cls, args).into_py(py))
     }
 
     fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
