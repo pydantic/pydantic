@@ -183,7 +183,7 @@ def test_model_class():
             'name': 'Branch',
             'schema': {
                 'type': 'model-class',
-                'class': Branch,
+                'class_type': Branch,
                 'model': {
                     'type': 'model',
                     'fields': {

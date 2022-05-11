@@ -61,9 +61,9 @@ lint-rust:
 .PHONY: lint
 lint: lint-python lint-rust
 
-.PHONY: mypy
-mypy:
-	mypy pydantic_core
+.PHONY: pyright
+pyright:
+	pyright
 
 .PHONY: test
 test:
@@ -81,7 +81,7 @@ testcov: build-coverage test
 	./tests/rust_coverage_html.sh
 
 .PHONY: all
-all: format build-dev lint mypy test
+all: format build-dev lint pyright test
 
 .PHONY: flame
 flame:
@@ -108,7 +108,6 @@ clean:
 	rm -rf flame
 	rm -rf htmlcov
 	rm -rf .pytest_cache
-	rm -rf .mypy_cache
 	rm -rf *.egg-info
 	rm -f .coverage
 	rm -f .coverage.*

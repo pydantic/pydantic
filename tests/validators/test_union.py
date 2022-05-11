@@ -56,12 +56,12 @@ class TestModelClass:
             'choices': [
                 {
                     'type': 'model-class',
-                    'class': ModelA,
+                    'class_type': ModelA,
                     'model': {'type': 'model', 'fields': {'a': {'type': 'int'}, 'b': {'type': 'str'}}},
                 },
                 {
                     'type': 'model-class',
-                    'class': ModelB,
+                    'class_type': ModelB,
                     'model': {'type': 'model', 'fields': {'c': {'type': 'int'}, 'd': {'type': 'str'}}},
                 },
             ],
@@ -110,12 +110,12 @@ class TestModelClassSimilar:
             'choices': [
                 {
                     'type': 'model-class',
-                    'class': ModelA,
+                    'class_type': ModelA,
                     'model': {'type': 'model', 'fields': {'a': {'type': 'int'}, 'b': {'type': 'str'}}},
                 },
                 {
                     'type': 'model-class',
-                    'class': ModelB,
+                    'class_type': ModelB,
                     'model': {
                         'type': 'model',
                         'fields': {'a': {'type': 'int'}, 'b': {'type': 'str'}, 'c': {'type': 'float', 'default': 1.0}},

@@ -53,7 +53,7 @@ setup(
     license='MIT',
     packages=['pydantic_core'],
     package_data={'pydantic_core': ['py.typed', '*.pyi']},
-    install_requires=[],
+    install_requires=['typing_extensions; python_version < "3.11.0"'],
     python_requires='>=3.7',
     zip_safe=False,
     project_urls={

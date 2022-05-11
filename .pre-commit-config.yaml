@@ -22,9 +22,9 @@ repos:
     entry: make lint-rust
     types: [rust]
     language: system
-  - id: mypy
-    name: Mypy
-    entry: make mypy
+  - id: pyright
+    name: Pyright
+    entry: make pyright
     types: [python]
     language: system
   - id: build
