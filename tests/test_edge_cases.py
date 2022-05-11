@@ -3,7 +3,7 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, ClassVar
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 
@@ -1935,6 +1935,7 @@ def test_int_subclass():
 
 
 def test_class_var_forward_ref(create_module):
+    # see #3679
     create_module(
         # language=Python
         """
