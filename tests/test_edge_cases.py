@@ -16,6 +16,7 @@ from pydantic import (
     ValidationError,
     constr,
     errors,
+    parse_obj_as,
     validate_model,
     validator,
 )
@@ -1932,3 +1933,16 @@ def test_int_subclass():
 
     m = MyModel(my_int=IntSubclass(123))
     assert m.my_int.__class__ == IntSubclass
+
+
+def test_none_type_root():
+    class NoneModel(BaseModel):
+        __root__: type(None)
+
+    class MyModel(BaseModel):
+        my_none: NoneModel
+
+    m = MyModel(my_none=None)
+    assert m.dict()['my_none'] is None
+    m = parse_obj_as(MyModel, {'my_none': None})
+    assert m.dict()['my_none'] is None

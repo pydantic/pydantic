@@ -839,7 +839,12 @@ class ModelField(Representation):
                 return v, errors
 
         if v is None:
-            if is_none_type(self.type_):
+            if (
+                is_none_type(self.type_)
+                or hasattr(self.type_, '__fields__')
+                and '__root__' in self.type_.__fields__
+                and is_none_type(self.type_.__fields__['__root__'].type_)
+            ):
                 # keep validating
                 pass
             elif self.allow_none:
