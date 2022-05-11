@@ -4,7 +4,7 @@ use pyo3::types::PyType;
 
 use crate::errors::ValResult;
 
-use super::{DictInput, ListInput, ToLocItem, ToPy};
+use super::{GenericMapping, GenericSequence, ToLocItem, ToPy};
 
 pub trait Input: fmt::Debug + ToPy + ToLocItem {
     fn is_none(&self) -> bool;
@@ -27,21 +27,21 @@ pub trait Input: fmt::Debug + ToPy + ToLocItem {
 
     fn strict_model_check(&self, class: &PyType) -> ValResult<bool>;
 
-    fn strict_dict<'data>(&'data self) -> ValResult<Box<dyn DictInput<'data> + 'data>>;
+    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>>;
 
-    fn lax_dict<'data>(&'data self, _try_instance: bool) -> ValResult<Box<dyn DictInput<'data> + 'data>> {
+    fn lax_dict<'data>(&'data self, _try_instance: bool) -> ValResult<GenericMapping<'data>> {
         self.strict_dict()
     }
 
-    fn strict_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
+    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
 
-    fn lax_list<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn lax_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         self.strict_list()
     }
 
-    fn strict_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>>;
+    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
 
-    fn lax_set<'data>(&'data self) -> ValResult<Box<dyn ListInput<'data> + 'data>> {
+    fn lax_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         self.strict_set()
     }
 }
