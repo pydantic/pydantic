@@ -30,6 +30,7 @@ def test_dict_value_error(py_or_json):
 
 def test_dict_any_value():
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
+    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
     assert v.validate_python({'1': 1, '2': 'a', '3': None}) == {'1': 1, '2': 'a', '3': None}
 
 

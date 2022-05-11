@@ -36,7 +36,7 @@ class TestBenchmarkSimpleModel:
         return SchemaValidator(
             {
                 'type': 'model-class',
-                'class': CoreModel,
+                'class_type': CoreModel,
                 'model': {
                     'type': 'model',
                     'fields': {
@@ -133,7 +133,7 @@ def test_small_class_core_model(benchmark):
     model_schema_validator = SchemaValidator(
         {
             'type': 'model-class',
-            'class': MyCoreModel,
+            'class_type': MyCoreModel,
             'model': {'type': 'model', 'fields': {'name': {'type': 'str'}, 'age': {'type': 'int'}}},
         }
     )
@@ -173,7 +173,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
             'name': 'Branch',
             'schema': {
                 'type': 'model-class',
-                'class': CoreBranch,
+                'class_type': CoreBranch,
                 'model': {
                     'type': 'model',
                     'fields': {
@@ -399,7 +399,7 @@ def test_many_models_core_model(benchmark):
             'type': 'list',
             'items': {
                 'type': 'model-class',
-                'class': MyCoreModel,
+                'class_type': MyCoreModel,
                 'model': {'type': 'model', 'fields': {'age': 'int'}},
             },
         }

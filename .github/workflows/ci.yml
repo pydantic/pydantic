@@ -123,4 +123,4 @@ jobs:
       uses: Swatinem/rust-cache@v1
 
     - run: make lint
-    - run: make mypy
+    - run: make pyright

@@ -28,7 +28,7 @@ impl BuildValidator for ModelClassValidator {
         config: Option<&PyDict>,
         slots_builder: &mut SlotsBuilder,
     ) -> PyResult<CombinedValidator> {
-        let class: &PyType = schema.get_as_req("class")?;
+        let class: &PyType = schema.get_as_req("class_type")?;
 
         let model_schema_raw: &PyAny = schema.get_as_req("model")?;
         let (validator, model_schema) = build_validator(model_schema_raw, config, slots_builder)?;

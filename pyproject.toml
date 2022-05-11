@@ -42,7 +42,6 @@ force_grid_wrap = 0
 combine_as_imports = true
 color_output = true
 
-[tool.mypy]
-strict = true
-warn_return_any = false
-show_error_codes = true
+[tool.pyright]
+include = ["pydantic_core", "tests/test_typing.py"]
+reportUnnecessaryTypeIgnoreComment = true
