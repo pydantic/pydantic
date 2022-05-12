@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from typing_extensions import Annotated
 
@@ -140,10 +142,13 @@ def test_annotated_alias() -> None:
     StrAlias = Annotated[str, Field(max_length=3)]
     IntAlias = Annotated[int, Field(default_factory=lambda: 2)]
 
+    Nested = Annotated[List[StrAlias], Field(description='foo')]
+
     class MyModel(BaseModel):
         a: StrAlias = 'abc'
         b: StrAlias
         c: IntAlias
         d: IntAlias
+        e: Nested
 
-    assert MyModel(b='def') == MyModel(a='abc', b='def', c=2, d=2)
+    assert MyModel(b='def', e=['xyz']) == MyModel(a='abc', b='def', c=2, d=2, e=['xyz'])
