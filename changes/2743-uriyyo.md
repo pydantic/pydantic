@@ -1,1 +1,0 @@
-Fix mypy plugin issue with self field declaration.

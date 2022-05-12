@@ -148,6 +148,11 @@ def exec_examples():
         'my_auth_key': 'xxx',
         'my_api_key': 'xxx',
         'database_dsn': 'postgres://postgres@localhost:5432/env_db',
+        'v0': '0',
+        'sub_model': '{"v1": "json-1", "v2": "json-2"}',
+        'sub_model__v2': 'nested-2',
+        'sub_model__v3': '3',
+        'sub_model__deep__v4': 'v4',
     })
 
     sys.path.append(str(EXAMPLES_DIR))
