@@ -132,3 +132,18 @@ def test_config_field_info():
     assert Foo.schema(by_alias=True)['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
     }
+
+
+def test_annotated_alias() -> None:
+    # https://github.com/samuelcolvin/pydantic/issues/2971
+
+    StrAlias = Annotated[str, Field(max_length=3)]
+    IntAlias = Annotated[int, Field(default_factory=lambda: 2)]
+
+    class MyModel(BaseModel):
+        a: StrAlias = 'abc'
+        b: StrAlias
+        c: IntAlias
+        d: IntAlias
+
+    assert MyModel(b='def') == MyModel(a='abc', b='def', c=2, d=2)
