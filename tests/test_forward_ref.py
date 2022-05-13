@@ -672,21 +672,27 @@ class User(BaseModel):
     assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
 
 
-skip_until_39 = pytest.mark.skipif(
+skip_pep585 = pytest.mark.skipif(
     sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
 )
 
 
-@skip_until_39
+@skip_pep585
 def test_pep585_self_referencing_generics():
     class SelfReferencing(BaseModel):
         names: list['SelfReferencing']  # noqa: F821
 
-    SelfReferencing.update_forward_refs()
-    SelfReferencing(names=[SelfReferencing(names=[])])
+    SelfReferencing.update_forward_refs()  # will raise an exception if the forward ref isn't resolvable
+    # test the class
+    assert SelfReferencing.__fields__['names'].type_ is SelfReferencing
+    # NOTE: outer_type_ is not converted
+    assert SelfReferencing.__fields__['names'].outer_type_ == list['SelfReferencing']
+    # test that object creation works
+    obj = SelfReferencing(names=[SelfReferencing(names=[])])
+    assert obj.names == [SelfReferencing(names=[])]
 
 
-@skip_until_39
+@skip_pep585
 def test_pep585_recursive_generics(create_module):
     @create_module
     def module():
@@ -701,5 +707,8 @@ def test_pep585_recursive_generics(create_module):
             teams: list[Team]
 
         Team.update_forward_refs()
+
+    assert module.Team.__fields__['heroes'].type_ is module.Hero
+    assert module.Hero.__fields__['teams'].type_ is module.Team
 
     module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
