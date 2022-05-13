@@ -1932,18 +1932,3 @@ def test_int_subclass():
 
     m = MyModel(my_int=IntSubclass(123))
     assert m.my_int.__class__ == IntSubclass
-
-
-def test_class_var_forward_ref(create_module):
-    # see #3679
-    create_module(
-        # language=Python
-        """
-from __future__ import annotations
-from typing import ClassVar
-from pydantic import BaseModel
-
-class WithClassVar(BaseModel):
-    Instances: ClassVar[dict[str, WithClassVar]] = {}
-"""
-    )
