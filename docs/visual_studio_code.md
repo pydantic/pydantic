@@ -269,7 +269,7 @@ reasons behind this, and why we can't avoid the problem.
 
 There are two potential workarounds:
 
-* use an ignore comment (`# pylance: ignore`) when initialising `settings`
+* use an ignore comment (`# pyright: ignore`) when initialising `settings`
 * or, use `settings.parse_obj({})` to avoid the warning
 
 ## Adding a default with `Field`
