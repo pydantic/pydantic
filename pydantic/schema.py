@@ -703,7 +703,7 @@ def field_singleton_sub_fields_schema(
     Take a list of Pydantic ``ModelField`` from the declaration of a type with parameters, and generate their
     schema. I.e., fields used as "type parameters", like ``str`` and ``int`` in ``Tuple[str, int]``.
     """
-    sub_fields = field.sub_fields
+    sub_fields = cast(List[ModelField], field.sub_fields)
     definitions = {}
     nested_models: Set[str] = set()
     if len(sub_fields) == 1:
@@ -717,7 +717,7 @@ def field_singleton_sub_fields_schema(
             known_models=known_models,
         )
     else:
-        s = {}
+        s: Dict[str, Any] = {}
         # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
         if field.discriminator_key is not None:
             assert field.sub_fields_mapping is not None
