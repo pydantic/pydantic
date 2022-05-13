@@ -1,3 +1,4 @@
+import copy
 from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
@@ -447,6 +448,7 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
+                field_info = copy.copy(field_info)
                 field_info.update_from_config(field_info_from_config)
                 if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
