@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: 3.9
 
@@ -37,13 +37,22 @@ jobs:
       - name: check dist
         run: make check-dist
 
+      - name: install node for pyright
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - run: npm install -g pyright
+
+      - run: make pyright
+
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.8
 
@@ -54,7 +63,7 @@ jobs:
       run: make docs
 
     - name: Store docs site
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: docs
         path: site
@@ -71,10 +80,10 @@ jobs:
       OS: ubuntu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -120,7 +129,7 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-compiled-no-deps-no
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
@@ -140,10 +149,10 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -159,7 +168,7 @@ jobs:
         CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
@@ -173,10 +182,10 @@ jobs:
         mypy-version: ['0.910', '0.920', '0.921']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
 
@@ -200,7 +209,7 @@ jobs:
         CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
@@ -210,14 +219,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
       - name: get coverage files
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: coverage
           path: coverage
@@ -230,7 +239,7 @@ jobs:
       - run: coverage html --show-contexts
 
       - name: Store coverage html
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-html
           path: htmlcov
@@ -239,10 +248,10 @@ jobs:
     name: test fastAPI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
 
@@ -252,32 +261,9 @@ jobs:
     - name: test
       run: make test-fastapi
 
-  benchmark:
-    name: run benchmarks
-    runs-on: ubuntu-latest
-    env:
-      BENCHMARK_REPEATS: 1
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: set up python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-
-    - name: install and build
-      run: |
-        make build
-        make install-benchmarks
-
-    - run: make benchmark-pydantic
-    - run: make benchmark-all
-    - run: make benchmark-json
-
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-old-mypy, test-fastapi, benchmark]
+    needs: [lint, test-linux, test-windows-mac, test-old-mypy, test-fastapi]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
@@ -292,10 +278,10 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.8'
 
@@ -331,7 +317,7 @@ jobs:
         twine check dist/*
 
     - name: Store dist artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pypi_files
         path: dist
@@ -343,21 +329,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: '3.8'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: pypi_files
           path: dist
 
       - name: get docs
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docs
           path: site

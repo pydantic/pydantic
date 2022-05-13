@@ -712,3 +712,19 @@ def test_pep585_recursive_generics(create_module):
     assert module.Hero.__fields__['teams'].type_ is module.Team
 
     module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
+def test_class_var_forward_ref(create_module):
+    # see #3679
+    create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import ClassVar
+from pydantic import BaseModel
+
+class WithClassVar(BaseModel):
+    Instances: ClassVar[dict[str, WithClassVar]] = {}
+"""
+    )

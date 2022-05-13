@@ -1,3 +1,4 @@
+import copy
 from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
@@ -38,6 +39,7 @@ from .typing import (
     display_as_type,
     get_args,
     get_origin,
+    is_classvar,
     is_literal_type,
     is_new_type,
     is_none_type,
@@ -447,6 +449,7 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
+                field_info = copy.copy(field_info)
                 field_info.update_from_config(field_info_from_config)
                 if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
@@ -601,7 +604,7 @@ class ModelField(Representation):
             return
 
         if self.discriminator_key is not None and not is_union(origin):
-            raise TypeError('`discriminator` can only be used with `Union` type')
+            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
         # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
         if origin is None or origin is CollectionsHashable:
@@ -611,6 +614,8 @@ class ModelField(Representation):
                 self.allow_none = True
             return
         elif origin is Callable:
+            return
+        elif is_classvar(origin):
             return
         elif is_union(origin):
             types_ = []

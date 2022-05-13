@@ -122,7 +122,7 @@ def int_domain_regex() -> Pattern[str]:
 class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
-    max_length = 2 ** 16
+    max_length = 2**16
     allowed_schemes: Optional[Collection[str]] = None
     tld_required: bool = False
     user_required: bool = False
@@ -265,7 +265,7 @@ class AnyUrl(str):
     def validate_host(cls, parts: 'Parts') -> Tuple[str, Optional[str], str, bool]:
         host, tld, host_type, rebuild = None, None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
-            host = parts[f]  # type: ignore[misc]
+            host = parts[f]  # type: ignore[literal-required]
             if host:
                 host_type = f
                 break
@@ -310,8 +310,8 @@ class AnyUrl(str):
     @classmethod
     def apply_default_parts(cls, parts: 'Parts') -> 'Parts':
         for key, value in cls.get_default_parts(parts).items():
-            if not parts[key]:  # type: ignore[misc]
-                parts[key] = value  # type: ignore[misc]
+            if not parts[key]:  # type: ignore[literal-required]
+                parts[key] = value  # type: ignore[literal-required]
         return parts
 
     def __repr__(self) -> str:
@@ -386,7 +386,7 @@ def stricturl(
     *,
     strip_whitespace: bool = True,
     min_length: int = 1,
-    max_length: int = 2 ** 16,
+    max_length: int = 2**16,
     tld_required: bool = True,
     host_required: bool = True,
     allowed_schemes: Optional[Collection[str]] = None,

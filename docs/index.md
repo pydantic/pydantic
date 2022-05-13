@@ -56,7 +56,8 @@ So *pydantic* uses some cool new language features, but why should I actually go
   be read from environment variables, and more complex objects like DSNs and python objects are often required.
 
 **fast**
-: In [benchmarks](benchmarks.md) *pydantic* is faster than all other tested libraries.
+: *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,
+  it's generally as fast or faster than most similar libraries.
 
 **validate complex structures**
 : use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s 
@@ -113,6 +114,11 @@ Hundreds of organisations and packages are using *pydantic*, including:
 [Reach](https://www.reach.vote)
 : trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
   asynchronous task queue) to reliably power multiple mission-critical microservices.
+
+[Robusta.dev](https://robusta.dev/)
+: are using *pydantic* to automate Kubernetes troubleshooting and maintenance. For example, their open source
+  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
+  *pydantic* models.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).

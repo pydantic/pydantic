@@ -799,7 +799,7 @@ def test_str_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2 ** 16}),
+        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16}),
         (
             stricturl(min_length=5, max_length=10),
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
@@ -2882,5 +2882,36 @@ def test_alias_same():
                 'title': 'Dog',
                 'type': 'object',
             },
+        },
+    }
+
+
+def test_nested_python_dataclasses():
+    """
+    Test schema generation for nested python dataclasses
+    """
+
+    from dataclasses import dataclass as python_dataclass
+
+    @python_dataclass
+    class ChildModel:
+        name: str
+
+    @python_dataclass
+    class NestedModel:
+        child: List[ChildModel]
+
+    assert model_schema(dataclass(NestedModel)) == {
+        'title': 'NestedModel',
+        'type': 'object',
+        'properties': {'child': {'title': 'Child', 'type': 'array', 'items': {'$ref': '#/definitions/ChildModel'}}},
+        'required': ['child'],
+        'definitions': {
+            'ChildModel': {
+                'title': 'ChildModel',
+                'type': 'object',
+                'properties': {'name': {'title': 'Name', 'type': 'string'}},
+                'required': ['name'],
+            }
         },
     }

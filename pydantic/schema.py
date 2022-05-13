@@ -419,10 +419,13 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     # Handle dataclass-based models
     if is_builtin_dataclass(field.type_):
         field.type_ = dataclass(field.type_)
+        was_dataclass = True
+    else:
+        was_dataclass = False
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
+    if field.sub_fields and (not lenient_issubclass(field_type, BaseModel) or was_dataclass):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
