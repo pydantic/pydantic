@@ -101,7 +101,7 @@ def test_convert_generics(type_, expectations):
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='NewType class was added in python 3.10.')
-def test_convert_generics_custom_type():
+def test_convert_generics_unsettable_args():
     class User(NewType):
 
         __origin__ = type(list[str])
@@ -112,10 +112,11 @@ def test_convert_generics_custom_type():
 
         def __setattr__(self, __name: str, __value: Any) -> None:
             if __name == '__args__':
-                raise AttributeError
+                raise AttributeError  # will be thrown during the generics conversion
             return super().__setattr__(__name, __value)
 
-    convert_generics(User('MyUser', str))
+    # tests that convert_generics will not throw an exception even if __args__ isn't settable
+    assert convert_generics(User('MyUser', str)).__args__ == (list['Hero'],)
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='PEP604 unions only supported for python 3.10 and above.')
