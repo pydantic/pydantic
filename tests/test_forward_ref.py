@@ -683,3 +683,19 @@ class User(BaseModel):
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
     assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
+def test_class_var_forward_ref(create_module):
+    # see #3679
+    create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import ClassVar
+from pydantic import BaseModel
+
+class WithClassVar(BaseModel):
+    Instances: ClassVar[dict[str, WithClassVar]] = {}
+"""
+    )

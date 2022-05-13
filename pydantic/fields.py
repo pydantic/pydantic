@@ -37,6 +37,7 @@ from .typing import (
     display_as_type,
     get_args,
     get_origin,
+    is_classvar,
     is_literal_type,
     is_new_type,
     is_none_type,
@@ -610,6 +611,8 @@ class ModelField(Representation):
                 self.allow_none = True
             return
         elif origin is Callable:
+            return
+        elif is_classvar(origin):
             return
         elif is_union(origin):
             types_ = []
