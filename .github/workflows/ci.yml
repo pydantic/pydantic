@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - master
+      - 1.9.X-fixes
     tags:
       - '**'
-  pull_request: {}
 
 jobs:
   lint:

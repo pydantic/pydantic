@@ -7,4 +7,4 @@ mypy==0.950
 pre-commit==2.17.0
 pycodestyle==2.8.0
 pyflakes==2.4.0
-twine==3.8.0
+twine==4.0.0
