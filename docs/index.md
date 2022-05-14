@@ -13,6 +13,59 @@ Data validation and settings management using python type annotations.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
 
+## Sponsors
+
+Development of *pydantic* is made possible by the following sponsors:
+
+<div class="sponsors">
+  <div>
+    <a rel="sponsored" target="_blank" href="https://www.salesforce.com">
+      <img src="./sponsor_logos/salesforce.png" alt="Salesforce" />
+      Salesforce
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://fastapi.tiangolo.com">
+      <img src="./sponsor_logos/fastapi.png" alt="FastApi" />
+      FastApi
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://tutorcruncher.com">
+      <img src="./sponsor_logos/tutorcruncher.png" alt="TutorCruncher" />
+      TutorCruncher
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://www.exoflare.io">
+      <img src="./sponsor_logos/exoflare.png" alt="ExoFlare" />
+      ExoFlare
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://home.robusta.dev">
+      <img src="./sponsor_logos/robusta.png" alt="Robusta" />
+      Robusta
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://www.sendcloud.com">
+      <img src="./sponsor_logos/sendcloud.png" alt="SendCloud" />
+      SendCloud
+    </a>
+  </div>
+</div>
+
+And many more who kindly sponsor Samuel Colvin on [GitHub Sponsors](https://github.com/sponsors/samuelcolvin#sponsors).
+
+<script>
+  // randomize the order of sponsors
+  const ul = document.querySelector('.sponsors')
+  for (let i = ul.children.length; i >= 0; i--) {
+    ul.appendChild(ul.children[Math.random() * i | 0])
+  }
+</script>
+
 ## Example
 
 ```py
