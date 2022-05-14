@@ -184,7 +184,12 @@ def _process_class(
 
     validators = gather_all_validators(cls)
     cls.__pydantic_model__ = create_model(
-        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **field_definitions
+        cls.__name__,
+        __config__=config,
+        __module__=_cls.__module__,
+        __validators__=validators,
+        __cls_kwargs__={'__resolve_forward_refs__': False},
+        **field_definitions,
     )
 
     cls.__initialised__ = False
@@ -195,6 +200,8 @@ def _process_class(
 
     if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment  # type: ignore[assignment]
+
+    cls.__pydantic_model__.__try_update_forward_refs__(**{cls.__name__: cls})
 
     return cls
 

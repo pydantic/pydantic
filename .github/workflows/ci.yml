@@ -50,6 +50,15 @@ jobs:
       - name: check dist
         run: make check-dist
 
+      - name: install node for pyright
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - run: npm install -g pyright
+
+      - run: make pyright
+
   docs-build:
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +89,7 @@ jobs:
       run: make docs
 
     - name: Store docs site
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: docs
         path: site
@@ -136,7 +145,7 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-compiled
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
@@ -202,7 +211,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
@@ -243,7 +252,7 @@ jobs:
         CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
@@ -260,7 +269,7 @@ jobs:
           python-version: '3.8'
 
       - name: get coverage files
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: coverage
           path: coverage
@@ -273,7 +282,7 @@ jobs:
       - run: coverage html --show-contexts
 
       - name: Store coverage html
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-html
           path: htmlcov
@@ -288,9 +297,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: '3.10'
-
-    - name: upgrade pip
-      run: pip install -U pip setuptools wheel
 
     - name: install
       run: make install-testing
@@ -354,7 +360,7 @@ jobs:
         twine check dist/*
 
     - name: Store dist artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pypi_files
         path: dist
@@ -374,13 +380,13 @@ jobs:
           python-version: '3.8'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: pypi_files
           path: dist
 
       - name: get docs
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docs
           path: site
