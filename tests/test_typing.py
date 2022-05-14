@@ -1,6 +1,6 @@
 import sys
 from collections import namedtuple
-from typing import Any, Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, NewType, Union  # noqa: F401
+from typing import Any, Callable as TypingCallable, Dict, List, NamedTuple, NewType, Union  # noqa: F401
 
 import pytest
 from typing_extensions import Annotated  # noqa: F401
@@ -23,6 +23,12 @@ try:
     from mypy_extensions import TypedDict as mypy_extensions_TypedDict
 except ImportError:
     mypy_extensions_TypedDict = None
+
+try:
+    from typing import ForwardRef
+except ImportError:
+    # ForwardRef is only available in Python 3.6+
+    pass
 
 ALL_TYPEDDICT_KINDS = (typing_TypedDict, typing_extensions_TypedDict, mypy_extensions_TypedDict)
 
