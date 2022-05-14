@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
@@ -155,9 +155,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        include:
-        - os: ubuntu
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -310,7 +308,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10']
+        python-version: ['6', '7', '8', '9', '10']
         include:
         - os: ubuntu
           platform: linux

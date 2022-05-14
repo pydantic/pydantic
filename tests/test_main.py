@@ -1883,6 +1883,7 @@ def test_default_factory_parse():
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='field constraints are set but not enforced with python 3.6')
 def test_none_min_max_items():
     # None default
     class Foo(BaseModel):
@@ -2054,6 +2055,7 @@ def test_typing_coercion_dict():
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='generic classes need 3.7')
 def test_typing_non_coercion_of_dict_subclasses():
     KT = TypeVar('KT')
     VT = TypeVar('VT')

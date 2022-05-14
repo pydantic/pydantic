@@ -104,6 +104,7 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
@@ -126,9 +127,10 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.7',
+    python_requires='>=3.6.1',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
+        'dataclasses>=0.6;python_version<"3.7"',
         'typing-extensions>=3.7.4.3'
     ],
     extras_require={

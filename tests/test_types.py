@@ -2459,7 +2459,8 @@ def test_pattern():
         pattern: Pattern
 
     f = Foobar(pattern=r'^whatev.r\d$')
-    assert f.pattern.__class__.__name__ == 'Pattern'
+    # SRE_Pattern for 3.6, Pattern for 3.7
+    assert f.pattern.__class__.__name__ in {'SRE_Pattern', 'Pattern'}
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
@@ -2990,10 +2991,13 @@ def test_default_union_types():
     assert DefaultModel(v=1).dict() == {'v': 1}
     assert DefaultModel(v='1').dict() == {'v': 1}
 
+    # In 3.6, Union[int, bool, str] == Union[int, str]
+    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
+
     assert DefaultModel.schema() == {
         'title': 'DefaultModel',
         'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
         'required': ['v'],
     }
 
@@ -3009,10 +3013,13 @@ def test_smart_union_types():
     assert SmartModel(v=True).dict() == {'v': True}
     assert SmartModel(v='1').dict() == {'v': '1'}
 
+    # In 3.6, Union[int, bool, str] == Union[int, str]
+    allowed_json_types = ('integer', 'string') if sys.version_info[:2] == (3, 6) else ('integer', 'boolean', 'string')
+
     assert SmartModel.schema() == {
         'title': 'SmartModel',
         'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in allowed_json_types]}},
         'required': ['v'],
     }
 

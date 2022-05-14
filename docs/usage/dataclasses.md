@@ -1,6 +1,8 @@
 If you don't want to use _pydantic_'s `BaseModel` you can instead get the same data validation on standard
 [dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in python 3.7).
 
+Dataclasses work in python 3.6 using the [dataclasses backport package](https://github.com/ericvsmith/dataclasses).
+
 ```py
 {!.tmp_examples/dataclasses_main.py!}
 ```

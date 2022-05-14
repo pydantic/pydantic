@@ -87,7 +87,9 @@ def test_wrap():
     assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
     assert foo_bar.model.schema()['title'] == 'FooBar'
-    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
+    # signature is slightly different on 3.6
+    if sys.version_info >= (3, 7):
+        assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
 def test_kwargs():
