@@ -118,7 +118,7 @@ jobs:
 
     - name: install
       run: make install-testing
-      if: steps.cache.outputs.cache-hit != 'true'
+#      if: steps.cache.outputs.cache-hit != 'true'
 
     - name: compile
       run: |
@@ -180,7 +180,7 @@ jobs:
 
     - name: install
       run: make install-testing
-      if: steps.cache.outputs.cache-hit != 'true'
+#      if: steps.cache.outputs.cache-hit != 'true'
 
     - run: pip freeze
 
