@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.8'
+          python-version: '3.9'
 
       - run: pip install smokeshow
 
