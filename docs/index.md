@@ -37,7 +37,7 @@ Development of *pydantic* is made possible by the following sponsors:
     </a>
   </div>
   <div>
-    <a rel="sponsored" target="_blank" href="https://www.exoflare.io">
+    <a rel="sponsored" target="_blank" href="https://www.exoflare.com/open-source/?utm_source=pydantic&utm_campaign=open_source">
       <img src="./sponsor_logos/exoflare.png" alt="ExoFlare" />
       ExoFlare
     </a>
