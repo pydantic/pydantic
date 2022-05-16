@@ -295,7 +295,7 @@ class ModelMetaclass(ABCMeta):
 
         return cls
 
-    def __instancecheck__(self, instance):
+    def __instancecheck__(self, instance: Any) -> bool:
         """
         Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
