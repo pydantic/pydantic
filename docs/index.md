@@ -84,7 +84,9 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 [Project Jupyter](https://jupyter.org/)
 : developers of the Jupyter notebook are using *pydantic* 
-  [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773).
+  [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773), through the FastAPI-based Jupyter server
+  [Jupyverse](https://github.com/jupyter-server/jupyverse), and for FPS[https://github.com/jupyter-server/fps]'s
+  configuration management.
 
 **Microsoft**
 : are using *pydantic* (via FastAPI) for 
