@@ -31,7 +31,7 @@ Development of *pydantic* is made possible by the following sponsors:
     </a>
   </div>
   <div>
-    <a rel="sponsored" target="_blank" href="https://tutorcruncher.com">
+    <a rel="sponsored" target="_blank" href="https://tutorcruncher.com/?utm_source=pydantic&utm_campaign=open_source">
       <img src="./sponsor_logos/tutorcruncher.png" alt="TutorCruncher" />
       TutorCruncher
     </a>
