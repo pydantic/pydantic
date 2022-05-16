@@ -1,5 +1,6 @@
 import sys
 import typing
+from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -26,7 +27,6 @@ from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .utils import all_identical, lenient_issubclass
 
-_generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
@@ -38,6 +38,8 @@ Parametrization = Mapping[TypeVarType, Type[Any]]
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
 _assigned_parameters: Dict[Type[Any], Parametrization] = {}
+# _assigned_parameters size is limited by _limit_assigned_parameters() below
+_assigned_parameters_max_length = 1000
 
 
 class GenericModel(BaseModel):
@@ -51,6 +53,7 @@ class GenericModel(BaseModel):
         __parameters__: ClassVar[Tuple[TypeVarType, ...]]
 
     # Setting the return type as Type[Any] instead of Type[BaseModel] prevents PyCharm warnings
+    @lru_cache(maxsize=1024)
     def __class_getitem__(cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]) -> Type[Any]:
         """Instantiates a new class from a generic class `cls` and type variables `params`.
 
@@ -62,9 +65,6 @@ class GenericModel(BaseModel):
             returned as is.
 
         """
-        cached = _generic_types_cache.get((cls, params))
-        if cached is not None:
-            return cached
         if cls.__concrete__ and Generic not in cls.__bases__:
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
@@ -125,12 +125,6 @@ class GenericModel(BaseModel):
         created_model.__concrete__ = not new_params
         if new_params:
             created_model.__parameters__ = new_params
-
-        # Save created model in cache so we don't end up creating duplicate
-        # models that should be identical.
-        _generic_types_cache[(cls, params)] = created_model
-        if len(params) == 1:
-            _generic_types_cache[(cls, params[0])] = created_model
 
         # Recursively walk class type hints and replace generic typevars
         # with concrete types that were passed.
@@ -358,3 +352,16 @@ def _prepare_model_fields(
         field.outer_type_ = concrete_type
         field.prepare()
         created_model.__annotations__[key] = concrete_type
+
+
+def _limit_assigned_parameters() -> None:
+    """
+    Limit the size/length of to avoid unlimited increase in memory usage.
+
+    Since the dict is ordered and we always remove elements from the beginning, beginning of the dict,
+    this is effectively an LRU cache.
+    """
+    if len(_assigned_parameters) > _assigned_parameters_max_length:
+        to_remove = list(_assigned_parameters.keys())[:100]
+        for key in to_remove:
+            del _assigned_parameters[key]
