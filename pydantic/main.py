@@ -295,6 +295,14 @@ class ModelMetaclass(ABCMeta):
 
         return cls
 
+    def __instancecheck__(self, instance):
+        """
+        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
+
 
 object_setattr = object.__setattr__
 
