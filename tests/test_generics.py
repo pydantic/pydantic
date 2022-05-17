@@ -256,7 +256,6 @@ def test_generic_cache_limit():
     assert len(_generic_types_cache) == 9
     Model[Dict[int, str]]
     assert len(_generic_types_cache) == 9
-    debug(str(list(_generic_types_cache.items())[-1][0]))
 
 
 def test_generic_config():
