@@ -1,6 +1,5 @@
 import sys
 import typing
-from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -32,6 +31,8 @@ TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
+_generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
+_generic_types_cache_limit = 1000
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
@@ -39,7 +40,7 @@ Parametrization = Mapping[TypeVarType, Type[Any]]
 # (This information is only otherwise available after creation from the class name string).
 _assigned_parameters: Dict[Type[Any], Parametrization] = {}
 # _assigned_parameters size is limited by _limit_assigned_parameters() below
-_assigned_parameters_max_length = 1000
+_assigned_parameters_limit = 1000
 
 
 class GenericModel(BaseModel):
@@ -53,7 +54,6 @@ class GenericModel(BaseModel):
         __parameters__: ClassVar[Tuple[TypeVarType, ...]]
 
     # Setting the return type as Type[Any] instead of Type[BaseModel] prevents PyCharm warnings
-    @lru_cache(maxsize=1024)
     def __class_getitem__(cls: Type[GenericModelT], params: Union[Type[Any], Tuple[Type[Any], ...]]) -> Type[Any]:
         """Instantiates a new class from a generic class `cls` and type variables `params`.
 
@@ -65,6 +65,9 @@ class GenericModel(BaseModel):
             returned as is.
 
         """
+        cached = _generic_types_cache.get((cls, params))
+        if cached is not None:
+            return cached
         if cls.__concrete__ and Generic not in cls.__bases__:
             raise TypeError('Cannot parameterize a concrete instantiation of a generic model')
         if not isinstance(params, tuple):
@@ -104,6 +107,7 @@ class GenericModel(BaseModel):
         )
 
         _assigned_parameters[created_model] = typevars_map
+        _limit_cache_size(_assigned_parameters, _assigned_parameters_limit)
 
         if called_globally:  # create global reference and therefore allow pickling
             object_by_reference = None
@@ -125,6 +129,13 @@ class GenericModel(BaseModel):
         created_model.__concrete__ = not new_params
         if new_params:
             created_model.__parameters__ = new_params
+
+        # Save created model in cache so we don't end up creating duplicate
+        # models that should be identical.
+        _generic_types_cache[(cls, params)] = created_model
+        if len(params) == 1:
+            _generic_types_cache[(cls, params[0])] = created_model
+            _limit_cache_size(_generic_types_cache, _generic_types_cache_limit)
 
         # Recursively walk class type hints and replace generic typevars
         # with concrete types that were passed.
@@ -354,14 +365,14 @@ def _prepare_model_fields(
         created_model.__annotations__[key] = concrete_type
 
 
-def _limit_assigned_parameters() -> None:
+def _limit_cache_size(cache_dict: Dict[Any, Any], size_limit: int) -> None:
     """
-    Limit the size/length of to avoid unlimited increase in memory usage.
+    Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
-    Since the dict is ordered and we always remove elements from the beginning, beginning of the dict,
-    this is effectively an LRU cache.
+    Since the dict is ordered, and we always remove elements from the beginning, this is effectively an LRU cache.
     """
-    if len(_assigned_parameters) > _assigned_parameters_max_length:
-        to_remove = list(_assigned_parameters.keys())[:100]
+    if len(cache_dict) > size_limit:
+        excess = len(cache_dict) - size_limit + size_limit // 10
+        to_remove = list(cache_dict.keys())[:excess]
         for key in to_remove:
-            del _assigned_parameters[key]
+            del cache_dict[key]
