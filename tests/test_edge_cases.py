@@ -1932,3 +1932,17 @@ def test_int_subclass():
 
     m = MyModel(my_int=IntSubclass(123))
     assert m.my_int.__class__ == IntSubclass
+
+
+def test_model_issubclass():
+    assert not issubclass(int, BaseModel)
+
+    class MyModel(BaseModel):
+        x: int
+
+    assert issubclass(MyModel, BaseModel)
+
+    class Custom:
+        __fields__ = True
+
+    assert not issubclass(Custom, BaseModel)
