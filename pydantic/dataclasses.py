@@ -106,6 +106,27 @@ def _generate_pydantic_post_init(
     return _pydantic_post_init
 
 
+def _generate_builtin_dataclass_wrapper_name(cls: Type[Any]) -> str:
+    """
+    Generate a name for the class that wraps a built-in dataclass that is:
+    - a valid Python identifier (usable as attribute name),
+    - unique (no collisions with different classes),
+    - deterministic (so it works across different processes), and
+    - recognisable as wrapper for the dataclass (to ease debugging).
+    """
+
+    # Assumption: the combination of `__module__` and `__qualname__` attributes
+    # uniquely identifies the class. This should be a safe assumption because pickle
+    # uses these two attributes to find the class.
+    fully_qualified_cls_name = f'{cls.__module__}.{cls.__qualname__}'
+
+    # We hex-encode the fully qualified name of the source class because it contains
+    # one or more period (.) characters, making it unusable as identifier.
+    unique_id = fully_qualified_cls_name.encode('utf-8').hex()
+
+    return f'_Pydantic_{cls.__name__}_{unique_id}'
+
+
 def _process_class(
     _cls: Type[Any],
     init: bool,
@@ -140,7 +161,7 @@ def _process_class(
     # and register it on module level to address pickle problem:
     # https://github.com/samuelcolvin/pydantic/issues/2111
     if is_builtin_dataclass(_cls):
-        uniq_class_name = f'_Pydantic_{_cls.__name__}_{id(_cls)}'
+        uniq_class_name = _generate_builtin_dataclass_wrapper_name(_cls)
         _cls = type(
             # for pretty output new class will have the name as original
             _cls.__name__,

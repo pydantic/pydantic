@@ -1,6 +1,8 @@
 import dataclasses
+import multiprocessing
 import pickle
 from collections.abc import Hashable
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Union
@@ -902,6 +904,40 @@ class ModelForPickle(pydantic.BaseModel):
     # ensure the restored dataclass is still a pydantic dataclass
     with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
         restored_obj.dataclass.value = 'value of a wrong type'
+
+
+# Class definition outside test function required. The class needs to be available
+# in spawned processes that don't run the actual test.
+@dataclasses.dataclass
+class BuiltinDataclassForCrossProcessPickle:
+    value: int
+
+
+# Class definition outside test function required. The class needs to be available
+# in spawned processes that don't run the actual test.
+class ModelForCrossProcessPickle(pydantic.BaseModel):
+    dataclass: BuiltinDataclassForCrossProcessPickle
+
+    class Config:
+        validate_assignment = True
+
+
+def test_cross_process_picklability_of_overriden_builtin_dataclasses(create_module):
+    # See https://github.com/samuelcolvin/pydantic/issues/3453
+
+    source_obj = ModelForCrossProcessPickle(dataclass=BuiltinDataclassForCrossProcessPickle(value=123))
+
+    # Fix multiprocessing start method for cross platforms consistency
+    # testing 'spawn' is most rigorous in this case
+    mp_context = multiprocessing.get_context('spawn')
+    with ProcessPoolExecutor(mp_context=mp_context) as executor:
+        # Pickle the source_obj in a different process (a worker of the executor)
+        # (transmitting source_obj to the worker happens through pickle, so it
+        # this happens to test both directions)
+        serialized_obj = executor.submit(pickle.dumps, source_obj).result()
+
+    revived = pickle.loads(serialized_obj)
+    assert revived == source_obj
 
 
 def test_config_field_info_create_model():
