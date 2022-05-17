@@ -927,13 +927,13 @@ def test_cross_process_picklability_of_overriden_builtin_dataclasses(create_modu
 
     source_obj = ModelForCrossProcessPickle(dataclass=BuiltinDataclassForCrossProcessPickle(value=123))
 
-    # Fix multiprocessing start method for cross platforms consistency
-    # testing 'spawn' is most rigorous in this case
+    # Prescribe the multiprocessing start method for cross-platforms consistency.
+    # 'spawn' makes for the most rigorous as well as compatible test in this case
     mp_context = multiprocessing.get_context('spawn')
     with ProcessPoolExecutor(mp_context=mp_context) as executor:
         # Pickle the source_obj in a different process (a worker of the executor)
         # (transmitting source_obj to the worker happens through pickle, so it
-        # this happens to test both directions)
+        # happens to test both directions)
         serialized_obj = executor.submit(pickle.dumps, source_obj).result()
 
     revived = pickle.loads(serialized_obj)
