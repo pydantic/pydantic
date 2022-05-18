@@ -369,7 +369,8 @@ def _limit_cache_size(cache_dict: Dict[Any, Any], size_limit: int) -> None:
     """
     Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
-    Since the dict is ordered, and we always remove elements from the beginning, this is effectively an LRU cache.
+    Since the dict is ordered, and we always remove elements from the beginning, this is effectively a
+    FIFO cache.
     """
     if len(cache_dict) > size_limit:
         excess = len(cache_dict) - size_limit + size_limit // 10
