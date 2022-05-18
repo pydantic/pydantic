@@ -16,6 +16,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
     Tuple,
@@ -73,6 +74,7 @@ __all__ = (
     'ROOT_KEY',
     'get_unique_discriminator_alias',
     'get_discriminator_alias_and_values',
+    'LimitedDict',
 )
 
 ROOT_KEY = '__root__'
@@ -749,3 +751,27 @@ def _get_union_alias_and_all_values(
     # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
     all_aliases, all_values = zip(*zipped_aliases_values)
     return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values
+
+
+KT = TypeVar('KT')
+VT = TypeVar('VT')
+
+
+class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+    """
+    Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
+
+    Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
+    """
+
+    def __init__(self, size_limit: int = 1000):
+        self.size_limit = size_limit
+        super().__init__()
+
+    def __setitem__(self, key: KT, value: VT) -> None:
+        super().__setitem__(key, value)
+        if len(self) > self.size_limit:
+            excess = len(self) - self.size_limit + self.size_limit // 10
+            to_remove = list(self.keys())[:excess]
+            for key in to_remove:
+                del self[key]

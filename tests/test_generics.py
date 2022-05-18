@@ -234,30 +234,6 @@ def test_cover_cache():
     assert len(_generic_types_cache) == cache_size + 2
 
 
-def test_generic_cache_limit():
-    _generic_types_cache.clear()
-    from pydantic import generics
-
-    generics._generic_types_cache_limit = 10
-    assert len(_generic_types_cache) == 0
-    T = TypeVar('T')
-
-    class Model(GenericModel, Generic[T]):
-        x: T
-
-    Model[int]  # adds both with-tuple and without-tuple version to cache
-    assert len(_generic_types_cache) == 2
-    for t in int, str, bytes, List[int], List[str]:
-        Model[t]  # uses the cache
-    assert len(_generic_types_cache) == 10
-    Model[List[bytes]]
-    assert len(_generic_types_cache) == 9  # reduce size to 9 after adding new type
-    Model[float]
-    assert len(_generic_types_cache) == 9
-    Model[Dict[int, str]]
-    assert len(_generic_types_cache) == 9
-
-
 def test_generic_config():
     data_type = TypeVar('data_type')
 

@@ -24,23 +24,20 @@ from .fields import DeferredType
 from .main import BaseModel, create_model
 from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .utils import all_identical, lenient_issubclass
+from .utils import LimitedDict, all_identical, lenient_issubclass
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
-_generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
-_generic_types_cache_limit = 1000
+_generic_types_cache: LimitedDict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = LimitedDict()
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
-_assigned_parameters: Dict[Type[Any], Parametrization] = {}
-# _assigned_parameters size is limited by _limit_assigned_parameters() below
-_assigned_parameters_limit = 1000
+_assigned_parameters: LimitedDict[Type[Any], Parametrization] = LimitedDict()
 
 
 class GenericModel(BaseModel):
@@ -107,7 +104,6 @@ class GenericModel(BaseModel):
         )
 
         _assigned_parameters[created_model] = typevars_map
-        _limit_cache_size(_assigned_parameters, _assigned_parameters_limit)
 
         if called_globally:  # create global reference and therefore allow pickling
             object_by_reference = None
@@ -135,7 +131,6 @@ class GenericModel(BaseModel):
         _generic_types_cache[(cls, params)] = created_model
         if len(params) == 1:
             _generic_types_cache[(cls, params[0])] = created_model
-            _limit_cache_size(_generic_types_cache, _generic_types_cache_limit)
 
         # Recursively walk class type hints and replace generic typevars
         # with concrete types that were passed.
@@ -363,17 +358,3 @@ def _prepare_model_fields(
         field.outer_type_ = concrete_type
         field.prepare()
         created_model.__annotations__[key] = concrete_type
-
-
-def _limit_cache_size(cache_dict: Dict[Any, Any], size_limit: int) -> None:
-    """
-    Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
-
-    Since the dict is ordered, and we always remove elements from the beginning, this is effectively a
-    FIFO cache.
-    """
-    if len(cache_dict) > size_limit:
-        excess = len(cache_dict) - size_limit + size_limit // 10
-        to_remove = list(cache_dict.keys())[:excess]
-        for key in to_remove:
-            del cache_dict[key]
