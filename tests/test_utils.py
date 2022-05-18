@@ -535,7 +535,7 @@ def test_limited_dict():
     assert list(d.items()) == [(1, '1'), (2, '2')]
     for no in '34567890':
         d[int(no)] = no
-    assert list(d.data.items()) == [
+    assert list(d.items()) == [
         (1, '1'),
         (2, '2'),
         (3, '3'),
@@ -551,7 +551,7 @@ def test_limited_dict():
 
     # reduce size to 9 after setting 11
     assert len(d) == 9
-    assert list(d.data.items()) == [
+    assert list(d.items()) == [
         (3, '3'),
         (4, '4'),
         (5, '5'),
@@ -566,5 +566,3 @@ def test_limited_dict():
     assert len(d) == 10
     d[13] = '13'
     assert len(d) == 9
-    del d[13]
-    assert len(d) == 8
