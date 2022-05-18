@@ -784,6 +784,6 @@ else:
                 for key in to_remove:
                     del self[key]
 
-        def __class_getitem__(cls, item: Any) -> Any:
+        def __class_getitem__(cls, *args: Any) -> Any:
             # to avoid errors with 3.7
             pass
