@@ -1,6 +1,6 @@
 import warnings
 import weakref
-from collections import OrderedDict, defaultdict, deque
+from collections import OrderedDict, UserDict, defaultdict, deque
 from copy import deepcopy
 from itertools import islice, zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
@@ -757,7 +757,7 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+class LimitedDict(UserDict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
     """
     Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
