@@ -1,6 +1,6 @@
 import warnings
 import weakref
-from collections import OrderedDict, UserDict, defaultdict, deque
+from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import islice, zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
@@ -757,21 +757,35 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-class LimitedDict(UserDict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+class LimitedDict(MutableMapping[KT, VT]):
     """
     Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
     Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
+
+    Annoying inheriting from `dict` or `UserDict` breaks cython.
     """
 
     def __init__(self, size_limit: int = 1000):
         self.size_limit = size_limit
-        super().__init__()
+        self.data: Dict[KT, VT] = {}
 
-    def __setitem__(self, key: KT, value: VT) -> None:
-        super().__setitem__(key, value)
+    def __setitem__(self, __key: KT, __value: VT) -> None:
+        self.data[__key] = __value
         if len(self) > self.size_limit:
-            excess = len(self) - self.size_limit + self.size_limit // 10
-            to_remove = list(self.keys())[:excess]
+            excess = len(self.data) - self.size_limit + self.size_limit // 10
+            to_remove = list(self.data.keys())[:excess]
             for key in to_remove:
-                del self[key]
+                del self.data[key]
+
+    def __delitem__(self, __v: KT) -> None:
+        del self.data[__v]
+
+    def __getitem__(self, __k: KT) -> VT:
+        return self.data[__k]
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __iter__(self) -> Iterator[KT]:
+        return iter(self.data)
