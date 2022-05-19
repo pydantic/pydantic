@@ -784,6 +784,6 @@ else:
                 for key in to_remove:
                     del self[key]
 
-        def __class_getitem__(cls, *args: Any) -> Any:
-            # to avoid errors with 3.7
+        def __class_getitem__(cls, *args: Any) -> Any:  # pragma: no cover
+            # just in case LimitedDict is used in type annotations
             pass
