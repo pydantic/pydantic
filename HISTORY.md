@@ -1,3 +1,32 @@
+## v1.9.1 (2022-05-19)
+
+Thank you to pydantic's sponsors:
+@tiangolo, @stellargraph, @JonasKs, @grillazz, @Mazyod, @kevinalh, @chdsbd, @povilasb, @povilasb, @jina-ai, 
+@mainframeindustries, @robusta-dev, @SendCloud, @rszamszur, @jodal, @hardbyte, @corleyma, @daddycocoaman, 
+@Rehket, @jokull, @reillysiemens, @westonsteimel, @primer-io, @koxudaxi, @browniebroke, @stradivari96, 
+@adriangb, @kamalgill, @jqueguiner, @dev-zero, @datarootsio, @RedCarpetUp
+for their kind support.
+
+* Limit the size of `generics._generic_types_cache` and `generics._assigned_parameters` 
+  to avoid unlimited increase in memory usage, #4083 by @samuelcolvin
+* Add Jupyverse and FPS as Jupyter projects using pydantic, #4082 by @davidbrochart
+* Speedup `__isinstancecheck__` on pydantic models when the type is not a model, may also avoid memory "leaks", #4081 by @samuelcolvin
+* Fix in-place modification of `FieldInfo` that caused problems with PEP 593 type aliases, #4067 by @adriangb
+* Add support for autocomplete in VS Code via `__dataclass_transform__` when using `pydantic.dataclasses.dataclass`, #4006 by @giuliano-oliveira
+* Remove benchmarks from codebase and docs, #3973 by @samuelcolvin
+* Typing checking with pyright in CI, improve docs on vscode/pylance/pyright, #3972 by @samuelcolvin
+* Fix nested Python dataclass schema regression, #3819 by @himbeles
+* Update documentation about lazy evaluation of sources for Settings, #3806 by @garyd203
+* Prevent subclasses of bytes being converted to bytes, #3706 by @samuelcolvin
+* Fixed "error checking inheritance of" when using PEP585 and PEP604 type hints, #3681 by @aleksul
+* Allow self referencing `ClassVar`s in models, #3679 by @samuelcolvin
+* Fix issue with self-referencing dataclass, #3675 by @uriyyo
+* Include non-standard port numbers in rendered URLs, #3652 by @dolfinus
+* `Config.copy_on_model_validation` does a deep copy and not a shallow one, #3641 by @PrettyWood
+* fix: clarify that discriminated unions do not support singletons, #3636 by @tommilligan
+* Add `read_text(encoding='utf-8')` for `setup.py`, #3625 by @hswong3i
+* Fix JSON Schema generation for Discriminated Unions within lists, #3608 by @samuelcolvin
+
 ## v1.9.0 (2021-12-31)
 
 Thank you to pydantic's sponsors:
