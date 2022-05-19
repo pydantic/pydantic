@@ -1567,6 +1567,28 @@ def test_model_exclude_copy_on_model_validation():
     assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
 
 
+def test_model_exclude_copy_on_model_validation_shallow():
+    """When `Config.copy_on_model_validation` is set and `Config.copy_on_model_validation_shallow` is set,
+    do the same as the previous test but perform a shallow copy"""
+
+    class User(BaseModel):
+        class Config:
+            copy_on_model_validation_shallow = True
+
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User = Field(...)
+
+    t = Transaction(
+        user=my_user,
+    )
+
+    assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
+
+
 def test_validation_deep_copy():
     """By default, Config.copy_on_model_validation should do a deep copy"""
 

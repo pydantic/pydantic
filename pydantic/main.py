@@ -675,7 +675,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
-            if cls.__config__.copy_on_model_validation:
+            if cls.__config__.copy_on_model_validation and cls.__config__.copy_on_model_validation_shallow:
+                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=False)
+            elif cls.__config__.copy_on_model_validation:
                 return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=True)
             else:
                 return value
