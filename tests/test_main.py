@@ -1573,7 +1573,7 @@ def test_model_exclude_copy_on_model_validation_shallow():
 
     class User(BaseModel):
         class Config:
-            copy_on_model_validation_shallow = "shallow"
+            copy_on_model_validation = "shallow"
 
         hobbies: List[str]
 
