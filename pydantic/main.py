@@ -25,7 +25,7 @@ from typing import (
 )
 
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
-from .config import BaseConfig, Extra, inherit_config, prepare_config
+from .config import BaseConfig, Copy, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
@@ -675,7 +675,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
-            if cls.__config__.copy_on_model_validation and cls.__config__.copy_on_model_validation_shallow:
+            if cls.__config__.copy_on_model_validation == Copy.shallow:
                 return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=False)
             elif cls.__config__.copy_on_model_validation:
                 return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=True)
