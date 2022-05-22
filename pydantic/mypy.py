@@ -185,6 +185,7 @@ class PydanticModelTransformer:
         ctx = self._ctx
         info = self._ctx.cls.info
 
+        self.adjust_validator_signatures()
         config = self.collect_config()
         fields = self.collect_fields(config)
         for field in fields:
@@ -199,6 +200,24 @@ class PydanticModelTransformer:
             'fields': {field.name: field.serialize() for field in fields},
             'config': config.set_values_dict(),
         }
+
+    def adjust_validator_signatures(self) -> None:
+        """When we decorate a function `f` with `pydantic.validator(...), mypy sees
+        `f` as a regular method taking a `self` instance, even though pydantic
+        internally wraps `f` with `classmethod` if necessary.
+
+        Teach mypy this by marking any function whose outermost decorator is a
+        `validator()` call as a classmethod.
+        """
+        for name, sym in self._ctx.cls.info.names.items():
+            if isinstance(sym.node, Decorator):
+                first_dec = sym.node.original_decorators[0]
+                if (
+                    isinstance(first_dec, CallExpr)
+                    and isinstance(first_dec.callee, NameExpr)
+                    and first_dec.callee.fullname == 'pydantic.class_validators.validator'
+                ):
+                    sym.node.func.is_class = True
 
     def collect_config(self) -> 'ModelConfigData':
         """

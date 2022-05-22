@@ -1,3 +1,4 @@
 121: error: Unexpected keyword argument "name" for "AddProject"  [call-arg]
 121: error: Unexpected keyword argument "slug" for "AddProject"  [call-arg]
 121: error: Unexpected keyword argument "description" for "AddProject"  [call-arg]
+190: error: The erased type of self "Type[plugin_success.ModelWithAnnotatedValidator]" is not a supertype of its class "plugin_success.ModelWithAnnotatedValidator"  [misc]

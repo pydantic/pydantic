@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Optional, Type, Union
 
 from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
@@ -181,3 +181,11 @@ class ModelWithAllowReuseValidator(BaseModel):
 
 
 model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
+
+
+class ModelWithAnnotatedValidator(BaseModel):
+    name: str
+
+    @validator('name')
+    def noop_validator_with_annotations(cls: Type['ModelWithAnnotatedValidator'], name: str) -> str:
+        return name
