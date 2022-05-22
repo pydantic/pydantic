@@ -1,5 +1,4 @@
 import re
-import sys
 from enum import Enum
 from typing import Generic, TypeVar, Union
 
@@ -12,10 +11,21 @@ from pydantic.generics import GenericModel
 
 
 def test_discriminated_union_only_union():
-    with pytest.raises(TypeError, match='`discriminator` can only be used with `Union` type'):
+    with pytest.raises(
+        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+    ):
 
         class Model(BaseModel):
             x: str = Field(..., discriminator='qwe')
+
+
+def test_discriminated_union_single_variant():
+    with pytest.raises(
+        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+    ):
+
+        class Model(BaseModel):
+            x: Union[str] = Field(..., discriminator='qwe')
 
 
 def test_discriminated_union_invalid_type():
@@ -365,7 +375,6 @@ def test_nested():
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 def test_generic():
     T = TypeVar('T')
 

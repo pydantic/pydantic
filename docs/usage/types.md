@@ -297,6 +297,12 @@ _(This script is complete, it should run "as is")_
     Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
     the `Union` and `discriminator` information. See below for an example!
 
+!!! warning
+    Discriminated unions cannot be used with only a single variant, such as `Union[Cat]`.
+
+    Python changes `Union[T]` into `T` at interpretation time, so it is not possible for `pydantic` to
+    distinguish fields of `Union[T]` from `T`.
+
 #### Nested Discriminated Unions
 
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
