@@ -675,11 +675,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
-            if cls.__config__.copy_on_model_validation == Copy.shallow:
+            if isinstance(cls.__config__.copy_on_model_validation, bool):
+                # Warn about deprecated behavior
+                warnings.warn('`copy_on_model_validation` should be a string of value ("deep", "shallow", "none")', RuntimeWarning)
+
+            if cls.__config__.copy_on_model_validation == "shallow":
+                # shallow copy
                 return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=False)
-            elif cls.__config__.copy_on_model_validation:
+            elif cls.__config__.copy_on_model_validation == "deep":
+                # deep copy
                 return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=True)
             else:
+                # ref
                 return value
 
         value = cls._enforce_dict_if_root(value)
