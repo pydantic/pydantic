@@ -464,6 +464,7 @@ def test_smart_deepcopy_collection(collection, mocker):
 T = TypeVar('T')
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason='get_origin is only consistent for python >= 3.7')
 @pytest.mark.parametrize(
     'input_value,output_value',
     [

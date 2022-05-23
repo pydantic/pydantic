@@ -73,7 +73,7 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
         output_path.write_text(actual_out)
         raise RuntimeError(f'wrote actual output to {output_path} since file did not exist')
 
-    expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
+    expected_out = Path(output_path).read_text() if output_path else ''
 
     # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
     if actual_out and float(mypy_version) < 0.930:

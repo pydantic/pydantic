@@ -4,5 +4,5 @@ Cython==0.29.28;sys_platform!='win32'
 devtools==0.8.0
 email-validator==1.2.1
 dataclasses==0.6; python_version < '3.7'
-typing-extensions==4.2.0
+typing-extensions==4.1.0
 python-dotenv==0.20.0

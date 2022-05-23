@@ -1,13 +1,20 @@
 import datetime
+import re
+import sys
 from collections import deque
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from re import Pattern
 from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
+
+if sys.version_info >= (3, 7):
+    Pattern = re.Pattern
+else:
+    # python 3.6
+    Pattern = re.compile('a').__class__
 
 from .color import Color
 from .networks import NameEmail
