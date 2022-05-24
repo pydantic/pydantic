@@ -214,7 +214,12 @@ def test_list_of_dict_models_core(benchmark):
     benchmark(v.validate_python, data)
 
 
-list_of_ints_data = ([i if i % 2 == 0 else str(i) for i in range(1000)], [str(i) for i in range(1000)])
+list_of_ints_data = (
+    [i for i in range(1000)],
+    [str(i) for i in range(1000)],
+    [str(1_000_000 + i) for i in range(1000)],
+    [str(1_000_000_000 + i) for i in range(1000)],
+)
 
 
 @skip_pydantic
