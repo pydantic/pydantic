@@ -2,7 +2,7 @@ coverage==6.3.2
 hypothesis==6.46.3
 # pin importlib-metadata as upper versions need typing-extensions to work if on python < 3.8
 importlib-metadata==3.1.0;python_version<"3.8"
-mypy==0.950
+mypy==0.960
 pytest==7.1.2
 pytest-cov==3.0.0
 pytest-mock==3.7.0
