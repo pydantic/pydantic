@@ -67,7 +67,7 @@ pip install pydantic[dotenv]
 pip install pydantic[email,dotenv]
 ```
 
-Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install`.
+Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install python-dotenv`.
 
 
 ## Install from repository
