@@ -83,7 +83,7 @@ Models possess the following methods and attributes:
 : a utility for loading strings of numerous formats; cf. [helper functions](#helper-functions)
 
 `parse_file()`
-: like `parse_raw()` but for file paths; cf. [helper function](#helper-functions)
+: like `parse_raw()` but for file paths; cf. [helper functions](#helper-functions)
 
 `from_orm()`
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
