@@ -943,7 +943,9 @@ def create_model(
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
-        `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
+        `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`, e.g.
+        `foo=Field(datetime, default_factory=datetime.utcnow, alias='bar')` or
+        `foo=(str, FieldInfo(title='Foo'))`
     """
 
     if __base__ is not None:
