@@ -28,6 +28,34 @@ def test_dict_value_error(py_or_json):
     ]
 
 
+def test_dict_error_key_int():
+    v = SchemaValidator({'type': 'dict', 'values': 'int'})
+    with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
+        v.validate_python({1: 2, 3: 'wrong'})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': [3],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'wrong',
+        }
+    ]
+
+
+def test_dict_error_key_other():
+    v = SchemaValidator({'type': 'dict', 'values': 'int'})
+    with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
+        v.validate_python({1: 2, (1, 2): 'wrong'})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['(1, 2)'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'wrong',
+        }
+    ]
+
+
 def test_dict_any_value():
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})

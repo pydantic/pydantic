@@ -215,3 +215,18 @@ def test_validate_assignment_allow_extra_validate():
             'input_value': 'xyz',
         }
     ]
+
+
+def test_json_error():
+    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'list', 'items': 'int'}}})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('{"field_a": [123, "wrong"]}')
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['field_a', 1],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'wrong',
+        }
+    ]

@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 
 def test_function_before():
@@ -95,11 +95,42 @@ def test_function_wrap():
     def f(input_value, *, validator, **kwargs):
         return validator(input_value) + ' Changed'
 
-    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
 
     # with pytest.raises(ValidationError) as exc_info:
     assert v.validate_python('input value') == 'input value Changed'
     # print(exc_info.value)
+
+
+def test_function_wrap_repr():
+    def f(input_value, *, validator, **kwargs):
+        return repr(validator)
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+
+    assert v.validate_python('input value') == 'ValidatorCallable(Str(StrValidator))'
+
+
+def test_function_wrap_str():
+    def f(input_value, *, validator, **kwargs):
+        return str(validator)
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+
+    assert v.validate_python('input value') == 'ValidatorCallable(Str(StrValidator))'
+
+
+def test_function_wrap_not_callable():
+    with pytest.raises(SchemaError, match='SchemaError: function must be callable'):
+        SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': [], 'schema': 'str'})
+
+    with pytest.raises(SchemaError, match='SchemaError: "function" key is required'):
+        SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'schema': 'str'})
+
+
+def test_wrong_mode():
+    with pytest.raises(SchemaError, match='SchemaError: Unexpected function mode "foobar"'):
+        SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'foobar', 'schema': 'str'})
 
 
 def test_function_after_data():
@@ -233,3 +264,27 @@ def test_class_with_validator():
     assert exc_info.value.errors() == [
         {'kind': 'str_type', 'loc': [], 'message': 'Value must be a valid string', 'input_value': True}
     ]
+
+
+def test_raise_assertion_error():
+    def f(input_value, **kwargs):
+        raise AssertionError('foobar')
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('input value')
+
+    assert exc_info.value.errors() == [
+        {'kind': 'assertion_error', 'loc': [], 'message': 'foobar', 'input_value': 'input value'}
+    ]
+
+
+def test_raise_type_error():
+    def f(input_value, **kwargs):
+        raise TypeError('foobar')
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+
+    with pytest.raises(TypeError, match='^foobar$'):
+        v.validate_python('input value')

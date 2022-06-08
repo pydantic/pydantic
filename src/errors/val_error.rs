@@ -1,5 +1,3 @@
-use std::error::Error;
-use std::fmt;
 use std::result::Result as StdResult;
 
 use pyo3::prelude::*;
@@ -14,27 +12,7 @@ pub enum ValError<'a> {
     InternalErr(PyErr),
 }
 
-impl<'a> fmt::Display for ValError<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ValError::LineErrors(line_errors) => {
-                write!(f, "Line errors: {:?}", line_errors)
-            }
-            ValError::InternalErr(err) => {
-                write!(f, "Internal error: {}", err)
-            }
-        }
-    }
-}
-
-impl<'a> Error for ValError<'a> {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            ValError::LineErrors(_errors) => None,
-            ValError::InternalErr(err) => Some(err),
-        }
-    }
-}
+// ValError used to implement Error, see #78 for removed code
 
 pub fn as_internal<'a>(err: PyErr) -> ValError<'a> {
     ValError::InternalErr(err)
