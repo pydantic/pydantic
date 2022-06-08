@@ -230,6 +230,7 @@ impl ValidatorCallable {
     fn __repr__(&self) -> String {
         format!("ValidatorCallable({:?})", self.validator)
     }
+
     fn __str__(&self) -> String {
         self.__repr__()
     }
