@@ -241,7 +241,7 @@ fn get_function(schema: &PyDict) -> PyResult<PyObject> {
             if obj.is_callable() {
                 Ok(obj.into())
             } else {
-                return py_error!("function must be callable");
+                py_error!("function must be callable")
             }
         }
         None => py_error!(r#""function" key is required"#),

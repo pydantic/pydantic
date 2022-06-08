@@ -34,7 +34,7 @@ jobs:
             py
             ${{ env.pythonLocation }}
             ${{ hashFiles('tests/requirements.txt') }}
-            ${{ hashFiles('setup.py') }}
+            ${{ hashFiles('pyproject.toml') }}
 
       - run: pip install -r tests/requirements.txt
         if: steps.cache-py.outputs.cache-hit != 'true'
