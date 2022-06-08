@@ -2,6 +2,10 @@
 name = "pydantic-core"
 version = "0.0.1"
 edition = "2021"
+license = "MIT"
+homepage = "https://github.com/samuelcolvin/pydantic-core"
+repository = "https://github.com/samuelcolvin/pydantic-core.git"
+readme = "README.md"
 
 [dependencies]
 pyo3 = {version = "0.16.3", features = ["extension-module"]}
@@ -12,11 +16,17 @@ serde_json = {version = "1.0.79", features = ["preserve_order"]}
 enum_dispatch = "0.3.8"
 serde = "1.0.137"
 indexmap = "1.8.1"
-mimalloc = { version = "0.1.29", default-features = false }
+mimalloc = { version = "0.1.29", default-features = false, optional = true }
 
 [lib]
 name = "_pydantic_core"
 crate-type = ["cdylib"]
+
+[features]
+default = ["mimalloc"]
+
+[package.metadata.maturin]
+name = "pydantic_core._pydantic_core"
 
 [profile.release]
 lto = "fat"

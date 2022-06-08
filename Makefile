@@ -1,10 +1,10 @@
 .DEFAULT_GOAL := all
-isort = isort pydantic_core tests setup.py
-black = black pydantic_core tests setup.py
+isort = isort pydantic_core tests
+black = black pydantic_core tests
 
 .PHONY: install
 install:
-	pip install -U pip wheel setuptools setuptools_rust pre-commit
+	pip install -U pip wheel pre-commit
 	pip install -r tests/requirements.txt
 	pip install -r tests/requirements-linting.txt
 	pip install -e .
@@ -46,7 +46,7 @@ format:
 
 .PHONY: lint-python
 lint-python:
-	flake8 --max-complexity 10 --max-line-length 120 --ignore E203,W503 pydantic_core tests setup.py
+	flake8 --max-complexity 10 --max-line-length 120 --ignore E203,W503 pydantic_core tests
 	$(isort) --check-only --df
 	$(black) --check --diff
 
@@ -114,4 +114,3 @@ clean:
 	rm -rf build
 	rm -rf perf.data*
 	rm -rf pydantic_core/*.so
-	python setup.py clean

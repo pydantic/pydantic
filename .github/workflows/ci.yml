@@ -57,7 +57,7 @@ jobs:
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('tests/requirements.txt') }}
-          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('pyproject.toml') }}
 
     - run: pip install -r tests/requirements.txt
       if: steps.cache-py.outputs.cache-hit != 'true'
@@ -88,6 +88,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
+
+    - name: cache rust
+      uses: Swatinem/rust-cache@v1
+
     - uses: actions/setup-python@v3
       with:
         python-version: '3.10'
@@ -101,26 +112,143 @@ jobs:
           py
           ${{ env.pythonLocation }}
           ${{ hashFiles('tests/requirements-linting.txt') }}
-          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('pyproject.toml') }}
 
     - run: pip install -r tests/requirements-linting.txt
       if: steps.cache-py.outputs.cache-hit != 'true'
 
-    - run: SKIP_RUST_EXTENSION=1 pip install .
+    - run: pip install .
       if: steps.cache-py.outputs.cache-hit != 'true'
 
     - run: pip freeze
 
-    - name: install rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-        components: rustfmt, clippy
-
-    - name: cache rust
-      uses: Swatinem/rust-cache@v1
-
     - run: make lint
     - run: make pyright
+
+  build:
+    name: >
+      build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
+    needs: [test, lint]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+        target: [x86_64, aarch64]
+        manylinux: [auto]
+        include:
+          - os: ubuntu
+            platform: linux
+          - os: windows
+            ls: dir
+          - os: windows
+            ls: dir
+            target: i686
+            python-architecture: x86
+          - os: ubuntu
+            platform: linux
+            target: i686
+          # GCC 4.8.5 in manylinux2014 container doesn't support c11 atomic
+          # we use manylinux_2_24 container for aarch64 and armv7 targets instead,
+          - os: ubuntu
+            platform: linux
+            target: aarch64
+            container: messense/manylinux_2_24-cross:aarch64
+          - os: ubuntu
+            platform: linux
+            target: armv7
+            container: messense/manylinux_2_24-cross:armv7
+          # musllinux
+          - os: ubuntu
+            platform: linux
+            target: x86_64
+            manylinux: musllinux_1_1
+          - os: ubuntu
+            platform: linux
+            target: aarch64
+            manylinux: musllinux_1_1
+        exclude:
+          # Windows on arm64 only supports Python 3.11+
+          - os: windows
+            target: aarch64
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+          architecture: ${{ matrix.python-architecture || 'x64' }}
+
+      - name: set package version
+        run: python .github/set_version.py
+        if: "startsWith(github.ref, 'refs/tags/')"
+
+      - name: Sync Cargo.lock
+        run: cargo update -p pydantic-core
+        if: "startsWith(github.ref, 'refs/tags/')"
+
+      - run: pip install -U twine
+
+      - name: build wheels
+        uses: messense/maturin-action@v1
+        with:
+          rust-toolchain: nightly
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux || 'auto' }}
+          container: ${{ matrix.container }}
+          args: --release --out dist --interpreter 3.7 3.8 3.9 3.10
+
+      - run: ${{ matrix.ls || 'ls -lh' }} dist/
+
+      - run: twine check dist/*
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+  list-pypi-files:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+      - run: ls -lh dist/
+
+  release:
+    needs: [build]
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.10'
+
+      - run: pip install -U twine
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+      - run: twine check dist/*
+
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}

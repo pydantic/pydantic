@@ -1,5 +1,50 @@
 [build-system]
-requires = ['setuptools', 'wheel', 'setuptools-rust']
+requires = ["maturin>=0.12,<0.13"]
+build-backend = "maturin"
+
+[project]
+name = "pydantic_core"
+requires-python = ">=3.7"
+authors = [
+    {name = "Samuel Colvin", email = "s@muelcolvin.com"}
+]
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Environment :: Console',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'Intended Audience :: System Administrators',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: MacOS',
+    'Environment :: MacOS X',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+]
+dependencies = [
+    'typing_extensions; python_version < "3.11.0"'
+]
+dynamic = [
+    "description",
+    "license",
+    "readme",
+    "version"
+]
+
+[project.urls]
+Homepage = 'https://github.com/samuelcolvin/pydantic-core'
+Funding = "https://github.com/sponsors/samuelcolvin"
+Source = "https://github.com/samuelcolvin/pydantic-core"
+
+[tool.maturin]
+bindings = "pyo3"
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
