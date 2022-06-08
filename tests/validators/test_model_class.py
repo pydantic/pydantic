@@ -186,3 +186,9 @@ def test_model_class_strict():
             'context': {'class_name': 'MyModel'},
         }
     ]
+
+
+def test_internal_error():
+    v = SchemaValidator({'type': 'model-class', 'class_type': int, 'model': {'type': 'model', 'fields': {'f': 'int'}}})
+    with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
+        v.validate_python({'f': 123})

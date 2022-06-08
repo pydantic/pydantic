@@ -30,6 +30,7 @@ from ..conftest import Err
             Err('Value must be a valid integer, unable to parse string as an integer [kind=int_parsing'),
             id='string',
         ),
+        pytest.param(None, Err('Value must be a valid integer [kind=int_type'), id='list'),
         pytest.param([1, 2], Err('Value must be a valid integer [kind=int_type'), id='list'),
     ],
 )

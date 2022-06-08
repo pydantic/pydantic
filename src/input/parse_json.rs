@@ -40,6 +40,7 @@ impl<'de> Deserialize<'de> for JsonInput {
         impl<'de> Visitor<'de> for JsonVisitor {
             type Value = JsonInput;
 
+            #[no_coverage]
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("any valid JSON value")
             }
@@ -148,6 +149,7 @@ impl<'de> DeserializeSeed<'de> for KeyDeserializer {
 impl<'de> Visitor<'de> for KeyDeserializer {
     type Value = String;
 
+    #[no_coverage]
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a string key")
     }

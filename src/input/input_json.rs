@@ -118,30 +118,37 @@ impl Input for JsonInput {
 
 /// Required for Dict keys so the string can behave like an Input
 impl Input for String {
+    #[no_coverage]
     fn is_none(&self) -> bool {
         false
     }
 
+    #[no_coverage]
     fn strict_str(&self) -> ValResult<String> {
         Ok(self.clone())
     }
 
+    #[no_coverage]
     fn lax_str(&self) -> ValResult<String> {
         Ok(self.clone())
     }
 
+    #[no_coverage]
     fn strict_bool(&self) -> ValResult<bool> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BoolType)
     }
 
+    #[no_coverage]
     fn lax_bool(&self) -> ValResult<bool> {
         str_as_bool(self, self)
     }
 
+    #[no_coverage]
     fn strict_int(&self) -> ValResult<i64> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
     }
 
+    #[no_coverage]
     fn lax_int(&self) -> ValResult<i64> {
         match self.parse() {
             Ok(i) => Ok(i),
@@ -149,10 +156,12 @@ impl Input for String {
         }
     }
 
+    #[no_coverage]
     fn strict_float(&self) -> ValResult<f64> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
     }
 
+    #[no_coverage]
     fn lax_float(&self) -> ValResult<f64> {
         match self.parse() {
             Ok(i) => Ok(i),
@@ -160,18 +169,22 @@ impl Input for String {
         }
     }
 
+    #[no_coverage]
     fn strict_model_check(&self, _class: &PyType) -> ValResult<bool> {
         Ok(false)
     }
 
+    #[no_coverage]
     fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
     }
 
+    #[no_coverage]
     fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
     }
 
+    #[no_coverage]
     fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
     }
