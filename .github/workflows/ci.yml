@@ -10,18 +10,21 @@ on:
 
 jobs:
   test:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    name: test py${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version:
+          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11.0-alpha - 3.11'
 
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ubuntu-latest
 
     env:
       PYTHON: ${{ matrix.python-version }}
-      OS: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v3
@@ -79,8 +82,7 @@ jobs:
 
     - uses: codecov/codecov-action@v2
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        env_vars: PYTHON,OS
+        env_vars: PYTHON
 
   lint:
     runs-on: ubuntu-latest
@@ -126,8 +128,9 @@ jobs:
     - run: make pyright
 
   build:
-    name: >
-      build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
+    name: build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
+    # only run on push to main and on release
+    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')"
     needs: [test, lint]
     strategy:
       fail-fast: false
