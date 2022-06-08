@@ -192,7 +192,7 @@ _(This script is complete, it should run "as is")_
 One exception will be raised regardless of the number of errors found, that `ValidationError` will
 contain information about all the errors and how they happened.
 
-You can access these errors in a several ways:
+You can access these errors in several ways:
 
 `e.errors()`
 : method will return list of errors found in the input data.
