@@ -144,6 +144,10 @@ In either case, the value of the passed argument can be any valid path or filena
 current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
 validating them.
 
+!!! note
+    If a filename is specified for `env_file`, Pydantic will only check the current working directory and
+    won't check any parent directories for the `.env` file.
+
 Even when using a dotenv file, *pydantic* will still read environment variables as well as the dotenv file,
 **environment variables will always take priority over values loaded from a dotenv file**.
 
