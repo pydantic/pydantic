@@ -21,6 +21,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -2999,5 +3000,29 @@ def test_discriminated_union_in_list():
                 },
                 'required': ['pet_type', 'name'],
             },
+        },
+    }
+
+
+def test_sub_model_with_type_attributes():
+    class Foo(BaseModel):
+        b: float
+
+    class Bar(BaseModel):
+        a: int
+        b: Type[Foo]
+
+    assert Bar.schema() == {
+        'title': 'Bar',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}, 'b': {'$ref': '#/definitions/Foo'}},
+        'required': ['a', 'b'],
+        'definitions': {
+            'Foo': {
+                'title': 'Foo',
+                'type': 'object',
+                'properties': {'b': {'title': 'B', 'type': 'number'}},
+                'required': ['b'],
+            }
         },
     }
