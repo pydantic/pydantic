@@ -3,9 +3,10 @@ import pickle
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Union
 
 import pytest
+from typing_extensions import Literal
 
 import pydantic
 from pydantic import BaseModel, ValidationError, validator
@@ -922,6 +923,49 @@ def test_config_field_info_create_model():
     }
 
 
+def test_discrimated_union_basemodel_instance_value():
+    @pydantic.dataclasses.dataclass
+    class A:
+        l: Literal['a']
+
+    @pydantic.dataclasses.dataclass
+    class B:
+        l: Literal['b']
+
+    @pydantic.dataclasses.dataclass
+    class Top:
+        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
+
+    t = Top(sub=A(l='a'))
+    assert isinstance(t, Top)
+    assert Top.__pydantic_model__.schema() == {
+        'title': 'Top',
+        'type': 'object',
+        'properties': {
+            'sub': {
+                'title': 'Sub',
+                'discriminator': {'propertyName': 'l', 'mapping': {'a': '#/definitions/A', 'b': '#/definitions/B'}},
+                'anyOf': [{'$ref': '#/definitions/A'}, {'$ref': '#/definitions/B'}],
+            }
+        },
+        'required': ['sub'],
+        'definitions': {
+            'A': {
+                'title': 'A',
+                'type': 'object',
+                'properties': {'l': {'title': 'L', 'enum': ['a'], 'type': 'string'}},
+                'required': ['l'],
+            },
+            'B': {
+                'title': 'B',
+                'type': 'object',
+                'properties': {'l': {'title': 'L', 'enum': ['b'], 'type': 'string'}},
+                'required': ['l'],
+            },
+        },
+    }
+
+
 def test_keeps_custom_properties():
     class StandardClass:
         """Class which modifies instance creation."""
@@ -945,3 +989,11 @@ def test_keeps_custom_properties():
         instance = cls(a=test_string)
         assert instance._special_property == 1
         assert instance.a == test_string
+
+
+def test_self_reference_dataclass():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        self_reference: 'MyDataclass'
+
+    assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
