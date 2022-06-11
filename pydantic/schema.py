@@ -932,7 +932,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
 
-    # Handle Type[x] based model attributes
+    # Handle Type[] based model attributes
     if get_origin(field_type) is type:
         field_type = get_class(field_type)
 
