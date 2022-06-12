@@ -396,7 +396,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if get_origin(field_type) is type:
+    elif get_origin(field_type) is type:
         field_type = get_class(field_type)
     if field.sub_fields and (not lenient_issubclass(field_type, BaseModel) or was_dataclass):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
@@ -928,12 +928,11 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if f_schema:
         return f_schema, definitions, nested_models
 
-    # Handle dataclass-based models
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
+        # Handle dataclass-based models
         field_type = field_type.__pydantic_model__
-
-    # Handle Type[] based model attributes
-    if get_origin(field_type) is type:
+    elif get_origin(field_type) is type:
+        # Handle Type[] based model fields
         field_type = get_class(field_type)
 
     if issubclass(field_type, BaseModel):
