@@ -77,7 +77,7 @@ from .typing import (
     is_none_type,
     is_union,
 )
-from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
+from .utils import ROOT_KEY, get_model, lenient_issubclass
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -984,7 +984,7 @@ def encode_default(dft: Any) -> Any:
         return dft.value
     elif isinstance(dft, (int, float, str)):
         return dft
-    elif sequence_like(dft):
+    elif isinstance(dft, (list, tuple)):
         t = dft.__class__
         seq_args = (encode_default(v) for v in dft)
         return t(*seq_args) if is_namedtuple(t) else t(seq_args)
