@@ -1,3 +1,5 @@
+from datetime import date, datetime, time
+
 from pydantic_core import Schema, SchemaError, SchemaValidator
 
 
@@ -42,6 +44,9 @@ def test_schema_typing() -> None:
                     },
                 },
             },
+            {'type': 'date', 'le': date.today()},
+            {'type': 'time', 'lt': time(12, 13, 14)},
+            {'type': 'datetime', 'ge': datetime.now()},
         ],
     }
 
