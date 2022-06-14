@@ -36,7 +36,18 @@ def test_str(py_or_json, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
-@pytest.mark.parametrize('input_value,expected', [(123, '123'), (Decimal('123'), '123')])
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('foobar', 'foobar'),
+        (b'foobar', 'foobar'),
+        (b'\x81', Err('Value must be a valid string, unable to parse raw data as a unicode string [kind=str_unicode')),
+        # null bytes are very annoying, but we can't really block them here
+        (b'\x00', '\x00'),
+        (123, '123'),
+        (Decimal('123'), '123'),
+    ],
+)
 def test_str_not_json(input_value, expected):
     v = SchemaValidator({'type': 'str'})
     if isinstance(expected, Err):
