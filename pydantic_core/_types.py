@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import date, datetime, time
 from typing import Any, Callable, Dict, List, Sequence, Union
 
 if sys.version_info < (3, 11):
@@ -138,6 +139,36 @@ class UnionSchema(TypedDict):
     default: NotRequired[Any]
 
 
+class DateSchema(TypedDict, total=False):
+    type: Required[Literal['date']]
+    strict: bool
+    le: date
+    ge: date
+    lt: date
+    gt: date
+    default: date
+
+
+class TimeSchema(TypedDict, total=False):
+    type: Required[Literal['time']]
+    strict: bool
+    le: time
+    ge: time
+    lt: time
+    gt: time
+    default: time
+
+
+class DatetimeSchema(TypedDict, total=False):
+    type: Required[Literal['datetime']]
+    strict: bool
+    le: datetime
+    ge: datetime
+    lt: datetime
+    gt: datetime
+    default: datetime
+
+
 # pydantic allows types to be defined via a simple string instead of dict with just `type`, e.g.
 # 'int' is equivalent to {'type': 'int'}
 BareType = Literal[
@@ -178,4 +209,7 @@ Schema = Union[
     SetSchema,
     StringSchema,
     UnionSchema,
+    DateSchema,
+    TimeSchema,
+    DatetimeSchema,
 ]

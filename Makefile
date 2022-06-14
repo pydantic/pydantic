@@ -22,8 +22,8 @@ build-dev:
 	@rm -f target/debug/lib_pydantic_core.d
 	@mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
 
-.PHONY: build-fast
-build-fast:
+.PHONY: build-prod
+build-prod:
 	@rm -f pydantic_core/*.so
 	cargo build --release
 	@rm -f target/release/lib_pydantic_core.d
