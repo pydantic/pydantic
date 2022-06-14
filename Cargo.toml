@@ -17,6 +17,7 @@ enum_dispatch = "0.3.8"
 serde = "1.0.137"
 indexmap = "1.8.1"
 mimalloc = { version = "0.1.29", default-features = false, optional = true }
+speedate = "0.4.1"
 
 [lib]
 name = "_pydantic_core"

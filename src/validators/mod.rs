@@ -14,6 +14,8 @@ use crate::SchemaError;
 
 mod any;
 mod bool;
+mod date;
+mod datetime;
 mod dict;
 mod float;
 mod function;
@@ -27,6 +29,7 @@ mod optional;
 mod recursive;
 mod set;
 mod string;
+mod time;
 mod union;
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
@@ -167,38 +170,44 @@ pub fn build_validator<'a>(
         config,
         build_context,
         // models e.g. heterogeneous dicts
-        self::model::ModelValidator,
+        model::ModelValidator,
         // unions
-        self::union::UnionValidator,
+        union::UnionValidator,
         // optional e.g. nullable
-        self::optional::OptionalValidator,
+        optional::OptionalValidator,
         // model classes
-        self::model_class::ModelClassValidator,
+        model_class::ModelClassValidator,
         // strings
-        self::string::StrValidator,
+        string::StrValidator,
         // integers
-        self::int::IntValidator,
+        int::IntValidator,
         // boolean
-        self::bool::BoolValidator,
+        bool::BoolValidator,
         // floats
-        self::float::FloatValidator,
+        float::FloatValidator,
         // list/arrays
-        self::list::ListValidator,
+        list::ListValidator,
         // sets - unique lists
-        self::set::SetValidator,
+        set::SetValidator,
         // dicts/objects (recursive)
-        self::dict::DictValidator,
+        dict::DictValidator,
         // None/null
-        self::none::NoneValidator,
+        none::NoneValidator,
         // functions - before, after, plain & wrap
-        self::function::FunctionBuilder,
+        function::FunctionBuilder,
         // recursive (self-referencing) models
-        self::recursive::RecursiveValidator,
-        self::recursive::RecursiveRefValidator,
+        recursive::RecursiveValidator,
+        recursive::RecursiveRefValidator,
         // literals
-        self::literal::LiteralBuilder,
+        literal::LiteralBuilder,
         // any
-        self::any::AnyValidator,
+        any::AnyValidator,
+        // dates
+        date::DateValidator,
+        // times
+        time::TimeValidator,
+        // datetimes
+        datetime::DateTimeValidator,
     )
 }
 
@@ -217,52 +226,58 @@ pub struct Extra<'a> {
 #[enum_dispatch]
 pub enum CombinedValidator {
     // models e.g. heterogeneous dicts
-    Model(self::model::ModelValidator),
+    Model(model::ModelValidator),
     // unions
-    Union(self::union::UnionValidator),
+    Union(union::UnionValidator),
     // optional e.g. nullable
-    Optional(self::optional::OptionalValidator),
+    Optional(optional::OptionalValidator),
     // model classes
-    ModelClass(self::model_class::ModelClassValidator),
+    ModelClass(model_class::ModelClassValidator),
     // strings
-    Str(self::string::StrValidator),
-    StrictStr(self::string::StrictStrValidator),
-    StrConstrained(self::string::StrConstrainedValidator),
+    Str(string::StrValidator),
+    StrictStr(string::StrictStrValidator),
+    StrConstrained(string::StrConstrainedValidator),
     // integers
-    Int(self::int::IntValidator),
-    StrictInt(self::int::StrictIntValidator),
-    ConstrainedInt(self::int::ConstrainedIntValidator),
+    Int(int::IntValidator),
+    StrictInt(int::StrictIntValidator),
+    ConstrainedInt(int::ConstrainedIntValidator),
     // booleans
-    Bool(self::bool::BoolValidator),
-    StrictBool(self::bool::StrictBoolValidator),
+    Bool(bool::BoolValidator),
+    StrictBool(bool::StrictBoolValidator),
     // floats
-    Float(self::float::FloatValidator),
-    StrictFloat(self::float::StrictFloatValidator),
-    ConstrainedFloat(self::float::ConstrainedFloatValidator),
+    Float(float::FloatValidator),
+    StrictFloat(float::StrictFloatValidator),
+    ConstrainedFloat(float::ConstrainedFloatValidator),
     // lists
-    List(self::list::ListValidator),
+    List(list::ListValidator),
     // sets - unique lists
-    Set(self::set::SetValidator),
+    Set(set::SetValidator),
     // dicts/objects (recursive)
-    Dict(self::dict::DictValidator),
+    Dict(dict::DictValidator),
     // None/null
-    None(self::none::NoneValidator),
+    None(none::NoneValidator),
     // functions
-    FunctionBefore(self::function::FunctionBeforeValidator),
-    FunctionAfter(self::function::FunctionAfterValidator),
-    FunctionPlain(self::function::FunctionPlainValidator),
-    FunctionWrap(self::function::FunctionWrapValidator),
+    FunctionBefore(function::FunctionBeforeValidator),
+    FunctionAfter(function::FunctionAfterValidator),
+    FunctionPlain(function::FunctionPlainValidator),
+    FunctionWrap(function::FunctionWrapValidator),
     // recursive (self-referencing) models
-    Recursive(self::recursive::RecursiveValidator),
-    RecursiveRef(self::recursive::RecursiveRefValidator),
+    Recursive(recursive::RecursiveValidator),
+    RecursiveRef(recursive::RecursiveRefValidator),
     // literals
-    LiteralSingleString(self::literal::LiteralSingleStringValidator),
-    LiteralSingleInt(self::literal::LiteralSingleIntValidator),
-    LiteralMultipleStrings(self::literal::LiteralMultipleStringsValidator),
-    LiteralMultipleInts(self::literal::LiteralMultipleIntsValidator),
-    LiteralGeneral(self::literal::LiteralGeneralValidator),
+    LiteralSingleString(literal::LiteralSingleStringValidator),
+    LiteralSingleInt(literal::LiteralSingleIntValidator),
+    LiteralMultipleStrings(literal::LiteralMultipleStringsValidator),
+    LiteralMultipleInts(literal::LiteralMultipleIntsValidator),
+    LiteralGeneral(literal::LiteralGeneralValidator),
     // any
-    Any(self::any::AnyValidator),
+    Any(any::AnyValidator),
+    // dates
+    Date(date::DateValidator),
+    // times
+    Time(time::TimeValidator),
+    // datetimes
+    Datetime(datetime::DateTimeValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

@@ -184,6 +184,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "speedate",
  "strum",
  "strum_macros",
 ]
@@ -323,6 +324,16 @@ name = "smallvec"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
+
+[[package]]
+name = "speedate"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2663284a2054abe857e107604cc981adc1957d94c6afbfcf1c4fdd80d301c916"
+dependencies = [
+ "strum",
+ "strum_macros",
+]
 
 [[package]]
 name = "strum"
