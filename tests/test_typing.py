@@ -24,6 +24,7 @@ def test_schema_typing() -> None:
             {'type': 'literal', 'expected': [1, '1']},
             {'type': 'any'},
             {'type': 'none'},
+            {'type': 'bytes'},
             {'type': 'list', 'items': {'type': 'str'}, 'min_items': 3},
             {'type': 'set', 'items': {'type': 'str'}, 'max_items': 3},
             {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'any'}},

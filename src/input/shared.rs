@@ -1,5 +1,6 @@
-use super::Input;
 use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
+
+use super::Input;
 
 #[inline]
 pub fn str_as_bool<'a>(input: &'a dyn Input, str: &str) -> ValResult<'a, bool> {

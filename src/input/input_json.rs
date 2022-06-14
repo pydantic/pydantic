@@ -9,6 +9,7 @@ use super::datetime::{
 use super::generics::{GenericMapping, GenericSequence};
 use super::input_abstract::Input;
 use super::parse_json::JsonInput;
+use super::return_enums::EitherBytes;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 
 impl Input for JsonInput {
@@ -116,6 +117,13 @@ impl Input for JsonInput {
         match self {
             JsonInput::Array(a) => Ok(a.into()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType),
+        }
+    }
+
+    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+        match self {
+            JsonInput::String(s) => Ok(EitherBytes::Rust(s.clone().into_bytes())),
+            _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BytesType),
         }
     }
 
@@ -233,6 +241,10 @@ impl Input for String {
     #[no_coverage]
     fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
+    }
+
+    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+        Ok(EitherBytes::Rust(self.clone().into_bytes()))
     }
 
     fn strict_date(&self) -> ValResult<EitherDate> {
