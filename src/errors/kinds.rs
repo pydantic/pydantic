@@ -119,6 +119,14 @@ pub enum ErrorKind {
     #[strum(message = "Value must be less than or equal to {le}")]
     FloatLessThanEqual,
     // ---------------------
+    // bytes errors
+    #[strum(message = "Value must be a valid bytes")]
+    BytesType,
+    #[strum(message = "Bytes must have at least {min_length} characters")]
+    BytesTooShort,
+    #[strum(message = "Bytes must have at most {max_length} characters")]
+    BytesTooLong,
+    // ---------------------
     // python errors from functions (the messages here will not be used as we sett message in these cases)
     #[strum(message = "Invalid value")]
     ValueError,
