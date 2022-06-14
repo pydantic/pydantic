@@ -432,6 +432,25 @@ def test_list_of_optional_core(benchmark):
     benchmark(v.validate_python, list_of_optional_data)
 
 
+some_bytes = b'0' * 1000
+
+
+@pytest.mark.benchmark(group='bytes')
+def test_bytes_core(benchmark):
+    v = SchemaValidator({'type': 'bytes'})
+
+    benchmark(v.validate_python, some_bytes)
+
+
+@skip_pydantic
+@pytest.mark.benchmark(group='bytes')
+def test_bytes_pyd(benchmark):
+    class PydanticModel(BaseModel):
+        __root__: bytes
+
+    benchmark(PydanticModel.parse_obj, some_bytes)
+
+
 class TestBenchmarkDateTime:
     @pytest.fixture(scope='class')
     def pydantic_model(self):
