@@ -104,8 +104,10 @@ impl DictValidator {
         let output = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
 
+        let key_validator = self.key_validator.as_ref();
+        let value_validator = self.value_validator.as_ref();
         for (key, value) in dict.generic_iter() {
-            let output_key = match self.key_validator.validate(py, key, extra, slots) {
+            let output_key = match key_validator.validate(py, key, extra, slots) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     let loc = vec![key.to_loc(), "[key]".to_loc()];
@@ -116,7 +118,7 @@ impl DictValidator {
                 }
                 Err(err) => return Err(err),
             };
-            let output_value = match self.value_validator.validate(py, value, extra, slots) {
+            let output_value = match value_validator.validate(py, value, extra, slots) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     let loc = vec![key.to_loc()];
