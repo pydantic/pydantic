@@ -24,6 +24,9 @@ mod errors;
 mod input;
 mod validators;
 
+// required for benchmarks
+pub use validators::SchemaValidator;
+
 create_exception!(_pydantic_core, SchemaError, PyException);
 
 #[pymodule]

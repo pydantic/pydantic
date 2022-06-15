@@ -8,7 +8,7 @@ repository = "https://github.com/samuelcolvin/pydantic-core.git"
 readme = "README.md"
 
 [dependencies]
-pyo3 = {version = "0.16.3", features = ["extension-module"]}
+pyo3 = "0.16.5"
 regex = "1.5.5"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
@@ -19,12 +19,23 @@ indexmap = "1.8.1"
 mimalloc = { version = "0.1.29", default-features = false, optional = true }
 speedate = "0.4.1"
 
+[dev-dependencies]
+criterion = {version = "0.3.5", features = ["html_reports"]}
+
+[[bench]]
+name = "main"
+harness = false
+
 [lib]
 name = "_pydantic_core"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["mimalloc"]
+# must be disabled for cargo bench
+extension-module = ["pyo3/extension-module"]
+# required for cargo bench
+auto-initialize = ["pyo3/auto-initialize"]
+default = ["mimalloc", "extension-module"]
 
 [package.metadata.maturin]
 name = "pydantic_core._pydantic_core"

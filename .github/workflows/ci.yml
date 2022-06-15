@@ -127,6 +127,29 @@ jobs:
     - run: make lint
     - run: make pyright
 
+  bench:
+    # run the rust benchmarks
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+
+    - name: cache rust
+      uses: Swatinem/rust-cache@v1
+
+    - uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+
+    - run: make rust-benchmark
+
   build:
     name: build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
     # only run on push to main and on release
