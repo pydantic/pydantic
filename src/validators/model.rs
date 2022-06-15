@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PySet};
+use pyo3::types::{PyDict, PySet, PyString};
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{
@@ -13,6 +13,7 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 struct ModelField {
     name: String,
     // alias: Option<String>,
+    dict_key: Py<PyString>,
     default: Option<PyObject>,
     validator: CombinedValidator,
 }
@@ -61,15 +62,18 @@ impl BuildValidator for ModelValidator {
         };
         let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
 
+        let py = schema.py();
         for (key, value) in fields_dict.iter() {
             let (validator, field_dict) = match build_validator(value, config, build_context) {
                 Ok(v) => v,
                 Err(err) => return py_error!("Key \"{}\":\n  {}", key, err),
             };
 
+            let key_str = key.to_string();
             fields.push(ModelField {
-                name: key.to_string(),
+                name: key_str.clone(),
                 // alias: field_dict.get_as("alias"),
+                dict_key: PyString::intern(py, &key_str).into(),
                 validator,
                 default: field_dict.get_as("default")?,
             });
@@ -109,9 +113,10 @@ impl Validator for ModelValidator {
         };
 
         for field in &self.fields {
+            let py_key: &PyString = field.dict_key.as_ref(py);
             if let Some(value) = dict.generic_get(&field.name) {
                 match field.validator.validate(py, value, &extra, slots) {
-                    Ok(value) => output_dict.set_item(&field.name, value).map_err(as_internal)?,
+                    Ok(value) => output_dict.set_item(py_key, value).map_err(as_internal)?,
                     Err(ValError::LineErrors(line_errors)) => {
                         let loc = vec![field.name.to_loc()];
                         for err in line_errors {
@@ -120,11 +125,9 @@ impl Validator for ModelValidator {
                     }
                     Err(err) => return Err(err),
                 }
-                fields_set.add(field.name.clone()).map_err(as_internal)?;
+                fields_set.add(py_key).map_err(as_internal)?;
             } else if let Some(ref default) = field.default {
-                output_dict
-                    .set_item(&field.name, default.clone())
-                    .map_err(as_internal)?;
+                output_dict.set_item(py_key, default.as_ref(py)).map_err(as_internal)?;
             } else {
                 errors.push(val_line_error!(
                     input_value = InputValue::InputRef(input),
@@ -141,6 +144,7 @@ impl Validator for ModelValidator {
         };
         if check_extra {
             for (raw_key, value) in dict.generic_iter() {
+                // TODO use strict_str here if the model is strict
                 let key: String = match raw_key.lax_str() {
                     Ok(k) => k,
                     Err(ValError::LineErrors(line_errors)) => {
@@ -152,10 +156,11 @@ impl Validator for ModelValidator {
                     }
                     Err(err) => return Err(err),
                 };
-                if fields_set.contains(&key).map_err(as_internal)? {
+                let py_key = PyString::new(py, &key);
+                if fields_set.contains(py_key).map_err(as_internal)? {
                     continue;
                 }
-                fields_set.add(key.clone()).map_err(as_internal)?;
+                fields_set.add(py_key).map_err(as_internal)?;
                 let loc = vec![key.to_loc()];
 
                 if forbid {
@@ -166,7 +171,7 @@ impl Validator for ModelValidator {
                     ));
                 } else if let Some(ref validator) = self.extra_validator {
                     match validator.validate(py, value, &extra, slots) {
-                        Ok(value) => output_dict.set_item(&key, value).map_err(as_internal)?,
+                        Ok(value) => output_dict.set_item(py_key, value).map_err(as_internal)?,
                         Err(ValError::LineErrors(line_errors)) => {
                             for err in line_errors {
                                 errors.push(err.with_prefix_location(&loc));

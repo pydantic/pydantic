@@ -63,13 +63,13 @@ impl SchemaValidator {
         })
     }
 
-    fn __reduce__(&self, py: Python) -> PyResult<PyObject> {
+    pub fn __reduce__(&self, py: Python) -> PyResult<PyObject> {
         let args = (self.schema.as_ref(py),);
         let cls = Py::new(py, self.to_owned())?.getattr(py, "__class__")?;
         Ok((cls, args).into_py(py))
     }
 
-    fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
+    pub fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
         let extra = Extra {
             data: None,
             field: None,
@@ -78,7 +78,7 @@ impl SchemaValidator {
         r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
     }
 
-    fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
+    pub fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
         match parse_json::<JsonInput>(&input) {
             Ok(input) => {
                 let extra = Extra {
@@ -100,7 +100,7 @@ impl SchemaValidator {
         }
     }
 
-    fn validate_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
+    pub fn validate_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
         let extra = Extra {
             data: Some(data),
             field: Some(field.as_str()),
@@ -109,7 +109,7 @@ impl SchemaValidator {
         r.map_err(|e| as_validation_err(py, &self.validator.get_name(py), e))
     }
 
-    fn __repr__(&self, py: Python) -> String {
+    pub fn __repr__(&self, py: Python) -> String {
         format!(
             "SchemaValidator(name={:?}, validator={:#?})",
             self.validator.get_name(py),
