@@ -1,9 +1,8 @@
-use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{as_internal, ValResult};
+use crate::build_tools::SchemaDict;
+use crate::errors::ValResult;
 use crate::input::Input;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -36,7 +35,7 @@ impl Validator for RecursiveValidator {
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let validator = get_validator(slots, self.validator_id)?;
+        let validator = unsafe { slots.get_unchecked(self.validator_id) };
         validator.validate(py, input, extra, slots)
     }
 
@@ -72,18 +71,11 @@ impl Validator for RecursiveRefValidator {
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let validator = get_validator(slots, self.validator_id)?;
+        let validator = unsafe { slots.get_unchecked(self.validator_id) };
         validator.validate(py, input, extra, slots)
     }
 
     fn get_name(&self, _py: Python) -> String {
         Self::EXPECTED_TYPE.to_string()
-    }
-}
-
-fn get_validator(slots: &[CombinedValidator], id: usize) -> ValResult<&CombinedValidator> {
-    match slots.get(id) {
-        Some(validator) => Ok(validator),
-        None => py_error!(PyRuntimeError; "Unable to find validator {}", id).map_err(as_internal),
     }
 }
