@@ -68,7 +68,11 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
-BUILTINS_NAME = 'builtins' if float(mypy_version) >= 0.930 else '__builtins__'
+
+if '+dev.' in mypy_version or float(mypy_version) >= 0.930:
+    BUILTINS_NAME = 'builtins'
+else:
+    BUILTINS_NAME = '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
