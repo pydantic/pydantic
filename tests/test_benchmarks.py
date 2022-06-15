@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Set
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator
 
 if os.getenv('BENCHMARK_VS_PYDANTIC'):
     try:
