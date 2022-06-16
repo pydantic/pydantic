@@ -27,6 +27,8 @@ def test_schema_typing() -> None:
             {'type': 'bytes'},
             {'type': 'list', 'items': {'type': 'str'}, 'min_items': 3},
             {'type': 'set', 'items': {'type': 'str'}, 'max_items': 3},
+            {'type': 'tuple-var-len', 'items': {'type': 'str'}, 'max_items': 3},
+            {'type': 'tuple-fix-len', 'items': [{'type': 'str'}, {'type': 'int'}]},
             {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'any'}},
             {'type': 'model-class', 'class_type': Foo, 'model': {'type': 'model', 'fields': {'bar': {'type': 'str'}}}},
             {'type': 'function', 'mode': 'wrap', 'function': foo},

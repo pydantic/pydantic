@@ -38,7 +38,7 @@ impl BuildValidator for ModelClassValidator {
         }
 
         Ok(Self {
-            // we don't use is_strict here since we don't wan validation to be strict in this case if
+            // we don't use is_strict here since we don't want validation to be strict in this case if
             // `config.strict` is set, only if this specific field is strict
             strict: schema.get_as("strict")?.unwrap_or(false),
             validator: Box::new(validator),

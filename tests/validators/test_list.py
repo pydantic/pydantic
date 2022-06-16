@@ -1,13 +1,29 @@
+import re
+
 import pytest
 from dirty_equals import IsList, IsNonNegative
 
 from pydantic_core import SchemaValidator, ValidationError
 
+from ..conftest import Err
 
-@pytest.mark.parametrize('input_value,expected', [([1, 2, 3], [1, 2, 3]), ([1, 2, '3'], [1, 2, 3])])
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ([1, 2, 3], [1, 2, 3]),
+        ([1, 2, '3'], [1, 2, 3]),
+        (5, Err('Value must be a valid list/array [kind=list_type, input_value=5, input_type=int]')),
+        ('5', Err("Value must be a valid list/array [kind=list_type, input_value='5', input_type=str]")),
+    ],
+)
 def test_list_json(py_or_json, input_value, expected):
     v = py_or_json({'type': 'list', 'items': {'type': 'int'}})
-    assert v.validate_test(input_value) == expected
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        assert v.validate_test(input_value) == expected
 
 
 def test_list_strict():

@@ -127,6 +127,14 @@ impl Input for JsonInput {
         }
     }
 
+    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        // just as in set's case, List has to be allowed
+        match self {
+            JsonInput::Array(a) => Ok(a.into()),
+            _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType),
+        }
+    }
+
     fn strict_date(&self) -> ValResult<EitherDate> {
         match self {
             JsonInput::String(v) => bytes_as_date(self, v.as_bytes()),
@@ -257,5 +265,10 @@ impl Input for String {
 
     fn strict_datetime(&self) -> ValResult<EitherDateTime> {
         bytes_as_datetime(self, self.as_bytes())
+    }
+
+    #[no_coverage]
+    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType)
     }
 }
