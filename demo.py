@@ -6,7 +6,7 @@ v = SchemaValidator(
         'type': 'model',
         'fields': {
             'name': {'type': 'str'},
-            'age': {'type': 'int-constrained', 'ge': 18},
+            'age': {'type': 'int', 'ge': 18},
             'is_developer': {'type': 'bool', 'default': True},
         },
     }
