@@ -13,4 +13,4 @@ rust-cov show -Xdemangler=rustfilt $(ls pydantic_core/*.so) \
     --ignore-filename-regex='library/std' \
     -format=html -o htmlcov/rust
 
-rm default.profraw default.profdata
+rm -f default.profraw default.profdata

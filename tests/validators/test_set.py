@@ -9,11 +9,21 @@ from ..conftest import Err
 
 @pytest.mark.parametrize(
     'input_value,expected',
-    [([], set()), ([1, 2, 3], {1, 2, 3}), ([1, 2, '3'], {1, 2, 3}), ([1, 2, 3, 2, 3], {1, 2, 3})],
+    [
+        ([], set()),
+        ([1, 2, 3], {1, 2, 3}),
+        ([1, 2, '3'], {1, 2, 3}),
+        ([1, 2, 3, 2, 3], {1, 2, 3}),
+        (5, Err('Value must be a valid set [kind=set_type, input_value=5, input_type=int]')),
+    ],
 )
 def test_set_ints_both(py_or_json, input_value, expected):
     v = py_or_json({'type': 'set', 'items': {'type': 'int'}})
-    assert v.validate_test(input_value) == expected
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        assert v.validate_test(input_value) == expected
 
 
 @pytest.mark.parametrize('input_value,expected', [([1, 2.5, '3'], {1, 2.5, '3'})])

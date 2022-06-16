@@ -31,6 +31,7 @@ mod recursive;
 mod set;
 mod string;
 mod time;
+mod tuple;
 mod union;
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
@@ -186,6 +187,9 @@ pub fn build_validator<'a>(
         bool::BoolValidator,
         // floats
         float::FloatValidator,
+        // tuples
+        tuple::TupleVarLenValidator,
+        tuple::TupleFixLenValidator,
         // list/arrays
         list::ListValidator,
         // sets - unique lists
@@ -218,7 +222,7 @@ pub fn build_validator<'a>(
 /// but that would confuse it with context as per samuelcolvin/pydantic#1549
 #[derive(Debug)]
 pub struct Extra<'a> {
-    /// This is used as the `data` kwargs to validator functions, it's also represents the current model
+    /// This is used as the `data` kwargs to validator functions, it also represents the current model
     /// data when validating assignment
     pub data: Option<&'a PyDict>,
     /// The field being assigned to when validating assignment
@@ -255,6 +259,9 @@ pub enum CombinedValidator {
     List(list::ListValidator),
     // sets - unique lists
     Set(set::SetValidator),
+    // tuples
+    TupleVarLen(tuple::TupleVarLenValidator),
+    TupleFixLen(tuple::TupleFixLenValidator),
     // dicts/objects (recursive)
     Dict(dict::DictValidator),
     // None/null
