@@ -1,22 +1,16 @@
 from pydantic_core import SchemaValidator, ValidationError
 
-v = SchemaValidator({
-    'title': 'MyModel',
-    'type': 'model',
-    'fields': {
-        'name': {
-            'type': 'str',
+v = SchemaValidator(
+    {
+        'title': 'MyModel',
+        'type': 'model',
+        'fields': {
+            'name': {'type': 'str'},
+            'age': {'type': 'int-constrained', 'ge': 18},
+            'is_developer': {'type': 'bool', 'default': True},
         },
-        'age': {
-            'type': 'int-constrained',
-            'ge': 18,
-        },
-        'is_developer': {
-            'type': 'bool',
-            'default': True,
-        },
-    },
-})
+    }
+)
 print(v)
 """
 SchemaValidator(title="MyModel", validator=ModelValidator ...

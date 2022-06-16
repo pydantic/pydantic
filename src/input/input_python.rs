@@ -311,6 +311,28 @@ impl Input for PyAny {
             err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateTimeType)
         }
     }
+
+    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(tuple.into())
+        } else {
+            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType)
+        }
+    }
+
+    fn lax_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(tuple.into())
+        } else if let Ok(list) = self.cast_as::<PyList>() {
+            Ok(list.into())
+        } else if let Ok(set) = self.cast_as::<PySet>() {
+            Ok(set.into())
+        } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
+            Ok(frozen_set.into())
+        } else {
+            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType)
+        }
+    }
 }
 
 fn mapping_as_dict(mapping: &PyMapping) -> PyResult<&PyDict> {
