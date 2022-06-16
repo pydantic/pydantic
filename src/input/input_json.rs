@@ -127,14 +127,6 @@ impl Input for JsonInput {
         }
     }
 
-    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
-        // just as in set's case, List has to be allowed
-        match self {
-            JsonInput::Array(a) => Ok(a.into()),
-            _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType),
-        }
-    }
-
     fn strict_date(&self) -> ValResult<EitherDate> {
         match self {
             JsonInput::String(v) => bytes_as_date(self, v.as_bytes()),
@@ -142,15 +134,15 @@ impl Input for JsonInput {
         }
     }
 
-    // NO custom `lax_date` implementation, if strict_date fails, the validator will fallback to lax_datetime
-    // then check there's no remainder
-
     fn strict_time(&self) -> ValResult<EitherTime> {
         match self {
             JsonInput::String(v) => bytes_as_time(self, v.as_bytes()),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TimeType),
         }
     }
+
+    // NO custom `lax_date` implementation, if strict_date fails, the validator will fallback to lax_datetime
+    // then check there's no remainder
 
     fn lax_time(&self) -> ValResult<EitherTime> {
         match self {
@@ -174,6 +166,14 @@ impl Input for JsonInput {
             JsonInput::Int(v) => int_as_datetime(self, *v, 0),
             JsonInput::Float(v) => float_as_datetime(self, *v),
             _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateTimeType),
+        }
+    }
+
+    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        // just as in set's case, List has to be allowed
+        match self {
+            JsonInput::Array(a) => Ok(a.into()),
+            _ => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType),
         }
     }
 }

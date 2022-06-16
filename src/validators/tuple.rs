@@ -205,7 +205,7 @@ impl TupleFixLenValidator {
                 kind = ErrorKind::TupleLengthMismatch,
                 // TODO fix Context::new so context! accepts different value types
                 context = context!(
-                    "expected_length" => expected_length.to_string(),
+                    "expected_length" => expected_length,
                     "plural" => plural.to_string(),
                 )
             );

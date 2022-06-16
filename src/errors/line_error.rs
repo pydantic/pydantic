@@ -83,8 +83,8 @@ impl<'a> InputValue<'a> {
 pub struct Context(Vec<(String, ContextValue)>);
 
 impl Context {
-    pub fn new<K: Into<String>, V: Into<ContextValue>, I: IntoIterator<Item = (K, V)>>(raw: I) -> Self {
-        Self(raw.into_iter().map(|(k, v)| (k.into(), v.into())).collect())
+    pub fn new<I: IntoIterator<Item = (String, ContextValue)>>(raw: I) -> Self {
+        Self(raw.into_iter().collect())
     }
 
     pub fn is_empty(&self) -> bool {

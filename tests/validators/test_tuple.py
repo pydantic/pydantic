@@ -291,3 +291,19 @@ def test_error_building_tuple_with_wrong_items(tuple_variant, items, expected):
 
     with pytest.raises(SchemaError, match=re.escape(expected.message)):
         SchemaValidator({'type': tuple_variant, 'items': items})
+
+
+def test_tuple_fix_error():
+    v = SchemaValidator({'type': 'tuple-fix-len', 'items': ['int', 'str']})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1])
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'tuple_length_mismatch',
+            'loc': [],
+            'message': 'Tuple must have exactly 2 items',
+            'input_value': [1],
+            'context': {'expected_length': 2, 'plural': 's'},
+        }
+    ]
