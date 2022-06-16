@@ -31,7 +31,7 @@ v = SchemaValidator({
             'type': 'str',
         },
         'age': {
-            'type': 'int-constrained',
+            'type': 'int',
             'ge': 18,
         },
         'is_developer': {
