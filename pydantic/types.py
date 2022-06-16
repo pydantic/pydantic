@@ -329,6 +329,7 @@ else:
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
+    to_upper = False
     to_lower = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
@@ -350,6 +351,7 @@ class ConstrainedBytes(bytes):
 def conbytes(
     *,
     strip_whitespace: bool = False,
+    to_upper: bool = False,
     to_lower: bool = False,
     min_length: int = None,
     max_length: int = None,
@@ -358,6 +360,7 @@ def conbytes(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        to_upper=to_upper,
         to_lower=to_lower,
         min_length=min_length,
         max_length=max_length,
@@ -379,6 +382,7 @@ else:
 
 class ConstrainedStr(str):
     strip_whitespace = False
+    to_upper = False
     to_lower = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
@@ -419,6 +423,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    to_upper: bool = False,
     to_lower: bool = False,
     strict: bool = False,
     min_length: int = None,
@@ -429,6 +434,7 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        to_upper=to_upper,
         to_lower=to_lower,
         strict=strict,
         min_length=min_length,
