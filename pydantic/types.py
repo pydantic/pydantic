@@ -35,6 +35,7 @@ from .validators import (
     constr_length_validator,
     constr_lower,
     constr_strip_whitespace,
+    constr_upper,
     decimal_validator,
     float_validator,
     frozenset_validator,
@@ -341,6 +342,7 @@ class ConstrainedBytes(bytes):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
+        yield constr_upper
         yield constr_lower
         yield constr_length_validator
 
@@ -397,6 +399,7 @@ class ConstrainedStr(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
+        yield constr_upper
         yield constr_lower
         yield constr_length_validator
         yield cls.validate
