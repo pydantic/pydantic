@@ -39,6 +39,7 @@ class Extra(str, Enum):
 class BaseConfig:
     title: Optional[str] = None
     anystr_lower: bool = False
+    anystr_upper: bool = False
     anystr_strip_whitespace: bool = False
     min_anystr_length: int = 0
     max_anystr_length: Optional[int] = None

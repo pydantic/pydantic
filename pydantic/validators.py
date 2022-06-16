@@ -206,6 +206,10 @@ def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
     return v.strip()
 
 
+def anystr_upper(v: 'StrBytes') -> 'StrBytes':
+    return v.upper()
+
+
 def anystr_lower(v: 'StrBytes') -> 'StrBytes':
     return v.lower()
 
@@ -488,6 +492,14 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
     return v
 
 
+def constr_upper(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
+    upper = field.type_.to_upper or config.anystr_upper
+    if upper:
+        v = v.upper()
+
+    return v
+
+
 def constr_lower(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
     lower = field.type_.to_lower or config.anystr_lower
     if lower:
@@ -614,6 +626,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_upper, 'anystr_upper'),
             IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
@@ -623,6 +636,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_upper, 'anystr_upper'),
             IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],

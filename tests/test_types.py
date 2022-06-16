@@ -1811,6 +1811,37 @@ def test_anystr_strip_whitespace_disabled():
     assert m.bytes_check == b'  456  '
 
 
+def test_anystr_upper_enabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_upper = True
+
+    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+
+    assert m.str_check == 'ABCDEFG'
+    assert m.bytes_check == b'ABCD1FG'
+
+
+def test_anystr_upper_disabled():
+    class Model(BaseModel):
+        str_check: str
+        bytes_check: bytes
+
+        class Config:
+            anystr_upper = False
+
+    str_check_value = 'ABCDefG'
+    bytes_check_value = b'abCD1Fg'
+
+    m = Model(str_check=str_check_value, bytes_check=bytes_check_value)
+
+    assert m.str_check == str_check_value
+    assert m.bytes_check == bytes_check_value
+
+
 def test_anystr_lower_enabled():
     class Model(BaseModel):
         str_check: str
