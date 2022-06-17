@@ -113,6 +113,22 @@ def test_constrained_bytes_too_long():
     ]
 
 
+def test_constrained_bytes_upper_enabled():
+    class Model(BaseModel):
+        v: conbytes(to_upper=True)
+
+    m = Model(v=b'abcd')
+    assert m.v == b'ABCD'
+
+
+def test_constrained_bytes_upper_disabled():
+    class Model(BaseModel):
+        v: conbytes(to_upper=False)
+
+    m = Model(v=b'aBcD')
+    assert m.v == b'aBcD'
+
+
 def test_constrained_bytes_lower_enabled():
     class Model(BaseModel):
         v: conbytes(to_lower=True)
@@ -697,6 +713,22 @@ def test_constrained_str_too_long():
             'ctx': {'limit_value': 10},
         }
     ]
+
+
+def test_constrained_str_upper_enabled():
+    class Model(BaseModel):
+        v: constr(to_upper=True)
+
+    m = Model(v='abcd')
+    assert m.v == 'ABCD'
+
+
+def test_constrained_str_upper_disabled():
+    class Model(BaseModel):
+        v: constr(to_upper=False)
+
+    m = Model(v='aBcD')
+    assert m.v == 'aBcD'
 
 
 def test_constrained_str_lower_enabled():
