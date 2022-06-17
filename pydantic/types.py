@@ -199,12 +199,14 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        is_gt_set = cls.gt is not None
+        is_lt_set = cls.lt is not None
         update_not_none(
             field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le,
+            exclusiveMinimum=True if is_gt_set else None,
+            exclusiveMaximum=True if is_lt_set else None,
+            minimum=cls.gt if is_gt_set else cls.ge,
+            maximum=cls.lt if is_lt_set else cls.le,
             multipleOf=cls.multiple_of,
         )
 
@@ -260,23 +262,29 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        is_gt_set = cls.gt is not None
+        is_lt_set = cls.lt is not None
         update_not_none(
             field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le,
+            exclusiveMinimum=True if is_gt_set else None,
+            exclusiveMaximum=True if is_lt_set else None,
+            minimum=cls.gt if is_gt_set else cls.ge,
+            maximum=cls.lt if is_lt_set else cls.le,
             multipleOf=cls.multiple_of,
         )
+
+        minimum_is_inf = field_schema.get('minimum') == -math.inf
+        maximum_is_inf = field_schema.get('maximum') == math.inf
+
         # Modify constraints to account for differences between IEEE floats and JSON
-        if field_schema.get('exclusiveMinimum') == -math.inf:
-            del field_schema['exclusiveMinimum']
-        if field_schema.get('minimum') == -math.inf:
+        if minimum_is_inf:
             del field_schema['minimum']
-        if field_schema.get('exclusiveMaximum') == math.inf:
-            del field_schema['exclusiveMaximum']
-        if field_schema.get('maximum') == math.inf:
+            if field_schema.get('exclusiveMinimum'):
+                del field_schema['exclusiveMinimum']
+        if maximum_is_inf:
             del field_schema['maximum']
+            if field_schema.get('exclusiveMaximum'):
+                del field_schema['exclusiveMaximum']
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -633,12 +641,14 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        is_gt_set = cls.gt is not None
+        is_lt_set = cls.lt is not None
         update_not_none(
             field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le,
+            exclusiveMinimum=True if is_gt_set else None,
+            exclusiveMaximum=True if is_lt_set else None,
+            minimum=cls.gt if is_gt_set else cls.ge,
+            maximum=cls.lt if is_lt_set else cls.le,
             multipleOf=cls.multiple_of,
         )
 

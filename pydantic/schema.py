@@ -281,8 +281,8 @@ _str_types_attrs: Tuple[Tuple[str, Union[type, Tuple[type, ...]], str], ...] = (
 )
 
 _numeric_types_attrs: Tuple[Tuple[str, Union[type, Tuple[type, ...]], str], ...] = (
-    ('gt', numeric_types, 'exclusiveMinimum'),
-    ('lt', numeric_types, 'exclusiveMaximum'),
+    ('gt', numeric_types, 'minimum'),
+    ('lt', numeric_types, 'maximum'),
     ('ge', numeric_types, 'minimum'),
     ('le', numeric_types, 'maximum'),
     ('multiple_of', numeric_types, 'multipleOf'),

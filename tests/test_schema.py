@@ -852,11 +852,11 @@ def test_secret_types(field_type, inner_type):
     'field_type,expected_schema',
     [
         (ConstrainedInt, {}),
-        (conint(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (conint(gt=5, lt=10), {'minimum': 5, 'maximum': 10, 'exclusiveMinimum': True, 'exclusiveMaximum': True}),
         (conint(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (conint(multiple_of=5), {'multipleOf': 5}),
-        (PositiveInt, {'exclusiveMinimum': 0}),
-        (NegativeInt, {'exclusiveMaximum': 0}),
+        (PositiveInt, {'minimum': 0, 'exclusiveMinimum': True}),
+        (NegativeInt, {'maximum': 0, 'exclusiveMaximum': True}),
         (NonNegativeInt, {'minimum': 0}),
         (NonPositiveInt, {'maximum': 0}),
     ],
@@ -880,15 +880,15 @@ def test_special_int_types(field_type, expected_schema):
     'field_type,expected_schema',
     [
         (ConstrainedFloat, {}),
-        (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (confloat(gt=5, lt=10), {'minimum': 5, 'maximum': 10, 'exclusiveMinimum': True, 'exclusiveMaximum': True}),
         (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (confloat(multiple_of=5), {'multipleOf': 5}),
-        (PositiveFloat, {'exclusiveMinimum': 0}),
-        (NegativeFloat, {'exclusiveMaximum': 0}),
+        (PositiveFloat, {'minimum': 0, 'exclusiveMinimum': True}),
+        (NegativeFloat, {'maximum': 0, 'exclusiveMaximum': True}),
         (NonNegativeFloat, {'minimum': 0}),
         (NonPositiveFloat, {'maximum': 0}),
         (ConstrainedDecimal, {}),
-        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (condecimal(gt=5, lt=10), {'minimum': 5, 'maximum': 10, 'exclusiveMinimum': True, 'exclusiveMaximum': True}),
         (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (condecimal(multiple_of=5), {'multipleOf': 5}),
     ],
@@ -1482,13 +1482,13 @@ def test_dict_default():
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
         ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
-        ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
-        ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
+        ({'gt': 2}, int, {'type': 'integer', 'minimum': 2, 'exclusiveMinimum': True}),
+        ({'lt': 5}, int, {'type': 'integer', 'maximum': 5, 'exclusiveMaximum': True}),
         ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
         ({'le': 5}, int, {'type': 'integer', 'maximum': 5}),
         ({'multiple_of': 5}, int, {'type': 'integer', 'multipleOf': 5}),
-        ({'gt': 2}, float, {'type': 'number', 'exclusiveMinimum': 2}),
-        ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'gt': 2}, float, {'type': 'number', 'minimum': 2, 'exclusiveMinimum': True}),
+        ({'lt': 5}, float, {'type': 'number', 'maximum': 5, 'exclusiveMaximum': True}),
         ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
         ({'gt': -math.inf}, float, {'type': 'number'}),
@@ -1496,8 +1496,8 @@ def test_dict_default():
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
-        ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'gt': 2}, Decimal, {'type': 'number', 'minimum': 2, 'exclusiveMinimum': True}),
+        ({'lt': 5}, Decimal, {'type': 'number', 'maximum': 5, 'exclusiveMaximum': True}),
         ({'ge': 2}, Decimal, {'type': 'number', 'minimum': 2}),
         ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
         ({'multiple_of': 5}, Decimal, {'type': 'number', 'multipleOf': 5}),
@@ -1979,12 +1979,18 @@ def test_model_with_extra_forbidden():
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
-        (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
-        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (int, dict(gt=0), {'title': 'A', 'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'}),
+        (Optional[int], dict(gt=0), {'title': 'A', 'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'}),
         (
             Tuple[int, ...],
             dict(gt=0),
-            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+            {
+                'title': 'A',
+                'minimum': 0,
+                'exclusiveMinimum': True,
+                'type': 'array',
+                'items': {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
+            },
         ),
         (
             Tuple[int, int, int],
@@ -1993,9 +1999,9 @@ def test_model_with_extra_forbidden():
                 'title': 'A',
                 'type': 'array',
                 'items': [
-                    {'exclusiveMinimum': 0, 'type': 'integer'},
-                    {'exclusiveMinimum': 0, 'type': 'integer'},
-                    {'exclusiveMinimum': 0, 'type': 'integer'},
+                    {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
+                    {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
+                    {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
                 ],
                 'minItems': 3,
                 'maxItems': 3,
@@ -2006,28 +2012,44 @@ def test_model_with_extra_forbidden():
             dict(gt=0),
             {
                 'title': 'A',
-                'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
+                'anyOf': [
+                    {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
+                    {'minimum': 0, 'exclusiveMinimum': True, 'type': 'number'},
+                ],
             },
         ),
         (
             List[int],
             dict(gt=0),
-            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+            {
+                'title': 'A',
+                'minimum': 0,
+                'exclusiveMinimum': True,
+                'type': 'array',
+                'items': {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
+            },
         ),
         (
             Dict[str, int],
             dict(gt=0),
             {
                 'title': 'A',
-                'exclusiveMinimum': 0,
+                'minimum': 0,
+                'exclusiveMinimum': True,
                 'type': 'object',
-                'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
+                'additionalProperties': {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
             },
         ),
         (
             Union[str, int],
             dict(gt=0, max_length=5),
-            {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+            {
+                'title': 'A',
+                'anyOf': [
+                    {'maxLength': 5, 'type': 'string'},
+                    {'minimum': 0, 'exclusiveMinimum': True, 'type': 'integer'},
+                ],
+            },
         ),
     ],
 )
@@ -2048,7 +2070,7 @@ def test_real_vs_phony_constraints():
             title = 'Test Model'
 
     class Model2(BaseModel):
-        foo: int = Field(..., exclusiveMinimum=123)
+        foo: int = Field(..., minimum=123, exclusiveMinimum=True)
 
         class Config:
             title = 'Test Model'
@@ -2064,7 +2086,7 @@ def test_real_vs_phony_constraints():
         == {
             'title': 'Test Model',
             'type': 'object',
-            'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
+            'properties': {'foo': {'title': 'Foo', 'minimum': 123, 'exclusiveMinimum': True, 'type': 'integer'}},
             'required': ['foo'],
         }
     )
