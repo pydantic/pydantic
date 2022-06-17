@@ -894,6 +894,7 @@ The following arguments are available when using the `condecimal` type function
 The following arguments are available when using the `constr` type function
 
 - `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_upper: bool = False`: turns all characters to uppercase
 - `to_lower: bool = False`: turns all characters to lowercase
 - `strict: bool = False`: controls type coercion
 - `min_length: int = None`: minimum length of the string
@@ -905,6 +906,7 @@ The following arguments are available when using the `constr` type function
 The following arguments are available when using the `conbytes` type function
 
 - `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_upper: bool = False`: turns all characters to uppercase
 - `to_lower: bool = False`: turns all characters to lowercase
 - `min_length: int = None`: minimum length of the byte string
 - `max_length: int = None`: maximum length of the byte string
