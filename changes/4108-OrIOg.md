@@ -1,0 +1,1 @@
+Making '*greater than*' / '*gt*' and '*lesser than*' /  '*lt*' set *minumum* and *maximum* values while setting *exclusiveMinimum* and *exclusiveMaximum* as the [specification](https://swagger.io/docs/specification/data-models/data-types/#range) defines.
