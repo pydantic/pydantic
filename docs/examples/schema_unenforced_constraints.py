@@ -10,9 +10,9 @@ except ValueError as e:
 
 
 # but you can set the schema attribute directly:
-# (Note: here exclusiveMaximum will not be enforce)
+# (Note: here exclusiveMaximum will not be enforced)
 class Model(BaseModel):
-    foo: PositiveInt = Field(..., exclusiveMaximum=10)
+    foo: PositiveInt = Field(..., maximum=10, exclusiveMaximum=True)
 
 
 print(Model.schema())
