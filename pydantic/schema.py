@@ -312,6 +312,11 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
             attr = getattr(field.field_info, attr_name, None)
             if isinstance(attr, t):
                 f_schema[keyword] = attr
+                # FIXME: Find a better way to set 'side effect' values
+                if attr_name == 'gt':
+                    f_schema['exclusiveMinimum'] = True
+                elif attr_name == 'lt':
+                    f_schema['exclusiveMaximum'] = True
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
     if field.field_info.extra:
