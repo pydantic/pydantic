@@ -63,6 +63,6 @@ def test_schema_recursive_error():
 
 
 def test_not_schema_recursive_error():
-    schema = {'type': 'model', 'fields': {f'f_{i}': {'type': 'optional', 'schema': 'int'} for i in range(101)}}
+    schema = {'type': 'model', 'fields': {f'f_{i}': {'type': 'nullable', 'schema': 'int'} for i in range(101)}}
     v = SchemaValidator(schema)
     assert repr(v).count('ModelField') == 101

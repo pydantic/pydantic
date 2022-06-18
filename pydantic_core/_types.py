@@ -96,8 +96,8 @@ class NoneSchema(TypedDict):
     type: Literal['none']
 
 
-class OptionalSchema(TypedDict):
-    type: Literal['optional']
+class NullableSchema(TypedDict):
+    type: Literal['nullable']
     schema: Schema
     strict: NotRequired[bool]
 
@@ -204,7 +204,7 @@ BareType = Literal[
     'model',
     'model-class',
     'none',
-    'optional',
+    'nullable',
     'recursive-container',
     'recursive-reference',
     'set',
@@ -228,7 +228,7 @@ Schema = Union[
     ModelSchema,
     ModelClassSchema,
     NoneSchema,
-    OptionalSchema,
+    NullableSchema,
     RecursiveContainerSchema,
     RecursiveReferenceSchema,
     SetSchema,

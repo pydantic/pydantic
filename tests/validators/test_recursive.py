@@ -5,7 +5,7 @@ import pytest
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 
-def test_branch_optional():
+def test_branch_nullable():
     v = SchemaValidator(
         {
             'type': 'recursive-container',
@@ -42,7 +42,7 @@ def test_branch_optional():
     )
 
 
-def test_optional_error():
+def test_nullable_error():
     v = SchemaValidator(
         {
             'type': 'recursive-container',
@@ -224,7 +224,7 @@ def test_invalid_schema():
                     'fields': {
                         'width': {'type': 'int'},
                         'branch': {
-                            'type': 'optional',
+                            'type': 'nullable',
                             'default': None,
                             'schema': {'type': 'recursive-ref', 'name': 'Branch'},
                         },
