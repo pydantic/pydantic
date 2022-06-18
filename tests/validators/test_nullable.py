@@ -3,8 +3,8 @@ import pytest
 from pydantic_core import SchemaValidator, ValidationError
 
 
-def test_optional():
-    v = SchemaValidator({'type': 'optional', 'schema': {'type': 'int'}})
+def test_nullable():
+    v = SchemaValidator({'type': 'nullable', 'schema': {'type': 'int'}})
     assert v.validate_python(None) is None
     assert v.validate_python(1) == 1
     assert v.validate_python('123') == 123
@@ -20,13 +20,13 @@ def test_optional():
     ]
 
 
-def test_union_optional_bool_int():
+def test_union_nullable_bool_int():
     v = SchemaValidator(
         {
             'type': 'union',
             'choices': [
-                {'type': 'optional', 'schema': {'type': 'bool'}},
-                {'type': 'optional', 'schema': {'type': 'int'}},
+                {'type': 'nullable', 'schema': {'type': 'bool'}},
+                {'type': 'nullable', 'schema': {'type': 'int'}},
             ],
         }
     )

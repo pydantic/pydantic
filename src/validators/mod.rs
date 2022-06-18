@@ -26,7 +26,7 @@ mod literal;
 mod model;
 mod model_class;
 mod none;
-mod optional;
+mod nullable;
 mod recursive;
 mod set;
 mod string;
@@ -175,8 +175,8 @@ pub fn build_validator<'a>(
         model::ModelValidator,
         // unions
         union::UnionValidator,
-        // optional e.g. nullable
-        optional::OptionalValidator,
+        // nullables
+        nullable::NullableValidator,
         // model classes
         model_class::ModelClassValidator,
         // strings
@@ -236,8 +236,8 @@ pub enum CombinedValidator {
     Model(model::ModelValidator),
     // unions
     Union(union::UnionValidator),
-    // optional e.g. nullable
-    Optional(optional::OptionalValidator),
+    // nullables
+    Nullable(nullable::NullableValidator),
     // model classes
     ModelClass(model_class::ModelClassValidator),
     // strings

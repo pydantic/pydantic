@@ -152,7 +152,7 @@ class TestModelClassSimilar:
         assert m2.c == 2.0
 
 
-def test_optional_via_union():
+def test_nullable_via_union():
     v = SchemaValidator({'type': 'union', 'choices': [{'type': 'none'}, {'type': 'int'}]})
     assert v.validate_python(None) is None
     assert v.validate_python(1) == 1
