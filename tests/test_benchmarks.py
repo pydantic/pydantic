@@ -188,7 +188,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
                     'fields': {
                         'width': {'type': 'int'},
                         'branch': {
-                            'type': 'optional',
+                            'type': 'nullable',
                             'default': None,
                             'schema': {'type': 'recursive-ref', 'name': 'Branch'},
                         },
@@ -421,23 +421,23 @@ def test_many_models_core_model(benchmark):
     benchmark(v.validate_python, many_models_data)
 
 
-list_of_optional_data = [None if i % 2 else i for i in range(1000)]
+list_of_nullable_data = [None if i % 2 else i for i in range(1000)]
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='list of optional')
-def test_list_of_optional_pyd(benchmark):
+@pytest.mark.benchmark(group='list of nullable')
+def test_list_of_nullable_pyd(benchmark):
     class PydanticModel(BaseModel):
         __root__: List[Optional[int]]
 
-    benchmark(PydanticModel.parse_obj, list_of_optional_data)
+    benchmark(PydanticModel.parse_obj, list_of_nullable_data)
 
 
-@pytest.mark.benchmark(group='list of optional')
-def test_list_of_optional_core(benchmark):
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'optional', 'schema': 'int'}})
+@pytest.mark.benchmark(group='list of nullable')
+def test_list_of_nullable_core(benchmark):
+    v = SchemaValidator({'type': 'list', 'items': {'type': 'nullable', 'schema': 'int'}})
 
-    benchmark(v.validate_python, list_of_optional_data)
+    benchmark(v.validate_python, list_of_nullable_data)
 
 
 some_bytes = b'0' * 1000
