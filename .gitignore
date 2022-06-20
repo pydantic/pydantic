@@ -18,7 +18,6 @@ docs/_build/
 /pydantic_core/*.so
 /target/
 /site/
-.rustfmt.toml
 /sandbox/
 /.editorconfig
 /*.lcov

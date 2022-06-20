@@ -137,7 +137,7 @@ impl PyLineError {
             kind: raw_error.kind,
             location: raw_error.location,
             message: raw_error.message,
-            input_value: raw_error.input_value.to_py(py),
+            input_value: raw_error.input_value.to_object(py),
             context: raw_error.context,
         }
     }
