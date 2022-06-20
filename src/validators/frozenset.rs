@@ -1,49 +1,28 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyFrozenSet};
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind};
 use crate::input::{GenericSequence, Input};
 
 use super::any::AnyValidator;
+use super::list::sequence_build_function;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
-pub struct ListValidator {
+pub struct FrozenSetValidator {
     strict: bool,
     item_validator: Box<CombinedValidator>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
 
-macro_rules! sequence_build_function {
-    () => {
-        fn build(
-            schema: &PyDict,
-            config: Option<&PyDict>,
-            build_context: &mut BuildContext,
-        ) -> PyResult<CombinedValidator> {
-            Ok(Self {
-                strict: is_strict(schema, config)?,
-                item_validator: match schema.get_item("items") {
-                    Some(d) => Box::new(build_validator(d, config, build_context)?.0),
-                    None => Box::new(AnyValidator::build(schema, config, build_context)?),
-                },
-                min_items: schema.get_as("min_items")?,
-                max_items: schema.get_as("max_items")?,
-            }
-            .into())
-        }
-    };
-}
-pub(crate) use sequence_build_function;
-
-impl BuildValidator for ListValidator {
-    const EXPECTED_TYPE: &'static str = "list";
+impl BuildValidator for FrozenSetValidator {
+    const EXPECTED_TYPE: &'static str = "frozenset";
     sequence_build_function!();
 }
 
-impl Validator for ListValidator {
+impl Validator for FrozenSetValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -51,11 +30,11 @@ impl Validator for ListValidator {
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let list = match self.strict {
-            true => input.strict_list()?,
-            false => input.lax_list()?,
+        let frozenset = match self.strict {
+            true => input.strict_frozenset()?,
+            false => input.lax_frozenset()?,
         };
-        self._validation_logic(py, input, list, extra, slots)
+        self._validation_logic(py, input, frozenset, extra, slots)
     }
 
     fn validate_strict<'s, 'data>(
@@ -65,7 +44,7 @@ impl Validator for ListValidator {
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_list()?, extra, slots)
+        self._validation_logic(py, input, input.strict_frozenset()?, extra, slots)
     }
 
     fn get_name(&self, py: Python) -> String {
@@ -73,7 +52,7 @@ impl Validator for ListValidator {
     }
 }
 
-impl ListValidator {
+impl FrozenSetValidator {
     fn _validation_logic<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -88,7 +67,7 @@ impl ListValidator {
                 return err_val_error!(
                     input_value = input.as_error_value(),
                     kind = ErrorKind::TooShort,
-                    context = context!("type" => "List", "min_length" => min_length)
+                    context = context!("type" => "FrozenSet", "min_length" => min_length)
                 );
             }
         }
@@ -97,12 +76,12 @@ impl ListValidator {
                 return err_val_error!(
                     input_value = input.as_error_value(),
                     kind = ErrorKind::TooLong,
-                    context = context!("type" => "List", "max_length" => max_length)
+                    context = context!("type" => "FrozenSet", "max_length" => max_length)
                 );
             }
         }
 
         let output = list.validate_to_vec(py, length, &self.item_validator, extra, slots)?;
-        Ok(output.into_py(py))
+        Ok(PyFrozenSet::new(py, &output).map_err(as_internal)?.into_py(py))
     }
 }

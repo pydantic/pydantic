@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import date, datetime, timedelta, timezone
-from typing import Dict, List, Optional, Set
+from typing import Dict, FrozenSet, List, Optional, Set
 
 import pytest
 
@@ -333,6 +333,25 @@ def test_set_of_ints_core_json(benchmark):
     def t():
         v.validate_json(json_data[0])
         v.validate_json(json_data[1])
+
+
+frozenset_of_ints = frozenset({i for i in range(1000)})
+
+
+@skip_pydantic
+@pytest.mark.benchmark(group='frozenset of ints')
+def test_frozenset_of_ints_pyd(benchmark):
+    class PydanticModel(BaseModel):
+        __root__: FrozenSet[int]
+
+    benchmark(PydanticModel.parse_obj, frozenset_of_ints)
+
+
+@pytest.mark.benchmark(group='frozenset of ints')
+def test_frozenset_of_ints_core(benchmark):
+    v = SchemaValidator({'type': 'frozenset', 'items': {'type': 'int'}})
+
+    benchmark(v.validate_python, frozenset_of_ints)
 
 
 dict_of_ints_data = ({i: i for i in range(1000)}, {i: str(i) for i in range(1000)})
