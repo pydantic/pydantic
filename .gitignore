@@ -2,6 +2,7 @@
 /.vscode/
 /env/
 /env*/
+.python-version
 *.py[cod]
 *.egg-info/
 build/
