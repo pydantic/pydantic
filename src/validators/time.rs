@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyTime};
 use speedate::Time;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
 use crate::input::{pytime_as_time, EitherTime, Input};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -55,7 +55,7 @@ impl Validator for TimeValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -69,7 +69,7 @@ impl Validator for TimeValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -85,7 +85,7 @@ impl TimeValidator {
     fn validation_comparison<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         time: EitherTime<'data>,
     ) -> ValResult<'data, PyObject> {
         if let Some(constraints) = &self.constraints {
@@ -96,7 +96,7 @@ impl TimeValidator {
                     if let Some(constraint) = &constraints.$constraint {
                         if !raw_time.$constraint(constraint) {
                             return err_val_error!(
-                                input_value = InputValue::InputRef(input),
+                                input_value = input.as_error_value(),
                                 kind = $error,
                                 context = context!($key => constraint.to_string())
                             );

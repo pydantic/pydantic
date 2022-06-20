@@ -5,7 +5,7 @@ use speedate::{Date, DateTime, Time};
 use strum::EnumMessage;
 
 use super::Input;
-use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 
 pub enum EitherDate<'a> {
     Raw(Date),
@@ -174,12 +174,12 @@ impl<'a> EitherDateTime<'a> {
     }
 }
 
-pub fn bytes_as_date<'a>(input: &'a dyn Input, bytes: &[u8]) -> ValResult<'a, EitherDate<'a>> {
+pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'a, EitherDate<'a>> {
     match Date::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
         Err(err) => {
             err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::DateParsing,
                 context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
             )
@@ -187,12 +187,12 @@ pub fn bytes_as_date<'a>(input: &'a dyn Input, bytes: &[u8]) -> ValResult<'a, Ei
     }
 }
 
-pub fn bytes_as_time<'a>(input: &'a dyn Input, bytes: &[u8]) -> ValResult<'a, EitherTime<'a>> {
+pub fn bytes_as_time<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'a, EitherTime<'a>> {
     match Time::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
         Err(err) => {
             err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::TimeParsing,
                 context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
             )
@@ -200,12 +200,12 @@ pub fn bytes_as_time<'a>(input: &'a dyn Input, bytes: &[u8]) -> ValResult<'a, Ei
     }
 }
 
-pub fn bytes_as_datetime<'a, 'b>(input: &'a dyn Input, bytes: &'b [u8]) -> ValResult<'a, EitherDateTime<'a>> {
+pub fn bytes_as_datetime<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> ValResult<'a, EitherDateTime<'a>> {
     match DateTime::parse_bytes(bytes) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => {
             err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::DateTimeParsing,
                 context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
             )
@@ -213,12 +213,16 @@ pub fn bytes_as_datetime<'a, 'b>(input: &'a dyn Input, bytes: &'b [u8]) -> ValRe
     }
 }
 
-pub fn int_as_datetime(input: &dyn Input, timestamp: i64, timestamp_microseconds: u32) -> ValResult<EitherDateTime> {
+pub fn int_as_datetime<'a>(
+    input: &'a impl Input<'a>,
+    timestamp: i64,
+    timestamp_microseconds: u32,
+) -> ValResult<EitherDateTime> {
     match DateTime::from_timestamp(timestamp, timestamp_microseconds) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => {
             err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::DateTimeParsing,
                 context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
             )
@@ -226,7 +230,7 @@ pub fn int_as_datetime(input: &dyn Input, timestamp: i64, timestamp_microseconds
     }
 }
 
-pub fn float_as_datetime(input: &dyn Input, timestamp: f64) -> ValResult<EitherDateTime> {
+pub fn float_as_datetime<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult<EitherDateTime> {
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // checking for extra digits in microseconds is unreliable with large floats,
     // so we just round to the nearest microsecond
@@ -251,11 +255,15 @@ pub fn date_as_datetime(date: &PyDate) -> PyResult<EitherDateTime> {
 
 const MAX_U32: i64 = u32::MAX as i64;
 
-pub fn int_as_time(input: &dyn Input, timestamp: i64, timestamp_microseconds: u32) -> ValResult<EitherTime> {
+pub fn int_as_time<'a>(
+    input: &'a impl Input<'a>,
+    timestamp: i64,
+    timestamp_microseconds: u32,
+) -> ValResult<EitherTime> {
     let time_timestamp: u32 = match timestamp {
         t if t < 0_i64 => {
             return err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::TimeParsing,
                 context = context!("parsing_error" => "time in seconds must be positive")
             );
@@ -269,7 +277,7 @@ pub fn int_as_time(input: &dyn Input, timestamp: i64, timestamp_microseconds: u3
         Ok(dt) => Ok(dt.into()),
         Err(err) => {
             err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::TimeParsing,
                 context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
             )
@@ -277,7 +285,7 @@ pub fn int_as_time(input: &dyn Input, timestamp: i64, timestamp_microseconds: u3
     }
 }
 
-pub fn float_as_time(input: &dyn Input, timestamp: f64) -> ValResult<EitherTime> {
+pub fn float_as_time<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult<EitherTime> {
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // round for same reason as above
     int_as_time(input, timestamp.floor() as i64, microseconds.round() as u32)

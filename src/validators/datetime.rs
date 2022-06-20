@@ -3,7 +3,7 @@ use pyo3::types::{PyDateTime, PyDict};
 use speedate::DateTime;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
 use crate::input::{pydatetime_as_datetime, EitherDateTime, Input};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -55,7 +55,7 @@ impl Validator for DateTimeValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -69,7 +69,7 @@ impl Validator for DateTimeValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -85,7 +85,7 @@ impl DateTimeValidator {
     fn validation_comparison<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         datetime: EitherDateTime,
     ) -> ValResult<'data, PyObject> {
         if let Some(constraints) = &self.constraints {
@@ -96,7 +96,7 @@ impl DateTimeValidator {
                 Err(err) => {
                     let error_name = err.get_type(py).name().map_err(as_internal)?;
                     return err_val_error!(
-                        input_value = InputValue::InputRef(input),
+                        input_value = input.as_error_value(),
                         kind = ErrorKind::DateTimeObjectInvalid,
                         context = context!("processing_error" => error_name)
                     );
@@ -107,7 +107,7 @@ impl DateTimeValidator {
                     if let Some(constraint) = &constraints.$constraint {
                         if !speedate_dt.$constraint(constraint) {
                             return err_val_error!(
-                                input_value = InputValue::InputRef(input),
+                                input_value = input.as_error_value(),
                                 kind = $error,
                                 context = context!($key => constraint.to_string())
                             );

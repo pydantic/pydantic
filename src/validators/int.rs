@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::Input;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -37,7 +37,7 @@ impl Validator for IntValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -47,7 +47,7 @@ impl Validator for IntValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -72,7 +72,7 @@ impl Validator for StrictIntValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -98,7 +98,7 @@ impl Validator for ConstrainedIntValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -112,7 +112,7 @@ impl Validator for ConstrainedIntValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -137,11 +137,11 @@ impl ConstrainedIntValidator {
         .into())
     }
 
-    fn _validation_logic<'a>(&self, py: Python<'a>, input: &'a dyn Input, int: i64) -> ValResult<'a, PyObject> {
+    fn _validation_logic<'a>(&self, py: Python<'a>, input: &'a impl Input<'a>, int: i64) -> ValResult<'a, PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::IntMultiple,
                     context = context!("multiple_of" => multiple_of)
                 );
@@ -150,7 +150,7 @@ impl ConstrainedIntValidator {
         if let Some(le) = self.le {
             if int > le {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::LessThanEqual,
                     context = context!("le" => le)
                 );
@@ -159,7 +159,7 @@ impl ConstrainedIntValidator {
         if let Some(lt) = self.lt {
             if int >= lt {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::LessThan,
                     context = context!("lt" => lt)
                 );
@@ -168,7 +168,7 @@ impl ConstrainedIntValidator {
         if let Some(ge) = self.ge {
             if int < ge {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::GreaterThanEqual,
                     context = context!("ge" => ge)
                 );
@@ -177,7 +177,7 @@ impl ConstrainedIntValidator {
         if let Some(gt) = self.gt {
             if int <= gt {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::GreaterThan,
                     context = context!("gt" => gt)
                 );
