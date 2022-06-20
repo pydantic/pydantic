@@ -51,6 +51,12 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + ToLocItem {
         self.strict_set()
     }
 
+    fn strict_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
+
+    fn lax_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        self.strict_frozenset()
+    }
+
     fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>>;
 
     fn lax_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
