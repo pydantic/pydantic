@@ -28,14 +28,20 @@ v = SchemaValidator({
     'type': 'model',
     'fields': {
         'name': {
-            'type': 'str',
+            'schema': {
+                'type': 'str',
+            },
         },
         'age': {
-            'type': 'int',
-            'ge': 18,
+            'schema': {
+                'type': 'int',
+                'ge': 18,
+            },
         },
         'is_developer': {
-            'type': 'bool',
+            'schema': {
+                'type': 'bool',
+            },
             'default': True,
         },
     },

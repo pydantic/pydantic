@@ -84,9 +84,15 @@ class ModelClassSchema(TypedDict):
     model: ModelSchema
 
 
+class ModelField(TypedDict):
+    schema: Schema
+    default: NotRequired[Any]
+    # alias: str
+
+
 class ModelSchema(TypedDict):
     type: Literal['model']
-    fields: Dict[str, Schema]
+    fields: Dict[str, ModelField]
     name: NotRequired[str]
     extra_validator: NotRequired[Schema]
     config: NotRequired[ConfigSchema]

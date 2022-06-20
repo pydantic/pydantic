@@ -31,7 +31,11 @@ def test_schema_typing() -> None:
             {'type': 'tuple-fix-len', 'items': [{'type': 'str'}, {'type': 'int'}]},
             {'type': 'frozenset', 'items': {'type': 'str'}, 'max_items': 3},
             {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'any'}},
-            {'type': 'model-class', 'class_type': Foo, 'model': {'type': 'model', 'fields': {'bar': {'type': 'str'}}}},
+            {
+                'type': 'model-class',
+                'class_type': Foo,
+                'model': {'type': 'model', 'fields': {'bar': {'schema': {'type': 'str'}}}},
+            },
             {'type': 'function', 'mode': 'wrap', 'function': foo},
             {
                 'type': 'recursive-container',
@@ -39,11 +43,13 @@ def test_schema_typing() -> None:
                 'schema': {
                     'type': 'model',
                     'fields': {
-                        'name': {'type': 'str'},
+                        'name': {'schema': {'type': 'str'}},
                         'sub_branch': {
-                            'type': 'union',
+                            'schema': {
+                                'type': 'union',
+                                'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
+                            },
                             'default': None,
-                            'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
                         },
                     },
                 },
