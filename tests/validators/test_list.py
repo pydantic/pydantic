@@ -72,3 +72,22 @@ def test_list_error(input_value, index):
             'input_value': 'wrong',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'kwargs,input_value,expected',
+    [
+        ({}, [1, 2, 3, 4], [1, 2, 3, 4]),
+        ({'min_items': 3}, [1, 2, 3, 4], [1, 2, 3, 4]),
+        ({'min_items': 3}, [1, 2], Err('List must have at least 3 items [kind=too_short')),
+        ({'max_items': 4}, [1, 2, 3, 4], [1, 2, 3, 4]),
+        ({'max_items': 3}, [1, 2, 3, 4], Err('List must have at most 3 items [kind=too_long')),
+    ],
+)
+def test_list_length_constraints(kwargs, input_value, expected):
+    v = SchemaValidator({'type': 'list', **kwargs})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
