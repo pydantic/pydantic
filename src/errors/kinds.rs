@@ -156,6 +156,14 @@ pub enum ErrorKind {
         message = "Invalid datetime object, got {processing_error}"
     )]
     DateTimeObjectInvalid,
+    // ---------------------
+    // frozenset errors
+    #[strum(message = "Value must be a valid frozenset")]
+    FrozenSetType,
+    #[strum(message = "FrozenSet must have at least {min_length} items")]
+    FrozenSetTooShort,
+    #[strum(message = "FrozenSet must have at most {max_length} items")]
+    FrozenSetTooLong,
 }
 
 impl Default for ErrorKind {

@@ -6,6 +6,7 @@ use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLin
 use crate::input::{GenericSequence, Input};
 
 use super::any::AnyValidator;
+use super::list::sequence_build_function;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
@@ -18,23 +19,7 @@ pub struct TupleVarLenValidator {
 
 impl BuildValidator for TupleVarLenValidator {
     const EXPECTED_TYPE: &'static str = "tuple-var-len";
-
-    fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
-        build_context: &mut BuildContext,
-    ) -> PyResult<CombinedValidator> {
-        Ok(Self {
-            strict: is_strict(schema, config)?,
-            item_validator: match schema.get_item("items") {
-                Some(d) => Box::new(build_validator(d, config, build_context)?.0),
-                None => Box::new(AnyValidator::build(schema, config, build_context)?),
-            },
-            min_items: schema.get_as("min_items")?,
-            max_items: schema.get_as("max_items")?,
-        }
-        .into())
-    }
+    sequence_build_function!();
 }
 
 impl Validator for TupleVarLenValidator {

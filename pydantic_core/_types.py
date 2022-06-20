@@ -113,12 +113,20 @@ class RecursiveContainerSchema(TypedDict):
     schema: Schema
 
 
-class SetSchema(TypedDict):
-    type: Literal['set']
+class SetSchema(TypedDict, total=False):
+    type: Required[Literal['set']]
     items: Schema
-    min_items: NotRequired[int]
-    max_items: NotRequired[int]
-    strict: NotRequired[bool]
+    min_items: int
+    max_items: int
+    strict: int
+
+
+class FrozenSetSchema(TypedDict, total=False):
+    type: Required[Literal['frozenset']]
+    items: Schema
+    min_items: int
+    max_items: int
+    strict: int
 
 
 class StringSchema(TypedDict, total=False):
@@ -139,11 +147,11 @@ class UnionSchema(TypedDict):
     default: NotRequired[Any]
 
 
-class BytesSchema(TypedDict):
-    type: Literal['bytes']
-    max_length: NotRequired[int]
-    min_length: NotRequired[int]
-    strict: NotRequired[bool]
+class BytesSchema(TypedDict, total=False):
+    type: Required[Literal['bytes']]
+    max_length: int
+    min_length: int
+    strict: bool
 
 
 class DateSchema(TypedDict, total=False):
@@ -232,6 +240,7 @@ Schema = Union[
     RecursiveContainerSchema,
     RecursiveReferenceSchema,
     SetSchema,
+    FrozenSetSchema,
     StringSchema,
     TupleFixLenSchema,
     TupleVarLenSchema,

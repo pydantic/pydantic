@@ -19,6 +19,7 @@ mod date;
 mod datetime;
 mod dict;
 mod float;
+mod frozenset;
 mod function;
 mod int;
 mod list;
@@ -215,6 +216,8 @@ pub fn build_validator<'a>(
         time::TimeValidator,
         // datetimes
         datetime::DateTimeValidator,
+        // frozensets
+        frozenset::FrozenSetValidator,
     )
 }
 
@@ -292,6 +295,8 @@ pub enum CombinedValidator {
     Time(time::TimeValidator),
     // datetimes
     Datetime(datetime::DateTimeValidator),
+    // frozensets
+    FrozenSet(frozenset::FrozenSetValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
