@@ -3,11 +3,11 @@ use std::fmt;
 use pyo3::types::PyType;
 use pyo3::ToPyObject;
 
-use super::return_enums::EitherBytes;
 use crate::errors::{InputValue, ValResult};
 use crate::input::datetime::EitherTime;
 
 use super::datetime::{EitherDate, EitherDateTime};
+use super::return_enums::{EitherBytes, EitherString};
 use super::{GenericMapping, GenericSequence, ToLocItem};
 
 pub trait Input<'a>: fmt::Debug + ToPyObject + ToLocItem {
@@ -15,9 +15,11 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + ToLocItem {
 
     fn is_none(&self) -> bool;
 
-    fn strict_str(&self) -> ValResult<String>;
+    fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>>;
 
-    fn lax_str(&self) -> ValResult<String>;
+    fn lax_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+        self.strict_str()
+    }
 
     fn strict_bool(&self) -> ValResult<bool>;
 

@@ -7,6 +7,7 @@ use pyo3::types::{
 };
 
 use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::input::return_enums::EitherString;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, date_as_datetime, float_as_datetime, float_as_time,
@@ -26,33 +27,33 @@ impl<'a> Input<'a> for PyAny {
         self.is_none()
     }
 
-    fn strict_str(&self) -> ValResult<String> {
+    fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
-            py_str.extract().map_err(as_internal)
+            Ok(py_str.into())
         } else {
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType)
         }
     }
 
-    fn lax_str(&self) -> ValResult<String> {
+    fn lax_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
-            py_str.extract().map_err(as_internal)
+            Ok(py_str.into())
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
                 Ok(s) => s.to_string(),
                 Err(_) => return err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrUnicode),
             };
-            Ok(str)
+            Ok(str.into())
         } else if self.cast_as::<PyBool>().is_ok() {
             // do this before int and float parsing as `False` is cast to `0` and we don't want False to
             // be returned as a string
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType)
         } else if let Ok(int) = self.cast_as::<PyInt>() {
             let int = i64::extract(int).map_err(as_internal)?;
-            Ok(int.to_string())
+            Ok(int.to_string().into())
         } else if let Ok(float) = f64::extract(self) {
             // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble
-            Ok(float.to_string())
+            Ok(float.to_string().into())
         } else {
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType)
         }
@@ -238,7 +239,7 @@ impl<'a> Input<'a> for PyAny {
 
     fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
-            Ok(EitherBytes::Python(py_bytes))
+            Ok(py_bytes.into())
         } else {
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BytesType)
         }
@@ -246,10 +247,10 @@ impl<'a> Input<'a> for PyAny {
 
     fn lax_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
-            Ok(EitherBytes::Python(py_bytes))
+            Ok(py_bytes.into())
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
             let str: String = py_str.extract().map_err(as_internal)?;
-            Ok(EitherBytes::Rust(str.into_bytes()))
+            Ok(str.into_bytes().into())
         } else {
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BytesType)
         }
