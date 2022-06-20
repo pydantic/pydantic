@@ -5,6 +5,8 @@ import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
+from ..conftest import Err
+
 
 def test_dict(py_or_json):
     v = py_or_json({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
@@ -111,3 +113,30 @@ def test_key_error():
             'input_value': 'x',
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'kwargs,input_value,expected',
+    [
+        ({}, {'1': 1, '2': 2}, {'1': 1, '2': 2}),
+        (
+            {'min_items': 3},
+            {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
+            {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
+        ),
+        ({'min_items': 3}, {1: '2', 3: '4'}, Err('Dict must have at least 3 items [kind=too_short')),
+        ({'max_items': 4}, {'1': 1, '2': 2, '3': 3.0}, {'1': 1, '2': 2, '3': 3.0}),
+        (
+            {'max_items': 3},
+            {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
+            Err('Dict must have at most 3 items [kind=too_long'),
+        ),
+    ],
+)
+def test_dict_length_constraints(kwargs, input_value, expected):
+    v = SchemaValidator({'type': 'dict', **kwargs})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
