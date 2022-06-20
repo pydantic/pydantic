@@ -223,12 +223,7 @@ def test_list_of_dict_models_core(benchmark):
     benchmark(v.validate_python, data)
 
 
-list_of_ints_data = (
-    [i for i in range(1000)],
-    [str(i) for i in range(1000)],
-    [str(1_000_000 + i) for i in range(1000)],
-    [str(1_000_000_000 + i) for i in range(1000)],
-)
+list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 
 @skip_pydantic
@@ -265,6 +260,16 @@ def test_list_of_ints_pyd_json(benchmark):
     def t():
         PydanticModel.parse_obj(json.loads(json_data[0]))
         PydanticModel.parse_obj(json.loads(json_data[1]))
+
+
+@pytest.mark.benchmark(group='list of ints')
+def test_list_of_any_core_py(benchmark):
+    v = SchemaValidator({'type': 'list'})
+
+    @benchmark
+    def t():
+        v.validate_python(list_of_ints_data[0])
+        v.validate_python(list_of_ints_data[1])
 
 
 @pytest.mark.benchmark(group='list of ints JSON')
@@ -348,6 +353,16 @@ def test_dict_of_ints_pyd(benchmark):
 @pytest.mark.benchmark(group='dict of ints')
 def test_dict_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'int'})
+
+    @benchmark
+    def t():
+        v.validate_python(dict_of_ints_data[0])
+        v.validate_python(dict_of_ints_data[1])
+
+
+@pytest.mark.benchmark(group='dict of ints')
+def test_dict_of_any_core(benchmark):
+    v = SchemaValidator({'type': 'dict'})
 
     @benchmark
     def t():
