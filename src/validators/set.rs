@@ -83,8 +83,8 @@ impl SetValidator {
             if length < min_length {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::SetTooShort,
-                    context = context!("min_length" => min_length)
+                    kind = ErrorKind::TooShort,
+                    context = context!("type" => "Set", "min_length" => min_length)
                 );
             }
         }
@@ -92,8 +92,8 @@ impl SetValidator {
             if length > max_length {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::SetTooLong,
-                    context = context!("max_length" => max_length)
+                    kind = ErrorKind::TooLong,
+                    context = context!("type" => "Set", "max_length" => max_length)
                 );
             }
         }

@@ -156,7 +156,7 @@ impl ConstrainedFloatValidator {
             if float > le {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::FloatLessThanEqual,
+                    kind = ErrorKind::LessThanEqual,
                     context = context!("le" => le)
                 );
             }
@@ -165,7 +165,7 @@ impl ConstrainedFloatValidator {
             if float >= lt {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::FloatLessThan,
+                    kind = ErrorKind::LessThan,
                     context = context!("lt" => lt)
                 );
             }
@@ -174,7 +174,7 @@ impl ConstrainedFloatValidator {
             if float < ge {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::FloatGreaterThanEqual,
+                    kind = ErrorKind::GreaterThanEqual,
                     context = context!("ge" => ge)
                 );
             }
@@ -183,7 +183,7 @@ impl ConstrainedFloatValidator {
             if float <= gt {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::FloatGreaterThan,
+                    kind = ErrorKind::GreaterThan,
                     context = context!("gt" => gt)
                 );
             }

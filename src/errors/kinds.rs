@@ -25,7 +25,7 @@ pub enum ErrorKind {
     #[strum(message = "Value must be a valid boolean")]
     Bool,
     // ---------------------
-    // comparison errors
+    // generic comparison errors - used for all inequality comparisons
     #[strum(message = "Value must be a multiple of {multiple_of}")]
     IntMultipleOf,
     #[strum(message = "Value must be greater than {gt}")]
@@ -37,14 +37,23 @@ pub enum ErrorKind {
     #[strum(message = "Value must be less than or equal to {le}")]
     LessThanEqual,
     // ---------------------
+    // generic length errors - used for everything with a length except strings and bytes which need custom messages
+    #[strum(message = "{type} must have at least {min_length} items")]
+    TooShort,
+    #[strum(message = "{type} must have at most {max_length} items")]
+    TooLong,
+    // ---------------------
     // string errors
     #[strum(message = "Value must be a valid string")]
     StrType,
     #[strum(message = "Value must be a valid string, unable to parse raw data as a unicode string")]
     StrUnicode,
-    #[strum(message = "String must have at least {min_length} characters")]
+    #[strum(
+        message = "String must have at least {min_length} characters",
+        serialize = "too_short"
+    )]
     StrTooShort,
-    #[strum(message = "String must have at most {max_length} characters")]
+    #[strum(message = "String must have at most {max_length} characters", serialize = "too_long")]
     StrTooLong,
     #[strum(message = "String must match pattern '{pattern}'")]
     StrPatternMismatch,
@@ -56,36 +65,20 @@ pub enum ErrorKind {
     DictFromMapping,
     #[strum(message = "Unable extract dict from object")]
     DictFromObject,
-    #[strum(message = "Dictionary must have at least {min_length} items")]
-    DictTooShort,
-    #[strum(message = "Dictionary must have at most {max_length} items")]
-    DictTooLong,
     // ---------------------
     // list errors
     #[strum(message = "Value must be a valid list/array")]
     ListType,
-    #[strum(message = "List must have at least {min_length} items")]
-    ListTooShort,
-    #[strum(message = "List must have at most {max_length} items")]
-    ListTooLong,
     // ---------------------
     // tuple errors
     #[strum(message = "Value must be a valid tuple")]
     TupleType,
-    #[strum(message = "Tuple must have at least {min_length} items")]
-    TupleTooShort,
-    #[strum(message = "Tuple must have at most {max_length} items")]
-    TupleTooLong,
     #[strum(message = "Tuple must have exactly {expected_length} item{plural}")]
     TupleLengthMismatch,
     // ---------------------
     // set errors
     #[strum(message = "Value must be a valid set")]
     SetType,
-    #[strum(message = "Set must have at least {min_length} items")]
-    SetTooShort,
-    #[strum(message = "Set must have at most {max_length} items")]
-    SetTooLong,
     // ---------------------
     // bool errors
     #[strum(message = "Value must be a valid boolean")]
@@ -104,14 +97,6 @@ pub enum ErrorKind {
     IntNan,
     #[strum(message = "Value must be a multiple of {multiple_of}")]
     IntMultiple,
-    #[strum(message = "Value must be greater than {gt}")]
-    IntGreaterThan,
-    #[strum(message = "Value must be greater than or equal to {ge}")]
-    IntGreaterThanEqual,
-    #[strum(message = "Value must be less than {lt}")]
-    IntLessThan,
-    #[strum(message = "Value must be less than or equal to {le}")]
-    IntLessThanEqual,
     // ---------------------
     // float errors
     #[strum(message = "Value must be a valid number")]
@@ -120,21 +105,13 @@ pub enum ErrorKind {
     FloatParsing,
     #[strum(message = "Value must be a multiple of {multiple_of}")]
     FloatMultiple,
-    #[strum(message = "Value must be greater than {gt}")]
-    FloatGreaterThan,
-    #[strum(message = "Value must be greater than or equal to {ge}")]
-    FloatGreaterThanEqual,
-    #[strum(message = "Value must be less than {lt}")]
-    FloatLessThan,
-    #[strum(message = "Value must be less than or equal to {le}")]
-    FloatLessThanEqual,
     // ---------------------
     // bytes errors
     #[strum(message = "Value must be a valid bytes")]
     BytesType,
-    #[strum(message = "Bytes must have at least {min_length} characters")]
+    #[strum(message = "Data must have at least {min_length} bytes", serialize = "too_short")]
     BytesTooShort,
-    #[strum(message = "Bytes must have at most {max_length} characters")]
+    #[strum(message = "Data must have at most {max_length} bytes", serialize = "too_long")]
     BytesTooLong,
     // ---------------------
     // python errors from functions (the messages here will not be used as we sett message in these cases)
