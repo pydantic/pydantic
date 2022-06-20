@@ -57,12 +57,18 @@ class TestModelClass:
                 {
                     'type': 'model-class',
                     'class_type': ModelA,
-                    'model': {'type': 'model', 'fields': {'a': {'type': 'int'}, 'b': {'type': 'str'}}},
+                    'model': {
+                        'type': 'model',
+                        'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
+                    },
                 },
                 {
                     'type': 'model-class',
                     'class_type': ModelB,
-                    'model': {'type': 'model', 'fields': {'c': {'type': 'int'}, 'd': {'type': 'str'}}},
+                    'model': {
+                        'type': 'model',
+                        'fields': {'c': {'schema': {'type': 'int'}}, 'd': {'schema': {'type': 'str'}}},
+                    },
                 },
             ],
         }
@@ -111,14 +117,21 @@ class TestModelClassSimilar:
                 {
                     'type': 'model-class',
                     'class_type': ModelA,
-                    'model': {'type': 'model', 'fields': {'a': {'type': 'int'}, 'b': {'type': 'str'}}},
+                    'model': {
+                        'type': 'model',
+                        'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
+                    },
                 },
                 {
                     'type': 'model-class',
                     'class_type': ModelB,
                     'model': {
                         'type': 'model',
-                        'fields': {'a': {'type': 'int'}, 'b': {'type': 'str'}, 'c': {'type': 'float', 'default': 1.0}},
+                        'fields': {
+                            'a': {'schema': {'type': 'int'}},
+                            'b': {'schema': {'type': 'str'}},
+                            'c': {'schema': {'type': 'float'}, 'default': 1.0},
+                        },
                     },
                 },
             ],

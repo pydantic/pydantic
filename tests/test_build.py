@@ -27,7 +27,9 @@ def test_build_error_deep():
         '  TypeError: \'str\' object cannot be interpreted as an integer'  # noqa Q003
     )
     with pytest.raises(SchemaError, match=msg):
-        SchemaValidator({'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'type': 'int', 'ge': 'not-int'}}})
+        SchemaValidator(
+            {'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'schema': {'type': 'int', 'ge': 'not-int'}}}}
+        )
 
 
 def test_schema_as_string():
@@ -63,6 +65,9 @@ def test_schema_recursive_error():
 
 
 def test_not_schema_recursive_error():
-    schema = {'type': 'model', 'fields': {f'f_{i}': {'type': 'nullable', 'schema': 'int'} for i in range(101)}}
+    schema = {
+        'type': 'model',
+        'fields': {f'f_{i}': {'schema': {'type': 'nullable', 'schema': 'int'}} for i in range(101)},
+    }
     v = SchemaValidator(schema)
     assert repr(v).count('ModelField') == 101

@@ -13,11 +13,13 @@ def test_branch_nullable():
             'schema': {
                 'type': 'model',
                 'fields': {
-                    'name': {'type': 'str'},
+                    'name': {'schema': {'type': 'str'}},
                     'sub_branch': {
-                        'type': 'union',
+                        'schema': {
+                            'type': 'union',
+                            'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
+                        },
                         'default': None,
-                        'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
                     },
                 },
             },
@@ -50,11 +52,13 @@ def test_nullable_error():
             'schema': {
                 'type': 'model',
                 'fields': {
-                    'width': 'int',
+                    'width': {'schema': 'int'},
                     'sub_branch': {
-                        'type': 'union',
+                        'schema': {
+                            'type': 'union',
+                            'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
+                        },
                         'default': None,
-                        'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
                     },
                 },
             },
@@ -90,11 +94,10 @@ def test_list():
             'schema': {
                 'type': 'model',
                 'fields': {
-                    'width': 'int',
+                    'width': {'schema': 'int'},
                     'branches': {
-                        'type': 'list',
+                        'schema': {'type': 'list', 'items': {'type': 'recursive-ref', 'name': 'BranchList'}},
                         'default': None,
-                        'items': {'type': 'recursive-ref', 'name': 'BranchList'},
                     },
                 },
             },
@@ -132,26 +135,29 @@ def test_multiple_intertwined():
             'schema': {
                 'type': 'model',
                 'fields': {
-                    'height': 'int',
+                    'height': {'schema': 'int'},
                     'bar': {
-                        'type': 'recursive-container',
-                        'name': 'Bar',
                         'schema': {
-                            'type': 'model',
-                            'fields': {
-                                'width': 'int',
-                                'bars': {
-                                    'type': 'list',
-                                    'default': None,
-                                    'items': {'type': 'recursive-ref', 'name': 'Bar'},
-                                },
-                                'foo': {
-                                    'type': 'union',
-                                    'default': None,
-                                    'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Foo'}],
+                            'type': 'recursive-container',
+                            'name': 'Bar',
+                            'schema': {
+                                'type': 'model',
+                                'fields': {
+                                    'width': {'schema': 'int'},
+                                    'bars': {
+                                        'schema': {'type': 'list', 'items': {'type': 'recursive-ref', 'name': 'Bar'}},
+                                        'default': None,
+                                    },
+                                    'foo': {
+                                        'schema': {
+                                            'type': 'union',
+                                            'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Foo'}],
+                                        },
+                                        'default': None,
+                                    },
                                 },
                             },
-                        },
+                        }
                     },
                 },
             },
@@ -187,11 +193,13 @@ def test_model_class():
                 'model': {
                     'type': 'model',
                     'fields': {
-                        'width': 'int',
+                        'width': {'schema': 'int'},
                         'branch': {
-                            'type': 'union',
+                            'schema': {
+                                'type': 'union',
+                                'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
+                            },
                             'default': None,
-                            'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
                         },
                     },
                 },
@@ -222,11 +230,10 @@ def test_invalid_schema():
                 'items': {
                     'type': 'model',
                     'fields': {
-                        'width': {'type': 'int'},
+                        'width': {'schema': {'type': 'int'}},
                         'branch': {
-                            'type': 'nullable',
+                            'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'name': 'Branch'}},
                             'default': None,
-                            'schema': {'type': 'recursive-ref', 'name': 'Branch'},
                         },
                     },
                 },

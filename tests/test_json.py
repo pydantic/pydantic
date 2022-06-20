@@ -33,7 +33,9 @@ def test_float(input_value, output_value):
 
 
 def test_model():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
+    )
 
     # language=json
     input_str = '{"field_a": 123, "field_b": 1}'
@@ -49,7 +51,7 @@ def test_error_loc():
     v = SchemaValidator(
         {
             'type': 'model',
-            'fields': {'field_a': {'type': 'list', 'items': {'type': 'int'}}},
+            'fields': {'field_a': {'schema': {'type': 'list', 'items': {'type': 'int'}}}},
             'extra_validator': {'type': 'int'},
             'config': {'extra': 'allow'},
         }

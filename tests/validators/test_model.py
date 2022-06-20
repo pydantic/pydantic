@@ -1,10 +1,12 @@
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 
 def test_simple():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
+    )
 
     assert v.validate_python({'field_a': 123, 'field_b': 1}) == (
         {'field_a': '123', 'field_b': 1},
@@ -17,7 +19,7 @@ def test_strict():
         {
             'type': 'model',
             'config': {'strict': True},
-            'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}},
+            'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
         }
     )
 
@@ -35,7 +37,10 @@ def test_strict():
 
 def test_with_default():
     v = SchemaValidator(
-        {'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int', 'default': 666}}}
+        {
+            'type': 'model',
+            'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}, 'default': 666}},
+        }
     )
 
     assert v.validate_python({'field_a': 123}) == ({'field_a': '123', 'field_b': 666}, {'field_a'})
@@ -46,7 +51,9 @@ def test_with_default():
 
 
 def test_missing_error():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
+    )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': 123})
     assert (
@@ -59,7 +66,9 @@ field_b
 
 
 def test_ignore_extra():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}, 'field_b': {'type': 'int'}}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
+    )
 
     assert v.validate_python({'field_a': 123, 'field_b': 1, 'field_c': 123}) == (
         {'field_a': '123', 'field_b': 1},
@@ -68,14 +77,18 @@ def test_ignore_extra():
 
 
 def test_forbid_extra():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'extra': 'forbid'}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'extra': 'forbid'}}
+    )
 
     with pytest.raises(ValidationError, match='field_b | Extra values are not permitted'):
         v.validate_python({'field_a': 123, 'field_b': 1})
 
 
 def test_allow_extra():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'extra': 'allow'}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'extra': 'allow'}}
+    )
 
     assert v.validate_python({'field_a': 123, 'field_b': (1, 2)}) == (
         {'field_a': '123', 'field_b': (1, 2)},
@@ -87,7 +100,7 @@ def test_allow_extra_validate():
     v = SchemaValidator(
         {
             'type': 'model',
-            'fields': {'field_a': {'type': 'str'}},
+            'fields': {'field_a': {'schema': {'type': 'str'}}},
             'extra_validator': {'type': 'int'},
             'config': {'extra': 'allow'},
         }
@@ -111,7 +124,9 @@ def test_allow_extra_validate():
 
 
 def test_str_config():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'str_max_length': 5}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'str_max_length': 5}}
+    )
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
     with pytest.raises(ValidationError, match='String must have at most 5 characters'):
@@ -119,7 +134,7 @@ def test_str_config():
 
 
 def test_validate_assignment():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}})
+    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}})
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
@@ -141,8 +156,12 @@ def test_validate_assignment_functions():
         {
             'type': 'model',
             'fields': {
-                'field_a': {'type': 'function', 'mode': 'after', 'function': func_a, 'schema': {'type': 'str'}},
-                'field_b': {'type': 'function', 'mode': 'after', 'function': func_b, 'schema': {'type': 'int'}},
+                'field_a': {
+                    'schema': {'type': 'function', 'mode': 'after', 'function': func_a, 'schema': {'type': 'str'}}
+                },
+                'field_b': {
+                    'schema': {'type': 'function', 'mode': 'after', 'function': func_b, 'schema': {'type': 'int'}}
+                },
             },
         }
     )
@@ -163,7 +182,7 @@ def test_validate_assignment_functions():
 
 
 def test_validate_assignment_ignore_extra():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}})
+    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}})
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
@@ -181,7 +200,9 @@ def test_validate_assignment_ignore_extra():
 
 
 def test_validate_assignment_allow_extra():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'str'}}, 'config': {'extra': 'allow'}})
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'extra': 'allow'}}
+    )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
@@ -195,7 +216,7 @@ def test_validate_assignment_allow_extra_validate():
     v = SchemaValidator(
         {
             'type': 'model',
-            'fields': {'field_a': {'type': 'str'}},
+            'fields': {'field_a': {'schema': {'type': 'str'}}},
             'extra_validator': {'type': 'int'},
             'config': {'extra': 'allow'},
         }
@@ -218,7 +239,7 @@ def test_validate_assignment_allow_extra_validate():
 
 
 def test_json_error():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'type': 'list', 'items': 'int'}}})
+    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'schema': {'type': 'list', 'items': 'int'}}}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('{"field_a": [123, "wrong"]}')
 
@@ -230,3 +251,8 @@ def test_json_error():
             'input_value': 'wrong',
         }
     ]
+
+
+def test_missing_schema_key():
+    with pytest.raises(SchemaError, match='"schema" is required'):
+        SchemaValidator({'type': 'model', 'fields': {'x': {'type': 'str'}}})
