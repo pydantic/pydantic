@@ -87,8 +87,8 @@ impl DictValidator {
             if dict.generic_len() < min_length {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::DictTooShort,
-                    context = context!("min_length" => min_length)
+                    kind = ErrorKind::TooShort,
+                    context = context!("type" => "Dict", "min_length" => min_length)
                 );
             }
         }
@@ -96,8 +96,8 @@ impl DictValidator {
             if dict.generic_len() > max_length {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::DictTooLong,
-                    context = context!("max_length" => max_length)
+                    kind = ErrorKind::TooLong,
+                    context = context!("type" => "Dict", "max_length" => max_length)
                 );
             }
         }

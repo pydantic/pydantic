@@ -75,16 +75,14 @@ def test_float_strict(py_or_json, input_value, expected):
             -0.1,
             Err(
                 'Value must be greater than or equal to 0 '
-                '[kind=float_greater_than_equal, context={ge: 0}, input_value=-0.1, input_type=float]'
+                '[kind=greater_than_equal, context={ge: 0}, input_value=-0.1, input_type=float]'
             ),
         ),
         ({'gt': 0}, 0.1, 0.1),
         (
             {'gt': 0},
             0,
-            Err(
-                'Value must be greater than 0 [kind=float_greater_than, context={gt: 0}, input_value=0, input_type=int]'
-            ),
+            Err('Value must be greater than 0 [kind=greater_than, context={gt: 0}, input_value=0, input_type=int]'),
         ),
         ({'le': 0}, 0, 0),
         ({'le': 0}, -1, -1),

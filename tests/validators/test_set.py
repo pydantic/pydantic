@@ -92,9 +92,9 @@ def test_set_multiple_errors():
         ({'strict': True}, frozenset([1, 2, 3]), Err('Value must be a valid set [kind=set_type,')),
         ({'strict': True}, 'abc', Err('Value must be a valid set [kind=set_type,')),
         ({'min_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'min_items': 3}, {1, 2}, Err('Set must have at least 3 items [kind=set_too_short,')),
+        ({'min_items': 3}, {1, 2}, Err('Set must have at least 3 items [kind=too_short,')),
         ({'max_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'max_items': 3}, {1, 2, 3, 4}, Err('Set must have at most 3 items [kind=set_too_long,')),
+        ({'max_items': 3}, {1, 2, 3, 4}, Err('Set must have at most 3 items [kind=too_long,')),
     ],
 )
 def test_set_kwargs(kwargs, input_value, expected):

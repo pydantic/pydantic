@@ -31,9 +31,9 @@ def test_lax_bytes_validator():
     [
         ({}, b'foo', b'foo'),
         ({'max_length': 5}, b'foo', b'foo'),
-        ({'max_length': 5}, b'foobar', Err('Bytes must have at most 5 characters')),
+        ({'max_length': 5}, b'foobar', Err('Data must have at most 5 bytes')),
         ({'min_length': 2}, b'foo', b'foo'),
-        ({'min_length': 2}, b'f', Err('Bytes must have at least 2 characters')),
+        ({'min_length': 2}, b'f', Err('Data must have at least 2 bytes')),
     ],
 )
 def test_constrained_bytes_python_bytes(opts, input, expected):
@@ -50,9 +50,9 @@ def test_constrained_bytes_python_bytes(opts, input, expected):
     [
         ({}, 'foo', b'foo'),
         ({'max_length': 5}, 'foo', b'foo'),
-        ({'max_length': 5}, 'foobar', Err('Bytes must have at most 5 characters')),
+        ({'max_length': 5}, 'foobar', Err('Data must have at most 5 bytes')),
         ({'min_length': 2}, 'foo', b'foo'),
-        ({'min_length': 2}, 'f', Err('Bytes must have at least 2 characters')),
+        ({'min_length': 2}, 'f', Err('Data must have at least 2 bytes')),
         ({}, 1, Err('Value must be a valid bytes')),
         ({}, 1.0, Err('Value must be a valid bytes')),
         ({}, [], Err('Value must be a valid bytes')),
