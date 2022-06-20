@@ -62,18 +62,21 @@ impl BuildValidator for ModelValidator {
 
         let py = schema.py();
         for (key, value) in fields_dict.iter() {
-            let (validator, field_dict) = match build_validator(value, config, build_context) {
-                Ok(v) => v,
+            let field_infos: &PyDict = value.cast_as()?;
+            let schema: &PyAny = field_infos.get_as_req("schema")?;
+
+            let validator = match build_validator(schema, config, build_context) {
+                Ok((v, _)) => v,
                 Err(err) => return py_error!("Key \"{}\":\n  {}", key, err),
             };
 
             let key_str = key.to_string();
             fields.push(ModelField {
                 name: key_str.clone(),
-                // alias: field_dict.get_as("alias"),
+                // alias: field_infos.get_as("alias"),
                 dict_key: PyString::intern(py, &key_str).into(),
                 validator,
-                default: field_dict.get_as("default")?,
+                default: field_infos.get_as("default")?,
             });
         }
         Ok(Self {

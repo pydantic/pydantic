@@ -41,10 +41,10 @@ class TestBenchmarkSimpleModel:
                 'model': {
                     'type': 'model',
                     'fields': {
-                        'name': {'type': 'str'},
-                        'age': {'type': 'int'},
-                        'friends': {'type': 'list', 'items': {'type': 'int'}},
-                        'settings': {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'float'}},
+                        'name': {'schema': {'type': 'str'}},
+                        'age': {'schema': {'type': 'int'}},
+                        'friends': {'schema': {'type': 'list', 'items': {'type': 'int'}}},
+                        'settings': {'schema': {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'float'}}},
                     },
                 },
             }
@@ -117,7 +117,10 @@ def test_small_class_pyd(benchmark):
 
 @pytest.mark.benchmark(group='create small model')
 def test_small_class_core_dict(benchmark):
-    model_schema = {'type': 'model', 'fields': {'name': {'type': 'str'}, 'age': {'type': 'int'}}}
+    model_schema = {
+        'type': 'model',
+        'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
+    }
     dict_schema_validator = SchemaValidator(model_schema)
     benchmark(dict_schema_validator.validate_python, small_class_data)
 
@@ -135,7 +138,10 @@ def test_small_class_core_model(benchmark):
         {
             'type': 'model-class',
             'class_type': MyCoreModel,
-            'model': {'type': 'model', 'fields': {'name': {'type': 'str'}, 'age': {'type': 'int'}}},
+            'model': {
+                'type': 'model',
+                'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
+            },
         }
     )
     benchmark(model_schema_validator.validate_python, small_class_data)
@@ -186,11 +192,10 @@ def test_recursive_model_core(recursive_model_data, benchmark):
                 'model': {
                     'type': 'model',
                     'fields': {
-                        'width': {'type': 'int'},
+                        'width': {'schema': {'type': 'int'}},
                         'branch': {
-                            'type': 'nullable',
+                            'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'name': 'Branch'}},
                             'default': None,
-                            'schema': {'type': 'recursive-ref', 'name': 'Branch'},
                         },
                     },
                 },
@@ -216,7 +221,7 @@ def test_list_of_dict_models_pyd(benchmark):
 @pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
-        {'type': 'list', 'name': 'Branch', 'items': {'type': 'model', 'fields': {'width': {'type': 'int'}}}}
+        {'type': 'list', 'name': 'Branch', 'items': {'type': 'model', 'fields': {'width': {'schema': {'type': 'int'}}}}}
     )
 
     data = [{'width': i} for i in range(100)]
@@ -432,7 +437,7 @@ def test_many_models_pyd(benchmark):
 
 @pytest.mark.benchmark(group='List[DictSimpleMode]')
 def test_many_models_core_dict(benchmark):
-    model_schema = {'type': 'list', 'items': {'type': 'model', 'fields': {'age': 'int'}}}
+    model_schema = {'type': 'list', 'items': {'type': 'model', 'fields': {'age': {'schema': 'int'}}}}
     v = SchemaValidator(model_schema)
     benchmark(v.validate_python, many_models_data)
 
@@ -448,7 +453,7 @@ def test_many_models_core_model(benchmark):
             'items': {
                 'type': 'model-class',
                 'class_type': MyCoreModel,
-                'model': {'type': 'model', 'fields': {'age': 'int'}},
+                'model': {'type': 'model', 'fields': {'age': {'schema': 'int'}}},
             },
         }
     )
@@ -507,7 +512,11 @@ class TestBenchmarkDateTime:
             __slots__ = '__dict__', '__fields_set__'
 
         return SchemaValidator(
-            {'type': 'model-class', 'class_type': CoreModel, 'model': {'type': 'model', 'fields': {'dt': 'datetime'}}}
+            {
+                'type': 'model-class',
+                'class_type': CoreModel,
+                'model': {'type': 'model', 'fields': {'dt': {'schema': 'datetime'}}},
+            }
         )
 
     @pytest.fixture(scope='class')
