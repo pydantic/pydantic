@@ -8,7 +8,7 @@ use pyo3::types::{PyDict, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValError, ValResult};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValResult};
 use crate::input::Input;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -52,16 +52,16 @@ impl Validator for ModelClassValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         let class = self.class.as_ref(py);
         if input.strict_model_check(class)? {
-            Ok(input.to_py(py))
+            Ok(input.to_object(py))
         } else if self.strict {
             err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::ModelType,
                 context = context!("class_name" => self.get_name(py))
             )
@@ -74,12 +74,12 @@ impl Validator for ModelClassValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
         if input.strict_model_check(self.class.as_ref(py))? {
-            Ok(input.to_py(py))
+            Ok(input.to_object(py))
         } else {
             // errors from `validate_strict` are never used used, so we can keep this simple
             Err(ValError::LineErrors(vec![]))

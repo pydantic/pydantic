@@ -26,11 +26,12 @@ impl Validator for AnyValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        Ok(input.to_py(py))
+        // Ok(input.clone().into_py(py))
+        Ok(input.to_object(py))
     }
 
     fn get_name(&self, _py: Python) -> String {

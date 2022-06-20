@@ -1,6 +1,8 @@
 use std::fmt;
 
 use indexmap::IndexMap;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
 
 // taken from `serde_json`
@@ -28,6 +30,26 @@ pub enum JsonInput {
 }
 pub type JsonArray = Vec<JsonInput>;
 pub type JsonObject = IndexMap<String, JsonInput>;
+
+impl ToPyObject for JsonInput {
+    fn to_object(&self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::Null => py.None(),
+            Self::Bool(b) => b.into_py(py),
+            Self::Int(i) => i.into_py(py),
+            Self::Float(f) => f.into_py(py),
+            Self::String(s) => s.into_py(py),
+            Self::Array(v) => v.iter().map(|v| v.to_object(py)).collect::<Vec<_>>().into_py(py),
+            Self::Object(o) => {
+                let dict = PyDict::new(py);
+                for (k, v) in o.iter() {
+                    dict.set_item(k, v.to_object(py)).unwrap();
+                }
+                dict.into_py(py)
+            }
+        }
+    }
+}
 
 impl<'de> Deserialize<'de> for JsonInput {
     #[inline]

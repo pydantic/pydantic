@@ -1,13 +1,11 @@
-use enum_dispatch::enum_dispatch;
-use indexmap::map::Iter;
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet, PyTuple};
 
-use pyo3::types::{PyAny, PyDict, PyFrozenSet, PyList, PySet, PyTuple};
-use pyo3::{ffi, AsPyPointer};
+use crate::errors::{LocItem, ValError, ValLineError, ValResult};
+use crate::validators::{CombinedValidator, Extra, Validator};
 
-use super::parse_json::{JsonArray, JsonInput, JsonObject};
-use super::Input;
+use super::parse_json::{JsonArray, JsonObject};
 
-#[enum_dispatch]
 pub enum GenericSequence<'a> {
     List(&'a PyList),
     Tuple(&'a PyTuple),
@@ -16,285 +14,91 @@ pub enum GenericSequence<'a> {
     JsonArray(&'a JsonArray),
 }
 
-#[enum_dispatch(GenericSequence)]
-pub trait SequenceLenIter<'a> {
-    fn generic_len(&self) -> usize;
-
-    fn generic_iter(&self) -> GenericSequenceIter<'a>;
-}
-
-impl<'a> SequenceLenIter<'a> for &'a PyList {
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    fn generic_iter(&self) -> GenericSequenceIter<'a> {
-        GenericSequenceIter::List(PyListIterator {
-            sequence: self,
-            index: 0,
-        })
-    }
-}
-
-impl<'a> SequenceLenIter<'a> for &'a PyTuple {
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    fn generic_iter(&self) -> GenericSequenceIter<'a> {
-        GenericSequenceIter::Tuple(PyTupleIterator {
-            sequence: self,
-            index: 0,
-            length: self.len(),
-        })
-    }
-}
-
-impl<'a> SequenceLenIter<'a> for &'a PySet {
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    fn generic_iter(&self) -> GenericSequenceIter<'a> {
-        GenericSequenceIter::Set(PySetIterator {
-            sequence: self,
-            index: 0,
-        })
-    }
-}
-
-impl<'a> SequenceLenIter<'a> for &'a PyFrozenSet {
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    fn generic_iter(&self) -> GenericSequenceIter<'a> {
-        GenericSequenceIter::Set(PySetIterator {
-            sequence: self,
-            index: 0,
-        })
-    }
-}
-
-impl<'a> SequenceLenIter<'a> for &'a JsonArray {
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    fn generic_iter(&self) -> GenericSequenceIter<'a> {
-        GenericSequenceIter::JsonArray(JsonArrayIterator {
-            sequence: self,
-            index: 0,
-        })
-    }
-}
-
-#[enum_dispatch]
-pub enum GenericSequenceIter<'a> {
-    List(PyListIterator<'a>),
-    Tuple(PyTupleIterator<'a>),
-    Set(PySetIterator<'a>),
-    JsonArray(JsonArrayIterator<'a>),
-}
-
-#[enum_dispatch(GenericSequenceIter)]
-pub trait SequenceNext<'a> {
-    fn _next(&mut self) -> Option<(usize, &'a dyn Input)>;
-}
-
-impl<'a> Iterator for GenericSequenceIter<'a> {
-    type Item = (usize, &'a dyn Input);
-
-    #[inline]
-    fn next(&mut self) -> Option<(usize, &'a dyn Input)> {
-        self._next()
-    }
-}
-
-pub struct PyListIterator<'a> {
-    sequence: &'a PyList,
-    index: usize,
-}
-
-impl<'a> SequenceNext<'a> for PyListIterator<'a> {
-    #[inline]
-    fn _next(&mut self) -> Option<(usize, &'a dyn Input)> {
-        if self.index < self.sequence.len() {
-            let item = unsafe { self.sequence.get_item_unchecked(self.index) };
-            let index = self.index;
-            self.index += 1;
-            Some((index, item))
-        } else {
-            None
+macro_rules! derive_from {
+    ($enum:ident, $type:ty, $key:ident) => {
+        impl<'a> From<&'a $type> for $enum<'a> {
+            fn from(s: &'a $type) -> $enum<'a> {
+                Self::$key(s)
+            }
         }
-    }
+    };
 }
+derive_from!(GenericSequence, PyList, List);
+derive_from!(GenericSequence, PyTuple, Tuple);
+derive_from!(GenericSequence, PySet, Set);
+derive_from!(GenericSequence, PyFrozenSet, FrozenSet);
+derive_from!(GenericSequence, JsonArray, JsonArray);
 
-pub struct PyTupleIterator<'a> {
-    sequence: &'a PyTuple,
-    index: usize,
-    length: usize,
-}
+macro_rules! build_validate_to_vec {
+    ($name:ident, $sequence_type:ty) => {
+        fn $name<'a, 's>(
+            py: Python<'a>,
+            sequence: &'a $sequence_type,
+            length: usize,
+            validator: &'s CombinedValidator,
+            extra: &Extra,
+            slots: &'a [CombinedValidator],
+        ) -> ValResult<'a, Vec<PyObject>> {
+            let mut output: Vec<PyObject> = Vec::with_capacity(length);
+            let mut errors: Vec<ValLineError> = Vec::new();
+            for (index, item) in sequence.iter().enumerate() {
+                match validator.validate(py, item, extra, slots) {
+                    Ok(item) => output.push(item),
+                    Err(ValError::LineErrors(line_errors)) => {
+                        let loc = vec![LocItem::I(index)];
+                        errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
+                    }
+                    Err(err) => return Err(err),
+                }
+            }
 
-impl<'a> SequenceNext<'a> for PyTupleIterator<'a> {
-    #[inline]
-    fn _next(&mut self) -> Option<(usize, &'a dyn Input)> {
-        if self.index < self.length {
-            let item = unsafe { self.sequence.get_item_unchecked(self.index) };
-            let index = self.index;
-            self.index += 1;
-            Some((index, item))
-        } else {
-            None
-        }
-    }
-}
-
-pub struct PySetIterator<'a> {
-    sequence: &'a PyAny,
-    index: isize,
-}
-
-impl<'a> SequenceNext<'a> for PySetIterator<'a> {
-    #[inline]
-    fn _next(&mut self) -> Option<(usize, &'a dyn Input)> {
-        unsafe {
-            let mut key: *mut ffi::PyObject = std::ptr::null_mut();
-            let mut hash: ffi::Py_hash_t = 0;
-            let index = self.index as usize;
-            if ffi::_PySet_NextEntry(self.sequence.as_ptr(), &mut self.index, &mut key, &mut hash) != 0 {
-                // _PySet_NextEntry returns borrowed object; for safety must make owned (see #890)
-                let item: &PyAny = self.sequence.py().from_owned_ptr(ffi::_Py_NewRef(key));
-                Some((index, item))
+            if errors.is_empty() {
+                Ok(output)
             } else {
-                None
+                Err(ValError::LineErrors(errors))
             }
+        }
+    };
+}
+build_validate_to_vec!(validate_to_vec_list, PyList);
+build_validate_to_vec!(validate_to_vec_tuple, PyTuple);
+build_validate_to_vec!(validate_to_vec_set, PySet);
+build_validate_to_vec!(validate_to_vec_frozenset, PyFrozenSet);
+build_validate_to_vec!(validate_to_vec_jsonarray, JsonArray);
+
+impl<'a> GenericSequence<'a> {
+    pub fn generic_len(&self) -> usize {
+        match self {
+            Self::List(v) => v.len(),
+            Self::Tuple(v) => v.len(),
+            Self::Set(v) => v.len(),
+            Self::FrozenSet(v) => v.len(),
+            Self::JsonArray(v) => v.len(),
+        }
+    }
+
+    pub fn validate_to_vec<'s>(
+        &self,
+        py: Python<'a>,
+        length: usize,
+        validator: &'s CombinedValidator,
+        extra: &Extra,
+        slots: &'a [CombinedValidator],
+    ) -> ValResult<'a, Vec<PyObject>> {
+        match self {
+            Self::List(sequence) => validate_to_vec_list(py, sequence, length, validator, extra, slots),
+            Self::Tuple(sequence) => validate_to_vec_tuple(py, sequence, length, validator, extra, slots),
+            Self::Set(sequence) => validate_to_vec_set(py, sequence, length, validator, extra, slots),
+            Self::FrozenSet(sequence) => validate_to_vec_frozenset(py, sequence, length, validator, extra, slots),
+            Self::JsonArray(sequence) => validate_to_vec_jsonarray(py, sequence, length, validator, extra, slots),
         }
     }
 }
 
-pub struct JsonArrayIterator<'a> {
-    sequence: &'a JsonArray,
-    index: usize,
-}
-
-impl<'a> SequenceNext<'a> for JsonArrayIterator<'a> {
-    #[inline]
-    fn _next(&mut self) -> Option<(usize, &'a dyn Input)> {
-        match self.sequence.get(self.index) {
-            Some(item) => {
-                let index = self.index;
-                self.index += 1;
-                Some((index, item))
-            }
-            None => None,
-        }
-    }
-}
-
-#[enum_dispatch]
 pub enum GenericMapping<'a> {
     PyDict(&'a PyDict),
     JsonObject(&'a JsonObject),
 }
 
-// TODO work out how to avoid recursive error - should be `len`, `get` and `iter`
-#[enum_dispatch(GenericMapping)]
-pub trait MappingLenIter<'a> {
-    fn generic_len(&self) -> usize;
-
-    fn generic_get(&self, key: &str) -> Option<&'a dyn Input>;
-
-    fn generic_iter(&self) -> GenericMappingIter<'a>;
-}
-
-impl<'a> MappingLenIter<'a> for &'a PyDict {
-    #[inline]
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    #[inline]
-    fn generic_get(&self, key: &str) -> Option<&'a dyn Input> {
-        self.get_item(key).map(|v| v as &dyn Input)
-    }
-
-    #[inline]
-    fn generic_iter(&self) -> GenericMappingIter<'a> {
-        GenericMappingIter::PyDict(PyDictIterator { dict: self, index: 0 })
-    }
-}
-
-impl<'a> MappingLenIter<'a> for &'a JsonObject {
-    #[inline]
-    fn generic_len(&self) -> usize {
-        self.len()
-    }
-
-    #[inline]
-    fn generic_get(&self, key: &str) -> Option<&'a dyn Input> {
-        self.get(key).map(|v| v as &dyn Input)
-    }
-
-    #[inline]
-    fn generic_iter(&self) -> GenericMappingIter<'a> {
-        GenericMappingIter::JsonObject(JsonObjectIterator { iter: self.iter() })
-    }
-}
-
-#[enum_dispatch]
-pub enum GenericMappingIter<'a> {
-    PyDict(PyDictIterator<'a>),
-    JsonObject(JsonObjectIterator<'a>),
-}
-
-/// helper trait implemented by all types in GenericMappingIter which is used when for the shared implementation of
-/// `Iterator` for `GenericMappingIter`
-#[enum_dispatch(GenericMappingIter)]
-pub trait DictNext<'a> {
-    fn _next(&mut self) -> Option<(&'a dyn Input, &'a dyn Input)>;
-}
-
-impl<'a> Iterator for GenericMappingIter<'a> {
-    type Item = (&'a dyn Input, &'a dyn Input);
-
-    #[inline]
-    fn next(&mut self) -> Option<(&'a dyn Input, &'a dyn Input)> {
-        self._next()
-    }
-}
-
-pub struct PyDictIterator<'a> {
-    dict: &'a PyDict,
-    index: isize,
-}
-
-impl<'a> DictNext<'a> for PyDictIterator<'a> {
-    #[inline]
-    fn _next(&mut self) -> Option<(&'a dyn Input, &'a dyn Input)> {
-        unsafe {
-            let mut key: *mut ffi::PyObject = std::ptr::null_mut();
-            let mut value: *mut ffi::PyObject = std::ptr::null_mut();
-            if ffi::PyDict_Next(self.dict.as_ptr(), &mut self.index, &mut key, &mut value) != 0 {
-                // PyDict_Next returns borrowed values; for safety must make them owned (see #890)
-                let py = self.dict.py();
-                let key: &PyAny = py.from_owned_ptr(ffi::_Py_NewRef(key));
-                let value: &PyAny = py.from_owned_ptr(ffi::_Py_NewRef(value));
-                Some((key, value))
-            } else {
-                None
-            }
-        }
-    }
-}
-
-pub struct JsonObjectIterator<'a> {
-    iter: Iter<'a, String, JsonInput>,
-}
-
-impl<'a> DictNext<'a> for JsonObjectIterator<'a> {
-    #[inline]
-    fn _next(&mut self) -> Option<(&'a dyn Input, &'a dyn Input)> {
-        self.iter.next().map(|(k, v)| (k as &dyn Input, v as &dyn Input))
-    }
-}
+derive_from!(GenericMapping, PyDict, PyDict);
+derive_from!(GenericMapping, JsonObject, JsonObject);

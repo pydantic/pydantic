@@ -2,15 +2,16 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, py_error, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind, InputValue, LocItem, ValError, ValLineError};
-use crate::input::{GenericSequence, Input, SequenceLenIter};
+use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
+use crate::input::{GenericSequence, Input};
 
+use super::any::AnyValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TupleVarLenValidator {
     strict: bool,
-    item_validator: Option<Box<CombinedValidator>>,
+    item_validator: Box<CombinedValidator>,
     min_items: Option<usize>,
     max_items: Option<usize>,
 }
@@ -26,8 +27,8 @@ impl BuildValidator for TupleVarLenValidator {
         Ok(Self {
             strict: is_strict(schema, config)?,
             item_validator: match schema.get_item("items") {
-                Some(d) => Some(Box::new(build_validator(d, config, build_context)?.0)),
-                None => None,
+                Some(d) => Box::new(build_validator(d, config, build_context)?.0),
+                None => Box::new(AnyValidator::build(schema, config, build_context)?),
             },
             min_items: schema.get_as("min_items")?,
             max_items: schema.get_as("max_items")?,
@@ -40,7 +41,7 @@ impl Validator for TupleVarLenValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -54,7 +55,7 @@ impl Validator for TupleVarLenValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -62,10 +63,7 @@ impl Validator for TupleVarLenValidator {
     }
 
     fn get_name(&self, py: Python) -> String {
-        match &self.item_validator {
-            Some(v) => format!("{}-{}", Self::EXPECTED_TYPE, v.get_name(py)),
-            None => Self::EXPECTED_TYPE.to_string(),
-        }
+        format!("{}-{}", Self::EXPECTED_TYPE, self.item_validator.get_name(py))
     }
 }
 
@@ -73,7 +71,7 @@ impl TupleVarLenValidator {
     fn _validation_logic<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         tuple: GenericSequence<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
@@ -82,7 +80,7 @@ impl TupleVarLenValidator {
         if let Some(min_length) = self.min_items {
             if length < min_length {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::TooShort,
                     context = context!("type" => "Tuple", "min_length" => min_length)
                 );
@@ -91,38 +89,15 @@ impl TupleVarLenValidator {
         if let Some(max_length) = self.max_items {
             if length > max_length {
                 return err_val_error!(
-                    input_value = InputValue::InputRef(input),
+                    input_value = input.as_error_value(),
                     kind = ErrorKind::TooLong,
                     context = context!("type" => "Tuple", "max_length" => max_length)
                 );
             }
         }
 
-        match self.item_validator {
-            Some(ref validator) => {
-                let mut output: Vec<PyObject> = Vec::with_capacity(length);
-                let mut errors: Vec<ValLineError> = Vec::new();
-                for (index, item) in tuple.generic_iter() {
-                    match validator.validate(py, item, extra, slots) {
-                        Ok(item) => output.push(item),
-                        Err(ValError::LineErrors(line_errors)) => {
-                            let loc = vec![LocItem::I(index)];
-                            errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
-                        }
-                        Err(err) => return Err(err),
-                    }
-                }
-                if errors.is_empty() {
-                    Ok(PyTuple::new(py, &output).into_py(py))
-                } else {
-                    Err(ValError::LineErrors(errors))
-                }
-            }
-            None => {
-                let output: Vec<PyObject> = tuple.generic_iter().map(|(_, item)| item.to_py(py)).collect();
-                Ok(PyTuple::new(py, &output).into_py(py))
-            }
-        }
+        let output = tuple.validate_to_vec(py, length, &self.item_validator, extra, slots)?;
+        Ok(PyTuple::new(py, &output).into_py(py))
     }
 }
 
@@ -161,7 +136,7 @@ impl Validator for TupleFixLenValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -175,7 +150,7 @@ impl Validator for TupleFixLenValidator {
     fn validate_strict<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
@@ -191,7 +166,7 @@ impl TupleFixLenValidator {
     fn _validation_logic<'s, 'data>(
         &'s self,
         py: Python<'data>,
-        input: &'data dyn Input,
+        input: &'data impl Input<'data>,
         tuple: GenericSequence<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
@@ -201,7 +176,7 @@ impl TupleFixLenValidator {
         if expected_length != tuple.generic_len() {
             let plural = if expected_length == 1 { "" } else { "s" };
             return err_val_error!(
-                input_value = InputValue::InputRef(input),
+                input_value = input.as_error_value(),
                 kind = ErrorKind::TupleLengthMismatch,
                 // TODO fix Context::new so context! accepts different value types
                 context = context!(
@@ -212,16 +187,26 @@ impl TupleFixLenValidator {
         }
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
         let mut errors: Vec<ValLineError> = Vec::new();
-
-        for (validator, (index, item)) in self.items_validators.iter().zip(tuple.generic_iter()) {
-            match validator.validate(py, item, extra, slots) {
-                Ok(item) => output.push(item),
-                Err(ValError::LineErrors(line_errors)) => {
-                    let loc = vec![LocItem::I(index)];
-                    errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
+        macro_rules! iter {
+            ($sequence:expr) => {
+                for (validator, (index, item)) in self.items_validators.iter().zip($sequence.iter().enumerate()) {
+                    match validator.validate(py, item, extra, slots) {
+                        Ok(item) => output.push(item),
+                        Err(ValError::LineErrors(line_errors)) => {
+                            let loc = vec![LocItem::I(index)];
+                            errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
+                        }
+                        Err(err) => return Err(err),
+                    }
                 }
-                Err(err) => return Err(err),
-            }
+            };
+        }
+        match tuple {
+            GenericSequence::List(sequence) => iter!(sequence),
+            GenericSequence::Tuple(sequence) => iter!(sequence),
+            GenericSequence::Set(sequence) => iter!(sequence),
+            GenericSequence::FrozenSet(sequence) => iter!(sequence),
+            GenericSequence::JsonArray(sequence) => iter!(sequence),
         }
         if errors.is_empty() {
             Ok(PyTuple::new(py, &output).into_py(py))

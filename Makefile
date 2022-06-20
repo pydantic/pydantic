@@ -52,7 +52,6 @@ build-cov-windows:
 format:
 	$(isort)
 	$(black)
-	@echo 'max_width = 120' > .rustfmt.toml
 	cargo fmt
 
 .PHONY: lint-python
@@ -64,7 +63,6 @@ lint-python:
 .PHONY: lint-rust
 lint-rust:
 	cargo fmt --version
-	@echo 'max_width = 120' > .rustfmt.toml
 	cargo fmt --all -- --check
 	cargo clippy --version
 	cargo clippy -- -D warnings -A incomplete_features

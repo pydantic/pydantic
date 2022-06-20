@@ -17,7 +17,11 @@ use super::input_abstract::Input;
 use super::return_enums::EitherBytes;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 
-impl Input for PyAny {
+impl<'a> Input<'a> for PyAny {
+    fn as_error_value(&'a self) -> InputValue<'a> {
+        InputValue::PyAny(self)
+    }
+
     fn is_none(&self) -> bool {
         self.is_none()
     }
@@ -26,7 +30,7 @@ impl Input for PyAny {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             py_str.extract().map_err(as_internal)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::StrType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType)
         }
     }
 
@@ -36,15 +40,13 @@ impl Input for PyAny {
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
                 Ok(s) => s.to_string(),
-                Err(_) => {
-                    return err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::StrUnicode)
-                }
+                Err(_) => return err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrUnicode),
             };
             Ok(str)
         } else if self.cast_as::<PyBool>().is_ok() {
             // do this before int and float parsing as `False` is cast to `0` and we don't want False to
             // be returned as a string
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::StrType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType)
         } else if let Ok(int) = self.cast_as::<PyInt>() {
             let int = i64::extract(int).map_err(as_internal)?;
             Ok(int.to_string())
@@ -52,7 +54,7 @@ impl Input for PyAny {
             // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble
             Ok(float.to_string())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::StrType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType)
         }
     }
 
@@ -60,7 +62,7 @@ impl Input for PyAny {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BoolType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BoolType)
         }
     }
 
@@ -72,18 +74,18 @@ impl Input for PyAny {
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_bool(self, int)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BoolType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BoolType)
         }
     }
 
     fn strict_int(&self) -> ValResult<i64> {
         // bool check has to come before int check as bools would be cast to ints below
         if self.extract::<bool>().is_ok() {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::IntType)
         } else if let Ok(int) = self.extract::<i64>() {
             Ok(int)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::IntType)
         }
     }
 
@@ -95,17 +97,17 @@ impl Input for PyAny {
         } else if let Ok(float) = self.lax_float() {
             float_as_int(self, float)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::IntType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::IntType)
         }
     }
 
     fn strict_float(&self) -> ValResult<f64> {
         if self.extract::<bool>().is_ok() {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FloatType)
         } else if let Ok(float) = self.extract::<f64>() {
             Ok(float)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FloatType)
         }
     }
 
@@ -115,10 +117,10 @@ impl Input for PyAny {
         } else if let Some(str) = _maybe_as_string(self, ErrorKind::FloatParsing)? {
             match str.parse() {
                 Ok(i) => Ok(i),
-                Err(_) => err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatParsing),
+                Err(_) => err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FloatParsing),
             }
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::FloatType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FloatType)
         }
     }
 
@@ -130,7 +132,7 @@ impl Input for PyAny {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DictType)
         }
     }
 
@@ -144,7 +146,7 @@ impl Input for PyAny {
                 Ok(dict) => dict,
                 Err(err) => {
                     return err_val_error!(
-                        input_value = InputValue::InputRef(self),
+                        input_value = self.as_error_value(),
                         message = Some(err.to_string()),
                         kind = ErrorKind::DictFromMapping
                     )
@@ -156,7 +158,7 @@ impl Input for PyAny {
                 Ok(dict) => dict,
                 Err(err) => {
                     return err_val_error!(
-                        input_value = InputValue::InputRef(self),
+                        input_value = self.as_error_value(),
                         message = Some(err.to_string()),
                         kind = ErrorKind::DictFromObject
                     )
@@ -164,7 +166,7 @@ impl Input for PyAny {
             };
             inner_dict.lax_dict(false)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DictType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DictType)
         }
     }
 
@@ -172,7 +174,7 @@ impl Input for PyAny {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::ListType)
         }
     }
 
@@ -186,7 +188,7 @@ impl Input for PyAny {
         } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::ListType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::ListType)
         }
     }
 
@@ -194,7 +196,7 @@ impl Input for PyAny {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::SetType)
         }
     }
 
@@ -208,7 +210,7 @@ impl Input for PyAny {
         } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::SetType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::SetType)
         }
     }
 
@@ -216,7 +218,7 @@ impl Input for PyAny {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             Ok(EitherBytes::Python(py_bytes))
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BytesType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BytesType)
         }
     }
 
@@ -227,18 +229,18 @@ impl Input for PyAny {
             let str: String = py_str.extract().map_err(as_internal)?;
             Ok(EitherBytes::Rust(str.into_bytes()))
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::BytesType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BytesType)
         }
     }
 
     fn strict_date(&self) -> ValResult<EitherDate> {
         if self.cast_as::<PyDateTime>().is_ok() {
             // have to check if it's a datetime first, otherwise the line below converts to a date
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateType)
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateType)
         }
     }
 
@@ -246,7 +248,7 @@ impl Input for PyAny {
         if self.cast_as::<PyDateTime>().is_ok() {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             // even if we later try coercion from a datetime, we don't want to return a datetime now
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateType)
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date.into())
         } else if let Ok(str) = self.extract::<String>() {
@@ -254,7 +256,7 @@ impl Input for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_date(self, py_bytes.as_bytes())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateType)
         }
     }
 
@@ -262,7 +264,7 @@ impl Input for PyAny {
         if let Ok(time) = self.cast_as::<PyTime>() {
             Ok(time.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TimeType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::TimeType)
         }
     }
 
@@ -274,13 +276,13 @@ impl Input for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_time(self, py_bytes.as_bytes())
         } else if self.cast_as::<PyBool>().is_ok() {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TimeType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::TimeType)
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_time(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_time(self, float)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TimeType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::TimeType)
         }
     }
 
@@ -288,7 +290,7 @@ impl Input for PyAny {
         if let Ok(dt) = self.cast_as::<PyDateTime>() {
             Ok(dt.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateTimeType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateTimeType)
         }
     }
 
@@ -300,7 +302,7 @@ impl Input for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_datetime(self, py_bytes.as_bytes())
         } else if self.cast_as::<PyBool>().is_ok() {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateTimeType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateTimeType)
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_datetime(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
@@ -308,7 +310,7 @@ impl Input for PyAny {
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             date_as_datetime(date).map_err(as_internal)
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::DateTimeType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DateTimeType)
         }
     }
 
@@ -316,7 +318,7 @@ impl Input for PyAny {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::TupleType)
         }
     }
 
@@ -330,7 +332,7 @@ impl Input for PyAny {
         } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else {
-            err_val_error!(input_value = InputValue::InputRef(self), kind = ErrorKind::TupleType)
+            err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::TupleType)
         }
     }
 }
@@ -367,7 +369,7 @@ fn _maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Str
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
         let str = match from_utf8(bytes.as_bytes()) {
             Ok(s) => s.to_string(),
-            Err(_) => return err_val_error!(input_value = InputValue::InputRef(v), kind = unicode_error),
+            Err(_) => return err_val_error!(input_value = v.as_error_value(), kind = unicode_error),
         };
         Ok(Some(str))
     } else {
