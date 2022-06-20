@@ -148,7 +148,7 @@ impl Validator for ModelValidator {
                     for (raw_key, value) in $dict.iter() {
                         // TODO use strict_str here if the model is strict
                         let key: String = match raw_key.lax_str() {
-                            Ok(k) => k,
+                            Ok(k) => k.as_raw().map_err(as_internal)?,
                             Err(ValError::LineErrors(line_errors)) => {
                                 let loc = vec![raw_key.to_loc()];
                                 for err in line_errors {

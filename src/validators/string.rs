@@ -3,8 +3,8 @@ use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
 use crate::build_tools::{is_strict, py_error, schema_or_config};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
-use crate::input::Input;
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
+use crate::input::{EitherString, Input};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -169,9 +169,9 @@ impl StrConstrainedValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        str: String,
+        either_str: EitherString<'data>,
     ) -> ValResult<'data, PyObject> {
-        let mut str = str;
+        let mut str = either_str.as_raw().map_err(as_internal)?;
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
@@ -211,7 +211,7 @@ impl StrConstrainedValidator {
             str = str.to_uppercase()
         }
         let py_str = PyString::new(py, &str);
-        ValResult::Ok(py_str.into_py(py))
+        Ok(py_str.into_py(py))
     }
 }
 
