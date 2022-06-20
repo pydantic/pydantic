@@ -122,14 +122,6 @@ def test_small_class_core_dict(benchmark):
     benchmark(dict_schema_validator.validate_python, small_class_data)
 
 
-@pytest.mark.benchmark(group='string')
-def test_core_string_lax(benchmark):
-    validator = SchemaValidator({'type': 'str'})
-    input_str = 'Hello ' * 20
-
-    benchmark(validator.validate_python, input_str)
-
-
 @pytest.mark.benchmark(group='create small model')
 def test_small_class_core_model(benchmark):
     class MyCoreModel:
@@ -147,6 +139,14 @@ def test_small_class_core_model(benchmark):
         }
     )
     benchmark(model_schema_validator.validate_python, small_class_data)
+
+
+@pytest.mark.benchmark(group='string')
+def test_core_string_lax(benchmark):
+    validator = SchemaValidator({'type': 'str'})
+    input_str = 'Hello ' * 20
+
+    benchmark(validator.validate_python, input_str)
 
 
 @pytest.fixture
@@ -201,7 +201,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='list of dict models')
+@pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_pyd(benchmark):
     class PydanticBranch(BaseModel):
         width: int
@@ -213,7 +213,7 @@ def test_list_of_dict_models_pyd(benchmark):
     benchmark(PydanticRoot.parse_obj, data)
 
 
-@pytest.mark.benchmark(group='list of dict models')
+@pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
         {'type': 'list', 'name': 'Branch', 'items': {'type': 'model', 'fields': {'width': {'type': 'int'}}}}
@@ -227,7 +227,7 @@ list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='list of ints')
+@pytest.mark.benchmark(group='List[int]')
 def test_list_of_ints_pyd_py(benchmark):
     class PydanticModel(BaseModel):
         __root__: List[int]
@@ -238,7 +238,7 @@ def test_list_of_ints_pyd_py(benchmark):
         PydanticModel.parse_obj(list_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='list of ints')
+@pytest.mark.benchmark(group='List[int]')
 def test_list_of_ints_core_py(benchmark):
     v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
 
@@ -249,7 +249,7 @@ def test_list_of_ints_core_py(benchmark):
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='list of ints JSON')
+@pytest.mark.benchmark(group='List[int] JSON')
 def test_list_of_ints_pyd_json(benchmark):
     class PydanticModel(BaseModel):
         __root__: List[int]
@@ -262,17 +262,7 @@ def test_list_of_ints_pyd_json(benchmark):
         PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
-@pytest.mark.benchmark(group='list of ints')
-def test_list_of_any_core_py(benchmark):
-    v = SchemaValidator({'type': 'list'})
-
-    @benchmark
-    def t():
-        v.validate_python(list_of_ints_data[0])
-        v.validate_python(list_of_ints_data[1])
-
-
-@pytest.mark.benchmark(group='list of ints JSON')
+@pytest.mark.benchmark(group='List[int] JSON')
 def test_list_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
 
@@ -284,11 +274,21 @@ def test_list_of_ints_core_json(benchmark):
         v.validate_json(json_data[1])
 
 
+@pytest.mark.benchmark(group='List[Any]')
+def test_list_of_any_core_py(benchmark):
+    v = SchemaValidator({'type': 'list'})
+
+    @benchmark
+    def t():
+        v.validate_python(list_of_ints_data[0])
+        v.validate_python(list_of_ints_data[1])
+
+
 set_of_ints_data = ({i for i in range(1000)}, {str(i) for i in range(1000)})
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='set of ints')
+@pytest.mark.benchmark(group='Set[int]')
 def test_set_of_ints_pyd(benchmark):
     class PydanticModel(BaseModel):
         __root__: Set[int]
@@ -299,7 +299,7 @@ def test_set_of_ints_pyd(benchmark):
         PydanticModel.parse_obj(set_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='set of ints')
+@pytest.mark.benchmark(group='Set[int]')
 def test_set_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'set', 'items': {'type': 'int'}})
 
@@ -310,7 +310,7 @@ def test_set_of_ints_core(benchmark):
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='set of ints JSON')
+@pytest.mark.benchmark(group='Set[int] JSON')
 def test_set_of_ints_pyd_json(benchmark):
     class PydanticModel(BaseModel):
         __root__: Set[int]
@@ -323,7 +323,7 @@ def test_set_of_ints_pyd_json(benchmark):
         PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
-@pytest.mark.benchmark(group='set of ints JSON')
+@pytest.mark.benchmark(group='Set[int] JSON')
 def test_set_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'set', 'items': {'type': 'int'}})
 
@@ -339,7 +339,7 @@ frozenset_of_ints = frozenset({i for i in range(1000)})
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='frozenset of ints')
+@pytest.mark.benchmark(group='FrozenSet[int]')
 def test_frozenset_of_ints_pyd(benchmark):
     class PydanticModel(BaseModel):
         __root__: FrozenSet[int]
@@ -347,7 +347,7 @@ def test_frozenset_of_ints_pyd(benchmark):
     benchmark(PydanticModel.parse_obj, frozenset_of_ints)
 
 
-@pytest.mark.benchmark(group='frozenset of ints')
+@pytest.mark.benchmark(group='FrozenSet[int]')
 def test_frozenset_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'frozenset', 'items': {'type': 'int'}})
 
@@ -358,7 +358,7 @@ dict_of_ints_data = ({i: i for i in range(1000)}, {i: str(i) for i in range(1000
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='dict of ints')
+@pytest.mark.benchmark(group='Dict[str, int]')
 def test_dict_of_ints_pyd(benchmark):
     class PydanticModel(BaseModel):
         __root__: Dict[str, int]
@@ -369,7 +369,7 @@ def test_dict_of_ints_pyd(benchmark):
         PydanticModel.parse_obj(dict_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='dict of ints')
+@pytest.mark.benchmark(group='Dict[str, int]')
 def test_dict_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'int'})
 
@@ -379,7 +379,7 @@ def test_dict_of_ints_core(benchmark):
         v.validate_python(dict_of_ints_data[1])
 
 
-@pytest.mark.benchmark(group='dict of ints')
+@pytest.mark.benchmark(group='Dict[any, any]')
 def test_dict_of_any_core(benchmark):
     v = SchemaValidator({'type': 'dict'})
 
@@ -390,7 +390,7 @@ def test_dict_of_any_core(benchmark):
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='dict of ints JSON')
+@pytest.mark.benchmark(group='Dict[str, int] JSON')
 def test_dict_of_ints_pyd_json(benchmark):
     class PydanticModel(BaseModel):
         __root__: Dict[str, int]
@@ -403,7 +403,7 @@ def test_dict_of_ints_pyd_json(benchmark):
         PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
-@pytest.mark.benchmark(group='dict of ints JSON')
+@pytest.mark.benchmark(group='Dict[str, int] JSON')
 def test_dict_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'int'})
 
@@ -419,7 +419,7 @@ many_models_data = [{'age': i} for i in range(1000)]
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='many models')
+@pytest.mark.benchmark(group='List[SimpleMode]')
 def test_many_models_pyd(benchmark):
     class SimpleMode(BaseModel):
         age: int
@@ -430,14 +430,14 @@ def test_many_models_pyd(benchmark):
     benchmark(PydanticModel.parse_obj, many_models_data)
 
 
-@pytest.mark.benchmark(group='many models')
+@pytest.mark.benchmark(group='List[DictSimpleMode]')
 def test_many_models_core_dict(benchmark):
     model_schema = {'type': 'list', 'items': {'type': 'model', 'fields': {'age': 'int'}}}
     v = SchemaValidator(model_schema)
     benchmark(v.validate_python, many_models_data)
 
 
-@pytest.mark.benchmark(group='many models')
+@pytest.mark.benchmark(group='List[SimpleMode]')
 def test_many_models_core_model(benchmark):
     class MyCoreModel:
         __slots__ = '__dict__', '__fields_set__'
@@ -459,7 +459,7 @@ list_of_nullable_data = [None if i % 2 else i for i in range(1000)]
 
 
 @skip_pydantic
-@pytest.mark.benchmark(group='list of nullable')
+@pytest.mark.benchmark(group='List[Nullable[int]]')
 def test_list_of_nullable_pyd(benchmark):
     class PydanticModel(BaseModel):
         __root__: List[Optional[int]]
@@ -467,7 +467,7 @@ def test_list_of_nullable_pyd(benchmark):
     benchmark(PydanticModel.parse_obj, list_of_nullable_data)
 
 
-@pytest.mark.benchmark(group='list of nullable')
+@pytest.mark.benchmark(group='List[Nullable[int]]')
 def test_list_of_nullable_core(benchmark):
     v = SchemaValidator({'type': 'list', 'items': {'type': 'nullable', 'schema': 'int'}})
 
