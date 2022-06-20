@@ -83,8 +83,8 @@ impl ListValidator {
             if length < min_length {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::ListTooShort,
-                    context = context!("min_length" => min_length)
+                    kind = ErrorKind::TooShort,
+                    context = context!("type" => "List", "min_length" => min_length)
                 );
             }
         }
@@ -92,8 +92,8 @@ impl ListValidator {
             if length > max_length {
                 return err_val_error!(
                     input_value = InputValue::InputRef(input),
-                    kind = ErrorKind::ListTooLong,
-                    context = context!("max_length" => max_length)
+                    kind = ErrorKind::TooLong,
+                    context = context!("type" => "List", "max_length" => max_length)
                 );
             }
         }
