@@ -15,7 +15,7 @@ fn build_schema_validator(py: Python, code: &str) -> SchemaValidator {
 }
 
 #[bench]
-fn benchmark_ints_json(bench: &mut Bencher) {
+fn ints_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'int'}");
@@ -28,7 +28,7 @@ fn benchmark_ints_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_ints_python(bench: &mut Bencher) {
+fn ints_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'int'}");
@@ -42,7 +42,7 @@ fn benchmark_ints_python(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_list_int_json(bench: &mut Bencher) {
+fn list_int_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
@@ -58,7 +58,7 @@ fn benchmark_list_int_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_list_int_python(bench: &mut Bencher) {
+fn list_int_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
@@ -78,7 +78,7 @@ fn benchmark_list_int_python(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_list_error_json(bench: &mut Bencher) {
+fn list_error_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
@@ -101,7 +101,7 @@ fn benchmark_list_error_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_list_error_python(bench: &mut Bencher) {
+fn list_error_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
@@ -121,7 +121,7 @@ fn benchmark_list_error_python(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_list_any_json(bench: &mut Bencher) {
+fn list_any_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list'}");
@@ -137,7 +137,7 @@ fn benchmark_list_any_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_list_any_python(bench: &mut Bencher) {
+fn list_any_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list'}");
@@ -155,13 +155,16 @@ fn benchmark_list_any_python(bench: &mut Bencher) {
     })
 }
 
+fn as_char(i: u8) -> char {
+    (i % 26 + 97) as char
+}
+
 #[bench]
-fn benchmark_dict_json(bench: &mut Bencher) {
+fn dict_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'dict', 'keys': 'str', 'values': 'int'}");
 
-    let as_char = |i: u8| (i % 26 + 97) as char;
     let code = format!(
         "{{{}}}",
         (0..100_u8)
@@ -177,12 +180,11 @@ fn benchmark_dict_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_dict_python(bench: &mut Bencher) {
+fn dict_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'dict', 'keys': 'str', 'values': 'int'}");
 
-    let as_char = |i: u8| (i % 26 + 97) as char;
     let code = format!(
         "{{{}}}",
         (0..100_u8)
@@ -201,7 +203,44 @@ fn benchmark_dict_python(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_model_json(bench: &mut Bencher) {
+fn dict_key_error(bench: &mut Bencher) {
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+    let validator = build_schema_validator(
+        py,
+        r#"{
+            'type': 'dict',
+            'keys': {
+                'type': 'int',
+                'lt': 10,
+            },
+            'values': 'int'
+        }"#,
+    );
+
+    let code = format!(
+        "{{{}}}",
+        (0..100_u8)
+            .map(|i| format!(r#"{}: {}"#, i, i))
+            .collect::<Vec<String>>()
+            .join(", ")
+    );
+
+    let input_python = py.eval(&code, None, None).unwrap();
+    let input_python = black_box(input_python.to_object(py));
+
+    bench.iter(|| {
+        let result = validator.validate_python(py, black_box(input_python.as_ref(py)));
+
+        match result {
+            Ok(_) => panic!("unexpectedly valid"),
+            Err(e) => black_box(e),
+        }
+    })
+}
+
+#[bench]
+fn model_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(
@@ -233,7 +272,7 @@ fn benchmark_model_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn benchmark_model_python(bench: &mut Bencher) {
+fn model_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(

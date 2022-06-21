@@ -1,10 +1,11 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet, PyTuple};
 
-use crate::errors::{LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{ValError, ValLineError, ValResult};
 use crate::validators::{CombinedValidator, Extra, Validator};
 
 use super::parse_json::{JsonArray, JsonObject};
+use super::ToLocItem;
 
 pub enum GenericSequence<'a> {
     List(&'a PyList),
@@ -45,8 +46,11 @@ macro_rules! build_validate_to_vec {
                 match validator.validate(py, item, extra, slots) {
                     Ok(item) => output.push(item),
                     Err(ValError::LineErrors(line_errors)) => {
-                        let loc = vec![LocItem::I(index)];
-                        errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
+                        errors.extend(
+                            line_errors
+                                .into_iter()
+                                .map(|err| err.with_prefix_location(index.to_loc())),
+                        );
                     }
                     Err(err) => return Err(err),
                 }
