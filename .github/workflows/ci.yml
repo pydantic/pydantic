@@ -10,16 +10,21 @@ on:
 
 jobs:
   test:
-    name: test py${{ matrix.python-version }}
+    name: test py${{ matrix.python-version }} rust ${{ matrix.rust-toolchain }}
     strategy:
       fail-fast: false
       matrix:
+        rust-toolchain:
+          - nightly
         python-version:
           - '3.7'
           - '3.8'
           - '3.9'
           - '3.10'
           - '3.11.0-alpha - 3.11'
+        include:
+          - rust-toolchain: stable
+            python-version: '3.10'
 
     runs-on: ubuntu-latest
 
@@ -33,6 +38,8 @@ jobs:
       uses: actions-rs/toolchain@v1.0.6
       with:
         profile: minimal
+        toolchain: ${{ matrix.rust-toolchain }}
+        override: true
 
     - id: cache-rust
       name: cache rust
@@ -79,6 +86,7 @@ jobs:
     - run: ./tests/rust_coverage_export.sh
 
     - uses: codecov/codecov-action@v2
+      if: matrix.rust-toolchain == 'nightly'
       with:
         env_vars: PYTHON
 
@@ -215,7 +223,6 @@ jobs:
       - name: build wheels
         uses: messense/maturin-action@v1
         with:
-          rust-toolchain: nightly
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux || 'auto' }}
           container: ${{ matrix.container }}

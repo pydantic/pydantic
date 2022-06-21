@@ -36,3 +36,6 @@ name = "pydantic_core._pydantic_core"
 [profile.release]
 lto = "fat"
 codegen-units = 1
+
+[build-dependencies]
+version_check = "0.9.4"
