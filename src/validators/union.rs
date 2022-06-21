@@ -56,8 +56,11 @@ impl Validator for UnionValidator {
                 otherwise => return otherwise,
             };
 
-            let loc = vec![LocItem::S(validator.get_name(py))];
-            errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
+            errors.extend(
+                line_errors
+                    .into_iter()
+                    .map(|err| err.with_prefix_location(LocItem::S(validator.get_name(py)))),
+            );
         }
 
         Err(ValError::LineErrors(errors))
