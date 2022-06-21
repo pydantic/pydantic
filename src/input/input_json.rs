@@ -195,7 +195,7 @@ impl<'a> Input<'a> for String {
         InputValue::String(self)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn is_none(&self) -> bool {
         false
     }
@@ -204,7 +204,7 @@ impl<'a> Input<'a> for String {
         Ok(self.clone().into())
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_bool(&self) -> ValResult<bool> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BoolType)
     }
@@ -213,12 +213,12 @@ impl<'a> Input<'a> for String {
         str_as_bool(self, self)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_int(&self) -> ValResult<i64> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::IntType)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn lax_int(&self) -> ValResult<i64> {
         match self.parse() {
             Ok(i) => Ok(i),
@@ -226,12 +226,12 @@ impl<'a> Input<'a> for String {
         }
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_float(&self) -> ValResult<f64> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FloatType)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn lax_float(&self) -> ValResult<f64> {
         match self.parse() {
             Ok(i) => Ok(i),
@@ -239,27 +239,27 @@ impl<'a> Input<'a> for String {
         }
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_model_check(&self, _class: &PyType) -> ValResult<bool> {
         Ok(false)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DictType)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::ListType)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::SetType)
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FrozenSetType)
     }
@@ -280,7 +280,7 @@ impl<'a> Input<'a> for String {
         bytes_as_datetime(self, self.as_bytes())
     }
 
-    #[no_coverage]
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::TupleType)
     }
