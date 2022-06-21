@@ -14,7 +14,7 @@ class SchemaError(ValueError):
     pass
 
 class ValidationError(ValueError):
-    model_name: str
+    title: str
 
     def error_count(self) -> int: ...
     def errors(self) -> List[Dict[str, Any]]: ...

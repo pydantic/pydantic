@@ -7,10 +7,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use serde_json::from_str as parse_json;
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::{py_error, SchemaDict, SchemaError};
 use crate::errors::{as_validation_err, val_line_error, ErrorKind, ValError, ValResult};
 use crate::input::{Input, JsonInput};
-use crate::SchemaError;
 
 mod any;
 mod bool;
@@ -140,7 +139,7 @@ macro_rules! validator_match {
                 <$validator>::EXPECTED_TYPE => {
                     $build_context.incr_check_depth()?;
                     let val = <$validator>::build($dict, $config, $build_context).map_err(|err| {
-                        crate::SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
+                        SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
                     })?;
                     $build_context.decr_depth();
                     Ok((val, $dict))
