@@ -1,4 +1,4 @@
-use pyo3::exceptions::PyKeyError;
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::FromPyObject;
@@ -31,6 +31,29 @@ impl<'py> SchemaDict<'py> for PyDict {
         match self.get_item(key) {
             Some(t) => <T>::extract(t),
             None => py_error!(PyKeyError; r#""{}" is required"#, key),
+        }
+    }
+}
+
+impl<'py> SchemaDict<'py> for Option<&PyDict> {
+    fn get_as<T>(&'py self, key: &str) -> PyResult<Option<T>>
+    where
+        T: FromPyObject<'py>,
+    {
+        match self {
+            Some(d) => d.get_as(key),
+            None => Ok(None),
+        }
+    }
+
+    #[cfg_attr(has_no_coverage, no_coverage)]
+    fn get_as_req<T>(&'py self, key: &str) -> PyResult<T>
+    where
+        T: FromPyObject<'py>,
+    {
+        match self {
+            Some(d) => d.get_as_req(key),
+            None => py_error!(PyTypeError; r#""{}" is required, so its source cannot be omitted"#, key),
         }
     }
 }

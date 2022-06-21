@@ -36,6 +36,15 @@ def test_schema_typing() -> None:
                 'class_type': Foo,
                 'model': {'type': 'model', 'fields': {'bar': {'schema': {'type': 'str'}}}},
             },
+            {
+                'type': 'model',
+                'fields': {
+                    'a': {'schema': {'type': 'str'}},
+                    'b': {'schema': {'type': 'str'}, 'alias': 'foobar'},
+                    'c': {'schema': {'type': 'str'}, 'aliases': [['foobar', 0, 'bar'], ['foo']]},
+                    'd': {'schema': {'type': 'str'}, 'default': 'spam'},
+                },
+            },
             {'type': 'function', 'mode': 'wrap', 'function': foo},
             {
                 'type': 'recursive-container',
