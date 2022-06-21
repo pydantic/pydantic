@@ -14,6 +14,12 @@ class Err:
     message: str
     errors: Any = None
 
+    def __repr__(self):
+        if self.errors:
+            return f'Err({self.message!r}, errors={self.errors!r})'
+        else:
+            return f'Err({self.message!r})'
+
 
 @pytest.fixture(params=['python', 'json'])
 def py_or_json(request):
