@@ -1,15 +1,5 @@
 #![feature(no_coverage)]
-#![feature(trait_upcasting)]
 #![allow(clippy::borrow_deref_ref)]
-
-extern crate core;
-extern crate enum_dispatch;
-extern crate indexmap;
-extern crate pyo3;
-extern crate regex;
-extern crate serde;
-extern crate serde_json;
-extern crate strum;
 
 use pyo3::create_exception;
 use pyo3::exceptions::PyException;
@@ -41,6 +31,6 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", version)?;
     m.add("ValidationError", py.get_type::<errors::ValidationError>())?;
     m.add("SchemaError", py.get_type::<SchemaError>())?;
-    m.add_class::<validators::SchemaValidator>()?;
+    m.add_class::<SchemaValidator>()?;
     Ok(())
 }
