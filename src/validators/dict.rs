@@ -112,9 +112,11 @@ macro_rules! build_validate {
                 let output_key = match key_validator.validate(py, key, extra, slots) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
-                        let loc = vec![key.to_loc(), "[key]".to_loc()];
                         for err in line_errors {
-                            errors.push(err.with_prefix_location(&loc));
+                            // these are added in reverse order so [key] is shunted along by the second call
+                            errors.push(err
+                                .with_prefix_location("[key]".to_loc())
+                                .with_prefix_location(key.to_loc()));
                         }
                         None
                     }
@@ -123,9 +125,8 @@ macro_rules! build_validate {
                 let output_value = match value_validator.validate(py, value, extra, slots) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
-                        let loc = vec![key.to_loc()];
                         for err in line_errors {
-                            errors.push(err.with_prefix_location(&loc));
+                            errors.push(err.with_prefix_location(key.to_loc()));
                         }
                         None
                     }

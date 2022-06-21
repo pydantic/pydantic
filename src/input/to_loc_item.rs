@@ -19,6 +19,12 @@ impl ToLocItem for &str {
     }
 }
 
+impl ToLocItem for usize {
+    fn to_loc(&self) -> LocItem {
+        LocItem::I(*self)
+    }
+}
+
 /// This is required by since JSON object keys are always strings, I don't think it can be called
 impl ToLocItem for JsonInput {
     #[no_coverage]

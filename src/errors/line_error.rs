@@ -44,14 +44,8 @@ pub struct ValLineError<'a> {
 }
 
 impl<'a> ValLineError<'a> {
-    pub fn with_prefix_location(mut self, location: &Location) -> Self {
-        if self.location.is_empty() {
-            self.location = location.clone();
-        } else {
-            // TODO we could perhaps instead store "reverse_location" in the ValLineError, then reverse it in
-            // `PyLineError` so we could just extend here.
-            self.location = [location.clone(), self.location].concat();
-        }
+    pub fn with_prefix_location(mut self, loc_item: LocItem) -> Self {
+        self.location.insert(0, loc_item);
         self
     }
 }

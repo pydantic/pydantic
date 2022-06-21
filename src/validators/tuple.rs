@@ -2,8 +2,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, py_error, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind, LocItem, ValError, ValLineError};
-use crate::input::{GenericSequence, Input};
+use crate::errors::{context, err_val_error, ErrorKind, ValError, ValLineError};
+use crate::input::{GenericSequence, Input, ToLocItem};
 
 use super::any::AnyValidator;
 use super::list::sequence_build_function;
@@ -178,8 +178,11 @@ impl TupleFixLenValidator {
                     match validator.validate(py, item, extra, slots) {
                         Ok(item) => output.push(item),
                         Err(ValError::LineErrors(line_errors)) => {
-                            let loc = vec![LocItem::I(index)];
-                            errors.extend(line_errors.into_iter().map(|err| err.with_prefix_location(&loc)));
+                            errors.extend(
+                                line_errors
+                                    .into_iter()
+                                    .map(|err| err.with_prefix_location(index.to_loc())),
+                            );
                         }
                         Err(err) => return Err(err),
                     }
