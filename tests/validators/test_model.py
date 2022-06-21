@@ -260,6 +260,99 @@ def test_missing_schema_key():
         SchemaValidator({'type': 'model', 'fields': {'x': {'type': 'str'}}})
 
 
+def test_fields_required_by_default():
+    """By default all fields should be required"""
+    v = SchemaValidator(
+        {'type': 'model', 'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}}}}
+    )
+
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert v.validate_python({'x': 'pika'})
+
+    assert exc_info.value.errors() == [
+        {'kind': 'missing', 'loc': ['y'], 'message': 'Field required', 'input_value': {'x': 'pika'}}
+    ]
+
+
+def test_fields_required_by_default_with_optional():
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}, 'required': False}},
+        }
+    )
+
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
+    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika'}, {'x'})
+
+
+def test_fields_required_by_default_with_default():
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}, 'default': 'bulbi'}},
+        }
+    )
+
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
+    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika', 'y': 'bulbi'}, {'x'})
+
+
+def test_all_optional_fields():
+    """By default all fields should be optional if `model_full` is set to `False`"""
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'config': {'model_full': False},
+            'fields': {'x': {'schema': {'type': 'str', 'strict': True}}, 'y': {'schema': {'type': 'str'}}},
+        }
+    )
+
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
+    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika'}, {'x'})
+    assert v.validate_python({'y': 'chu'}) == ({'y': 'chu'}, {'y'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert v.validate_python({'x': 123})
+
+    assert exc_info.value.errors() == [
+        {'kind': 'str_type', 'loc': ['x'], 'message': 'Value must be a valid string', 'input_value': 123}
+    ]
+
+
+def test_all_optional_fields_with_required_fields():
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'config': {'model_full': False},
+            'fields': {
+                'x': {'schema': {'type': 'str', 'strict': True}, 'required': True},
+                'y': {'schema': {'type': 'str'}},
+            },
+        }
+    )
+
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
+    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika'}, {'x'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert v.validate_python({'y': 'chu'}) == ({'y': 'chu'}, {'y'})
+
+    assert exc_info.value.errors() == [
+        {'kind': 'missing', 'loc': ['x'], 'message': 'Field required', 'input_value': {'y': 'chu'}}
+    ]
+
+
+def test_field_required_and_default():
+    """A field cannot be required and have a default value"""
+    with pytest.raises(SchemaError, match='Key "x":\n a required field cannot have a default value'):
+        SchemaValidator(
+            {'type': 'model', 'fields': {'x': {'schema': {'type': 'str'}, 'required': True, 'default': 'pika'}}}
+        )
+
+
 def test_alias(py_or_json):
     v = py_or_json({'type': 'model', 'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}}})
     assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, {'field_a'})
