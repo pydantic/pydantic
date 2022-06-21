@@ -141,7 +141,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
         } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
-            // this is ugly, but we'd have to do it in `input_iter` anyway
+            // this is ugly, but we'd have to do it in somewhere anyway
             // we could perhaps use an indexmap instead of a python dict?
             let dict = match mapping_as_dict(mapping) {
                 Ok(dict) => dict,
