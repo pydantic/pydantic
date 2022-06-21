@@ -13,6 +13,7 @@ struct ModelField {
     name: String,
     lookup_key: LookupKey,
     dict_key: Py<PyString>,
+    required: bool,
     default: Option<PyObject>,
     validator: CombinedValidator,
 }
@@ -36,6 +37,8 @@ impl BuildValidator for ModelValidator {
         // models ignore the parent config and always use the config from this model
         let config: Option<&PyDict> = schema.get_as("config")?;
 
+        let model_full = config.get_as("model_full")?.unwrap_or(true);
+
         let extra_behavior = ExtraBehavior::from_py(config)?;
         let extra_validator = match extra_behavior {
             ExtraBehavior::Allow => match schema.get_item("extra_validator") {
@@ -55,6 +58,7 @@ impl BuildValidator for ModelValidator {
             let field_info: &PyDict = value.cast_as()?;
             let schema: &PyAny = field_info.get_as_req("schema")?;
             let field_name: &str = key.extract()?;
+            let default = field_info.get_as("default")?;
 
             fields.push(ModelField {
                 name: field_name.to_string(),
@@ -64,7 +68,16 @@ impl BuildValidator for ModelValidator {
                     Ok((v, _)) => v,
                     Err(err) => return py_error!("Key \"{}\":\n  {}", key, err),
                 },
-                default: field_info.get_as("default")?,
+                required: match field_info.get_as::<bool>("required")? {
+                    Some(required) => {
+                        if required && default.is_some() {
+                            return py_error!("Key \"{}\":\n a required field cannot have a default value", key);
+                        }
+                        required
+                    }
+                    None => model_full,
+                },
+                default,
             });
         }
         Ok(Self {
@@ -120,6 +133,8 @@ impl Validator for ModelValidator {
                         output_dict
                             .set_item(py_key, default.as_ref(py))
                             .map_err(as_internal)?;
+                    } else if !field.required {
+                        continue;
                     } else {
                         errors.push(val_line_error!(
                             input_value = input.as_error_value(),
