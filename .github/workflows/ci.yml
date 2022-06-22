@@ -153,10 +153,9 @@ jobs:
 
     - run: make rust-benchmark
 
-  build_wasm_emscripten:
-    name: build wasm emscripten
-    # only run on push to main and on release
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')"
+  build-wasm-emscripten:
+    # run this for now on all CI for now in case something starts breaking it
+    # if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')"
     needs: [test, lint]
     runs-on: ubuntu-latest
     steps:
@@ -300,7 +299,7 @@ jobs:
       - run: ls -lh dist/
 
   release:
-    needs: [build]
+    needs: [build, build-wasm-emscripten]
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
