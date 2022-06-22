@@ -1,15 +1,15 @@
 import json
 import os
 from datetime import date, datetime, timedelta, timezone
-from typing import Dict, FrozenSet, List, Optional, Set
+from typing import Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 
-from pydantic_core import SchemaValidator
+from pydantic_core import SchemaValidator, ValidationError as CoreValidationError
 
 if os.getenv('BENCHMARK_VS_PYDANTIC'):
     try:
-        from pydantic import BaseModel
+        from pydantic import BaseModel, StrictBool, StrictInt, StrictStr, ValidationError as PydanticValidationError
     except ImportError:
         BaseModel = None
 else:
@@ -613,3 +613,78 @@ class TestBenchmarkDateX:
         v = SchemaValidator({'type': 'date', 'gt': date.today()})
 
         benchmark(v.validate_python, str(date(2032, 1, 1)))
+
+
+class TestBenchmarkUnion:
+    @pytest.mark.benchmark(group='smart-union')
+    def test_smart_union_core(self, benchmark):
+        v = SchemaValidator({'type': 'union', 'choices': [{'type': 'bool'}, {'type': 'int'}, {'type': 'str'}]})
+
+        benchmark(v.validate_python, 1)
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='smart-union')
+    def test_smart_union_pyd(self, benchmark):
+        # default pydantic-core behavior matches pydantic one with `Config.smart_union`
+        class PydanticModel(BaseModel, smart_union=True):
+            __root__: Union[bool, int, str]
+
+        benchmark(PydanticModel.parse_obj, 1)
+
+    @pytest.mark.benchmark(group='smart-union-coerce')
+    def test_smart_union_coerce_core(self, benchmark):
+        v = SchemaValidator({'type': 'union', 'choices': [{'type': 'bool'}, {'type': 'str'}]})
+
+        benchmark(v.validate_python, 1)  # will be True
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='smart-union-coerce')
+    def test_smart_union_coerce_pyd(self, benchmark):
+        class PydanticModel(BaseModel, smart_union=True):
+            __root__: Union[bool, str]
+
+        benchmark(PydanticModel.parse_obj, 1)  # will be True
+
+    @pytest.mark.benchmark(group='strict-union')
+    def test_strict_union_core(self, benchmark):
+        v = SchemaValidator(
+            {'type': 'union', 'strict': True, 'choices': [{'type': 'bool'}, {'type': 'int'}, {'type': 'str'}]}
+        )
+
+        benchmark(v.validate_python, 1)
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='strict-union')
+    def test_strict_union_pyd(self, benchmark):
+        class PydanticModel(BaseModel):
+            __root__: Union[StrictBool, StrictInt, StrictStr]
+
+        benchmark(PydanticModel.parse_obj, 1)  # will be True
+
+    @pytest.mark.benchmark(group='strict-union-error')
+    def test_strict_union_error_core(self, benchmark):
+        v = SchemaValidator({'type': 'union', 'strict': True, 'choices': [{'type': 'bool'}, {'type': 'str'}]})
+
+        def validate_with_expected_error():
+            try:
+                v.validate_python(2)
+                assert False
+            except CoreValidationError:
+                assert True
+
+        benchmark(validate_with_expected_error)
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='strict-union-error')
+    def test_strict_union_error_pyd(self, benchmark):
+        class PydanticModel(BaseModel):
+            __root__: Union[StrictBool, StrictStr]
+
+        def validate_with_expected_error():
+            try:
+                PydanticModel.parse_obj(2)
+                assert False
+            except PydanticValidationError:
+                assert True
+
+        benchmark(validate_with_expected_error)

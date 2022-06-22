@@ -37,6 +37,7 @@ class DictSchema(TypedDict, total=False):
     values: Schema  # default: AnySchema
     min_items: int
     max_items: int
+    strict: bool
 
 
 class FloatSchema(TypedDict, total=False):
@@ -73,6 +74,7 @@ class ListSchema(TypedDict, total=False):
     items: Schema  # default: AnySchema
     min_items: int
     max_items: int
+    strict: bool
 
 
 class LiteralSchema(TypedDict):
@@ -128,7 +130,7 @@ class SetSchema(TypedDict, total=False):
     items: Schema
     min_items: int
     max_items: int
-    strict: int
+    strict: bool
 
 
 class FrozenSetSchema(TypedDict, total=False):
@@ -136,7 +138,7 @@ class FrozenSetSchema(TypedDict, total=False):
     items: Schema
     min_items: int
     max_items: int
-    strict: int
+    strict: bool
 
 
 class StringSchema(TypedDict, total=False):
