@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{GenericMapping, Input, JsonObject, ToLocItem};
+use crate::input::{GenericMapping, Input, JsonObject};
 
 use super::any::AnyValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -120,8 +120,8 @@ macro_rules! build_validate {
                         for err in line_errors {
                             // these are added in reverse order so [key] is shunted along by the second call
                             errors.push(err
-                                .with_prefix_location("[key]".to_loc())
-                                .with_prefix_location(key.to_loc()));
+                                .with_outer_location("[key]".into())
+                                .with_outer_location(key.as_loc_item()));
                         }
                         None
                     }
@@ -131,7 +131,7 @@ macro_rules! build_validate {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
-                            errors.push(err.with_prefix_location(key.to_loc()));
+                            errors.push(err.with_outer_location(key.as_loc_item()));
                         }
                         None
                     }

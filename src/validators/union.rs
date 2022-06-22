@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{LocItem, ValError, ValLineError};
+use crate::errors::{ValError, ValLineError};
 use crate::input::Input;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
@@ -51,7 +51,7 @@ impl Validator for UnionValidator {
                 errors.extend(
                     line_errors
                         .into_iter()
-                        .map(|err| err.with_prefix_location(LocItem::S(validator.get_name(py)))),
+                        .map(|err| err.with_outer_location(validator.get_name(py).into())),
                 );
             }
 
@@ -79,7 +79,7 @@ impl Validator for UnionValidator {
                 errors.extend(
                     line_errors
                         .into_iter()
-                        .map(|err| err.with_prefix_location(LocItem::S(validator.get_name(py)))),
+                        .map(|err| err.with_outer_location(validator.get_name(py).into())),
                 );
             }
 

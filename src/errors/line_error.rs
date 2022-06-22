@@ -6,30 +6,7 @@ use pyo3::types::PyDict;
 use crate::input::JsonInput;
 
 use super::kinds::ErrorKind;
-
-/// Used to store individual items of the error location, e.g. a string for key/field names
-/// or a number for array indices.
-/// Note: ints are also used for keys of `Dict[int, ...]`
-#[derive(Debug, Clone)]
-pub enum LocItem {
-    S(String),
-    I(usize),
-}
-// we could use the From trait to make creating Location's much easier, would it be worth it?
-
-impl fmt::Display for LocItem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            LocItem::S(s) => write!(f, "{}", s),
-            LocItem::I(i) => write!(f, "{}", i),
-        }
-    }
-}
-
-/// Error locations are represented by a vector of `LocItem`s.
-/// e.g. if the error occurred in the third member of a list called `foo`,
-/// the location would be `["foo", 2]`.
-pub type Location = Vec<LocItem>;
+use super::location::{LocItem, Location};
 
 /// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`
 /// to eventually form a `ValidationError`.
@@ -37,16 +14,29 @@ pub type Location = Vec<LocItem>;
 #[derive(Debug, Default)]
 pub struct ValLineError<'a> {
     pub kind: ErrorKind,
-    pub location: Location,
+    // location is reversed so that adding an "outer" location item is pushing, it's reversed before showing to the user
+    pub reverse_location: Location,
     pub message: Option<String>,
     pub input_value: InputValue<'a>,
     pub context: Context,
 }
 
 impl<'a> ValLineError<'a> {
-    pub fn with_prefix_location(mut self, loc_item: LocItem) -> Self {
-        self.location.insert(0, loc_item);
+    /// location is stored reversed so it's quicker to add "outer" items as that's what we always do
+    /// hence `push` here instead of `insert`
+    pub fn with_outer_location(mut self, loc_item: LocItem) -> Self {
+        self.reverse_location.push(loc_item);
         self
+    }
+
+    pub fn into_new<'b>(self, py: Python) -> ValLineError<'b> {
+        ValLineError {
+            kind: self.kind,
+            reverse_location: self.reverse_location,
+            message: self.message,
+            input_value: InputValue::PyObject(self.input_value.to_object(py)),
+            context: self.context,
+        }
     }
 }
 
