@@ -481,3 +481,50 @@ def test_empty_model():
     assert v.validate_python({}) == ({}, set())
     with pytest.raises(ValidationError):
         v.validate_python('x')
+
+
+def test_model_deep():
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'fields': {
+                'field_a': {'schema': 'str'},
+                'field_b': {
+                    'schema': {
+                        'type': 'model',
+                        'fields': {
+                            'field_c': {'schema': 'str'},
+                            'field_d': {
+                                'schema': {
+                                    'type': 'model',
+                                    'fields': {'field_e': {'schema': 'str'}, 'field_f': {'schema': 'int'}},
+                                }
+                            },
+                        },
+                    }
+                },
+            },
+        }
+    )
+    output, fields_set = v.validate_python(
+        {'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 4}}}
+    )
+    assert output == {
+        'field_a': '1',
+        'field_b': (
+            {'field_c': '2', 'field_d': ({'field_e': '4', 'field_f': 4}, {'field_f', 'field_e'})},
+            {'field_d', 'field_c'},
+        ),
+    }
+    assert fields_set == {'field_a', 'field_b'}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 'xx'}}})
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['field_b', 'field_d', 'field_f'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'xx',
+        }
+    ]

@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, py_error, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind, ValError, ValLineError};
-use crate::input::{GenericSequence, Input, ToLocItem};
+use crate::input::{GenericSequence, Input};
 
 use super::any::AnyValidator;
 use super::list::sequence_build_function;
@@ -187,7 +187,7 @@ impl TupleFixLenValidator {
                             errors.extend(
                                 line_errors
                                     .into_iter()
-                                    .map(|err| err.with_prefix_location(index.to_loc())),
+                                    .map(|err| err.with_outer_location(index.into())),
                             );
                         }
                         Err(err) => return Err(err),

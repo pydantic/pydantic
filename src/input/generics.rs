@@ -5,7 +5,6 @@ use crate::errors::{ValError, ValLineError, ValResult};
 use crate::validators::{CombinedValidator, Extra, Validator};
 
 use super::parse_json::{JsonArray, JsonObject};
-use super::ToLocItem;
 
 pub enum GenericSequence<'a> {
     List(&'a PyList),
@@ -49,7 +48,7 @@ macro_rules! build_validate_to_vec {
                         errors.extend(
                             line_errors
                                 .into_iter()
-                                .map(|err| err.with_prefix_location(index.to_loc())),
+                                .map(|err| err.with_outer_location(index.into())),
                         );
                     }
                     Err(err) => return Err(err),

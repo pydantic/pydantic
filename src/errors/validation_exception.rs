@@ -9,9 +9,11 @@ use pyo3::PyErrArguments;
 
 use strum::EnumMessage;
 
-use super::kinds::ErrorKind;
-use super::line_error::{Context, LocItem, Location, ValLineError};
+use crate::input::repr_string;
 
+use super::kinds::ErrorKind;
+use super::line_error::{Context, ValLineError};
+use super::location::Location;
 use super::ValError;
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
@@ -136,7 +138,10 @@ impl PyLineError {
     pub fn new(py: Python, raw_error: ValLineError) -> Self {
         Self {
             kind: raw_error.kind,
-            location: raw_error.location,
+            location: match raw_error.reverse_location.len() {
+                0..=1 => raw_error.reverse_location,
+                _ => raw_error.reverse_location.into_iter().rev().collect(),
+            },
             message: raw_error.message,
             input_value: raw_error.input_value.to_object(py),
             context: raw_error.context,
@@ -146,7 +151,7 @@ impl PyLineError {
     pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
         dict.set_item("kind", self.kind())?;
-        dict.set_item("loc", self.location(py))?;
+        dict.set_item("loc", self.location.to_object(py))?;
         dict.set_item("message", self.message())?;
         dict.set_item("input_value", &self.input_value)?;
         if !self.context.is_empty() {
@@ -157,18 +162,6 @@ impl PyLineError {
 
     fn kind(&self) -> String {
         self.kind.to_string()
-    }
-
-    fn location(&self, py: Python) -> PyObject {
-        let mut loc: Vec<PyObject> = Vec::with_capacity(self.location.len());
-        for location in &self.location {
-            let item: PyObject = match location {
-                LocItem::S(key) => key.into_py(py),
-                LocItem::I(index) => index.into_py(py),
-            };
-            loc.push(item);
-        }
-        loc.into_py(py)
     }
 
     fn message(&self) -> String {
@@ -211,7 +204,7 @@ impl PyLineError {
         }
         if let Some(py) = py {
             let input_value = self.input_value.as_ref(py);
-            let input_str = match repr(input_value) {
+            let input_str = match repr_string(input_value) {
                 Ok(s) => s,
                 Err(_) => input_value.to_string(),
             };
@@ -226,8 +219,4 @@ impl PyLineError {
         output.push(']');
         Ok(output)
     }
-}
-
-fn repr(v: &PyAny) -> PyResult<String> {
-    v.repr()?.extract()
 }
