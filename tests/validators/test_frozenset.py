@@ -51,7 +51,7 @@ def test_frozenset_no_validators_both(py_or_json, input_value, expected):
         (frozenset([1, 2, 3, 2, 3]), {1, 2, 3}),
         ({'abc'}, Err('0\n  Value must be a valid integer')),
         ({1, 2, 'wrong'}, Err('Value must be a valid integer')),
-        ({1: 2}, Err('1 validation error for frozenset-int\n  Value must be a valid frozenset')),
+        ({1: 2}, Err('1 validation error for frozenset[int]\n  Value must be a valid frozenset')),
         ('abc', Err('Value must be a valid frozenset')),
         # Technically correct, but does anyone actually need this? I think needs a new type in pyo3
         pytest.param({1: 10, 2: 20, 3: 30}.keys(), {1, 2, 3}, marks=pytest.mark.xfail(raises=ValidationError)),
@@ -143,14 +143,14 @@ def test_union_frozenset_list(input_value, expected):
                 errors=[
                     {
                         'kind': 'int_type',
-                        'loc': ['frozenset-strict-int', 1],
+                        'loc': ['frozenset[strict-int]', 1],
                         'message': 'Value must be a valid integer',
                         'input_value': 'a',
                     },
                     # second because validation on the string choice comes second
                     {
                         'kind': 'str_type',
-                        'loc': ['frozenset-strict-str', 0],
+                        'loc': ['frozenset[strict-str]', 0],
                         'message': 'Value must be a valid string',
                         'input_value': 1,
                     },
@@ -189,7 +189,7 @@ def test_frozenset_as_dict_keys(py_or_json):
 def test_repr():
     v = SchemaValidator({'type': 'frozenset', 'strict': True, 'min_items': 42})
     assert repr(v) == (
-        'SchemaValidator(name="frozenset-any", validator=FrozenSet(\n'
+        'SchemaValidator(name="frozenset[any]", validator=FrozenSet(\n'
         '    FrozenSetValidator {\n'
         '        strict: true,\n'
         '        item_validator: Any(\n'

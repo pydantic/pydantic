@@ -54,7 +54,7 @@ impl Validator for NullableValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self, py: Python) -> String {
+        format!("{}[{}]", Self::EXPECTED_TYPE, self.validator.get_name(py))
     }
 }

@@ -198,14 +198,14 @@ def test_union_tuple_list(input_value, expected):
                     {
                         # first of all, not a tuple of ints ..
                         'kind': 'tuple_type',
-                        'loc': ['tuple-var-len-int'],
+                        'loc': ['tuple-var-len[int]'],
                         'message': 'Value must be a valid tuple',
                         'input_value': [5],
                     },
                     # .. and not a tuple of strings, either
                     {
                         'kind': 'tuple_type',
-                        'loc': ['tuple-var-len-str'],
+                        'loc': ['tuple-var-len[str]'],
                         'message': 'Value must be a valid tuple',
                         'input_value': [5],
                     },
@@ -246,13 +246,13 @@ def test_union_tuple_var_len(input_value, expected):
                 errors=[
                     {
                         'kind': 'tuple_type',
-                        'loc': ['tuple-fix-len-3-items'],
+                        'loc': ['tuple-fix-len[int, int, int]'],
                         'message': 'Value must be a valid tuple',
                         'input_value': [5, '1', 1],
                     },
                     {
                         'kind': 'tuple_type',
-                        'loc': ['tuple-fix-len-3-items'],
+                        'loc': ['tuple-fix-len[str, str, str]'],
                         'message': 'Value must be a valid tuple',
                         'input_value': [5, '1', 1],
                     },

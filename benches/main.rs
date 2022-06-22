@@ -82,13 +82,24 @@ fn list_error_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
-    let mut code = format!("[{}", (0..90).map(|x| x.to_string()).collect::<Vec<String>>().join(","));
-    code.push_str(r#","a","b","c","d","e","f","g","h","i","j"]"#);
+    let code = format!(
+        "[{}]",
+        (0..100)
+            .map(|v| format!(r#""{}""#, as_str(v)))
+            .collect::<Vec<String>>()
+            .join(", ")
+    );
 
     let input_json = black_box(code.clone());
     match validator.validate_json(py, input_json) {
         Ok(_) => panic!("unexpectedly valid"),
-        Err(e) => e,
+        Err(e) => {
+            let v = e.value(py);
+            // println!("error: {}", v.to_string());
+            assert_eq!(v.getattr("title").unwrap().to_string(), "list[int]");
+            let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
+            assert_eq!(error_count, 100);
+        }
     };
 
     bench.iter(|| {
@@ -105,11 +116,28 @@ fn list_error_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
-    let mut code = format!("[{}", (0..90).map(|x| x.to_string()).collect::<Vec<String>>().join(","));
-    code.push_str(r#","a","b","c","d","e","f","g","h","i","j"]"#);
+    let code = format!(
+        "[{}]",
+        (0..100)
+            .map(|v| format!(r#""{}""#, as_str(v)))
+            .collect::<Vec<String>>()
+            .join(", ")
+    );
 
     let input_python = py.eval(&code, None, None).unwrap();
     let input_python = black_box(input_python.to_object(py));
+
+    match validator.validate_python(py, input_python.as_ref(py)) {
+        Ok(_) => panic!("unexpectedly valid"),
+        Err(e) => {
+            let v = e.value(py);
+            // println!("error: {}", v.to_string());
+            assert_eq!(v.getattr("title").unwrap().to_string(), "list[int]");
+            let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
+            assert_eq!(error_count, 100);
+        }
+    };
+
     bench.iter(|| {
         let result = validator.validate_python(py, black_box(input_python.as_ref(py)));
 
@@ -159,6 +187,10 @@ fn as_char(i: u8) -> char {
     (i % 26 + 97) as char
 }
 
+fn as_str(i: u8) -> String {
+    format!("{}{}", as_char(i / 26), as_char(i))
+}
+
 #[bench]
 fn dict_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
@@ -168,7 +200,7 @@ fn dict_json(bench: &mut Bencher) {
     let code = format!(
         "{{{}}}",
         (0..100_u8)
-            .map(|i| format!(r#""{}{}": {}"#, as_char(i / 26), as_char(i), i))
+            .map(|i| format!(r#""{}": {}"#, as_str(i), i))
             .collect::<Vec<String>>()
             .join(", ")
     );
@@ -203,31 +235,42 @@ fn dict_python(bench: &mut Bencher) {
 }
 
 #[bench]
-fn dict_key_error(bench: &mut Bencher) {
+fn dict_value_error(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(
         py,
         r#"{
             'type': 'dict',
-            'keys': {
+            'keys': 'str',
+            'values': {
                 'type': 'int',
-                'lt': 10,
+                'lt': 0,
             },
-            'values': 'int'
         }"#,
     );
 
     let code = format!(
         "{{{}}}",
         (0..100_u8)
-            .map(|i| format!(r#"{}: {}"#, i, i))
+            .map(|i| format!(r#""{}": {}"#, as_str(i), i))
             .collect::<Vec<String>>()
             .join(", ")
     );
 
     let input_python = py.eval(&code, None, None).unwrap();
     let input_python = black_box(input_python.to_object(py));
+
+    match validator.validate_python(py, input_python.as_ref(py)) {
+        Ok(_) => panic!("unexpectedly valid"),
+        Err(e) => {
+            let v = e.value(py);
+            // println!("error: {}", v.to_string());
+            assert_eq!(v.getattr("title").unwrap().to_string(), "dict[str, constrained-int]");
+            let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
+            assert_eq!(error_count, 100);
+        }
+    };
 
     bench.iter(|| {
         let result = validator.validate_python(py, black_box(input_python.as_ref(py)));
