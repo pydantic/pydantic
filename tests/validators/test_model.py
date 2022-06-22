@@ -61,7 +61,7 @@ def test_missing_error():
     assert (
         str(exc_info.value)
         == """\
-1 validation error for Model
+1 validation error for model
 field_b
   Field required [kind=missing, input_value={'field_a': 123}, input_type=dict]"""
     )

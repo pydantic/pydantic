@@ -20,7 +20,6 @@ struct ModelField {
 
 #[derive(Debug, Clone)]
 pub struct ModelValidator {
-    name: String,
     fields: Vec<ModelField>,
     extra_behavior: ExtraBehavior,
     extra_validator: Option<Box<CombinedValidator>>,
@@ -48,7 +47,6 @@ impl BuildValidator for ModelValidator {
             _ => None,
         };
 
-        let name: String = schema.get_as("name")?.unwrap_or_else(|| "Model".to_string());
         let fields_dict: &PyDict = schema.get_as_req("fields")?;
         let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
         let allow_by_name: bool = config.get_as("allow_population_by_field_name")?.unwrap_or(false);
@@ -81,7 +79,6 @@ impl BuildValidator for ModelValidator {
             });
         }
         Ok(Self {
-            name,
             fields,
             extra_behavior,
             extra_validator,
@@ -206,7 +203,7 @@ impl Validator for ModelValidator {
     }
 
     fn get_name(&self, _py: Python) -> String {
-        self.name.clone()
+        Self::EXPECTED_TYPE.to_string()
     }
 }
 

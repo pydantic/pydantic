@@ -66,7 +66,13 @@ impl Validator for UnionValidator {
         Err(ValError::LineErrors(errors))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self, py: Python) -> String {
+        let descr = self
+            .choices
+            .iter()
+            .map(|v| v.get_name(py))
+            .collect::<Vec<_>>()
+            .join(", ");
+        format!("{}[{}]", Self::EXPECTED_TYPE, descr)
     }
 }

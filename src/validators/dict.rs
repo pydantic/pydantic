@@ -69,8 +69,13 @@ impl Validator for DictValidator {
         self._validation_logic(py, input, input.strict_dict()?, extra, slots)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self, py: Python) -> String {
+        format!(
+            "{}[{}, {}]",
+            Self::EXPECTED_TYPE,
+            self.key_validator.get_name(py),
+            self.value_validator.get_name(py)
+        )
     }
 }
 

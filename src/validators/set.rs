@@ -48,7 +48,7 @@ impl Validator for SetValidator {
     }
 
     fn get_name(&self, py: Python) -> String {
-        format!("{}-{}", Self::EXPECTED_TYPE, self.item_validator.get_name(py))
+        format!("{}[{}]", Self::EXPECTED_TYPE, self.item_validator.get_name(py))
     }
 }
 

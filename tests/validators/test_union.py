@@ -197,13 +197,13 @@ def test_union_list_bool_int():
     assert exc_info.value.errors() == [
         {
             'kind': 'bool_parsing',
-            'loc': ['list-bool', 0],
+            'loc': ['list[bool]', 0],
             'message': 'Value must be a valid boolean, unable to interpret input',
             'input_value': 3,
         },
         {
             'kind': 'int_parsing',
-            'loc': ['list-int', 1],
+            'loc': ['list[int]', 1],
             'message': 'Value must be a valid integer, unable to parse string as an integer',
             'input_value': 'true',
         },
