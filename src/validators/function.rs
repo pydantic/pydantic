@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{as_validation_err, val_line_error, ErrorKind, InputValue, ValError, ValLineError, ValResult};
+use crate::errors::{as_validation_err, val_line_error, ErrorKind, ValError, ValResult};
 use crate::input::Input;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -83,17 +83,12 @@ impl Validator for FunctionBeforeValidator {
             Ok(v) => Ok(v),
             Err(ValError::InternalErr(err)) => Err(ValError::InternalErr(err)),
             Err(ValError::LineErrors(line_errors)) => {
-                // we have to be explicit about copying line errors here and converting the input value
+                // we have to be explicit about clone line errors to a new lifetime since new_input doesn't have
+                // the 'data lifetime
                 Err(ValError::LineErrors(
                     line_errors
                         .into_iter()
-                        .map(|line_error| ValLineError {
-                            kind: line_error.kind,
-                            location: line_error.location,
-                            message: line_error.message,
-                            input_value: InputValue::PyObject(line_error.input_value.to_object(py)),
-                            context: line_error.context,
-                        })
+                        .map(|line_error| line_error.into_new(py))
                         .collect(),
                 ))
             }

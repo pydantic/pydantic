@@ -4,7 +4,7 @@ use pyo3::types::{PyDict, PyList, PySet, PyString};
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, err_val_error, val_line_error, ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{GenericMapping, Input, JsonInput, JsonObject, ToLocItem};
+use crate::input::{GenericMapping, Input, JsonInput, JsonObject};
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -60,7 +60,7 @@ impl BuildValidator for ModelValidator {
 
             fields.push(ModelField {
                 name: field_name.to_string(),
-                lookup_key: LookupKey::from_py(field_info, field_name, allow_by_name)?,
+                lookup_key: LookupKey::from_py(py, field_info, field_name, allow_by_name)?,
                 dict_key: PyString::intern(py, field_name).into(),
                 validator: match build_validator(schema, config, build_context) {
                     Ok((v, _)) => v,
@@ -120,7 +120,7 @@ impl Validator for ModelValidator {
                             Ok(value) => output_dict.set_item(py_key, value).map_err(as_internal)?,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
-                                    errors.push(err.with_prefix_location(field.name.to_loc()));
+                                    errors.push(err.with_outer_location(field.name.clone().into()));
                                 }
                             }
                             Err(err) => return Err(err),
@@ -136,7 +136,7 @@ impl Validator for ModelValidator {
                         errors.push(val_line_error!(
                             input_value = input.as_error_value(),
                             kind = ErrorKind::Missing,
-                            location = vec![field.name.to_loc()]
+                            reverse_location = vec![field.name.clone().into()]
                         ));
                     }
                 }
@@ -153,7 +153,7 @@ impl Validator for ModelValidator {
                             Ok(k) => k.as_raw().map_err(as_internal)?,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
-                                    errors.push(err.with_prefix_location(raw_key.to_loc()));
+                                    errors.push(err.with_outer_location(raw_key.as_loc_item()));
                                 }
                                 continue;
                             }
@@ -169,14 +169,14 @@ impl Validator for ModelValidator {
                             errors.push(val_line_error!(
                                 input_value = input.as_error_value(),
                                 kind = ErrorKind::ExtraForbidden,
-                                location = vec![key.to_loc()]
+                                reverse_location = vec![raw_key.as_loc_item()]
                             ));
                         } else if let Some(ref validator) = self.extra_validator {
                             match validator.validate(py, value, &extra, slots) {
                                 Ok(value) => output_dict.set_item(py_key, value).map_err(as_internal)?,
                                 Err(ValError::LineErrors(line_errors)) => {
                                     for err in line_errors {
-                                        errors.push(err.with_prefix_location(key.to_loc()));
+                                        errors.push(err.with_outer_location(raw_key.as_loc_item()));
                                     }
                                 }
                                 Err(err) => return Err(err),
@@ -236,7 +236,7 @@ impl ModelValidator {
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors
                     .into_iter()
-                    .map(|e| e.with_prefix_location(field.to_loc()))
+                    .map(|e| e.with_outer_location(field.to_string().into()))
                     .collect();
                 Err(ValError::LineErrors(errors))
             }
@@ -256,10 +256,9 @@ impl ModelValidator {
                 // - with forbid this is obvious
                 // - with ignore the model should never be overloaded, so an error is the clearest option
                 _ => {
-                    let loc = vec![field.to_loc()];
                     err_val_error!(
                         input_value = input.as_error_value(),
-                        location = loc,
+                        reverse_location = vec![field.to_string().into()],
                         kind = ErrorKind::ExtraForbidden
                     )
                 }
@@ -292,25 +291,40 @@ impl ExtraBehavior {
 /// Used got getting items from python or JSON objects, in different ways
 #[derive(Debug, Clone)]
 pub enum LookupKey {
-    // simply look up a key in a dict, equivalent to `d.get(key)`
-    Simple(String),
-    // look up a key by either string, equivalent to `d.get(choice1, d.get(choice2))`
-    Choice((String, String)),
-    // look up keys buy one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
-    // ints are also supported to index arrays/lists/tuples and dicts with int keys
-    PathChoices(Vec<Vec<FieldKeyLoc>>),
+    /// simply look up a key in a dict, equivalent to `d.get(key)`
+    /// we save both the string and pystring to save creating the pystring for python
+    Simple(String, PyObject),
+    /// look up a key by either string, equivalent to `d.get(choice1, d.get(choice2))`
+    /// these are interpreted as (json_key1, json_key2, py_key1, py_key2)
+    Choice(String, String, PyObject, PyObject),
+    /// look up keys buy one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
+    /// ints are also supported to index arrays/lists/tuples and dicts with int keys
+    /// we reuse Location as the enum is the same, and the meaning is the same
+    PathChoices(Vec<Path>),
+}
+
+macro_rules! py_string {
+    ($py:ident, $str:expr) => {
+        PyString::intern($py, $str).into()
+    };
 }
 
 impl LookupKey {
-    pub fn from_py(field: &PyDict, field_name: &str, allow_by_name: bool) -> PyResult<Self> {
+    pub fn from_py(py: Python, field: &PyDict, field_name: &str, allow_by_name: bool) -> PyResult<Self> {
         match field.get_as::<String>("alias")? {
             Some(alias) => {
                 if field.contains("aliases")? {
                     py_error!("'alias' and 'aliases' cannot be used together")
                 } else {
+                    let alias_py = py_string!(py, &alias);
                     match allow_by_name {
-                        true => Ok(LookupKey::Choice((alias, field_name.to_string()))),
-                        false => Ok(LookupKey::Simple(alias)),
+                        true => Ok(LookupKey::Choice(
+                            alias,
+                            field_name.to_string(),
+                            alias_py,
+                            py_string!(py, field_name),
+                        )),
+                        false => Ok(LookupKey::Simple(alias, alias_py)),
                     }
                 }
             }
@@ -318,30 +332,30 @@ impl LookupKey {
                 Some(aliases) => {
                     let mut locs = aliases
                         .iter()
-                        .map(Self::path_choice)
-                        .collect::<PyResult<Vec<Vec<FieldKeyLoc>>>>()?;
+                        .map(|obj| Self::path_choice(py, obj))
+                        .collect::<PyResult<Vec<Path>>>()?;
 
                     if locs.is_empty() {
                         py_error!("Aliases must have at least one element")
                     } else {
                         if allow_by_name {
-                            locs.push(vec![FieldKeyLoc::StrKey(field_name.to_string())])
+                            locs.push(vec![PathItem::S(field_name.to_string(), py_string!(py, field_name))])
                         }
                         Ok(LookupKey::PathChoices(locs))
                     }
                 }
-                None => Ok(LookupKey::Simple(field_name.to_string())),
+                None => Ok(LookupKey::Simple(field_name.to_string(), py_string!(py, field_name))),
             },
         }
     }
 
-    fn path_choice(obj: &PyAny) -> PyResult<Vec<FieldKeyLoc>> {
+    fn path_choice(py: Python, obj: &PyAny) -> PyResult<Path> {
         let path = obj
             .extract::<&PyList>()?
             .iter()
             .enumerate()
-            .map(FieldKeyLoc::from_py)
-            .collect::<PyResult<Vec<FieldKeyLoc>>>()?;
+            .map(|(index, obj)| PathItem::from_py(py, index, obj))
+            .collect::<PyResult<Path>>()?;
 
         if path.is_empty() {
             py_error!("Each alias path must have at least one element")
@@ -352,10 +366,10 @@ impl LookupKey {
 
     fn pydict_get<'data, 's>(&'s self, dict: &'data PyDict) -> Option<&'data PyAny> {
         match self {
-            LookupKey::Simple(key) => dict.get_item(key),
-            LookupKey::Choice((key1, key2)) => match dict.get_item(key1) {
+            LookupKey::Simple(_, py_key) => dict.get_item(py_key),
+            LookupKey::Choice(_, _, py_key1, py_key2) => match dict.get_item(py_key1) {
                 Some(v) => Some(v),
-                None => dict.get_item(key2),
+                None => dict.get_item(py_key2),
             },
             LookupKey::PathChoices(path_choices) => {
                 for path in path_choices {
@@ -374,8 +388,8 @@ impl LookupKey {
 
     fn jsonobject_get<'data, 's>(&'s self, dict: &'data JsonObject) -> Option<&'data JsonInput> {
         match self {
-            LookupKey::Simple(key) => dict.get(key),
-            LookupKey::Choice((key1, key2)) => match dict.get(key1) {
+            LookupKey::Simple(key, _) => dict.get(key),
+            LookupKey::Choice(key1, key2, _, _) => match dict.get(key1) {
                 Some(v) => Some(v),
                 None => dict.get(key2),
             },
@@ -406,31 +420,35 @@ impl LookupKey {
 }
 
 #[derive(Debug, Clone)]
-pub enum FieldKeyLoc {
-    // string type key, used to get items from a dict or anything that implements __getitem__
-    StrKey(String),
-    // integer key, used to get items from a list, tuple OR a dict with int keys (python only)
-    IntKey(usize),
+pub enum PathItem {
+    /// string type key, used to get or identify items from a dict or anything that implements `__getitem__`
+    /// as above we store both the string and pystring to save creating the pystring for python
+    S(String, Py<PyString>),
+    /// integer key, used to get items from a list, tuple OR a dict with int keys `Dict[int, ...]` (python only)
+    I(usize),
 }
 
-impl ToPyObject for FieldKeyLoc {
+impl ToPyObject for PathItem {
     fn to_object(&self, py: Python<'_>) -> PyObject {
         match self {
-            Self::StrKey(val) => val.to_object(py),
-            Self::IntKey(val) => val.to_object(py),
+            Self::S(_, val) => val.to_object(py),
+            Self::I(val) => val.to_object(py),
         }
     }
 }
 
-impl FieldKeyLoc {
-    pub fn from_py((index, obj): (usize, &PyAny)) -> PyResult<Self> {
+type Path = Vec<PathItem>;
+
+impl PathItem {
+    pub fn from_py(py: Python, index: usize, obj: &PyAny) -> PyResult<Self> {
         if let Ok(str_key) = obj.extract::<String>() {
-            Ok(FieldKeyLoc::StrKey(str_key))
+            let py_str_key = py_string!(py, &str_key);
+            Ok(Self::S(str_key, py_str_key))
         } else if let Ok(int_key) = obj.extract::<usize>() {
             if index == 0 {
                 py_error!(PyTypeError; "The first item in an alias path must be a string")
             } else {
-                Ok(FieldKeyLoc::IntKey(int_key))
+                Ok(Self::I(int_key))
             }
         } else {
             py_error!(PyTypeError; "Alias path items must be with a string or int")
@@ -456,7 +474,7 @@ impl FieldKeyLoc {
         match any_json {
             JsonInput::Object(v_obj) => self.json_obj_get(v_obj),
             JsonInput::Array(v_array) => match self {
-                Self::IntKey(index) => v_array.get(*index),
+                Self::I(index) => v_array.get(*index),
                 _ => None,
             },
             _ => None,
@@ -465,7 +483,7 @@ impl FieldKeyLoc {
 
     pub fn json_obj_get<'a>(&self, json_obj: &'a JsonObject) -> Option<&'a JsonInput> {
         match self {
-            Self::StrKey(key) => json_obj.get(key),
+            Self::S(key, _) => json_obj.get(key),
             _ => None,
         }
     }
