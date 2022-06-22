@@ -40,7 +40,7 @@ impl<'a> Input<'a> for PyAny {
             Ok(py_str.into())
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
-                Ok(s) => s.to_string(),
+                Ok(s) => s,
                 Err(_) => return err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrUnicode),
             };
             Ok(str.into())
