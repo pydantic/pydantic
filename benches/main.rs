@@ -348,3 +348,57 @@ fn model_python(bench: &mut Bencher) {
         black_box(v)
     })
 }
+
+#[bench]
+fn model_deep_error(bench: &mut Bencher) {
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+    let validator = build_schema_validator(
+        py,
+        r#"{
+            'type': 'model',
+            'fields': {
+                'field_a': {'schema': 'str'},
+                'field_b': {
+                    'schema': {
+                        'type': 'model',
+                        'fields': {
+                            'field_c': {'schema': 'str'},
+                            'field_d': {
+                                'schema': {
+                                    'type': 'model',
+                                    'fields': {'field_e': {'schema': 'str'}, 'field_f': {'schema': 'int'}},
+                                }
+                            },
+                        },
+                    }
+                },
+            },
+        }"#,
+    );
+
+    let code = "{'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 'xx'}}}";
+
+    let input_python = py.eval(&code, None, None).unwrap();
+    let input_python = black_box(input_python.to_object(py));
+
+    match validator.validate_python(py, input_python.as_ref(py)) {
+        Ok(_) => panic!("unexpectedly valid"),
+        Err(e) => {
+            let v = e.value(py);
+            // println!("error: {}", v.to_string());
+            assert_eq!(v.getattr("title").unwrap().to_string(), "model");
+            let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
+            assert_eq!(error_count, 1);
+        }
+    };
+
+    bench.iter(|| {
+        let result = validator.validate_python(py, black_box(input_python.as_ref(py)));
+
+        match result {
+            Ok(_) => panic!("unexpectedly valid"),
+            Err(e) => black_box(e),
+        }
+    })
+}
