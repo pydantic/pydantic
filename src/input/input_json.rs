@@ -23,14 +23,14 @@ impl<'a> Input<'a> for JsonInput {
 
     fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
         match self {
-            JsonInput::String(s) => Ok(s.to_string().into()),
+            JsonInput::String(s) => Ok(s.as_str().into()),
             _ => err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType),
         }
     }
 
     fn lax_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
         match self {
-            JsonInput::String(s) => Ok(s.to_string().into()),
+            JsonInput::String(s) => Ok(s.as_str().into()),
             JsonInput::Int(int) => Ok(int.to_string().into()),
             JsonInput::Float(float) => Ok(float.to_string().into()),
             _ => err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::StrType),
@@ -201,7 +201,7 @@ impl<'a> Input<'a> for String {
     }
 
     fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
-        Ok(self.clone().into())
+        Ok(self.as_str().into())
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]

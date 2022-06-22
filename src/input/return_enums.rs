@@ -1,23 +1,31 @@
+use std::borrow::Cow;
+
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyString};
 
 pub enum EitherString<'a> {
-    Raw(String),
+    Raw(Cow<'a, str>),
     Py(&'a PyString),
 }
 
 impl<'a> EitherString<'a> {
     pub fn as_raw(&self) -> PyResult<String> {
         match self {
-            Self::Raw(date) => Ok(date.clone()),
+            Self::Raw(data) => Ok(data.to_string()),
             Self::Py(py_str) => py_str.extract(),
         }
     }
 }
 
 impl<'a> From<String> for EitherString<'a> {
-    fn from(date: String) -> Self {
-        Self::Raw(date)
+    fn from(data: String) -> Self {
+        Self::Raw(Cow::Owned(data))
+    }
+}
+
+impl<'a> From<&'a str> for EitherString<'a> {
+    fn from(data: &'a str) -> Self {
+        Self::Raw(Cow::Borrowed(data))
     }
 }
 
