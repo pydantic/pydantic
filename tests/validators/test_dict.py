@@ -13,6 +13,32 @@ def test_dict(py_or_json):
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
     v = py_or_json({'type': 'dict', 'strict': True, 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
+    assert v.validate_test({}) == {}
+    with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
+        v.validate_test([])
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ({'1': 1, '2': 2}, {'1': '1', '2': '2'}),
+        ({}, {}),
+        ('foobar', Err("Value must be a valid dictionary [kind=dict_type, input_value='foobar', input_type=str]")),
+        ([], Err('Value must be a valid dictionary [kind=dict_type,')),
+        ([('x', 'y')], Err('Value must be a valid dictionary [kind=dict_type,')),
+        ([('x', 'y'), ('z', 'z')], Err('Value must be a valid dictionary [kind=dict_type,')),
+        ((), Err('Value must be a valid dictionary [kind=dict_type,')),
+        ((('x', 'y'),), Err('Value must be a valid dictionary [kind=dict_type,')),
+    ],
+    ids=repr,
+)
+def test_dict_cases(input_value, expected):
+    v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'str'})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
 
 
 def test_dict_value_error(py_or_json):

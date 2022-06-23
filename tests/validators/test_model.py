@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
@@ -479,7 +481,7 @@ def test_alias_build_error(alias_schema, error):
 def test_empty_model():
     v = SchemaValidator({'type': 'model', 'fields': {}})
     assert v.validate_python({}) == ({}, set())
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match=re.escape('Value must be a valid dictionary [kind=dict_type,')):
         v.validate_python('x')
 
 
