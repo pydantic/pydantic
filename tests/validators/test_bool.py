@@ -34,8 +34,10 @@ def test_bool(py_or_json, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
+        assert v.isinstance_test(input_value) is False
     else:
         assert v.validate_test(input_value) == expected
+        assert v.isinstance_test(input_value) is True
 
 
 def test_bool_strict(py_or_json):
