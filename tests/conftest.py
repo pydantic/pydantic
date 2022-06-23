@@ -33,4 +33,10 @@ def py_or_json(request):
             else:
                 return self.validator.validate_python(py_input)
 
+        def isinstance_test(self, py_input):
+            if request.param == 'json':
+                return self.validator.isinstance_json(json.dumps(py_input))
+            else:
+                return self.validator.isinstance_python(py_input)
+
     return CustomSchemaValidator

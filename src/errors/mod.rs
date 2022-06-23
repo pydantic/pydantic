@@ -7,7 +7,7 @@ mod validation_exception;
 pub use self::kinds::ErrorKind;
 pub use self::line_error::{Context, InputValue, ValLineError};
 pub use self::val_error::{as_internal, ValError, ValResult};
-pub use self::validation_exception::{as_validation_err, ValidationError};
+pub use self::validation_exception::ValidationError;
 
 /// Utility for concisely creating a `ValLineError`
 /// can either take just `py` and a `value` (the given value) in which case kind `ErrorKind::ValueError` is used as kind
@@ -15,7 +15,7 @@ pub use self::validation_exception::{as_validation_err, ValidationError};
 /// or, `py`, `value` and a mapping of other attributes for `ValLineError`
 /// e.g. `val_line_error!(py, "the value provided", kind=ErrorKind::ExtraForbidden, message="the message")`
 macro_rules! val_line_error {
-    ($($key:ident = $val:expr),+) => {
+    ($($key:ident = $val:expr),+ $(,)?) => {
         crate::errors::ValLineError {
             $(
                 $key: $val,

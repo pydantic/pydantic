@@ -2,6 +2,7 @@ import re
 from collections.abc import Mapping
 
 import pytest
+from dirty_equals import HasRepr, IsStr
 
 from pydantic_core import SchemaValidator, ValidationError
 
@@ -111,19 +112,23 @@ def test_mapping():
         v.validate_python(MyMapping({'1': 2, 3: '4'}))
 
 
-def test_dict_mapping():
+def test_dict_try_instance():
     class ClassWithDict:
         def __init__(self):
             self.a = 1
             self.b = 2
             self.c = 'ham'
 
+        @property
+        def d(self):
+            return 'egg'
+
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
     with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
         v.validate_python(ClassWithDict())
 
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}, 'try_instance_as_dict': True})
-    assert v.validate_python(ClassWithDict()) == {'a': 1, 'b': 2, 'c': 'ham'}
+    assert v.validate_python(ClassWithDict()) == {'a': 1, 'b': 2, 'c': 'ham', 'd': 'egg'}
 
 
 def test_key_error():
@@ -137,6 +142,56 @@ def test_key_error():
             'loc': ['x', '[key]'],
             'message': 'Value must be a valid integer, unable to parse string as an integer',
             'input_value': 'x',
+        }
+    ]
+
+
+def test_mapping_error():
+    class MyMapping(Mapping):
+        def __getitem__(self, key):
+            raise None
+
+        def __iter__(self):
+            raise RuntimeError('intentional error')
+
+        def __len__(self):
+            return 1
+
+    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(MyMapping())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'dict_from_mapping',
+            'loc': [],
+            'message': 'Unable to convert mapping to a dictionary, error: RuntimeError: intentional error',
+            'input_value': HasRepr(IsStr(regex='.+MyMapping object at.+')),
+            'context': {'error': 'RuntimeError: intentional error'},
+        }
+    ]
+
+
+def test_dict_try_instance_error():
+    class ClassWithDict:
+        def __init__(self):
+            self.a = 1
+
+        @property
+        def b(self):
+            raise RuntimeError('intentional error')
+
+    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}, 'try_instance_as_dict': True})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(ClassWithDict())
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'dict_from_object',
+            'loc': [],
+            'message': 'Unable to extract dictionary from object, error: RuntimeError: intentional error',
+            'input_value': HasRepr(IsStr(regex='.+ClassWithDict object at.+')),
+            'context': {'error': 'RuntimeError: intentional error'},
         }
     ]
 

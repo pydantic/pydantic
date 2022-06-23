@@ -5,7 +5,6 @@ use std::fmt::Write;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
-use pyo3::PyErrArguments;
 
 use strum::EnumMessage;
 
@@ -20,17 +19,7 @@ use super::ValError;
 #[derive(Debug)]
 pub struct ValidationError {
     line_errors: Vec<PyLineError>,
-    title: String,
-}
-
-pub fn as_validation_err(py: Python, model_name: &str, error: ValError) -> PyErr {
-    match error {
-        ValError::LineErrors(raw_errors) => {
-            let line_errors: Vec<PyLineError> = raw_errors.into_iter().map(|e| PyLineError::new(py, e)).collect();
-            ValidationError::new_err((line_errors, model_name.to_string()))
-        }
-        ValError::InternalErr(err) => err,
-    }
+    title: PyObject,
 }
 
 impl fmt::Display for ValidationError {
@@ -41,16 +30,23 @@ impl fmt::Display for ValidationError {
 }
 
 impl ValidationError {
-    pub fn new_err<A>(args: A) -> PyErr
-    where
-        A: PyErrArguments + Send + Sync + 'static,
-    {
-        PyErr::new::<ValidationError, A>(args)
+    pub fn from_val_error(py: Python, title: PyObject, error: ValError) -> PyErr {
+        match error {
+            ValError::LineErrors(raw_errors) => {
+                let line_errors: Vec<PyLineError> = raw_errors.into_iter().map(|e| PyLineError::new(py, e)).collect();
+                PyErr::new::<ValidationError, _>((line_errors, title))
+            }
+            ValError::InternalErr(err) => err,
+        }
     }
 
     fn display(&self, py: Option<Python>) -> String {
         let count = self.line_errors.len();
         let plural = if count == 1 { "" } else { "s" };
+        let title: &str = match py {
+            Some(py) => self.title.extract(py).unwrap(),
+            None => "Schema",
+        };
         let line_errors = self
             .line_errors
             .iter()
@@ -58,10 +54,7 @@ impl ValidationError {
             .collect::<Result<Vec<_>, _>>()
             .unwrap_or_else(|err| vec![format!("[error formatting line errors: {}]", err)])
             .join("\n");
-        format!(
-            "{} validation error{} for {}\n{}",
-            count, plural, self.title, line_errors
-        )
+        format!("{} validation error{} for {}\n{}", count, plural, title, line_errors)
     }
 }
 
@@ -77,13 +70,13 @@ impl Error for ValidationError {
 #[pymethods]
 impl ValidationError {
     #[new]
-    fn py_new(line_errors: Vec<PyLineError>, title: String) -> Self {
+    fn py_new(line_errors: Vec<PyLineError>, title: PyObject) -> Self {
         Self { line_errors, title }
     }
 
     #[getter]
-    fn title(&self) -> String {
-        self.title.clone()
+    fn title(&self, py: Python) -> PyObject {
+        self.title.clone_ref(py)
     }
 
     fn error_count(&self) -> usize {
@@ -129,7 +122,6 @@ macro_rules! truncate_input_value {
 pub struct PyLineError {
     kind: ErrorKind,
     location: Location,
-    message: Option<String>,
     input_value: PyObject,
     context: Context,
 }
@@ -142,7 +134,6 @@ impl PyLineError {
                 0..=1 => raw_error.reverse_location,
                 _ => raw_error.reverse_location.into_iter().rev().collect(),
             },
-            message: raw_error.message,
             input_value: raw_error.input_value.to_object(py),
             context: raw_error.context,
         }
@@ -152,7 +143,7 @@ impl PyLineError {
         let dict = PyDict::new(py);
         dict.set_item("kind", self.kind())?;
         dict.set_item("loc", self.location.to_object(py))?;
-        dict.set_item("message", self.message())?;
+        dict.set_item("message", self.get_message())?;
         dict.set_item("input_value", &self.input_value)?;
         if !self.context.is_empty() {
             dict.set_item("context", &self.context)?;
@@ -164,24 +155,15 @@ impl PyLineError {
         self.kind.to_string()
     }
 
-    fn message(&self) -> String {
-        let raw = self.raw_message();
+    fn get_message(&self) -> String {
+        let raw = match self.kind.get_message() {
+            Some(message) => message.to_string(),
+            None => self.kind(),
+        };
         if self.context.is_empty() {
             raw
         } else {
             self.context.render(raw)
-        }
-    }
-
-    fn raw_message(&self) -> String {
-        // TODO string substitution
-        if let Some(ref message) = self.message {
-            message.to_string()
-        } else {
-            match self.kind.get_message() {
-                Some(message) => message.to_string(),
-                None => self.kind(),
-            }
         }
     }
 
@@ -197,7 +179,7 @@ impl PyLineError {
             writeln!(output, "{}", &loc)?;
         }
 
-        write!(output, "  {} [kind={}", self.message(), self.kind())?;
+        write!(output, "  {} [kind={}", self.get_message(), self.kind())?;
 
         if !self.context.is_empty() {
             write!(output, ", context={}", self.context)?;

@@ -1,3 +1,4 @@
+use pyo3::exceptions::PyAttributeError;
 use std::str::from_utf8;
 
 use pyo3::prelude::*;
@@ -7,7 +8,7 @@ use pyo3::types::{
 };
 
 use crate::errors::location::LocItem;
-use crate::errors::{as_internal, err_val_error, ErrorKind, InputValue, ValResult};
+use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValResult};
 use crate::input::return_enums::EitherString;
 
 use super::datetime::{
@@ -155,26 +156,25 @@ impl<'a> Input<'a> for PyAny {
     fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<GenericMapping<'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
-        } else if let Some(mapping_seq) = extract_mapping_seq(self) {
-            let dict = match mapping_seq_as_dict(mapping_seq) {
-                Ok(dict) => dict,
+        } else if let Some(result_dict) = mapping_as_dict(self) {
+            match result_dict {
+                Ok(dict) => Ok(dict.into()),
                 Err(err) => {
-                    return err_val_error!(
+                    err_val_error!(
                         input_value = self.as_error_value(),
-                        message = Some(err.to_string()),
-                        kind = ErrorKind::DictFromMapping
+                        kind = ErrorKind::DictFromMapping,
+                        context = context!("error" => err_string(self.py(), err)),
                     )
                 }
-            };
-            Ok(dict.into())
+            }
         } else if try_instance {
             let inner_dict = match instance_as_dict(self) {
                 Ok(dict) => dict,
                 Err(err) => {
                     return err_val_error!(
                         input_value = self.as_error_value(),
-                        message = Some(err.to_string()),
-                        kind = ErrorKind::DictFromObject
+                        kind = ErrorKind::DictFromObject,
+                        context = context!("error" => err_string(self.py(), err)),
                     )
                 }
             };
@@ -373,7 +373,9 @@ impl<'a> Input<'a> for PyAny {
     }
 }
 
-fn extract_mapping_seq(obj: &PyAny) -> Option<&PySequence> {
+/// return None if obj is not a mapping (cast_as::<PyMapping> fails or mapping.items returns an AttributeError)
+/// otherwise try to covert the mapping to a dict and return an Some(error) if it fails
+fn mapping_as_dict(obj: &PyAny) -> Option<PyResult<&PyDict>> {
     let mapping: &PyMapping = match obj.cast_as() {
         Ok(mapping) => mapping,
         Err(_) => return None,
@@ -382,8 +384,14 @@ fn extract_mapping_seq(obj: &PyAny) -> Option<&PySequence> {
     // and returns some things which are definitely not mappings (e.g. str) as mapping,
     // hence we also require that the object as `items` to consider it a mapping
     match mapping.items() {
-        Ok(seq) => Some(seq),
-        Err(_) => None,
+        Ok(seq) => Some(mapping_seq_as_dict(seq)),
+        Err(err) => {
+            if matches!(err.get_type(obj.py()).is_subclass_of::<PyAttributeError>(), Ok(true)) {
+                None
+            } else {
+                Some(Err(err))
+            }
+        }
     }
 }
 
@@ -424,5 +432,24 @@ fn _maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Str
         Ok(Some(str))
     } else {
         Ok(None)
+    }
+}
+
+fn err_string(py: Python, err: PyErr) -> String {
+    let value = err.value(py);
+    match value.get_type().name() {
+        Ok(type_name) => match value.str() {
+            Ok(py_str) => {
+                let str_cow = py_str.to_string_lossy();
+                let str = str_cow.as_ref();
+                if !str.is_empty() {
+                    format!("{}: {}", type_name, str)
+                } else {
+                    type_name.to_string()
+                }
+            }
+            Err(_) => format!("{}: <exception str() failed>", type_name),
+        },
+        Err(_) => "Unknown Error".to_string(),
     }
 }

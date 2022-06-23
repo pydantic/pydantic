@@ -65,8 +65,10 @@ def test_constrained_bytes(py_or_json, opts, input, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input)
+        assert v.isinstance_test(input) is False
     else:
         assert v.validate_test(input) == expected
+        assert v.isinstance_test(input) is True
 
 
 def test_union():

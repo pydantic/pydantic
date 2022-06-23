@@ -16,7 +16,6 @@ pub struct ValLineError<'a> {
     pub kind: ErrorKind,
     // location is reversed so that adding an "outer" location item is pushing, it's reversed before showing to the user
     pub reverse_location: Location,
-    pub message: Option<String>,
     pub input_value: InputValue<'a>,
     pub context: Context,
 }
@@ -33,7 +32,6 @@ impl<'a> ValLineError<'a> {
         ValLineError {
             kind: self.kind,
             reverse_location: self.reverse_location,
-            message: self.message,
             input_value: InputValue::PyObject(self.input_value.to_object(py)),
             context: self.context,
         }

@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{as_validation_err, val_line_error, ErrorKind, ValError, ValResult};
+use crate::errors::{context, val_line_error, ErrorKind, ValError, ValResult, ValidationError};
 use crate::input::Input;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -219,7 +219,7 @@ impl ValidatorCallable {
         };
         self.validator
             .validate(py, arg, &extra, &self.slots)
-            .map_err(|e| as_validation_err(py, "Model", e))
+            .map_err(|e| ValidationError::from_val_error(py, "Model".to_object(py), e))
     }
 
     fn __repr__(&self) -> String {
@@ -256,10 +256,20 @@ fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> Val
     };
 
     let message = match err.value(py).str() {
-        Ok(s) => Some(s.to_string()),
-        Err(err) => return ValError::InternalErr(err),
+        Ok(py_string) => match py_string.to_str() {
+            Ok(s) => match s.is_empty() {
+                true => "Unknown error",
+                false => s,
+            },
+            Err(e) => return ValError::InternalErr(e),
+        },
+        Err(e) => return ValError::InternalErr(e),
     };
     #[allow(clippy::redundant_field_names)]
-    let line_error = val_line_error!(input_value = input.as_error_value(), kind = kind, message = message);
+    let line_error = val_line_error!(
+        input_value = input.as_error_value(),
+        kind = kind,
+        context = context!("error" => message),
+    );
     ValError::LineErrors(vec![line_error])
 }
