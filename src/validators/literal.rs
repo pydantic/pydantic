@@ -64,8 +64,8 @@ impl Validator for LiteralSingleStringValidator {
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let str = input.strict_str()?.as_raw().map_err(as_internal)?;
-        if str == self.expected {
+        let either_str = input.strict_str()?;
+        if either_str.as_cow().as_ref() == self.expected.as_str() {
             Ok(input.to_object(py))
         } else {
             err_val_error!(
@@ -151,8 +151,8 @@ impl Validator for LiteralMultipleStringsValidator {
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
     ) -> ValResult<'data, PyObject> {
-        let str = input.strict_str()?.as_raw().map_err(as_internal)?;
-        if self.expected.contains(&str) {
+        let either_str = input.strict_str()?;
+        if self.expected.contains(either_str.as_cow().as_ref()) {
             Ok(input.to_object(py))
         } else {
             err_val_error!(
@@ -270,8 +270,7 @@ impl Validator for LiteralGeneralValidator {
         }
         if !self.expected_str.is_empty() {
             if let Ok(either_str) = input.strict_str() {
-                let str = either_str.as_raw().map_err(as_internal)?;
-                if self.expected_str.contains(&str) {
+                if self.expected_str.contains(either_str.as_cow().as_ref()) {
                     return Ok(input.to_object(py));
                 }
             }

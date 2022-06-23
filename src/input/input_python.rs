@@ -86,8 +86,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_bool(&self) -> ValResult<bool> {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
-        } else if let Some(str) = _maybe_as_string(self, ErrorKind::BoolParsing)? {
-            str_as_bool(self, &str)
+        } else if let Some(either_str) = maybe_as_string(self, ErrorKind::BoolParsing)? {
+            str_as_bool(self, &either_str.as_cow())
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_bool(self, int)
         } else {
@@ -109,8 +109,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_int(&self) -> ValResult<i64> {
         if let Ok(int) = self.extract::<i64>() {
             Ok(int)
-        } else if let Some(str) = _maybe_as_string(self, ErrorKind::IntParsing)? {
-            str_as_int(self, &str)
+        } else if let Some(either_str) = maybe_as_string(self, ErrorKind::IntParsing)? {
+            str_as_int(self, &either_str.as_cow())
         } else if let Ok(float) = self.lax_float() {
             float_as_int(self, float)
         } else {
@@ -131,8 +131,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_float(&self) -> ValResult<f64> {
         if let Ok(float) = self.extract::<f64>() {
             Ok(float)
-        } else if let Some(str) = _maybe_as_string(self, ErrorKind::FloatParsing)? {
-            match str.parse() {
+        } else if let Some(either_str) = maybe_as_string(self, ErrorKind::FloatParsing)? {
+            match either_str.as_cow().as_ref().parse() {
                 Ok(i) => Ok(i),
                 Err(_) => err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::FloatParsing),
             }
@@ -262,8 +262,8 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             Ok(py_bytes.into())
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
-            let str: String = py_str.extract().map_err(as_internal)?;
-            Ok(str.into_bytes().into())
+            let string = py_str.to_string_lossy().to_string();
+            Ok(string.into_bytes().into())
         } else {
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BytesType)
         }
@@ -421,15 +421,14 @@ fn instance_as_dict(instance: &PyAny) -> PyResult<&PyDict> {
 }
 
 /// Utility for extracting a string from a PyAny, if possible.
-fn _maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<String>> {
-    if let Ok(str) = v.extract::<String>() {
-        Ok(Some(str))
+fn maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<EitherString>> {
+    if let Ok(py_string) = v.cast_as::<PyString>() {
+        Ok(Some(py_string.into()))
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
-        let str = match from_utf8(bytes.as_bytes()) {
-            Ok(s) => s.to_string(),
-            Err(_) => return err_val_error!(input_value = v.as_error_value(), kind = unicode_error),
-        };
-        Ok(Some(str))
+        match from_utf8(bytes.as_bytes()) {
+            Ok(s) => Ok(Some(s.into())),
+            Err(_) => err_val_error!(input_value = v.as_error_value(), kind = unicode_error),
+        }
     } else {
         Ok(None)
     }

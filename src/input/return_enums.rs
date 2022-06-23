@@ -4,28 +4,35 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyString};
 
 pub enum EitherString<'a> {
-    Raw(Cow<'a, str>),
+    Cow(Cow<'a, str>),
     Py(&'a PyString),
 }
 
 impl<'a> EitherString<'a> {
-    pub fn as_raw(&self) -> PyResult<String> {
+    pub fn as_cow(&self) -> Cow<str> {
         match self {
-            Self::Raw(data) => Ok(data.to_string()),
-            Self::Py(py_str) => py_str.extract(),
+            Self::Cow(data) => data.clone(),
+            Self::Py(py_str) => py_str.to_string_lossy(),
+        }
+    }
+
+    pub fn as_py_string(&'a self, py: Python<'a>) -> &'a PyString {
+        match self {
+            Self::Cow(cow) => PyString::new(py, cow),
+            Self::Py(py_string) => py_string,
         }
     }
 }
 
 impl<'a> From<String> for EitherString<'a> {
     fn from(data: String) -> Self {
-        Self::Raw(Cow::Owned(data))
+        Self::Cow(Cow::Owned(data))
     }
 }
 
 impl<'a> From<&'a str> for EitherString<'a> {
     fn from(data: &'a str) -> Self {
-        Self::Raw(Cow::Borrowed(data))
+        Self::Cow(Cow::Borrowed(data))
     }
 }
 
@@ -37,21 +44,24 @@ impl<'a> From<&'a PyString> for EitherString<'a> {
 
 impl<'a> IntoPy<PyObject> for EitherString<'a> {
     fn into_py(self, py: Python<'_>) -> PyObject {
-        match self {
-            EitherString::Raw(string) => PyString::new(py, &string).into_py(py),
-            EitherString::Py(py_string) => py_string.into_py(py),
-        }
+        self.as_py_string(py).into_py(py)
     }
 }
 
 pub enum EitherBytes<'a> {
-    Raw(Vec<u8>),
+    Cow(Cow<'a, [u8]>),
     Py(&'a PyBytes),
 }
 
 impl<'a> From<Vec<u8>> for EitherBytes<'a> {
     fn from(date: Vec<u8>) -> Self {
-        Self::Raw(date)
+        Self::Cow(Cow::Owned(date))
+    }
+}
+
+impl<'a> From<&'a [u8]> for EitherBytes<'a> {
+    fn from(date: &'a [u8]) -> Self {
+        Self::Cow(Cow::Borrowed(date))
     }
 }
 
@@ -64,7 +74,7 @@ impl<'a> From<&'a PyBytes> for EitherBytes<'a> {
 impl<'a> EitherBytes<'a> {
     pub fn len(&'a self) -> PyResult<usize> {
         match self {
-            EitherBytes::Raw(bytes) => Ok(bytes.len()),
+            EitherBytes::Cow(bytes) => Ok(bytes.len()),
             EitherBytes::Py(py_bytes) => py_bytes.len(),
         }
     }
@@ -73,7 +83,7 @@ impl<'a> EitherBytes<'a> {
 impl<'a> IntoPy<PyObject> for EitherBytes<'a> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
-            EitherBytes::Raw(bytes) => PyBytes::new(py, &bytes).into_py(py),
+            EitherBytes::Cow(bytes) => PyBytes::new(py, &bytes).into_py(py),
             EitherBytes::Py(py_bytes) => py_bytes.into_py(py),
         }
     }
