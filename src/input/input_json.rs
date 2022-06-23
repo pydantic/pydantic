@@ -144,7 +144,7 @@ impl<'a> Input<'a> for JsonInput {
 
     fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
         match self {
-            JsonInput::String(s) => Ok(s.clone().into_bytes().into()),
+            JsonInput::String(s) => Ok(s.as_bytes().into()),
             _ => err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::BytesType),
         }
     }
@@ -280,7 +280,7 @@ impl<'a> Input<'a> for String {
     }
 
     fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
-        Ok(self.clone().into_bytes().into())
+        Ok(self.as_bytes().into())
     }
 
     fn strict_date(&self) -> ValResult<EitherDate> {

@@ -114,10 +114,11 @@ impl Validator for ModelValidator {
         macro_rules! process {
             ($dict:ident, $get_method:ident) => {{
                 for field in &self.fields {
-                    let py_key: &PyString = field.dict_key.as_ref(py);
                     if let Some(value) = field.lookup_key.$get_method($dict) {
                         match field.validator.validate(py, value, &extra, slots) {
-                            Ok(value) => output_dict.set_item(py_key, value).map_err(as_internal)?,
+                            Ok(value) => output_dict
+                                .set_item(&field.dict_key, value)
+                                .map_err(as_internal)?,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
                                     errors.push(err.with_outer_location(field.name.clone().into()));
@@ -125,10 +126,10 @@ impl Validator for ModelValidator {
                             }
                             Err(err) => return Err(err),
                         }
-                        fields_set.add(py_key).map_err(as_internal)?;
+                        fields_set.add(&field.dict_key).map_err(as_internal)?;
                     } else if let Some(ref default) = field.default {
                         output_dict
-                            .set_item(py_key, default.as_ref(py))
+                            .set_item(&field.dict_key, default.as_ref(py))
                             .map_err(as_internal)?;
                     } else if !field.required {
                         continue;
@@ -149,8 +150,8 @@ impl Validator for ModelValidator {
                 if check_extra {
                     for (raw_key, value) in $dict.iter() {
                         // TODO use strict_str here if the model is strict
-                        let key: String = match raw_key.lax_str() {
-                            Ok(k) => k.as_raw().map_err(as_internal)?,
+                        let either_str = match raw_key.lax_str() {
+                            Ok(k) => k,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
                                     errors.push(err.with_outer_location(raw_key.as_loc_item()));
@@ -159,7 +160,7 @@ impl Validator for ModelValidator {
                             }
                             Err(err) => return Err(err),
                         };
-                        let py_key = PyString::new(py, &key);
+                        let py_key = either_str.as_py_string(py);
                         if fields_set.contains(py_key).map_err(as_internal)? {
                             continue;
                         }
@@ -183,7 +184,7 @@ impl Validator for ModelValidator {
                             }
                         } else {
                             output_dict
-                                .set_item(&key, value.to_object(py))
+                                .set_item(py_key, value.to_object(py))
                                 .map_err(as_internal)?;
                         }
                     }

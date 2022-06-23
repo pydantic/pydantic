@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
 use crate::build_tools::{is_strict, py_error, schema_or_config};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
+use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{EitherString, Input};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -171,7 +171,8 @@ impl StrConstrainedValidator {
         input: &'data impl Input<'data>,
         either_str: EitherString<'data>,
     ) -> ValResult<'data, PyObject> {
-        let mut str = either_str.as_raw().map_err(as_internal)?;
+        let cow = either_str.as_cow();
+        let mut str = cow.as_ref();
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
@@ -192,7 +193,7 @@ impl StrConstrainedValidator {
             }
         }
         if let Some(pattern) = &self.pattern {
-            if !pattern.is_match(&str) {
+            if !pattern.is_match(str) {
                 return err_val_error!(
                     input_value = input.as_error_value(),
                     kind = ErrorKind::StrPatternMismatch,
@@ -202,16 +203,20 @@ impl StrConstrainedValidator {
         }
 
         if self.strip_whitespace {
-            str = str.trim().to_string();
+            str = str.trim();
         }
 
-        if self.to_lower {
-            str = str.to_lowercase()
+        let py_string = if self.to_lower {
+            PyString::new(py, &str.to_lowercase())
         } else if self.to_upper {
-            str = str.to_uppercase()
-        }
-        let py_str = PyString::new(py, &str);
-        Ok(py_str.into_py(py))
+            PyString::new(py, &str.to_uppercase())
+        } else if self.strip_whitespace {
+            PyString::new(py, str)
+        } else {
+            // we haven't modified the string, return the original as it might be a PyString
+            either_str.as_py_string(py)
+        };
+        Ok(py_string.into_py(py))
     }
 }
 
