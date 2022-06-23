@@ -2,8 +2,8 @@ use std::str::from_utf8;
 
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyBool, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySet, PyString, PyTime,
-    PyTuple, PyType,
+    PyBool, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySequence, PySet, PyString,
+    PyTime, PyTuple, PyType,
 };
 
 use crate::errors::location::LocItem;
@@ -155,10 +155,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<GenericMapping<'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
-        } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
-            // this is ugly, but we'd have to do it in somewhere anyway
-            // we could perhaps use an indexmap instead of a python dict?
-            let dict = match mapping_as_dict(mapping) {
+        } else if let Some(mapping_seq) = extract_mapping_seq(self) {
+            let dict = match mapping_seq_as_dict(mapping_seq) {
                 Ok(dict) => dict,
                 Err(err) => {
                     return err_val_error!(
@@ -375,9 +373,23 @@ impl<'a> Input<'a> for PyAny {
     }
 }
 
-fn mapping_as_dict(mapping: &PyMapping) -> PyResult<&PyDict> {
-    let seq = mapping.items()?;
-    let dict = PyDict::new(mapping.py());
+fn extract_mapping_seq(obj: &PyAny) -> Option<&PySequence> {
+    let mapping: &PyMapping = match obj.cast_as() {
+        Ok(mapping) => mapping,
+        Err(_) => return None,
+    };
+    // see https://github.com/PyO3/pyo3/issues/2072 - the cast_as::<PyMapping> is not entirely accurate
+    // and returns some things which are definitely not mappings (e.g. str) as mapping,
+    // hence we also require that the object as `items` to consider it a mapping
+    match mapping.items() {
+        Ok(seq) => Some(seq),
+        Err(_) => None,
+    }
+}
+
+// creating a temporary dict is slow, we could perhaps use an indexmap instead
+fn mapping_seq_as_dict(seq: &PySequence) -> PyResult<&PyDict> {
+    let dict = PyDict::new(seq.py());
     for r in seq.iter()? {
         let t: &PyTuple = r?.extract()?;
         let k = t.get_item(0)?;
