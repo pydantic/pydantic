@@ -79,8 +79,10 @@ test:
 	coverage run -m pytest
 
 .PHONY: py-benchmark
-py-benchmark:
-	pytest tests/test_benchmarks.py --benchmark-enable --benchmark-autosave
+py-benchmark: BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
+py-benchmark: build-prod
+	@echo "running py-benchmark, saving to: $(BRANCH)"
+	pytest tests/test_benchmarks.py --benchmark-enable --benchmark-save=$(BRANCH)
 
 .PHONY: rust-benchmark
 rust-benchmark:
