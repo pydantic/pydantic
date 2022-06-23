@@ -40,9 +40,11 @@ def test_date(input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
+        assert v.isinstance_python(input_value) is False
     else:
         output = v.validate_python(input_value)
         assert output == expected
+        assert v.isinstance_python(input_value) is True
 
 
 @pytest.mark.parametrize(
@@ -75,9 +77,11 @@ def test_date_json(py_or_json, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
+        assert v.isinstance_test(input_value) is False
     else:
         output = v.validate_test(input_value)
         assert output == expected
+        assert v.isinstance_test(input_value) is True
 
 
 @pytest.mark.parametrize(

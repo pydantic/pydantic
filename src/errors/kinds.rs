@@ -5,7 +5,7 @@ use strum::{Display, EnumMessage};
 pub enum ErrorKind {
     #[strum(message = "Invalid input")]
     InvalidInput,
-    #[strum(message = "Invalid JSON")]
+    #[strum(message = "Invalid JSON: {parser_error}")]
     InvalidJson,
     // ---------------------
     // model specific errors
@@ -61,9 +61,9 @@ pub enum ErrorKind {
     // dict errors
     #[strum(message = "Value must be a valid dictionary")]
     DictType,
-    #[strum(message = "Unable to convert mapping to a dictionary")]
+    #[strum(message = "Unable to convert mapping to a dictionary, error: {error}")]
     DictFromMapping,
-    #[strum(message = "Unable extract dict from object")]
+    #[strum(message = "Unable to extract dictionary from object, error: {error}")]
     DictFromObject,
     // ---------------------
     // list errors
@@ -115,9 +115,9 @@ pub enum ErrorKind {
     BytesTooLong,
     // ---------------------
     // python errors from functions (the messages here will not be used as we sett message in these cases)
-    #[strum(message = "Invalid value")]
+    #[strum(message = "Invalid value: {error}")]
     ValueError,
-    #[strum(message = "Assertion failed")]
+    #[strum(message = "Assertion failed: {error}")]
     AssertionError,
     // ---------------------
     // literals

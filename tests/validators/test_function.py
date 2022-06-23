@@ -29,7 +29,13 @@ def test_function_before_raise():
         assert v.validate_python('input value') == 'input value Changed'
     # debug(str(exc_info.value))
     assert exc_info.value.errors() == [
-        {'kind': 'value_error', 'loc': [], 'message': 'foobar', 'input_value': 'input value'}
+        {
+            'kind': 'value_error',
+            'loc': [],
+            'message': 'Invalid value: foobar',
+            'input_value': 'input value',
+            'context': {'error': 'foobar'},
+        }
     ]
 
 
@@ -280,8 +286,48 @@ def test_raise_assertion_error():
         v.validate_python('input value')
 
     assert exc_info.value.errors() == [
-        {'kind': 'assertion_error', 'loc': [], 'message': 'foobar', 'input_value': 'input value'}
+        {
+            'kind': 'assertion_error',
+            'loc': [],
+            'message': 'Assertion failed: foobar',
+            'input_value': 'input value',
+            'context': {'error': 'foobar'},
+        }
     ]
+
+
+def test_raise_assertion_error_plain():
+    def f(input_value, **kwargs):
+        raise AssertionError
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('input value')
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'assertion_error',
+            'loc': [],
+            'message': 'Assertion failed: Unknown error',
+            'input_value': 'input value',
+            'context': {'error': 'Unknown error'},
+        }
+    ]
+
+
+def test_error_with_error():
+    class MyError(ValueError):
+        def __str__(self):
+            raise RuntimeError('internal error')
+
+    def f(input_value, **kwargs):
+        raise MyError()
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+
+    with pytest.raises(RuntimeError, match='internal error'):
+        v.validate_python('input value')
 
 
 def test_raise_type_error():
