@@ -15,7 +15,6 @@ pub struct DictValidator {
     value_validator: Box<CombinedValidator>,
     min_items: Option<usize>,
     max_items: Option<usize>,
-    try_instance_as_dict: bool,
 }
 
 impl BuildValidator for DictValidator {
@@ -38,7 +37,6 @@ impl BuildValidator for DictValidator {
             },
             min_items: schema.get_as("min_items")?,
             max_items: schema.get_as("max_items")?,
-            try_instance_as_dict: schema.get_as("try_instance_as_dict")?.unwrap_or(false),
         }
         .into())
     }
@@ -54,7 +52,7 @@ impl Validator for DictValidator {
     ) -> ValResult<'data, PyObject> {
         let dict = match self.strict {
             true => input.strict_dict()?,
-            false => input.lax_dict(self.try_instance_as_dict)?,
+            false => input.lax_dict()?,
         };
         self._validation_logic(py, input, dict, extra, slots)
     }
@@ -165,6 +163,7 @@ impl DictValidator {
     ) -> ValResult<'data, PyObject> {
         match dict {
             GenericMapping::PyDict(py_dict) => self.validate_dict(py, input, py_dict, extra, slots),
+            GenericMapping::PyGetAttr(_) => unreachable!(),
             GenericMapping::JsonObject(json_object) => self.validate_json_object(py, input, json_object, extra, slots),
         }
     }

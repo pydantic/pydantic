@@ -62,7 +62,7 @@ impl Validator for ModelClassValidator {
         } else if self.strict {
             err_val_error!(
                 input_value = input.as_error_value(),
-                kind = ErrorKind::ModelType,
+                kind = ErrorKind::ModelClassType,
                 context = context!("class_name" => self.get_name(py))
             )
         } else {
