@@ -126,7 +126,6 @@ def test_model_class_instance_direct():
     assert m3.field_a == 'init'
 
 
-@pytest.mark.xfail(reason="need to fix 'try_instance' in model.rs")
 def test_model_class_instance_subclass():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
@@ -146,7 +145,11 @@ def test_model_class_instance_subclass():
         {
             'type': 'model-class',
             'class_type': MyModel,
-            'model': {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+            'model': {
+                'type': 'model',
+                'fields': {'field_a': {'schema': {'type': 'str'}}},
+                'config': {'from_attributes': True},
+            },
         }
     )
 
@@ -186,7 +189,7 @@ def test_model_class_strict():
         v.validate_python({'field_a': 'test', 'field_b': 12})
     assert exc_info.value.errors() == [
         {
-            'kind': 'model_type',
+            'kind': 'model_class_type',
             'loc': [],
             'message': 'Value must be an instance of MyModel',
             'input_value': {'field_a': 'test', 'field_b': 12},

@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 from collections.abc import Mapping
 
 import pytest
@@ -23,6 +24,7 @@ def test_dict(py_or_json):
     'input_value,expected',
     [
         ({'1': 1, '2': 2}, {'1': '1', '2': '2'}),
+        (OrderedDict(a=1, b=2), {'a': '1', 'b': '2'}),
         ({}, {}),
         ('foobar', Err("Value must be a valid dictionary [kind=dict_type, input_value='foobar', input_type=str]")),
         ([], Err('Value must be a valid dictionary [kind=dict_type,')),
@@ -30,6 +32,7 @@ def test_dict(py_or_json):
         ([('x', 'y'), ('z', 'z')], Err('Value must be a valid dictionary [kind=dict_type,')),
         ((), Err('Value must be a valid dictionary [kind=dict_type,')),
         ((('x', 'y'),), Err('Value must be a valid dictionary [kind=dict_type,')),
+        ((type('Foobar', (), {'x': 1})()), Err('Value must be a valid dictionary [kind=dict_type,')),
     ],
     ids=repr,
 )
@@ -112,25 +115,6 @@ def test_mapping():
         v.validate_python(MyMapping({'1': 2, 3: '4'}))
 
 
-def test_dict_try_instance():
-    class ClassWithDict:
-        def __init__(self):
-            self.a = 1
-            self.b = 2
-            self.c = 'ham'
-
-        @property
-        def d(self):
-            return 'egg'
-
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
-    with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
-        v.validate_python(ClassWithDict())
-
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}, 'try_instance_as_dict': True})
-    assert v.validate_python(ClassWithDict()) == {'a': 1, 'b': 2, 'c': 'ham', 'd': 'egg'}
-
-
 def test_key_error():
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
     assert v.validate_python({'1': True}) == {1: 1}
@@ -147,7 +131,7 @@ def test_key_error():
 
 
 def test_mapping_error():
-    class MyMapping(Mapping):
+    class BadMapping(Mapping):
         def __getitem__(self, key):
             raise None
 
@@ -159,39 +143,47 @@ def test_mapping_error():
 
     v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(MyMapping())
+        v.validate_python(BadMapping())
+
     assert exc_info.value.errors() == [
         {
             'kind': 'dict_from_mapping',
             'loc': [],
             'message': 'Unable to convert mapping to a dictionary, error: RuntimeError: intentional error',
-            'input_value': HasRepr(IsStr(regex='.+MyMapping object at.+')),
+            'input_value': HasRepr(IsStr(regex='.+BadMapping object at.+')),
             'context': {'error': 'RuntimeError: intentional error'},
         }
     ]
 
 
-def test_dict_try_instance_error():
-    class ClassWithDict:
-        def __init__(self):
-            self.a = 1
+def test_mapping_error_yield_1():
+    class BadMapping(Mapping):
+        def items(self):
+            return [(1,)]
 
-        @property
-        def b(self):
-            raise RuntimeError('intentional error')
+        def __iter__(self):
+            return iter({1: 2})
 
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}, 'try_instance_as_dict': True})
+        def __getitem__(self, key):
+            raise None
 
+        def __len__(self):
+            return 1
+
+    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(ClassWithDict())
+        v.validate_python(BadMapping())
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'dict_from_object',
+            'kind': 'dict_from_mapping',
             'loc': [],
-            'message': 'Unable to extract dictionary from object, error: RuntimeError: intentional error',
-            'input_value': HasRepr(IsStr(regex='.+ClassWithDict object at.+')),
-            'context': {'error': 'RuntimeError: intentional error'},
+            'message': (
+                'Unable to convert mapping to a dictionary, error: '
+                'TypeError: mapping items must be a tuple with 2 elements'
+            ),
+            'input_value': HasRepr(IsStr(regex='.+BadMapping object at.+')),
+            'context': {'error': 'TypeError: mapping items must be a tuple with 2 elements'},
         }
     ]
 

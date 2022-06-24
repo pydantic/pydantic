@@ -1,6 +1,7 @@
-use pyo3::exceptions::PyAttributeError;
 use std::str::from_utf8;
 
+use pyo3::exceptions::{PyAttributeError, PyTypeError};
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySequence, PySet, PyString,
@@ -8,18 +9,14 @@ use pyo3::types::{
 };
 
 use crate::errors::location::LocItem;
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, InputValue, ValResult};
-use crate::input::return_enums::EitherString;
+use crate::errors::{as_internal, context, err_val_error, py_err_string, ErrorKind, InputValue, ValResult};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, date_as_datetime, float_as_datetime, float_as_time,
     int_as_datetime, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
-use super::generics::{GenericMapping, GenericSequence};
-use super::input_abstract::Input;
-use super::repr_string;
-use super::return_enums::EitherBytes;
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
+use super::{repr_string, EitherBytes, EitherString, GenericMapping, GenericSequence, Input};
 
 impl<'a> Input<'a> for PyAny {
     fn as_loc_item(&'a self) -> LocItem {
@@ -153,34 +150,43 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_dict<'data>(&'data self, try_instance: bool) -> ValResult<GenericMapping<'data>> {
+    fn lax_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
-        } else if let Some(result_dict) = mapping_as_dict(self) {
-            match result_dict {
-                Ok(dict) => Ok(dict.into()),
-                Err(err) => {
-                    err_val_error!(
-                        input_value = self.as_error_value(),
-                        kind = ErrorKind::DictFromMapping,
-                        context = context!("error" => err_string(self.py(), err)),
-                    )
-                }
-            }
-        } else if try_instance {
-            let inner_dict = match instance_as_dict(self) {
-                Ok(dict) => dict,
-                Err(err) => {
-                    return err_val_error!(
-                        input_value = self.as_error_value(),
-                        kind = ErrorKind::DictFromObject,
-                        context = context!("error" => err_string(self.py(), err)),
-                    )
-                }
-            };
-            Ok(inner_dict.into())
+        } else if let Some(generic_mapping) = mapping_as_dict(self) {
+            generic_mapping
         } else {
             err_val_error!(input_value = self.as_error_value(), kind = ErrorKind::DictType)
+        }
+    }
+
+    fn typed_dict<'data>(&'data self, from_attributes: bool, from_mapping: bool) -> ValResult<GenericMapping<'data>> {
+        if from_attributes {
+            // if from_attributes, first try a dict, then mapping then from_attributes
+            if let Ok(dict) = self.cast_as::<PyDict>() {
+                return Ok(dict.into());
+            } else if from_mapping {
+                // we can't do this in one set of if/else because we need to check from_mapping before doing this
+                if let Some(generic_mapping) = mapping_as_dict(self) {
+                    return generic_mapping;
+                }
+            }
+
+            if from_attributes_applicable(self) {
+                Ok(self.into())
+            } else {
+                // note the error here gives a hint about from_attributes
+                err_val_error!(
+                    input_value = self.as_error_value(),
+                    kind = ErrorKind::DictAttributesType
+                )
+            }
+        } else if from_mapping {
+            // otherwise we just call back to lax_dict if from_mapping is allowed, not there error in this
+            // case (correctly) won't hint about from_attributes
+            self.lax_dict()
+        } else {
+            self.strict_dict()
         }
     }
 
@@ -375,7 +381,7 @@ impl<'a> Input<'a> for PyAny {
 
 /// return None if obj is not a mapping (cast_as::<PyMapping> fails or mapping.items returns an AttributeError)
 /// otherwise try to covert the mapping to a dict and return an Some(error) if it fails
-fn mapping_as_dict(obj: &PyAny) -> Option<PyResult<&PyDict>> {
+fn mapping_as_dict(obj: &PyAny) -> Option<ValResult<GenericMapping>> {
     let mapping: &PyMapping = match obj.cast_as() {
         Ok(mapping) => mapping,
         Err(_) => return None,
@@ -383,15 +389,23 @@ fn mapping_as_dict(obj: &PyAny) -> Option<PyResult<&PyDict>> {
     // see https://github.com/PyO3/pyo3/issues/2072 - the cast_as::<PyMapping> is not entirely accurate
     // and returns some things which are definitely not mappings (e.g. str) as mapping,
     // hence we also require that the object as `items` to consider it a mapping
-    match mapping.items() {
-        Ok(seq) => Some(mapping_seq_as_dict(seq)),
+    let result_dict = match mapping.items() {
+        Ok(seq) => mapping_seq_as_dict(seq),
         Err(err) => {
             if matches!(err.get_type(obj.py()).is_subclass_of::<PyAttributeError>(), Ok(true)) {
-                None
+                return None;
             } else {
-                Some(Err(err))
+                Err(err)
             }
         }
+    };
+    match result_dict {
+        Ok(dict) => Some(Ok(dict.into())),
+        Err(err) => Some(err_val_error!(
+            input_value = obj.as_error_value(),
+            kind = ErrorKind::DictFromMapping,
+            context = context!("error" => py_err_string(obj.py(), err)),
+        )),
     }
 }
 
@@ -400,24 +414,31 @@ fn mapping_seq_as_dict(seq: &PySequence) -> PyResult<&PyDict> {
     let dict = PyDict::new(seq.py());
     for r in seq.iter()? {
         let t: &PyTuple = r?.extract()?;
-        let k = t.get_item(0)?;
-        let v = t.get_item(1)?;
+        if t.len() != 2 {
+            return Err(PyTypeError::new_err("mapping items must be a tuple with 2 elements"));
+        }
+        let k = unsafe { t.get_item_unchecked(0) };
+        let v = unsafe { t.get_item_unchecked(1) };
         dict.set_item(k, v)?;
     }
     Ok(dict)
 }
 
-/// This is equivalent to `GetterDict` in pydantic v1
-fn instance_as_dict(instance: &PyAny) -> PyResult<&PyDict> {
-    let dict = PyDict::new(instance.py());
-    for k_any in instance.dir() {
-        let k_str: &str = k_any.extract()?;
-        if !k_str.starts_with('_') {
-            let v = instance.getattr(k_any)?;
-            dict.set_item(k_any, v)?;
-        }
-    }
-    Ok(dict)
+/// Best effort check of whether it's likely to make sense to inspect obj for attributes and iterate over it
+/// with `obj.dir()`
+fn from_attributes_applicable(obj: &PyAny) -> bool {
+    let module_name = match obj.get_type().getattr(intern!(obj.py(), "__module__")) {
+        Ok(module) => match module.extract::<&str>() {
+            Ok(s) => s,
+            Err(_) => return false,
+        },
+        Err(_) => return false,
+    };
+    // I don't think it's a very good list at all! But it doesn't have to be at perfect, it just needs to avoid
+    // the most egregious foot guns, it's mostly just to catch "builtins"
+    // still happy to add more or do something completely different if anyone has a better idea???
+    // dbg!(obj, module_name);
+    !matches!(module_name, "builtins" | "datetime" | "collections")
 }
 
 /// Utility for extracting a string from a PyAny, if possible.
@@ -431,24 +452,5 @@ fn maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Eith
         }
     } else {
         Ok(None)
-    }
-}
-
-fn err_string(py: Python, err: PyErr) -> String {
-    let value = err.value(py);
-    match value.get_type().name() {
-        Ok(type_name) => match value.str() {
-            Ok(py_str) => {
-                let str_cow = py_str.to_string_lossy();
-                let str = str_cow.as_ref();
-                if !str.is_empty() {
-                    format!("{}: {}", type_name, str)
-                } else {
-                    type_name.to_string()
-                }
-            }
-            Err(_) => format!("{}: <exception str() failed>", type_name),
-        },
-        Err(_) => "Unknown Error".to_string(),
     }
 }

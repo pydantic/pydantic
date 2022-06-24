@@ -1,7 +1,116 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyString};
+use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTuple};
+
+use crate::errors::{ValError, ValLineError, ValResult};
+use crate::validators::{CombinedValidator, Extra, Validator};
+
+use super::parse_json::{JsonArray, JsonObject};
+
+#[derive(Debug)]
+pub enum GenericSequence<'a> {
+    List(&'a PyList),
+    Tuple(&'a PyTuple),
+    Set(&'a PySet),
+    FrozenSet(&'a PyFrozenSet),
+    JsonArray(&'a JsonArray),
+}
+
+macro_rules! derive_from {
+    ($enum:ident, $key:ident, $type:ty) => {
+        impl<'a> From<&'a $type> for $enum<'a> {
+            fn from(s: &'a $type) -> $enum<'a> {
+                Self::$key(s)
+            }
+        }
+    };
+}
+derive_from!(GenericSequence, List, PyList);
+derive_from!(GenericSequence, Tuple, PyTuple);
+derive_from!(GenericSequence, Set, PySet);
+derive_from!(GenericSequence, FrozenSet, PyFrozenSet);
+derive_from!(GenericSequence, JsonArray, JsonArray);
+
+macro_rules! build_validate_to_vec {
+    ($name:ident, $sequence_type:ty) => {
+        fn $name<'a, 's>(
+            py: Python<'a>,
+            sequence: &'a $sequence_type,
+            length: usize,
+            validator: &'s CombinedValidator,
+            extra: &Extra,
+            slots: &'a [CombinedValidator],
+        ) -> ValResult<'a, Vec<PyObject>> {
+            let mut output: Vec<PyObject> = Vec::with_capacity(length);
+            let mut errors: Vec<ValLineError> = Vec::new();
+            for (index, item) in sequence.iter().enumerate() {
+                match validator.validate(py, item, extra, slots) {
+                    Ok(item) => output.push(item),
+                    Err(ValError::LineErrors(line_errors)) => {
+                        errors.extend(
+                            line_errors
+                                .into_iter()
+                                .map(|err| err.with_outer_location(index.into())),
+                        );
+                    }
+                    Err(err) => return Err(err),
+                }
+            }
+
+            if errors.is_empty() {
+                Ok(output)
+            } else {
+                Err(ValError::LineErrors(errors))
+            }
+        }
+    };
+}
+build_validate_to_vec!(validate_to_vec_list, PyList);
+build_validate_to_vec!(validate_to_vec_tuple, PyTuple);
+build_validate_to_vec!(validate_to_vec_set, PySet);
+build_validate_to_vec!(validate_to_vec_frozenset, PyFrozenSet);
+build_validate_to_vec!(validate_to_vec_jsonarray, JsonArray);
+
+impl<'a> GenericSequence<'a> {
+    pub fn generic_len(&self) -> usize {
+        match self {
+            Self::List(v) => v.len(),
+            Self::Tuple(v) => v.len(),
+            Self::Set(v) => v.len(),
+            Self::FrozenSet(v) => v.len(),
+            Self::JsonArray(v) => v.len(),
+        }
+    }
+
+    pub fn validate_to_vec<'s>(
+        &self,
+        py: Python<'a>,
+        length: usize,
+        validator: &'s CombinedValidator,
+        extra: &Extra,
+        slots: &'a [CombinedValidator],
+    ) -> ValResult<'a, Vec<PyObject>> {
+        match self {
+            Self::List(sequence) => validate_to_vec_list(py, sequence, length, validator, extra, slots),
+            Self::Tuple(sequence) => validate_to_vec_tuple(py, sequence, length, validator, extra, slots),
+            Self::Set(sequence) => validate_to_vec_set(py, sequence, length, validator, extra, slots),
+            Self::FrozenSet(sequence) => validate_to_vec_frozenset(py, sequence, length, validator, extra, slots),
+            Self::JsonArray(sequence) => validate_to_vec_jsonarray(py, sequence, length, validator, extra, slots),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum GenericMapping<'a> {
+    PyDict(&'a PyDict),
+    PyGetAttr(&'a PyAny),
+    JsonObject(&'a JsonObject),
+}
+
+derive_from!(GenericMapping, PyDict, PyDict);
+derive_from!(GenericMapping, PyGetAttr, PyAny);
+derive_from!(GenericMapping, JsonObject, JsonObject);
 
 pub enum EitherString<'a> {
     Cow(Cow<'a, str>),

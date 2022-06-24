@@ -51,6 +51,7 @@ testpaths = 'tests'
 log_format = '%(name)s %(levelname)s: %(message)s'
 filterwarnings = 'error'
 timeout = 30
+xfail_strict = true
 # min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
 addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
