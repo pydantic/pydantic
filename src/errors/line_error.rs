@@ -8,6 +8,20 @@ use crate::input::JsonInput;
 use super::kinds::ErrorKind;
 use super::location::{LocItem, Location};
 
+pub type ValResult<'a, T> = Result<T, ValError<'a>>;
+
+#[derive(Debug)]
+pub enum ValError<'a> {
+    LineErrors(Vec<ValLineError<'a>>),
+    InternalErr(PyErr),
+}
+
+// ValError used to implement Error, see #78 for removed code
+
+pub fn as_internal<'a>(err: PyErr) -> ValError<'a> {
+    ValError::InternalErr(err)
+}
+
 /// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`
 /// to eventually form a `ValidationError`.
 /// I don't like the name `ValLineError`, but it's the best I could come up with (for now).
@@ -25,6 +39,12 @@ impl<'a> ValLineError<'a> {
     /// hence `push` here instead of `insert`
     pub fn with_outer_location(mut self, loc_item: LocItem) -> Self {
         self.reverse_location.push(loc_item);
+        self
+    }
+
+    // change the kind on a error in place
+    pub fn with_kind(mut self, kind: ErrorKind) -> Self {
+        self.kind = kind;
         self
     }
 

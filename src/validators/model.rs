@@ -1,9 +1,12 @@
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyAttributeError, PyTypeError};
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PySet, PyString};
+use pyo3::types::{PyDict, PyFunction, PyList, PySet, PyString};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{as_internal, err_val_error, val_line_error, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{
+    as_internal, context, err_val_error, py_err_string, val_line_error, ErrorKind, ValError, ValLineError, ValResult,
+};
 use crate::input::{GenericMapping, Input, JsonInput, JsonObject};
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -23,6 +26,8 @@ pub struct ModelValidator {
     fields: Vec<ModelField>,
     extra_behavior: ExtraBehavior,
     extra_validator: Option<Box<CombinedValidator>>,
+    strict: bool,
+    from_attributes: bool,
 }
 
 impl BuildValidator for ModelValidator {
@@ -37,19 +42,29 @@ impl BuildValidator for ModelValidator {
         let config: Option<&PyDict> = schema.get_as("config")?;
 
         let model_full = config.get_as("model_full")?.unwrap_or(true);
+        let strict = config.get_as("strict")?.unwrap_or(false);
+        let from_attributes = config.get_as("from_attributes")?.unwrap_or(false);
 
-        let extra_behavior = ExtraBehavior::from_py(config)?;
-        let extra_validator = match extra_behavior {
-            ExtraBehavior::Allow => match schema.get_item("extra_validator") {
-                Some(v) => Some(Box::new(build_validator(v, config, build_context)?.0)),
-                None => None,
+        let extra_behavior = match config.get_as::<&str>("extra_behavior")? {
+            Some(s) => match s {
+                "allow" => ExtraBehavior::Allow,
+                "ignore" => ExtraBehavior::Ignore,
+                "forbid" => ExtraBehavior::Forbid,
+                _ => return py_error!(r#"Invalid extra_behavior: "{}""#, s),
             },
-            _ => None,
+            None => ExtraBehavior::Ignore,
+        };
+        let extra_validator = match schema.get_item("extra_validator") {
+            Some(v) => match extra_behavior {
+                ExtraBehavior::Allow => Some(Box::new(build_validator(v, config, build_context)?.0)),
+                _ => return py_error!("extra_validator can only be used if extra_behavior=allow"),
+            },
+            None => None,
         };
 
+        let populate_by_name: bool = config.get_as("populate_by_name")?.unwrap_or(false);
         let fields_dict: &PyDict = schema.get_as_req("fields")?;
         let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
-        let allow_by_name: bool = config.get_as("allow_population_by_field_name")?.unwrap_or(false);
 
         let py = schema.py();
         for (key, value) in fields_dict.iter() {
@@ -60,7 +75,7 @@ impl BuildValidator for ModelValidator {
 
             fields.push(ModelField {
                 name: field_name.to_string(),
-                lookup_key: LookupKey::from_py(py, field_info, field_name, allow_by_name)?,
+                lookup_key: LookupKey::from_py(py, field_info, field_name, populate_by_name)?,
                 dict_key: PyString::intern(py, field_name).into(),
                 validator: match build_validator(schema, config, build_context) {
                     Ok((v, _)) => v,
@@ -82,6 +97,8 @@ impl BuildValidator for ModelValidator {
             fields,
             extra_behavior,
             extra_validator,
+            strict,
+            from_attributes,
         }
         .into())
     }
@@ -100,8 +117,7 @@ impl Validator for ModelValidator {
             return self.validate_assignment(py, field, input, extra, slots);
         }
 
-        // TODO allow _try_instance to be configurable
-        let dict = input.lax_dict(false)?;
+        let dict = input.typed_dict(self.from_attributes, !self.strict)?;
         let output_dict = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
         let fields_set = PySet::empty(py).map_err(as_internal)?;
@@ -112,9 +128,22 @@ impl Validator for ModelValidator {
         };
 
         macro_rules! process {
-            ($dict:ident, $get_method:ident) => {{
+            ($dict:ident, $get_method:ident, $iter:block) => {{
                 for field in &self.fields {
-                    if let Some(value) = field.lookup_key.$get_method($dict) {
+                    let op_value = match field.lookup_key.$get_method($dict) {
+                        Ok(v) => v,
+                        Err(err) => {
+                            // we're setting every member on ValLineError, so clippy complains if we use val_line_error!
+                            errors.push(ValLineError {
+                                input_value: input.as_error_value(),
+                                kind: ErrorKind::ModelAttributeError,
+                                reverse_location: vec![field.name.clone().into()],
+                                context: context!("error" => py_err_string(py, err)),
+                            });
+                            continue;
+                        },
+                    };
+                    if let Some(value) = op_value {
                         match field.validator.validate(py, value, &extra, slots) {
                             Ok(value) => output_dict
                                 .set_item(&field.dict_key, value)
@@ -148,13 +177,13 @@ impl Validator for ModelValidator {
                     ExtraBehavior::Forbid => (true, true),
                 };
                 if check_extra {
-                    for (raw_key, value) in $dict.iter() {
+                    for (raw_key, value) in $iter {
                         // TODO use strict_str here if the model is strict
-                        let either_str = match raw_key.lax_str() {
+                        let either_str = match raw_key.strict_str() {
                             Ok(k) => k,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
-                                    errors.push(err.with_outer_location(raw_key.as_loc_item()));
+                                    errors.push(err.with_outer_location(raw_key.as_loc_item()).with_kind(ErrorKind::InvalidKey));
                                 }
                                 continue;
                             }
@@ -192,8 +221,9 @@ impl Validator for ModelValidator {
             }};
         }
         match dict {
-            GenericMapping::PyDict(d) => process!(d, pydict_get),
-            GenericMapping::JsonObject(d) => process!(d, jsonobject_get),
+            GenericMapping::PyDict(d) => process!(d, py_get_item, { d.iter() }),
+            GenericMapping::PyGetAttr(d) => process!(d, py_get_attr, { IterAttributes::new(d) }),
+            GenericMapping::JsonObject(d) => process!(d, json_get, { d.iter() }),
         }
 
         if errors.is_empty() {
@@ -223,7 +253,7 @@ impl ModelValidator {
         // TODO probably we should set location on errors here
         let data = match extra.data {
             Some(data) => data,
-            None => panic!("data is required when validating assignment"),
+            None => unreachable!(),
         };
 
         let prepare_tuple = |output: PyObject| {
@@ -275,20 +305,6 @@ enum ExtraBehavior {
     Forbid,
 }
 
-impl ExtraBehavior {
-    pub fn from_py(config: Option<&PyDict>) -> PyResult<Self> {
-        match config.get_as::<&str>("extra")? {
-            Some(s) => match s {
-                "allow" => Ok(ExtraBehavior::Allow),
-                "ignore" => Ok(ExtraBehavior::Ignore),
-                "forbid" => Ok(ExtraBehavior::Forbid),
-                _ => py_error!(r#"Invalid extra_behavior: "{}""#, s),
-            },
-            None => Ok(ExtraBehavior::Ignore),
-        }
-    }
-}
-
 /// Used got getting items from python or JSON objects, in different ways
 #[derive(Debug, Clone)]
 pub enum LookupKey {
@@ -311,14 +327,14 @@ macro_rules! py_string {
 }
 
 impl LookupKey {
-    pub fn from_py(py: Python, field: &PyDict, field_name: &str, allow_by_name: bool) -> PyResult<Self> {
+    pub fn from_py(py: Python, field: &PyDict, field_name: &str, populate_by_name: bool) -> PyResult<Self> {
         match field.get_as::<String>("alias")? {
             Some(alias) => {
                 if field.contains("aliases")? {
                     py_error!("'alias' and 'aliases' cannot be used together")
                 } else {
                     let alias_py = py_string!(py, &alias);
-                    match allow_by_name {
+                    match populate_by_name {
                         true => Ok(LookupKey::Choice(
                             alias,
                             field_name.to_string(),
@@ -339,7 +355,7 @@ impl LookupKey {
                     if locs.is_empty() {
                         py_error!("Aliases must have at least one element")
                     } else {
-                        if allow_by_name {
+                        if populate_by_name {
                             locs.push(vec![PathItem::S(field_name.to_string(), py_string!(py, field_name))])
                         }
                         Ok(LookupKey::PathChoices(locs))
@@ -365,35 +381,59 @@ impl LookupKey {
         }
     }
 
-    fn pydict_get<'data, 's>(&'s self, dict: &'data PyDict) -> Option<&'data PyAny> {
+    fn py_get_item<'data, 's>(&'s self, dict: &'data PyDict) -> PyResult<Option<&'data PyAny>> {
         match self {
-            LookupKey::Simple(_, py_key) => dict.get_item(py_key),
-            LookupKey::Choice(_, _, py_key1, py_key2) => match dict.get_item(py_key1) {
-                Some(v) => Some(v),
-                None => dict.get_item(py_key2),
-            },
+            LookupKey::Simple(_, py_key) => Ok(dict.get_item(py_key)),
+            LookupKey::Choice(_, _, py_key1, py_key2) => Ok(dict.get_item(py_key1).or_else(|| dict.get_item(py_key2))),
             LookupKey::PathChoices(path_choices) => {
                 for path in path_choices {
                     // iterate over the path and plug each value into the py_any from the last step, starting with dict
                     // this could just be a loop but should be somewhat faster with a functional design
-                    if let Some(v) = path.iter().try_fold(dict as &PyAny, |d, loc| loc.py_get(d)) {
+                    if let Some(v) = path.iter().try_fold(dict as &PyAny, |d, loc| loc.py_get_item(d)) {
                         // Successfully found an item, return it
-                        return Some(v);
+                        return Ok(Some(v));
                     }
                 }
                 // got to the end of path_choices, without a match, return None
-                None
+                Ok(None)
             }
         }
     }
 
-    fn jsonobject_get<'data, 's>(&'s self, dict: &'data JsonObject) -> Option<&'data JsonInput> {
+    fn py_get_attr<'data, 's>(&'s self, obj: &'data PyAny) -> PyResult<Option<&'data PyAny>> {
         match self {
-            LookupKey::Simple(key, _) => dict.get(key),
-            LookupKey::Choice(key1, key2, _, _) => match dict.get(key1) {
-                Some(v) => Some(v),
-                None => dict.get(key2),
+            LookupKey::Simple(_, py_key) => py_get_attrs(obj, &py_key),
+            LookupKey::Choice(_, _, py_key1, py_key2) => match py_get_attrs(obj, &py_key1)? {
+                Some(v) => Ok(Some(v)),
+                None => py_get_attrs(obj, &py_key2),
             },
+            LookupKey::PathChoices(path_choices) => {
+                'outer: for path in path_choices {
+                    // similar to above, but using `py_get_attrs`, we can't use try_fold because of the extra Err
+                    // so we have to loop manually
+                    let mut v = obj;
+                    for loc in path {
+                        v = match loc.py_get_attrs(v) {
+                            Ok(Some(v)) => v,
+                            Ok(None) => {
+                                continue 'outer;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                    }
+                    // Successfully found an item, return it
+                    return Ok(Some(v));
+                }
+                // got to the end of path_choices, without a match, return None
+                Ok(None)
+            }
+        }
+    }
+
+    fn json_get<'data, 's>(&'s self, dict: &'data JsonObject) -> PyResult<Option<&'data JsonInput>> {
+        match self {
+            LookupKey::Simple(key, _) => Ok(dict.get(key)),
+            LookupKey::Choice(key1, key2, _, _) => Ok(dict.get(key1).or_else(|| dict.get(key2))),
             LookupKey::PathChoices(path_choices) => {
                 for path in path_choices {
                     let mut path_iter = path.iter();
@@ -410,11 +450,11 @@ impl LookupKey {
                     // from the first step, this could just be a loop but should be somewhat faster with a functional design
                     if let Some(v) = path_iter.try_fold(v, |d, loc| loc.json_get(d)) {
                         // Successfully found an item, return it
-                        return Some(v);
+                        return Ok(Some(v));
                     }
                 }
                 // got to the end of path_choices, without a match, return None
-                None
+                Ok(None)
             }
         }
     }
@@ -456,18 +496,28 @@ impl PathItem {
         }
     }
 
-    pub fn py_get<'a>(&self, py_any: &'a PyAny) -> Option<&'a PyAny> {
+    pub fn py_get_item<'a>(&self, py_any: &'a PyAny) -> Option<&'a PyAny> {
         // we definitely don't want to index strings, so explicitly omit this case
         if py_any.cast_as::<PyString>().is_ok() {
             None
         } else {
             // otherwise, blindly try getitem on v since no better logic is realistic
-            // TODO we could perhaps try getattr for StrKey depending on try_instance
-            match py_any.get_item(self) {
-                Ok(v_next) => Some(v_next),
-                // key/index not found, try next path
-                Err(_) => None,
+            py_any.get_item(self).ok()
+        }
+    }
+
+    pub fn py_get_attrs<'a>(&self, obj: &'a PyAny) -> PyResult<Option<&'a PyAny>> {
+        match self {
+            Self::S(_, py_key) => {
+                // if obj is a dict, we want to use get_item, not getattr
+                if obj.cast_as::<PyDict>().is_ok() {
+                    Ok(self.py_get_item(obj))
+                } else {
+                    py_get_attrs(obj, py_key)
+                }
             }
+            // int, we fall back to py_get_item - e.g. we want to use get_item for a list, tuple, dict, etc.
+            Self::I(_) => Ok(self.py_get_item(obj)),
         }
     }
 
@@ -488,4 +538,75 @@ impl PathItem {
             _ => None,
         }
     }
+}
+
+/// wrapper around `getattr` that returns `Ok(None)` for attribute errors, but returns other errors
+/// We dont check `try_from_attributes` because that check was performed on the top level object before we got here
+fn py_get_attrs<N>(obj: &PyAny, attr_name: N) -> PyResult<Option<&PyAny>>
+where
+    N: ToPyObject,
+{
+    match obj.getattr(attr_name) {
+        Ok(attr) => Ok(Some(attr)),
+        Err(err) => {
+            if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {
+                Ok(None)
+            } else {
+                Err(err)
+            }
+        }
+    }
+}
+
+pub struct IterAttributes<'a> {
+    object: &'a PyAny,
+    attributes: &'a PyList,
+    index: usize,
+}
+
+impl<'a> IterAttributes<'a> {
+    pub fn new(object: &'a PyAny) -> Self {
+        Self {
+            object,
+            attributes: object.dir(),
+            index: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for IterAttributes<'a> {
+    type Item = (&'a PyAny, &'a PyAny);
+
+    fn next(&mut self) -> Option<(&'a PyAny, &'a PyAny)> {
+        // loop until we find an attribute who's name does not start with underscore,
+        // or we get to the end of the list of attributes
+        loop {
+            if self.index < self.attributes.len() {
+                let name: &PyAny = unsafe { self.attributes.get_item_unchecked(self.index) };
+                self.index += 1;
+                // from benchmarks this is 14x faster than using the python `startswith` method
+                let name_cow = name
+                    .cast_as::<PyString>()
+                    .expect("dir didn't return a PyString")
+                    .to_string_lossy();
+                if !name_cow.as_ref().starts_with('_') {
+                    // getattr is most likely to fail due to an exception in a @property, skip
+                    if let Ok(attr) = self.object.getattr(name) {
+                        // we don't want bound methods to be included, is there a better way to check?
+                        // ref https://stackoverflow.com/a/18955425/949890
+                        let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
+                        // the is_instance_of::<PyFunction> catches `staticmethod`, but also any other function,
+                        // I think that's better than including static methods in the yielded attributes,
+                        // if someone really wants fields, they can use an explicit field, or a function to modify input
+                        if !is_bound && !matches!(attr.is_instance_of::<PyFunction>(), Ok(true)) {
+                            return Some((name, attr));
+                        }
+                    }
+                }
+            } else {
+                return None;
+            }
+        }
+    }
+    // size_hint is omitted as it isn't needed
 }

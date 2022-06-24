@@ -53,7 +53,7 @@ def test_error_loc():
             'type': 'model',
             'fields': {'field_a': {'schema': {'type': 'list', 'items': {'type': 'int'}}}},
             'extra_validator': {'type': 'int'},
-            'config': {'extra': 'allow'},
+            'config': {'extra_behavior': 'allow'},
         }
     )
 

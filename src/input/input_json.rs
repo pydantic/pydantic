@@ -7,11 +7,8 @@ use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, float_as_datetime, float_as_time, int_as_datetime, int_as_time,
     EitherDate, EitherDateTime, EitherTime,
 };
-use super::generics::{GenericMapping, GenericSequence};
-use super::input_abstract::Input;
-use super::parse_json::JsonInput;
-use super::return_enums::{EitherBytes, EitherString};
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
+use super::{EitherBytes, EitherString, GenericMapping, GenericSequence, Input, JsonInput};
 
 impl<'a> Input<'a> for JsonInput {
     /// This is required by since JSON object keys are always strings, I don't think it can be called
