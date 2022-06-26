@@ -30,6 +30,9 @@ def py_or_json(request):
         def __init__(self, schema):
             self.validator = SchemaValidator(schema)
 
+        def validate_python(self, py_input):
+            return self.validator.validate_python(py_input)
+
         def validate_test(self, py_input):
             if request.param == 'json':
                 return self.validator.validate_json(json.dumps(py_input))
