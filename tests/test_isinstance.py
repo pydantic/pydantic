@@ -48,7 +48,11 @@ def test_isinstance_json():
 
 def test_internal_error():
     v = SchemaValidator(
-        {'type': 'model-class', 'class_type': int, 'model': {'type': 'model', 'fields': {'f': {'schema': 'int'}}}}
+        {
+            'type': 'model-class',
+            'class_type': int,
+            'model': {'type': 'model', 'return_fields_set': True, 'fields': {'f': {'schema': 'int'}}},
+        }
     )
     with pytest.raises(AttributeError, match="'int' object has no attribute '__dict__'"):
         v.validate_python({'f': 123})

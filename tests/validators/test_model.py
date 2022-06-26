@@ -43,10 +43,7 @@ def test_simple():
         {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
     )
 
-    assert v.validate_python({'field_a': 123, 'field_b': 1}) == (
-        {'field_a': '123', 'field_b': 1},
-        {'field_b', 'field_a'},
-    )
+    assert v.validate_python({'field_a': 123, 'field_b': 1}) == {'field_a': '123', 'field_b': 1}
 
 
 def test_strict():
@@ -58,10 +55,8 @@ def test_strict():
         }
     )
 
-    assert v.validate_python({'field_a': 'hello', 'field_b': 12}) == (
-        {'field_a': 'hello', 'field_b': 12},
-        {'field_b', 'field_a'},
-    )
+    assert v.validate_python({'field_a': 'hello', 'field_b': 12}) == {'field_a': 'hello', 'field_b': 12}
+
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'field_a': 123, 'field_b': '123'})
     assert exc_info.value.errors() == [
@@ -74,6 +69,7 @@ def test_with_default():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}, 'default': 666}},
         }
     )
@@ -126,13 +122,17 @@ def test_config(config, input_value, expected):
             val = v.validate_python(input_value)
             print(f'UNEXPECTED OUTPUT: {val!r}')
     else:
-        output_dict, _ = v.validate_python(input_value)
+        output_dict = v.validate_python(input_value)
         assert output_dict == expected
 
 
 def test_ignore_extra():
     v = SchemaValidator(
-        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
+        {
+            'type': 'model',
+            'return_fields_set': True,
+            'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+        }
     )
 
     assert v.validate_python({'field_a': 123, 'field_b': 1, 'field_c': 123}) == (
@@ -143,7 +143,12 @@ def test_ignore_extra():
 
 def test_forbid_extra():
     v = SchemaValidator(
-        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'extra_behavior': 'forbid'}}
+        {
+            'type': 'model',
+            'return_fields_set': True,
+            'fields': {'field_a': {'schema': {'type': 'str'}}},
+            'config': {'extra_behavior': 'forbid'},
+        }
     )
 
     with pytest.raises(ValidationError, match='field_b | Extra values are not permitted'):
@@ -152,7 +157,12 @@ def test_forbid_extra():
 
 def test_allow_extra():
     v = SchemaValidator(
-        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'extra_behavior': 'allow'}}
+        {
+            'type': 'model',
+            'return_fields_set': True,
+            'fields': {'field_a': {'schema': {'type': 'str'}}},
+            'config': {'extra_behavior': 'allow'},
+        }
     )
 
     assert v.validate_python({'field_a': 123, 'field_b': (1, 2)}) == (
@@ -165,6 +175,7 @@ def test_allow_extra_validate():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'field_a': {'schema': {'type': 'str'}}},
             'extra_validator': {'type': 'int'},
             'config': {'extra_behavior': 'allow'},
@@ -204,14 +215,16 @@ def test_str_config():
     v = SchemaValidator(
         {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'str_max_length': 5}}
     )
-    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == {'field_a': 'test'}
 
     with pytest.raises(ValidationError, match='String must have at most 5 characters'):
         v.validate_python({'field_a': 'test long'})
 
 
 def test_validate_assignment():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}})
+    v = SchemaValidator(
+        {'type': 'model', 'return_fields_set': True, 'fields': {'field_a': {'schema': {'type': 'str'}}}}
+    )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
@@ -232,6 +245,7 @@ def test_validate_assignment_functions():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {
                 'field_a': {
                     'schema': {'type': 'function', 'mode': 'after', 'function': func_a, 'schema': {'type': 'str'}}
@@ -259,7 +273,9 @@ def test_validate_assignment_functions():
 
 
 def test_validate_assignment_ignore_extra():
-    v = SchemaValidator({'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}})
+    v = SchemaValidator(
+        {'type': 'model', 'return_fields_set': True, 'fields': {'field_a': {'schema': {'type': 'str'}}}}
+    )
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
@@ -281,12 +297,9 @@ def test_validate_assignment_allow_extra():
         {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}, 'config': {'extra_behavior': 'allow'}}
     )
 
-    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == {'field_a': 'test'}
 
-    assert v.validate_assignment('other_field', 456, {'field_a': 'test'}) == (
-        {'field_a': 'test', 'other_field': 456},
-        {'other_field'},
-    )
+    assert v.validate_assignment('other_field', 456, {'field_a': 'test'}) == {'field_a': 'test', 'other_field': 456}
 
 
 def test_validate_assignment_allow_extra_validate():
@@ -299,10 +312,8 @@ def test_validate_assignment_allow_extra_validate():
         }
     )
 
-    assert v.validate_assignment('other_field', '456', {'field_a': 'test'}) == (
-        {'field_a': 'test', 'other_field': 456},
-        {'other_field'},
-    )
+    assert v.validate_assignment('other_field', '456', {'field_a': 'test'}) == {'field_a': 'test', 'other_field': 456}
+
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_assignment('other_field', 'xyz', {'field_a': 'test'})
     assert exc_info.value.errors() == [
@@ -331,7 +342,7 @@ def test_json_error():
 
 
 def test_missing_schema_key():
-    with pytest.raises(SchemaError, match='"schema" is required'):
+    with pytest.raises(SchemaError, match='SchemaError: Field "x":\n  KeyError: \'schema\''):
         SchemaValidator({'type': 'model', 'fields': {'x': {'type': 'str'}}})
 
 
@@ -341,7 +352,7 @@ def test_fields_required_by_default():
         {'type': 'model', 'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}}}}
     )
 
-    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == {'x': 'pika', 'y': 'chu'}
 
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'x': 'pika'})
@@ -355,6 +366,7 @@ def test_fields_required_by_default_with_optional():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}, 'required': False}},
         }
     )
@@ -367,6 +379,7 @@ def test_fields_required_by_default_with_default():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}, 'default': 'bulbi'}},
         }
     )
@@ -381,6 +394,7 @@ def test_all_optional_fields():
         {
             'type': 'model',
             'config': {'model_full': False},
+            'return_fields_set': True,
             'fields': {'x': {'schema': {'type': 'str', 'strict': True}}, 'y': {'schema': {'type': 'str'}}},
         }
     )
@@ -402,6 +416,7 @@ def test_all_optional_fields_with_required_fields():
         {
             'type': 'model',
             'config': {'model_full': False},
+            'return_fields_set': True,
             'fields': {
                 'x': {'schema': {'type': 'str', 'strict': True}, 'required': True},
                 'y': {'schema': {'type': 'str'}},
@@ -422,7 +437,7 @@ def test_all_optional_fields_with_required_fields():
 
 def test_field_required_and_default():
     """A field cannot be required and have a default value"""
-    with pytest.raises(SchemaError, match='Key "x":\n a required field cannot have a default value'):
+    with pytest.raises(SchemaError, match='Field "x": a required field cannot have a default value'):
         SchemaValidator(
             {'type': 'model', 'fields': {'x': {'schema': {'type': 'str'}, 'required': True, 'default': 'pika'}}}
         )
@@ -430,7 +445,7 @@ def test_field_required_and_default():
 
 def test_alias(py_or_json):
     v = py_or_json({'type': 'model', 'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}}})
-    assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, {'field_a'})
+    assert v.validate_test({'FieldA': '123'}) == {'field_a': 123}
     with pytest.raises(ValidationError, match=r'field_a\n +Field required \[kind=missing,'):
         assert v.validate_test({'foobar': '123'})
     with pytest.raises(ValidationError, match=r'field_a\n +Field required \[kind=missing,'):
@@ -441,6 +456,7 @@ def test_alias_allow_pop(py_or_json):
     v = py_or_json(
         {
             'type': 'model',
+            'return_fields_set': True,
             'config': {'populate_by_name': True},
             'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}},
         }
@@ -455,7 +471,7 @@ def test_alias_allow_pop(py_or_json):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ({'foo': {'bar': '123'}}, ({'field_a': 123}, {'field_a'})),
+        ({'foo': {'bar': '123'}}, {'field_a': 123}),
         ({'x': '123'}, Err(r'field_a\n +Field required \[kind=missing,')),
         ({'foo': '123'}, Err(r'field_a\n +Field required \[kind=missing,')),
         ({'foo': [1, 2, 3]}, Err(r'field_a\n +Field required \[kind=missing,')),
@@ -493,6 +509,7 @@ def test_aliases_path_multiple(py_or_json, input_value, expected):
     v = py_or_json(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'field_a': {'aliases': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
         }
     )
@@ -539,7 +556,7 @@ def test_paths_allow_by_name(py_or_json, input_value):
             'config': {'populate_by_name': True},
         }
     )
-    assert v.validate_test(input_value) == ({'field_a': 42}, {'field_a'})
+    assert v.validate_test(input_value) == {'field_a': 42}
 
 
 @pytest.mark.parametrize(
@@ -561,7 +578,7 @@ def test_alias_build_error(alias_schema, error):
 
 
 def test_empty_model():
-    v = SchemaValidator({'type': 'model', 'fields': {}})
+    v = SchemaValidator({'type': 'model', 'fields': {}, 'return_fields_set': True})
     assert v.validate_python({}) == ({}, set())
     with pytest.raises(ValidationError, match=re.escape('Value must be a valid dictionary [kind=dict_type,')):
         v.validate_python('x')
@@ -571,16 +588,19 @@ def test_model_deep():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {
                 'field_a': {'schema': 'str'},
                 'field_b': {
                     'schema': {
                         'type': 'model',
+                        'return_fields_set': True,
                         'fields': {
                             'field_c': {'schema': 'str'},
                             'field_d': {
                                 'schema': {
                                     'type': 'model',
+                                    'return_fields_set': True,
                                     'fields': {'field_e': {'schema': 'str'}, 'field_f': {'schema': 'int'}},
                                 }
                             },
@@ -649,6 +669,7 @@ def test_from_attributes(input_value, expected):
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'a': {'schema': 'int'}, 'b': {'schema': 'int'}, 'c': {'schema': 'str'}},
             'config': {'from_attributes': True},
         }
@@ -687,6 +708,7 @@ def test_from_attributes_by_name():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'a': {'schema': 'int', 'alias': 'a_alias'}},
             'config': {'from_attributes': True, 'populate_by_name': True},
         }
@@ -793,6 +815,7 @@ def test_from_attributes_extra():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'a': {'schema': 'int'}},
             'config': {'from_attributes': True, 'extra_behavior': 'allow'},
         }
@@ -823,7 +846,7 @@ def foobar():
 def test_from_attributes_function(input_value, expected):
     v = SchemaValidator({'type': 'model', 'fields': {'a': {'schema': 'any'}}, 'config': {'from_attributes': True}})
 
-    assert v.validate_python(input_value) == (expected, {'a'})
+    assert v.validate_python(input_value) == expected
 
 
 def test_from_attributes_error_error():
@@ -873,13 +896,13 @@ def test_from_attributes_error_error():
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ({'foo': {'bar': {'bat': '123'}}}, ({'my_field': 123}, {'my_field'})),
-        (Cls(foo=Cls(bar=Cls(bat='123'))), ({'my_field': 123}, {'my_field'})),
-        (Cls(foo={'bar': {'bat': '123'}}), ({'my_field': 123}, {'my_field'})),
-        (Cls(foo=[1, 2, 3, 4]), ({'my_field': 4}, {'my_field'})),
-        (Cls(foo=(1, 2, 3, 4)), ({'my_field': 4}, {'my_field'})),
-        (Cls(spam=5), ({'my_field': 5}, {'my_field'})),
-        (Cls(spam=1, foo=Cls(bar=Cls(bat=2))), ({'my_field': 2}, {'my_field'})),
+        ({'foo': {'bar': {'bat': '123'}}}, {'my_field': 123}),
+        (Cls(foo=Cls(bar=Cls(bat='123'))), {'my_field': 123}),
+        (Cls(foo={'bar': {'bat': '123'}}), {'my_field': 123}),
+        (Cls(foo=[1, 2, 3, 4]), {'my_field': 4}),
+        (Cls(foo=(1, 2, 3, 4)), {'my_field': 4}),
+        (Cls(spam=5), {'my_field': 5}),
+        (Cls(spam=1, foo=Cls(bar=Cls(bat=2))), {'my_field': 2}),
         (Cls(x='123'), Err(r'my_field\n +Field required \[kind=missing,')),
         (Cls(x={2: 33}), Err(r'my_field\n +Field required \[kind=missing,')),
         (Cls(foo='01234'), Err(r'my_field\n +Field required \[kind=missing,')),

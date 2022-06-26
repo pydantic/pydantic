@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'src/**.rs'
-      - 'tests/test_benchmarks.py'
+      - 'tests/benchmarks/**'
       - 'Cargo.toml'
       - '.github/workflows/benchmarks.yml'
     branches:
@@ -55,7 +55,7 @@ jobs:
       - run: rm tests/__init__.py
 
       - run: >
-          pytest tests/test_benchmarks.py
+          pytest tests/benchmarks/
           --benchmark-enable
           --benchmark-json output.json
 

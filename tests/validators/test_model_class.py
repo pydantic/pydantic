@@ -18,6 +18,7 @@ def test_model_class():
             'class_type': MyModel,
             'model': {
                 'type': 'model',
+                'return_fields_set': True,
                 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
             },
         }
@@ -51,7 +52,7 @@ def test_model_class_setattr():
         {
             'type': 'model-class',
             'class_type': MyModel,
-            'model': {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+            'model': {'type': 'model', 'return_fields_set': True, 'fields': {'field_a': {'schema': {'type': 'str'}}}},
         }
     )
     m = v.validate_python({'field_a': 'test'})
@@ -78,7 +79,11 @@ def test_model_class_root_validator():
             'schema': {
                 'type': 'model-class',
                 'class_type': MyModel,
-                'model': {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+                'model': {
+                    'type': 'model',
+                    'return_fields_set': True,
+                    'fields': {'field_a': {'schema': {'type': 'str'}}},
+                },
             },
         }
     )
@@ -112,7 +117,7 @@ def test_model_class_instance_direct():
         {
             'type': 'model-class',
             'class_type': MyModel,
-            'model': {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+            'model': {'type': 'model', 'return_fields_set': True, 'fields': {'field_a': {'schema': {'type': 'str'}}}},
         }
     )
     m1 = v.validate_python({'field_a': 'test'})
@@ -147,6 +152,7 @@ def test_model_class_instance_subclass():
             'class_type': MyModel,
             'model': {
                 'type': 'model',
+                'return_fields_set': True,
                 'fields': {'field_a': {'schema': {'type': 'str'}}},
                 'config': {'from_attributes': True},
             },
@@ -174,6 +180,7 @@ def test_model_class_strict():
             'class_type': MyModel,
             'model': {
                 'type': 'model',
+                'return_fields_set': True,
                 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
             },
         }
@@ -200,7 +207,11 @@ def test_model_class_strict():
 
 def test_internal_error():
     v = SchemaValidator(
-        {'type': 'model-class', 'class_type': int, 'model': {'type': 'model', 'fields': {'f': {'schema': 'int'}}}}
+        {
+            'type': 'model-class',
+            'class_type': int,
+            'model': {'type': 'model', 'return_fields_set': True, 'fields': {'f': {'schema': 'int'}}},
+        }
     )
     with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
         v.validate_python({'f': 123})

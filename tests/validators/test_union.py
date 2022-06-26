@@ -50,52 +50,56 @@ class TestModelClass:
     class ModelB:
         pass
 
-    v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {
-                    'type': 'model-class',
-                    'class_type': ModelA,
-                    'model': {
-                        'type': 'model',
-                        'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
+    @pytest.fixture(scope='class')
+    def schema_validator(self):
+        return SchemaValidator(
+            {
+                'type': 'union',
+                'choices': [
+                    {
+                        'type': 'model-class',
+                        'class_type': self.ModelA,
+                        'model': {
+                            'type': 'model',
+                            'return_fields_set': True,
+                            'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
+                        },
                     },
-                },
-                {
-                    'type': 'model-class',
-                    'class_type': ModelB,
-                    'model': {
-                        'type': 'model',
-                        'fields': {'c': {'schema': {'type': 'int'}}, 'd': {'schema': {'type': 'str'}}},
+                    {
+                        'type': 'model-class',
+                        'class_type': self.ModelB,
+                        'model': {
+                            'type': 'model',
+                            'return_fields_set': True,
+                            'fields': {'c': {'schema': {'type': 'int'}}, 'd': {'schema': {'type': 'str'}}},
+                        },
                     },
-                },
-            ],
-        }
-    )
+                ],
+            }
+        )
 
-    def test_model_a(self):
-        m_a = self.v.validate_python({'a': 1, 'b': 'hello'})
+    def test_model_a(self, schema_validator):
+        m_a = schema_validator.validate_python({'a': 1, 'b': 'hello'})
         assert isinstance(m_a, self.ModelA)
         assert m_a.a == 1
         assert m_a.b == 'hello'
 
-    def test_model_b(self):
-        m_b = self.v.validate_python({'c': 2, 'd': 'again'})
+    def test_model_b(self, schema_validator):
+        m_b = schema_validator.validate_python({'c': 2, 'd': 'again'})
         assert isinstance(m_b, self.ModelB)
         assert m_b.c == 2
         assert m_b.d == 'again'
 
-    def test_exact_check(self):
-        m_b = self.v.validate_python({'c': 2, 'd': 'again'})
+    def test_exact_check(self, schema_validator):
+        m_b = schema_validator.validate_python({'c': 2, 'd': 'again'})
         assert isinstance(m_b, self.ModelB)
 
-        m_b2 = self.v.validate_python(m_b)
+        m_b2 = schema_validator.validate_python(m_b)
         assert m_b2 is m_b
 
-    def test_error(self):
+    def test_error(self, schema_validator):
         with pytest.raises(ValidationError) as exc_info:
-            self.v.validate_python({'a': 2})
+            schema_validator.validate_python({'a': 2})
         assert exc_info.value.errors() == [
             {'kind': 'missing', 'loc': ['ModelA', 'b'], 'message': 'Field required', 'input_value': {'a': 2}},
             {'kind': 'missing', 'loc': ['ModelB', 'c'], 'message': 'Field required', 'input_value': {'a': 2}},
@@ -110,55 +114,59 @@ class TestModelClassSimilar:
     class ModelB:
         pass
 
-    v = SchemaValidator(
-        {
-            'type': 'union',
-            'choices': [
-                {
-                    'type': 'model-class',
-                    'class_type': ModelA,
-                    'model': {
-                        'type': 'model',
-                        'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
-                    },
-                },
-                {
-                    'type': 'model-class',
-                    'class_type': ModelB,
-                    'model': {
-                        'type': 'model',
-                        'fields': {
-                            'a': {'schema': {'type': 'int'}},
-                            'b': {'schema': {'type': 'str'}},
-                            'c': {'schema': {'type': 'float'}, 'default': 1.0},
+    @pytest.fixture(scope='class')
+    def schema_validator(self):
+        return SchemaValidator(
+            {
+                'type': 'union',
+                'choices': [
+                    {
+                        'type': 'model-class',
+                        'class_type': self.ModelA,
+                        'model': {
+                            'type': 'model',
+                            'return_fields_set': True,
+                            'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
                         },
                     },
-                },
-            ],
-        }
-    )
+                    {
+                        'type': 'model-class',
+                        'class_type': self.ModelB,
+                        'model': {
+                            'type': 'model',
+                            'return_fields_set': True,
+                            'fields': {
+                                'a': {'schema': {'type': 'int'}},
+                                'b': {'schema': {'type': 'str'}},
+                                'c': {'schema': {'type': 'float'}, 'default': 1.0},
+                            },
+                        },
+                    },
+                ],
+            }
+        )
 
-    def test_model_a(self):
-        m = self.v.validate_python({'a': 1, 'b': 'hello'})
+    def test_model_a(self, schema_validator):
+        m = schema_validator.validate_python({'a': 1, 'b': 'hello'})
         assert isinstance(m, self.ModelA)
         assert m.a == 1
         assert m.b == 'hello'
         assert not hasattr(m, 'c')
 
-    def test_model_b_ignored(self):
+    def test_model_b_ignored(self, schema_validator):
         # first choice works, so second choice is not used
-        m = self.v.validate_python({'a': 1, 'b': 'hello', 'c': 2.0})
+        m = schema_validator.validate_python({'a': 1, 'b': 'hello', 'c': 2.0})
         assert isinstance(m, self.ModelA)
         assert m.a == 1
         assert m.b == 'hello'
         assert not hasattr(m, 'c')
 
-    def test_model_b_not_ignored(self):
+    def test_model_b_not_ignored(self, schema_validator):
         m1 = self.ModelB()
         m1.a = 1
         m1.b = 'hello'
         m1.c = 2.0
-        m2 = self.v.validate_python(m1)
+        m2 = schema_validator.validate_python(m1)
         assert isinstance(m2, self.ModelB)
         assert m2.a == 1
         assert m2.b == 'hello'
@@ -214,7 +222,7 @@ def test_no_choices():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator({'type': 'union'})
 
-    assert exc_info.value.args[0] == ('Error building "union" validator:\n' '  KeyError: \'"choices" is required\'')
+    assert exc_info.value.args[0] == 'Error building "union" validator:\n  KeyError: \'choices\''
 
 
 def test_strict_union():

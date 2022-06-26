@@ -36,6 +36,10 @@ impl BuildValidator for ModelClassValidator {
         if &model_type != "model" {
             return py_error!("model-class expected a 'model' schema, got '{}'", model_type);
         }
+        let return_fields_set = model_schema.get_as("return_fields_set")?.unwrap_or(false);
+        if !return_fields_set {
+            return py_error!(r#"model-class inner model must have "return_fields_set" set to True"#);
+        }
 
         Ok(Self {
             // we don't use is_strict here since we don't want validation to be strict in this case if

@@ -136,9 +136,9 @@ def test_date_strict_json(input_value, expected):
             '2000-01-02',
             Err('Value must be less than or equal to 2000-01-01 [kind=less_than_equal,'),
         ),
-        ({'lt': date(2000, 1, 1)}, '1999-12-31', date(1999, 12, 31)),
-        ({'lt': date(2000, 1, 1)}, '2000-01-01', Err('Value must be less than 2000-01-01 [kind=less_than,')),
-        ({'ge': date(2000, 1, 1)}, '2000-01-01', date(2000, 1, 1)),
+        ({'lt': '2000-01-01'}, '1999-12-31', date(1999, 12, 31)),
+        ({'lt': '2000-01-01'}, '2000-01-01', Err('Value must be less than 2000-01-01 [kind=less_than,')),
+        ({'ge': '2000-01-01'}, '2000-01-01', date(2000, 1, 1)),
         (
             {'ge': date(2000, 1, 1)},
             '1999-12-31',
@@ -159,8 +159,8 @@ def test_date_kwargs(kwargs, input_value, expected):
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match="'str' object cannot be converted to 'PyDate'"):
-        SchemaValidator({'type': 'date', 'gt': '2000-01-01'})
+    with pytest.raises(SchemaError, match='Invalid "gt" constraint for date:  Value must be a valid date in the forma'):
+        SchemaValidator({'type': 'date', 'gt': 'foobar'})
 
 
 def test_dict_py():

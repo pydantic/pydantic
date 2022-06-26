@@ -20,16 +20,16 @@ def test_build_error_internal():
 
 
 def test_build_error_deep():
-    msg = (
-        'Error building "model" validator:\n'
-        '  SchemaError: Key "age":\n'
-        '  SchemaError: Error building "int" validator:\n'
-        '  TypeError: \'str\' object cannot be interpreted as an integer'  # noqa Q003
-    )
-    with pytest.raises(SchemaError, match=msg):
+    with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(
             {'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'schema': {'type': 'int', 'ge': 'not-int'}}}}
         )
+    assert str(exc_info.value) == (
+        'Error building "model" validator:\n'
+        '  SchemaError: Field "age":\n'
+        '  SchemaError: Error building "int" validator:\n'
+        "  TypeError: 'str' object cannot be interpreted as an integer"
+    )
 
 
 def test_schema_as_string():

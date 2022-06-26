@@ -83,7 +83,7 @@ def test_function_before_error_model():
         }
     )
 
-    assert v.validate_python({'my_field': '1234'}) == ({'my_field': '1234x'}, {'my_field'})
+    assert v.validate_python({'my_field': '1234'}) == {'my_field': '1234x'}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'my_field': '12345'})
     assert exc_info.value.errors() == [
@@ -158,10 +158,7 @@ def test_function_after_data():
         }
     )
 
-    assert v.validate_python({'field_a': '123', 'field_b': 321}) == (
-        {'field_a': 123, 'field_b': '321 Changed'},
-        {'field_b', 'field_a'},
-    )
+    assert v.validate_python({'field_a': '123', 'field_b': 321}) == {'field_a': 123, 'field_b': '321 Changed'}
     assert f_kwargs == {'data': {'field_a': 123}, 'config': None}
 
 
@@ -186,7 +183,7 @@ def test_function_after_config():
         }
     )
 
-    assert v.validate_python({'test_field': 321}) == ({'test_field': '321 Changed'}, {'test_field'})
+    assert v.validate_python({'test_field': 321}) == {'test_field': '321 Changed'}
     assert f_kwargs == {'data': {}, 'config': {'foo': 'bar'}}
 
 
@@ -218,8 +215,7 @@ def test_function_plain():
 
 def test_validate_assignment():
     def f(input_value, **kwargs):
-        data, fields_set = input_value
-        data['more'] = 'foobar'
+        input_value['more'] = 'foobar'
         return input_value
 
     v = SchemaValidator(
@@ -232,8 +228,8 @@ def test_validate_assignment():
     )
 
     m = {'field_a': 'test', 'more': 'foobar'}
-    assert v.validate_python({'field_a': 'test'}) == (m, {'field_a'})
-    assert v.validate_assignment('field_a', 456, m) == ({'field_a': '456', 'more': 'foobar'}, {'field_a'})
+    assert v.validate_python({'field_a': 'test'}) == m
+    assert v.validate_assignment('field_a', 456, m) == {'field_a': '456', 'more': 'foobar'}
 
 
 def test_function_wrong_sig():

@@ -435,3 +435,23 @@ fn model_deep_error(bench: &mut Bencher) {
         }
     })
 }
+
+#[bench]
+fn complete_model(bench: &mut Bencher) {
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+
+    let sys_path = py.import("sys").unwrap().getattr("path").unwrap();
+    sys_path.call_method1("append", ("./tests/benchmarks/",)).unwrap();
+
+    let complete_schema = py.import("complete_schema").unwrap();
+    let schema = complete_schema.call_method0("schema").unwrap();
+    let validator = SchemaValidator::py_new(py, schema).unwrap();
+
+    let input = complete_schema.call_method0("input_data_lax").unwrap();
+    let input = black_box(input);
+
+    bench.iter(|| {
+        black_box(validator.validate_python(py, input).unwrap());
+    })
+}

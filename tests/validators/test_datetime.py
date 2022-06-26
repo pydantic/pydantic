@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 import pytz
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 from ..conftest import Err
 
@@ -246,3 +246,8 @@ def test_union():
     v = SchemaValidator({'type': 'union', 'choices': ['datetime', 'str']})
     assert v.validate_python('2022-01-02T00:00') == '2022-01-02T00:00'
     assert v.validate_python(datetime(2022, 1, 2)) == datetime(2022, 1, 2)
+
+
+def test_invalid_constraint():
+    with pytest.raises(SchemaError, match='Invalid "gt" constraint for datetime:  Value must be a valid datetime'):
+        SchemaValidator({'type': 'datetime', 'gt': 'foobar'})
