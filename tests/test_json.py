@@ -39,7 +39,7 @@ def test_model():
 
     # language=json
     input_str = '{"field_a": 123, "field_b": 1}'
-    assert v.validate_json(input_str) == ({'field_a': '123', 'field_b': 1}, {'field_b', 'field_a'})
+    assert v.validate_json(input_str) == {'field_a': '123', 'field_b': 1}
 
 
 def test_float_no_remainder():
@@ -51,6 +51,7 @@ def test_error_loc():
     v = SchemaValidator(
         {
             'type': 'model',
+            'return_fields_set': True,
             'fields': {'field_a': {'schema': {'type': 'list', 'items': {'type': 'int'}}}},
             'extra_validator': {'type': 'int'},
             'config': {'extra_behavior': 'allow'},

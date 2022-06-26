@@ -1,10 +1,10 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDict};
+use pyo3::types::PyDict;
 use speedate::{Date, Time};
 
-use crate::build_tools::{is_strict, SchemaDict};
+use crate::build_tools::{is_strict, SchemaDict, SchemaError};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValResult};
-use crate::input::{pydate_as_date, EitherDate, Input};
+use crate::input::{EitherDate, Input};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -169,9 +169,14 @@ fn date_from_datetime<'data>(
 }
 
 fn convert_pydate(schema: &PyDict, field: &str) -> PyResult<Option<Date>> {
-    let py_date: Option<&PyDate> = schema.get_as(field)?;
-    match py_date {
-        Some(py_date) => Ok(Some(pydate_as_date!(py_date))),
+    match schema.get_as::<&PyAny>(field)? {
+        Some(obj) => {
+            let prefix = format!(r#"Invalid "{}" constraint for date"#, field);
+            let date = obj
+                .lax_date()
+                .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
+            Ok(Some(date.as_raw()?))
+        }
         None => Ok(None),
     }
 }

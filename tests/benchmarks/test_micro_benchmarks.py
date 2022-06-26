@@ -1,3 +1,6 @@
+"""
+Numerous benchmarks of specific functionality.
+"""
 import json
 import os
 from datetime import date, datetime, timedelta, timezone
@@ -40,6 +43,7 @@ class TestBenchmarkSimpleModel:
                 'class_type': CoreModel,
                 'model': {
                     'type': 'model',
+                    'return_fields_set': True,
                     'fields': {
                         'name': {'schema': {'type': 'str'}},
                         'age': {'schema': {'type': 'int'}},
@@ -140,6 +144,7 @@ def test_small_class_core_model(benchmark):
             'class_type': MyCoreModel,
             'model': {
                 'type': 'model',
+                'return_fields_set': True,
                 'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
             },
         }
@@ -191,6 +196,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
                 'class_type': CoreBranch,
                 'model': {
                     'type': 'model',
+                    'return_fields_set': True,
                     'fields': {
                         'width': {'schema': {'type': 'int'}},
                         'branch': {
@@ -453,7 +459,7 @@ def test_many_models_core_model(benchmark):
             'items': {
                 'type': 'model-class',
                 'class_type': MyCoreModel,
-                'model': {'type': 'model', 'fields': {'age': {'schema': 'int'}}},
+                'model': {'type': 'model', 'return_fields_set': True, 'fields': {'age': {'schema': 'int'}}},
             },
         }
     )
@@ -515,7 +521,7 @@ class TestBenchmarkDateTime:
             {
                 'type': 'model-class',
                 'class_type': CoreModel,
-                'model': {'type': 'model', 'fields': {'dt': {'schema': 'datetime'}}},
+                'model': {'type': 'model', 'return_fields_set': True, 'fields': {'dt': {'schema': 'datetime'}}},
             }
         )
 

@@ -6,7 +6,7 @@ pub mod location;
 mod validation_exception;
 
 pub use self::kinds::ErrorKind;
-pub use self::line_error::{as_internal, Context, InputValue, ValError, ValLineError, ValResult};
+pub use self::line_error::{as_internal, pretty_line_errors, Context, InputValue, ValError, ValLineError, ValResult};
 pub use self::validation_exception::ValidationError;
 
 /// Utility for concisely creating a `ValLineError`
