@@ -22,10 +22,14 @@ def test_build_error_internal():
 def test_build_error_deep():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(
-            {'title': 'MyTestModel', 'type': 'model', 'fields': {'age': {'schema': {'type': 'int', 'ge': 'not-int'}}}}
+            {
+                'title': 'MyTestModel',
+                'type': 'typed-dict',
+                'fields': {'age': {'schema': {'type': 'int', 'ge': 'not-int'}}},
+            }
         )
     assert str(exc_info.value) == (
-        'Error building "model" validator:\n'
+        'Error building "typed-dict" validator:\n'
         '  SchemaError: Field "age":\n'
         '  SchemaError: Error building "int" validator:\n'
         "  TypeError: 'str' object cannot be interpreted as an integer"
@@ -66,8 +70,8 @@ def test_schema_recursive_error():
 
 def test_not_schema_recursive_error():
     schema = {
-        'type': 'model',
+        'type': 'typed-dict',
         'fields': {f'f_{i}': {'schema': {'type': 'nullable', 'schema': 'int'}} for i in range(101)},
     }
     v = SchemaValidator(schema)
-    assert repr(v).count('ModelField') == 101
+    assert repr(v).count('TypedDictField') == 101

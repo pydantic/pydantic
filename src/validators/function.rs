@@ -135,11 +135,15 @@ pub struct FunctionPlainValidator {
 
 impl FunctionPlainValidator {
     pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
-        Ok(Self {
-            func: get_function(schema)?,
-            config: config.map(|c| c.into()),
+        if schema.get_item("schema").is_some() {
+            py_error!("Plain functions should not include a sub-schema")
+        } else {
+            Ok(Self {
+                func: get_function(schema)?,
+                config: config.map(|c| c.into()),
+            }
+            .into())
         }
-        .into())
     }
 }
 

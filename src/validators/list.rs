@@ -25,7 +25,7 @@ macro_rules! sequence_build_function {
         ) -> PyResult<CombinedValidator> {
             Ok(Self {
                 strict: is_strict(schema, config)?,
-                item_validator: match schema.get_item("items") {
+                item_validator: match schema.get_item("items_schema") {
                     Some(d) => Box::new(build_validator(d, config, build_context)?.0),
                     None => Box::new(AnyValidator::build(schema, config, build_context)?),
                 },

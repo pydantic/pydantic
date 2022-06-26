@@ -12,7 +12,7 @@ from ..conftest import Err
     [([], frozenset()), ([1, 2, 3], {1, 2, 3}), ([1, 2, '3'], {1, 2, 3}), ([1, 2, 3, 2, 3], {1, 2, 3})],
 )
 def test_frozenset_ints_both(py_or_json, input_value, expected):
-    v = py_or_json({'type': 'frozenset', 'items': {'type': 'int'}})
+    v = py_or_json({'type': 'frozenset', 'items_schema': {'type': 'int'}})
     output = v.validate_test(input_value)
     assert output == expected
     assert isinstance(output, frozenset)
@@ -58,7 +58,7 @@ def test_frozenset_no_validators_both(py_or_json, input_value, expected):
     ],
 )
 def test_frozenset_ints_python(input_value, expected):
-    v = SchemaValidator({'type': 'frozenset', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -77,7 +77,7 @@ def test_frozenset_no_validators_python(input_value, expected):
 
 
 def test_frozenset_multiple_errors():
-    v = SchemaValidator({'type': 'frozenset', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(['a', (1, 2), []])
     assert exc_info.value.errors() == [
@@ -164,8 +164,8 @@ def test_union_frozenset_int_frozenset_str(input_value, expected):
         {
             'type': 'union',
             'choices': [
-                {'type': 'frozenset', 'items': {'type': 'int', 'strict': True}},
-                {'type': 'frozenset', 'items': {'type': 'str', 'strict': True}},
+                {'type': 'frozenset', 'items_schema': {'type': 'int', 'strict': True}},
+                {'type': 'frozenset', 'items_schema': {'type': 'str', 'strict': True}},
             ],
         }
     )
@@ -181,7 +181,7 @@ def test_union_frozenset_int_frozenset_str(input_value, expected):
 
 
 def test_frozenset_as_dict_keys(py_or_json):
-    v = py_or_json({'type': 'dict', 'keys': {'type': 'frozenset'}, 'value': 'int'})
+    v = py_or_json({'type': 'dict', 'keys_schema': {'type': 'frozenset'}, 'value': 'int'})
     with pytest.raises(ValidationError, match=re.escape('Value must be a valid frozenset')):
         v.validate_test({'foo': 'bar'})
 

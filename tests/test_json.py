@@ -34,7 +34,10 @@ def test_float(input_value, output_value):
 
 def test_model():
     v = SchemaValidator(
-        {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}}}
+        {
+            'type': 'typed-dict',
+            'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+        }
     )
 
     # language=json
@@ -50,9 +53,9 @@ def test_float_no_remainder():
 def test_error_loc():
     v = SchemaValidator(
         {
-            'type': 'model',
+            'type': 'typed-dict',
             'return_fields_set': True,
-            'fields': {'field_a': {'schema': {'type': 'list', 'items': {'type': 'int'}}}},
+            'fields': {'field_a': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}}},
             'extra_validator': {'type': 'int'},
             'config': {'extra_behavior': 'allow'},
         }
@@ -73,12 +76,12 @@ def test_error_loc():
 
 
 def test_dict():
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_json('{"1": 2, "3": 4}') == {1: 2, 3: 4}
 
 
 def test_dict_any_value():
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}})
     assert v.validate_json('{"1": 1, "2": "a", "3": null}') == {'1': 1, '2': 'a', '3': None}
 
 

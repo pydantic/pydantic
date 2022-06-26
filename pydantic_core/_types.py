@@ -34,8 +34,8 @@ class ConfigSchema(TypedDict, total=False):
 
 class DictSchema(TypedDict, total=False):
     type: Required[Literal['dict']]
-    keys: Schema  # default: AnySchema
-    values: Schema  # default: AnySchema
+    keys_schema: Schema  # default: AnySchema
+    values_schema: Schema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -52,12 +52,17 @@ class FloatSchema(TypedDict, total=False):
     default: float
 
 
-# TODO: function could be typed based on mode
 class FunctionSchema(TypedDict):
     type: Literal['function']
-    mode: Literal['before', 'after', 'plain', 'wrap']
+    mode: Literal['before', 'after', 'wrap']
     function: Callable[..., Any]
-    schema: NotRequired[Schema]
+    schema: Schema
+
+
+class FunctionPlainSchema(TypedDict):
+    type: Literal['function']
+    mode: Literal['plain']
+    function: Callable[..., Any]
 
 
 class IntSchema(TypedDict, total=False):
@@ -72,7 +77,7 @@ class IntSchema(TypedDict, total=False):
 
 class ListSchema(TypedDict, total=False):
     type: Required[Literal['list']]
-    items: Schema  # default: AnySchema
+    items_schema: Schema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -86,10 +91,10 @@ class LiteralSchema(TypedDict):
 class ModelClassSchema(TypedDict):
     type: Literal['model-class']
     class_type: type
-    model: ModelSchema
+    schema: TypedDictSchema
 
 
-class ModelField(TypedDict, total=False):
+class TypedDictField(TypedDict, total=False):
     schema: Required[Schema]
     required: bool
     default: Any
@@ -97,9 +102,9 @@ class ModelField(TypedDict, total=False):
     aliases: List[List[Union[str, int]]]
 
 
-class ModelSchema(TypedDict):
-    type: Literal['model']
-    fields: Dict[str, ModelField]
+class TypedDictSchema(TypedDict):
+    type: Literal['typed-dict']
+    fields: Dict[str, TypedDictField]
     extra_validator: NotRequired[Schema]
     config: NotRequired[ConfigSchema]
     return_fields_set: NotRequired[bool]
@@ -128,7 +133,7 @@ class RecursiveContainerSchema(TypedDict):
 
 class SetSchema(TypedDict, total=False):
     type: Required[Literal['set']]
-    items: Schema
+    items_schema: Schema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -136,7 +141,7 @@ class SetSchema(TypedDict, total=False):
 
 class FrozenSetSchema(TypedDict, total=False):
     type: Required[Literal['frozenset']]
-    items: Schema
+    items_schema: Schema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -197,15 +202,15 @@ class DatetimeSchema(TypedDict, total=False):
     default: datetime
 
 
-class TupleFixLenSchema(TypedDict, total=False):
-    type: Required[Literal['tuple-fix-len']]
-    items: List[Schema]
-    strict: bool
+class TupleFixLenSchema(TypedDict):
+    type: Literal['tuple-fix-len']
+    items_schema: List[Schema]
+    strict: NotRequired[bool]
 
 
 class TupleVarLenSchema(TypedDict, total=False):
     type: Required[Literal['tuple-var-len']]
-    items: Required[Schema]
+    items_schema: Schema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -243,10 +248,11 @@ Schema = Union[
     DictSchema,
     FloatSchema,
     FunctionSchema,
+    FunctionPlainSchema,
     IntSchema,
     ListSchema,
     LiteralSchema,
-    ModelSchema,
+    TypedDictSchema,
     ModelClassSchema,
     NoneSchema,
     NullableSchema,

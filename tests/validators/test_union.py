@@ -59,8 +59,8 @@ class TestModelClass:
                     {
                         'type': 'model-class',
                         'class_type': self.ModelA,
-                        'model': {
-                            'type': 'model',
+                        'schema': {
+                            'type': 'typed-dict',
                             'return_fields_set': True,
                             'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
                         },
@@ -68,8 +68,8 @@ class TestModelClass:
                     {
                         'type': 'model-class',
                         'class_type': self.ModelB,
-                        'model': {
-                            'type': 'model',
+                        'schema': {
+                            'type': 'typed-dict',
                             'return_fields_set': True,
                             'fields': {'c': {'schema': {'type': 'int'}}, 'd': {'schema': {'type': 'str'}}},
                         },
@@ -123,8 +123,8 @@ class TestModelClassSimilar:
                     {
                         'type': 'model-class',
                         'class_type': self.ModelA,
-                        'model': {
-                            'type': 'model',
+                        'schema': {
+                            'type': 'typed-dict',
                             'return_fields_set': True,
                             'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
                         },
@@ -132,8 +132,8 @@ class TestModelClassSimilar:
                     {
                         'type': 'model-class',
                         'class_type': self.ModelB,
-                        'model': {
-                            'type': 'model',
+                        'schema': {
+                            'type': 'typed-dict',
                             'return_fields_set': True,
                             'fields': {
                                 'a': {'schema': {'type': 'int'}},
@@ -194,7 +194,10 @@ def test_union_list_bool_int():
     v = SchemaValidator(
         {
             'type': 'union',
-            'choices': [{'type': 'list', 'items': {'type': 'bool'}}, {'type': 'list', 'items': {'type': 'int'}}],
+            'choices': [
+                {'type': 'list', 'items_schema': {'type': 'bool'}},
+                {'type': 'list', 'items_schema': {'type': 'int'}},
+            ],
         }
     )
     assert v.validate_python(['true', True, 'no']) == [True, True, False]

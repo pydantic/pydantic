@@ -27,11 +27,11 @@ impl BuildValidator for DictValidator {
     ) -> PyResult<CombinedValidator> {
         Ok(Self {
             strict: is_strict(schema, config)?,
-            key_validator: match schema.get_item("keys") {
+            key_validator: match schema.get_item("keys_schema") {
                 Some(schema) => Box::new(build_validator(schema, config, build_context)?.0),
                 None => Box::new(AnyValidator::build(schema, config, build_context)?),
             },
-            value_validator: match schema.get_item("values") {
+            value_validator: match schema.get_item("values_schema") {
                 Some(d) => Box::new(build_validator(d, config, build_context)?.0),
                 None => Box::new(AnyValidator::build(schema, config, build_context)?),
             },

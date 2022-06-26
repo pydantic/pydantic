@@ -41,8 +41,8 @@ class TestBenchmarkSimpleModel:
             {
                 'type': 'model-class',
                 'class_type': CoreModel,
-                'model': {
-                    'type': 'model',
+                'schema': {
+                    'type': 'typed-dict',
                     'return_fields_set': True,
                     'fields': {
                         'name': {'schema': {'type': 'str'}},
@@ -122,7 +122,7 @@ def test_small_class_pyd(benchmark):
 @pytest.mark.benchmark(group='create small model')
 def test_small_class_core_dict(benchmark):
     model_schema = {
-        'type': 'model',
+        'type': 'typed-dict',
         'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
     }
     dict_schema_validator = SchemaValidator(model_schema)
@@ -142,8 +142,8 @@ def test_small_class_core_model(benchmark):
         {
             'type': 'model-class',
             'class_type': MyCoreModel,
-            'model': {
-                'type': 'model',
+            'schema': {
+                'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
             },
@@ -194,8 +194,8 @@ def test_recursive_model_core(recursive_model_data, benchmark):
             'schema': {
                 'type': 'model-class',
                 'class_type': CoreBranch,
-                'model': {
-                    'type': 'model',
+                'schema': {
+                    'type': 'typed-dict',
                     'return_fields_set': True,
                     'fields': {
                         'width': {'schema': {'type': 'int'}},
@@ -227,7 +227,11 @@ def test_list_of_dict_models_pyd(benchmark):
 @pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
-        {'type': 'list', 'name': 'Branch', 'items': {'type': 'model', 'fields': {'width': {'schema': {'type': 'int'}}}}}
+        {
+            'type': 'list',
+            'name': 'Branch',
+            'items': {'type': 'typed-dict', 'fields': {'width': {'schema': {'type': 'int'}}}},
+        }
     )
 
     data = [{'width': i} for i in range(100)]
@@ -443,7 +447,7 @@ def test_many_models_pyd(benchmark):
 
 @pytest.mark.benchmark(group='List[DictSimpleMode]')
 def test_many_models_core_dict(benchmark):
-    model_schema = {'type': 'list', 'items': {'type': 'model', 'fields': {'age': {'schema': 'int'}}}}
+    model_schema = {'type': 'list', 'items': {'type': 'typed-dict', 'fields': {'age': {'schema': 'int'}}}}
     v = SchemaValidator(model_schema)
     benchmark(v.validate_python, many_models_data)
 
@@ -459,7 +463,7 @@ def test_many_models_core_model(benchmark):
             'items': {
                 'type': 'model-class',
                 'class_type': MyCoreModel,
-                'model': {'type': 'model', 'return_fields_set': True, 'fields': {'age': {'schema': 'int'}}},
+                'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'age': {'schema': 'int'}}},
             },
         }
     )
@@ -521,7 +525,7 @@ class TestBenchmarkDateTime:
             {
                 'type': 'model-class',
                 'class_type': CoreModel,
-                'model': {'type': 'model', 'return_fields_set': True, 'fields': {'dt': {'schema': 'datetime'}}},
+                'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'dt': {'schema': 'datetime'}}},
             }
         )
 
