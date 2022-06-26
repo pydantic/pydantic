@@ -1,4 +1,5 @@
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -80,6 +81,7 @@ def test_validation_error_multiple():
     )
 
 
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='README.md is not mounted in wasm file system')
 def test_readme(import_execute):
     this_dir = Path(__file__).parent
     readme = (this_dir / '..' / 'README.md').read_text()
