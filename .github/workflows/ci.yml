@@ -158,8 +158,23 @@ jobs:
     # if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')"
     # needs: [test, lint]
     runs-on: ubuntu-latest
+    env:
+      PYODIDE_VERSION: '0.21.0-alpha.2'
+      PYTHON_VERSION: '3.10.2'
+      NODE_VERSION: 18
     steps:
       - uses: actions/checkout@v3
+
+      - name: set up python
+        id: setup-python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -169,15 +184,18 @@ jobs:
           target: wasm32-unknown-emscripten
           override: true
 
+      - name: cache rust
+        uses: Swatinem/rust-cache@v1
+
+      - run: pip install nox requests
+
+      - name: setup pyodide
+        run: nox -f tests/noxfile.py -s setup-pyodide
+
       - uses: mymindstorm/setup-emsdk@v11
         with:
-          version: 3.1.13
+          version: ${{ env.EMSCRIPTEN_VERSION }}
           actions-cache-folder: emsdk-cache
-
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
 
       - name: set package version
         run: python .github/set_version.py
@@ -193,6 +211,15 @@ jobs:
         run: maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.10
 
       - run: ls -lh dist
+
+      # setup-emsdk action adds an old version of node in PATH
+      # override it by setup node again
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: run tests
+        run: nox -f tests/noxfile.py -s test-emscripten
 
       - uses: actions/upload-artifact@v3
         with:
