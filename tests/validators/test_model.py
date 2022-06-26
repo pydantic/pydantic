@@ -953,3 +953,67 @@ def test_from_attributes_path_error():
             'context': {'error': 'RuntimeError: intentional error'},
         }
     ]
+
+
+def test_alias_extra(py_or_json):
+    v = py_or_json(
+        {
+            'type': 'model',
+            'config': {'extra_behavior': 'allow'},
+            'fields': {'field_a': {'aliases': [['FieldA'], ['foo', 2]], 'schema': 'int'}},
+        }
+    )
+    assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
+    assert v.validate_test({'foo': [1, 2, 3]}) == {'field_a': 3}
+
+    # used_keys should be populated either though validation fails so "FieldA" is skipped in extra
+    with pytest.raises(ValidationError) as exc_info:
+        assert v.validate_test({'FieldA': '...'}) == {'field_a': 1}
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['field_a'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': '...',
+        }
+    ]
+
+
+def test_alias_extra_from_attributes():
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'config': {'extra_behavior': 'allow', 'from_attributes': True},
+            'fields': {'field_a': {'aliases': [['FieldA'], ['foo', 2]], 'schema': 'int'}},
+        }
+    )
+    assert v.validate_python({'FieldA': 1}) == {'field_a': 1}
+    assert v.validate_python(Cls(FieldA=1)) == {'field_a': 1}
+    assert v.validate_python(Cls(foo=[1, 2, 3])) == {'field_a': 3}
+    assert v.validate_python({'foo': [1, 2, 3]}) == {'field_a': 3}
+
+
+def test_alias_extra_by_name(py_or_json):
+    v = py_or_json(
+        {
+            'type': 'model',
+            'config': {'extra_behavior': 'allow', 'from_attributes': True, 'populate_by_name': True},
+            'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}},
+        }
+    )
+    assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
+    assert v.validate_test({'field_a': 1}) == {'field_a': 1}
+    assert v.validate_python(Cls(FieldA=1)) == {'field_a': 1}
+    assert v.validate_python(Cls(field_a=1)) == {'field_a': 1}
+
+
+def test_alias_extra_forbid(py_or_json):
+    v = py_or_json(
+        {
+            'type': 'model',
+            'config': {'extra_behavior': 'forbid'},
+            'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}},
+        }
+    )
+    assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
