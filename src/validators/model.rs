@@ -8,6 +8,7 @@ use crate::errors::{
     as_internal, context, err_val_error, py_err_string, val_line_error, ErrorKind, ValError, ValLineError, ValResult,
 };
 use crate::input::{GenericMapping, Input, JsonInput, JsonObject};
+use crate::SchemaError;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -28,6 +29,7 @@ pub struct ModelValidator {
     extra_validator: Option<Box<CombinedValidator>>,
     strict: bool,
     from_attributes: bool,
+    return_fields_set: bool,
 }
 
 impl BuildValidator for ModelValidator {
@@ -44,6 +46,7 @@ impl BuildValidator for ModelValidator {
         let model_full = config.get_as("model_full")?.unwrap_or(true);
         let strict = config.get_as("strict")?.unwrap_or(false);
         let from_attributes = config.get_as("from_attributes")?.unwrap_or(false);
+        let return_fields_set = schema.get_as("return_fields_set")?.unwrap_or(false);
 
         let extra_behavior = match config.get_as::<&str>("extra_behavior")? {
             Some(s) => match s {
@@ -69,9 +72,13 @@ impl BuildValidator for ModelValidator {
         let py = schema.py();
         for (key, value) in fields_dict.iter() {
             let field_info: &PyDict = value.cast_as()?;
-            let schema: &PyAny = field_info.get_as_req("schema")?;
             let field_name: &str = key.extract()?;
-            let default = field_info.get_as("default")?;
+            let schema: &PyAny = field_info
+                .get_as_req("schema")
+                .map_err(|err| SchemaError::new_err(format!("Field \"{}\":\n  {}", field_name, err)))?;
+            let default = field_info
+                .get_as("default")
+                .map_err(|err| PyTypeError::new_err(format!("Field \"{}\":\n  {}", field_name, err)))?;
 
             fields.push(ModelField {
                 name: field_name.to_string(),
@@ -79,12 +86,12 @@ impl BuildValidator for ModelValidator {
                 dict_key: PyString::intern(py, field_name).into(),
                 validator: match build_validator(schema, config, build_context) {
                     Ok((v, _)) => v,
-                    Err(err) => return py_error!("Key \"{}\":\n  {}", key, err),
+                    Err(err) => return py_error!("Field \"{}\":\n  {}", field_name, err),
                 },
                 required: match field_info.get_as::<bool>("required")? {
                     Some(required) => {
                         if required && default.is_some() {
-                            return py_error!("Key \"{}\":\n a required field cannot have a default value", key);
+                            return py_error!("Field \"{}\": a required field cannot have a default value", field_name);
                         }
                         required
                     }
@@ -99,6 +106,7 @@ impl BuildValidator for ModelValidator {
             extra_validator,
             strict,
             from_attributes,
+            return_fields_set,
         }
         .into())
     }
@@ -155,7 +163,9 @@ impl Validator for ModelValidator {
                             }
                             Err(err) => return Err(err),
                         }
-                        fields_set.add(&field.dict_key).map_err(as_internal)?;
+                        if self.return_fields_set {
+                            fields_set.add(&field.dict_key).map_err(as_internal)?;
+                        }
                     } else if let Some(ref default) = field.default {
                         output_dict
                             .set_item(&field.dict_key, default.as_ref(py))
@@ -178,7 +188,6 @@ impl Validator for ModelValidator {
                 };
                 if check_extra {
                     for (raw_key, value) in $iter {
-                        // TODO use strict_str here if the model is strict
                         let either_str = match raw_key.strict_str() {
                             Ok(k) => k,
                             Err(ValError::LineErrors(line_errors)) => {
@@ -190,10 +199,18 @@ impl Validator for ModelValidator {
                             Err(err) => return Err(err),
                         };
                         let py_key = either_str.as_py_string(py);
-                        if fields_set.contains(py_key).map_err(as_internal)? {
-                            continue;
+                        if self.return_fields_set {
+                            if fields_set.contains(py_key).map_err(as_internal)? {
+                                continue;
+                            }
+                            fields_set.add(py_key).map_err(as_internal)?;
+                        } else {
+                            // fields_set has not been populated, so we have to use the output dict to check
+                            // if this key has already been processed
+                            if output_dict.contains(py_key).map_err(as_internal)? {
+                                continue;
+                            }
                         }
-                        fields_set.add(py_key).map_err(as_internal)?;
 
                         if forbid {
                             errors.push(val_line_error!(
@@ -226,10 +243,12 @@ impl Validator for ModelValidator {
             GenericMapping::JsonObject(d) => process!(d, json_get, { d.iter() }),
         }
 
-        if errors.is_empty() {
+        if !errors.is_empty() {
+            Err(ValError::LineErrors(errors))
+        } else if self.return_fields_set {
             Ok((output_dict, fields_set).to_object(py))
         } else {
-            Err(ValError::LineErrors(errors))
+            Ok(output_dict.to_object(py))
         }
     }
 
@@ -258,8 +277,12 @@ impl ModelValidator {
 
         let prepare_tuple = |output: PyObject| {
             data.set_item(field, output).map_err(as_internal)?;
-            let fields_set = PySet::new(py, &[field]).map_err(as_internal)?;
-            Ok((data, fields_set).to_object(py))
+            if self.return_fields_set {
+                let fields_set = PySet::new(py, &[field]).map_err(as_internal)?;
+                Ok((data, fields_set).to_object(py))
+            } else {
+                Ok(data.to_object(py))
+            }
         };
 
         let prepare_result = |result: ValResult<'data, PyObject>| match result {

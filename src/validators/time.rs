@@ -1,10 +1,10 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTime};
+use pyo3::types::PyDict;
 use speedate::Time;
 
-use crate::build_tools::{is_strict, SchemaDict};
+use crate::build_tools::{is_strict, SchemaDict, SchemaError};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
-use crate::input::{pytime_as_time, EitherTime, Input};
+use crate::input::{EitherTime, Input};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -115,9 +115,14 @@ impl TimeValidator {
 }
 
 fn convert_pytime(schema: &PyDict, field: &str) -> PyResult<Option<Time>> {
-    let py_time: Option<&PyTime> = schema.get_as(field)?;
-    match py_time {
-        Some(py_time) => Ok(Some(pytime_as_time!(py_time))),
+    match schema.get_as::<&PyAny>(field)? {
+        Some(obj) => {
+            let prefix = format!(r#"Invalid "{}" constraint for time"#, field);
+            let date = obj
+                .lax_time()
+                .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
+            Ok(Some(date.as_raw()?))
+        }
         None => Ok(None),
     }
 }

@@ -1,5 +1,8 @@
+import importlib.util
 import json
+import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -40,3 +43,39 @@ def py_or_json(request):
                 return self.validator.isinstance_python(py_input)
 
     return CustomSchemaValidator
+
+
+@pytest.fixture
+def tmp_work_path(tmp_path: Path):
+    """
+    Create a temporary working directory.
+    """
+    previous_cwd = Path.cwd()
+    os.chdir(tmp_path)
+
+    yield tmp_path
+
+    os.chdir(previous_cwd)
+
+
+@pytest.fixture
+def import_execute(request, tmp_work_path: Path):
+    def _import_execute(source: str, *, custom_module_name: str = None):
+        example_bash_file = tmp_work_path / 'example.sh'
+        example_bash_file.write_text('#!/bin/sh\necho testing')
+        example_bash_file.chmod(0o755)
+        (tmp_work_path / 'first/path').mkdir(parents=True, exist_ok=True)
+        (tmp_work_path / 'second/path').mkdir(parents=True, exist_ok=True)
+
+        module_name = custom_module_name or request.node.name
+
+        module_path = tmp_work_path / f'{module_name}.py'
+        module_path.write_text(source)
+        spec = importlib.util.spec_from_file_location('__main__', str(module_path))
+        module = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(module)
+        except KeyboardInterrupt:
+            print('KeyboardInterrupt')
+
+    return _import_execute

@@ -24,7 +24,6 @@ Example of usage:
 from pydantic_core import SchemaValidator, ValidationError
 
 v = SchemaValidator({
-    'title': 'MyModel',
     'type': 'model',
     'fields': {
         'name': {
@@ -52,13 +51,7 @@ SchemaValidator(title="MyModel", validator=ModelValidator ...
 """
 
 r1 = v.validate_python({'name': 'Samuel', 'age': 35})
-print(r1)
-"""
-(
-  {'name': 'Samuel', 'age': 35, 'is_developer': True}, <- validated data
-  {'age', 'name'} <- fields set
-)
-"""
+assert r1 == {'name': 'Samuel', 'age': 35, 'is_developer': True}
 
 # pydantic-core can also validate JSON directly
 r2 = v.validate_json('{"name": "Samuel", "age": 35}')
@@ -69,15 +62,15 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for MyModel
+    1 validation error for model
     age
       Value must be greater than or equal to 18
-      [kind=int_greater_than_equal, context={ge: 18}, input_value=11, input_type=int]
+      [kind=greater_than_equal, context={ge: 18}, input_value=11, input_type=int]
     """
 ```
 
 Pydantic-core is currently around 17x faster than pydantic standard.
-See [`tests/test_benchmarks.py`](./tests/test_benchmarks.py) for details.
+See [`tests/benchmarks/`](./tests/benchmarks/) for details.
 
 Benchmarks overtime can be seen [here](https://samuelcolvin.github.io/pydantic-core/dev/bench/).
 

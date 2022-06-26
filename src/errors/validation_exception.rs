@@ -47,13 +47,7 @@ impl ValidationError {
             Some(py) => self.title.extract(py).unwrap(),
             None => "Schema",
         };
-        let line_errors = self
-            .line_errors
-            .iter()
-            .map(|i| i.pretty(py))
-            .collect::<Result<Vec<_>, _>>()
-            .unwrap_or_else(|err| vec![format!("[error formatting line errors: {}]", err)])
-            .join("\n");
+        let line_errors = pretty_py_line_errors(py, self.line_errors.iter());
         format!("{} validation error{} for {}\n{}", count, plural, title, line_errors)
     }
 }
@@ -114,6 +108,17 @@ macro_rules! truncate_input_value {
             write!($out, ", input_value={}", $value)?;
         }
     };
+}
+
+pub fn pretty_py_line_errors<'a>(
+    py: Option<Python>,
+    line_errors_iter: impl Iterator<Item = &'a PyLineError>,
+) -> String {
+    line_errors_iter
+        .map(|i| i.pretty(py))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap_or_else(|err| vec![format!("[error formatting line errors: {}]", err)])
+        .join("\n")
 }
 
 /// `PyLineError` are the public version of `ValLineError`, as help and used in `ValidationError`s

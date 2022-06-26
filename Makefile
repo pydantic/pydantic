@@ -83,7 +83,7 @@ test:
 py-benchmark: BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 py-benchmark: build-prod
 	@echo "running py-benchmark, saving to: $(BRANCH)"
-	pytest tests/test_benchmarks.py --benchmark-enable --benchmark-save=$(BRANCH)
+	pytest tests/benchmarks/ --benchmark-enable --benchmark-save=$(BRANCH)
 
 .PHONY: rust-benchmark
 rust-benchmark:
@@ -112,11 +112,11 @@ flame:
 	@rm -rf perf.data*
 	@rm -rf flame
 	@mkdir -p flame
-	perf record -g benchmarks/dict_model.py
+	perf record -g profiling/dict_model.py
 	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/python.svg
 	perf script --max-stack 20 | stackcollapse-perf.pl > flame/python.txt
 	@rm perf.data
-	JSON=1 perf record -g benchmarks/dict_model.py
+	JSON=1 perf record -g profiling/dict_model.py
 	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/json.svg
 	perf script --max-stack 20 | stackcollapse-perf.pl > flame/json.txt
 	@rm perf.data

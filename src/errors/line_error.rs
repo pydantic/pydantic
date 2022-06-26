@@ -7,6 +7,7 @@ use crate::input::JsonInput;
 
 use super::kinds::ErrorKind;
 use super::location::{LocItem, Location};
+use super::validation_exception::{pretty_py_line_errors, PyLineError};
 
 pub type ValResult<'a, T> = Result<T, ValError<'a>>;
 
@@ -20,6 +21,11 @@ pub enum ValError<'a> {
 
 pub fn as_internal<'a>(err: PyErr) -> ValError<'a> {
     ValError::InternalErr(err)
+}
+
+pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String {
+    let py_line_errors: Vec<PyLineError> = line_errors.into_iter().map(|e| PyLineError::new(py, e)).collect();
+    pretty_py_line_errors(Some(py), py_line_errors.iter())
 }
 
 /// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`

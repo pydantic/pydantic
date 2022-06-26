@@ -26,21 +26,13 @@ def test_branch_nullable():
         }
     )
 
-    assert v.validate_python({'name': 'root'}) == ({'name': 'root', 'sub_branch': None}, {'name'})
+    assert v.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
 
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1'}}) == (
-        {'name': 'root', 'sub_branch': ({'name': 'b1', 'sub_branch': None}, {'name'})},
-        {'sub_branch', 'name'},
+        {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': None}}
     )
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': {'name': 'b2'}}}) == (
-        {
-            'name': 'root',
-            'sub_branch': (
-                {'name': 'b1', 'sub_branch': ({'name': 'b2', 'sub_branch': None}, {'name'})},
-                {'name', 'sub_branch'},
-            ),
-        },
-        {'sub_branch', 'name'},
+        {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': {'name': 'b2', 'sub_branch': None}}}
     )
 
 
@@ -65,8 +57,7 @@ def test_nullable_error():
         }
     )
     assert v.validate_python({'width': 123, 'sub_branch': {'width': 321}}) == (
-        {'width': 123, 'sub_branch': ({'width': 321, 'sub_branch': None}, {'width'})},
-        {'sub_branch', 'width'},
+        {'width': 123, 'sub_branch': {'width': 321, 'sub_branch': None}}
     )
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'width': 123, 'sub_branch': {'width': 'wrong'}})
@@ -106,12 +97,8 @@ def test_list():
     assert v.validate_python({'width': 1, 'branches': [{'width': 2}, {'width': 3, 'branches': [{'width': 4}]}]}) == (
         {
             'width': 1,
-            'branches': [
-                ({'width': 2, 'branches': None}, {'width'}),
-                ({'width': 3, 'branches': [({'width': 4, 'branches': None}, {'width'})]}, {'width', 'branches'}),
-            ],
-        },
-        {'width', 'branches'},
+            'branches': [{'width': 2, 'branches': None}, {'width': 3, 'branches': [{'width': 4, 'branches': None}]}],
+        }
     )
 
 
@@ -192,6 +179,7 @@ def test_model_class():
                 'class_type': Branch,
                 'model': {
                     'type': 'model',
+                    'return_fields_set': True,
                     'fields': {
                         'width': {'schema': 'int'},
                         'branch': {

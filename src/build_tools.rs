@@ -33,7 +33,7 @@ impl<'py> SchemaDict<'py> for PyDict {
     {
         match self.get_item(key) {
             Some(t) => <T>::extract(t),
-            None => py_error!(PyKeyError; r#""{}" is required"#, key),
+            None => py_error!(PyKeyError; "{}", key),
         }
     }
 }
@@ -116,6 +116,17 @@ impl SchemaError {
     {
         PyErr::new::<SchemaError, A>(args)
     }
+
+    pub fn from_val_error(py: Python, prefix: &str, error: ValError) -> PyErr {
+        match error {
+            ValError::LineErrors(line_errors) => {
+                let join = if line_errors.len() == 1 { ":" } else { ":\n" };
+                let details = pretty_line_errors(py, line_errors);
+                SchemaError::new_err(format!("{}{}{}", prefix, join, details))
+            }
+            ValError::InternalErr(py_err) => py_err,
+        }
+    }
 }
 
 #[pymethods]
@@ -150,4 +161,5 @@ macro_rules! py_error {
         Err(<$error_type>::new_err(format!($msg, $( $msg_args ),+)))
     };
 }
+use crate::errors::{pretty_line_errors, ValError};
 pub(crate) use py_error;
