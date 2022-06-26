@@ -1010,18 +1010,18 @@ class PaymentCardNumber(str):
 
 BYTE_SIZES = {
     'b': 1,
-    'kb': 10 ** 3,
-    'mb': 10 ** 6,
-    'gb': 10 ** 9,
-    'tb': 10 ** 12,
-    'pb': 10 ** 15,
-    'eb': 10 ** 18,
-    'kib': 2 ** 10,
-    'mib': 2 ** 20,
-    'gib': 2 ** 30,
-    'tib': 2 ** 40,
-    'pib': 2 ** 50,
-    'eib': 2 ** 60,
+    'kb': 10**3,
+    'mb': 10**6,
+    'gb': 10**9,
+    'tb': 10**12,
+    'pb': 10**15,
+    'eb': 10**18,
+    'kib': 2**10,
+    'mib': 2**20,
+    'gib': 2**30,
+    'tib': 2**40,
+    'pib': 2**50,
+    'eib': 2**60,
 }
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
 byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)

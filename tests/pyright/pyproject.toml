@@ -1,0 +1,4 @@
+[tool.pyright]
+extraPaths = ['../..']
+reportUnnecessaryTypeIgnoreComment = true
+pythonVersion = '3.10'

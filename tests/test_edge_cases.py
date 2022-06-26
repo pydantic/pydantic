@@ -1906,3 +1906,43 @@ def test_arbitrary_types_allowed_custom_eq():
             arbitrary_types_allowed = True
 
     assert Model().x == Foo()
+
+
+def test_bytes_subclass():
+    class MyModel(BaseModel):
+        my_bytes: bytes
+
+    class BytesSubclass(bytes):
+        def __new__(cls, data: bytes):
+            self = bytes.__new__(cls, data)
+            return self
+
+    m = MyModel(my_bytes=BytesSubclass(b'foobar'))
+    assert m.my_bytes.__class__ == BytesSubclass
+
+
+def test_int_subclass():
+    class MyModel(BaseModel):
+        my_int: int
+
+    class IntSubclass(int):
+        def __new__(cls, data: int):
+            self = int.__new__(cls, data)
+            return self
+
+    m = MyModel(my_int=IntSubclass(123))
+    assert m.my_int.__class__ == IntSubclass
+
+
+def test_model_issubclass():
+    assert not issubclass(int, BaseModel)
+
+    class MyModel(BaseModel):
+        x: int
+
+    assert issubclass(MyModel, BaseModel)
+
+    class Custom:
+        __fields__ = True
+
+    assert not issubclass(Custom, BaseModel)

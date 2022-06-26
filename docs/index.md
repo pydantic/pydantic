@@ -13,6 +13,59 @@ Data validation and settings management using python type annotations.
 
 Define how data should be in pure, canonical python; validate it with *pydantic*.
 
+## Sponsors
+
+Development of *pydantic* is made possible by the following sponsors:
+
+<div class="sponsors">
+  <div>
+    <a rel="sponsored" target="_blank" href="https://www.salesforce.com">
+      <img src="./sponsor_logos/salesforce.png" alt="Salesforce" />
+      Salesforce
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://fastapi.tiangolo.com">
+      <img src="./sponsor_logos/fastapi.png" alt="FastApi" />
+      FastApi
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://tutorcruncher.com/?utm_source=pydantic&utm_campaign=open_source">
+      <img src="./sponsor_logos/tutorcruncher.png" alt="TutorCruncher" />
+      TutorCruncher
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://www.exoflare.com/open-source/?utm_source=pydantic&utm_campaign=open_source">
+      <img src="./sponsor_logos/exoflare.png" alt="ExoFlare" />
+      ExoFlare
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://home.robusta.dev">
+      <img src="./sponsor_logos/robusta.png" alt="Robusta" />
+      Robusta
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://www.sendcloud.com">
+      <img src="./sponsor_logos/sendcloud.png" alt="SendCloud" />
+      SendCloud
+    </a>
+  </div>
+</div>
+
+And many more who kindly sponsor Samuel Colvin on [GitHub Sponsors](https://github.com/sponsors/samuelcolvin#sponsors).
+
+<script>
+  // randomize the order of sponsors
+  const ul = document.querySelector('.sponsors')
+  for (let i = ul.children.length; i >= 0; i--) {
+    ul.appendChild(ul.children[Math.random() * i | 0])
+  }
+</script>
+
 ## Example
 
 ```py
@@ -56,7 +109,8 @@ So *pydantic* uses some cool new language features, but why should I actually go
   be read from environment variables, and more complex objects like DSNs and python objects are often required.
 
 **fast**
-: In [benchmarks](benchmarks.md) *pydantic* is faster than all other tested libraries.
+: *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,
+  it's generally as fast or faster than most similar libraries.
 
 **validate complex structures**
 : use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s 
@@ -83,7 +137,9 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 [Project Jupyter](https://jupyter.org/)
 : developers of the Jupyter notebook are using *pydantic* 
-  [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773).
+  [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773), through the FastAPI-based Jupyter server
+  [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
+  configuration management.
 
 **Microsoft**
 : are using *pydantic* (via FastAPI) for 
@@ -113,6 +169,11 @@ Hundreds of organisations and packages are using *pydantic*, including:
 [Reach](https://www.reach.vote)
 : trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
   asynchronous task queue) to reliably power multiple mission-critical microservices.
+
+[Robusta.dev](https://robusta.dev/)
+: are using *pydantic* to automate Kubernetes troubleshooting and maintenance. For example, their open source
+  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
+  *pydantic* models.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
 [list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
