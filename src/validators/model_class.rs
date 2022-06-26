@@ -30,15 +30,15 @@ impl BuildValidator for ModelClassValidator {
     ) -> PyResult<CombinedValidator> {
         let class: &PyType = schema.get_as_req("class_type")?;
 
-        let model_schema_raw: &PyAny = schema.get_as_req("model")?;
-        let (validator, model_schema) = build_validator(model_schema_raw, config, build_context)?;
-        let model_type: String = model_schema.get_as_req("type")?;
-        if &model_type != "model" {
-            return py_error!("model-class expected a 'model' schema, got '{}'", model_type);
+        let sub_schema: &PyAny = schema.get_as_req("schema")?;
+        let (validator, td_schema) = build_validator(sub_schema, config, build_context)?;
+        let schema_type: String = td_schema.get_as_req("type")?;
+        if &schema_type != "typed-dict" {
+            return py_error!("model-class expected a 'typed-dict' schema, got '{}'", schema_type);
         }
-        let return_fields_set = model_schema.get_as("return_fields_set")?.unwrap_or(false);
+        let return_fields_set = td_schema.get_as("return_fields_set")?.unwrap_or(false);
         if !return_fields_set {
-            return py_error!(r#"model-class inner model must have "return_fields_set" set to True"#);
+            return py_error!(r#"model-class inner schema must have "return_fields_set" set to True"#);
         }
 
         Ok(Self {

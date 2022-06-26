@@ -23,7 +23,6 @@ mod function;
 mod int;
 mod list;
 mod literal;
-mod model;
 mod model_class;
 mod none;
 mod nullable;
@@ -32,6 +31,7 @@ mod set;
 mod string;
 mod time;
 mod tuple;
+mod typed_dict;
 mod union;
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
@@ -191,8 +191,8 @@ pub fn build_validator<'a>(
         dict,
         config,
         build_context,
-        // models e.g. heterogeneous dicts
-        model::ModelValidator,
+        // typed dict e.g. heterogeneous dicts or simply a model
+        typed_dict::TypedDictValidator,
         // unions
         union::UnionValidator,
         // nullables
@@ -254,8 +254,8 @@ pub struct Extra<'a> {
 #[derive(Debug, Clone)]
 #[enum_dispatch]
 pub enum CombinedValidator {
-    // models e.g. heterogeneous dicts
-    Model(model::ModelValidator),
+    // typed dict e.g. heterogeneous dicts or simply a model
+    Model(typed_dict::TypedDictValidator),
     // unions
     Union(union::UnionValidator),
     // nullables

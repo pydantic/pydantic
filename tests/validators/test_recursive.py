@@ -11,7 +11,7 @@ def test_branch_nullable():
             'type': 'recursive-container',
             'name': 'Branch',
             'schema': {
-                'type': 'model',
+                'type': 'typed-dict',
                 'fields': {
                     'name': {'schema': {'type': 'str'}},
                     'sub_branch': {
@@ -42,7 +42,7 @@ def test_nullable_error():
             'type': 'recursive-container',
             'name': 'Branch',
             'schema': {
-                'type': 'model',
+                'type': 'typed-dict',
                 'fields': {
                     'width': {'schema': 'int'},
                     'sub_branch': {
@@ -83,11 +83,11 @@ def test_list():
             'type': 'recursive-container',
             'name': 'BranchList',
             'schema': {
-                'type': 'model',
+                'type': 'typed-dict',
                 'fields': {
                     'width': {'schema': 'int'},
                     'branches': {
-                        'schema': {'type': 'list', 'items': {'type': 'recursive-ref', 'name': 'BranchList'}},
+                        'schema': {'type': 'list', 'items_schema': {'type': 'recursive-ref', 'name': 'BranchList'}},
                         'default': None,
                     },
                 },
@@ -120,7 +120,7 @@ def test_multiple_intertwined():
             'type': 'recursive-container',
             'name': 'Foo',
             'schema': {
-                'type': 'model',
+                'type': 'typed-dict',
                 'fields': {
                     'height': {'schema': 'int'},
                     'bar': {
@@ -128,11 +128,14 @@ def test_multiple_intertwined():
                             'type': 'recursive-container',
                             'name': 'Bar',
                             'schema': {
-                                'type': 'model',
+                                'type': 'typed-dict',
                                 'fields': {
                                     'width': {'schema': 'int'},
                                     'bars': {
-                                        'schema': {'type': 'list', 'items': {'type': 'recursive-ref', 'name': 'Bar'}},
+                                        'schema': {
+                                            'type': 'list',
+                                            'items_schema': {'type': 'recursive-ref', 'name': 'Bar'},
+                                        },
                                         'default': None,
                                     },
                                     'foo': {
@@ -177,8 +180,8 @@ def test_model_class():
             'schema': {
                 'type': 'model-class',
                 'class_type': Branch,
-                'model': {
-                    'type': 'model',
+                'schema': {
+                    'type': 'typed-dict',
                     'return_fields_set': True,
                     'fields': {
                         'width': {'schema': 'int'},
@@ -215,8 +218,8 @@ def test_invalid_schema():
         SchemaValidator(
             {
                 'type': 'list',
-                'items': {
-                    'type': 'model',
+                'items_schema': {
+                    'type': 'typed-dict',
                     'fields': {
                         'width': {'schema': {'type': 'int'}},
                         'branch': {

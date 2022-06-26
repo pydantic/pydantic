@@ -12,8 +12,8 @@ def schema(*, strict: bool = False) -> dict:
     return {
         'type': 'model-class',
         'class_type': MyModel,
-        'model': {
-            'type': 'model',
+        'schema': {
+            'type': 'typed-dict',
             'config': {'strict': strict},
             'return_fields_set': True,
             'fields': {
@@ -35,37 +35,45 @@ def schema(*, strict: bool = False) -> dict:
                     'schema': {'type': 'datetime', 'ge': '2000-01-01T06:00:00', 'lt': '2020-01-02T12:13:14'}
                 },
                 'field_list_any': {'schema': 'list'},
-                'field_list_str': {'schema': {'type': 'list', 'items': 'str'}},
-                'field_list_str_con': {'schema': {'type': 'list', 'items': 'str', 'min_items': 3, 'max_items': 42}},
+                'field_list_str': {'schema': {'type': 'list', 'items_schema': 'str'}},
+                'field_list_str_con': {
+                    'schema': {'type': 'list', 'items_schema': 'str', 'min_items': 3, 'max_items': 42}
+                },
                 'field_set_any': {'schema': 'set'},
-                'field_set_int': {'schema': {'type': 'set', 'items': 'int'}},
-                'field_set_int_con': {'schema': {'type': 'set', 'items': 'int', 'min_items': 3, 'max_items': 42}},
+                'field_set_int': {'schema': {'type': 'set', 'items_schema': 'int'}},
+                'field_set_int_con': {
+                    'schema': {'type': 'set', 'items_schema': 'int', 'min_items': 3, 'max_items': 42}
+                },
                 'field_frozenset_any': {'schema': 'frozenset'},
-                'field_frozenset_bytes': {'schema': {'type': 'frozenset', 'items': 'bytes'}},
+                'field_frozenset_bytes': {'schema': {'type': 'frozenset', 'items_schema': 'bytes'}},
                 'field_frozenset_bytes_con': {
-                    'schema': {'type': 'frozenset', 'items': 'bytes', 'min_items': 3, 'max_items': 42}
+                    'schema': {'type': 'frozenset', 'items_schema': 'bytes', 'min_items': 3, 'max_items': 42}
                 },
                 'field_tuple_var_len_any': {'schema': 'tuple-var-len'},
-                'field_tuple_var_len_float': {'schema': {'type': 'tuple-var-len', 'items': 'float'}},
+                'field_tuple_var_len_float': {'schema': {'type': 'tuple-var-len', 'items_schema': 'float'}},
                 'field_tuple_var_len_float_con': {
-                    'schema': {'type': 'tuple-var-len', 'items': 'float', 'min_items': 3, 'max_items': 42}
+                    'schema': {'type': 'tuple-var-len', 'items_schema': 'float', 'min_items': 3, 'max_items': 42}
                 },
-                'field_tuple_fix_len': {'schema': {'type': 'tuple-fix-len', 'items': ['str', 'int', 'float', 'bool']}},
+                'field_tuple_fix_len': {
+                    'schema': {'type': 'tuple-fix-len', 'items_schema': ['str', 'int', 'float', 'bool']}
+                },
                 'field_dict_any': {'schema': 'dict'},
-                'field_dict_str_float': {'schema': {'type': 'dict', 'key': 'str', 'values': 'float'}},
+                'field_dict_str_float': {'schema': {'type': 'dict', 'keys_schema': 'str', 'values_schema': 'float'}},
                 'field_literal_1_int': {'schema': {'type': 'literal', 'expected': [1]}},
                 'field_literal_1_str': {'schema': {'type': 'literal', 'expected': ['foobar']}},
                 'field_literal_mult_int': {'schema': {'type': 'literal', 'expected': [1, 2, 3]}},
                 'field_literal_mult_str': {'schema': {'type': 'literal', 'expected': ['foo', 'bar', 'baz']}},
                 'field_literal_assorted': {'schema': {'type': 'literal', 'expected': [1, 'foo', True]}},
-                'field_list_nullable_int': {'schema': {'type': 'list', 'items': {'type': 'nullable', 'schema': 'int'}}},
+                'field_list_nullable_int': {
+                    'schema': {'type': 'list', 'items_schema': {'type': 'nullable', 'schema': 'int'}}
+                },
                 'field_union': {
                     'schema': {
                         'type': 'union',
                         'choices': [
                             'str',
                             {
-                                'type': 'model',
+                                'type': 'typed-dict',
                                 'fields': {
                                     'field_str': {'schema': 'str'},
                                     'field_int': {'schema': 'int'},
@@ -73,7 +81,7 @@ def schema(*, strict: bool = False) -> dict:
                                 },
                             },
                             {
-                                'type': 'model',
+                                'type': 'typed-dict',
                                 'fields': {
                                     'field_float': {'schema': 'float'},
                                     'field_bytes': {'schema': 'bytes'},
@@ -85,7 +93,7 @@ def schema(*, strict: bool = False) -> dict:
                 },
                 'field_functions_model': {
                     'schema': {
-                        'type': 'model',
+                        'type': 'typed-dict',
                         'fields': {
                             'field_before': {
                                 'schema': {
@@ -120,7 +128,7 @@ def schema(*, strict: bool = False) -> dict:
                         'type': 'recursive-container',
                         'name': 'Branch',
                         'schema': {
-                            'type': 'model',
+                            'type': 'typed-dict',
                             'fields': {
                                 'name': {'schema': 'str'},
                                 'sub_branch': {

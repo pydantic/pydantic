@@ -8,7 +8,7 @@ pub enum ErrorKind {
     #[strum(message = "Invalid JSON: {parser_error}")]
     InvalidJson,
     // ---------------------
-    // model specific errors
+    // typed dict specific errors
     #[strum(message = "Value must be a valid dictionary or instance to extract fields from")]
     DictAttributesType,
     #[strum(message = "Field required")]
@@ -18,7 +18,7 @@ pub enum ErrorKind {
     #[strum(message = "Model keys must be strings")]
     InvalidKey,
     #[strum(message = "Error extracting attribute: {error}")]
-    ModelAttributeError,
+    GetAttributeError,
     // ---------------------
     // model class specific errors
     #[strum(message = "Value must be an instance of {class_name}")]

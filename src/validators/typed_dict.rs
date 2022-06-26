@@ -14,7 +14,7 @@ use crate::SchemaError;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-struct ModelField {
+struct TypedDictField {
     name: String,
     lookup_key: LookupKey,
     name_pystring: Py<PyString>,
@@ -24,8 +24,8 @@ struct ModelField {
 }
 
 #[derive(Debug, Clone)]
-pub struct ModelValidator {
-    fields: Vec<ModelField>,
+pub struct TypedDictValidator {
+    fields: Vec<TypedDictField>,
     check_extra: bool,
     forbid_extra: bool,
     extra_validator: Option<Box<CombinedValidator>>,
@@ -34,8 +34,8 @@ pub struct ModelValidator {
     return_fields_set: bool,
 }
 
-impl BuildValidator for ModelValidator {
-    const EXPECTED_TYPE: &'static str = "model";
+impl BuildValidator for TypedDictValidator {
+    const EXPECTED_TYPE: &'static str = "typed-dict";
 
     fn build(
         schema: &PyDict,
@@ -73,7 +73,7 @@ impl BuildValidator for ModelValidator {
 
         let populate_by_name: bool = config.get_as("populate_by_name")?.unwrap_or(false);
         let fields_dict: &PyDict = schema.get_as_req("fields")?;
-        let mut fields: Vec<ModelField> = Vec::with_capacity(fields_dict.len());
+        let mut fields: Vec<TypedDictField> = Vec::with_capacity(fields_dict.len());
 
         let py = schema.py();
         for (key, value) in fields_dict.iter() {
@@ -86,7 +86,7 @@ impl BuildValidator for ModelValidator {
                 .get_as("default")
                 .map_err(|err| PyTypeError::new_err(format!("Field \"{}\":\n  {}", field_name, err)))?;
 
-            fields.push(ModelField {
+            fields.push(TypedDictField {
                 name: field_name.to_string(),
                 lookup_key: LookupKey::from_py(py, field_info, field_name, populate_by_name)?,
                 name_pystring: PyString::intern(py, field_name).into(),
@@ -119,7 +119,7 @@ impl BuildValidator for ModelValidator {
     }
 }
 
-impl Validator for ModelValidator {
+impl Validator for TypedDictValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -162,7 +162,7 @@ impl Validator for ModelValidator {
                             // we're setting every member on ValLineError, so clippy complains if we use val_line_error!
                             errors.push(ValLineError {
                                 input_value: input.as_error_value(),
-                                kind: ErrorKind::ModelAttributeError,
+                                kind: ErrorKind::GetAttributeError,
                                 reverse_location: vec![field.name.clone().into()],
                                 context: context!("error" => py_err_string(py, err)),
                             });
@@ -289,7 +289,7 @@ impl Validator for ModelValidator {
     }
 }
 
-impl ModelValidator {
+impl TypedDictValidator {
     fn validate_assignment<'s, 'data>(
         &'s self,
         py: Python<'data>,

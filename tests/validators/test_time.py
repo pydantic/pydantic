@@ -151,12 +151,12 @@ def test_invalid_constraint():
 
 
 def test_dict_py():
-    v = SchemaValidator({'type': 'dict', 'keys': 'time', 'values': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': 'time', 'values_schema': 'int'})
     assert v.validate_python({time(12, 1, 1): 2, time(12, 1, 2): 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 
 def test_dict(py_or_json):
-    v = py_or_json({'type': 'dict', 'keys': 'time', 'values': 'int'})
+    v = py_or_json({'type': 'dict', 'keys_schema': 'time', 'values_schema': 'int'})
     assert v.validate_test({'12:01:01': 2, '12:01:02': 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 
