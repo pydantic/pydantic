@@ -112,6 +112,7 @@ derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyGetAttr, PyAny);
 derive_from!(GenericMapping, JsonObject, JsonObject);
 
+#[derive(Debug)]
 pub enum EitherString<'a> {
     Cow(Cow<'a, str>),
     Py(&'a PyString),
@@ -157,6 +158,7 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
     }
 }
 
+#[derive(Debug)]
 pub enum EitherBytes<'a> {
     Cow(Cow<'a, [u8]>),
     Py(&'a PyBytes),
