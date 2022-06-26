@@ -79,7 +79,7 @@ def test_function_before_error_model():
             'type': 'function',
             'mode': 'before',
             'function': f,
-            'schema': {'type': 'model', 'fields': {'my_field': {'schema': {'type': 'str', 'max_length': 5}}}},
+            'schema': {'type': 'typed-dict', 'fields': {'my_field': {'schema': {'type': 'str', 'max_length': 5}}}},
         }
     )
 
@@ -150,7 +150,7 @@ def test_function_after_data():
     v = SchemaValidator(
         {
             'title': 'Test',
-            'type': 'model',
+            'type': 'typed-dict',
             'fields': {
                 'field_a': {'schema': {'type': 'int'}},
                 'field_b': {'schema': {'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}}},
@@ -173,7 +173,7 @@ def test_function_after_config():
     v = SchemaValidator(
         {
             'title': 'Test',
-            'type': 'model',
+            'type': 'typed-dict',
             'fields': {
                 'test_field': {
                     'schema': {'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}}
@@ -213,6 +213,11 @@ def test_function_plain():
     assert v.validate_python('x') == 'xx'
 
 
+def test_plain_schema():
+    with pytest.raises(SchemaError, match='Plain functions should not include a sub-schema'):
+        SchemaValidator({'type': 'function', 'mode': 'plain', 'function': lambda x: x, 'schema': 'str'})
+
+
 def test_validate_assignment():
     def f(input_value, **kwargs):
         input_value['more'] = 'foobar'
@@ -223,7 +228,7 @@ def test_validate_assignment():
             'type': 'function',
             'mode': 'after',
             'function': f,
-            'schema': {'type': 'model', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+            'schema': {'type': 'typed-dict', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
         }
     )
 

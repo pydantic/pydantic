@@ -11,9 +11,9 @@ from ..conftest import Err
 
 
 def test_dict(py_or_json):
-    v = py_or_json({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = py_or_json({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
-    v = py_or_json({'type': 'dict', 'strict': True, 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = py_or_json({'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
     assert v.validate_test({}) == {}
     with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
@@ -37,7 +37,7 @@ def test_dict(py_or_json):
     ids=repr,
 )
 def test_dict_cases(input_value, expected):
-    v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'str'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': 'str', 'values_schema': 'str'})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -46,7 +46,7 @@ def test_dict_cases(input_value, expected):
 
 
 def test_dict_value_error(py_or_json):
-    v = py_or_json({'type': 'dict', 'values': 'int'})
+    v = py_or_json({'type': 'dict', 'values_schema': 'int'})
     assert v.validate_test({'a': 2, 'b': '4'}) == {'a': 2, 'b': 4}
     with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
         v.validate_test({'a': 2, 'b': 'wrong'})
@@ -61,7 +61,7 @@ def test_dict_value_error(py_or_json):
 
 
 def test_dict_error_key_int():
-    v = SchemaValidator({'type': 'dict', 'values': 'int'})
+    v = SchemaValidator({'type': 'dict', 'values_schema': 'int'})
     with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
         v.validate_python({1: 2, 3: 'wrong'})
     assert exc_info.value.errors() == [
@@ -75,7 +75,7 @@ def test_dict_error_key_int():
 
 
 def test_dict_error_key_other():
-    v = SchemaValidator({'type': 'dict', 'values': 'int'})
+    v = SchemaValidator({'type': 'dict', 'values_schema': 'int'})
     with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
         v.validate_python({1: 2, (1, 2): 'wrong'})
     assert exc_info.value.errors() == [
@@ -89,8 +89,8 @@ def test_dict_error_key_other():
 
 
 def test_dict_any_value():
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'str'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}})
     assert v.validate_python({'1': 1, '2': 'a', '3': None}) == {'1': 1, '2': 'a', '3': None}
 
 
@@ -108,15 +108,17 @@ def test_mapping():
         def __len__(self):
             return len(self._d)
 
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python(MyMapping({'1': 2, 3: '4'})) == {1: 2, 3: 4}
-    v = SchemaValidator({'type': 'dict', 'strict': True, 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = SchemaValidator(
+        {'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}}
+    )
     with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
         v.validate_python(MyMapping({'1': 2, 3: '4'}))
 
 
 def test_key_error():
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({'1': True}) == {1: 1}
     with pytest.raises(ValidationError, match=re.escape('x -> [key]\n  Value must be a valid integer')) as exc_info:
         v.validate_python({'x': 1})
@@ -141,7 +143,7 @@ def test_mapping_error():
         def __len__(self):
             return 1
 
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadMapping())
 
@@ -170,7 +172,7 @@ def test_mapping_error_yield_1():
         def __len__(self):
             return 1
 
-    v = SchemaValidator({'type': 'dict', 'keys': {'type': 'int'}, 'values': {'type': 'int'}})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadMapping())
 

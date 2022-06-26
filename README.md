@@ -24,7 +24,7 @@ Example of usage:
 from pydantic_core import SchemaValidator, ValidationError
 
 v = SchemaValidator({
-    'type': 'model',
+    'type': 'typed-dict',
     'fields': {
         'name': {
             'schema': {
@@ -45,10 +45,6 @@ v = SchemaValidator({
         },
     },
 })
-print(v)
-"""
-SchemaValidator(title="MyModel", validator=ModelValidator ...
-"""
 
 r1 = v.validate_python({'name': 'Samuel', 'age': 35})
 assert r1 == {'name': 'Samuel', 'age': 35, 'is_developer': True}

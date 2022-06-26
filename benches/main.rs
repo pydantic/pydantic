@@ -47,7 +47,7 @@ fn ints_python(bench: &mut Bencher) {
 fn list_int_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
-    let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
+    let validator = build_schema_validator(py, "{'type': 'list', 'items_schema': 'int'}");
     let code = format!(
         "[{}]",
         (0..100).map(|x| x.to_string()).collect::<Vec<String>>().join(",")
@@ -60,7 +60,7 @@ fn list_int_json(bench: &mut Bencher) {
 }
 
 fn list_int_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
-    let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
+    let validator = build_schema_validator(py, "{'type': 'list', 'items_schema': 'int'}");
     let code = format!(
         "[{}]",
         (0..100).map(|x| x.to_string()).collect::<Vec<String>>().join(",")
@@ -101,7 +101,7 @@ fn list_int_python_isinstance(bench: &mut Bencher) {
 fn list_error_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
-    let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
+    let validator = build_schema_validator(py, "{'type': 'list', 'items_schema': 'int'}");
     let code = format!(
         "[{}]",
         (0..100)
@@ -132,7 +132,7 @@ fn list_error_json(bench: &mut Bencher) {
 }
 
 fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
-    let validator = build_schema_validator(py, "{'type': 'list', 'items': 'int'}");
+    let validator = build_schema_validator(py, "{'type': 'list', 'items_schema': 'int'}");
     let code = format!(
         "[{}]",
         (0..100)
@@ -277,8 +277,8 @@ fn dict_value_error(bench: &mut Bencher) {
         py,
         r#"{
             'type': 'dict',
-            'keys': 'str',
-            'values': {
+            'keys_schema': 'str',
+            'values_schema': {
                 'type': 'int',
                 'lt': 0,
             },
@@ -318,13 +318,13 @@ fn dict_value_error(bench: &mut Bencher) {
 }
 
 #[bench]
-fn model_json(bench: &mut Bencher) {
+fn typed_dict_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(
         py,
         r#"{
-          'type': 'model',
+          'type': 'typed-dict',
           'extra': 'ignore',
           'fields': {
             'a': {'schema': 'int'},
@@ -350,13 +350,13 @@ fn model_json(bench: &mut Bencher) {
 }
 
 #[bench]
-fn model_python(bench: &mut Bencher) {
+fn typed_dict_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(
         py,
         r#"{
-          'type': 'model',
+          'type': 'typed-dict',
           'extra': 'ignore',
           'fields': {
             'a': {'schema': 'int'},
@@ -383,23 +383,23 @@ fn model_python(bench: &mut Bencher) {
 }
 
 #[bench]
-fn model_deep_error(bench: &mut Bencher) {
+fn typed_dict_deep_error(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(
         py,
         r#"{
-            'type': 'model',
+            'type': 'typed-dict',
             'fields': {
                 'field_a': {'schema': 'str'},
                 'field_b': {
                     'schema': {
-                        'type': 'model',
+                        'type': 'typed-dict',
                         'fields': {
                             'field_c': {'schema': 'str'},
                             'field_d': {
                                 'schema': {
-                                    'type': 'model',
+                                    'type': 'typed-dict',
                                     'fields': {'field_e': {'schema': 'str'}, 'field_f': {'schema': 'int'}},
                                 }
                             },
@@ -420,7 +420,7 @@ fn model_deep_error(bench: &mut Bencher) {
         Err(e) => {
             let v = e.value(py);
             // println!("error: {}", v.to_string());
-            assert_eq!(v.getattr("title").unwrap().to_string(), "model");
+            assert_eq!(v.getattr("title").unwrap().to_string(), "typed-dict");
             let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
             assert_eq!(error_count, 1);
         }

@@ -18,7 +18,7 @@ from ..conftest import Err
     ],
 )
 def test_list_json(py_or_json, input_value, expected):
-    v = py_or_json({'type': 'list', 'items': {'type': 'int'}})
+    v = py_or_json({'type': 'list', 'items_schema': {'type': 'int'}})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -27,7 +27,7 @@ def test_list_json(py_or_json, input_value, expected):
 
 
 def test_list_strict():
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}, 'strict': True})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}, 'strict': True})
     assert v.validate_python([1, 2, '33']) == [1, 2, 33]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python((1, 2, '33'))
@@ -45,7 +45,7 @@ def test_list_strict():
     ],
 )
 def test_list(input_value, expected):
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     assert v.validate_python(input_value) == expected
 
 
@@ -61,7 +61,7 @@ def test_list(input_value, expected):
     ],
 )
 def test_list_error(input_value, index):
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(input_value)
     assert exc_info.value.errors() == [
