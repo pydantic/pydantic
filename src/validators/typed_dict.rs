@@ -2,7 +2,8 @@ use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFunction, PyList, PySet, PyString};
-use std::collections::HashSet;
+
+use ahash::AHashSet;
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{
@@ -143,8 +144,8 @@ impl Validator for TypedDictValidator {
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
-        let mut used_keys: Option<HashSet<&str>> = match self.check_extra {
-            true => Some(HashSet::with_capacity(self.fields.len())),
+        let mut used_keys: Option<AHashSet<&str>> = match self.check_extra {
+            true => Some(AHashSet::with_capacity(self.fields.len())),
             false => None,
         };
 
