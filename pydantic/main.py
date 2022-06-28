@@ -589,7 +589,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         for name, field in cls.__fields__.items():
             if field.alt_alias and field.alias in values:
                 fields_values[name] = values[field.alias]
-            elif cls.__config__.allow_population_by_field_name and name in values:
+            elif name in values:
                 fields_values[name] = values[name]
             elif not field.required:
                 fields_values[name] = field.get_default()

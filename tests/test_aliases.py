@@ -339,16 +339,16 @@ def test_alias_priority():
 
 
 @pytest.mark.parametrize(
-    ["use_construct", "allow_population_by_field_name_config", "arg_name", "expectation"],
+    ['use_construct', 'allow_population_by_field_name_config', 'arg_name', 'expectation'],
     [
-        [False, True, "bar", does_not_raise()],
-        [False, True, "bar_", does_not_raise()],
-        [False, False, "bar", does_not_raise()],
-        [False, False, "bar_", pytest.raises(ValueError)],
-        [True, True, "bar", does_not_raise()],
-        [True, True, "bar_", does_not_raise()],
-        [True, False, "bar", does_not_raise()],
-        [True, False, "bar_", does_not_raise()],
+        [False, True, 'bar', does_not_raise()],
+        [False, True, 'bar_', does_not_raise()],
+        [False, False, 'bar', does_not_raise()],
+        [False, False, 'bar_', pytest.raises(ValueError)],
+        [True, True, 'bar', does_not_raise()],
+        [True, True, 'bar_', does_not_raise()],
+        [True, False, 'bar', does_not_raise()],
+        [True, False, 'bar_', does_not_raise()],
     ]
 )
 def test_allow_population_by_field_name_config(use_construct: bool, allow_population_by_field_name_config: bool, arg_name: str, expectation: ContextManager):
@@ -356,7 +356,7 @@ def test_allow_population_by_field_name_config(use_construct: bool, allow_popula
 
     class Foo(BaseModel):
 
-        bar_: int = Field(..., alias="bar", allow_population_by_field_name=True)
+        bar_: int = Field(..., alias='bar', allow_population_by_field_name=True)
 
         class Config(BaseConfig):
             allow_population_by_field_name = allow_population_by_field_name_config
