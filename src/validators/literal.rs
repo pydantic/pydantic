@@ -1,7 +1,7 @@
-use std::collections::HashSet;
-
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
+
+use ahash::AHashSet;
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
@@ -119,13 +119,13 @@ impl Validator for LiteralSingleIntValidator {
 
 #[derive(Debug, Clone)]
 pub struct LiteralMultipleStringsValidator {
-    expected: HashSet<String>,
+    expected: AHashSet<String>,
     repr: String,
 }
 
 impl LiteralMultipleStringsValidator {
     fn new(expected_list: &PyList) -> Option<Self> {
-        let mut expected: HashSet<String> = HashSet::new();
+        let mut expected: AHashSet<String> = AHashSet::new();
         let mut repr_args = Vec::new();
         for item in expected_list.iter() {
             if let Ok(str) = item.extract() {
@@ -170,13 +170,13 @@ impl Validator for LiteralMultipleStringsValidator {
 
 #[derive(Debug, Clone)]
 pub struct LiteralMultipleIntsValidator {
-    expected: HashSet<i64>,
+    expected: AHashSet<i64>,
     repr: String,
 }
 
 impl LiteralMultipleIntsValidator {
     fn new(expected_list: &PyList) -> Option<Self> {
-        let mut expected: HashSet<i64> = HashSet::new();
+        let mut expected: AHashSet<i64> = AHashSet::new();
         let mut repr_args = Vec::new();
         for item in expected_list.iter() {
             if let Ok(str) = item.extract() {
@@ -221,16 +221,16 @@ impl Validator for LiteralMultipleIntsValidator {
 
 #[derive(Debug, Clone)]
 pub struct LiteralGeneralValidator {
-    expected_int: HashSet<i64>,
-    expected_str: HashSet<String>,
+    expected_int: AHashSet<i64>,
+    expected_str: AHashSet<String>,
     expected_py: Py<PyList>,
     repr: String,
 }
 
 impl LiteralGeneralValidator {
     fn new(expected: &PyList) -> PyResult<Self> {
-        let mut expected_int = HashSet::new();
-        let mut expected_str = HashSet::new();
+        let mut expected_int = AHashSet::new();
+        let mut expected_str = AHashSet::new();
         let py = expected.py();
         let expected_py = PyList::empty(py);
         let mut repr_args: Vec<String> = Vec::new();
