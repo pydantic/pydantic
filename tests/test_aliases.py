@@ -1,6 +1,6 @@
 import re
 from contextlib import nullcontext as does_not_raise
-from typing import Any, List, Optional, ContextManager
+from typing import Any, ContextManager, List, Optional
 
 import pytest
 
@@ -361,7 +361,7 @@ def test_allow_population_by_field_name_config(
 
     class Foo(BaseModel):
 
-        bar_: int = Field(..., alias='bar', allow_population_by_field_name=True)
+        bar_: int = Field(..., alias='bar')
 
         class Config(BaseConfig):
             allow_population_by_field_name = allow_population_by_field_name_config
