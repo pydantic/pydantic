@@ -116,7 +116,7 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
 **`smart_union`**
-: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion (see [the dedicated section](#smart-union)
+: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion (see [the dedicated section](#smart-union))
 
 ## Change behaviour globally
 
