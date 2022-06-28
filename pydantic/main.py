@@ -586,7 +586,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         """
         m = cls.__new__(cls)
         fields_values: Dict[str, Any] = {}
-        errors = []
         for name, field in cls.__fields__.items():
             if field.alt_alias and field.alias in values:
                 fields_values[name] = values[field.alias]
@@ -594,11 +593,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 fields_values[name] = values[name]
             elif not field.required:
                 fields_values[name] = field.get_default()
-            else:
-                errors.append(ErrorWrapper(MissingError(), loc=field.alias))
-
-        if errors:
-            raise ValidationError(errors, cls)
 
         fields_values.update(values)
         object_setattr(m, '__dict__', fields_values)

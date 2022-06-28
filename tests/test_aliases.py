@@ -348,7 +348,7 @@ def test_alias_priority():
         [True, True, "bar", does_not_raise()],
         [True, True, "bar_", does_not_raise()],
         [True, False, "bar", does_not_raise()],
-        [True, False, "bar_", pytest.raises(ValueError)],
+        [True, False, "bar_", does_not_raise()],
     ]
 )
 def test_allow_population_by_field_name_config(use_construct: bool, allow_population_by_field_name_config: bool, arg_name: str, expectation: ContextManager):
