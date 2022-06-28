@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import sys
 from datetime import date, datetime, time
-from typing import Any, Callable, Dict, List, Sequence, Union
+from typing import Any, Callable, Dict, List, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Required
 else:
-    from typing import NotRequired
+    from typing import NotRequired, Required
 
 if sys.version_info < (3, 8):
     from typing_extensions import Literal, TypedDict
@@ -19,9 +19,10 @@ class AnySchema(TypedDict):
     type: Literal['any']
 
 
-class BoolSchema(TypedDict):
-    type: Literal['bool']
-    strict: NotRequired[bool]
+class BoolSchema(TypedDict, total=False):
+    type: Required[Literal['bool']]
+    strict: bool
+    ref: str
 
 
 class ConfigSchema(TypedDict, total=False):
@@ -39,6 +40,7 @@ class DictSchema(TypedDict, total=False):
     min_items: int
     max_items: int
     strict: bool
+    ref: str
 
 
 class FloatSchema(TypedDict, total=False):
@@ -49,7 +51,7 @@ class FloatSchema(TypedDict, total=False):
     lt: float
     gt: float
     strict: bool
-    default: float
+    ref: str
 
 
 class FunctionSchema(TypedDict):
@@ -57,12 +59,14 @@ class FunctionSchema(TypedDict):
     mode: Literal['before', 'after', 'wrap']
     function: Callable[..., Any]
     schema: Schema
+    ref: NotRequired[str]
 
 
 class FunctionPlainSchema(TypedDict):
     type: Literal['function']
     mode: Literal['plain']
     function: Callable[..., Any]
+    ref: NotRequired[str]
 
 
 class IntSchema(TypedDict, total=False):
@@ -73,6 +77,7 @@ class IntSchema(TypedDict, total=False):
     lt: int
     gt: int
     strict: bool
+    ref: str
 
 
 class ListSchema(TypedDict, total=False):
@@ -81,17 +86,20 @@ class ListSchema(TypedDict, total=False):
     min_items: int
     max_items: int
     strict: bool
+    ref: str
 
 
 class LiteralSchema(TypedDict):
     type: Literal['literal']
-    expected: Sequence[Any]
+    expected: List[Any]
+    ref: NotRequired[str]
 
 
 class ModelClassSchema(TypedDict):
     type: Literal['model-class']
     class_type: type
     schema: TypedDictSchema
+    ref: NotRequired[str]
 
 
 class TypedDictField(TypedDict, total=False):
@@ -102,33 +110,30 @@ class TypedDictField(TypedDict, total=False):
     aliases: List[List[Union[str, int]]]
 
 
-class TypedDictSchema(TypedDict):
-    type: Literal['typed-dict']
-    fields: Dict[str, TypedDictField]
-    extra_validator: NotRequired[Schema]
-    config: NotRequired[ConfigSchema]
-    return_fields_set: NotRequired[bool]
+class TypedDictSchema(TypedDict, total=False):
+    type: Required[Literal['typed-dict']]
+    fields: Required[Dict[str, TypedDictField]]
+    extra_validator: Schema
+    config: ConfigSchema
+    return_fields_set: bool
+    ref: str
 
 
 class NoneSchema(TypedDict):
     type: Literal['none']
+    ref: NotRequired[str]
 
 
-class NullableSchema(TypedDict):
-    type: Literal['nullable']
-    schema: Schema
-    strict: NotRequired[bool]
+class NullableSchema(TypedDict, total=False):
+    type: Required[Literal['nullable']]
+    schema: Required[Schema]
+    strict: bool
+    ref: str
 
 
 class RecursiveReferenceSchema(TypedDict):
     type: Literal['recursive-ref']
-    name: str
-
-
-class RecursiveContainerSchema(TypedDict):
-    type: Literal['recursive-container']
-    name: str
-    schema: Schema
+    schema_ref: str
 
 
 class SetSchema(TypedDict, total=False):
@@ -137,6 +142,7 @@ class SetSchema(TypedDict, total=False):
     min_items: int
     max_items: int
     strict: bool
+    ref: str
 
 
 class FrozenSetSchema(TypedDict, total=False):
@@ -145,6 +151,7 @@ class FrozenSetSchema(TypedDict, total=False):
     min_items: int
     max_items: int
     strict: bool
+    ref: str
 
 
 class StringSchema(TypedDict, total=False):
@@ -156,13 +163,14 @@ class StringSchema(TypedDict, total=False):
     to_lower: bool
     to_upper: bool
     strict: bool
+    ref: str
 
 
-class UnionSchema(TypedDict):
-    type: Literal['union']
-    choices: List[Schema]
-    strict: NotRequired[bool]
-    default: NotRequired[Any]
+class UnionSchema(TypedDict, total=False):
+    type: Required[Literal['union']]
+    choices: Required[List[Schema]]
+    strict: bool
+    ref: str
 
 
 class BytesSchema(TypedDict, total=False):
@@ -170,6 +178,7 @@ class BytesSchema(TypedDict, total=False):
     max_length: int
     min_length: int
     strict: bool
+    ref: str
 
 
 class DateSchema(TypedDict, total=False):
@@ -179,7 +188,7 @@ class DateSchema(TypedDict, total=False):
     ge: date
     lt: date
     gt: date
-    default: date
+    ref: str
 
 
 class TimeSchema(TypedDict, total=False):
@@ -189,7 +198,7 @@ class TimeSchema(TypedDict, total=False):
     ge: time
     lt: time
     gt: time
-    default: time
+    ref: str
 
 
 class DatetimeSchema(TypedDict, total=False):
@@ -199,13 +208,14 @@ class DatetimeSchema(TypedDict, total=False):
     ge: datetime
     lt: datetime
     gt: datetime
-    default: datetime
+    ref: str
 
 
-class TupleFixLenSchema(TypedDict):
-    type: Literal['tuple-fix-len']
-    items_schema: List[Schema]
-    strict: NotRequired[bool]
+class TupleFixLenSchema(TypedDict, total=False):
+    type: Required[Literal['tuple-fix-len']]
+    items_schema: Required[List[Schema]]
+    strict: bool
+    ref: str
 
 
 class TupleVarLenSchema(TypedDict, total=False):
@@ -214,6 +224,7 @@ class TupleVarLenSchema(TypedDict, total=False):
     min_items: int
     max_items: int
     strict: bool
+    ref: str
 
 
 # pydantic allows types to be defined via a simple string instead of dict with just `type`, e.g.
@@ -256,7 +267,6 @@ Schema = Union[
     ModelClassSchema,
     NoneSchema,
     NullableSchema,
-    RecursiveContainerSchema,
     RecursiveReferenceSchema,
     SetSchema,
     FrozenSetSchema,

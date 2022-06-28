@@ -151,19 +151,35 @@ pub trait BuildValidator: Sized {
     ) -> PyResult<CombinedValidator>;
 }
 
+fn build_single_validator<'a, T: BuildValidator>(
+    val_type: &str,
+    schema_dict: &'a PyDict,
+    config: Option<&'a PyDict>,
+    build_context: &mut BuildContext,
+) -> PyResult<(CombinedValidator, &'a PyDict)> {
+    build_context.incr_check_depth()?;
+
+    let val: CombinedValidator = if let Some(schema_ref) = schema_dict.get_as::<String>("ref")? {
+        let slot_id = build_context.prepare_slot(schema_ref)?;
+        let inner_val = T::build(schema_dict, config, build_context)
+            .map_err(|err| SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", val_type, err)))?;
+        build_context.complete_slot(slot_id, inner_val);
+        recursive::RecursiveContainerValidator::create(slot_id)
+    } else {
+        T::build(schema_dict, config, build_context)
+            .map_err(|err| SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", val_type, err)))?
+    };
+
+    build_context.decr_depth();
+    Ok((val, schema_dict))
+}
+
 // macro to build the match statement for validator selection
 macro_rules! validator_match {
     ($type:ident, $dict:ident, $config:ident, $build_context:ident, $($validator:path,)+) => {
         match $type {
             $(
-                <$validator>::EXPECTED_TYPE => {
-                    $build_context.incr_check_depth()?;
-                    let val = <$validator>::build($dict, $config, $build_context).map_err(|err| {
-                        SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", $type, err))
-                    })?;
-                    $build_context.decr_depth();
-                    Ok((val, $dict))
-                },
+                <$validator>::EXPECTED_TYPE => build_single_validator::<$validator>($type, $dict, $config, $build_context),
             )+
             _ => {
                 return py_error!(r#"Unknown schema type: "{}""#, $type)
@@ -221,7 +237,6 @@ pub fn build_validator<'a>(
         // functions - before, after, plain & wrap
         function::FunctionBuilder,
         // recursive (self-referencing) models
-        recursive::RecursiveValidator,
         recursive::RecursiveRefValidator,
         // literals
         literal::LiteralBuilder,
@@ -294,7 +309,7 @@ pub enum CombinedValidator {
     FunctionPlain(function::FunctionPlainValidator),
     FunctionWrap(function::FunctionWrapValidator),
     // recursive (self-referencing) models
-    Recursive(recursive::RecursiveValidator),
+    Recursive(recursive::RecursiveContainerValidator),
     RecursiveRef(recursive::RecursiveRefValidator),
     // literals
     LiteralSingleString(literal::LiteralSingleStringValidator),
@@ -348,6 +363,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
     fn get_name(&self, py: Python) -> String;
 }
 
+#[derive(Default)]
 pub struct BuildContext {
     named_slots: Vec<(Option<String>, Option<CombinedValidator>)>,
     depth: usize,
@@ -355,20 +371,16 @@ pub struct BuildContext {
 
 const MAX_DEPTH: usize = 100;
 
-impl Default for BuildContext {
-    fn default() -> Self {
-        let named_slots: Vec<(Option<String>, Option<CombinedValidator>)> = Vec::new();
-        BuildContext { named_slots, depth: 0 }
-    }
-}
-
 impl BuildContext {
-    pub fn add_named_slot(&mut self, name: String, schema: &PyAny, config: Option<&PyDict>) -> PyResult<usize> {
+    pub fn prepare_slot(&mut self, slot_ref: String) -> PyResult<usize> {
         let id = self.named_slots.len();
-        self.named_slots.push((Some(name), None));
-        let validator = build_validator(schema, config, self)?.0;
-        self.named_slots[id] = (None, Some(validator));
+        self.named_slots.push((Some(slot_ref), None));
         Ok(id)
+    }
+
+    pub fn complete_slot(&mut self, slot_id: usize, validator: CombinedValidator) {
+        let (name, _) = self.named_slots.get(slot_id).unwrap();
+        self.named_slots[slot_id] = (name.clone(), Some(validator));
     }
 
     pub fn incr_check_depth(&mut self) -> PyResult<()> {
@@ -384,14 +396,14 @@ impl BuildContext {
         self.depth -= 1;
     }
 
-    pub fn find_id(&self, name: &str) -> PyResult<usize> {
+    pub fn find_slot_id(&self, slot_ref: &str) -> PyResult<usize> {
         let is_match = |(n, _): &(Option<String>, Option<CombinedValidator>)| match n {
-            Some(n) => n == name,
+            Some(n) => n == slot_ref,
             None => false,
         };
         match self.named_slots.iter().position(is_match) {
             Some(id) => Ok(id),
-            None => py_error!("Recursive reference error: ref '{}' not found", name),
+            None => py_error!("Recursive reference error: ref '{}' not found", slot_ref),
         }
     }
 

@@ -189,20 +189,17 @@ def test_recursive_model_core(recursive_model_data, benchmark):
 
     v = SchemaValidator(
         {
-            'type': 'recursive-container',
-            'name': 'Branch',
+            'ref': 'Branch',
+            'type': 'model-class',
+            'class_type': CoreBranch,
             'schema': {
-                'type': 'model-class',
-                'class_type': CoreBranch,
-                'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
-                    'fields': {
-                        'width': {'schema': {'type': 'int'}},
-                        'branch': {
-                            'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'name': 'Branch'}},
-                            'default': None,
-                        },
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {
+                    'width': {'schema': {'type': 'int'}},
+                    'branch': {
+                        'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
+                        'default': None,
                     },
                 },
             },
