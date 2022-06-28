@@ -351,7 +351,12 @@ def test_alias_priority():
         [True, False, 'bar_', does_not_raise()],
     ]
 )
-def test_allow_population_by_field_name_config(use_construct: bool, allow_population_by_field_name_config: bool, arg_name: str, expectation: ContextManager):
+def test_allow_population_by_field_name_config(
+        use_construct: bool,
+        allow_population_by_field_name_config: bool,
+        arg_name: str,
+        expectation: ContextManager
+):
     expected_value: int = 7
 
     class Foo(BaseModel):
