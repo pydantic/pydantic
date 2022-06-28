@@ -125,19 +125,16 @@ def schema(*, strict: bool = False) -> dict:
                 },
                 'field_recursive': {
                     'schema': {
-                        'type': 'recursive-container',
-                        'name': 'Branch',
-                        'schema': {
-                            'type': 'typed-dict',
-                            'fields': {
-                                'name': {'schema': 'str'},
-                                'sub_branch': {
-                                    'schema': {
-                                        'type': 'nullable',
-                                        'schema': {'type': 'recursive-ref', 'name': 'Branch'},
-                                    },
-                                    'default': None,
+                        'ref': 'Branch',
+                        'type': 'typed-dict',
+                        'fields': {
+                            'name': {'schema': 'str'},
+                            'sub_branch': {
+                                'schema': {
+                                    'type': 'nullable',
+                                    'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'},
                                 },
+                                'default': None,
                             },
                         },
                     }

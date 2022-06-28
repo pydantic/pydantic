@@ -64,19 +64,16 @@ def test_schema_typing() -> None:
     schema: Schema = {'type': 'function', 'mode': 'plain', 'function': foo}
     SchemaValidator(schema)
     schema: Schema = {
-        'type': 'recursive-container',
-        'name': 'Branch',
-        'schema': {
-            'type': 'typed-dict',
-            'fields': {
-                'name': {'schema': {'type': 'str'}},
-                'sub_branch': {
-                    'schema': {
-                        'type': 'union',
-                        'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'name': 'Branch'}],
-                    },
-                    'default': None,
+        'ref': 'Branch',
+        'type': 'typed-dict',
+        'fields': {
+            'name': {'schema': {'type': 'str'}},
+            'sub_branch': {
+                'schema': {
+                    'type': 'union',
+                    'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'schema_ref': 'Branch'}],
                 },
+                'default': None,
             },
         },
     }
