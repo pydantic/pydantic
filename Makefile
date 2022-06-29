@@ -82,8 +82,8 @@ test:
 .PHONY: py-benchmark
 py-benchmark: BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 py-benchmark: build-prod
-	@echo "running py-benchmark, saving to: $(BRANCH)"
-	pytest tests/benchmarks/ --benchmark-enable --benchmark-save=$(BRANCH)
+	@echo "running the \"complete\" python benchmarks, saving to: $(BRANCH)"
+	pytest tests/benchmarks/test_complete_benchmark.py --benchmark-enable --benchmark-save=$(BRANCH)
 
 .PHONY: rust-benchmark
 rust-benchmark:
