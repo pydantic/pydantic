@@ -4,6 +4,7 @@ use pyo3::types::{PyDict, PyList};
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ValError, ValLineError};
 use crate::input::Input;
+use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
 
@@ -38,12 +39,13 @@ impl Validator for UnionValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if self.strict {
             let mut errors: Vec<ValLineError> = Vec::with_capacity(self.choices.len());
 
             for validator in &self.choices {
-                let line_errors = match validator.validate_strict(py, input, extra, slots) {
+                let line_errors = match validator.validate_strict(py, input, extra, slots, recursion_guard) {
                     Err(ValError::LineErrors(line_errors)) => line_errors,
                     otherwise => return otherwise,
                 };
@@ -61,7 +63,7 @@ impl Validator for UnionValidator {
             if let Some(res) = self
                 .choices
                 .iter()
-                .map(|validator| validator.validate_strict(py, input, extra, slots))
+                .map(|validator| validator.validate_strict(py, input, extra, slots, recursion_guard))
                 .find(ValResult::is_ok)
             {
                 return res;
@@ -71,7 +73,7 @@ impl Validator for UnionValidator {
 
             // 2nd pass: check if the value can be coerced into one of the Union types
             for validator in &self.choices {
-                let line_errors = match validator.validate(py, input, extra, slots) {
+                let line_errors = match validator.validate(py, input, extra, slots, recursion_guard) {
                     Err(ValError::LineErrors(line_errors)) => line_errors,
                     otherwise => return otherwise,
                 };

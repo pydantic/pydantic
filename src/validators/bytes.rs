@@ -4,6 +4,7 @@ use pyo3::types::PyDict;
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
 use crate::input::{EitherBytes, Input};
+use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -36,6 +37,7 @@ impl Validator for BytesValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_bytes = input.lax_bytes()?;
         Ok(either_bytes.into_py(py))
@@ -47,6 +49,7 @@ impl Validator for BytesValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_bytes = input.strict_bytes()?;
         Ok(either_bytes.into_py(py))
@@ -73,6 +76,7 @@ impl Validator for StrictBytesValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_bytes = input.strict_bytes()?;
         Ok(either_bytes.into_py(py))
@@ -97,6 +101,7 @@ impl Validator for BytesConstrainedValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let bytes = match self.strict {
             true => input.strict_bytes()?,
@@ -111,6 +116,7 @@ impl Validator for BytesConstrainedValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_bytes()?)
     }

@@ -678,6 +678,8 @@ class MyDataclass:
         (Cls(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
         (dict(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
         (Map(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
+        # using type gives `__module__ == 'builtins'`
+        (type('Testing', (), {}), Err('[kind=dict_attributes_type,')),
         ('123', Err('Value must be a valid dictionary or instance to extract fields from [kind=dict_attributes_type,')),
         ([(1, 2)], Err('kind=dict_attributes_type,')),
         (((1, 2),), Err('kind=dict_attributes_type,')),

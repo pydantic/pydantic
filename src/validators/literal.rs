@@ -6,6 +6,7 @@ use ahash::AHashSet;
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
 use crate::input::Input;
+use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -63,6 +64,7 @@ impl Validator for LiteralSingleStringValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_str = input.strict_str()?;
         if either_str.as_cow().as_ref() == self.expected.as_str() {
@@ -99,6 +101,7 @@ impl Validator for LiteralSingleIntValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let str = input.strict_int()?;
         if str == self.expected {
@@ -150,6 +153,7 @@ impl Validator for LiteralMultipleStringsValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_str = input.strict_str()?;
         if self.expected.contains(either_str.as_cow().as_ref()) {
@@ -201,6 +205,7 @@ impl Validator for LiteralMultipleIntsValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let int = input.strict_int()?;
         if self.expected.contains(&int) {
@@ -260,6 +265,7 @@ impl Validator for LiteralGeneralValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if !self.expected_int.is_empty() {
             if let Ok(int) = input.strict_int() {

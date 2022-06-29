@@ -17,14 +17,27 @@ pub enum ValError<'a> {
     InternalErr(PyErr),
 }
 
+impl<'a> From<PyErr> for ValError<'a> {
+    fn from(py_err: PyErr) -> Self {
+        Self::InternalErr(py_err)
+    }
+}
+
+impl<'a> From<Vec<ValLineError<'a>>> for ValError<'a> {
+    fn from(line_errors: Vec<ValLineError<'a>>) -> Self {
+        Self::LineErrors(line_errors)
+    }
+}
+
 // ValError used to implement Error, see #78 for removed code
 
+// TODO, remove and replace with just .into()
 pub fn as_internal<'a>(err: PyErr) -> ValError<'a> {
-    ValError::InternalErr(err)
+    err.into()
 }
 
 pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String {
-    let py_line_errors: Vec<PyLineError> = line_errors.into_iter().map(|e| PyLineError::new(py, e)).collect();
+    let py_line_errors: Vec<PyLineError> = line_errors.into_iter().map(|e| e.into_py(py)).collect();
     pretty_py_line_errors(Some(py), py_line_errors.iter())
 }
 
@@ -58,7 +71,7 @@ impl<'a> ValLineError<'a> {
         ValLineError {
             kind: self.kind,
             reverse_location: self.reverse_location,
-            input_value: InputValue::PyObject(self.input_value.to_object(py)),
+            input_value: self.input_value.to_object(py).into(),
             context: self.context,
         }
     }
@@ -76,6 +89,12 @@ pub enum InputValue<'a> {
 impl Default for InputValue<'_> {
     fn default() -> Self {
         Self::None
+    }
+}
+
+impl<'a> From<PyObject> for InputValue<'a> {
+    fn from(py_object: PyObject) -> Self {
+        Self::PyObject(py_object)
     }
 }
 

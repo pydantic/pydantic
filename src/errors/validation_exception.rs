@@ -16,7 +16,7 @@ use super::location::Location;
 use super::ValError;
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ValidationError {
     line_errors: Vec<PyLineError>,
     title: PyObject,
@@ -33,7 +33,7 @@ impl ValidationError {
     pub fn from_val_error(py: Python, title: PyObject, error: ValError) -> PyErr {
         match error {
             ValError::LineErrors(raw_errors) => {
-                let line_errors: Vec<PyLineError> = raw_errors.into_iter().map(|e| PyLineError::new(py, e)).collect();
+                let line_errors: Vec<PyLineError> = raw_errors.into_iter().map(|e| e.into_py(py)).collect();
                 PyErr::new::<ValidationError, _>((line_errors, title))
             }
             ValError::InternalErr(err) => err,
@@ -58,6 +58,18 @@ impl Error for ValidationError {
         // we could in theory set self.source as `ValError::LineErrors(line_errors.clone())`, then return that here
         // source is not used, and I can't imagine why it would be
         None
+    }
+}
+
+// used to convert a validation error back to ValError for wrap functions
+impl<'a> From<ValidationError> for ValError<'a> {
+    fn from(val_error: ValidationError) -> Self {
+        val_error
+            .line_errors
+            .into_iter()
+            .map(|e| e.into())
+            .collect::<Vec<_>>()
+            .into()
     }
 }
 
@@ -131,19 +143,36 @@ pub struct PyLineError {
     context: Context,
 }
 
-impl PyLineError {
-    pub fn new(py: Python, raw_error: ValLineError) -> Self {
-        Self {
-            kind: raw_error.kind,
-            location: match raw_error.reverse_location.len() {
-                0..=1 => raw_error.reverse_location,
-                _ => raw_error.reverse_location.into_iter().rev().collect(),
+impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
+    fn into_py(self, py: Python<'_>) -> PyLineError {
+        PyLineError {
+            kind: self.kind,
+            location: match self.reverse_location.len() {
+                0..=1 => self.reverse_location,
+                _ => self.reverse_location.into_iter().rev().collect(),
             },
-            input_value: raw_error.input_value.to_object(py),
-            context: raw_error.context,
+            input_value: self.input_value.to_object(py),
+            context: self.context,
         }
     }
+}
 
+/// opposite of above, used to extract line errors from a validation error for wrap functions
+impl<'a> From<PyLineError> for ValLineError<'a> {
+    fn from(py_line_error: PyLineError) -> Self {
+        Self {
+            kind: py_line_error.kind,
+            reverse_location: match py_line_error.location.len() {
+                0..=1 => py_line_error.location,
+                _ => py_line_error.location.into_iter().rev().collect(),
+            },
+            input_value: py_line_error.input_value.into(),
+            context: py_line_error.context,
+        }
+    }
+}
+
+impl PyLineError {
     pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
         dict.set_item("kind", self.kind())?;
