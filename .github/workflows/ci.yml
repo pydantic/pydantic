@@ -353,3 +353,16 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+      - name: get wasm dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wasm_wheels
+          path: wasm
+
+      - name: upload to github release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            wasm/*.whl
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
