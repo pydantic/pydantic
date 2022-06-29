@@ -860,6 +860,9 @@ def test_root_validator_pre():
         a: int = 1
         b: str
 
+        class Config:
+            validate_assignment = True
+
         @validator('b')
         def repeat_b(cls, v):
             return v * 2
