@@ -363,6 +363,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             for validator in self.__pre_root_validators__:
                 try:
                     new_values = validator(self.__class__, new_values)
+                    value = new_values[name]
                 except (ValueError, TypeError, AssertionError) as exc:
                     raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], self.__class__)
 
