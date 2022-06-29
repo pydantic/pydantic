@@ -879,9 +879,10 @@ def test_root_validator_pre():
     assert root_val_values == [{'a': '123', 'b': 'bar'}, {'b': 'snap dragon'}]
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
 
-    model = Model({"a": 1, "b": "bar"})
-    model.a = 41 
-    assert model.a == 42 # assignment as 42 implies root_validator value propogated
+    model = Model({'a': 1, 'b': 'bar'})
+    model.a = 41
+    assert model.a == 42  # assignment as 42 implies root_validator value propogated
+
 
 def test_root_validator_repeat():
     with pytest.raises(errors.ConfigError, match='duplicate validator function'):
