@@ -5,6 +5,7 @@ use regex::Regex;
 use crate::build_tools::{is_strict, py_error, schema_or_config};
 use crate::errors::{context, err_val_error, ErrorKind, ValResult};
 use crate::input::{EitherString, Input};
+use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -53,6 +54,7 @@ impl Validator for StrValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         Ok(input.lax_str()?.into_py(py))
     }
@@ -63,6 +65,7 @@ impl Validator for StrValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         Ok(input.strict_str()?.into_py(py))
     }
@@ -88,6 +91,7 @@ impl Validator for StrictStrValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         Ok(input.strict_str()?.into_py(py))
     }
@@ -115,6 +119,7 @@ impl Validator for StrConstrainedValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let str = match self.strict {
             true => input.strict_str()?,
@@ -129,6 +134,7 @@ impl Validator for StrConstrainedValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         self._validation_logic(py, input, input.strict_str()?)
     }

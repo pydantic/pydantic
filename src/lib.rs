@@ -10,6 +10,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 mod build_tools;
 mod errors;
 mod input;
+mod recursion_guard;
 mod validators;
 
 // required for benchmarks

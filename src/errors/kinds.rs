@@ -8,6 +8,10 @@ pub enum ErrorKind {
     #[strum(message = "Invalid JSON: {parser_error}")]
     InvalidJson,
     // ---------------------
+    // recursion error
+    #[strum(message = "Recursion error - cyclic reference detected")]
+    RecursionLoop,
+    // ---------------------
     // typed dict specific errors
     #[strum(message = "Value must be a valid dictionary or instance to extract fields from")]
     DictAttributesType,

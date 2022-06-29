@@ -16,6 +16,10 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
 
     fn as_error_value(&'a self) -> InputValue<'a>;
 
+    fn identity(&'a self) -> Option<usize> {
+        None
+    }
+
     fn is_none(&self) -> bool;
 
     fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>>;

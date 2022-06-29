@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTuple};
 
 use crate::errors::{ValError, ValLineError, ValResult};
+use crate::recursion_guard::RecursionGuard;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
 use super::parse_json::{JsonArray, JsonObject};
@@ -41,11 +42,12 @@ macro_rules! build_validate_to_vec {
             validator: &'s CombinedValidator,
             extra: &Extra,
             slots: &'a [CombinedValidator],
+            recursion_guard: &'s mut RecursionGuard,
         ) -> ValResult<'a, Vec<PyObject>> {
             let mut output: Vec<PyObject> = Vec::with_capacity(length);
             let mut errors: Vec<ValLineError> = Vec::new();
             for (index, item) in sequence.iter().enumerate() {
-                match validator.validate(py, item, extra, slots) {
+                match validator.validate(py, item, extra, slots, recursion_guard) {
                     Ok(item) => output.push(item),
                     Err(ValError::LineErrors(line_errors)) => {
                         errors.extend(
@@ -90,13 +92,22 @@ impl<'a> GenericSequence<'a> {
         validator: &'s CombinedValidator,
         extra: &Extra,
         slots: &'a [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'a, Vec<PyObject>> {
         match self {
-            Self::List(sequence) => validate_to_vec_list(py, sequence, length, validator, extra, slots),
-            Self::Tuple(sequence) => validate_to_vec_tuple(py, sequence, length, validator, extra, slots),
-            Self::Set(sequence) => validate_to_vec_set(py, sequence, length, validator, extra, slots),
-            Self::FrozenSet(sequence) => validate_to_vec_frozenset(py, sequence, length, validator, extra, slots),
-            Self::JsonArray(sequence) => validate_to_vec_jsonarray(py, sequence, length, validator, extra, slots),
+            Self::List(sequence) => {
+                validate_to_vec_list(py, sequence, length, validator, extra, slots, recursion_guard)
+            }
+            Self::Tuple(sequence) => {
+                validate_to_vec_tuple(py, sequence, length, validator, extra, slots, recursion_guard)
+            }
+            Self::Set(sequence) => validate_to_vec_set(py, sequence, length, validator, extra, slots, recursion_guard),
+            Self::FrozenSet(sequence) => {
+                validate_to_vec_frozenset(py, sequence, length, validator, extra, slots, recursion_guard)
+            }
+            Self::JsonArray(sequence) => {
+                validate_to_vec_jsonarray(py, sequence, length, validator, extra, slots, recursion_guard)
+            }
         }
     }
 }
