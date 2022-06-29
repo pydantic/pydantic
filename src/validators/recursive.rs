@@ -2,8 +2,9 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
-use crate::errors::ValResult;
+use crate::errors::{err_val_error, ErrorKind, ValResult};
 use crate::input::Input;
+use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -25,9 +26,9 @@ impl Validator for RecursiveContainerValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let validator = unsafe { slots.get_unchecked(self.validator_id) };
-        validator.validate(py, input, extra, slots)
+        validate(self.validator_id, py, input, extra, slots, recursion_guard)
     }
 
     fn get_name(&self, _py: Python) -> String {
@@ -61,12 +62,36 @@ impl Validator for RecursiveRefValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let validator = unsafe { slots.get_unchecked(self.validator_id) };
-        validator.validate(py, input, extra, slots)
+        validate(self.validator_id, py, input, extra, slots, recursion_guard)
     }
 
     fn get_name(&self, _py: Python) -> String {
         Self::EXPECTED_TYPE.to_string()
+    }
+}
+
+fn validate<'s, 'data>(
+    validator_id: usize,
+    py: Python<'data>,
+    input: &'data impl Input<'data>,
+    extra: &Extra,
+    slots: &'data [CombinedValidator],
+    recursion_guard: &'s mut RecursionGuard,
+) -> ValResult<'data, PyObject> {
+    if let Some(id) = input.identity() {
+        if recursion_guard.contains_or_insert(id) {
+            // remove ID in case we use recursion_guard again
+            recursion_guard.remove(&id);
+            return err_val_error!(kind = ErrorKind::RecursionLoop, input_value = input.as_error_value());
+        }
+        let validator = unsafe { slots.get_unchecked(validator_id) };
+        let output = validator.validate(py, input, extra, slots, recursion_guard);
+        recursion_guard.remove(&id);
+        output
+    } else {
+        let validator = unsafe { slots.get_unchecked(validator_id) };
+        validator.validate(py, input, extra, slots, recursion_guard)
     }
 }

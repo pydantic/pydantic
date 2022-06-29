@@ -10,6 +10,7 @@ use serde_json::from_str as parse_json;
 use crate::build_tools::{py_error, SchemaDict, SchemaError};
 use crate::errors::{context, val_line_error, ErrorKind, ValError, ValResult, ValidationError};
 use crate::input::{Input, JsonInput};
+use crate::recursion_guard::RecursionGuard;
 
 mod any;
 mod bool;
@@ -74,12 +75,24 @@ impl SchemaValidator {
     }
 
     pub fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
-        let r = self.validator.validate(py, input, &Extra::default(), &self.slots);
+        let r = self.validator.validate(
+            py,
+            input,
+            &Extra::default(),
+            &self.slots,
+            &mut RecursionGuard::default(),
+        );
         r.map_err(|e| self.prepare_validation_err(py, e))
     }
 
     pub fn isinstance_python(&self, py: Python, input: &PyAny) -> PyResult<bool> {
-        match self.validator.validate(py, input, &Extra::default(), &self.slots) {
+        match self.validator.validate(
+            py,
+            input,
+            &Extra::default(),
+            &self.slots,
+            &mut RecursionGuard::default(),
+        ) {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
             _ => Ok(false),
@@ -89,7 +102,13 @@ impl SchemaValidator {
     pub fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
         match parse_json::<JsonInput>(&input) {
             Ok(input) => {
-                let r = self.validator.validate(py, &input, &Extra::default(), &self.slots);
+                let r = self.validator.validate(
+                    py,
+                    &input,
+                    &Extra::default(),
+                    &self.slots,
+                    &mut RecursionGuard::default(),
+                );
                 r.map_err(|e| self.prepare_validation_err(py, e))
             }
             Err(e) => {
@@ -106,11 +125,19 @@ impl SchemaValidator {
 
     pub fn isinstance_json(&self, py: Python, input: String) -> PyResult<bool> {
         match parse_json::<JsonInput>(&input) {
-            Ok(input) => match self.validator.validate(py, &input, &Extra::default(), &self.slots) {
-                Ok(_) => Ok(true),
-                Err(ValError::InternalErr(err)) => Err(err),
-                _ => Ok(false),
-            },
+            Ok(input) => {
+                match self.validator.validate(
+                    py,
+                    &input,
+                    &Extra::default(),
+                    &self.slots,
+                    &mut RecursionGuard::default(),
+                ) {
+                    Ok(_) => Ok(true),
+                    Err(ValError::InternalErr(err)) => Err(err),
+                    _ => Ok(false),
+                }
+            }
             Err(_) => Ok(false),
         }
     }
@@ -120,7 +147,9 @@ impl SchemaValidator {
             data: Some(data),
             field: Some(field.as_str()),
         };
-        let r = self.validator.validate(py, input, &extra, &self.slots);
+        let r = self
+            .validator
+            .validate(py, input, &extra, &self.slots, &mut RecursionGuard::default());
         r.map_err(|e| self.prepare_validation_err(py, e))
     }
 
@@ -344,6 +373,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject>;
 
     /// This is used in unions for the first pass to see if we have an "exact match",
@@ -354,8 +384,9 @@ pub trait Validator: Send + Sync + Clone + Debug {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra, slots)
+        self.validate(py, input, extra, slots, recursion_guard)
     }
 
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator

@@ -4,6 +4,7 @@ use pyo3::types::PyDict;
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{context, err_val_error, ErrorKind};
 use crate::input::{GenericSequence, Input};
+use crate::recursion_guard::RecursionGuard;
 
 use super::any::AnyValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
@@ -50,12 +51,13 @@ impl Validator for ListValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let list = match self.strict {
             true => input.strict_list()?,
             false => input.lax_list()?,
         };
-        self._validation_logic(py, input, list, extra, slots)
+        self._validation_logic(py, input, list, extra, slots, recursion_guard)
     }
 
     fn validate_strict<'s, 'data>(
@@ -64,8 +66,9 @@ impl Validator for ListValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_list()?, extra, slots)
+        self._validation_logic(py, input, input.strict_list()?, extra, slots, recursion_guard)
     }
 
     fn get_name(&self, py: Python) -> String {
@@ -81,6 +84,7 @@ impl ListValidator {
         list: GenericSequence<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let length = list.generic_len();
         if let Some(min_length) = self.min_items {
@@ -102,7 +106,7 @@ impl ListValidator {
             }
         }
 
-        let output = list.validate_to_vec(py, length, &self.item_validator, extra, slots)?;
+        let output = list.validate_to_vec(py, length, &self.item_validator, extra, slots, recursion_guard)?;
         Ok(output.into_py(py))
     }
 }

@@ -5,6 +5,7 @@ use speedate::DateTime;
 use crate::build_tools::{is_strict, SchemaDict, SchemaError};
 use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValResult};
 use crate::input::{EitherDateTime, Input};
+use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -58,6 +59,7 @@ impl Validator for DateTimeValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let date = match self.strict {
             true => input.strict_datetime()?,
@@ -72,6 +74,7 @@ impl Validator for DateTimeValidator {
         input: &'data impl Input<'data>,
         _extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         self.validation_comparison(py, input, input.strict_datetime()?)
     }

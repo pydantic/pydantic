@@ -5,6 +5,7 @@ use pyo3::types::{PyAny, PyDict};
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{context, val_line_error, ErrorKind, ValError, ValResult, ValidationError};
 use crate::input::Input;
+use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -71,6 +72,7 @@ impl Validator for FunctionBeforeValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         let value = self
@@ -79,7 +81,7 @@ impl Validator for FunctionBeforeValidator {
             .map_err(|e| convert_err(py, e, input))?;
         // maybe there's some way to get the PyAny here and explicitly tell rust it should have lifespan 'a?
         let new_input: &PyAny = value.as_ref(py);
-        match self.validator.validate(py, new_input, extra, slots) {
+        match self.validator.validate(py, new_input, extra, slots, recursion_guard) {
             Ok(v) => Ok(v),
             Err(ValError::InternalErr(err)) => Err(ValError::InternalErr(err)),
             Err(ValError::LineErrors(line_errors)) => {
@@ -116,8 +118,9 @@ impl Validator for FunctionAfterValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let v = self.validator.validate(py, input, extra, slots)?;
+        let v = self.validator.validate(py, input, extra, slots, recursion_guard)?;
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
@@ -154,6 +157,7 @@ impl Validator for FunctionPlainValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let kwargs = kwargs!(py, "data" => extra.data, "config" => self.config.as_ref());
         self.func
@@ -182,12 +186,14 @@ impl Validator for FunctionWrapValidator {
         input: &'data impl Input<'data>,
         extra: &Extra,
         slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let validator_kwarg = ValidatorCallable {
             validator: self.validator.clone(),
             slots: slots.to_vec(),
             data: extra.data.map(|d| d.into_py(py)),
             field: extra.field.map(|f| f.to_string()),
+            recursion_guard: recursion_guard.clone(),
         };
         let kwargs = kwargs!(
             py,
@@ -212,17 +218,18 @@ struct ValidatorCallable {
     slots: Vec<CombinedValidator>,
     data: Option<Py<PyDict>>,
     field: Option<String>,
+    recursion_guard: RecursionGuard,
 }
 
 #[pymethods]
 impl ValidatorCallable {
-    fn __call__(&self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
+    fn __call__(&mut self, py: Python, arg: &PyAny) -> PyResult<PyObject> {
         let extra = Extra {
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             field: self.field.as_deref(),
         };
         self.validator
-            .validate(py, arg, &extra, &self.slots)
+            .validate(py, arg, &extra, &self.slots, &mut self.recursion_guard)
             .map_err(|e| ValidationError::from_val_error(py, "Model".to_object(py), e))
     }
 
@@ -252,6 +259,9 @@ fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> Val
     // Only ValueError and AssertionError are considered as validation errors,
     // TypeError is now considered as a runtime error to catch errors in function signatures
     let kind = if err.is_instance_of::<PyValueError>(py) {
+        if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
+            return validation_error.into();
+        }
         ErrorKind::ValueError
     } else if err.is_instance_of::<PyAssertionError>(py) {
         ErrorKind::AssertionError

@@ -1,12 +1,12 @@
 use std::str::from_utf8;
 
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySequence, PySet, PyString,
     PyTime, PyTuple, PyType,
 };
+use pyo3::{intern, AsPyPointer};
 
 use crate::errors::location::LocItem;
 use crate::errors::{as_internal, context, err_val_error, py_err_string, ErrorKind, InputValue, ValResult};
@@ -34,6 +34,10 @@ impl<'a> Input<'a> for PyAny {
 
     fn as_error_value(&'a self) -> InputValue<'a> {
         InputValue::PyAny(self)
+    }
+
+    fn identity(&'a self) -> Option<usize> {
+        Some(self.as_ptr() as usize)
     }
 
     fn is_none(&self) -> bool {

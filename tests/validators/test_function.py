@@ -103,9 +103,7 @@ def test_function_wrap():
 
     v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
 
-    # with pytest.raises(ValidationError) as exc_info:
     assert v.validate_python('input value') == 'input value Changed'
-    # print(exc_info.value)
 
 
 def test_function_wrap_repr():
@@ -132,6 +130,25 @@ def test_function_wrap_not_callable():
 
     with pytest.raises(SchemaError, match='SchemaError: "function" key is required'):
         SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'schema': 'str'})
+
+
+def test_wrap_error():
+    def f(input_value, *, validator, **kwargs):
+        return validator(input_value) * 2
+
+    v = SchemaValidator({'title': 'Test', 'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'int'})
+
+    assert v.validate_python('42') == 84
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('wrong')
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': [],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'wrong',
+        }
+    ]
 
 
 def test_wrong_mode():
