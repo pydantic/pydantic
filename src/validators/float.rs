@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -151,47 +151,27 @@ impl ConstrainedFloatValidator {
     ) -> ValResult<'data, PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::FloatMultiple,
-                    context = context!("multiple_of" => multiple_of)
-                );
+                return Err(ValError::new(ErrorKind::FloatMultipleOf { multiple_of }, input));
             }
         }
         if let Some(le) = self.le {
             if float > le {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::LessThanEqual,
-                    context = context!("le" => le)
-                );
+                return Err(ValError::new(ErrorKind::FloatLessThanEqual { le }, input));
             }
         }
         if let Some(lt) = self.lt {
             if float >= lt {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::LessThan,
-                    context = context!("lt" => lt)
-                );
+                return Err(ValError::new(ErrorKind::FloatLessThan { lt }, input));
             }
         }
         if let Some(ge) = self.ge {
             if float < ge {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::GreaterThanEqual,
-                    context = context!("ge" => ge)
-                );
+                return Err(ValError::new(ErrorKind::FloatGreaterThanEqual { ge }, input));
             }
         }
         if let Some(gt) = self.gt {
             if float <= gt {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::GreaterThan,
-                    context = context!("gt" => gt)
-                );
+                return Err(ValError::new(ErrorKind::FloatGreaterThan { gt }, input));
             }
         }
         Ok(float.into_py(py))

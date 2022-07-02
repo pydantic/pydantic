@@ -73,9 +73,9 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type, tuple_variant, items)
     [
         ({}, (1, 2, 3, 4), (1, 2, 3, 4)),
         ({'min_items': 3}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'min_items': 3}, (1, 2), Err('Tuple must have at least 3 items [kind=too_short')),
+        ({'min_items': 3}, (1, 2), Err('Input must have at least 3 items [kind=too_short')),
         ({'max_items': 4}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'max_items': 3}, (1, 2, 3, 4), Err('Tuple must have at most 3 items [kind=too_long')),
+        ({'max_items': 3}, (1, 2, 3, 4), Err('Input must have at most 3 items [kind=too_long')),
     ],
 )
 def test_tuple_var_len_kwargs(kwargs, input_value, expected):
@@ -312,6 +312,6 @@ def test_tuple_fix_error():
             'loc': [],
             'message': 'Tuple must have exactly 2 items',
             'input_value': [1],
-            'context': {'expected_length': 2, 'plural': 's'},
+            'context': {'expected_length': 2, 'plural': True},
         }
     ]

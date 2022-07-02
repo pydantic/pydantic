@@ -79,9 +79,9 @@ def test_list_error(input_value, index):
     [
         ({}, [1, 2, 3, 4], [1, 2, 3, 4]),
         ({'min_items': 3}, [1, 2, 3, 4], [1, 2, 3, 4]),
-        ({'min_items': 3}, [1, 2], Err('List must have at least 3 items [kind=too_short')),
+        ({'min_items': 3}, [1, 2], Err('Input must have at least 3 items [kind=too_short')),
         ({'max_items': 4}, [1, 2, 3, 4], [1, 2, 3, 4]),
-        ({'max_items': 3}, [1, 2, 3, 4], Err('List must have at most 3 items [kind=too_long')),
+        ({'max_items': 3}, [1, 2, 3, 4], Err('Input must have at most 3 items [kind=too_long')),
     ],
 )
 def test_list_length_constraints(kwargs, input_value, expected):
@@ -91,3 +91,31 @@ def test_list_length_constraints(kwargs, input_value, expected):
             v.validate_python(input_value)
     else:
         assert v.validate_python(input_value) == expected
+
+
+def test_length_ctx():
+    v = SchemaValidator({'type': 'list', 'min_items': 2, 'max_items': 3})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1])
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'too_short',
+            'loc': [],
+            'message': 'Input must have at least 2 items',
+            'input_value': [1],
+            'context': {'min_length': 2},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1, 2, 3, 4])
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'too_long',
+            'loc': [],
+            'message': 'Input must have at most 3 items',
+            'input_value': [1, 2, 3, 4],
+            'context': {'max_length': 3},
+        }
+    ]

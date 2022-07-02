@@ -105,7 +105,7 @@ testcov-windows: build-cov-windows test
 
 
 .PHONY: all
-all: format build-dev lint pyright test
+all: format build-dev lint test
 
 .PHONY: flame
 flame:

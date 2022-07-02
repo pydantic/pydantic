@@ -215,9 +215,9 @@ def test_custom_invalid_tz():
         {
             'kind': 'datetime_object_invalid',
             'loc': [],
-            'message': 'Invalid datetime object, got NotImplementedError',
+            'message': 'Invalid datetime object, got NotImplementedError: a tzinfo subclass must implement utcoffset()',
             'input_value': dt,
-            'context': {'processing_error': 'NotImplementedError'},
+            'context': {'error': 'NotImplementedError: a tzinfo subclass must implement utcoffset()'},
         }
     ]
 

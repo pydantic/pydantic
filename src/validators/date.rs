@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 use speedate::{Date, Time};
 
 use crate::build_tools::{is_strict, SchemaDict, SchemaError};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValResult};
+use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
 use crate::input::{EitherDate, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -103,23 +103,24 @@ impl DateValidator {
             let raw_date = date.as_raw().map_err(as_internal)?;
 
             macro_rules! check_constraint {
-                ($constraint:ident, $error:path, $key:literal) => {
+                ($constraint:ident, $error:ident) => {
                     if let Some(constraint) = &constraints.$constraint {
                         if !raw_date.$constraint(constraint) {
-                            return err_val_error!(
-                                input_value = input.as_error_value(),
-                                kind = $error,
-                                context = context!($key => constraint.to_string())
-                            );
+                            return Err(ValError::new(
+                                ErrorKind::$error {
+                                    $constraint: constraint.to_string(),
+                                },
+                                input,
+                            ));
                         }
                     }
                 };
             }
 
-            check_constraint!(le, ErrorKind::LessThanEqual, "le");
-            check_constraint!(lt, ErrorKind::LessThan, "lt");
-            check_constraint!(ge, ErrorKind::GreaterThanEqual, "ge");
-            check_constraint!(gt, ErrorKind::GreaterThan, "gt");
+            check_constraint!(le, LessThanEqual);
+            check_constraint!(lt, LessThan);
+            check_constraint!(ge, GreaterThanEqual);
+            check_constraint!(gt, GreaterThan);
         }
         date.try_into_py(py).map_err(as_internal)
     }
@@ -140,8 +141,10 @@ fn date_from_datetime<'data>(
                     // convert DateTimeParsing -> DateFromDatetimeParsing but keep the rest of the error unchanged
                     for line_error in line_errors.iter_mut() {
                         match line_error.kind {
-                            ErrorKind::DateTimeParsing => {
-                                line_error.kind = ErrorKind::DateFromDatetimeParsing;
+                            ErrorKind::DateTimeParsing { ref error } => {
+                                line_error.kind = ErrorKind::DateFromDatetimeParsing {
+                                    error: error.to_string(),
+                                };
                             }
                             _ => {
                                 return Err(date_err);
@@ -164,10 +167,7 @@ fn date_from_datetime<'data>(
     if dt.time == zero_time && dt.offset.is_none() {
         Ok(EitherDate::Raw(dt.date))
     } else {
-        err_val_error!(
-            input_value = input.as_error_value(),
-            kind = ErrorKind::DateFromDatetimeInexact
-        )
+        Err(ValError::new(ErrorKind::DateFromDatetimeInexact, input))
     }
 }
 

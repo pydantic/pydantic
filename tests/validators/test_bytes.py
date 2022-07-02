@@ -75,3 +75,31 @@ def test_union():
     v = SchemaValidator({'type': 'union', 'choices': ['str', 'bytes'], 'strict': True})
     assert v.validate_python('oh, a string') == 'oh, a string'
     assert v.validate_python(b'oh, bytes') == b'oh, bytes'
+
+
+def test_length_ctx():
+    v = SchemaValidator({'type': 'bytes', 'min_length': 2, 'max_length': 3})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(b'1')
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'too_short',
+            'loc': [],
+            'message': 'Data must have at least 2 bytes',
+            'input_value': b'1',
+            'context': {'min_length': 2},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(b'1234')
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'too_long',
+            'loc': [],
+            'message': 'Data must have at most 3 bytes',
+            'input_value': b'1234',
+            'context': {'max_length': 3},
+        }
+    ]

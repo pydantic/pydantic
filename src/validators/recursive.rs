@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
-use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -84,7 +84,7 @@ fn validate<'s, 'data>(
         if recursion_guard.contains_or_insert(id) {
             // remove ID in case we use recursion_guard again
             recursion_guard.remove(&id);
-            return err_val_error!(kind = ErrorKind::RecursionLoop, input_value = input.as_error_value());
+            return Err(ValError::new(ErrorKind::RecursionLoop, input));
         }
         let validator = unsafe { slots.get_unchecked(validator_id) };
         let output = validator.validate(py, input, extra, slots, recursion_guard);

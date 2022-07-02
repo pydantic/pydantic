@@ -8,7 +8,7 @@ use pyo3::types::{PyAny, PyDict};
 use serde_json::from_str as parse_json;
 
 use crate::build_tools::{py_error, SchemaDict, SchemaError};
-use crate::errors::{context, val_line_error, ErrorKind, ValError, ValResult, ValidationError};
+use crate::errors::{ErrorKind, ValError, ValLineError, ValResult, ValidationError};
 use crate::input::{Input, JsonInput};
 use crate::recursion_guard::RecursionGuard;
 
@@ -112,11 +112,7 @@ impl SchemaValidator {
                 r.map_err(|e| self.prepare_validation_err(py, e))
             }
             Err(e) => {
-                let line_err = val_line_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::InvalidJson,
-                    context = context!("parser_error" => e.to_string())
-                );
+                let line_err = ValLineError::new(ErrorKind::InvalidJson { error: e.to_string() }, &input);
                 let err = ValError::LineErrors(vec![line_err]);
                 Err(self.prepare_validation_err(py, err))
             }

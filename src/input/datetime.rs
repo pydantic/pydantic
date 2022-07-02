@@ -5,7 +5,7 @@ use speedate::{Date, DateTime, Time};
 use strum::EnumMessage;
 
 use super::Input;
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 
 pub enum EitherDate<'a> {
     Raw(Date),
@@ -177,39 +177,36 @@ impl<'a> EitherDateTime<'a> {
 pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'a, EitherDate<'a>> {
     match Date::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
-        Err(err) => {
-            err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::DateParsing,
-                context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
-            )
-        }
+        Err(err) => Err(ValError::new(
+            ErrorKind::DateParsing {
+                error: err.get_documentation().unwrap_or_default(),
+            },
+            input,
+        )),
     }
 }
 
 pub fn bytes_as_time<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'a, EitherTime<'a>> {
     match Time::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
-        Err(err) => {
-            err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::TimeParsing,
-                context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
-            )
-        }
+        Err(err) => Err(ValError::new(
+            ErrorKind::TimeParsing {
+                error: err.get_documentation().unwrap_or_default(),
+            },
+            input,
+        )),
     }
 }
 
 pub fn bytes_as_datetime<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> ValResult<'a, EitherDateTime<'a>> {
     match DateTime::parse_bytes(bytes) {
         Ok(dt) => Ok(dt.into()),
-        Err(err) => {
-            err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::DateTimeParsing,
-                context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
-            )
-        }
+        Err(err) => Err(ValError::new(
+            ErrorKind::DateTimeParsing {
+                error: err.get_documentation().unwrap_or_default(),
+            },
+            input,
+        )),
     }
 }
 
@@ -220,13 +217,12 @@ pub fn int_as_datetime<'a>(
 ) -> ValResult<EitherDateTime> {
     match DateTime::from_timestamp(timestamp, timestamp_microseconds) {
         Ok(dt) => Ok(dt.into()),
-        Err(err) => {
-            err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::DateTimeParsing,
-                context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
-            )
-        }
+        Err(err) => Err(ValError::new(
+            ErrorKind::DateTimeParsing {
+                error: err.get_documentation().unwrap_or_default(),
+            },
+            input,
+        )),
     }
 }
 
@@ -262,11 +258,12 @@ pub fn int_as_time<'a>(
 ) -> ValResult<EitherTime> {
     let time_timestamp: u32 = match timestamp {
         t if t < 0_i64 => {
-            return err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::TimeParsing,
-                context = context!("parsing_error" => "time in seconds must be positive")
-            );
+            return Err(ValError::new(
+                ErrorKind::TimeParsing {
+                    error: "time in seconds must be positive",
+                },
+                input,
+            ));
         }
         // continue and use the speedate error for >86400
         t if t > MAX_U32 => u32::MAX,
@@ -275,13 +272,12 @@ pub fn int_as_time<'a>(
     };
     match Time::from_timestamp(time_timestamp, timestamp_microseconds) {
         Ok(dt) => Ok(dt.into()),
-        Err(err) => {
-            err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::TimeParsing,
-                context = context!("parsing_error" => err.get_documentation().unwrap_or_default())
-            )
-        }
+        Err(err) => Err(ValError::new(
+            ErrorKind::TimeParsing {
+                error: err.get_documentation().unwrap_or_default(),
+            },
+            input,
+        )),
     }
 }
 

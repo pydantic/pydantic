@@ -6,6 +6,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::{FromPyObject, PyErrArguments};
 
+use crate::errors::{pretty_line_errors, ValError};
+
 pub trait SchemaDict<'py> {
     fn get_as<T>(&'py self, key: &str) -> PyResult<Option<T>>
     where
@@ -161,5 +163,4 @@ macro_rules! py_error {
         Err(<$error_type>::new_err(format!($msg, $( $msg_args ),+)))
     };
 }
-use crate::errors::{pretty_line_errors, ValError};
 pub(crate) use py_error;
