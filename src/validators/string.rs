@@ -3,7 +3,7 @@ use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
 use crate::build_tools::{is_strict, py_error, schema_or_config};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{EitherString, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -182,29 +182,22 @@ impl StrConstrainedValidator {
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::StrTooShort,
-                    context = context!("min_length" => min_length)
-                );
+                return Err(ValError::new(ErrorKind::StrTooShort { min_length }, input));
             }
         }
         if let Some(max_length) = self.max_length {
             if str.len() > max_length {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::StrTooLong,
-                    context = context!("max_length" => max_length)
-                );
+                return Err(ValError::new(ErrorKind::StrTooLong { max_length }, input));
             }
         }
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(str) {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::StrPatternMismatch,
-                    context = context!("pattern" => pattern.to_string())
-                );
+                return Err(ValError::new(
+                    ErrorKind::StrPatternMismatch {
+                        pattern: pattern.to_string(),
+                    },
+                    input,
+                ));
             }
         }
 

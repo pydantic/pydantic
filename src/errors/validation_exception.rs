@@ -6,12 +6,10 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use strum::EnumMessage;
-
 use crate::input::repr_string;
 
 use super::kinds::ErrorKind;
-use super::line_error::{Context, ValLineError};
+use super::line_error::ValLineError;
 use super::location::Location;
 use super::ValError;
 
@@ -140,19 +138,14 @@ pub struct PyLineError {
     kind: ErrorKind,
     location: Location,
     input_value: PyObject,
-    context: Context,
 }
 
 impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
     fn into_py(self, py: Python<'_>) -> PyLineError {
         PyLineError {
             kind: self.kind,
-            location: match self.reverse_location.len() {
-                0..=1 => self.reverse_location,
-                _ => self.reverse_location.into_iter().rev().collect(),
-            },
+            location: self.location,
             input_value: self.input_value.to_object(py),
-            context: self.context,
         }
     }
 }
@@ -162,12 +155,8 @@ impl<'a> From<PyLineError> for ValLineError<'a> {
     fn from(py_line_error: PyLineError) -> Self {
         Self {
             kind: py_line_error.kind,
-            reverse_location: match py_line_error.location.len() {
-                0..=1 => py_line_error.location,
-                _ => py_line_error.location.into_iter().rev().collect(),
-            },
+            location: py_line_error.location,
             input_value: py_line_error.input_value.into(),
-            context: py_line_error.context,
         }
     }
 }
@@ -175,49 +164,22 @@ impl<'a> From<PyLineError> for ValLineError<'a> {
 impl PyLineError {
     pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
-        dict.set_item("kind", self.kind())?;
+        dict.set_item("kind", self.kind.to_string())?;
         dict.set_item("loc", self.location.to_object(py))?;
-        dict.set_item("message", self.get_message())?;
+        dict.set_item("message", self.kind.render())?;
         dict.set_item("input_value", &self.input_value)?;
-        if !self.context.is_empty() {
-            dict.set_item("context", &self.context)?;
+        if let Some(context) = self.kind.py_dict(py)? {
+            dict.set_item("context", context)?;
         }
         Ok(dict.into_py(py))
     }
 
-    fn kind(&self) -> String {
-        self.kind.to_string()
-    }
-
-    fn get_message(&self) -> String {
-        let raw = match self.kind.get_message() {
-            Some(message) => message.to_string(),
-            None => self.kind(),
-        };
-        if self.context.is_empty() {
-            raw
-        } else {
-            self.context.render(raw)
-        }
-    }
-
     fn pretty(&self, py: Option<Python>) -> Result<String, fmt::Error> {
         let mut output = String::with_capacity(200);
-        if !self.location.is_empty() {
-            let loc = self
-                .location
-                .iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<String>>()
-                .join(" -> ");
-            writeln!(output, "{}", &loc)?;
-        }
+        write!(output, "{}", self.location)?;
 
-        write!(output, "  {} [kind={}", self.get_message(), self.kind())?;
+        write!(output, "  {} [kind={}", self.kind.render(), self.kind)?;
 
-        if !self.context.is_empty() {
-            write!(output, ", context={}", self.context)?;
-        }
         if let Some(py) = py {
             let input_value = self.input_value.as_ref(py);
             let input_str = match repr_string(input_value) {

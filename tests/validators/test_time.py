@@ -138,11 +138,32 @@ def test_time_strict_json(input_value, expected):
 def test_time_kwargs(kwargs, input_value, expected):
     v = SchemaValidator({'type': 'time', **kwargs})
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        if len(kwargs) == 1:
+            key = list(kwargs.keys())[0]
+            assert key in errors[0]['context']
     else:
         output = v.validate_python(input_value)
         assert output == expected
+
+
+def test_time_bound_ctx():
+    v = SchemaValidator({'type': 'time', 'gt': time(12, 13, 14, 123_456)})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('12:13')
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'greater_than',
+            'loc': [],
+            'message': 'Value must be greater than 12:13:14.123456',
+            'input_value': '12:13',
+            'context': {'gt': '12:13:14.123456'},
+        }
+    ]
 
 
 def test_invalid_constraint():

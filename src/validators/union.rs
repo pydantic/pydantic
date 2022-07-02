@@ -2,11 +2,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{ValError, ValLineError};
+use crate::errors::{ValError, ValLineError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct UnionValidator {

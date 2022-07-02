@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -146,47 +146,27 @@ impl ConstrainedIntValidator {
     fn _validation_logic<'a>(&self, py: Python<'a>, input: &'a impl Input<'a>, int: i64) -> ValResult<'a, PyObject> {
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::IntMultiple,
-                    context = context!("multiple_of" => multiple_of)
-                );
+                return Err(ValError::new(ErrorKind::IntMultipleOf { multiple_of }, input));
             }
         }
         if let Some(le) = self.le {
             if int > le {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::LessThanEqual,
-                    context = context!("le" => le)
-                );
+                return Err(ValError::new(ErrorKind::IntLessThanEqual { le }, input));
             }
         }
         if let Some(lt) = self.lt {
             if int >= lt {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::LessThan,
-                    context = context!("lt" => lt)
-                );
+                return Err(ValError::new(ErrorKind::IntLessThan { lt }, input));
             }
         }
         if let Some(ge) = self.ge {
             if int < ge {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::GreaterThanEqual,
-                    context = context!("ge" => ge)
-                );
+                return Err(ValError::new(ErrorKind::IntGreaterThanEqual { ge }, input));
             }
         }
         if let Some(gt) = self.gt {
             if int <= gt {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::GreaterThan,
-                    context = context!("gt" => gt)
-                );
+                return Err(ValError::new(ErrorKind::IntGreaterThan { gt }, input));
             }
         }
         Ok(int.into_py(py))

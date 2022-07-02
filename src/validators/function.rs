@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{context, val_line_error, ErrorKind, ValError, ValResult, ValidationError};
+use crate::errors::{ErrorKind, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -258,32 +258,34 @@ fn get_function(schema: &PyDict) -> PyResult<PyObject> {
 fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError<'a> {
     // Only ValueError and AssertionError are considered as validation errors,
     // TypeError is now considered as a runtime error to catch errors in function signatures
-    let kind = if err.is_instance_of::<PyValueError>(py) {
+    if err.is_instance_of::<PyValueError>(py) {
         if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
-            return validation_error.into();
+            validation_error.into()
+        } else {
+            match py_err_string(py, err) {
+                Ok(error) => ValError::new(ErrorKind::ValueError { error }, input),
+                Err(e) => e,
+            }
         }
-        ErrorKind::ValueError
     } else if err.is_instance_of::<PyAssertionError>(py) {
-        ErrorKind::AssertionError
+        match py_err_string(py, err) {
+            Ok(error) => ValError::new(ErrorKind::AssertionError { error }, input),
+            Err(e) => e,
+        }
     } else {
-        return ValError::InternalErr(err);
-    };
+        ValError::InternalErr(err)
+    }
+}
 
-    let message = match err.value(py).str() {
+fn py_err_string(py: Python, err: PyErr) -> ValResult<String> {
+    match err.value(py).str() {
         Ok(py_string) => match py_string.to_str() {
             Ok(s) => match s.is_empty() {
-                true => "Unknown error",
-                false => s,
+                true => Ok("Unknown error".to_string()),
+                false => Ok(s.to_string()),
             },
-            Err(e) => return ValError::InternalErr(e),
+            Err(e) => Err(ValError::InternalErr(e)),
         },
-        Err(e) => return ValError::InternalErr(e),
-    };
-    #[allow(clippy::redundant_field_names)]
-    let line_error = val_line_error!(
-        input_value = input.as_error_value(),
-        kind = kind,
-        context = context!("error" => message),
-    );
-    ValError::LineErrors(vec![line_error])
+        Err(e) => Err(ValError::InternalErr(e)),
+    }
 }

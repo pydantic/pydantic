@@ -112,39 +112,38 @@ def test_int_strict(py_or_json, input_value, expected):
 @pytest.mark.parametrize(
     'kwargs,input_value,expected',
     [
-        pytest.param({}, 0, 0),
-        pytest.param({}, '123.000', 123),
-        pytest.param({'ge': 0}, 0, 0),
-        pytest.param(
+        ({}, 0, 0),
+        ({}, '123.000', 123),
+        ({'ge': 0}, 0, 0),
+        (
             {'ge': 0},
             -1,
             Err(
-                'Value must be greater than or equal to 0 '
-                '[kind=greater_than_equal, context={ge: 0}, input_value=-1, input_type=int]'
+                'Value must be greater than or equal to 0 ' '[kind=greater_than_equal, input_value=-1, input_type=int]'
             ),
-            id='ge-0',
         ),
-        pytest.param({'gt': 0}, 1, 1),
-        pytest.param(
-            {'gt': 0},
-            0,
-            Err('Value must be greater than 0 [kind=greater_than, context={gt: 0}, input_value=0, input_type=int]'),
-            id='gt-0',
-        ),
-        pytest.param({'le': 0}, 0, 0),
-        pytest.param({'le': 0}, -1, -1),
-        pytest.param({'le': 0}, 1, Err('Value must be less than or equal to 0'), id='le-0'),
-        pytest.param({'lt': 0}, 0, Err('Value must be less than 0'), id='lt-0'),
-        pytest.param({'lt': 0}, 1, Err('Value must be less than 0'), id='lt-0'),
-        pytest.param({'multiple_of': 5}, 15, 15),
-        pytest.param({'multiple_of': 5}, 6, Err('Value must be a multiple of 5'), id='multiple_of-5'),
+        ({'gt': 0}, 1, 1),
+        ({'gt': 0}, 0, Err('Value must be greater than 0 [kind=greater_than, input_value=0, input_type=int]')),
+        ({'le': 0}, 0, 0),
+        ({'le': 0}, -1, -1),
+        ({'le': 0}, 1, Err('Value must be less than or equal to 0')),
+        ({'lt': 0}, 0, Err('Value must be less than 0')),
+        ({'lt': 0}, 1, Err('Value must be less than 0')),
+        ({'multiple_of': 5}, 15, 15),
+        ({'multiple_of': 5}, 6, Err('Value must be a multiple of 5')),
     ],
+    ids=repr,
 )
 def test_int_kwargs(py_or_json, kwargs, input_value, expected):
     v = py_or_json({'type': 'int', **kwargs})
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
+
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        if 'context' in errors[0]:
+            assert errors[0]['context'] == kwargs
     else:
         output = v.validate_test(input_value)
         assert output == expected
@@ -161,7 +160,7 @@ def test_union_int(py_or_json):
     assert exc_info.value.errors() == [
         {'kind': 'int_type', 'loc': ['strict-int'], 'message': 'Value must be a valid integer', 'input_value': '5'},
         {
-            'kind': 'int_multiple',
+            'kind': 'multiple_of',
             'loc': ['constrained-int'],
             'message': 'Value must be a multiple of 7',
             'input_value': '5',
@@ -213,7 +212,7 @@ def test_long_int(py_or_json):
     assert repr(exc_info.value) == (
         '1 validation error for int\n'
         '  Value must be a valid integer, got infinity '
-        '[kind=int_nan, context={nan_value: infinity}, '
+        '[kind=int_nan, '
         "input_value='111111111111111111111111...11111111111111111111111', input_type=str]"
     )
 

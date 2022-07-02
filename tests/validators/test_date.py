@@ -126,6 +126,21 @@ def test_date_strict_json(input_value, expected):
         assert output == expected
 
 
+def test_date_strict_json_ctx():
+    v = SchemaValidator({'type': 'date', 'strict': True})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('"foobar"')
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'date_parsing',
+            'loc': [],
+            'message': 'Value must be a valid date in the format YYYY-MM-DD, input is too short',
+            'input_value': 'foobar',
+            'context': {'error': 'input is too short'},
+        }
+    ]
+
+
 @pytest.mark.parametrize(
     'kwargs,input_value,expected',
     [

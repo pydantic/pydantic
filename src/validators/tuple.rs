@@ -2,13 +2,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, py_error, SchemaDict};
-use crate::errors::{context, err_val_error, ErrorKind, ValError, ValLineError};
+use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericSequence, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::any::AnyValidator;
 use super::list::sequence_build_function;
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, ValResult, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TupleVarLenValidator {
@@ -68,20 +68,12 @@ impl TupleVarLenValidator {
         let length = tuple.generic_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::TooShort,
-                    context = context!("type" => "Tuple", "min_length" => min_length)
-                );
+                return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
             }
         }
         if let Some(max_length) = self.max_items {
             if length > max_length {
-                return err_val_error!(
-                    input_value = input.as_error_value(),
-                    kind = ErrorKind::TooLong,
-                    context = context!("type" => "Tuple", "max_length" => max_length)
-                );
+                return Err(ValError::new(ErrorKind::TooLong { max_length }, input));
             }
         }
 
@@ -172,16 +164,13 @@ impl TupleFixLenValidator {
         let expected_length = self.items_validators.len();
 
         if expected_length != tuple.generic_len() {
-            let plural = if expected_length == 1 { "" } else { "s" };
-            return err_val_error!(
-                input_value = input.as_error_value(),
-                kind = ErrorKind::TupleLengthMismatch,
-                // TODO fix Context::new so context! accepts different value types
-                context = context!(
-                    "expected_length" => expected_length,
-                    "plural" => plural.to_string(),
-                )
-            );
+            return Err(ValError::new(
+                ErrorKind::TupleLengthMismatch {
+                    expected_length,
+                    plural: expected_length != 1,
+                },
+                input,
+            ));
         }
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
         let mut errors: Vec<ValLineError> = Vec::new();
