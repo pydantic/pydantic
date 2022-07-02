@@ -6,9 +6,7 @@ use pyo3::types::{PyDict, PyFunction, PyList, PySet, PyString};
 use ahash::AHashSet;
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{
-    as_internal, context, err_val_error, py_err_string, val_line_error, ErrorKind, ValError, ValLineError, ValResult,
-};
+use crate::errors::{as_internal, py_err_string, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input, JsonInput, JsonObject};
 use crate::recursion_guard::RecursionGuard;
 use crate::SchemaError;
@@ -162,15 +160,15 @@ impl Validator for TypedDictValidator {
                     let op_key_value = match field.lookup_key.$get_method($dict) {
                         Ok(v) => v,
                         Err(err) => {
-                            // we're setting every member on ValLineError, so clippy complains if we use val_line_error!
-                            errors.push(ValLineError {
-                                input_value: input.as_error_value(),
-                                kind: ErrorKind::GetAttributeError,
-                                reverse_location: vec![field.name.clone().into()],
-                                context: context!("error" => py_err_string(py, err)),
-                            });
+                            errors.push(ValLineError::new_with_loc(
+                                ErrorKind::GetAttributeError {
+                                    error: py_err_string(py, err),
+                                },
+                                input,
+                                field.name.clone(),
+                            ));
                             continue;
-                        },
+                        }
                     };
                     if let Some((used_key, value)) = op_key_value {
                         if let Some(ref mut used_keys) = used_keys {
@@ -178,7 +176,10 @@ impl Validator for TypedDictValidator {
                             // extra logic either way
                             used_keys.insert(used_key);
                         }
-                        match field.validator.validate(py, value, &extra, slots, recursion_guard) {
+                        match field
+                            .validator
+                            .validate(py, value, &extra, slots, recursion_guard)
+                        {
                             Ok(value) => {
                                 output_dict
                                     .set_item(&field.name_pystring, value)
@@ -186,7 +187,7 @@ impl Validator for TypedDictValidator {
                                 if let Some(ref mut fs) = fields_set_vec {
                                     fs.push(field.name_pystring.clone_ref(py));
                                 }
-                            },
+                            }
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
                                     errors.push(err.with_outer_location(field.name.clone().into()));
@@ -202,10 +203,10 @@ impl Validator for TypedDictValidator {
                     } else if !field.required {
                         continue;
                     } else {
-                        errors.push(val_line_error!(
-                            input_value = input.as_error_value(),
-                            kind = ErrorKind::Missing,
-                            reverse_location = vec![field.name.clone().into()]
+                        errors.push(ValLineError::new_with_loc(
+                            ErrorKind::Missing,
+                            input,
+                            field.name.clone(),
                         ));
                     }
                 }
@@ -220,7 +221,10 @@ impl Validator for TypedDictValidator {
                             Ok(k) => k,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
-                                    errors.push(err.with_outer_location(raw_key.as_loc_item()).with_kind(ErrorKind::InvalidKey));
+                                    errors.push(
+                                        err.with_outer_location(raw_key.as_loc_item())
+                                            .with_kind(ErrorKind::InvalidKey),
+                                    );
                                 }
                                 continue;
                             }
@@ -231,10 +235,10 @@ impl Validator for TypedDictValidator {
                         }
 
                         if self.forbid_extra {
-                            errors.push(val_line_error!(
-                                input_value = input.as_error_value(),
-                                kind = ErrorKind::ExtraForbidden,
-                                reverse_location = vec![raw_key.as_loc_item()]
+                            errors.push(ValLineError::new_with_loc(
+                                ErrorKind::ExtraForbidden,
+                                input,
+                                raw_key.as_loc_item(),
                             ));
                             continue;
                         }
@@ -251,7 +255,7 @@ impl Validator for TypedDictValidator {
                                     if let Some(ref mut fs) = fields_set_vec {
                                         fs.push(py_key.into_py(py));
                                     }
-                                },
+                                }
                                 Err(ValError::LineErrors(line_errors)) => {
                                     for err in line_errors {
                                         errors.push(err.with_outer_location(raw_key.as_loc_item()));
@@ -345,11 +349,11 @@ impl TypedDictValidator {
             // otherwise we raise an error:
             // - with forbid this is obvious
             // - with ignore the model should never be overloaded, so an error is the clearest option
-            err_val_error!(
-                input_value = input.as_error_value(),
-                reverse_location = vec![field.to_string().into()],
-                kind = ErrorKind::ExtraForbidden
-            )
+            Err(ValError::new_with_loc(
+                ErrorKind::ExtraForbidden,
+                input,
+                field.to_string(),
+            ))
         }
     }
 }

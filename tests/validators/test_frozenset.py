@@ -105,9 +105,9 @@ def test_frozenset_multiple_errors():
         ({'strict': True}, {1, 2, 3}, Err('Value must be a valid frozenset [kind=frozen_set_type,')),
         ({'strict': True}, 'abc', Err('Value must be a valid frozenset [kind=frozen_set_type,')),
         ({'min_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'min_items': 3}, {1, 2}, Err('FrozenSet must have at least 3 items [kind=too_short,')),
+        ({'min_items': 3}, {1, 2}, Err('Input must have at least 3 items [kind=too_short,')),
         ({'max_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'max_items': 3}, {1, 2, 3, 4}, Err('FrozenSet must have at most 3 items [kind=too_long,')),
+        ({'max_items': 3}, {1, 2, 3, 4}, Err('Input must have at most 3 items [kind=too_long,')),
     ],
 )
 def test_frozenset_kwargs_python(kwargs, input_value, expected):

@@ -3,8 +3,7 @@ use std::fmt;
 use pyo3::types::PyType;
 use pyo3::ToPyObject;
 
-use crate::errors::location::LocItem;
-use crate::errors::{InputValue, ValResult};
+use crate::errors::{InputValue, LocItem, ValResult};
 use crate::input::datetime::EitherTime;
 
 use super::datetime::{EitherDate, EitherDateTime};

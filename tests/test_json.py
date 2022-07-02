@@ -96,7 +96,7 @@ def test_invalid_json():
             'loc': [],
             'message': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
             'input_value': '"foobar',
-            'context': {'parser_error': 'EOF while parsing a string at line 1 column 7'},
+            'context': {'error': 'EOF while parsing a string at line 1 column 7'},
         }
     ]
     with pytest.raises(ValidationError) as exc_info:
@@ -107,6 +107,6 @@ def test_invalid_json():
             'loc': [],
             'message': 'Invalid JSON: trailing comma at line 3 column 3',
             'input_value': '[1,\n2,\n3,]',
-            'context': {'parser_error': 'trailing comma at line 3 column 3'},
+            'context': {'error': 'trailing comma at line 3 column 3'},
         }
     ]

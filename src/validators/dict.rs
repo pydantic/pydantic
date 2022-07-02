@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, context, err_val_error, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{as_internal, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input, JsonObject};
 use crate::recursion_guard::RecursionGuard;
 
@@ -93,20 +93,12 @@ macro_rules! build_validate {
         ) -> ValResult<'data, PyObject> {
             if let Some(min_length) = self.min_items {
                 if dict.len() < min_length {
-                    return err_val_error!(
-                        input_value = input.as_error_value(),
-                        kind = ErrorKind::TooShort,
-                        context = context!("type" => "Dict", "min_length" => min_length)
-                    );
+                    return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
                 }
             }
             if let Some(max_length) = self.max_items {
                 if dict.len() > max_length {
-                    return err_val_error!(
-                        input_value = input.as_error_value(),
-                        kind = ErrorKind::TooLong,
-                        context = context!("type" => "Dict", "max_length" => max_length)
-                    );
+                    return Err(ValError::new(ErrorKind::TooLong { max_length }, input));
                 }
             }
             let output = PyDict::new(py);
@@ -121,9 +113,10 @@ macro_rules! build_validate {
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
                             // these are added in reverse order so [key] is shunted along by the second call
-                            errors.push(err
-                                .with_outer_location("[key]".into())
-                                .with_outer_location(key.as_loc_item()));
+                            errors.push(
+                                err.with_outer_location("[key]".into())
+                                    .with_outer_location(key.as_loc_item()),
+                            );
                         }
                         None
                     }

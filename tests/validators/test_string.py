@@ -105,3 +105,18 @@ def test_invalid_regex():
         '    ^\n'
         'error: unclosed group'
     )
+
+
+def test_regex_error():
+    v = SchemaValidator({'type': 'str', 'pattern': '11'})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('12')
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'str_pattern_mismatch',
+            'loc': [],
+            'message': "String must match pattern '11'",
+            'input_value': '12',
+            'context': {'pattern': '11'},
+        }
+    ]

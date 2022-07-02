@@ -334,8 +334,9 @@ def test_raise_assertion_error_plain():
     ]
 
 
-def test_error_with_error():
-    class MyError(ValueError):
+@pytest.mark.parametrize('base_error', [ValueError, AssertionError])
+def test_error_with_error(base_error):
+    class MyError(base_error):
         def __str__(self):
             raise RuntimeError('internal error')
 

@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::errors::{err_val_error, ErrorKind, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -33,7 +33,7 @@ impl Validator for NoneValidator {
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),
-            false => err_val_error!(input_value = input.as_error_value(), kind = ErrorKind::NoneRequired),
+            false => Err(ValError::new(ErrorKind::NoneRequired, input)),
         }
     }
 
