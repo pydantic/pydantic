@@ -738,7 +738,7 @@ def test_str_limited_good():
     max_length = 5
 
     class Model(BaseModel):
-        v: StrLimited[max_length]
+        v: StrLimited[5]
 
     m = Model(v='abcde')
     assert m.v == 'abcde'
