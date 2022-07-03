@@ -748,7 +748,7 @@ def test_str_limited_too_long():
     max_length = 5
 
     class Model(BaseModel):
-        v: StrLimited[max_length]
+        v: StrLimited[5]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='abcdef')
