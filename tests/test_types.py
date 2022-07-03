@@ -740,7 +740,7 @@ def test_str_limited_good():
     class Model(BaseModel):
         v: StrLimited[5]
 
-    m = Model(v='abcde')
+    m = Model(v='abcde ')
     assert m.v == 'abcde'
 
 
