@@ -439,7 +439,7 @@ def constr(
 
 class StrLimited:
     @classmethod
-    def __class_getitem__(cls, max_length: int) -> Type[str]:
+    def __class_getitem__(cls, max_length: int) -> Type[ConstrainedStr]:
         return constr(max_length=max_length, strip_whitespace=True)
 
 
