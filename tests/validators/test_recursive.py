@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pytest
-from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict
+from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict, IsStr
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
@@ -68,7 +68,7 @@ def test_nullable_error():
         },
         {
             'kind': 'int_parsing',
-            'loc': ['sub_branch', 'recursive-ref', 'width'],
+            'loc': ['sub_branch', 'typed-dict', 'width'],
             'message': 'Value must be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         },
@@ -266,7 +266,7 @@ def test_recursion_branch():
     b['branch'] = b
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(b)
-    assert exc_info.value.title == 'recursive-container'
+    assert exc_info.value.title == 'typed-dict'
     assert exc_info.value.errors() == [
         {
             'kind': 'recursion_loop',
@@ -299,8 +299,17 @@ def test_recursive_list():
 
     data = list()
     data.append(data)
-    with pytest.raises(ValidationError, match='Recursion error - cyclic reference detected'):
+    with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(data)
+    assert exc_info.value.title == 'list[...]'
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'recursion_loop',
+            'loc': [0],
+            'message': 'Recursion error - cyclic reference detected',
+            'input_value': [IsList(length=1)],
+        }
+    ]
 
 
 @pytest.fixture(scope='module')
@@ -438,3 +447,196 @@ def test_recursive_wrap():
             'input_value': IsList(positions={0: 1}, length=2),
         }
     ]
+
+
+def test_union_ref_strictness():
+    v = SchemaValidator(
+        {
+            'fields': {
+                'a': {'schema': {'type': 'int', 'ref': 'int-type'}},
+                'b': {
+                    'schema': {
+                        'type': 'union',
+                        'choices': [{'type': 'recursive-ref', 'schema_ref': 'int-type'}, {'type': 'str'}],
+                    }
+                },
+            },
+            'type': 'typed-dict',
+        }
+    )
+    assert v.validate_python({'a': 1, 'b': '2'}) == {'a': 1, 'b': '2'}
+    assert v.validate_python({'a': 1, 'b': 2}) == {'a': 1, 'b': 2}
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'a': 1, 'b': []})
+
+    assert exc_info.value.errors() == [
+        {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Value must be a valid integer', 'input_value': []},
+        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Value must be a valid string', 'input_value': []},
+    ]
+
+
+def test_union_container_strictness():
+    v = SchemaValidator(
+        {
+            'fields': {
+                'b': {'schema': {'type': 'union', 'choices': [{'type': 'int', 'ref': 'int-type'}, {'type': 'str'}]}},
+                'a': {'schema': {'type': 'recursive-ref', 'schema_ref': 'int-type'}},
+            },
+            'type': 'typed-dict',
+        }
+    )
+    assert v.validate_python({'a': 1, 'b': '2'}) == {'a': 1, 'b': '2'}
+    assert v.validate_python({'a': 1, 'b': 2}) == {'a': 1, 'b': 2}
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'a': 1, 'b': []})
+
+    assert exc_info.value.errors() == [
+        {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Value must be a valid integer', 'input_value': []},
+        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Value must be a valid string', 'input_value': []},
+    ]
+
+
+@pytest.mark.parametrize('strict', [True, False], ids=lambda s: f'strict={s}')
+def test_union_cycle(strict):
+    s = SchemaValidator(
+        {
+            'choices': [
+                {
+                    'fields': {
+                        'foobar': {
+                            'schema': {
+                                'items_schema': {'schema_ref': 'root-schema', 'type': 'recursive-ref'},
+                                'type': 'list',
+                            }
+                        }
+                    },
+                    'type': 'typed-dict',
+                }
+            ],
+            'strict': strict,
+            'ref': 'root-schema',
+            'type': 'union',
+        }
+    )
+
+    data = {'foobar': []}
+    data['foobar'].append(data)
+
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python(data)
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'recursion_loop',
+            'loc': ['typed-dict', 'foobar', 0],
+            'message': 'Recursion error - cyclic reference detected',
+            'input_value': {'foobar': [{'foobar': IsList(length=1)}]},
+        }
+    ]
+
+
+def test_function_name():
+    def f(input_value, **kwargs):
+        return input_value + ' Changed'
+
+    v = SchemaValidator(
+        {
+            'choices': [
+                {
+                    'type': 'function',
+                    'mode': 'after',
+                    'function': f,
+                    'schema': {'schema_ref': 'root-schema', 'type': 'recursive-ref'},
+                },
+                'int',
+            ],
+            'ref': 'root-schema',
+            'type': 'union',
+        }
+    )
+
+    assert v.validate_python(123) == 123
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('input value')
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'recursion_loop',
+            'loc': ['function-after[...]'],
+            'message': 'Recursion error - cyclic reference detected',
+            'input_value': 'input value',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['int'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'input value',
+        },
+    ]
+
+
+@pytest.mark.parametrize('strict', [True, False], ids=lambda s: f'strict={s}')
+def test_function_change_id(strict):
+    def f(input_value, **kwargs):
+        _, count = input_value.split('-')
+        return f'f-{int(count) + 1}'
+
+    v = SchemaValidator(
+        {
+            'choices': [
+                {
+                    'type': 'function',
+                    'mode': 'before',
+                    'function': f,
+                    'schema': {'schema_ref': 'root-schema', 'type': 'recursive-ref'},
+                }
+            ],
+            'strict': strict,
+            'ref': 'root-schema',
+            'type': 'union',
+        }
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('start-0')
+
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'recursion_loop',
+            'loc': IsList(length=(1, 255)),
+            'message': 'Recursion error - cyclic reference detected',
+            'input_value': IsStr(regex=r'f-\d+'),
+        }
+    ]
+
+
+def test_many_uses_of_ref():
+    # check we can safely exceed BACKUP_GUARD_LIMIT without upsetting the backup recursion guard
+    v = SchemaValidator(
+        {
+            'type': 'typed-dict',
+            'ref': 'Branch',
+            'fields': {
+                'name': {'schema': {'type': 'str', 'max_length': 8, 'ref': 'limited-string'}},
+                'other_names': {
+                    'schema': {
+                        'type': 'list',
+                        'items_schema': {'type': 'recursive-ref', 'schema_ref': 'limited-string'},
+                    }
+                },
+            },
+        }
+    )
+
+    assert v.validate_python({'name': 'Anne', 'other_names': ['Bob', 'Charlie']}) == {
+        'name': 'Anne',
+        'other_names': ['Bob', 'Charlie'],
+    }
+
+    with pytest.raises(ValidationError, match=r'other_names -> 2\s+String must have at most 8 characters'):
+        v.validate_python({'name': 'Anne', 'other_names': ['Bob', 'Charlie', 'Daveeeeee']})
+
+    long_input = {'name': 'Anne', 'other_names': [f'p-{i}' for i in range(300)]}
+    assert v.validate_python(long_input) == long_input

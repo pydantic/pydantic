@@ -291,7 +291,7 @@ fn dict_value_error(bench: &mut Bencher) {
         Err(e) => {
             let v = e.value(py);
             // println!("error: {}", v.to_string());
-            assert_eq!(v.getattr("title").unwrap().to_string(), "dict[str, constrained-int]");
+            assert_eq!(v.getattr("title").unwrap().to_string(), "dict[str,constrained-int]");
             let error_count: i64 = v.call_method0("error_count").unwrap().extract().unwrap();
             assert_eq!(error_count, 100);
         }

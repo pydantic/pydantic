@@ -16,6 +16,7 @@ pub struct DictValidator {
     value_validator: Box<CombinedValidator>,
     min_items: Option<usize>,
     max_items: Option<usize>,
+    name: String,
 }
 
 impl BuildValidator for DictValidator {
@@ -26,18 +27,27 @@ impl BuildValidator for DictValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
+        let key_validator = match schema.get_item("keys_schema") {
+            Some(schema) => Box::new(build_validator(schema, config, build_context)?.0),
+            None => Box::new(AnyValidator::build(schema, config, build_context)?),
+        };
+        let value_validator = match schema.get_item("values_schema") {
+            Some(d) => Box::new(build_validator(d, config, build_context)?.0),
+            None => Box::new(AnyValidator::build(schema, config, build_context)?),
+        };
+        let name = format!(
+            "{}[{},{}]",
+            Self::EXPECTED_TYPE,
+            key_validator.get_name(),
+            value_validator.get_name()
+        );
         Ok(Self {
             strict: is_strict(schema, config)?,
-            key_validator: match schema.get_item("keys_schema") {
-                Some(schema) => Box::new(build_validator(schema, config, build_context)?.0),
-                None => Box::new(AnyValidator::build(schema, config, build_context)?),
-            },
-            value_validator: match schema.get_item("values_schema") {
-                Some(d) => Box::new(build_validator(d, config, build_context)?.0),
-                None => Box::new(AnyValidator::build(schema, config, build_context)?),
-            },
+            key_validator,
+            value_validator,
             min_items: schema.get_as("min_items")?,
             max_items: schema.get_as("max_items")?,
+            name,
         }
         .into())
     }
@@ -70,13 +80,13 @@ impl Validator for DictValidator {
         self._validation_logic(py, input, input.strict_dict()?, extra, slots, recursion_guard)
     }
 
-    fn get_name(&self, py: Python) -> String {
-        format!(
-            "{}[{}, {}]",
-            Self::EXPECTED_TYPE,
-            self.key_validator.get_name(py),
-            self.value_validator.get_name(py)
-        )
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.key_validator.complete(build_context)?;
+        self.value_validator.complete(build_context)
     }
 }
 

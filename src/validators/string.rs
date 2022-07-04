@@ -70,8 +70,8 @@ impl Validator for StrValidator {
         Ok(input.strict_str()?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
 
@@ -96,8 +96,8 @@ impl Validator for StrictStrValidator {
         Ok(input.strict_str()?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "strict-str".to_string()
+    fn get_name(&self) -> &str {
+        "strict-str"
     }
 }
 
@@ -139,8 +139,8 @@ impl Validator for StrConstrainedValidator {
         self._validation_logic(py, input, input.strict_str()?)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "constrained-str".to_string()
+    fn get_name(&self) -> &str {
+        "constrained-str"
     }
 }
 

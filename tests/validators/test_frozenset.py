@@ -199,6 +199,7 @@ def test_repr():
         '            42,\n'
         '        ),\n'
         '        max_items: None,\n'
+        '        name: "frozenset[any]",\n'
         '    },\n'
         '))'
     )

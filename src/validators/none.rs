@@ -37,7 +37,7 @@ impl Validator for NoneValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
