@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from datetime import date, datetime, time
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Type, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Required
@@ -227,6 +227,15 @@ class TupleVarLenSchema(TypedDict, total=False):
     ref: str
 
 
+class IsInstanceSchema(TypedDict):
+    type: Literal['is-instance']
+    class_: Type[Any]
+
+
+class CallableSchema(TypedDict):
+    type: Literal['callable']
+
+
 # pydantic allows types to be defined via a simple string instead of dict with just `type`, e.g.
 # 'int' is equivalent to {'type': 'int'}
 BareType = Literal[
@@ -249,6 +258,7 @@ BareType = Literal[
     # tuple-fix-len cannot be created without more typing information
     'tuple-var-len',
     'union',
+    'callable',
 ]
 
 Schema = Union[
@@ -277,4 +287,6 @@ Schema = Union[
     DateSchema,
     TimeSchema,
     DatetimeSchema,
+    IsInstanceSchema,
+    CallableSchema,
 ]

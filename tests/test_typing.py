@@ -84,6 +84,10 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: Schema = {'type': 'datetime', 'ge': datetime.now()}
     SchemaValidator(schema)
+    schema: Schema = {'type': 'is-instance', 'class_': Foo}
+    SchemaValidator(schema)
+    schema: Schema = {'type': 'callable'}
+    SchemaValidator(schema)
 
 
 def test_schema_typing_error() -> None:
