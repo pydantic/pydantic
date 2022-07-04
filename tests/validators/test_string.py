@@ -41,7 +41,12 @@ def test_str(py_or_json, input_value, expected):
     [
         ('foobar', 'foobar'),
         (b'foobar', 'foobar'),
+        (bytearray(b'foobar'), 'foobar'),
         (b'\x81', Err('Value must be a valid string, unable to parse raw data as a unicode string [kind=str_unicode')),
+        (
+            bytearray(b'\x81'),
+            Err('Value must be a valid string, unable to parse raw data as a unicode string [kind=str_unicode'),
+        ),
         # null bytes are very annoying, but we can't really block them here
         (b'\x00', '\x00'),
         (123, '123'),

@@ -14,7 +14,9 @@ def test_strict_bytes_validator():
     assert v.validate_json('"foo"') == b'foo'
 
     with pytest.raises(ValidationError, match='Value must be a valid bytes'):
-        assert v.validate_python('foo') == b'foo'
+        v.validate_python('foo')
+    with pytest.raises(ValidationError, match='Value must be a valid bytes'):
+        v.validate_python(bytearray(b'foo'))
 
 
 def test_lax_bytes_validator():
@@ -22,6 +24,7 @@ def test_lax_bytes_validator():
 
     assert v.validate_python(b'foo') == b'foo'
     assert v.validate_python('foo') == b'foo'
+    assert v.validate_python(bytearray(b'foo')) == b'foo'
 
     assert v.validate_json('"foo"') == b'foo'
 
