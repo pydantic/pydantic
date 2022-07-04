@@ -34,8 +34,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: install rust
-      uses: actions-rs/toolchain@v1.0.6
+    - name: install rust nightly
+      if: matrix.rust-toolchain == 'nightly'
+      uses: actions-rs/toolchain@v1
+      with:
+        # use the default version from rust-toolchain in case rust in pinned there
+        profile: minimal
+
+    - name: install rust stable
+      if: matrix.rust-toolchain != 'nightly'
+      uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: ${{ matrix.rust-toolchain }}
@@ -86,7 +94,7 @@ jobs:
     - run: ./tests/rust_coverage_export.sh
 
     - uses: codecov/codecov-action@v2
-      if: matrix.rust-toolchain == 'nightly'
+      if: matrix.rust-toolchain == 'nightly-2022-07-01'
       with:
         env_vars: PYTHON
 
@@ -97,7 +105,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: install rust
-      uses: actions-rs/toolchain@v1.0.6
+      uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         override: true
@@ -140,7 +148,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: install rust
-      uses: actions-rs/toolchain@v1.0.6
+      uses: actions-rs/toolchain@v1
       with:
         profile: minimal
 
@@ -179,10 +187,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly
           components: rust-src
           target: wasm32-unknown-emscripten
-          override: true
 
       - name: cache rust
         uses: Swatinem/rust-cache@v1
