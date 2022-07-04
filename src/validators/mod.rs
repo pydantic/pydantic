@@ -2,10 +2,9 @@ use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
 
-use pyo3::exceptions::PyRecursionError;
+use pyo3::exceptions::{PyRecursionError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDict};
-use serde_json::from_str as parse_json;
+use pyo3::types::{PyAny, PyByteArray, PyBytes, PyDict, PyString};
 
 use crate::build_tools::{py_error, SchemaDict, SchemaError};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult, ValidationError};
@@ -99,8 +98,8 @@ impl SchemaValidator {
         }
     }
 
-    pub fn validate_json(&self, py: Python, input: String) -> PyResult<PyObject> {
-        match parse_json::<JsonInput>(&input) {
+    pub fn validate_json(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
+        match parse_json(input)? {
             Ok(input) => {
                 let r = self.validator.validate(
                     py,
@@ -112,15 +111,15 @@ impl SchemaValidator {
                 r.map_err(|e| self.prepare_validation_err(py, e))
             }
             Err(e) => {
-                let line_err = ValLineError::new(ErrorKind::InvalidJson { error: e.to_string() }, &input);
+                let line_err = ValLineError::new(ErrorKind::InvalidJson { error: e.to_string() }, input);
                 let err = ValError::LineErrors(vec![line_err]);
                 Err(self.prepare_validation_err(py, err))
             }
         }
     }
 
-    pub fn isinstance_json(&self, py: Python, input: String) -> PyResult<bool> {
-        match parse_json::<JsonInput>(&input) {
+    pub fn isinstance_json(&self, py: Python, input: &PyAny) -> PyResult<bool> {
+        match parse_json(input)? {
             Ok(input) => {
                 match self.validator.validate(
                     py,
@@ -161,6 +160,20 @@ impl SchemaValidator {
 impl SchemaValidator {
     pub fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
         ValidationError::from_val_error(py, self.title.clone_ref(py), error)
+    }
+}
+
+fn parse_json(input: &PyAny) -> PyResult<serde_json::Result<JsonInput>> {
+    if let Ok(py_bytes) = input.cast_as::<PyBytes>() {
+        Ok(serde_json::from_slice(py_bytes.as_bytes()))
+    } else if let Ok(py_str) = input.cast_as::<PyString>() {
+        let str = py_str.to_str()?;
+        Ok(serde_json::from_str(str))
+    } else if let Ok(py_byte_array) = input.cast_as::<PyByteArray>() {
+        Ok(serde_json::from_slice(unsafe { py_byte_array.as_bytes() }))
+    } else {
+        let input_type = input.get_type().name().unwrap_or("unknown");
+        py_error!(PyTypeError; "JSON input must be str, bytes or bytearray, not {}", input_type)
     }
 }
 
