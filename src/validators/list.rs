@@ -15,6 +15,7 @@ pub struct ListValidator {
     item_validator: Box<CombinedValidator>,
     min_items: Option<usize>,
     max_items: Option<usize>,
+    name: String,
 }
 
 macro_rules! sequence_build_function {
@@ -24,14 +25,17 @@ macro_rules! sequence_build_function {
             config: Option<&PyDict>,
             build_context: &mut BuildContext,
         ) -> PyResult<CombinedValidator> {
+            let item_validator = match schema.get_item("items_schema") {
+                Some(d) => Box::new(build_validator(d, config, build_context)?.0),
+                None => Box::new(AnyValidator::build(schema, config, build_context)?),
+            };
+            let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_validator.get_name());
             Ok(Self {
                 strict: is_strict(schema, config)?,
-                item_validator: match schema.get_item("items_schema") {
-                    Some(d) => Box::new(build_validator(d, config, build_context)?.0),
-                    None => Box::new(AnyValidator::build(schema, config, build_context)?),
-                },
+                item_validator,
                 min_items: schema.get_as("min_items")?,
                 max_items: schema.get_as("max_items")?,
+                name,
             }
             .into())
         }
@@ -71,8 +75,12 @@ impl Validator for ListValidator {
         self._validation_logic(py, input, input.strict_list()?, extra, slots, recursion_guard)
     }
 
-    fn get_name(&self, py: Python) -> String {
-        format!("{}[{}]", Self::EXPECTED_TYPE, self.item_validator.get_name(py))
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.item_validator.complete(build_context)
     }
 }
 

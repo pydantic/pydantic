@@ -12,6 +12,7 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 pub struct UnionValidator {
     choices: Vec<CombinedValidator>,
     strict: bool,
+    name: String,
 }
 
 impl BuildValidator for UnionValidator {
@@ -28,7 +29,15 @@ impl BuildValidator for UnionValidator {
             .map(|choice| build_validator(choice, config, build_context).map(|result| result.0))
             .collect::<PyResult<Vec<CombinedValidator>>>()?;
         let strict = is_strict(schema, config)?;
-        Ok(Self { choices, strict }.into())
+
+        let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
+
+        Ok(Self {
+            choices,
+            strict,
+            name: format!("{}[{}]", Self::EXPECTED_TYPE, descr),
+        }
+        .into())
     }
 }
 
@@ -53,13 +62,13 @@ impl Validator for UnionValidator {
                 errors.extend(
                     line_errors
                         .into_iter()
-                        .map(|err| err.with_outer_location(validator.get_name(py).into())),
+                        .map(|err| err.with_outer_location(validator.get_name().into())),
                 );
             }
 
             Err(ValError::LineErrors(errors))
         } else {
-            // 1st pass: check if the value is an exact instance of one of the Union types
+            // 1st pass: check if the value is an exact instance of one of the Union types, e.g. use validate_strict
             if let Some(res) = self
                 .choices
                 .iter()
@@ -71,17 +80,17 @@ impl Validator for UnionValidator {
 
             let mut errors: Vec<ValLineError> = Vec::with_capacity(self.choices.len());
 
-            // 2nd pass: check if the value can be coerced into one of the Union types
+            // 2nd pass: check if the value can be coerced into one of the Union types, e.g. use validate
             for validator in &self.choices {
                 let line_errors = match validator.validate(py, input, extra, slots, recursion_guard) {
                     Err(ValError::LineErrors(line_errors)) => line_errors,
-                    otherwise => return otherwise,
+                    success => return success,
                 };
 
                 errors.extend(
                     line_errors
                         .into_iter()
-                        .map(|err| err.with_outer_location(validator.get_name(py).into())),
+                        .map(|err| err.with_outer_location(validator.get_name().into())),
                 );
             }
 
@@ -89,13 +98,11 @@ impl Validator for UnionValidator {
         }
     }
 
-    fn get_name(&self, py: Python) -> String {
-        let descr = self
-            .choices
-            .iter()
-            .map(|v| v.get_name(py))
-            .collect::<Vec<_>>()
-            .join(", ");
-        format!("{}[{}]", Self::EXPECTED_TYPE, descr)
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.choices.iter_mut().try_for_each(|v| v.complete(build_context))
     }
 }

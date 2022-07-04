@@ -38,17 +38,20 @@ macro_rules! kwargs {
 }
 
 macro_rules! impl_build {
-    ($name:ident) => {
-        impl $name {
+    ($impl_name:ident, $name:literal) => {
+        impl $impl_name {
             pub fn build(
                 schema: &PyDict,
                 config: Option<&PyDict>,
                 build_context: &mut BuildContext,
             ) -> PyResult<CombinedValidator> {
+                let validator = build_validator(schema.get_as_req("schema")?, config, build_context)?.0;
+                let name = format!("{}[{}]", $name, validator.get_name());
                 Ok(Self {
-                    validator: Box::new(build_validator(schema.get_as_req("schema")?, config, build_context)?.0),
+                    validator: Box::new(validator),
                     func: get_function(schema)?,
                     config: config.map(|c| c.into()),
+                    name,
                 }
                 .into())
             }
@@ -61,9 +64,10 @@ pub struct FunctionBeforeValidator {
     validator: Box<CombinedValidator>,
     func: PyObject,
     config: Option<Py<PyDict>>,
+    name: String,
 }
 
-impl_build!(FunctionBeforeValidator);
+impl_build!(FunctionBeforeValidator, "function-before");
 
 impl Validator for FunctionBeforeValidator {
     fn validate<'s, 'data>(
@@ -97,8 +101,12 @@ impl Validator for FunctionBeforeValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-before".to_string()
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.validator.complete(build_context)
     }
 }
 
@@ -107,9 +115,10 @@ pub struct FunctionAfterValidator {
     validator: Box<CombinedValidator>,
     func: PyObject,
     config: Option<Py<PyDict>>,
+    name: String,
 }
 
-impl_build!(FunctionAfterValidator);
+impl_build!(FunctionAfterValidator, "function-after");
 
 impl Validator for FunctionAfterValidator {
     fn validate<'s, 'data>(
@@ -125,8 +134,12 @@ impl Validator for FunctionAfterValidator {
         self.func.call(py, (v,), kwargs).map_err(|e| convert_err(py, e, input))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-after".to_string()
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.validator.complete(build_context)
     }
 }
 
@@ -165,8 +178,8 @@ impl Validator for FunctionPlainValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-plain".to_string()
+    fn get_name(&self) -> &str {
+        "function-plain"
     }
 }
 
@@ -175,9 +188,10 @@ pub struct FunctionWrapValidator {
     validator: Box<CombinedValidator>,
     func: PyObject,
     config: Option<Py<PyDict>>,
+    name: String,
 }
 
-impl_build!(FunctionWrapValidator);
+impl_build!(FunctionWrapValidator, "function-wrap");
 
 impl Validator for FunctionWrapValidator {
     fn validate<'s, 'data>(
@@ -206,8 +220,12 @@ impl Validator for FunctionWrapValidator {
             .map_err(|e| convert_err(py, e, input))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "function-wrap".to_string()
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.validator.complete(build_context)
     }
 }
 

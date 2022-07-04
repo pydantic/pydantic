@@ -52,8 +52,8 @@ impl Validator for BoolValidator {
         Ok(input.strict_bool()?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
 
@@ -78,7 +78,7 @@ impl Validator for StrictBoolValidator {
         Ok(input.strict_bool()?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "strict-bool".to_string()
+    fn get_name(&self) -> &str {
+        "strict-bool"
     }
 }

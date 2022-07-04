@@ -19,6 +19,7 @@ pub struct ModelClassValidator {
     strict: bool,
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
+    name: String,
 }
 
 impl BuildValidator for ModelClassValidator {
@@ -48,6 +49,9 @@ impl BuildValidator for ModelClassValidator {
             strict: schema.get_as("strict")?.unwrap_or(false),
             validator: Box::new(validator),
             class: class.into(),
+            // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
+            // which is not what we want here
+            name: class.getattr(intern!(schema.py(), "__name__"))?.extract()?,
         }
         .into())
     }
@@ -68,7 +72,7 @@ impl Validator for ModelClassValidator {
         } else if self.strict {
             Err(ValError::new(
                 ErrorKind::ModelClassType {
-                    class_name: self.get_name(py),
+                    class_name: self.get_name().to_string(),
                 },
                 input,
             ))
@@ -94,15 +98,8 @@ impl Validator for ModelClassValidator {
         }
     }
 
-    fn get_name(&self, py: Python) -> String {
-        // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
-        // which is not what we want here
-        let class = self.class.as_ref(py);
-        let name_result: PyResult<&str> = match class.getattr(intern!(py, "__name__")) {
-            Ok(name) => name.extract(),
-            Err(e) => Err(e),
-        };
-        name_result.unwrap_or("ModelClass").to_string()
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
