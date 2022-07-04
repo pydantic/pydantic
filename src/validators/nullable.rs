@@ -11,6 +11,7 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 #[derive(Debug, Clone)]
 pub struct NullableValidator {
     validator: Box<CombinedValidator>,
+    name: String,
 }
 
 impl BuildValidator for NullableValidator {
@@ -22,10 +23,9 @@ impl BuildValidator for NullableValidator {
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let schema: &PyAny = schema.get_as_req("schema")?;
-        Ok(Self {
-            validator: Box::new(build_validator(schema, config, build_context)?.0),
-        }
-        .into())
+        let validator = Box::new(build_validator(schema, config, build_context)?.0);
+        let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
+        Ok(Self { validator, name }.into())
     }
 }
 
@@ -58,7 +58,11 @@ impl Validator for NullableValidator {
         }
     }
 
-    fn get_name(&self, py: Python) -> String {
-        format!("{}[{}]", Self::EXPECTED_TYPE, self.validator.get_name(py))
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.validator.complete(build_context)
     }
 }

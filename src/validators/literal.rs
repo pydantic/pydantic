@@ -48,12 +48,14 @@ impl BuildValidator for LiteralBuilder {
 pub struct LiteralSingleStringValidator {
     expected: String,
     repr: String,
+    name: String,
 }
 
 impl LiteralSingleStringValidator {
     fn new(expected: String) -> Self {
         let repr = format!("'{}'", expected);
-        Self { expected, repr }
+        let name = format!("literal[{}]", repr);
+        Self { expected, repr, name }
     }
 }
 
@@ -79,19 +81,23 @@ impl Validator for LiteralSingleStringValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        format!("literal[{}]", self.repr)
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct LiteralSingleIntValidator {
     expected: i64,
+    name: String,
 }
 
 impl LiteralSingleIntValidator {
     fn new(expected: i64) -> Self {
-        Self { expected }
+        Self {
+            expected,
+            name: format!("literal[{}]", expected),
+        }
     }
 }
 
@@ -117,8 +123,8 @@ impl Validator for LiteralSingleIntValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        format!("literal[{}]", self.expected)
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -126,6 +132,7 @@ impl Validator for LiteralSingleIntValidator {
 pub struct LiteralMultipleStringsValidator {
     expected: AHashSet<String>,
     repr: String,
+    name: String,
 }
 
 impl LiteralMultipleStringsValidator {
@@ -140,11 +147,9 @@ impl LiteralMultipleStringsValidator {
                 return None;
             }
         }
-
-        Some(Self {
-            expected,
-            repr: repr_args.join(", "),
-        })
+        let repr = repr_args.join(", ");
+        let name = format!("literal[{}]", repr);
+        Some(Self { expected, repr, name })
     }
 }
 
@@ -170,8 +175,8 @@ impl Validator for LiteralMultipleStringsValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        format!("literal[{}]", self.repr)
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -179,6 +184,7 @@ impl Validator for LiteralMultipleStringsValidator {
 pub struct LiteralMultipleIntsValidator {
     expected: AHashSet<i64>,
     repr: String,
+    name: String,
 }
 
 impl LiteralMultipleIntsValidator {
@@ -193,11 +199,9 @@ impl LiteralMultipleIntsValidator {
                 return None;
             }
         }
-
-        Some(Self {
-            expected,
-            repr: repr_args.join(", "),
-        })
+        let repr = repr_args.join(", ");
+        let name = format!("literal[{}]", repr);
+        Some(Self { expected, repr, name })
     }
 }
 
@@ -223,8 +227,8 @@ impl Validator for LiteralMultipleIntsValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        format!("literal[{}]", self.repr)
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -234,6 +238,7 @@ pub struct LiteralGeneralValidator {
     expected_str: AHashSet<String>,
     expected_py: Py<PyList>,
     repr: String,
+    name: String,
 }
 
 impl LiteralGeneralValidator {
@@ -253,11 +258,14 @@ impl LiteralGeneralValidator {
                 expected_py.append(item)?;
             }
         }
+        let repr = repr_args.join(", ");
+        let name = format!("literal[{}]", repr);
         Ok(Self {
             expected_int,
             expected_str,
             expected_py: expected_py.into_py(py),
-            repr: repr_args.join(", "),
+            repr,
+            name,
         })
     }
 }
@@ -301,7 +309,7 @@ impl Validator for LiteralGeneralValidator {
         ))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        format!("literal[{}]", self.repr)
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }

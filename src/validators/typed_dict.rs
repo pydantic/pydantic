@@ -291,8 +291,14 @@ impl Validator for TypedDictValidator {
         }
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.fields
+            .iter_mut()
+            .try_for_each(|f| f.validator.complete(build_context))
     }
 }
 

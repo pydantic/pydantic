@@ -16,6 +16,7 @@ pub struct SetValidator {
     item_validator: Box<CombinedValidator>,
     min_items: Option<usize>,
     max_items: Option<usize>,
+    name: String,
 }
 
 impl BuildValidator for SetValidator {
@@ -50,8 +51,12 @@ impl Validator for SetValidator {
         self._validation_logic(py, input, input.strict_set()?, extra, slots, recursion_guard)
     }
 
-    fn get_name(&self, py: Python) -> String {
-        format!("{}[{}]", Self::EXPECTED_TYPE, self.item_validator.get_name(py))
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.item_validator.complete(build_context)
     }
 }
 

@@ -57,8 +57,8 @@ impl Validator for IntValidator {
         Ok(input.strict_int()?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        Self::EXPECTED_TYPE.to_string()
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
 
@@ -83,8 +83,8 @@ impl Validator for StrictIntValidator {
         Ok(input.strict_int()?.into_py(py))
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "strict-int".to_string()
+    fn get_name(&self) -> &str {
+        "strict-int"
     }
 }
 
@@ -125,8 +125,8 @@ impl Validator for ConstrainedIntValidator {
         self._validation_logic(py, input, input.strict_int()?)
     }
 
-    fn get_name(&self, _py: Python) -> String {
-        "constrained-int".to_string()
+    fn get_name(&self) -> &str {
+        "constrained-int"
     }
 }
 
