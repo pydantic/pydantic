@@ -7,10 +7,16 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from hypothesis import settings
 
 from pydantic_core import SchemaValidator
 
 __all__ = ('Err',)
+
+hyp_max_examples = os.getenv('HYPOTHESIS_MAX_EXAMPLES')
+if hyp_max_examples:
+    settings.register_profile('custom', max_examples=int(hyp_max_examples))
+    settings.load_profile('custom')
 
 
 @dataclass
