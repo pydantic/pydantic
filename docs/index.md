@@ -7,11 +7,11 @@
 
 {!.version.md!}
 
-Data validation and settings management using python type annotations.
+Data validation and settings management using Python type annotations.
 
 *pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
 
-Define how data should be in pure, canonical python; validate it with *pydantic*.
+Define how data should be in pure, canonical Python; validate it with *pydantic*.
 
 ## Sponsors
 
@@ -80,7 +80,7 @@ What's going on here:
 * `name` is inferred as a string from the provided default; because it has a default, it is not required.
 * `signup_ts` is a datetime field which is not required (and takes the value ``None`` if it's not supplied).
   *pydantic* will process either a unix timestamp int (e.g. `1496498400`) or a string representing the date & time.
-* `friends` uses python's typing system, and requires a list of integers. As with `id`, integer-like objects
+* `friends` uses Python's typing system, and requires a list of integers. As with `id`, integer-like objects
   will be converted to integers.
 
 If validation fails pydantic will raise an error with a breakdown of what was wrong:
@@ -98,7 +98,7 @@ outputs:
 So *pydantic* uses some cool new language features, but why should I actually go and use it?
 
 **plays nicely with your IDE/linter/brain**
-: There's no new schema definition micro-language to learn. If you know how to use python type hints, 
+: There's no new schema definition micro-language to learn. If you know how to use Python type hints, 
   you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations, 
   so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)), 
   and your intuition should all work properly with your validated data.
@@ -106,7 +106,7 @@ So *pydantic* uses some cool new language features, but why should I actually go
 **dual use**
 : *pydantic's* [BaseSettings](usage/settings.md) class allows *pydantic* to be used in both a "validate this request
   data" context and in a "load my system settings" context. The main differences are that system settings can
-  be read from environment variables, and more complex objects like DSNs and python objects are often required.
+  be read from environment variables, and more complex objects like DSNs and Python objects are often required.
 
 **fast**
 : *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,
@@ -124,7 +124,7 @@ So *pydantic* uses some cool new language features, but why should I actually go
   
 **dataclasses integration**
 : As well as `BaseModel`, *pydantic* provides
-  a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla python dataclasses with input
+  a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla Python dataclasses with input
   data parsing and validation.
 
 ## Using Pydantic
@@ -191,7 +191,7 @@ Podcasts and videos discussing pydantic.
 
 [Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
 : "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management 
-  using python type annotations, and it's the python type annotations that makes me really extra happy... It works 
+  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works 
   automatically with all the IDE's you already have.*" --Michael Kennedy
 
 [Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}

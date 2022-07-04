@@ -57,7 +57,7 @@ all upper-case, you should name attribute all upper-case too. You can still name
 you like through `Field(..., env=...)`.
 
 !!! note
-    On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+    On Windows, Python's `os` module always treats environment variables as case-insensitive, so the
     `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
 
 ## Parsing environment variable values
