@@ -13,7 +13,9 @@ from ..conftest import Err
         (False, False),
         (True, True),
         (0, False),
+        (0.0, False),
         (1, True),
+        (1.0, True),
         ('yes', True),
         ('no', False),
         ('true', True),
@@ -27,6 +29,9 @@ from ..conftest import Err
         ),
         (2, Err('Value must be a valid boolean, unable to interpret input [kind=bool_parsing, input_value=2')),
         ([], Err('Value must be a valid boolean [kind=bool_type, input_value=[], input_type=list]')),
+        (1.1, Err('Value must be a valid boolean [kind=bool_type, input_value=1.1, input_type=float]')),
+        (2, Err('unable to interpret input [kind=bool_parsing, input_value=2, input_type=int]')),
+        (2.0, Err('unable to interpret input [kind=bool_parsing, input_value=2.0, input_type=float]')),
     ],
 )
 def test_bool(py_or_json, input_value, expected):
