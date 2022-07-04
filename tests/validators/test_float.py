@@ -45,13 +45,10 @@ def test_float(py_or_json, input_value, expected):
         (42, 42),
         (42.0, 42.0),
         (42.5, 42.5),
-        pytest.param(
-            '42', Err("Value must be a valid number [kind=float_type, input_value='42', input_type=str]"), id='string'
-        ),
-        pytest.param(
-            True, Err('Value must be a valid number [kind=float_type, input_value=True, input_type=bool]'), id='bool'
-        ),
+        ('42', Err("Value must be a valid number [kind=float_type, input_value='42', input_type=str]")),
+        (True, Err('Value must be a valid number [kind=float_type, input_value=True, input_type=bool]')),
     ],
+    ids=repr,
 )
 def test_float_strict(py_or_json, input_value, expected):
     v = py_or_json({'type': 'float', 'strict': True})

@@ -96,6 +96,11 @@ impl<'a> Input<'a> for PyAny {
             str_as_bool(self, &either_str.as_cow())
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_bool(self, int)
+        } else if let Ok(float) = self.extract::<f64>() {
+            match float_as_int(self, float) {
+                Ok(int) => int_as_bool(self, int),
+                _ => Err(ValError::new(ErrorKind::BoolType, self)),
+            }
         } else {
             Err(ValError::new(ErrorKind::BoolType, self))
         }

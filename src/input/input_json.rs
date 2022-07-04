@@ -56,7 +56,10 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Bool(b) => Ok(*b),
             JsonInput::String(s) => str_as_bool(self, s),
             JsonInput::Int(int) => int_as_bool(self, *int),
-            // TODO float??
+            JsonInput::Float(float) => match float_as_int(self, *float) {
+                Ok(int) => int_as_bool(self, int),
+                _ => Err(ValError::new(ErrorKind::BoolType, self)),
+            },
             _ => Err(ValError::new(ErrorKind::BoolType, self)),
         }
     }
