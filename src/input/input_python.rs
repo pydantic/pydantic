@@ -3,8 +3,8 @@ use std::str::from_utf8;
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyBool, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySequence, PySet, PyString,
-    PyTime, PyTuple, PyType,
+    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyInt, PyList, PyMapping, PySequence, PySet,
+    PyString, PyTime, PyTuple, PyType,
 };
 use pyo3::{intern, AsPyPointer};
 
@@ -56,6 +56,12 @@ impl<'a> Input<'a> for PyAny {
             Ok(py_str.into())
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
+                Ok(s) => s,
+                Err(_) => return Err(ValError::new(ErrorKind::StrUnicode, self)),
+            };
+            Ok(str.into())
+        } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
+            let str = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
                 Ok(s) => s,
                 Err(_) => return Err(ValError::new(ErrorKind::StrUnicode, self)),
             };
@@ -270,6 +276,8 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
             let string = py_str.to_string_lossy().to_string();
             Ok(string.into_bytes().into())
+        } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
+            Ok(py_byte_array.to_vec().into())
         } else {
             Err(ValError::new(ErrorKind::BytesType, self))
         }

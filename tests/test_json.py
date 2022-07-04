@@ -12,6 +12,18 @@ def test_bool(input_value, output_value):
     assert v.validate_json(input_value) == output_value
 
 
+@pytest.mark.parametrize('input_value', ['[1, 2, 3]', b'[1, 2, 3]', bytearray(b'[1, 2, 3]')])
+def test_input_types(input_value):
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
+    assert v.validate_json(input_value) == [1, 2, 3]
+
+
+def test_input_type_invalid():
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
+    with pytest.raises(TypeError, match='^JSON input must be str, bytes or bytearray, not list$'):
+        v.validate_json([])
+
+
 def test_null():
     assert SchemaValidator({'type': 'none'}).validate_json('null') is None
 

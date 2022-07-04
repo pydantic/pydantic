@@ -5,7 +5,7 @@ extern crate test;
 use test::{black_box, Bencher};
 
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyString};
 
 use _pydantic_core::SchemaValidator;
 
@@ -14,17 +14,21 @@ fn build_schema_validator(py: Python, code: &str) -> SchemaValidator {
     SchemaValidator::py_new(py, schema).unwrap()
 }
 
+fn json<'a>(py: Python<'a>, code: &'a str) -> &'a PyAny {
+    black_box(PyString::new(py, code))
+}
+
 #[bench]
 fn ints_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'int'}");
 
-    let result = validator.validate_json(py, black_box("123".to_string())).unwrap();
+    let result = validator.validate_json(py, json(py, "123")).unwrap();
     let result_int: i64 = result.extract(py).unwrap();
     assert_eq!(result_int, 123);
 
-    bench.iter(|| black_box(validator.validate_json(py, black_box("123".to_string())).unwrap()))
+    bench.iter(|| black_box(validator.validate_json(py, json(py, "123")).unwrap()))
 }
 
 #[bench]
@@ -53,10 +57,7 @@ fn list_int_json(bench: &mut Bencher) {
         (0..100).map(|x| x.to_string()).collect::<Vec<String>>().join(",")
     );
 
-    bench.iter(|| {
-        let input = black_box(code.clone());
-        black_box(validator.validate_json(py, input).unwrap())
-    })
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
 }
 
 fn list_int_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
@@ -110,8 +111,7 @@ fn list_error_json(bench: &mut Bencher) {
             .join(", ")
     );
 
-    let input = black_box(code.clone());
-    match validator.validate_json(py, input) {
+    match validator.validate_json(py, json(py, &code)) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
@@ -122,12 +122,9 @@ fn list_error_json(bench: &mut Bencher) {
         }
     };
 
-    bench.iter(|| {
-        let input = black_box(code.clone());
-        match validator.validate_json(py, input) {
-            Ok(_) => panic!("unexpectedly valid"),
-            Err(e) => black_box(e),
-        }
+    bench.iter(|| match validator.validate_json(py, json(py, &code)) {
+        Ok(_) => panic!("unexpectedly valid"),
+        Err(e) => black_box(e),
     })
 }
 
@@ -197,10 +194,7 @@ fn list_any_json(bench: &mut Bencher) {
         (0..100).map(|x| x.to_string()).collect::<Vec<String>>().join(",")
     );
 
-    bench.iter(|| {
-        let input = black_box(code.clone());
-        black_box(validator.validate_json(py, input).unwrap())
-    })
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
 }
 
 #[bench]
@@ -242,10 +236,7 @@ fn dict_json(bench: &mut Bencher) {
             .join(", ")
     );
 
-    bench.iter(|| {
-        let input = black_box(code.to_string());
-        black_box(validator.validate_json(py, input).unwrap())
-    })
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
 }
 
 #[bench]
@@ -343,10 +334,7 @@ fn typed_dict_json(bench: &mut Bencher) {
 
     let code = r#"{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9, "j": 0}"#.to_string();
 
-    bench.iter(|| {
-        let input = black_box(code.clone());
-        black_box(validator.validate_json(py, input).unwrap())
-    })
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
 }
 
 #[bench]
