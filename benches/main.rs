@@ -11,7 +11,7 @@ use _pydantic_core::SchemaValidator;
 
 fn build_schema_validator(py: Python, code: &str) -> SchemaValidator {
     let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
-    SchemaValidator::py_new(py, schema).unwrap()
+    SchemaValidator::py_new(py, schema, None).unwrap()
 }
 
 fn json<'a>(py: Python<'a>, code: &'a str) -> &'a PyAny {
@@ -434,7 +434,7 @@ fn complete_model(bench: &mut Bencher) {
 
     let complete_schema = py.import("complete_schema").unwrap();
     let schema = complete_schema.call_method0("schema").unwrap();
-    let validator = SchemaValidator::py_new(py, schema).unwrap();
+    let validator = SchemaValidator::py_new(py, schema, None).unwrap();
 
     let input = complete_schema.call_method0("input_data_lax").unwrap();
     let input = black_box(input);

@@ -48,9 +48,9 @@ pub struct SchemaValidator {
 #[pymethods]
 impl SchemaValidator {
     #[new]
-    pub fn py_new(py: Python, schema: &PyAny) -> PyResult<Self> {
+    pub fn py_new(py: Python, schema: &PyAny, config: Option<&PyDict>) -> PyResult<Self> {
         let mut build_context = BuildContext::default();
-        let mut validator = match build_validator(schema, None, &mut build_context) {
+        let mut validator = match build_validator(schema, config, &mut build_context) {
             Ok((v, _)) => v,
             Err(err) => {
                 return Err(match err.is_instance_of::<SchemaError>(py) {
