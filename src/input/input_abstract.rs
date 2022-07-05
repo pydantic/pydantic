@@ -6,7 +6,7 @@ use pyo3::types::PyType;
 use crate::errors::{InputValue, LocItem, ValResult};
 use crate::input::datetime::EitherTime;
 
-use super::datetime::{EitherDate, EitherDateTime};
+use super::datetime::{EitherDate, EitherDateTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
 use super::{GenericMapping, GenericSequence};
 
@@ -97,6 +97,12 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
 
     fn lax_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         self.strict_tuple()
+    }
+
+    fn strict_timedelta(&self) -> ValResult<EitherTimedelta>;
+
+    fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
+        self.strict_timedelta()
     }
 
     fn is_instance(&self, _class: &PyType) -> PyResult<bool> {
