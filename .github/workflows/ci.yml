@@ -41,6 +41,9 @@ jobs:
       - name: lint
         run: make lint
 
+      - name: pyupgrade
+        run: make pyupgrade
+
       - name: mypy
         run: make mypy
 

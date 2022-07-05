@@ -309,7 +309,7 @@ class PydanticModelTransformer:
                     known_fields.add(name)
                     superclass_fields.append(field)
                 else:
-                    (field,) = [a for a in all_fields if a.name == name]
+                    (field,) = (a for a in all_fields if a.name == name)
                     all_fields.remove(field)
                     superclass_fields.append(field)
             all_fields = superclass_fields + all_fields

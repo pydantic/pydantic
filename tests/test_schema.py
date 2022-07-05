@@ -1134,7 +1134,7 @@ def test_flat_models_unique_models():
     from pydantic_schema_test.moduled.modeld import Model as ModelD
 
     flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
-    assert flat_models == set([ModelA, ModelB])
+    assert flat_models == {ModelA, ModelB}
 
 
 def test_flat_models_with_submodels():
@@ -1148,7 +1148,7 @@ def test_flat_models_with_submodels():
         c: Dict[str, Bar]
 
     flat_models = get_flat_models_from_model(Baz)
-    assert flat_models == set([Foo, Bar, Baz])
+    assert flat_models == {Foo, Bar, Baz}
 
 
 def test_flat_models_with_submodels_from_sequence():
@@ -1166,7 +1166,7 @@ def test_flat_models_with_submodels_from_sequence():
         ingredients: List[Ingredient]
 
     flat_models = get_flat_models_from_models([Bar, Pizza])
-    assert flat_models == set([Foo, Bar, Ingredient, Pizza])
+    assert flat_models == {Foo, Bar, Ingredient, Pizza}
 
 
 def test_model_name_maps():
