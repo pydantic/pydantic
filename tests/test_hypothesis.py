@@ -1,4 +1,5 @@
 import re
+import sys
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -20,6 +21,7 @@ def test_datetime_datetime(datetime_schema, data):
     assert datetime_schema.validate_python(data) == data
 
 
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='OverflowError, see pyodide/pyodide#2841')
 @given(strategies.integers(min_value=-11_676_096_000, max_value=253_402_300_799_000))
 def test_datetime_int(datetime_schema, data):
     if abs(data) > 20_000_000_000:
