@@ -56,6 +56,10 @@ so in this example
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
 
+In Pydantic **v1** `case_sensitive` is `False` by default and all variable names are converted to lower-case internally.
+If you want to define upper-case variable names on nested models like `SubModel` you have to
+set `case_sensitive=True` to disable this behaviour.
+
 !!! note
     On Windows, Python's `os` module always treats environment variables as case-insensitive, so the
     `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
