@@ -25,12 +25,23 @@ class BoolSchema(TypedDict, total=False):
     ref: str
 
 
-class ConfigSchema(TypedDict, total=False):
+class Config(TypedDict, total=False):
     strict: bool
-    extra_behavior: Literal['allow', 'forbid', 'ignore']
-    model_full: bool  # default: True
-    populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
-    from_attributes: bool
+    # higher priority configs take precedence of over lower, if priority matches the two configs are merged, default 0
+    config_choose_priority: int
+    # if configs are merged, which should take precedence, default 0, default means child takes precedence
+    config_merge_priority: int
+    # settings related to typed_dicts only
+    typed_dict_extra_behavior: Literal['allow', 'forbid', 'ignore']
+    typed_dict_full: bool  # default: True
+    typed_dict_populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
+    typed_dict_from_attributes: bool
+    # fields related to string fields only
+    str_max_length: int
+    str_min_length: int
+    str_strip_whitespace: bool
+    str_to_lower: bool
+    str_to_upper: bool
 
 
 class DictSchema(TypedDict, total=False):
@@ -100,6 +111,7 @@ class ModelClassSchema(TypedDict):
     class_type: type
     schema: TypedDictSchema
     ref: NotRequired[str]
+    config: NotRequired[Config]
 
 
 class TypedDictField(TypedDict, total=False):
@@ -113,10 +125,15 @@ class TypedDictField(TypedDict, total=False):
 class TypedDictSchema(TypedDict, total=False):
     type: Required[Literal['typed-dict']]
     fields: Required[Dict[str, TypedDictField]]
+    strict: bool
     extra_validator: Schema
-    config: ConfigSchema
     return_fields_set: bool
     ref: str
+    # all these values can be set via config, equivalent fields have `typed_dict_` prefix
+    extra_behavior: Literal['allow', 'forbid', 'ignore']
+    full: bool  # default: True
+    populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
+    from_attributes: bool
 
 
 class NoneSchema(TypedDict):

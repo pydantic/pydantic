@@ -5,7 +5,7 @@ use pyo3::types::{PyDict, PyFunction, PyList, PySet, PyString};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::{is_strict, py_error, schema_or_config, SchemaDict};
 use crate::errors::{as_internal, py_err_string, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input, JsonInput, JsonObject};
 use crate::recursion_guard::RecursionGuard;
@@ -39,18 +39,21 @@ impl BuildValidator for TypedDictValidator {
 
     fn build(
         schema: &PyDict,
-        _config: Option<&PyDict>,
+        config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        // models ignore the parent config and always use the config from this model
-        let config: Option<&PyDict> = schema.get_as("config")?;
+        let strict = is_strict(schema, config)?;
 
-        let model_full = config.get_as("model_full")?.unwrap_or(true);
-        let strict = config.get_as("strict")?.unwrap_or(false);
-        let from_attributes = config.get_as("from_attributes")?.unwrap_or(false);
+        let extra_behavior = schema_or_config::<&str>(schema, config, "extra_behavior", "typed_dict_extra_behavior")?;
+        let full = schema_or_config(schema, config, "full", "typed_dict_full")?.unwrap_or(true);
+        let from_attributes =
+            schema_or_config(schema, config, "from_attributes", "typed_dict_from_attributes")?.unwrap_or(false);
+        let populate_by_name =
+            schema_or_config(schema, config, "populate_by_name", "typed_dict_populate_by_name")?.unwrap_or(false);
+
         let return_fields_set = schema.get_as("return_fields_set")?.unwrap_or(false);
 
-        let (check_extra, forbid_extra) = match config.get_as::<&str>("extra_behavior")? {
+        let (check_extra, forbid_extra) = match extra_behavior {
             Some(s) => match s {
                 "allow" => (true, false),
                 "ignore" => (false, false),
@@ -71,7 +74,6 @@ impl BuildValidator for TypedDictValidator {
             None => None,
         };
 
-        let populate_by_name: bool = config.get_as("populate_by_name")?.unwrap_or(false);
         let fields_dict: &PyDict = schema.get_as_req("fields")?;
         let mut fields: Vec<TypedDictField> = Vec::with_capacity(fields_dict.len());
 
@@ -101,7 +103,7 @@ impl BuildValidator for TypedDictValidator {
                         }
                         required
                     }
-                    None => model_full,
+                    None => full,
                 },
                 default,
             });

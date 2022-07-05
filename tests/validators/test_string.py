@@ -8,14 +8,6 @@ from pydantic_core import SchemaError, SchemaValidator, ValidationError
 from ..conftest import Err
 
 
-def test_str_constrained():
-    v = SchemaValidator({'type': 'str', 'max_length': 5})
-    assert v.validate_python('test') == 'test'
-
-    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
-        v.validate_python('test long')
-
-
 @pytest.mark.parametrize(
     'input_value,expected',
     [
@@ -93,6 +85,22 @@ def test_constrained_str(py_or_json, kwargs, input_value, expected):
             v.validate_test(input_value)
     else:
         assert v.validate_test(input_value) == expected
+
+
+def test_str_constrained():
+    v = SchemaValidator({'type': 'str', 'max_length': 5})
+    assert v.validate_python('test') == 'test'
+
+    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
+        v.validate_python('test long')
+
+
+def test_str_constrained_config():
+    v = SchemaValidator({'type': 'str'}, {'str_max_length': 5})
+    assert v.validate_python('test') == 'test'
+
+    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
+        v.validate_python('test long')
 
 
 def test_invalid_regex():
