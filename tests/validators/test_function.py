@@ -196,12 +196,12 @@ def test_function_after_config():
                     'schema': {'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}}
                 }
             },
-            'config': {'foo': 'bar'},
-        }
+        },
+        {'config_choose_priority': 2},
     )
 
     assert v.validate_python({'test_field': 321}) == {'test_field': '321 Changed'}
-    assert f_kwargs == {'data': {}, 'config': {'foo': 'bar'}}
+    assert f_kwargs == {'data': {}, 'config': {'config_choose_priority': 2}}
 
 
 def test_config_no_model():

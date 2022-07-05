@@ -12,9 +12,9 @@ def schema(*, strict: bool = False) -> dict:
     return {
         'type': 'model-class',
         'class_type': MyModel,
+        'config': {'strict': strict},
         'schema': {
             'type': 'typed-dict',
-            'config': {'strict': strict},
             'return_fields_set': True,
             'fields': {
                 'field_str': {'schema': 'str'},
