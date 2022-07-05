@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -111,3 +112,14 @@ def test_recursive_broken(recursive_schema):
     data['sub_branch'] = data
     with pytest.raises(ValidationError, match='Recursion error - cyclic reference detected'):
         recursive_schema.validate_python(data)
+
+
+@given(strategies.timedeltas())
+def test_pytimedelta_as_timedelta(dt):
+    v = SchemaValidator({'type': 'timedelta', 'gt': dt})
+    # simplest way to check `pytimedelta_as_timedelta` is correct is to extract duration from repr of the validator
+    m = re.search(r'Duration ?\{\s+positive: ?(\w+),\s+day: ?(\d+),\s+second: ?(\d+),\s+microsecond: ?(\d+)', repr(v))
+    pos, day, sec, micro = m.groups()
+    total_seconds = (1 if pos == 'true' else -1) * (int(day) * 86_400 + int(sec) + int(micro) / 1_000_000)
+
+    assert total_seconds == pytest.approx(dt.total_seconds())

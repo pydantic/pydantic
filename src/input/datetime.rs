@@ -1,11 +1,12 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDateTime, PyDelta, PyTime, PyTzInfo};
-use speedate::{Date, DateTime, Time};
+use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyTime, PyTzInfo};
+use speedate::{Date, DateTime, Duration, Time};
 use strum::EnumMessage;
 
-use super::Input;
 use crate::errors::{ErrorKind, ValError, ValResult};
+
+use super::Input;
 
 pub enum EitherDate<'a> {
     Raw(Date),
@@ -66,6 +67,73 @@ impl<'a> From<Time> for EitherTime<'a> {
 impl<'a> From<&'a PyTime> for EitherTime<'a> {
     fn from(time: &'a PyTime) -> Self {
         Self::Py(time)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum EitherTimedelta<'a> {
+    Raw(Duration),
+    Py(&'a PyDelta),
+}
+
+impl<'a> From<Duration> for EitherTimedelta<'a> {
+    fn from(timedelta: Duration) -> Self {
+        Self::Raw(timedelta)
+    }
+}
+
+impl<'a> From<&'a PyDelta> for EitherTimedelta<'a> {
+    fn from(timedelta: &'a PyDelta) -> Self {
+        Self::Py(timedelta)
+    }
+}
+
+pub fn pytimedelta_as_timedelta(py_timedelta: &PyDelta) -> Duration {
+    // see https://docs.python.org/3/c-api/datetime.html#c.PyDateTime_DELTA_GET_DAYS
+    // days can be negative, but seconds and microseconds are always positive.
+    let mut days = py_timedelta.get_days(); // -999999999 to 999999999
+    let mut seconds = py_timedelta.get_seconds(); // 0 through 86399
+    let mut microseconds = py_timedelta.get_microseconds(); // 0 through 999999
+    let positive = days >= 0;
+    if !positive {
+        // negative timedelta, we need to adjust values to match duration logic
+        if microseconds != 0 {
+            seconds += 1;
+            microseconds = (microseconds - 1_000_000).abs();
+        }
+        if seconds != 0 {
+            days += 1;
+            seconds = (seconds - 86400).abs();
+        }
+        days = days.abs();
+    }
+    // we can safely "unwrap" since the methods above guarantee values are in the correct ranges.
+    Duration::new(positive, days as u32, seconds as u32, microseconds as u32).unwrap()
+}
+
+impl<'a> EitherTimedelta<'a> {
+    pub fn as_raw(&self) -> Duration {
+        match self {
+            Self::Raw(timedelta) => timedelta.clone(),
+            Self::Py(py_timedelta) => pytimedelta_as_timedelta(py_timedelta),
+        }
+    }
+
+    pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
+        let timedelta = match self {
+            Self::Py(timedelta) => Ok(timedelta),
+            Self::Raw(duration) => {
+                let sign = if duration.positive { 1 } else { -1 };
+                PyDelta::new(
+                    py,
+                    sign * duration.day as i32,
+                    sign * duration.second as i32,
+                    sign * duration.microsecond as i32,
+                    true,
+                )
+            }
+        }?;
+        Ok(timedelta.into_py(py))
     }
 }
 
@@ -285,6 +353,36 @@ pub fn float_as_time<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // round for same reason as above
     int_as_time(input, timestamp.floor() as i64, microseconds.round() as u32)
+}
+
+pub fn bytes_as_timedelta<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> ValResult<'a, EitherTimedelta<'a>> {
+    match Duration::parse_bytes(bytes) {
+        Ok(dt) => Ok(dt.into()),
+        Err(err) => Err(ValError::new(
+            ErrorKind::TimeDeltaParsing {
+                error: err.get_documentation().unwrap_or_default(),
+            },
+            input,
+        )),
+    }
+}
+
+pub fn int_as_duration(total_seconds: i64) -> Duration {
+    let positive = total_seconds >= 0;
+    let total_seconds = total_seconds.unsigned_abs();
+    // we can safely unwrap here since we've guaranteed seconds and microseconds can't cause overflow
+    let days = (total_seconds / 86400) as u32;
+    let seconds = (total_seconds % 86400) as u32;
+    Duration::new(positive, days, seconds, 0).unwrap()
+}
+
+pub fn float_as_duration(total_seconds: f64) -> Duration {
+    let positive = total_seconds >= 0_f64;
+    let total_seconds = total_seconds.abs();
+    let microsecond = total_seconds.fract() * 1_000_000.0;
+    let days = (total_seconds / 86400f64) as u32;
+    let seconds = total_seconds as u64 % 86400;
+    Duration::new(positive, days, seconds as u32, microsecond.round() as u32).unwrap()
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core", extends = PyTzInfo)]
