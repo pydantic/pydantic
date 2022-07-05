@@ -3,11 +3,11 @@ use pyo3::types::PyType;
 use crate::errors::{ErrorKind, InputValue, LocItem, ValError, ValResult};
 
 use super::datetime::{
-    bytes_as_date, bytes_as_datetime, bytes_as_time, float_as_datetime, float_as_time, int_as_datetime, int_as_time,
-    EitherDate, EitherDateTime, EitherTime,
+    bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
+    float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
-use super::{EitherBytes, EitherString, GenericMapping, GenericSequence, Input, JsonInput};
+use super::{EitherBytes, EitherString, EitherTimedelta, GenericMapping, GenericSequence, Input, JsonInput};
 
 impl<'a> Input<'a> for JsonInput {
     /// This is required by since JSON object keys are always strings, I don't think it can be called
@@ -197,6 +197,22 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorKind::TupleType, self)),
         }
     }
+
+    fn strict_timedelta(&self) -> ValResult<EitherTimedelta> {
+        match self {
+            JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
+            _ => Err(ValError::new(ErrorKind::TimeDeltaType, self)),
+        }
+    }
+
+    fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
+        match self {
+            JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
+            JsonInput::Int(v) => Ok(int_as_duration(*v).into()),
+            JsonInput::Float(v) => Ok(float_as_duration(*v).into()),
+            _ => Err(ValError::new(ErrorKind::TimeDeltaType, self)),
+        }
+    }
 }
 
 /// Required for Dict keys so the string can behave like an Input
@@ -297,5 +313,9 @@ impl<'a> Input<'a> for String {
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
         Err(ValError::new(ErrorKind::TupleType, self))
+    }
+
+    fn strict_timedelta(&self) -> ValResult<super::EitherTimedelta> {
+        bytes_as_timedelta(self, self.as_bytes())
     }
 }
