@@ -1,7 +1,6 @@
 import importlib.util
 import json
 import os
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -89,23 +88,3 @@ def import_execute(request, tmp_work_path: Path):
             print('KeyboardInterrupt')
 
     return _import_execute
-
-
-if sys.platform == 'emscripten':
-    # we have to stub pytest-benchmark since it can't currently be used with webassembly/emscripten
-
-    @pytest.fixture
-    def benchmark():
-        def result(func, *args, **kwargs):
-            return func(*args, **kwargs)
-
-        return result
-
-    def pytest_configure(config):
-        config.addinivalue_line('markers', 'benchmark: pytest-benchmark stub, ignored')
-
-    def pytest_addoption(parser):
-        parser.addoption('--benchmark-columns', action='store', default='-', help='pytest-benchmark stub, ignored')
-        parser.addoption('--benchmark-group-by', action='store', default='-', help='pytest-benchmark stub, ignored')
-        parser.addoption('--benchmark-warmup', action='store', default='-', help='pytest-benchmark stub, ignored')
-        parser.addoption('--benchmark-disable', action='store_true', default='-', help='pytest-benchmark stub, ignored')

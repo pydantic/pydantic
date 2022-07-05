@@ -169,6 +169,7 @@ jobs:
     env:
       PYODIDE_VERSION: '0.21.0-alpha.2'
       PYTHON_VERSION: '3.10.2'
+      EMSCRIPTEN_VERSION: '3.1.14'
       NODE_VERSION: 18
     steps:
       - uses: actions/checkout@v3
