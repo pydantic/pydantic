@@ -1,0 +1,26 @@
+{
+  "name": "pydantic-core",
+  "version": "1.0.0",
+  "description": "for running wasm tests.",
+  "author": "Samuel Colvin",
+  "license": "MIT",
+  "homepage": "https://github.com/samuelcolvin/pydantic-core#readme",
+  "main": "tests/emscripten_runner.js",
+  "dependencies": {
+    "prettier": "^2.7.1",
+    "pyodide": "^0.21.0-alpha.2"
+  },
+  "scripts": {
+    "test": "node tests/emscripten_runner.js",
+    "format": "prettier --write 'tests/emscripten_runner.js'",
+    "lint": "prettier --check 'tests/emscripten_runner.js'"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "printWidth": 119,
+    "bracketSpacing": false,
+    "arrowParens": "avoid"
+  }
+}

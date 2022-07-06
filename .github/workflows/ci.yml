@@ -59,7 +59,7 @@ jobs:
     - run: rustup component add llvm-tools-preview
 
     - name: set up python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -114,9 +114,14 @@ jobs:
     - name: cache rust
       uses: Swatinem/rust-cache@v1
 
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+
+    # used to lint js code
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18'
 
     - uses: actions/cache@v2
       id: cache-py
@@ -140,6 +145,9 @@ jobs:
     - run: make lint
     - run: make pyright
 
+    - run: npm install
+    - run: npm run lint
+
   bench:
     # run the rust benchmarks
     runs-on: ubuntu-latest
@@ -155,22 +163,14 @@ jobs:
     - name: cache rust
       uses: Swatinem/rust-cache@v1
 
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
     - run: make rust-benchmark
 
   build-wasm-emscripten:
-    # run this for now on all CI for now in case something starts breaking it
-    # if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')"
-    # needs: [test, lint]
     runs-on: ubuntu-latest
-    env:
-      PYODIDE_VERSION: '0.21.0-alpha.2'
-      PYTHON_VERSION: '3.10.2'
-      EMSCRIPTEN_VERSION: '3.1.14'
-      NODE_VERSION: 18
     steps:
       - uses: actions/checkout@v3
 
@@ -178,12 +178,7 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: set up node
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          python-version: '3.10'
 
       - uses: actions-rs/toolchain@v1
         with:
@@ -194,14 +189,12 @@ jobs:
       - name: cache rust
         uses: Swatinem/rust-cache@v1
 
-      - run: pip install nox requests
-
-      - name: setup pyodide
-        run: nox -f tests/noxfile.py -s setup-pyodide
-
       - uses: mymindstorm/setup-emsdk@v11
         with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
+          # NOTE!: as per https://github.com/samuelcolvin/pydantic-core/pull/149 this version needs to match the version
+          # in node_modules/pyodide/repodata.json, to get the version, run:
+          # `cat node_modules/pyodide/repodata.json | python -m json.tool | rg platform`
+          version: '3.1.14'
           actions-cache-folder: emsdk-cache
 
       - name: set package version
@@ -219,14 +212,13 @@ jobs:
 
       - run: ls -lh dist
 
-      # setup-emsdk action adds an old version of node in PATH
-      # override it by setup node again
       - uses: actions/setup-node@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '18'
 
-      - name: run tests
-        run: nox -f tests/noxfile.py -s test-emscripten
+      - run: npm install
+
+      - run: npm run test
 
       - uses: actions/upload-artifact@v3
         with:
@@ -285,7 +277,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           architecture: ${{ matrix.python-architecture || 'x64' }}
@@ -341,7 +333,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
