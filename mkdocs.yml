@@ -55,6 +55,8 @@ nav:
   - usage/postponed_annotations.md
   - 'Usage with mypy': usage/mypy.md
   - 'Usage with devtools': usage/devtools.md
+- Blog:
+  - blog/pydantic-v2.md
 - Contributing to pydantic: contributing.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
@@ -72,6 +74,9 @@ markdown_extensions:
 - pymdownx.highlight
 - pymdownx.extra
 - mdx_truly_sane_lists
+- pymdownx.emoji:
+    emoji_index: !!python/name:materialx.emoji.twemoji
+    emoji_generator: !!python/name:materialx.emoji.to_svg
 
 plugins:
 - search
