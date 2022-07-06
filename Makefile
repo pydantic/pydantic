@@ -35,6 +35,7 @@ build:
 
 .PHONY: format
 format:
+	pyupgrade --py37-plus  --exit-zero-even-if-changed `find pydantic tests -name "*.py" -type f`
 	$(isort)
 	$(black)
 
@@ -53,6 +54,10 @@ check-dist:
 .PHONY: mypy
 mypy:
 	mypy pydantic
+
+.PHONY: pyupgrade
+pyupgrade:
+	pyupgrade --py37-plus `find pydantic tests -name "*.py" -type f`
 
 .PHONY: pyright
 pyright:
