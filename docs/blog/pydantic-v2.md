@@ -184,6 +184,28 @@ Basically anywhere were you don't care about a traditional model class.
 
 We'll need to add standalone methods for generating json schema and dumping these objects to JSON etc.
 
+### Required vs. Nullable Cleanup :smiley:
+
+Pydantic previously had a somewhat confused idea about "required" vs. "nullable". This mostly resulted from
+my misgivings about marking a field as `Optional[int]` but requiring a value to be provided but allowing it to be 
+`None`.
+
+In pydantic V2, pydantic will move to match dataclasses, thus:
+
+```py title="Required vs. Nullable"
+from pydantic import BaseModel
+
+class Foo(BaseModel):
+    # required, cannot be None
+    f1: str
+    # required, can be None - same as `Optional[str]` or `Union[str, None]`
+    f2: str | None
+    # optional, can be None
+    f3: str | None = None
+    # optional, but cannot be none
+    f4: str = None  
+```
+
 ### Validator Function Improvements :smiley: :smiley: :smiley:
 
 This is one of the changes in pydantic V2 that I'm most excited about, I've been talking about something
@@ -302,7 +324,43 @@ This wouldn't replace the current example-based somewhat informal documentation 
 
 ### Error descriptions :smiley:
 
-TODO
+The way line errors (the individual errors with a `ValidationError`) are built has become much more sophisticated
+in pydantic-core.
+
+There's a well=defined 
+[set of error codes and messages](https://github.com/samuelcolvin/pydantic-core/blob/main/src/errors/kinds.rs).
+
+More will be added when other type are validated via pure python validators in pydantic.
+
+I would like to add a dedicated section to the documentation with extra information for each type of error.
+
+This would be another key in a line error `documentation`, which would link to the appropriate section in the
+docs.
+
+Thus, errors might look like:
+
+```py
+[
+    {
+        'kind': 'greater_than_equal',
+        'loc': ['age'],
+        'message': 'Value must be greater than or equal to 18',
+        'input_value': 11,
+        'context': {'ge': 18},
+        'documentation': 'https://pydantic.dev/errors/#greater_than_equal',
+    },
+    {
+        'kind': 'bool_parsing',
+        'loc': ['is_developer'],
+        'message': 'Value must be a valid boolean, unable to interpret input',
+        'input_value': 'foobar',
+        'documentation': 'https://pydantic.dev/errors/#bool_parsing',
+    },
+]
+```
+
+(I own the `pydantic.dev` domain and will use it for at least these errors so that even if the docs URL
+changes, the error will still link to the correct place.)
 
 ### No pure python implementation :frowning:
 
@@ -402,8 +460,13 @@ which is a type defining the schema for validation schemas.
    and a validation error is raised
 2. The reason I've been so keen to get pydantic-core to compile and run with wasm is that I want all examples
    in the docs of pydantic V2 to be editable and runnable in the browser
-3. `from_orm` has become `from_attributes` and is now defined at schema generation time 
+3. Full (pun intended) support for `TypedDict`, including `full=False` - e.g. omitted keys
+4. `from_orm` has become `from_attributes` and is now defined at schema generation time 
    (either via model config or field config)
+5. `input_value` has been added to each line error in a `ValidationError` which should provide.
+6. `on_error` logic in a schema which allows either a default value to be used in the event of an error,
+   or that value to be omitted (in the case of a `full=False` `TypeDict`),
+   [#151](https://github.com/samuelcolvin/pydantic-core/issues/151)
 
 ## Removed Features :neutral_face:
 
