@@ -1,7 +1,7 @@
 import os
 import warnings
 from pathlib import Path
-from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union
+from typing import AbstractSet, Any, Callable, ClassVar, Dict, List, Mapping, Optional, Tuple, Type, Union, cast
 
 from .config import BaseConfig, Extra
 from .fields import ModelField
@@ -183,7 +183,7 @@ class EnvSettingsSource:
             if is_complex:
                 if env_val is None:
                     # field is complex but no value found so far, try explode_env_vars
-                    env_val_built = self.explode_env_vars(field, env_vars)
+                    env_val_built = self.explode_env_vars(settings, field, env_vars)
                     if env_val_built:
                         d[field.alias] = env_val_built
                 else:
@@ -195,7 +195,7 @@ class EnvSettingsSource:
                             raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
                     if isinstance(env_val, dict):
-                        d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars))
+                        d[field.alias] = deep_update(env_val, self.explode_env_vars(settings, field, env_vars))
                     else:
                         d[field.alias] = env_val
             elif env_val is not None:
@@ -217,7 +217,23 @@ class EnvSettingsSource:
 
         return True, allow_json_failure
 
-    def explode_env_vars(self, field: ModelField, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
+    @staticmethod
+    def next_field(field: Union[ModelField, None], key: str) -> Union[ModelField, None]:
+        if not field:
+            return None
+
+        if field.sub_fields:
+            for sub_field in field.sub_fields:
+                if sub_field.alias == key:
+                    return sub_field
+        elif field.type_ and field.type_.__fields__.get(key):
+            return cast(ModelField, field.type_.__fields__[key])
+
+        return None
+
+    def explode_env_vars(
+        self, settings: BaseSettings, field: ModelField, env_vars: Mapping[str, Optional[str]]
+    ) -> Dict[str, Any]:
         """
         Process env_vars and extract the values of keys containing env_nested_delimiter into nested dictionaries.
 
@@ -230,8 +246,25 @@ class EnvSettingsSource:
                 continue
             _, *keys, last_key = env_name.split(self.env_nested_delimiter)
             env_var = result
+            target_field: Union[ModelField, None] = field
+
             for key in keys:
+                target_field = self.next_field(target_field, key)
                 env_var = env_var.setdefault(key, {})
+
+            # get proper field with last_key
+            target_field = self.next_field(target_field, last_key)
+
+            # check if env_val maps to a complex field and if so, parse the env_val
+            if target_field and env_val:
+                is_complex, allow_json_failure = self.field_is_complex(target_field)
+                if is_complex:
+                    try:
+                        env_val = settings.__config__.json_loads(env_val)
+                    except ValueError as e:
+                        if not allow_json_failure:
+                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+
             env_var[last_key] = env_val
 
         return result

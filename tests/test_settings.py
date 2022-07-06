@@ -164,6 +164,52 @@ def test_nested_env_delimiter_aliases(env):
     assert Cfg().dict() == {'sub_model': {'v1': '-1-', 'v2': '-2-'}}
 
 
+def test_nested_env_complex_values(env):
+    class SubSubModel(BaseSettings):
+        dvals: Dict
+
+    class SubModel(BaseSettings):
+        vals: List[str]
+        sub_sub_model: SubSubModel
+
+    class Cfg(BaseSettings):
+        sub_model: SubModel
+
+        class Config:
+            env_prefix = 'cfg_'
+            env_nested_delimiter = '__'
+
+    env.set('cfg_sub_model__vals', '["one", "two"]')
+    env.set('cfg_sub_model__sub_sub_model__dvals', '{"three": 4}')
+    assert Cfg().dict() == {'sub_model': {'vals': ['one', 'two'], 'sub_sub_model': {'dvals': {'three': 4}}}}
+
+
+def test_nested_env_union_complex_values(env):
+    class SubModel(BaseSettings):
+        vals: Union[List[str], Dict[str, str]]
+
+    class Cfg(BaseSettings):
+        sub_model: SubModel
+
+        class Config:
+            env_prefix = 'cfg_'
+            env_nested_delimiter = '__'
+
+    env.set('cfg_sub_model__vals', '["one", "two"]')
+    assert Cfg().dict() == {'sub_model': {'vals': ['one', 'two']}}
+
+    env.set('cfg_sub_model__vals', '{"three": "four"}')
+    assert Cfg().dict() == {'sub_model': {'vals': {'three': 'four'}}}
+
+    env.set('cfg_sub_model__vals', 'stringval')
+    with pytest.raises(ValidationError):
+        Cfg()
+
+    env.set('cfg_sub_model__vals', '{"invalid": dict}')
+    with pytest.raises(ValidationError):
+        Cfg()
+
+
 class DateModel(BaseModel):
     pips: bool = False
 
