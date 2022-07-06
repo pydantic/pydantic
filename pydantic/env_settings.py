@@ -223,9 +223,8 @@ class EnvSettingsSource:
             return None
 
         if field.sub_fields:
-            for sub_field in field.sub_fields:
-                if sub_field.alias == key:
-                    return sub_field
+            # no support for Unions of complex BaseSettings fields
+            return None
         elif field.type_ and field.type_.__fields__.get(key):
             return cast(ModelField, field.type_.__fields__[key])
 

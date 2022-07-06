@@ -181,7 +181,44 @@ def test_nested_env_complex_values(env):
 
     env.set('cfg_sub_model__vals', '["one", "two"]')
     env.set('cfg_sub_model__sub_sub_model__dvals', '{"three": 4}')
+
     assert Cfg().dict() == {'sub_model': {'vals': ['one', 'two'], 'sub_sub_model': {'dvals': {'three': 4}}}}
+
+    env.set('cfg_sub_model__vals', 'invalid')
+    with pytest.raises(SettingsError, match='error parsing JSON for "cfg_sub_model__vals'):
+        Cfg()
+
+
+def test_nested_env_nonexisting_field(env):
+    class SubModel(BaseSettings):
+        vals: List[str]
+
+    class Cfg(BaseSettings):
+        sub_model: SubModel
+
+        class Config:
+            env_prefix = 'cfg_'
+            env_nested_delimiter = '__'
+
+    env.set('cfg_sub_model__foo_vals', '[]')
+    with pytest.raises(ValidationError):
+        Cfg()
+
+
+def test_nested_env_nonexisting_field_deep(env):
+    class SubModel(BaseSettings):
+        vals: List[str]
+
+    class Cfg(BaseSettings):
+        sub_model: SubModel
+
+        class Config:
+            env_prefix = 'cfg_'
+            env_nested_delimiter = '__'
+
+    env.set('cfg_sub_model__vals__foo__bar__vals', '[]')
+    with pytest.raises(ValidationError):
+        Cfg()
 
 
 def test_nested_env_union_complex_values(env):
