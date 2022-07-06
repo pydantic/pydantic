@@ -66,6 +66,7 @@ nav:
 - changelog.md
 
 markdown_extensions:
+- tables
 - markdown_include.include:
     base_path: docs
 - toc:

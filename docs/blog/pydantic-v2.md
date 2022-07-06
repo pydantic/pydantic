@@ -467,6 +467,8 @@ which is a type defining the schema for validation schemas.
 6. `on_error` logic in a schema which allows either a default value to be used in the event of an error,
    or that value to be omitted (in the case of a `full=False` `TypeDict`),
    [#151](https://github.com/samuelcolvin/pydantic-core/issues/151)
+7. `datetime`, `date`, `time` & `timedelta` validation is improved, see the 
+   [speedate] rust library I built specifically for this purpose for more details
 
 ## Removed Features :neutral_face:
 
@@ -481,4 +483,103 @@ which is a type defining the schema for validation schemas.
 
 ## Conversion Table
 
-TODO
+The table below provisionally defines what times are allowed to which field types.
+
+An updated and complete version of this table will be included in the docs for V2.
+
+| Field Type    | Input       | Mode   | Input Source | Conditions                                                                  |
+|---------------|-------------|--------|--------------|-----------------------------------------------------------------------------|
+| `str`         | `str`       | both   | python, JSON | -                                                                           |
+| `str`         | `bytes`     | lax    | python       | assumes UTF-8, error on unicode decoding error                              |
+| `str`         | `bytearray` | lax    | python       | assumes UTF-8, error on unicode decoding error                              |
+| `bytes`       | `bytes`     | both   | python       | -                                                                           |
+| `bytes`       | `str`       | both   | JSON         | -                                                                           |
+| `bytes`       | `str`       | lax    | python       | -                                                                           |
+| `bytes`       | `bytearray` | lax    | python       | -                                                                           |
+| `int`         | `int`       | strict | python, JSON | max abs value 2^64 - `i64` is used internally, `bool` explicitly forbidden  |
+| `int`         | `int`       | lax    | python, JSON | `i64`                                                                       |
+| `int`         | `float`     | lax    | python, JSON | `i64`, must be exact int, e.g. `f % 1 == 0`, `nan`, `inf` raise errors      |
+| `int`         | `Decimal`   | lax    | python, JSON | `i64`, must be exact int, e.g. `f % 1 == 0`                                 |
+| `int`         | `bool`      | lax    | python, JSON | -                                                                           |
+| `int`         | `str`       | lax    | python, JSON | `i64`, must be numeric only, e.g. `[0-9]+`                                  |
+| `float`       | `float`     | strict | python, JSON | `bool` explicitly forbidden                                                 |
+| `float`       | `float`     | lax    | python, JSON | -                                                                           |
+| `float`       | `int`       | lax    | python, JSON | -                                                                           |
+| `float`       | `str`       | lax    | python, JSON | must match `[0-9]+(\.[0-9]+)?`                                              |
+| `float`       | `Decimal`   | lax    | python       | -                                                                           |
+| `float`       | `bool`      | lax    | python, JSON | -                                                                           |
+| `bool`        | `bool`      | both   | python, JSON | -                                                                           |
+| `bool`        | `int`       | lax    | python, JSON | allowed: `0, 1`                                                             |
+| `bool`        | `float`     | lax    | python, JSON | allowed: `0, 1`                                                             |
+| `bool`        | `Decimal`   | lax    | python, JSON | allowed: `0, 1`                                                             |
+| `bool`        | `str`       | lax    | python, JSON | allowed: `'f', 'n', 'no', 'off', 'false', 't', 'y', 'on', 'yes', 'true'`    |
+| `None`        | `None`      | both   | python, JSON | -                                                                           |
+| `date`        | `date`      | both   | python       | -                                                                           |
+| `date`        | `datetime`  | lax    | python       | must be exact date, eg. no H, M, S, f                                       |
+| `date`        | `str`       | both   | JSON         | format `YYYY-MM-DD`                                                         |
+| `date`        | `str`       | lax    | python       | format `YYYY-MM-DD`                                                         |
+| `date`        | `bytes`     | lax    | python       | format `YYYY-MM-DD` (UTF-8)                                                 |
+| `date`        | `int`       | lax    | python, JSON | interpreted as seconds or ms from epoch, see [speedate], must be exact date |
+| `date`        | `float`     | lax    | python, JSON | interpreted as seconds or ms from epoch, see [speedate], must be exact date |
+| `datetime`    | `datetime`  | both   | python       | -                                                                           |
+| `datetime`    | `date`      | lax    | python       | -                                                                           |
+| `datetime`    | `str`       | both   | JSON         | format `YYYY-MM-DDTHH:MM:SS.f` etc. see [speedate]                          |
+| `datetime`    | `str`       | lax    | python       | format `YYYY-MM-DDTHH:MM:SS.f` etc. see [speedate]                          |
+| `datetime`    | `bytes`     | lax    | python       | format `YYYY-MM-DDTHH:MM:SS.f` etc. see [speedate], (UTF-8)                 |
+| `datetime`    | `int`       | lax    | python, JSON | interpreted as seconds or ms from epoch, see [speedate]                     |
+| `datetime`    | `float`     | lax    | python, JSON | interpreted as seconds or ms from epoch, see [speedate]                     |
+| `time`        | `time`      | both   | python       | -                                                                           |
+| `time`        | `str`       | both   | JSON         | format `HH:MM:SS.FFFFFF` etc. see [speedate]                                |
+| `time`        | `str`       | lax    | python       | format `HH:MM:SS.FFFFFF` etc. see [speedate]                                |
+| `time`        | `bytes`     | lax    | python       | format `HH:MM:SS.FFFFFF` etc. see [speedate], (UTF-8)                       |
+| `time`        | `int`       | lax    | python, JSON | interpreted as seconds, range 0 - 86399                                     |
+| `time`        | `float`     | lax    | python, JSON | interpreted as seconds, range 0 - 86399.9*                                  |
+| `time`        | `Decimal`   | lax    | python, JSON | interpreted as seconds, range 0 - 86399.9*                                  |
+| `timedelta`   | `timedelta` | both   | python       | -                                                                           |
+| `timedelta`   | `str`       | both   | JSON         | format ISO8601 etc. see [speedate]                                          |
+| `timedelta`   | `str`       | lax    | python       | format ISO8601 etc. see [speedate]                                          |
+| `timedelta`   | `bytes`     | lax    | python       | format ISO8601 etc. see [speedate], (UTF-8)                                 |
+| `timedelta`   | `int`       | lax    | python, JSON | interpreted as seconds                                                      |
+| `timedelta`   | `float`     | lax    | python, JSON | interpreted as seconds                                                      |
+| `timedelta`   | `Decimal`   | lax    | python, JSON | interpreted as seconds                                                      |
+| `dict`        | `dict`      | both   | python       | -                                                                           |
+| `dict`        | `Object`    | both   | JSON         | -                                                                           |
+| `dict`        | `mapping`   | lax    | python       | must implement the mapping interface and have an `items()` method           | 
+| `TypeDict`    | `dict`      | both   | python       | -                                                                           |
+| `TypeDict`    | `Object`    | both   | JSON         | -                                                                           |
+| `TypeDict`    | `Any`       | both   | python       | builtins not allowed, uses `getattr`, requires `from_attributes=True`       | 
+| `TypeDict`    | `mapping`   | lax    | python       | must implement the mapping interface and have an `items()` method           | 
+| `list`        | `list`      | both   | python       | -                                                                           |
+| `list`        | `Array`     | both   | JSON         | -                                                                           |
+| `list`        | `tuple`     | lax    | python       | -                                                                           |
+| `list`        | `set`       | lax    | python       | -                                                                           |
+| `list`        | `frozenset` | lax    | python       | -                                                                           |
+| `list`        | `dict_keys` | lax    | python       | -                                                                           |
+| `tuple`       | `tuple`     | both   | python       | -                                                                           |
+| `tuple`       | `Array`     | both   | JSON         | -                                                                           |
+| `tuple`       | `list`      | lax    | python       | -                                                                           |
+| `tuple`       | `set`       | lax    | python       | -                                                                           |
+| `tuple`       | `frozenset` | lax    | python       | -                                                                           |
+| `tuple`       | `dict_keys` | lax    | python       | -                                                                           |
+| `set`         | `set`       | both   | python       | -                                                                           |
+| `set`         | `Array`     | both   | JSON         | -                                                                           |
+| `set`         | `list`      | lax    | python       | -                                                                           |
+| `set`         | `tuple`     | lax    | python       | -                                                                           |
+| `set`         | `frozenset` | lax    | python       | -                                                                           |
+| `set`         | `dict_keys` | lax    | python       | -                                                                           |
+| `frozenset`   | `frozenset` | both   | python       | -                                                                           |
+| `frozenset`   | `Array`     | both   | JSON         | -                                                                           |
+| `frozenset`   | `list`      | lax    | python       | -                                                                           |
+| `frozenset`   | `tuple`     | lax    | python       | -                                                                           |
+| `frozenset`   | `set`       | lax    | python       | -                                                                           |
+| `frozenset`   | `dict_keys` | lax    | python       | -                                                                           |
+| `is_instance` | `Any`       | both   | python       | `isinstance()` check returns `True`                                         |
+| `is_instance` | -           | both   | JSON         | never valid                                                                 |
+| `callable`    | `Any`       | both   | python       | `callable()` check returns `True`                                           |
+| `callable`    | -           | both   | JSON         | never valid                                                                 |
+
+!!!note
+    The `ModelClass` validator (use to create instances of a class) uses the `TypeDict` validator, then creates an instance
+    with `__dict__` and `__fields_set__` set, so same rules apply as `TypeDict`.
+
+[speedate]: https://docs.rs/speedate/latest/speedate/
