@@ -14,8 +14,9 @@ Here goes...
 # Plan & Timeframe
 
 I'm currently taking a kind of "sabbatical" after leaving my last job to get pydantic V2 released.
-Why? Well I ask myself that quite often. I'm very proud of how much pydantic is used, but I'm less proud of its internals.
-Since it's something people seem to use quite a lot (26m downloads a month, Used 72k public repos on GitHub),
+Why? Well I ask myself that question quite often.
+I'm very proud of how much pydantic is used, but I'm less proud of its internals.
+Since it's something people seem to care about and use quite a lot (26M downloads a month, Used 72K public repos on GitHub),
 I want it to be as good as possible.
 
 While I'm on the subject of why, how and my odd sabbatical: if you work for a large company who use pydantic a lot,
@@ -24,8 +25,8 @@ like [Salesforce did](https://twitter.com/samuel_colvin/status/15012882476700631
 This is not charity, recruitment or marketing - the argument should be about how much the company will save if
 pydantic is 10x faster, more stable and more powerful - it would be worth paying me 10% of that to make it happen.
 
-The plan is to have pydantic V2 released within 3 months of full time work 
-(again, that'll be sooner if I can continue to work on it full time).
+The plan is to have pydantic V2 released within 3 months of full-time work 
+(again, that'll be sooner if I can continue to work on it full-time :face_with_raised_eyebrow:).
 
 Before pydantic V2 can be released, we need to released pydantic v1.10 - there are lots of changes in the main
 branch of pydantic contributed by the community, it's only fair to provide a release including those changes,
@@ -33,16 +34,17 @@ many of them will remain unchanged for V2, the rest will act as a requirement to
 the capabilities they implemented.
 
 The basic road map for me is as follows:
-1. implement a few more critical features in pydantic-core
-2. release V0.1 of pydantic-core
-3. work on getting pydantic V1.10 out - basically merge all open PRs that are finished
-4. release pydantic V1.10
-5. delete all stale PRs which didn't make it into V1.10, apologise profusely to their authors who put their valuable
+1. Implement a few more critical features in pydantic-core
+2. Release V0.1 of pydantic-core
+3. Work on getting pydantic V1.10 out - basically merge all open PRs that are finished
+4. Release pydantic V1.10
+5. Delete all stale PRs which didn't make it into V1.10, apologise profusely to their authors who put their valuable
   time into pydantic only to have their PRs closed :pray:
-6. change the main branch of pydantic to target v2
-7. start tearing pydantic code apart and see how many existing tests can be made to pass
-8. rinse, repeat
-9. release pydantic V2 :tada:
+6. Rename `master` to `main`, seems like a good time to do this
+7. Change the main branch of pydantic to target v2
+8. Start tearing pydantic code apart and see how many existing tests can be made to pass
+9. Rinse, repeat
+10. Release pydantic V2 :tada:
 
 # Introduction
 
@@ -68,8 +70,9 @@ The core validation logic of pydantic V2 will be performed by a separate package
 *pydantic-core* is written in Rust using the excellent [pyo3](https://pyo3.rs/) library which provides rust bindings
 for python.
 
-**Note:** the python interface to pydantic shouldn't change as a result of using pydantic-core, instead
-pydantic will use type annotations to build a schema for pydantic-core to use.
+!!! note
+    The python interface to pydantic shouldn't change as a result of using pydantic-core, instead
+    pydantic will use type annotations to build a schema for pydantic-core to use.
 
 pydantic-core is usable now, albeit with a fairly unintuitive API, if you're interested, please give it a try.
 
@@ -143,6 +146,12 @@ In future direct validation of JSON will also allow:
 * parsing in a separate thread while starting validation in the main thread
 * line numbers from JSON to be included in the validation errors
 
+!!! note
+    Pydantic has always had special support for JSON, that is not going to change. While in theory other formats
+    could be specifically supported, the overheads are significant and I don't think there's another format that's
+    used widely enough to be worth specific logic. Other formats can be parsed to python then validated, similarly
+    when serialising, data can be exported to a python object, then serialised, see below.
+
 ### Validation without a Model :smile:
 
 In pydantic v1 the core of all validation was a pydantic model, this led to significant overheads and complexity
@@ -159,6 +168,108 @@ This feature will provide significant addition performance improvements in scena
 
 Basically anywhere were you don't care about a traditional model class.
 
+We'll need to add standalone methods for generating json schema and dumping these objects to JSON etc.
+
+### Validator Function Improvements :smile: :smile: :smile:
+
+This is one of the changes in pydantic V2 that I'm most excited about, I've been talking about something
+like this for a long time, see [#1984](https://github.com/samuelcolvin/pydantic/issues/1984), but couldn't
+find a way to do this until now.
+
+Fields which use a function for validation can be any of the following types:
+* **function before mode** - where the function is called before the inner validator is called
+* **function after mode** - where the function is called after the inner validator is called
+* **plan mode** - where there's no inner validator
+* **wrap mode** - where the function takes a reference to a function which calls the inner validator,
+  and can therefore modify the input before inner validation, modify the output after inner validation, conditionally
+  not call the inner validator or catch errors from the inner validator and return a default value
+
+An example how a wrap validator might look:
+
+```py
+from datetime import datetime
+from pydantic import BaseModel, ValidationError, validator
+
+class MyModel(BaseModel):
+    timestamp: datetime
+
+    @validator('timestamp', mode='wrap')
+    def validate_timestamp(cls, v, handler):
+        if v == 'now':
+            # we don't want to bother with further validation, so we just return the value
+            return datetime.now()
+        try:
+            return handler(v)
+        except ValidationError:
+            # validation failed, in this case we want to return a default value
+            return datetime(2000, 1, 1)
+```
+
+### Improvements to Dumping/Serialization/Export :smile: :question:
+
+(I haven't worked on this yet, so things are a bit less set in stone)
+
+There has long been a debate about how to handle converting data when extracting it from a model.
+One of the features people have long requested is the ability to convert data to JSON compliant types while 
+converting a model to a dict.
+
+My plan is to move data export into pydantic-core, with that one implementation can support all export modes without
+compromising (and hopefully significantly improving) performance.
+
+I see four different export/serialisation scenarios:
+
+1. Extracting the field values of a model with no conversion, effectively `model.__dict__` but with the current filtering
+   logic provided by `.dict()`
+2. Extracting the field values of a model recursively (effectively what `.dict()` does now) - sub-models are converted to
+   dicts, but other fields remain unchanged.
+3. Extracting data and converting at the same time (e.g. to JSON compliant types)
+4. Serialising data straight to JSON
+
+I think all 4 modes can be supported in a single implementation, with a kind of "3.5" mode where a python function
+is used to convert the data as the use wishes.
+
+The current `include` and `exclude` logic is extremely complicated, hopefully it won't be too hard to
+translate it to rust.
+
+We should also add support for `validate_alias` and `dump_alias` to allow for customising field keys.
+
+### Model namespace cleanup :smile:
+
+For years I've wanted to clean up the model namespace,
+see [#1001](https://github.com/samuelcolvin/pydantic/issues/1001). This would avoid confusing gotchas when field
+names clash with methods on a model, it would also make it safer to add more methods to a model without risking
+new clashes.
+
+After much deliberation (and even giving a lightning talk at the python language submit about alternatives, see 
+[here](https://discuss.python.org/t/better-fields-access-and-allowing-a-new-character-at-the-start-of-identifiers/14529))
+I've decided to go with the simplest and clearest approach, the expense of a bit more typing:
+
+All methods on models with start with `model_`, fields names will not be allowed to start with `"model"`,
+aliases can be used if required.
+
+This will mean the following methods and attributes on a model:
+* `.__dict__` as currently, holds a dict of validated data
+* `.__fields_set__` as currently, set containing which fields were set (vs. populated from defaults)
+* `.model_validate()` (currently `.parse_obj()`) - validate data
+* `.model_validate_json()` (currently `parse_raw(j..., content_type='application/json')`) - validate data from JSON
+* `.model_dump()` (currently `.dict()`) - as above, with new `mode` argument
+* `.model_json()` (currently `.json()`) - alias of `.model_dump(mode='json')`
+* `.model_schema()` (currently `.schema()`)
+* `.model_schema_json()` (currently `.schema_json()`)
+* `.model_update_forward_refs()` (currently `.update_forward_refs()`) - update forward references
+* `.model_copy()` (currently `.copy()`) - copy a model
+* `.model_construct()` (currently `.construct()`) - construct a model with no validation
+* `._model_validator` attribute holding the internal pydantic `SchemaValidator`
+* `.model_fields` (currently `.__fields__`) - although the format will have to change a lot, might be an alias of
+  `._model_validator.schema`
+* `ModelConfig` (currently `Config`) - configuration class for models
+
+The following methods will be removed:
+* `.parse_file()`
+* `.parse_raw()`
+* `.from_orm()` - the functionality has been configured as a `Config` property call `from_attributes` which can be set
+  either on `ModelConfig` or on a specific `ModelClass` or `TypedDict` field
+
 ### Strict API & API documentation :smile:
 
 When preparing a pydantic V2, we'll make a strict distinction between the public API and private functions & classes.
@@ -171,6 +282,10 @@ The public API will have API documentation. I've recently been working with the 
 API documentation.
 
 This wouldn't replace the current example-based somewhat informal documentation style byt instead will augment it.
+
+### Error descriptions :smile:
+
+
 
 ### No pure python implementation :frowning:
 
@@ -203,18 +318,86 @@ In addition, some constraints on pydantic code can be removed once it no-longer 
 
 Some pieces of edge logic could get a little slower as they're no longer compiled.
 
+### I'm dropping the word "parse" and just using "validate" :confused:
+
+Partly due to the issues with the lack of strict mode. I've previously gone back and forth between using 
+"parse" and "validate" for what pydantic does.
+
+While pydantic is not simply a validation library (and I'm sure some would argue validation is not strictly what it does),
+most people use the **validation**.
+
+it's time to stop fighting that, use consistent names.
+
+The word "parse" will no longer be used except when talking about JSON parsing.
+
+## Changes to custom field types :neutral_face:
+
+Since the core structure of validators has changed from "a list of validators to call on each field" to
+"a tree of validators which call each other", the 
+[`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
+way of defining custom field types no longer makes sense.
+
+Instead we'll look for the attribute `__pydantic_schema__` which must be a 
+pydantic-core compliant schema for validating data to this field type, except for the `'function'`
+item which can be a string which should be a property (function) of the class.
+
+Here's an example of how a custom field type could be defined:
+
+```py
+from pydantic import ValiationSchema
+
+class Foobar:
+    __pydantic_schema__: ValiationSchema = {
+        'type': 'function',
+        'mode': 'after',
+        'function': 'validate',
+        'schema': {'type': 'str'}
+    }
+    
+    def __init__(self, value: str):
+        self.value = value
+
+    @classmethod
+    def validate(cls, value):
+        if 'foobar' in value:
+            return Foobar(value)
+        else:
+            raise ValueError('expected foobar')
+
+```
+
+What's going on here: `__pydantic_schema__` defines a schema which effectively says:
+
+> Validate input data as a string, then call the `validate` with that string, use the output of `validate`
+> as the final result of validation.
+
+`ValiationSchema` is just an alias to 
+[`pydantic_core.types.Schema`](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291).
+
+!!! note
+    pydantic-core schema has full type definitions although since the type is recursive, 
+    mypy can't provide static type analysis, pyright however can.
+
 ## Other Improvements :smile:
 
-* Recursive models
-* Documentation examples you can edit and run
-
-TODO
+1. Recursive models with cyclic references - although recursive models were supported by pydantic V1,
+   data with cyclic references cause recursion errors, in pydantic-core code is correctly detected
+   and a validation error is raised
+2. The reason I've been so keen to get pydantic-core to compile and run with wasm is that I want all examples
+   in the docs of pydantic V2 to be editable and runnable in the browser
+3. `from_orm` has become `from_attributes` and is now defined at schema generation time 
+   (either via model config or field config)
 
 ## Removed Features :neutral_face:
 
-* `__root__` models
-
-TODO
+* `__root__` custom root models are no longer necessary since validation on any support data type is supported
+  without a model
+* `parse_file` and `parse_raw`, partially replaced with `.model_validate_json()`
+* `TypeError` are no longer considered as validation errors, but rather as internal errors, this is to better
+  catch errors in argument names in function validators.
+* Subclasses of builtin types like `str`, `bytes` and `int` are coerced to their parent builtin type,
+  this is a limitation of how pydantic-core converts these types to rust types during validation, if you have a
+  specific need to keep the type, you can use wrap validators (see above) or custom type validation
 
 ## Conversion Table
 
