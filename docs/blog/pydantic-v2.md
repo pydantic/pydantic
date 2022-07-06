@@ -22,7 +22,7 @@ I think I owe people a proper explanation of the plan for V2:
 
 Here goes...
 
-# Plan & Timeframe
+## Plan & Timeframe
 
 I'm currently taking a kind of sabbatical after leaving my last job to get pydantic V2 released.
 Why? I ask myself that question quite often.
@@ -54,26 +54,28 @@ The basic road map for me is as follows:
 5. Delete all stale PRs which didn't make it into V1.10, apologise profusely to their authors who put their valuable
   time into pydantic only to have their PRs closed :pray:
 6. Rename `master` to `main`, seems like a good time to do this
-7. Change the main branch of pydantic to target v2
+7. Change the main branch of pydantic to target V2
 8. Start tearing pydantic code apart and see how many existing tests can be made to pass
 9. Rinse, repeat
 10. Release pydantic V2 :tada:
 
 Plan is to have all this done by the end of October, definitely by the end of the year.
 
-# Introduction
+## Introduction
 
 Pydantic began life as an experiment in some code in a long dead project.
 I ended up making the code into a package and releasing it.
 It got a bit of attention on hacker news when it was first released, but started to get really popular when
-Sebastian Ramirez used it in FastAPI.
+Sebastián Ramírez used it in [FastAPI](https://fastapi.tiangolo.com/).
 Since then the package and its usage have grown enormously.
 The core logic however has remained relatively unchanged since the initial experiment.
 It's old, it smells, it needs to be rebuilt.
-The release of version 2 is an opportunity to rebuild pydantic and correct many things that don't make sense.
+
+The release of version 2 is an opportunity to rebuild pydantic and correct many things that don't make sense - 
+**to make pydantic amazing :rocket:**.
 
 Much of the work on V2 is already done, but there's still a lot to do.
-Now seems a good opportunity to explain what V2 is going to look like and get feedback from uses.
+Now seems a good opportunity to explain what V2 is going to look like and get feedback from users.
 
 ## Headlines
 
@@ -95,35 +97,35 @@ pydantic-core provides validators for all common data types,
 [see a list here](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291).
 Other, less commonly used data types will be supported via validator functions.
 
-### Performance :smiley:
+### Performance :thumbsup:
 
 As a result of the move to rust for the validation logic 
 (and significant improvements in how validation objects are structured) pydantic V2 will be significantly faster
-than pydantic V1.X.
+than pydantic V1.
 
-Looking at the pydantic-core [benchmarks](https://github.com/samuelcolvin/pydantic-core/tree/main/tests/benchmarks),
-pydantic V2 is between 4x and 50x faster than pydantic V1.X.
+Looking at the pydantic-core [benchmarks](https://github.com/samuelcolvin/pydantic-core/tree/main/tests/benchmarks)
+today, pydantic V2 is between 4x and 50x faster than pydantic V1.9.1.
 
-In general, pydantic V2 is about 17x faster than V1.X when validating a representative model containing a range
+In general, pydantic V2 is about 17x faster than V1 when validating a model containing a range
 of common fields.
 
-### Strict Mode :smiley:
+### Strict Mode :thumbsup:
 
-People have long complained about pydantic preference for coercing data instead of throwing an error.
+People have long complained about pydantic for coercing data instead of throwing an error.
 E.g. input to an `int` field could be `123` or the string `"123"` which would be converted to `123`.
 
 pydantic-core comes with "strict mode" built in. With this only the exact data type is allowed, e.g. passing
 `"123"` to an `int` field would result in a validation error.
 
-Strictness can be defined on a per-field basis, or whole model.
+This will allow pydantic V2 to offer a `strict` switch which can be set on either a model or a field.
 
-#### IsInstance checks :smiley:
+#### `IsInstance` checks :thumbsup:
 
 Strict mode also means it makes sense to provide an `is_instance` method on validators which effectively run
 validation then throw away the result while avoiding the (admittedly small) overhead of creating and raising
 and error or returning the validation result.
 
-### Formalised Conversion Table :smiley:
+### Formalised Conversion Table :thumbsup:
 
 As well as complaints about coercion, another (legitimate) complaint was inconsistency around data conversion.
 
@@ -135,6 +137,8 @@ In pydantic V2, the following principle will govern when data should be converte
 > virtually all data has an intuitive representation as a string (e.g. `repr()` and `str()`), therefore
 > a custom rule is required: only `str`, `bytes` and `bytearray` are valid as inputs to string fields.
 
+Some examples of what that means in practice:
+
 | Field Type | Input                   | Single & Intuitive R. | data Loss        | Result  |
 |------------|-------------------------|-----------------------|------------------|---------|
 | `int`      | `"123"`                 | :material-check:      | :material-close: | Convert |
@@ -142,34 +146,42 @@ In pydantic V2, the following principle will govern when data should be converte
 | `int`      | `123.1`                 | :material-check:      | :material-check: | Error   |
 | `date`     | `"2020-01-01"`          | :material-check:      | :material-close: | Convert |
 | `date`     | `"2020-01-01T12:00:00"` | :material-check:      | :material-check: | Error   |
+| `int`      | `b"1"`                  | :material-close:      | :material-close: | Error   |
+
+(For the last case converting `bytes` to an `int` could reasonably mean `int(bytes_data.decode())` or 
+`int.from_bytes(b'1', 'big')`, hence an error)
 
 In addition to the general rule, we'll provide a conversion table which defines exactly what data will be allowed 
-to which field types. See [the table below](TODO) for a start on this.
+to which field types. See [the table below](#conversion-table) for a start on this.
 
-### Built in JSON support :smiley:
+### Built in JSON support :thumbsup:
 
 pydantic-core can parse JSON directly into a model or output type, this both improves performance and avoids
-issue with strictness - e.g. if you have a "strict" model with a `datetime` field, the input must be a 
+issue with strictness - e.g. if you have a strict model with a `datetime` field, the input must be a 
 `datetime` object, but clearly that makes no sense when parsing JSON which has no `datatime` type.
 Same with `bytes` and many other types.
 
-Pydantic v2 will therefore allow some conversion when validating JSON directly, even in strict mode 
+Pydantic V2 will therefore allow some conversion when validating JSON directly, even in strict mode 
 (e.g. `ISO8601 string -> datetime`, `str -> bytes`) even though this would not be allowed when validating
 a python object.
 
 In future direct validation of JSON will also allow:
+
 * parsing in a separate thread while starting validation in the main thread
 * line numbers from JSON to be included in the validation errors
 
 !!! note
-    Pydantic has always had special support for JSON, that is not going to change. While in theory other formats
+    Pydantic has always had special support for JSON, that is not going to change.
+
+    While in theory other formats
     could be specifically supported, the overheads are significant and I don't think there's another format that's
     used widely enough to be worth specific logic. Other formats can be parsed to python then validated, similarly
-    when serialising, data can be exported to a python object, then serialised, see below.
+    when serialising, data can be exported to a python object, then serialised, 
+    see [below](#improvements-to-dumpingserializationexport).
 
-### Validation without a Model :smiley:
+### Validation without a Model :thumbsup:
 
-In pydantic v1 the core of all validation was a pydantic model, this led to significant overheads and complexity
+In pydantic V1 the core of all validation was a pydantic model, this led to significant overheads and complexity
 when the output data type was not a model.
 
 pydantic-core operates on a tree of validators with no "model" type required at the base of the tree.
@@ -177,16 +189,16 @@ It can therefore validate a single `string` or `datetime` value, a `TypeDict` or
 
 This feature will provide significant addition performance improvements in scenarios like:
 
-* adding validation to `dataclass`
+* adding validation to `dataclasses`
 * validating URL arguments, query strings, headers, etc. in FastAPI
 * adding validation to `TypedDict`
 * function argument validation
 
-Basically anywhere were you don't care about a traditional model class.
+Basically anywhere were you don't care about a traditional model class instance.
 
 We'll need to add standalone methods for generating json schema and dumping these objects to JSON etc.
 
-### Required vs. Nullable Cleanup :smiley:
+### Required vs. Nullable Cleanup :thumbsup:
 
 Pydantic previously had a somewhat confused idea about "required" vs. "nullable". This mostly resulted from
 my misgivings about marking a field as `Optional[int]` but requiring a value to be provided but allowing it to be 
@@ -198,17 +210,13 @@ In pydantic V2, pydantic will move to match dataclasses, thus:
 from pydantic import BaseModel
 
 class Foo(BaseModel):
-    # required, cannot be None
-    f1: str
-    # required, can be None - same as `Optional[str]` or `Union[str, None]`
-    f2: str | None
-    # optional, can be None
-    f3: str | None = None
-    # optional, but cannot be none
-    f4: str = None  
+    f1: str  # required, cannot be None
+    f2: str | None  # required, can be None - same as Optional[str] / Union[str, None]
+    f3: str | None = None  # optional, can be None
+    f4: str = None  # optional, but cannot be None  
 ```
 
-### Validator Function Improvements :smiley: :smiley: :smiley:
+### Validator Function Improvements :thumbsup: :thumbsup: :thumbsup:
 
 This is one of the changes in pydantic V2 that I'm most excited about, I've been talking about something
 like this for a long time, see [#1984](https://github.com/samuelcolvin/pydantic/issues/1984), but couldn't
@@ -221,7 +229,7 @@ Fields which use a function for validation can be any of the following types:
 * **plan mode** - where there's no inner validator
 * **wrap mode** - where the function takes a reference to a function which calls the inner validator,
   and can therefore modify the input before inner validation, modify the output after inner validation, conditionally
-  not call the inner validator or catch errors from the inner validator and return a default value
+  not call the inner validator or catch errors from the inner validator and return a default value, or change the error
 
 An example how a wrap validator might look:
 
@@ -235,7 +243,7 @@ class MyModel(BaseModel):
     @validator('timestamp', mode='wrap')
     def validate_timestamp(cls, v, handler):
         if v == 'now':
-            # we don't want to bother with further validation, so we just return the value
+            # we don't want to bother with further validation, just return the value
             return datetime.now()
         try:
             return handler(v)
@@ -244,7 +252,9 @@ class MyModel(BaseModel):
             return datetime(2000, 1, 1)
 ```
 
-### Improvements to Dumping/Serialization/Export :smiley: :confused:
+As well as being powerful, this provides a great "escape hatch" when pydantic validation doesn't do what you want.
+
+### Improvements to Dumping/Serialization/Export :thumbsup: :confused:
 
 (I haven't worked on this yet, so these ideas are only provisional)
 
@@ -272,7 +282,7 @@ translate it to rust.
 
 We should also add support for `validate_alias` and `dump_alias` to allow for customising field keys.
 
-### Model namespace cleanup :smiley:
+### Model namespace cleanup :thumbsup:
 
 For years I've wanted to clean up the model namespace,
 see [#1001](https://github.com/samuelcolvin/pydantic/issues/1001). This would avoid confusing gotchas when field
@@ -311,7 +321,7 @@ The following methods will be removed:
 * `.from_orm()` - the functionality has been configured as a `Config` property call `from_attributes` which can be set
   either on `ModelConfig` or on a specific `ModelClass` or `TypedDict` field
 
-### Strict API & API documentation :smiley:
+### Strict API & API documentation :thumbsup:
 
 When preparing a pydantic V2, we'll make a strict distinction between the public API and private functions & classes.
 Private objects clearly identified as private via `_internal` sub package to discourage use.
@@ -324,7 +334,7 @@ API documentation.
 
 This wouldn't replace the current example-based somewhat informal documentation style byt instead will augment it.
 
-### Error descriptions :smiley:
+### Error descriptions :thumbsup:
 
 The way line errors (the individual errors with a `ValidationError`) are built has become much more sophisticated
 in pydantic-core.
@@ -387,7 +397,7 @@ Effectively, until that's fixed you'll likely have to install pydantic-core with
 
 ### Pydantic becomes a pure python package :neutral_face:
 
-Pydantic v1.X is a pure python code base but is compiled with cython to provide some performance improvements.
+Pydantic V1.X is a pure python code base but is compiled with cython to provide some performance improvements.
 Since the "hot" code is moved to pydantic-core, pydantic itself can go back to being a pure python package.
 
 This should significantly reduce the size of the pydantic package and make unit tests of pydantic much faster.
@@ -455,7 +465,7 @@ which is a type defining the schema for validation schemas.
     pydantic-core schema has full type definitions although since the type is recursive, 
     mypy can't provide static type analysis, pyright however can.
 
-## Other Improvements :smiley:
+## Other Improvements :thumbsup:
 
 1. Recursive models with cyclic references - although recursive models were supported by pydantic V1,
    data with cyclic references cause recursion errors, in pydantic-core code is correctly detected
@@ -471,6 +481,7 @@ which is a type defining the schema for validation schemas.
    [#151](https://github.com/samuelcolvin/pydantic-core/issues/151)
 7. `datetime`, `date`, `time` & `timedelta` validation is improved, see the 
    [speedate] rust library I built specifically for this purpose for more details
+8. Powerful "priority" system for optionally merging or overriding config in sub-models
 
 ## Removed Features :neutral_face:
 
