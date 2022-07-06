@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - 1.9.X-fixes
+      - pydantic-v2-blog
     tags:
       - '**'
 

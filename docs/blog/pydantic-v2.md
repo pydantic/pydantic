@@ -1,4 +1,4 @@
-# Pydantic V2
+# Pydantic V2 Plan
 
 <aside class="blog" markdown>
 ![Samuel Colvin](/img/samuelcolvin.jpg)
@@ -25,10 +25,10 @@ Here goes...
 # Plan & Timeframe
 
 I'm currently taking a kind of sabbatical after leaving my last job to get pydantic V2 released.
-Why? Well I ask myself that question quite often.
+Why? I ask myself that question quite often.
 I'm very proud of how much pydantic is used, but I'm less proud of its internals.
 Since it's something people seem to care about and use quite a lot 
-(26M downloads a month, used by 72K public repos on GitHub).
+(26m downloads a month, used by 72k public repos, 10k stars).
 I want it to be as good as possible.
 
 While I'm on the subject of why, how and my odd sabbatical: if you work for a large company who use pydantic a lot,
@@ -40,7 +40,7 @@ pydantic is 10x faster, more stable and more powerful - it would be worth paying
 The plan is to have pydantic V2 released within 3 months of full-time work 
 (again, that'll be sooner if I can continue to work on it full-time :face_with_raised_eyebrow:).
 
-Before pydantic V2 can be released, we need to released pydantic v1.10 - there are lots of changes in the main
+Before pydantic V2 can be released, we need to released pydantic V1.10 - there are lots of changes in the main
 branch of pydantic contributed by the community, it's only fair to provide a release including those changes,
 many of them will remain unchanged for V2, the rest will act as a requirement to make sure pydantic V2 includes
 the capabilities they implemented.
@@ -58,6 +58,8 @@ The basic road map for me is as follows:
 8. Start tearing pydantic code apart and see how many existing tests can be made to pass
 9. Rinse, repeat
 10. Release pydantic V2 :tada:
+
+Plan is to have all this done by the end of October, definitely by the end of the year.
 
 # Introduction
 
