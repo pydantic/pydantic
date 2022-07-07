@@ -4,7 +4,8 @@
 ![Samuel Colvin](/img/samuelcolvin.jpg)
 <div markdown>
   **Samuel Colvin** &bull;&nbsp;
-  [@samuelcolvin](https://github.com/samuelcolvin) &bull;&nbsp;
+  [:material-github:](https://github.com/samuelcolvin) &bull;&nbsp;
+  [:material-twitter:](https://twitter.com/samuel_colvin) &bull;&nbsp;
   :octicons-calendar-24: Jul 6, 2022 &bull;&nbsp;
   :octicons-clock-24: 10 min read
 </div>
@@ -331,7 +332,7 @@ names clash with methods on a model, it would also make it safer to add more met
 new clashes.
 
 After much deliberation (and even giving a lightning talk at the python language submit about alternatives, see 
-[here](https://discuss.python.org/t/better-fields-access-and-allowing-a-new-character-at-the-start-of-identifiers/14529))
+[this discussion](https://discuss.python.org/t/better-fields-access-and-allowing-a-new-character-at-the-start-of-identifiers/14529)).
 I've decided to go with the simplest and clearest approach, at the expense of a bit more typing:
 
 All methods on models will start with `model_`, fields' names will not be allowed to start with `"model"`
@@ -339,23 +340,23 @@ All methods on models will start with `model_`, fields' names will not be allowe
 
 This will mean the following methods and attributes on a model:
 
-* `.__dict__` as currently, holds a dict of validated data
-* `.__fields_set__` as currently, set containing which fields were set (vs. populated from defaults)
-* `.model_validate()` (currently `.parse_obj()`) - validate data
-* `.model_validate_json()` (currently `parse_raw(j..., content_type='application/json')`) - validate data from JSON
-* `.model_dump()` (currently `.dict()`) - as above, with new `mode` argument
-* `.model_json()` (currently `.json()`) - alias of `.model_dump(mode='json')`
-* `.model_schema()` (currently `.schema()`)
-* `.model_schema_json()` (currently `.schema_json()`)
-* `.model_update_forward_refs()` (currently `.update_forward_refs()`) - update forward references
-* `.model_copy()` (currently `.copy()`) - copy a model
-* `.model_construct()` (currently `.construct()`) - construct a model with no validation
-* `.__model_validator__` attribute holding the internal pydantic `SchemaValidator`
-* `.model_fields` (currently `.__fields__`) - although the format will have to change a lot, might be an alias of
-  `.__model_validator__.schema`
-* `.model_customise_schema()` - a function to customise the schema used to build the `pydantic_core.SchemaValidator`
-  this provides a way to add or change validation without having to use a custom type
-* `ModelConfig` (currently `Config`) - configuration class for models
+| New Name                      | Old Name                              | Description                                                                 |
+|-------------------------------|---------------------------------------|-----------------------------------------------------------------------------|
+| `__dict__`                    | `__dict__`                            | holds a dict of validated data                                              |
+| `__fields_set__`              | `__fields_set__`                      | set containing which fields were set (vs. populated from defaults)          |
+| `model_validate()`            | `parse_obj()`                         | validate data                                                               |
+| `model_validate_json()`       | `parse_raw(..., content_type='json')` | validate data from JSON                                                     |
+| `model_dump()`                | `dict()`                              | as before, with new `mode` argument                                         |
+| `model_json()`                | `json()`                              | effectively alias of `json.dump(self.model_dump(mode='json'))`              |
+| `model_schema()`              | `schema()`                            | JSON schema as a dict                                                       |
+| `model_schema_json()`         | `schema_json()`                       | JSON schema as a JSON string                                                |
+| `model_update_forward_refs()` | `update_forward_refs()`               | update forward references                                                   |
+| `model_copy()`                | `copy()`                              | copy a model                                                                |
+| `model_construct()`           | `construct()`                         | construct a model with no validation                                        |
+| `__model_validator__`         | new                                   | internal pydantic `PydanticValidator`, see [below](#implementation-details) |
+| `model_fields`                | `__fields__`                          | although the format will have to change a lot                               |
+| `model_customise_schema()`    | new                                   | way to customise building `.__model_validator__`                            |
+| `ModelConfig`                 | `Config`                              | configuration class for models                                              |
 
 The following methods will be removed:
 
@@ -563,6 +564,16 @@ Some other things which will also change, IMHO for the better:
    remove the functionality, but it's something of a historical curiosity that it lives within pydantic,
    perhaps it should move to a separate package, perhaps installable alongside pydantic with 
    `pip install pydantic[settings]`?
+6. The following `Config` properties will be  removed:
+   * `fields` - it's very old (it pre-dates `Field`), can be removed
+   * `allow_mutation` will be removed, instead `frozen` will be used
+   * `error_msg_templates`, it's not properly documented anyway, error messages can be customised with external logic if required
+   * `getter_dict` - pydantic-core has hardcoded `from_attributes` logic
+   * `json_loads` - again this is hard coded in pydantic-core
+   * `json_dumps` - possibly
+   * `json_encoders` - see the export "mode" discussion [above](#improvements-to-dumpingserializationexport)
+   * `underscore_attrs_are_private` we should just choose a sensible default
+   * `smart_union` - all unions are now "smart"
 
 ## Features Remaining :neutral_face:
 
@@ -572,6 +583,7 @@ The following features will remain (mostly) changed:
 * JSONSchema, internally this will need to change a lot, but hopefully the external interface will remain unchanged
 * `dataclass` support, again internals might change, but not the external interface
 * `validate_arguments`, might be renamed, but otherwise remain
+* hypothesis plugin, might be able to improve this as part of the general cleanup
 
 ## Questions :question:
 
