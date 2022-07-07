@@ -27,3 +27,4 @@ docs/_build/
 .hypothesis/
 node_modules/
 package-lock.json
+/pytest-speed/

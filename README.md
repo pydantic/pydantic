@@ -78,6 +78,40 @@ but shouldn't change more.
 
 The aim is to remain 10x faster than current pydantic for common use cases.
 
+## Getting Started
+
+While pydantic-core is not yet released and not design for direct use, you can still try it.
+
+You'll need rust stable [installed](https://rustup.rs/), or rust nightly if you want to generate accurate coverage.
+
+With rust and python 3.7+ installed, compiling pydantic-core should be possible with roughly the following:
+
+```bash
+# clone this repo or your fork
+git clone git@github.com:samuelcolvin/pydantic-core.git
+cd pydantic-core
+# create a new virtual env
+python3 -m venv env
+source env/bin/activate
+# install dependencies and install pydantic-core
+make install
+```
+
+That should be it, the example shown above should now run.
+
+You might find it useful to look at [`pydantic_core/_pydantic_core.pyi`](./pydantic_core/_pydantic_core.pyi) and
+[`pydantic_core/_types.py`](./pydantic_core/_types.py) for more information on the python API,
+beyond that, [`tests/`](./tests) provide a large number of examples of usage.
+
+If you want to contribute to pydantic-core, you'll some other make commands:
+* `make build-dev` to build the package during development
+* `make build-prod` to perform an optimised build for benchmarking
+* `make test` to run the tests
+* `make testcov` to run the tests and generate a coverage report
+* `make lint` to run the linter
+* `make format` to format python and rust code
+* `make` to run `format build-dev lint test`
+
 ## Why not JSONSchema?
 
 Looking at the above schema passed to `SchemaValidator` it would seem reasonable to ask "why not use JSONSchema?".
