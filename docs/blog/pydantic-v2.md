@@ -135,11 +135,26 @@ pydantic-core comes with "strict mode" built in. With this only the exact data t
 
 This will allow pydantic V2 to offer a `strict` switch which can be set on either a model or a field.
 
-#### `is_instance` checks :thumbsup:
+#### `is_instance` like checks :thumbsup:
 
-Strict mode also means it makes sense to provide an `is_instance` method on validators which effectively run
+Strict mode also means it makes sense to provide an `is_instance` method on models which effectively run
 validation then throws away the result while avoiding the (admittedly small) overhead of creating and raising
 an error or returning the validation result.
+
+To be clear, this isn't a real `isinstance` call, rather it is equivalent to
+
+```py title="is_instance"
+class BaseModel:
+    ...
+    @classmethod
+    def model_is_instance(cls, data: Any) -> bool:
+        try:
+            cls(**data)
+        except ValidationError:
+            return False
+        else:
+            return True
+```
 
 ### Formalised Conversion Table :thumbsup:
 
@@ -340,23 +355,25 @@ All methods on models will start with `model_`, fields' names will not be allowe
 
 This will mean the following methods and attributes on a model:
 
-| New Name                      | Old Name                              | Description                                                                 |
-|-------------------------------|---------------------------------------|-----------------------------------------------------------------------------|
-| `__dict__`                    | `__dict__`                            | holds a dict of validated data                                              |
-| `__fields_set__`              | `__fields_set__`                      | set containing which fields were set (vs. populated from defaults)          |
-| `model_validate()`            | `parse_obj()`                         | validate data                                                               |
-| `model_validate_json()`       | `parse_raw(..., content_type='json')` | validate data from JSON                                                     |
-| `model_dump()`                | `dict()`                              | as before, with new `mode` argument                                         |
-| `model_json()`                | `json()`                              | effectively alias of `json.dump(self.model_dump(mode='json'))`              |
-| `model_schema()`              | `schema()`                            | JSON schema as a dict                                                       |
-| `model_schema_json()`         | `schema_json()`                       | JSON schema as a JSON string                                                |
-| `model_update_forward_refs()` | `update_forward_refs()`               | update forward references                                                   |
-| `model_copy()`                | `copy()`                              | copy a model                                                                |
-| `model_construct()`           | `construct()`                         | construct a model with no validation                                        |
-| `__model_validator__`         | new                                   | internal pydantic `PydanticValidator`, see [below](#implementation-details) |
-| `model_fields`                | `__fields__`                          | although the format will have to change a lot                               |
-| `model_customise_schema()`    | new                                   | way to customise building `.__model_validator__`                            |
-| `ModelConfig`                 | `Config`                              | configuration class for models                                              |
+| New Name                      | Old Name                              | Description                                                                         |
+|-------------------------------|---------------------------------------|-------------------------------------------------------------------------------------|
+| `__dict__`                    | `__dict__`                            | holds a dict of validated data                                                      |
+| `__fields_set__`              | `__fields_set__`                      | set containing which fields were set (vs. populated from defaults)                  |
+| `model_validate()`            | `parse_obj()`                         | validate data                                                                       |
+| `model_validate_json()`       | `parse_raw(..., content_type='json')` | validate data from JSON                                                             |
+| `model_is_instance()`         | new                                   | check if data is value for the model, see [`is_instance`](#is_instance-like-checks) |
+| `model_is_instance_json()`    | new                                   | same, but from JSOn                                                                 |
+| `model_dump()`                | `dict()`                              | as before, with new `mode` argument                                                 |
+| `model_json()`                | `json()`                              | effectively alias of `json.dump(self.model_dump(mode='json'))`                      |
+| `model_schema()`              | `schema()`                            | JSON schema as a dict                                                               |
+| `model_schema_json()`         | `schema_json()`                       | JSON schema as a JSON string                                                        |
+| `model_update_forward_refs()` | `update_forward_refs()`               | update forward references                                                           |
+| `model_copy()`                | `copy()`                              | copy a model                                                                        |
+| `model_construct()`           | `construct()`                         | construct a model with no validation                                                |
+| `__model_validator__`         | new                                   | internal pydantic `PydanticValidator`, see [below](#implementation-details)         |
+| `model_fields`                | `__fields__`                          | although the format will have to change a lot                                       |
+| `model_customise_schema()`    | new                                   | way to customise building `.__model_validator__`                                    |
+| `ModelConfig`                 | `Config`                              | configuration class for models                                                      |
 
 The following methods will be removed:
 
@@ -549,6 +566,8 @@ Some other things which will also change, IMHO for the better:
     is one method I've used), we should provide utilities
 12. Improve the performance of `__eq__` on models
 13. Computed fields, these having been an idea for a long time in pydantic - we should get them right
+14. Model validation that avoids instances of subclasses leaking data (particularly important for FastAPI),
+    see [pydantic-core#155](https://github.com/samuelcolvin/pydantic-core/issues/155)
 
 ## Removed Features :neutral_face:
 
@@ -654,7 +673,7 @@ The table below provisionally defines what input value types are allowed to whic
 An updated and complete version of this table will be included in the docs for V2.
 
 !!!note
-    Some type conversion shown here are a significant departure from existing behavior, we may have to provide a config
+    Some type conversion shown here is a significant departure from existing behavior, we may have to provide a config
     flag for backwards compatibility for a few of them, however pydantic V2 cannot be entirely backward compatible,
     see [pydantic-core#152](https://github.com/samuelcolvin/pydantic-core/issues/152).
 
