@@ -44,12 +44,12 @@ the capabilities they implemented.
 
 The basic road map for me is as follows:
 
-1. Implement a few more critical features in pydantic-core, see [below](#motivation-pydantic-core)
+1. Implement a few more features in pydantic-core, and release a first version, see [below](#motivation-pydantic-core)
 2. Work on getting pydantic V1.10 out - basically merge all open PRs that are finished
 3. Release pydantic V1.10
 4. Delete all stale PRs which didn't make it into V1.10, apologise profusely to their authors who put their valuable
    time into pydantic only to have their PRs closed :pray: 
-   (and explain when and how they can rebase and recreate their PR)
+   (and explain when and how they can rebase and recreate the PR)
 5. Rename `master` to `main`, seems like a good time to do this
 6. Change the main branch of pydantic to target V2
 7. Start tearing pydantic code apart and see how many existing tests can be made to pass
@@ -58,13 +58,24 @@ The basic road map for me is as follows:
 
 Plan is to have all this done by the end of October, definitely by the end of the year.
 
+### Breaking Changes & Compatibility :pray:
+
+While we'll do our best to avoid breaking changes, some things will break.
+
+As per the [greatest pun in modern TV history](https://youtu.be/ezAlySFluEk).
+
+> You can't make a Tomelette without breaking some Greggs.
+
+Where possible, if breaking changes are unavoidable, we'll try to provide warnings or errors to make sure those 
+changes are obvious to developers.
+
 ## Motivation & `pydantic-core`
 
 Since pydantic's initial release, with the help of wonderful contributors 
 [Eric Jolibois](https://github.com/PrettyWood),
 [Sebastián Ramírez](https://github.com/tiangolo),
 [David Montague](https://github.com/dmontagu) and many others, the package and its usage have grown enormously.
-The core logic however has remained relatively unchanged since the initial experiment.
+The core logic however has remained mostly unchanged since the initial experiment.
 It's old, it smells, it needs to be rebuilt.
 
 The release of version 2 is an opportunity to rebuild pydantic and correct many things that don't make sense - 
@@ -76,6 +87,7 @@ The core validation logic of pydantic V2 will be performed by a separate package
 for python.
 
 The motivation for building pydantic-core in Rust is as follows:
+
 1. **Performance**, see [below](#performance)
 2. **Recursion and code separation** - with no stack and little or no overhead for extra function calls, 
    Rust allows pydantic-core to be implemented as a tree of small validators which call each other, without harming performance
@@ -87,7 +99,7 @@ The motivation for building pydantic-core in Rust is as follows:
     The python interface to pydantic shouldn't change as a result of using pydantic-core, instead
     pydantic will use type annotations to build a schema for pydantic-core to use.
 
-pydantic-core is usable now, albeit with a fairly unintuitive API, if you're interested, please give it a try.
+pydantic-core is usable now, albeit with an unintuitive API, if you're interested, please give it a try.
 
 pydantic-core provides validators for all common data types, 
 [see a list here](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291).
@@ -341,6 +353,8 @@ This will mean the following methods and attributes on a model:
 * `.__model_validator__` attribute holding the internal pydantic `SchemaValidator`
 * `.model_fields` (currently `.__fields__`) - although the format will have to change a lot, might be an alias of
   `.__model_validator__.schema`
+* `.model_customise_schema()` - a function to customise the schema used to build the `pydantic_core.SchemaValidator`
+  this provides a way to add or change validation without having to use a custom type
 * `ModelConfig` (currently `Config`) - configuration class for models
 
 The following methods will be removed:
@@ -437,8 +451,8 @@ Some pieces of edge logic could get a little slower as they're no longer compile
 
 ### I'm dropping the word "parse" and just using "validate" :neutral_face:
 
-Partly due to the issues with the lack of strict mode. I've previously gone back and forth between using 
-the terms "parse" and "validate" for what pydantic does.
+Partly due to the issues with the lack of strict mode,
+I've gone back and forth between using the terms "parse" and "validate" for what pydantic does.
 
 While pydantic is not simply a validation library (and I'm sure some would argue validation is not strictly what it does),
 most people use the word **"validation"**.
@@ -532,6 +546,8 @@ Some other things which will also change, IMHO for the better:
     models, particularly in FastAPI 
     ([here](https://github.com/samuelcolvin/foxglove/blob/a4aaacf372178f345e5ff1d569ee8fd9d10746a4/foxglove/exceptions.py#L137-L149)
     is one method I've used), we should provide utilities
+12. Improve the performance of `__eq__` on models
+13. Computed fields, these having been an idea for a long time in pydantic - we should get them right
 
 ## Removed Features :neutral_face:
 
@@ -614,6 +630,10 @@ This could be used directly, but more commonly will be used by the following:
 * the `validate` decorator described above
 * `pydantic.dataclasses.dataclass` (which might be an alias of `validate`)
 * generics
+
+The aim will be to get pydantic V2 to a place were the vast majority of tests continue to pass unchanged.
+
+Thereby guaranteeing (as much as possible) that the external interface to pydantic and its behaviour are unchanged.
 
 ## Conversion Table :material-table:
 
