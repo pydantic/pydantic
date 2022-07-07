@@ -104,7 +104,7 @@ pydantic-core is usable now, albeit with an unintuitive API, if you're intereste
 
 pydantic-core provides validators for all common data types, 
 [see a list here](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291).
-Other, less commonly used data types will be supported via validator functions implemented in pydantic.
+Other, less commonly used data types will be supported via validator functions implemented in pydantic, in Python.
 
 See [pydantic-core#153](https://github.com/samuelcolvin/pydantic-core/issues/153)
 for a summary of what needs to be completed before its first release.
@@ -139,7 +139,7 @@ This will allow pydantic V2 to offer a `strict` switch which can be set on eithe
 
 Strict mode also means it makes sense to provide an `is_instance` method on validators which effectively run
 validation then throws away the result while avoiding the (admittedly small) overhead of creating and raising
-and error or returning the validation result.
+an error or returning the validation result.
 
 ### Formalised Conversion Table :thumbsup:
 
@@ -155,14 +155,14 @@ In pydantic V2, the following principle will govern when data should be converte
 
 Some examples of what that means in practice:
 
-| Field Type | Input                   | Single & Intuitive R. | data Loss        | Result  |
-|------------|-------------------------|-----------------------|------------------|---------|
-| `int`      | `"123"`                 | :material-check:      | :material-close: | Convert |
-| `int`      | `123.0`                 | :material-check:      | :material-close: | Convert |
-| `int`      | `123.1`                 | :material-check:      | :material-check: | Error   |
-| `date`     | `"2020-01-01"`          | :material-check:      | :material-close: | Convert |
-| `date`     | `"2020-01-01T12:00:00"` | :material-check:      | :material-check: | Error   |
-| `int`      | `b"1"`                  | :material-close:      | :material-close: | Error   |
+| Field Type | Input                   | Single & Intuitive R. | All Data Preserved | Result  |
+|------------|-------------------------|-----------------------|--------------------|---------|
+| `int`      | `"123"`                 | :material-check:      | :material-check:   | Convert |
+| `int`      | `123.0`                 | :material-check:      | :material-check:   | Convert |
+| `int`      | `123.1`                 | :material-check:      | :material-close:   | Error   |
+| `date`     | `"2020-01-01"`          | :material-check:      | :material-check:   | Convert |
+| `date`     | `"2020-01-01T12:00:00"` | :material-check:      | :material-close:   | Error   |
+| `int`      | `b"1"`                  | :material-close:      | :material-check:   | Error   |
 
 (For the last case converting `bytes` to an `int` could reasonably mean `int(bytes_data.decode())` or 
 `int.from_bytes(b'1', 'big/little')`, hence an error)
@@ -213,7 +213,7 @@ This feature will provide significant addition performance improvements in scena
 
 In effect - anywhere where you don't care about a traditional model class instance.
 
-We'll need to add standalone methods for generating json schema and dumping these objects to JSON etc.
+We'll need to add standalone methods for generating JSON Schema and dumping these objects to JSON, etc.
 
 ### Required vs. Nullable Cleanup :thumbsup:
 
@@ -316,7 +316,7 @@ I see four different export/serialisation scenarios:
 4. Serialising data straight to JSON
 
 I think all 4 modes can be supported in a single implementation, with a kind of "3.5" mode where a python function
-is used to convert the data as the use wishes.
+is used to convert the data as the user wishes.
 
 The current `include` and `exclude` logic is extremely complicated, but hopefully it won't be too hard to
 translate it to Rust.
@@ -385,7 +385,7 @@ in pydantic-core.
 There's a well-defined 
 [set of error codes and messages](https://github.com/samuelcolvin/pydantic-core/blob/main/src/errors/kinds.rs).
 
-More will be added when other type are validated via pure python validators in pydantic.
+More will be added when other types are validated via pure python validators in pydantic.
 
 I would like to add a dedicated section to the documentation with extra information for each type of error.
 
