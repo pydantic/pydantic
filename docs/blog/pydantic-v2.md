@@ -12,11 +12,11 @@
 
 I've spoken to quite a few people about pydantic V2, and mention it in passing even more.
 
-I think I owe people a proper explanation of the plan for V2:
+I owe people a proper explanation of the plan for V2:
 
-* What will be added
-* What will be removed
-* What will change
+* What we will add
+* What we will remove
+* What we will change
 * How I'm intending to go about completing it and getting it released
 * Some idea of timeframe :fearful:
 
@@ -32,7 +32,7 @@ Since it's something people seem to care about and use quite a lot
 I want it to be as good as possible.
 
 While I'm on the subject of why, how and my odd sabbatical: if you work for a large company who use pydantic a lot,
-you should encourage the company to **sponsor me a meaningful amount**, 
+you might encourage the company to **sponsor me a meaningful amount**, 
 like [Salesforce did](https://twitter.com/samuel_colvin/status/1501288247670063104).
 This is not charity, recruitment or marketing - the argument should be about how much the company will save if
 pydantic is 10x faster, more stable and more powerful - it would be worth paying me 10% of that to make it happen.
@@ -40,7 +40,7 @@ pydantic is 10x faster, more stable and more powerful - it would be worth paying
 The plan is to have pydantic V2 released within 3 months of full-time work 
 (again, that'll be sooner if I can continue to work on it full-time :face_with_raised_eyebrow:).
 
-Before pydantic V2 can be released, we need to released pydantic V1.10 - there are lots of changes in the main
+Before pydantic V2 can be released, we need to release pydantic V1.10 - there are lots of changes in the main
 branch of pydantic contributed by the community, it's only fair to provide a release including those changes,
 many of them will remain unchanged for V2, the rest will act as a requirement to make sure pydantic V2 includes
 the capabilities they implemented.
@@ -52,12 +52,13 @@ The basic road map for me is as follows:
 3. Work on getting pydantic V1.10 out - basically merge all open PRs that are finished
 4. Release pydantic V1.10
 5. Delete all stale PRs which didn't make it into V1.10, apologise profusely to their authors who put their valuable
-  time into pydantic only to have their PRs closed :pray:
-6. Rename `master` to `main`, seems like a good time to do this
-7. Change the main branch of pydantic to target V2
-8. Start tearing pydantic code apart and see how many existing tests can be made to pass
-9. Rinse, repeat
-10. Release pydantic V2 :tada:
+   time into pydantic only to have their PRs closed :pray: 
+   (and explain when and how they can rebase and recreate their PR)
+7. Rename `master` to `main`, seems like a good time to do this
+8. Change the main branch of pydantic to target V2
+9. Start tearing pydantic code apart and see how many existing tests can be made to pass
+10. Rinse, repeat
+11. Release pydantic V2 :tada:
 
 Plan is to have all this done by the end of October, definitely by the end of the year.
 
@@ -88,7 +89,7 @@ For good and bad, here are some of the biggest changes expected in V2.
 The core validation logic of pydantic V2 will be performed by a separate package 
 [pydantic-core](https://github.com/samuelcolvin/pydantic-core) which I've been building over the last few months.
 
-*pydantic-core* is written in Rust using the excellent [pyo3](https://pyo3.rs/) library which provides rust bindings
+*pydantic-core* is written in Rust using the excellent [pyo3](https://pyo3.rs) library which provides rust bindings
 for python.
 
 !!! note
@@ -193,12 +194,13 @@ It can therefore validate a single `string` or `datetime` value, a `TypeDict` or
 
 This feature will provide significant addition performance improvements in scenarios like:
 
-* adding validation to `dataclasses`
-* validating URL arguments, query strings, headers, etc. in FastAPI
-* adding validation to `TypedDict`
-* function argument validation
+* Adding validation to `dataclasses`
+* Validating URL arguments, query strings, headers, etc. in FastAPI
+* Adding validation to `TypedDict`
+* Function argument validation
+* Adding validation to your custom classes, decorators...
 
-Basically anywhere were you don't care about a traditional model class instance.
+In effect - anywhere where you don't care about a traditional model class instance.
 
 We'll need to add standalone methods for generating json schema and dumping these objects to JSON etc.
 
@@ -217,7 +219,7 @@ class Foo(BaseModel):
     f1: str  # required, cannot be None
     f2: str | None  # required, can be None - same as Optional[str] / Union[str, None]
     f3: str | None = None  # optional, can be None
-    f4: str = None  # optional, but cannot be None  
+    f4: str = 'Foobar'  # optional, but cannot be None  
 ```
 
 ### Validator Function Improvements :thumbsup: :thumbsup: :thumbsup:
@@ -462,13 +464,13 @@ item can be a string, if so a function of that name will be taken from the class
 Here's an example of how a custom field type could be defined:
 
 ```py title="New custom field types"
-from pydantic import ValiationSchema
+from pydantic import ValidationSchema
 
 class Foobar:
     def __init__(self, value: str):
         self.value = value
 
-    __pydantic_schema__: ValiationSchema = {
+    __pydantic_schema__: ValidationSchema = {
         'type': 'function',
         'mode': 'after',
         'function': 'validate',
@@ -488,7 +490,7 @@ What's going on here: `__pydantic_schema__` defines a schema which effectively s
 > Validate input data as a string, then call the `validate` function with that string, use the returned value
 > as the final result of validation.
 
-`ValiationSchema` is just an alias to 
+`ValidationSchema` is just an alias to 
 [`pydantic_core.Schema`](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291)
 which is a type defining the schema for validation schemas.
 
