@@ -38,11 +38,7 @@ def test_alias_generator_with_field_schema():
 
         class Config:
             alias_generator = to_upper_case
-            fields = {
-                'my_shiny_field': 'MY_FIELD',
-                'foo_bar': {'alias': 'FOO'},
-                'another_field': {'not_alias': 'a'},
-            }
+            fields = {'my_shiny_field': 'MY_FIELD', 'foo_bar': {'alias': 'FOO'}, 'another_field': {'not_alias': 'a'}}
 
     data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
     m = MyModel(**data)
@@ -89,11 +85,7 @@ def test_alias_error():
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('_a',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        }
+        {'loc': ('_a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
 
@@ -166,11 +158,7 @@ def test_pop_by_field_name():
     with pytest.raises(ValidationError) as exc_info:
         Model(lastUpdatedBy='foo', last_updated_by='bar')
     assert exc_info.value.errors() == [
-        {
-            'loc': ('last_updated_by',),
-            'msg': 'extra fields not permitted',
-            'type': 'value_error.extra',
-        }
+        {'loc': ('last_updated_by',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'}
     ]
 
 
@@ -301,11 +289,7 @@ def test_field_vs_config():
         class Config:
             fields = {'x': dict(alias='x_on_config'), 'y': dict(alias='y_on_config')}
 
-    assert [f.alias for f in Model.__fields__.values()] == [
-        'x_on_field',
-        'y_on_config',
-        'z',
-    ]
+    assert [f.alias for f in Model.__fields__.values()] == ['x_on_field', 'y_on_config', 'z']
 
 
 def test_alias_priority():
@@ -331,10 +315,7 @@ def test_alias_priority():
         a: str = Field(..., alias='a_field_child')
 
         class Config:
-            fields = {
-                'a': dict(alias='a_config_child'),
-                'b': dict(alias='b_config_child'),
-            }
+            fields = {'a': dict(alias='a_config_child'), 'b': dict(alias='b_config_child')}
 
             @staticmethod
             def alias_generator(x):
@@ -358,12 +339,7 @@ def test_alias_priority():
 
 
 @pytest.mark.parametrize(
-    [
-        'use_construct',
-        'allow_population_by_field_name_config',
-        'arg_name',
-        'expectation',
-    ],
+    'use_construct, allow_population_by_field_name_config, arg_name, expectation',
     [
         [False, True, 'bar', does_not_raise()],
         [False, True, 'bar_', does_not_raise()],
@@ -384,7 +360,6 @@ def test_allow_population_by_field_name_config(
     expected_value: int = 7
 
     class Foo(BaseModel):
-
         bar_: int = Field(..., alias='bar')
 
         class Config(BaseConfig):

@@ -593,7 +593,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 fields_values[name] = values[name]
             elif not field.required:
                 fields_values[name] = field.get_default()
-
         fields_values.update(values)
         object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
