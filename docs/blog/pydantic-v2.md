@@ -34,7 +34,8 @@ I want it to be as good as possible.
 
 While I'm on the subject of why, how and my odd sabbatical: if you work for a large company who use pydantic a lot,
 you might encourage the company to **sponsor me a meaningful amount**, 
-like [Salesforce did](https://twitter.com/samuel_colvin/status/1501288247670063104).
+like [Salesforce did](https://twitter.com/samuel_colvin/status/1501288247670063104)
+(if your organisation is not open to donations, I can also offer consulting services).
 This is not charity, recruitment or marketing - the argument should be about how much the company will save if
 pydantic is 10x faster, more stable and more powerful - it would be worth paying me 10% of that to make it happen.
 
@@ -134,27 +135,6 @@ pydantic-core comes with "strict mode" built in. With this only the exact data t
 `"123"` to an `int` field would result in a validation error.
 
 This will allow pydantic V2 to offer a `strict` switch which can be set on either a model or a field.
-
-#### `is_instance` like checks :thumbsup:
-
-Strict mode also means it makes sense to provide an `is_instance` method on models which effectively run
-validation then throws away the result while avoiding the (admittedly small) overhead of creating and raising
-an error or returning the validation result.
-
-To be clear, this isn't a real `isinstance` call, rather it is equivalent to
-
-```py title="is_instance"
-class BaseModel:
-    ...
-    @classmethod
-    def model_is_instance(cls, data: Any) -> bool:
-        try:
-            cls(**data)
-        except ValidationError:
-            return False
-        else:
-            return True
-```
 
 ### Formalised Conversion Table :thumbsup:
 
@@ -432,7 +412,8 @@ Thus, errors might look like:
 ```
 
 (I own the `pydantic.dev` domain and will use it for at least these errors so that even if the docs URL
-changes, the error will still link to the correct documentation.)
+changes, the error will still link to the correct documentation. If developers don't want to show these errors to users,
+they can always process the errors list and filter out items from each error they don't need or want.)
 
 ### No pure python implementation :frowning:
 
@@ -463,9 +444,34 @@ Pydantic V1.X is a pure python code base but is compiled with cython to provide 
 Since the "hot" code is moved to pydantic-core, pydantic itself can go back to being a pure python package.
 
 This should significantly reduce the size of the pydantic package and make unit tests of pydantic much faster.
-In addition, some constraints on pydantic code can be removed once it no-longer has to be compilable with cython.
+In addition:
+
+* some constraints on pydantic code can be removed once it no-longer has to be compilable with cython
+* debugging will be easier as you'll be able to drop straight into the pydantic codebase as you can with other, 
+  pure python packages
 
 Some pieces of edge logic could get a little slower as they're no longer compiled.
+
+### `is_instance` like checks :thumbsup:
+
+Strict mode also means it makes sense to provide an `is_instance` method on models which effectively run
+validation then throws away the result while avoiding the (admittedly small) overhead of creating and raising
+an error or returning the validation result.
+
+To be clear, this isn't a real `isinstance` call, rather it is equivalent to
+
+```py title="is_instance"
+class BaseModel:
+    ...
+    @classmethod
+    def model_is_instance(cls, data: Any) -> bool:
+        try:
+            cls(**data)
+        except ValidationError:
+            return False
+        else:
+            return True
+```
 
 ### I'm dropping the word "parse" and just using "validate" :neutral_face:
 
@@ -553,7 +559,7 @@ Some other things which will also change, IMHO for the better:
    [speedate] Rust library I built specifically for this purpose for more details
 8. Powerful "priority" system for optionally merging or overriding config in sub-models for nested schemas
 9. pydantic will support [annotated-types](https://github.com/annotated-types/annotated-types), 
-   so you can do stuff like `Annotated[set[int], Len(0, 10)]`
+   so you can do stuff like `Annotated[set[int], Len(0, 10)]` or `Name = Annotated[str, Len(1, 1024)]`
 10. A single decorator for general usage - we should add a `valdiate` decorator which can be used:
   * on functions (replacing `validate_arguments`)
   * on dataclasses, `pydantic.dataclasses.dataclass` will become an alias of this
@@ -563,7 +569,7 @@ Some other things which will also change, IMHO for the better:
 11. Easier validation error creation, I've often found myself wanting to raise `ValidationError`s outside
     models, particularly in FastAPI 
     ([here](https://github.com/samuelcolvin/foxglove/blob/a4aaacf372178f345e5ff1d569ee8fd9d10746a4/foxglove/exceptions.py#L137-L149)
-    is one method I've used), we should provide utilities
+    is one method I've used), we should provide utilities to generate these errors
 12. Improve the performance of `__eq__` on models
 13. Computed fields, these having been an idea for a long time in pydantic - we should get them right
 14. Model validation that avoids instances of subclasses leaking data (particularly important for FastAPI),
@@ -620,15 +626,19 @@ We will endeavour to read and respond to everyone.
 
 (This is yet to be built, so these are nascent ideas which might change)
 
-At the center of pydantic v2 will be a `PydanticValidator` class which looks roughly like this:
+At the center of pydantic v2 will be a `PydanticValidator` class which looks roughly like this
+(note: this is just pseudo-code, it's not even valid python and is only supposed to be used to demonstrate the idea):
 
 ```py title="PydanticValidator"
 # type identifying data which has been validated,
 # as per pydantic-core, this can include "fields_set" data
-ValidData = TypeVar('ValidData')
+ValidData = ...
+
+# any type we can perform validation for
+AnyOutputType = ...
 
 class PydanticValidator:
-    def __init__(self, output_type: Function | Type | TypingConstruct, config: Config):
+    def __init__(self, output_type: AnyOutputType, config: Config):
         ...
     def validate(self, input_data: Any) -> ValidData:
         ...
@@ -651,7 +661,9 @@ class PydanticValidator:
         exclude_none: bool = False,
         mode: Literal['unchanged', 'dicts', 'json-compliant'] = 'unchanged',
         converter: Callable[[Any], Any] | None = None
-    ) -> str:
+    ) -> Any:
+        ...
+    def dump_json(self, ...) -> str:
         ...
 ```
 
