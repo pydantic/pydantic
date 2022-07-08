@@ -91,9 +91,10 @@ for python.
 The motivation for building pydantic-core in Rust is as follows:
 
 1. **Performance**, see [below](#performance)
-2. **Recursion and code separation** - with no stack and little or no overhead for extra function calls,
-   Rust allows pydantic-core to be implemented as a tree of small validators which call each other, without harming performance
-3. **Safety and complexity** - pydantic-core is a fairly complex piece of code which has to draw distinctions
+2. **Recursion and code separation** - with no stack and little-to-no overhead for extra function calls,
+   Rust allows pydantic-core to be implemented as a tree of small validators which call each other,
+   making code easier to understand and extend without harming performance
+4. **Safety and complexity** - pydantic-core is a fairly complex piece of code which has to draw distinctions
    between many different errors, Rust is great in situations like this,
    it should minimise bugs (:fingers_crossed:) and allow the codebase to be extended for a long time to come
 
@@ -103,7 +104,7 @@ The motivation for building pydantic-core in Rust is as follows:
 
 pydantic-core is usable now, albeit with an unintuitive API, if you're interested, please give it a try.
 
-pydantic-core provides validators for all common data types,
+pydantic-core provides validators for common data types,
 [see a list here](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291).
 Other, less commonly used data types will be supported via validator functions implemented in pydantic, in Python.
 
@@ -123,22 +124,23 @@ than pydantic V1.
 Looking at the pydantic-core [benchmarks](https://github.com/samuelcolvin/pydantic-core/tree/main/tests/benchmarks)
 today, pydantic V2 is between 4x and 50x faster than pydantic V1.9.1.
 
-In general, pydantic V2 is about 17x faster than V1 when validating a model containing a range
-of common fields.
+In general, pydantic V2 is about 17x faster than V1 when validating a model containing a range of common fields.
 
 ### Strict Mode :thumbsup:
 
 People have long complained about pydantic for coercing data instead of throwing an error.
-E.g. input to an `int` field could be `123` or the string `"123"` which would be converted to `123`.
+E.g. input to an `int` field could be `123` or the string `"123"` which would be converted to `123`
+While this is very useful in many scenarios (think: URL parameters, environment variables, user input),
+there are some situations where it's not desirable.
 
-pydantic-core comes with "strict mode" built in. With this only the exact data type is allowed, e.g. passing
+pydantic-core comes with "strict mode" built in. With this, only the exact data type is allowed, e.g. passing
 `"123"` to an `int` field would result in a validation error.
 
 This will allow pydantic V2 to offer a `strict` switch which can be set on either a model or a field.
 
 ### Formalised Conversion Table :thumbsup:
 
-As well as complaints about coercion, another (legitimate) complaint was inconsistency around data conversion.
+As well as complaints about coercion, another legitimate complaint was inconsistency around data conversion.
 
 In pydantic V2, the following principle will govern when data should be converted in "lax mode" (`strict=False`):
 
@@ -156,6 +158,7 @@ Some examples of what that means in practice:
 | `int`      | `123.0`                 | :material-check:      | :material-check:   | Convert |
 | `int`      | `123.1`                 | :material-check:      | :material-close:   | Error   |
 | `date`     | `"2020-01-01"`          | :material-check:      | :material-check:   | Convert |
+| `date`     | `"2020-01-01T00:00:00"` | :material-check:      | :material-check:   | Convert |
 | `date`     | `"2020-01-01T12:00:00"` | :material-check:      | :material-close:   | Error   |
 | `int`      | `b"1"`                  | :material-close:      | :material-check:   | Error   |
 
@@ -181,19 +184,21 @@ In future direct validation of JSON will also allow:
 * parsing in a separate thread while starting validation in the main thread
 * line numbers from JSON to be included in the validation errors
 
+(These features will not be included in V2, but instead will hopefully be added later.)
+
 !!! note
     Pydantic has always had special support for JSON, that is not going to change.
 
-    While in theory other formats
-    could be specifically supported, the overheads are significant and I don't think there's another format that's
+    While in theory other formats could be specifically supported, the overheads and development time are 
+    significant and I don't think there's another format that's
     used widely enough to be worth specific logic. Other formats can be parsed to python then validated, similarly
     when serialising, data can be exported to a python object, then serialised,
     see [below](#improvements-to-dumpingserializationexport).
 
 ### Validation without a Model :thumbsup:
 
-In pydantic V1 the core of all validation was a pydantic model, this led to significant overheads and complexity
-when the output data type was not a model.
+In pydantic V1 the core of all validation was a pydantic model, this led to a significant performance penalty 
+and extra complexity when the output data type was not a model.
 
 pydantic-core operates on a tree of validators with no "model" type required at the base of that tree.
 It can therefore validate a single `string` or `datetime` value, a `TypeDict` or a `Model` equally easily.
@@ -214,7 +219,7 @@ We'll need to add standalone methods for generating JSON Schema and dumping thes
 
 Pydantic previously had a somewhat confused idea about "required" vs. "nullable". This mostly resulted from
 my misgivings about marking a field as `Optional[int]` but requiring a value to be provided but allowing it to be
-`None`.
+`None` - I didn't like using the word "optional" in relation to a field which was not optional.
 
 In pydantic V2, pydantic will move to match dataclasses, thus:
 
@@ -238,7 +243,7 @@ Fields which use a function for validation can be any of the following types:
 
 * **function before mode** - where the function is called before the inner validator is called
 * **function after mode** - where the function is called after the inner validator is called
-* **plan mode** - where there's no inner validator
+* **plain mode** - where there's no inner validator
 * **wrap mode** - where the function takes a reference to a function which calls the inner validator,
   and can therefore modify the input before inner validation, modify the output after inner validation, conditionally
   not call the inner validator or catch errors from the inner validator and return a default value, or change the error
@@ -255,16 +260,18 @@ class MyModel(BaseModel):
     @validator('timestamp', mode='wrap')
     def validate_timestamp(cls, v, handler):
         if v == 'now':
-            # we don't want to bother with further validation, just return the value
+            # we don't want to bother with further validation, 
+            # just return the new value
             return datetime.now()
         try:
             return handler(v)
         except ValidationError:
-            # validation failed, in this case we want to return a default value
+            # validation failed, in this case we want to 
+            # return a default value
             return datetime(2000, 1, 1)
 ```
 
-As well as being powerful, this provides a great "escape hatch" when pydantic validation doesn't do what you want.
+As well as being powerful, this provides a great "escape hatch" when pydantic validation doesn't do what you need.
 
 ### More powerful alias(es) :thumbsup:
 
@@ -281,7 +288,12 @@ class Foo(BaseModel):
 
 
 data = {
-    'baz': [{'qux': 'a'}, {'qux': 'b'}, {'qux': 'c'}, {'qux': 'd'}]
+    'baz': [
+        {'qux': 'a'},
+        {'qux': 'b'},
+        {'qux': 'c'},
+        {'qux': 'd'},
+    ]
 }
 
 foo = Foo(**data)
@@ -324,6 +336,8 @@ to allow for customising field keys.
 Pydantic V2 will add a new optional `context` argument to `model_validate` and `model_validate_json`
 which will allow you to pass information not available when creating a model to validators.
 See [pydantic#1549](https://github.com/samuelcolvin/pydantic/issues/1549) for motivation.
+
+Here's an example of `context` might be used:
 
 ```py title="Context during Validation"
 from pydantic import BaseModel, EmailStr, validator
@@ -472,7 +486,7 @@ The following methods will be removed:
 * `.parse_raw()` - partially replaced by `.model_validate_json()`, the other functionality was a mistake
 * `.from_orm()` - the functionality has been moved to config, see [other improvements](#other-improvements) below
 * `.schema_json()` - mostly since it causes confusion between pydantic validation schema and JSON schema,
-  and can be replaced with json `json.dumps(m.model_json_schema())`
+  and can be replaced with just `json.dumps(m.model_json_schema())`
 
 ### Strict API & API documentation :thumbsup:
 
@@ -524,9 +538,9 @@ Thus, errors might look like:
 ]
 ```
 
-(I own the `pydantic.dev` domain and will use it for at least these errors so that even if the docs URL
+I own the `pydantic.dev` domain and will use it for at least these errors so that even if the docs URL
 changes, the error will still link to the correct documentation. If developers don't want to show these errors to users,
-they can always process the errors list and filter out items from each error they don't need or want.)
+they can always process the errors list and filter out items from each error they don't need or want.
 
 ### No pure python implementation :frowning:
 
@@ -690,10 +704,10 @@ Some other things which will also change, IMHO for the better:
 14. Model validation that avoids instances of subclasses leaking data (particularly important for FastAPI),
     see [pydantic-core#155](https://github.com/samuelcolvin/pydantic-core/issues/155)
 
-## Removed Features & Limitations :disappointed:
+## Removed Features & Limitations :frowning:
 
-The emoji here is just for variation, I'm not disappointed about any of this, there changes are either good IMHO
-(will make pydantic cleaner, easier to learn and easier to maintain) or pretty irrelevant to 99.9+% of users.
+The emoji here is just for variation, I'm not frowning about any of this, these changes are either good IMHO
+(will make pydantic cleaner, easier to learn and easier to maintain) or irrelevant to 99.9+% of users.
 
 1. `__root__` custom root models are no longer necessary since validation on any supported data type is allowed
    without a model
@@ -705,11 +719,11 @@ The emoji here is just for variation, I'm not disappointed about any of this, th
    specific need to keep the type, you can use wrap validators or custom type validation as described above
 5. integers are represented in rust code as `i64`, meaning if you want to use ints where `abs(v) > 2^63 − 1`
    (9,223,372,036,854,775,807), you'll need to use a [wrap validator](#validator-function-improvements) and your own logic
-7. [Settings Management](https://pydantic-docs.helpmanual.io/usage/settings/) ??? - I definitely don't want to
+6. [Settings Management](https://pydantic-docs.helpmanual.io/usage/settings/) ??? - I definitely don't want to
    remove the functionality, but it's something of a historical curiosity that it lives within pydantic,
    perhaps it should move to a separate package, perhaps installable alongside pydantic with
    `pip install pydantic[settings]`?
-8. The following `Config` properties will be removed:
+7. The following `Config` properties will be removed:
    * `fields` - it's very old (it pre-dates `Field`), can be removed
    * `allow_mutation` will be removed, instead `frozen` will be used
    * `error_msg_templates`, it's not properly documented anyway, error messages can be customised with external logic if required
@@ -719,6 +733,8 @@ The emoji here is just for variation, I'm not disappointed about any of this, th
    * `json_encoders` - see the export "mode" discussion [above](#improvements-to-dumpingserializationexport)
    * `underscore_attrs_are_private` we should just choose a sensible default
    * `smart_union` - all unions are now "smart"
+8. `dict(model)` functionality should be removed, there's a much clearer distinction now that in 2017 when I 
+   implemented this between a model and a dict
 
 ## Features Remaining :neutral_face:
 
