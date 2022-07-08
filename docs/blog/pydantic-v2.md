@@ -430,11 +430,6 @@ class BaseModel:
         previously `schema()`, arguments roughly as before
         JSON schema as a dict
         """
-    def model_schema_json(self, ...) -> str:
-        """
-        previously `schema_json()`, arguments roughly as before
-        JSON schema as a JSON string
-        """
     def model_update_forward_refs(self) -> None:
         """
         previously `update_forward_refs()`, update forward references
