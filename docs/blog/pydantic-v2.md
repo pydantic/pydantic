@@ -383,14 +383,14 @@ class BaseModel:
         previously `dict()`, as before
         with new `mode` argument
         """
-    def model_json(self, ...) -> str:
+    def model_dump_json(self, ...) -> str:
         """
         previously `json()`, argument as above
         effectively an alias of `json.dump(self.model_dump(..., mode='json'))`
         """
-    def model_schema(self, ...) -> dict[str, Any]:
+    def model_json_schema(self, ...) -> dict[str, Any]:
         """
-        previously `schema(), arguments roughly as before
+        previously `schema()`, arguments roughly as before
         JSON schema as a dict
         """
     def model_schema_json(self, ...) -> str:
@@ -439,6 +439,8 @@ The following methods will be removed:
 * `.parse_file()` - was a mistake, should never have been in pydantic
 * `.parse_raw()` - partially replaced by `.model_validate_json()`, the other functionality was a mistake
 * `.from_orm()` - the functionality has been moved to config, see [other improvements](#other-improvements) below
+* `.schema_json()` - mostly since it causes confusion between pydantic validation schema and JSON schema,
+  and can be replaced with json `json.dumps(m.model_json_schema())`
 
 ### Strict API & API documentation :thumbsup:
 
@@ -572,7 +574,7 @@ Since the core structure of validators has changed from "a list of validators to
 [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
 way of defining custom field types no longer makes sense.
 
-Instead, we'll look for the attribute `__pydantic_schema__` which must be a
+Instead, we'll look for the attribute `__pydantic_validation_schema__` which must be a
 pydantic-core compliant schema for validating data to this field type (the `function`
 item can be a string, if so a function of that name will be taken from the class, see `'validate'` below).
 
@@ -585,7 +587,7 @@ class Foobar:
     def __init__(self, value: str):
         self.value = value
 
-    __pydantic_schema__: ValidationSchema = {
+    __pydantic_validation_schema__: ValidationSchema = {
         'type': 'function',
         'mode': 'after',
         'function': 'validate',
@@ -600,7 +602,7 @@ class Foobar:
             raise ValueError('expected foobar')
 ```
 
-What's going on here: `__pydantic_schema__` defines a schema which effectively says:
+What's going on here: `__pydantic_validation_schema__` defines a schema which effectively says:
 
 > Validate input data as a string, then call the `validate` function with that string, use the returned value
 > as the final result of validation.
