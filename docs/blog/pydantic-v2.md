@@ -143,7 +143,7 @@ As well as complaints about coercion, another (legitimate) complaint was inconsi
 In pydantic V2, the following principle will govern when data should be converted in "lax mode" (`strict=False`):
 
 > If the input data has a SINGLE and INTUITIVE representation, in the field's type, AND no data is lost
-> during the conversion, then the data will be converted, Otherwise a validation error is raised.
+> during the conversion, then the data will be converted; otherwise a validation error is raised.
 > There is one exception to this rule: string fields -
 > virtually all data has an intuitive representation as a string (e.g. `repr()` and `str()`), therefore
 > a custom rule is required: only `str`, `bytes` and `bytearray` are valid as inputs to string fields.
@@ -224,8 +224,8 @@ from pydantic import BaseModel
 class Foo(BaseModel):
     f1: str  # required, cannot be None
     f2: str | None  # required, can be None - same as Optional[str] / Union[str, None]
-    f3: str | None = None  # optional, can be None
-    f4: str = 'Foobar'  # optional, but cannot be None  
+    f3: str | None = None  # not required, can be None
+    f4: str = 'Foobar'  # not required, but cannot be None  
 ```
 
 ### Validator Function Improvements :thumbsup: :thumbsup: :thumbsup:
