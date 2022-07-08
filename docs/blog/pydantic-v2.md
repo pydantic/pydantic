@@ -302,6 +302,9 @@ assert foo.bar == 'c'
 
 `aliases` is a list of lists because multiple paths can be provided, if so they're tried in turn until a value is found.
 
+Tagged unions will use the same logic as `aliases` meaning nested attributes can be used to select a schema
+to validate against.
+
 ### Improvements to Dumping/Serialization/Export :thumbsup: :confused:
 
 (I haven't worked on this yet, so these ideas are only provisional)
@@ -557,13 +560,14 @@ pydantic-core will provide binaries in PyPI for (at least):
   compiled for wasm32 using emscripten and unit tests pass, except where cpython itself has
   [problems](https://github.com/pyodide/pyodide/issues/2841))
 
-Binaries for pypy should also be possible, TODO.
+Binaries for pypy are a work in progress and will be added if possible,
+see [pydantic-core#154](https://github.com/samuelcolvin/pydantic-core/issues/154).
 
 Other binaries can be added provided they can be (cross-)compiled on github actions.
 If no binary is available from PyPI, pydantic-core can be compiled from source if Rust stable is available.
 
 The only place where I know this will cause problems is Raspberry Pi, which is a
-[mess](https://github.com/piwheels/packages/issues/254) when it comes to packages written in Rust for python.
+[mess](https://github.com/piwheels/packages/issues/254) when it comes to packages written in Rust for Python.
 Effectively, until that's fixed you'll likely have to install pydantic with
 `pip install -i https://pypi.org/simple/ pydantic`.
 
