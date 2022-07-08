@@ -319,7 +319,42 @@ translate it to Rust.
 We should also add support for `validate_alias` and `dump_alias` as well as the standard `alias`
 to allow for customising field keys.
 
-### Model namespace cleanup :thumbsup:
+### Validation Context :thumbsup:
+
+Pydantic V2 will add a new optional `context` argument to `model_validate` and `model_validate_json`
+which will allow you to pass information not available when creating a model to validators.
+See [pydantic#1549](https://github.com/samuelcolvin/pydantic/issues/1549) for motivation.
+
+```py title="Context during Validation"
+from pydantic import BaseModel, EmailStr, validator
+
+class User(BaseModel):
+    email: EmailStr
+    home_country: str
+    
+    @validator('home_country')
+    def check_home_country(cls, v, context):
+        if v not in context['countries']:
+            raise ValueError('invalid country choice')
+        return v
+
+async def add_user(post_data: bytes):
+    countries = set(await db_connection.fetch_all('select code from country'))
+    user = User.model_validate_json(post_data, context={'countries': countries})
+    ...
+```
+
+!!! note
+    We (actually mostly Sebastián :wink:) will have to make some changes to FastAPI to fully leverage `context`
+    as we'd need some kind of dependency injection to build context before validation so models can still be passed as
+    arguments to views. I'm sure he'll be game.
+
+!!! warning
+    Although this will make it slightly easier to run synchronous IO (HTTP requests, DB. queries, etc.)
+    from within validators, I strongly advise you keep IO separate from validation - do it before and use context,
+    do it afterwards, avoid where possible making queries inside validation.
+
+### Model Namespace Cleanup :thumbsup:
 
 For years I've wanted to clean up the model namespace,
 see [pydantic#1001](https://github.com/samuelcolvin/pydantic/issues/1001). This would avoid confusing gotchas when field
@@ -340,7 +375,7 @@ class BaseModel:
     model_fields: List[FieldInfo]
     """previously `__fields__`, although the format will change a lot"""
     @classmethod
-    def model_validate(cls, data: Any, *, context=None) -> Self:
+    def model_validate(cls, data: Any, *, context=None) -> Self:  # (1)
         """
         previously `parse_obj()`, validate data
         """
@@ -348,22 +383,24 @@ class BaseModel:
     def model_validate_json(
         cls,
         data: str | bytes | bytearray,
-        *, context=None
+        *,
+        context=None
     ) -> Self:
         """
-        previously `parse_raw(..., content_type='json')`
+        previously `parse_raw(..., content_type='application/json')`
         validate data from JSON
         """
     @classmethod
-    def model_is_instance(cls, data: Any, *, context=None) -> bool:
+    def model_is_instance(cls, data: Any, *, context=None) -> bool: # (2)
         """
         new, check if data is value for the model
-        """ # (2)
+        """
     @classmethod
     def model_is_instance_json(
         cls,
         data: str | bytes | bytearray,
-        *, context=None
+        *,
+        context=None
     ) -> bool:
         """
         Same as `model_is_instance`, but from JSON
@@ -431,7 +468,7 @@ class BaseModel:
         """
 ```
 
-1. see [Implementation Details below](#implementation-details)
+1. see [Validation Context](#validation-context) for more information on `context`
 2. see [`is_instance` checks](#is_instance-like-checks)
 
 The following methods will be removed:
@@ -511,6 +548,8 @@ pydantic-core will provide binaries in PyPI for (at least):
   compiled for wasm32 using emscripten and unit tests pass, except where cpython itself has
   [problems](https://github.com/pyodide/pyodide/issues/2841))
 
+Binaries for pypy should also be possible, TODO.
+
 Other binaries can be added provided they can be (cross-)compiled on github actions.
 If no binary is available from PyPI, pydantic-core can be compiled from source if Rust stable is available.
 
@@ -567,7 +606,7 @@ It's time to stop fighting that, and use consistent names.
 The word "parse" will no longer be used except when talking about JSON parsing, see
 [model methods](#model-namespace-cleanup) above.
 
-## Changes to custom field types :neutral_face:
+### Changes to custom field types :neutral_face:
 
 Since the core structure of validators has changed from "a list of validators to call one after another" to
 "a tree of validators which call each other", the
