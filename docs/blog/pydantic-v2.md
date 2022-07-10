@@ -479,9 +479,9 @@ class BaseModel:
         construct a model with no validation
         """
     @classmethod
-    def model_customise_schema(cls, schema: dict[str, Any]) -> dict[str, Any]:
+    def model_customize_schema(cls, schema: dict[str, Any]) -> dict[str, Any]:
         """
-        new, way to customise validation,
+        new, way to customize validation,
         e.g. if you wanted to alter how the model validates certain types,
         or add validation for a specific type without custom types or
         decorated validators
@@ -502,6 +502,8 @@ The following methods will be removed:
 * `.from_orm()` - the functionality has been moved to config, see [other improvements](#other-improvements) below
 * `.schema_json()` - mostly since it causes confusion between pydantic validation schema and JSON schema,
   and can be replaced with just `json.dumps(m.model_json_schema())`
+* `.copy()` instead we'll implement `__copy__` and let people use the `copy` module
+  (this removes some functionality) from `copy()` but there are bugs and ambiguities with the functionality anyway
 
 ### Strict API & API documentation :thumbsup:
 
@@ -729,29 +731,31 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
 
 1. `__root__` custom root models are no longer necessary since validation on any supported data type is allowed
    without a model
-2. `parse_file` and `parse_raw`, partially replaced with `.model_validate_json()`
-3. `TypeError` are no longer considered as validation errors, but rather as internal errors, this is to better
+2. `.parse_file()` and `.parse_raw()`, partially replaced with `.model_validate_json()`, 
+   see [model methods](#model-namespace-cleanup)
+3. `.schema_json()` & `.copy()`, see [model methods](#model-namespace-cleanup)
+4. `TypeError` are no longer considered as validation errors, but rather as internal errors, this is to better
    catch errors in argument names in function validators.
-4. Subclasses of builtin types like `str`, `bytes` and `int` are coerced to their parent builtin type,
+5. Subclasses of builtin types like `str`, `bytes` and `int` are coerced to their parent builtin type,
    this is a limitation of how pydantic-core converts these types to Rust types during validation, if you have a
    specific need to keep the type, you can use wrap validators or custom type validation as described above
-5. integers are represented in rust code as `i64`, meaning if you want to use ints where `abs(v) > 2^63 − 1`
+6. integers are represented in rust code as `i64`, meaning if you want to use ints where `abs(v) > 2^63 − 1`
    (9,223,372,036,854,775,807), you'll need to use a [wrap validator](#validator-function-improvements) and your own logic
-6. [Settings Management](https://pydantic-docs.helpmanual.io/usage/settings/) ??? - I definitely don't want to
+7. [Settings Management](https://pydantic-docs.helpmanual.io/usage/settings/) ??? - I definitely don't want to
    remove the functionality, but it's something of a historical curiosity that it lives within pydantic,
    perhaps it should move to a separate package, perhaps installable alongside pydantic with
    `pip install pydantic[settings]`?
-7. The following `Config` properties will be removed:
+8. The following `Config` properties will be removed:
    * `fields` - it's very old (it pre-dates `Field`), can be removed
    * `allow_mutation` will be removed, instead `frozen` will be used
-   * `error_msg_templates`, it's not properly documented anyway, error messages can be customised with external logic if required
+   * `error_msg_templates`, it's not properly documented anyway, error messages can be customized with external logic if required
    * `getter_dict` - pydantic-core has hardcoded `from_attributes` logic
    * `json_loads` - again this is hard coded in pydantic-core
    * `json_dumps` - possibly
    * `json_encoders` - see the export "mode" discussion [above](#improvements-to-dumpingserializationexport)
    * `underscore_attrs_are_private` we should just choose a sensible default
    * `smart_union` - all unions are now "smart"
-8. `dict(model)` functionality should be removed, there's a much clearer distinction now that in 2017 when I 
+9. `dict(model)` functionality should be removed, there's a much clearer distinction now that in 2017 when I 
    implemented this between a model and a dict
 
 ## Features Remaining :neutral_face:
