@@ -7,7 +7,7 @@
   [:material-github:](https://github.com/samuelcolvin) &bull;&nbsp;
   [:material-twitter:](https://twitter.com/samuel_colvin) &bull;&nbsp;
   :octicons-calendar-24: Jul 10, 2022 &bull;&nbsp;
-  :octicons-clock-24: 12 min read
+  :octicons-clock-24: 25 min read
 </div>
 </aside>
 
@@ -213,7 +213,7 @@ In pydantic V1 the core of all validation was a pydantic model, this led to a si
 and extra complexity when the output data type was not a model.
 
 pydantic-core operates on a tree of validators with no "model" type required at the base of that tree.
-It can therefore validate a single `string` or `datetime` value, a `TypeDict` or a `Model` equally easily.
+It can therefore validate a single `string` or `datetime` value, a `TypedDict` or a `Model` equally easily.
 
 This feature will provide significant addition performance improvements in scenarios like:
 
@@ -464,11 +464,6 @@ class BaseModel:
         """
         previously `update_forward_refs()`, update forward references
         """
-    def model_copy(self, ...) -> Self:
-        """
-        previously `copy()`, arguments roughly as before
-        copy a model
-        """
     @classmethod
     def model_construct(
         self,
@@ -693,22 +688,22 @@ Some other things which will also change, IMHO for the better:
    and a validation error is raised
 2. The reason I've been so keen to get pydantic-core to compile and run with wasm is that I want all examples
    in the docs of pydantic V2 to be editable and runnable in the browser
-3. Full (pun intended) support for `TypedDict`, including `full=False` - e.g. omitted keys,
-   providing validation schema to a `TypeDict` field/item will use `Annotated`, e.g. `Annotated[str, Field(strict=True)]`
+3. Full support for `TypedDict`, including `total=False` - e.g. omitted keys,
+   providing validation schema to a `TypedDict` field/item will use `Annotated`, e.g. `Annotated[str, Field(strict=True)]`
 4. `from_orm` has become `from_attributes` and is now defined at schema generation time
    (either via model config or field config)
 5. `input_value` has been added to each line error in a `ValidationError`, making errors easier to understand,
    and more comprehensive details of errors to be provided to end users,
    [pydantic#784](https://github.com/samuelcolvin/pydantic/issues/784)
 6. `on_error` logic in a schema which allows either a default value to be used in the event of an error,
-   or that value to be omitted (in the case of a `full=False` `TypeDict`),
+   or that value to be omitted (in the case of a `total=False` `TypedDict`),
    [pydantic-core#151](https://github.com/samuelcolvin/pydantic-core/issues/151)
 7. `datetime`, `date`, `time` & `timedelta` validation is improved, see the
    [speedate] Rust library I built specifically for this purpose for more details
 8. Powerful "priority" system for optionally merging or overriding config in sub-models for nested schemas
 9. Pydantic will support [annotated-types](https://github.com/annotated-types/annotated-types),
    so you can do stuff like `Annotated[set[int], Len(0, 10)]` or `Name = Annotated[str, Len(1, 1024)]`
-10. A single decorator for general usage - we should add a `valdiate` decorator which can be used:
+10. A single decorator for general usage - we should add a `validate` decorator which can be used:
   * on functions (replacing `validate_arguments`)
   * on dataclasses, `pydantic.dataclasses.dataclass` will become an alias of this
   * on `TypedDict`s
@@ -724,6 +719,8 @@ Some other things which will also change, IMHO for the better:
     see [pydantic-core#155](https://github.com/samuelcolvin/pydantic-core/issues/155)
 15. We'll now follow [semvar](https://semver.org/) properly and avoid breaking changes between minor versions,
     as a result, major versions will become more common
+16. Improve generics to use `M(Basemodel, Generic[T])` instead of `M(GenericModel, Generic[T])` - e.g. `GenericModel`
+    can be removed; this results from no-longer needing to compile pydantic code with cython
 
 ## Removed Features & Limitations :frowning:
 
@@ -763,7 +760,6 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
 
 The following features will remain (mostly) changed:
 
-* Generics
 * JSONSchema, internally this will need to change a lot, but hopefully the external interface will remain unchanged
 * `dataclass` support, again internals might change, but not the external interface
 * `validate_arguments`, might be renamed, but otherwise remain
@@ -906,10 +902,10 @@ An updated and complete version of this table will be included in the docs for V
 | `dict`        | `dict`      | both   | python       | -                                                                           |
 | `dict`        | `Object`    | both   | JSON         | -                                                                           |
 | `dict`        | `mapping`   | lax    | python       | must implement the mapping interface and have an `items()` method           |
-| `TypeDict`    | `dict`      | both   | python       | -                                                                           |
-| `TypeDict`    | `Object`    | both   | JSON         | -                                                                           |
-| `TypeDict`    | `Any`       | both   | python       | builtins not allowed, uses `getattr`, requires `from_attributes=True`       |
-| `TypeDict`    | `mapping`   | lax    | python       | must implement the mapping interface and have an `items()` method           |
+| `TypedDict`    | `dict`      | both   | python       | -                                                                           |
+| `TypedDict`    | `Object`    | both   | JSON         | -                                                                           |
+| `TypedDict`    | `Any`       | both   | python       | builtins not allowed, uses `getattr`, requires `from_attributes=True`       |
+| `TypedDict`    | `mapping`   | lax    | python       | must implement the mapping interface and have an `items()` method           |
 | `list`        | `list`      | both   | python       | -                                                                           |
 | `list`        | `Array`     | both   | JSON         | -                                                                           |
 | `list`        | `tuple`     | lax    | python       | -                                                                           |
@@ -939,7 +935,7 @@ An updated and complete version of this table will be included in the docs for V
 | `callable`    | `Any`       | both   | python       | `callable()` check returns `True`                                           |
 | `callable`    | -           | both   | JSON         | never valid                                                                 |
 
-The `ModelClass` validator (use to create instances of a class) uses the `TypeDict` validator, then creates an instance
-with `__dict__` and `__fields_set__` set, so same rules apply as `TypeDict`.
+The `ModelClass` validator (use to create instances of a class) uses the `TypedDict` validator, then creates an instance
+with `__dict__` and `__fields_set__` set, so same rules apply as `TypedDict`.
 
 [speedate]: https://docs.rs/speedate/latest/speedate/
