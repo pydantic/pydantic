@@ -11,6 +11,12 @@
 </div>
 </aside>
 
+---
+
+Updated late 10 Jul 2022, see [pydantic#4226](https://github.com/samuelcolvin/pydantic/pull/4226).
+
+---
+
 I've spoken to quite a few people about pydantic V2, and mention it in passing even more.
 
 I owe people a proper explanation of the plan for V2:
