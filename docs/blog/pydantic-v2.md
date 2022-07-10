@@ -6,8 +6,8 @@
   **Samuel Colvin** &bull;&nbsp;
   [:material-github:](https://github.com/samuelcolvin) &bull;&nbsp;
   [:material-twitter:](https://twitter.com/samuel_colvin) &bull;&nbsp;
-  :octicons-calendar-24: Jul 6, 2022 &bull;&nbsp;
-  :octicons-clock-24: 10 min read
+  :octicons-calendar-24: Jul 10, 2022 &bull;&nbsp;
+  :octicons-clock-24: 12 min read
 </div>
 </aside>
 
@@ -22,6 +22,18 @@ I owe people a proper explanation of the plan for V2:
 * Some idea of timeframe :fearful:
 
 Here goes...
+
+---
+
+Enormous thanks to
+[Eric Jolibois](https://github.com/PrettyWood), [Laurence Watson](https://github.com/Rabscuttler), 
+[Sebastián Ramírez](https://github.com/tiangolo), [Adrian Garcia Badaracco](https://github.com/adriangb), 
+[Tom Hamilton Stubber](https://github.com/tomhamiltonstubber), [Zac Hatfield-Dodds](https://github.com/Zac-HD), 
+[Tom](https://github.com/czotomo) & [Hasan Ramezani](https://github.com/hramezani)
+for reviewing this blog post, putting up with (and correcting) my horrible typos and making great suggestions
+that have made this post and Pydantic V2 materially better.
+
+---
 
 ## Plan & Timeframe
 
@@ -707,6 +719,8 @@ Some other things which will also change, IMHO for the better:
 13. Computed fields, these having been an idea for a long time in pydantic - we should get them right
 14. Model validation that avoids instances of subclasses leaking data (particularly important for FastAPI),
     see [pydantic-core#155](https://github.com/samuelcolvin/pydantic-core/issues/155)
+15. We'll now follow [semvar](https://semver.org/) properly and avoid breaking changes between minor versions,
+    as a result, major versions will become more common
 
 ## Removed Features & Limitations :frowning:
 
