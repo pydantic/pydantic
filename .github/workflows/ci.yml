@@ -205,7 +205,7 @@ jobs:
         run: cargo update -p pydantic-core
         if: "startsWith(github.ref, 'refs/tags/')"
 
-      - run: pip install -U --pre maturin
+      - run: pip install 'maturin>=0.13,<0.14'
 
       - name: build wheels
         run: maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.10
