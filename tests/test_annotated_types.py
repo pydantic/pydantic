@@ -146,6 +146,29 @@ def test_namedtuple_postponed_annotation():
         Model.parse_obj({'t': [-1]})
 
 
+def test_namedtuple_arbitrary_type():
+    class CustomClass:
+        pass
+
+    class Tup(NamedTuple):
+        c: CustomClass
+
+    class Model(BaseModel):
+        x: Tup
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    data = {'x': Tup(c=CustomClass())}
+    model = Model.parse_obj(data)
+    assert isinstance(model.x.c, CustomClass)
+
+    with pytest.raises(RuntimeError):
+
+        class ModelNoArbitraryTypes(BaseModel):
+            x: Tup
+
+
 def test_typeddict():
     class TD(TypedDict):
         a: int
