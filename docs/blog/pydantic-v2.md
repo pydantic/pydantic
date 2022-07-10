@@ -451,8 +451,9 @@ class BaseModel:
         """
     def model_dump_json(self, ...) -> str:
         """
-        previously `json()`, argument as above
-        effectively an alias of `json.dump(self.model_dump(..., mode='json'))`
+        previously `json()`, arguments as above
+        effectively equivalent to `json.dump(self.model_dump(..., mode='json'))`,
+        but more performant
         """
     def model_json_schema(self, ...) -> dict[str, Any]:
         """
