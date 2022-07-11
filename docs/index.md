@@ -27,7 +27,7 @@ Development of *pydantic* is made possible by the following sponsors:
   <div>
     <a rel="sponsored" target="_blank" href="https://fastapi.tiangolo.com">
       <img src="./sponsor_logos/fastapi.png" alt="FastAPI" />
-      FastApi
+      FastAPI
     </a>
   </div>
   <div>
