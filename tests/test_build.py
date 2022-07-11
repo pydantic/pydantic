@@ -63,7 +63,7 @@ def test_schema_recursive_error():
     schema = {'type': 'union', 'choices': []}
     schema['choices'].append(schema)
     with pytest.raises(
-        SchemaError, match='RecursionError: Recursive detected, depth exceeded max allowed value of 100'
+        SchemaError, match=r'RecursionError: Recursive detected, depth exceeded max allowed value of \d+'
     ):
         SchemaValidator(schema)
 
