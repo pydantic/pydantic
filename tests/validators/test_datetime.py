@@ -1,4 +1,5 @@
 import json
+import platform
 import re
 from datetime import date, datetime, time, timedelta, timezone, tzinfo
 from decimal import Decimal
@@ -211,13 +212,20 @@ def test_custom_invalid_tz():
     # perhaps this should be a ValidationError? but we don't catch other errors
     with pytest.raises(ValidationError) as excinfo:
         schema.validate_python(dt)
+
+    # exception messages differ between python and pypy
+    if platform.python_implementation() == 'PyPy':
+        error_message = 'NotImplementedError: tzinfo subclass must override utcoffset()'
+    else:
+        error_message = 'NotImplementedError: a tzinfo subclass must implement utcoffset()'
+
     assert excinfo.value.errors() == [
         {
             'kind': 'datetime_object_invalid',
             'loc': [],
-            'message': 'Invalid datetime object, got NotImplementedError: a tzinfo subclass must implement utcoffset()',
+            'message': f'Invalid datetime object, got {error_message}',
             'input_value': dt,
-            'context': {'error': 'NotImplementedError: a tzinfo subclass must implement utcoffset()'},
+            'context': {'error': error_message},
         }
     ]
 

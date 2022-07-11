@@ -1,3 +1,4 @@
+import platform
 import re
 from copy import deepcopy
 
@@ -259,7 +260,14 @@ def test_function_wrong_sig():
         return input_value + ' Changed'
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
-    with pytest.raises(TypeError, match=re.escape("f() got an unexpected keyword argument 'data'")):
+
+    # exception messages differ between python and pypy
+    if platform.python_implementation() == 'PyPy':
+        error_message = 'f() got 2 unexpected keyword arguments'
+    else:
+        error_message = "f() got an unexpected keyword argument 'data'"
+
+    with pytest.raises(TypeError, match=re.escape(error_message)):
         v.validate_python('input value')
 
 
