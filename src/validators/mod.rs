@@ -427,7 +427,11 @@ pub struct BuildContext {
     depth: usize,
 }
 
+#[cfg(not(PyPy))]
 const MAX_DEPTH: usize = 100;
+
+#[cfg(PyPy)]
+const MAX_DEPTH: usize = 50;
 
 impl BuildContext {
     pub fn prepare_slot(&mut self, slot_ref: String) -> PyResult<usize> {

@@ -3,6 +3,7 @@ Numerous benchmarks of specific functionality.
 """
 import json
 import os
+import platform
 from datetime import date, datetime, timedelta, timezone
 from typing import Dict, FrozenSet, List, Optional, Set, Union
 
@@ -171,6 +172,7 @@ def recursive_model_data():
     return data
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='crashes on pypy due to recursion depth')
 @skip_pydantic
 @pytest.mark.benchmark(group='recursive model')
 def test_recursive_model_pyd(recursive_model_data, benchmark):
@@ -181,6 +183,7 @@ def test_recursive_model_pyd(recursive_model_data, benchmark):
     benchmark(PydanticBranch.parse_obj, recursive_model_data)
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='crashes on pypy due to recursion depth')
 @pytest.mark.benchmark(group='recursive model')
 def test_recursive_model_core(recursive_model_data, benchmark):
     class CoreBranch:

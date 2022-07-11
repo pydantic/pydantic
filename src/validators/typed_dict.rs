@@ -1,7 +1,7 @@
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFunction, PyList, PySet, PyString};
+use pyo3::{intern, PyTypeInfo};
 
 use ahash::AHashSet;
 
@@ -677,6 +677,9 @@ impl<'a> Iterator for IterAttributes<'a> {
         // or we get to the end of the list of attributes
         loop {
             if self.index < self.attributes.len() {
+                #[cfg(PyPy)]
+                let name: &PyAny = self.attributes.get_item(self.index).unwrap();
+                #[cfg(not(PyPy))]
                 let name: &PyAny = unsafe { self.attributes.get_item_unchecked(self.index) };
                 self.index += 1;
                 // from benchmarks this is 14x faster than using the python `startswith` method
@@ -690,10 +693,19 @@ impl<'a> Iterator for IterAttributes<'a> {
                         // we don't want bound methods to be included, is there a better way to check?
                         // ref https://stackoverflow.com/a/18955425/949890
                         let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
-                        // the is_instance_of::<PyFunction> catches `staticmethod`, but also any other function,
+                        // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
                         // I think that's better than including static methods in the yielded attributes,
                         // if someone really wants fields, they can use an explicit field, or a function to modify input
-                        if !is_bound && !matches!(attr.is_instance_of::<PyFunction>(), Ok(true)) {
+                        if !is_bound && !PyFunction::is_type_of(attr) {
+                            // MASSIVE HACK! PyFunction::is_type_of(attr) doesn't detect staticmethod on PyPy,
+                            // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
+                            // https://github.com/samuelcolvin/pydantic-core/pull/161#discussion_r917257635
+                            #[cfg(PyPy)]
+                            if attr.get_type().to_string() != "<class 'function'>" {
+                                return Some((name, attr));
+                            }
+
+                            #[cfg(not(PyPy))]
                             return Some((name, attr));
                         }
                     }

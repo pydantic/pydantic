@@ -211,6 +211,7 @@ dependencies = [
  "mimalloc",
  "nohash-hasher",
  "pyo3",
+ "pyo3-build-config",
  "regex",
  "serde",
  "serde_json",
