@@ -37,7 +37,8 @@ user = User(id='123')
 `user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
 if no `ValidationError` is raised, you know the resulting model instance is valid.
 ```py
-assert user.id == 123
+# Note that 123.45 was casted to an int and its value is 123
+assert isinstance(User(id=123.45).id, int)
 ```
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type
