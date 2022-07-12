@@ -83,7 +83,7 @@ Models possess the following methods and attributes:
 : a utility for loading strings of numerous formats; cf. [helper functions](#helper-functions)
 
 `parse_file()`
-: like `parse_raw()` but for file paths; cf. [helper function](#helper-functions)
+: like `parse_raw()` but for file paths; cf. [helper functions](#helper-functions)
 
 `from_orm()`
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
@@ -192,7 +192,7 @@ _(This script is complete, it should run "as is")_
 One exception will be raised regardless of the number of errors found, that `ValidationError` will
 contain information about all the errors and how they happened.
 
-You can access these errors in a several ways:
+You can access these errors in several ways:
 
 `e.errors()`
 : method will return list of errors found in the input data.
@@ -450,7 +450,7 @@ Models can be configured to be immutable via `allow_mutation = False`. When this
 values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
 
 !!! warning
-    Immutability in python is never strict. If developers are determined/stupid they can always
+    Immutability in Python is never strict. If developers are determined/stupid they can always
     modify a so-called "immutable" object.
 
 ```py
@@ -490,7 +490,7 @@ _(This script is complete, it should run "as is")_
 
 !!! warning
     As demonstrated by the example above, combining the use of annotated and non-annotated fields
-    in the same model can result in surprising field orderings. (This is due to limitations of python)
+    in the same model can result in surprising field orderings. (This is due to limitations of Python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
     would determine the type by itself to guarantee field order is preserved.
@@ -629,8 +629,8 @@ The generated signature will also respect custom `__init__` functions:
 {!.tmp_examples/models_signature_custom_init.py!}
 ```
 
-To be included in the signature, a field's alias or name must be a valid python identifier.
-*pydantic* prefers aliases over names, but may use field names if the alias is not a valid python identifier.
+To be included in the signature, a field's alias or name must be a valid Python identifier. 
+*pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier. 
 
 If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
 In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.

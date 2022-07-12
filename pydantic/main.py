@@ -155,6 +155,7 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
+        resolve_forward_refs = kwargs.pop('__resolve_forward_refs__', True)
         allowed_config_kwargs: SetStr = {
             key
             for key in dir(config)
@@ -290,9 +291,18 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
-        cls.__try_update_forward_refs__()
+        if resolve_forward_refs:
+            cls.__try_update_forward_refs__()
 
         return cls
+
+    def __instancecheck__(self, instance: Any) -> bool:
+        """
+        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
 
 
 object_setattr = object.__setattr__
@@ -667,7 +677,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
             if cls.__config__.copy_on_model_validation:
-                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=False)
+                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=True)
             else:
                 return value
 
@@ -766,12 +776,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
-    def __try_update_forward_refs__(cls) -> None:
+    def __try_update_forward_refs__(cls, **localns: Any) -> None:
         """
         Same as update_forward_refs but will not raise exception
         when forward references are not defined.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, {}, (NameError,))
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns, (NameError,))
 
     @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
@@ -899,6 +909,7 @@ def create_model(
     __base__: None = None,
     __module__: str = __name__,
     __validators__: Dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: Dict[str, Any] = None,
     **field_definitions: Any,
 ) -> Type['BaseModel']:
     ...
@@ -912,6 +923,7 @@ def create_model(
     __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
     __module__: str = __name__,
     __validators__: Dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: Dict[str, Any] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     ...
@@ -924,6 +936,7 @@ def create_model(
     __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
     __validators__: Dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: Dict[str, Any] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     """
@@ -933,6 +946,7 @@ def create_model(
     :param __base__: base class for the new model to inherit from
     :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
+    :param __cls_kwargs__: a dict for class creation
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
@@ -946,6 +960,8 @@ def create_model(
             __base__ = (__base__,)
     else:
         __base__ = (cast(Type['Model'], BaseModel),)
+
+    __cls_kwargs__ = __cls_kwargs__ or {}
 
     fields = {}
     annotations = {}
@@ -976,7 +992,7 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(__model_name, __base__, namespace)
+    return type(__model_name, __base__, namespace, **__cls_kwargs__)
 
 
 _missing = object()

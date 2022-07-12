@@ -56,8 +56,12 @@ so in this example
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
 
+In Pydantic **v1** `case_sensitive` is `False` by default and all variable names are converted to lower-case internally.
+If you want to define upper-case variable names on nested models like `SubModel` you have to
+set `case_sensitive=True` to disable this behaviour.
+
 !!! note
-    On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+    On Windows, Python's `os` module always treats environment variables as case-insensitive, so the
     `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
 
 ## Parsing environment variable values
@@ -71,7 +75,7 @@ by treating the environment variable's value as a JSON-encoded string.
 
 Another way to populate nested complex variables is to configure your model with the `env_nested_delimiter`
 config setting, then use an env variable with a name pointing to the nested module fields.
-What it does is simply explodes yor variable into nested models or dicts.
+What it does is simply explodes your variable into nested models or dicts.
 So if you define a variable `FOO__BAR__BAZ=123` it will convert it into `FOO={'BAR': {'BAZ': 123}}`
 If you have multiple variables with the same structure they will be merged.
 
@@ -278,6 +282,3 @@ You might also want to disable a source:
 {!.tmp_examples/settings_disable_source.py!}
 ```
 _(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_
-
-Because of the callables approach of `customise_sources`, evaluation of sources is lazy so unused sources don't
-have an adverse effect on performance.
