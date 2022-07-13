@@ -152,15 +152,14 @@ class EnvSettingsSource:
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
 
     @staticmethod
-    def _json_parse(val: Optional[str], name: str, json_loads: Callable[[str], Any], allow_json_failure: bool) -> Any:
-        if val is not None:
-            if val.startswith('-') and val.endswith('-'):
-                val = f'"{val}"'
-            try:
-                return json_loads(val)
-            except ValueError as e:
-                if not allow_json_failure:
-                    raise SettingsError(f'error parsing JSON for "{name}"') from e
+    def _json_parse(val: str, name: str, json_loads: Callable[[str], Any], allow_json_failure: bool) -> Any:
+        if val.startswith('-') and val.endswith('-'):
+            val = f'"{val}"'
+        try:
+            return json_loads(val)
+        except ValueError as e:
+            if not allow_json_failure:
+                raise SettingsError(f'error parsing JSON for "{name}"') from e
         return val
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa C901
