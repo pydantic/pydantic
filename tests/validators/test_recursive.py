@@ -313,7 +313,7 @@ def test_recursive_list():
 
 
 @pytest.fixture(scope='module')
-def multiple_tuple_schema():
+def multiple_tuple_schema() -> SchemaValidator:
     return SchemaValidator(
         {
             'type': 'typed-dict',
@@ -353,7 +353,7 @@ def multiple_tuple_schema():
         ),
     ],
 )
-def test_multiple_tuple_param(multiple_tuple_schema, input_value, expected):
+def test_multiple_tuple_param(multiple_tuple_schema: SchemaValidator, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
             multiple_tuple_schema.validate_python(input_value)
@@ -362,7 +362,7 @@ def test_multiple_tuple_param(multiple_tuple_schema, input_value, expected):
         assert multiple_tuple_schema.validate_python(input_value) == expected
 
 
-def test_multiple_tuple_repeat(multiple_tuple_schema):
+def test_multiple_tuple_repeat(multiple_tuple_schema: SchemaValidator):
     t = (42, None)
     assert multiple_tuple_schema.validate_python({'f1': (1, t), 'f2': (2, t)}) == {
         'f1': (1, (42, None)),
@@ -370,7 +370,7 @@ def test_multiple_tuple_repeat(multiple_tuple_schema):
     }
 
 
-def test_multiple_tuple_recursion(multiple_tuple_schema):
+def test_multiple_tuple_recursion(multiple_tuple_schema: SchemaValidator):
     data = [1]
     data.append(data)
     with pytest.raises(ValidationError) as exc_info:
@@ -392,7 +392,7 @@ def test_multiple_tuple_recursion(multiple_tuple_schema):
     ]
 
 
-def test_multiple_tuple_recursion_once(multiple_tuple_schema):
+def test_multiple_tuple_recursion_once(multiple_tuple_schema: SchemaValidator):
     data = [1]
     data.append(data)
     with pytest.raises(ValidationError) as exc_info:
@@ -499,7 +499,7 @@ def test_union_container_strictness():
 
 
 @pytest.mark.parametrize('strict', [True, False], ids=lambda s: f'strict={s}')
-def test_union_cycle(strict):
+def test_union_cycle(strict: bool):
     s = SchemaValidator(
         {
             'choices': [
@@ -578,7 +578,7 @@ def test_function_name():
 
 
 @pytest.mark.parametrize('strict', [True, False], ids=lambda s: f'strict={s}')
-def test_function_change_id(strict):
+def test_function_change_id(strict: bool):
     def f(input_value, **kwargs):
         _, count = input_value.split('-')
         return f'f-{int(count) + 1}'

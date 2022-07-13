@@ -1,11 +1,12 @@
 import re
+from typing import Any, Dict
 
 import pytest
 from dirty_equals import IsList, IsNonNegative
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
 
 
 @pytest.mark.parametrize(
@@ -17,8 +18,8 @@ from ..conftest import Err
         ('5', Err("Value must be a valid list/array [kind=list_type, input_value='5', input_type=str]")),
     ],
 )
-def test_list_json(py_or_json, input_value, expected):
-    v = py_or_json({'type': 'list', 'items_schema': {'type': 'int'}})
+def test_list_json(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json({'type': 'list', 'items_schema': {'type': 'int'}})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -84,7 +85,7 @@ def test_list_error(input_value, index):
         ({'max_items': 3}, [1, 2, 3, 4], Err('Input must have at most 3 items [kind=too_long')),
     ],
 )
-def test_list_length_constraints(kwargs, input_value, expected):
+def test_list_length_constraints(kwargs: Dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'list', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
