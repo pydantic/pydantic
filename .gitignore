@@ -2,6 +2,8 @@
 env/
 venv/
 env3*/
+.envrc
+.direnv/
 Pipfile
 *.lock
 *.py[cod]
