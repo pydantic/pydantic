@@ -51,7 +51,7 @@ class TestModelClass:
         pass
 
     @pytest.fixture(scope='class')
-    def schema_validator(self):
+    def schema_validator(self) -> SchemaValidator:
         return SchemaValidator(
             {
                 'type': 'union',
@@ -78,26 +78,26 @@ class TestModelClass:
             }
         )
 
-    def test_model_a(self, schema_validator):
+    def test_model_a(self, schema_validator: SchemaValidator):
         m_a = schema_validator.validate_python({'a': 1, 'b': 'hello'})
         assert isinstance(m_a, self.ModelA)
         assert m_a.a == 1
         assert m_a.b == 'hello'
 
-    def test_model_b(self, schema_validator):
+    def test_model_b(self, schema_validator: SchemaValidator):
         m_b = schema_validator.validate_python({'c': 2, 'd': 'again'})
         assert isinstance(m_b, self.ModelB)
         assert m_b.c == 2
         assert m_b.d == 'again'
 
-    def test_exact_check(self, schema_validator):
+    def test_exact_check(self, schema_validator: SchemaValidator):
         m_b = schema_validator.validate_python({'c': 2, 'd': 'again'})
         assert isinstance(m_b, self.ModelB)
 
         m_b2 = schema_validator.validate_python(m_b)
         assert m_b2 is m_b
 
-    def test_error(self, schema_validator):
+    def test_error(self, schema_validator: SchemaValidator):
         with pytest.raises(ValidationError) as exc_info:
             schema_validator.validate_python({'a': 2})
         assert exc_info.value.errors() == [
@@ -115,7 +115,7 @@ class TestModelClassSimilar:
         pass
 
     @pytest.fixture(scope='class')
-    def schema_validator(self):
+    def schema_validator(self) -> SchemaValidator:
         return SchemaValidator(
             {
                 'type': 'union',
@@ -146,14 +146,14 @@ class TestModelClassSimilar:
             }
         )
 
-    def test_model_a(self, schema_validator):
+    def test_model_a(self, schema_validator: SchemaValidator):
         m = schema_validator.validate_python({'a': 1, 'b': 'hello'})
         assert isinstance(m, self.ModelA)
         assert m.a == 1
         assert m.b == 'hello'
         assert not hasattr(m, 'c')
 
-    def test_model_b_ignored(self, schema_validator):
+    def test_model_b_ignored(self, schema_validator: SchemaValidator):
         # first choice works, so second choice is not used
         m = schema_validator.validate_python({'a': 1, 'b': 'hello', 'c': 2.0})
         assert isinstance(m, self.ModelA)
@@ -161,7 +161,7 @@ class TestModelClassSimilar:
         assert m.b == 'hello'
         assert not hasattr(m, 'c')
 
-    def test_model_b_not_ignored(self, schema_validator):
+    def test_model_b_not_ignored(self, schema_validator: SchemaValidator):
         m1 = self.ModelB()
         m1.a = 1
         m1.b = 'hello'
@@ -234,7 +234,7 @@ def test_strict_union():
     assert v.validate_python(123) == 123
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python('123') == 123
+        v.validate_python('123')
 
     assert exc_info.value.errors() == [
         {'kind': 'bool_type', 'loc': ['bool'], 'message': 'Value must be a valid boolean', 'input_value': '123'},

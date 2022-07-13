@@ -7,9 +7,9 @@ from typing import Mapping
 import pytest
 from dirty_equals import HasRepr, IsStr
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import Config, SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
 
 
 class Cls:
@@ -119,7 +119,7 @@ field_b
     ],
     ids=repr,
 )
-def test_config(config, input_value, expected):
+def test_config(config: Config, input_value, expected):
     v = SchemaValidator(
         {'type': 'typed-dict', 'fields': {'a': {'schema': 'int'}, 'b': {'schema': 'int', 'required': False}}}, config
     )
@@ -451,8 +451,8 @@ def test_field_required_and_default():
         )
 
 
-def test_alias(py_or_json):
-    v = py_or_json({'type': 'typed-dict', 'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}}})
+def test_alias(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'alias': 'FieldA', 'schema': 'int'}}})
     assert v.validate_test({'FieldA': '123'}) == {'field_a': 123}
     with pytest.raises(ValidationError, match=r'field_a\n +Field required \[kind=missing,'):
         assert v.validate_test({'foobar': '123'})
@@ -460,8 +460,8 @@ def test_alias(py_or_json):
         assert v.validate_test({'field_a': '123'})
 
 
-def test_alias_allow_pop(py_or_json):
-    v = py_or_json(
+def test_alias_allow_pop(py_and_json: PyAndJson):
+    v = py_and_json(
         {
             'type': 'typed-dict',
             'return_fields_set': True,
@@ -487,8 +487,8 @@ def test_alias_allow_pop(py_or_json):
     ],
     ids=repr,
 )
-def test_alias_path(py_or_json, input_value, expected):
-    v = py_or_json({'type': 'typed-dict', 'fields': {'field_a': {'aliases': [['foo', 'bar']], 'schema': 'int'}}})
+def test_alias_path(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'aliases': [['foo', 'bar']], 'schema': 'int'}}})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
             v.validate_test(input_value)
@@ -513,8 +513,8 @@ def test_alias_path(py_or_json, input_value, expected):
     ],
     ids=repr,
 )
-def test_aliases_path_multiple(py_or_json, input_value, expected):
-    v = py_or_json(
+def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json(
         {
             'type': 'typed-dict',
             'return_fields_set': True,
@@ -558,8 +558,8 @@ def get_custom_getitem():
 
 
 @pytest.mark.parametrize('input_value', [{'foo': {'bar': 42}}, {'foo': 42}, {'field_a': 42}], ids=repr)
-def test_paths_allow_by_name(py_or_json, input_value):
-    v = py_or_json(
+def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
+    v = py_and_json(
         {
             'type': 'typed-dict',
             'fields': {'field_a': {'aliases': [['foo', 'bar'], ['foo']], 'schema': 'int'}},
@@ -971,8 +971,8 @@ def test_from_attributes_path_error():
     ]
 
 
-def test_alias_extra(py_or_json):
-    v = py_or_json(
+def test_alias_extra(py_and_json: PyAndJson):
+    v = py_and_json(
         {
             'type': 'typed-dict',
             'typed_dict_extra_behavior': 'allow',
@@ -1011,8 +1011,8 @@ def test_alias_extra_from_attributes():
     assert v.validate_python({'foo': [1, 2, 3]}) == {'field_a': 3}
 
 
-def test_alias_extra_by_name(py_or_json):
-    v = py_or_json(
+def test_alias_extra_by_name(py_and_json: PyAndJson):
+    v = py_and_json(
         {
             'type': 'typed-dict',
             'typed_dict_extra_behavior': 'allow',
@@ -1027,8 +1027,8 @@ def test_alias_extra_by_name(py_or_json):
     assert v.validate_python(Cls(field_a=1)) == {'field_a': 1}
 
 
-def test_alias_extra_forbid(py_or_json):
-    v = py_or_json(
+def test_alias_extra_forbid(py_and_json: PyAndJson):
+    v = py_and_json(
         {
             'type': 'typed-dict',
             'typed_dict_extra_behavior': 'forbid',

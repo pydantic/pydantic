@@ -4,7 +4,7 @@ import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
 
 
 @pytest.mark.parametrize(
@@ -46,8 +46,8 @@ from ..conftest import Err
         ),
     ],
 )
-def test_literal_py_or_json(py_or_json, kwarg_expected, input_value, expected):
-    v = py_or_json({'type': 'literal', 'expected': kwarg_expected})
+def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value, expected):
+    v = py_and_json({'type': 'literal', 'expected': kwarg_expected})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
