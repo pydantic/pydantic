@@ -198,6 +198,25 @@ def test_invalid_json(env):
         ComplexSettings()
 
 
+def test_env_nested_with_complex_field(env):
+    class Child(BaseModel):
+        nested_field: List[str] = []
+
+    class Parent(BaseSettings):
+        parent_field: List[str]
+        child: Child
+
+        class Config:
+            env_nested_delimiter = '__'
+
+    env.set('PARENT_FIELD', '["c", "d", "e"]')
+    env.set('CHILD__NESTED_FIELD', '["a", "b", "c"]')
+
+    p = Parent()
+
+    assert p.child.nested_field == ['a', 'b', 'c']
+
+
 def test_required_sub_model(env):
     class Settings(BaseSettings):
         foobar: DateModel
