@@ -1,11 +1,15 @@
 import re
+from typing import Any, Dict, Type
 
 import pytest
 from dirty_equals import IsNonNegative, IsTuple
+from typing_extensions import Literal
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
+
+TupleVariant = Literal['tuple-var-len', 'tuple-fix-len']
 
 
 @pytest.mark.parametrize(
@@ -27,8 +31,8 @@ from ..conftest import Err
         ),
     ],
 )
-def test_tuple_json(py_or_json, tuple_variant, items, input_value, expected):
-    v = py_or_json({'type': tuple_variant, 'items_schema': items})
+def test_tuple_json(py_and_json: PyAndJson, tuple_variant: TupleVariant, items, input_value, expected):
+    v = py_and_json({'type': tuple_variant, 'items_schema': items})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -44,7 +48,7 @@ def test_tuple_json(py_or_json, tuple_variant, items, input_value, expected):
         ('tuple-fix-len', [{'type': 'int'}, {'type': 'str'}, {'type': 'float'}], (1, 2, 33), (1, '2', 33.0)),
     ],
 )
-def test_tuple_strict_passes_with_tuple(tuple_variant, items, input, expected):
+def test_tuple_strict_passes_with_tuple(tuple_variant: TupleVariant, items, input, expected):
     v = SchemaValidator({'type': tuple_variant, 'items_schema': items, 'strict': True})
     assert v.validate_python(input) == expected
 
@@ -54,7 +58,7 @@ def test_tuple_strict_passes_with_tuple(tuple_variant, items, input, expected):
     [('tuple-var-len', {'type': 'int'}), ('tuple-fix-len', [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}])],
 )
 @pytest.mark.parametrize('wrong_coll_type', [list, set, frozenset])
-def test_tuple_strict_fails_without_tuple(wrong_coll_type, tuple_variant, items):
+def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], tuple_variant: TupleVariant, items):
     v = SchemaValidator({'type': tuple_variant, 'items_schema': items, 'strict': True})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(wrong_coll_type([1, 2, '33']))
@@ -78,7 +82,7 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type, tuple_variant, items)
         ({'max_items': 3}, (1, 2, 3, 4), Err('Input must have at most 3 items [kind=too_long')),
     ],
 )
-def test_tuple_var_len_kwargs(kwargs, input_value, expected):
+def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'tuple-var-len', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -295,7 +299,7 @@ def test_union_tuple_fix_len(input_value, expected):
         ('tuple-fix-len', [{'type': 'mint'}], Err('Error building "tuple-fix-len" validator')),
     ],
 )
-def test_error_building_tuple_with_wrong_items(tuple_variant, items, expected):
+def test_error_building_tuple_with_wrong_items(tuple_variant: TupleVariant, items, expected):
 
     with pytest.raises(SchemaError, match=re.escape(expected.message)):
         SchemaValidator({'type': tuple_variant, 'items_schema': items})

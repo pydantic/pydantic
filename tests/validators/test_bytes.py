@@ -1,10 +1,11 @@
 import re
+from typing import Any, Dict
 
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
 
 
 def test_strict_bytes_validator():
@@ -40,7 +41,7 @@ def test_lax_bytes_validator():
         ({'min_length': 1, 'max_length': 6, 'strict': True}, b'bytes?', b'bytes?'),
     ],
 )
-def test_constrained_bytes_python_bytes(opts, input, expected):
+def test_constrained_bytes_python_bytes(opts: Dict[str, Any], input, expected):
     v = SchemaValidator({'type': 'bytes', **opts})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -63,8 +64,8 @@ def test_constrained_bytes_python_bytes(opts, input, expected):
         ({}, {}, Err('Value must be a valid bytes')),
     ],
 )
-def test_constrained_bytes(py_or_json, opts, input, expected):
-    v = py_or_json({'type': 'bytes', **opts})
+def test_constrained_bytes(py_and_json: PyAndJson, opts: Dict[str, Any], input, expected):
+    v = py_and_json({'type': 'bytes', **opts})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input)

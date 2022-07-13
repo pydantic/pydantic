@@ -1,12 +1,13 @@
 import re
 from datetime import date, datetime, time
 from decimal import Decimal
+from typing import Any, Dict
 
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
 
 
 @pytest.mark.parametrize(
@@ -67,8 +68,8 @@ def test_time(input_value, expected):
         pytest.param(True, Err('Value must be a valid time [kind=time_type'), id='bool'),
     ],
 )
-def test_time_json(py_or_json, input_value, expected):
-    v = py_or_json({'type': 'time'})
+def test_time_json(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json({'type': 'time'})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -135,7 +136,7 @@ def test_time_strict_json(input_value, expected):
         ({'gt': '12:13:14.123456'}, '12:13:14.123456', Err('Value must be greater than 12:13:14.123456')),
     ],
 )
-def test_time_kwargs(kwargs, input_value, expected):
+def test_time_kwargs(kwargs: Dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'time', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
@@ -176,8 +177,8 @@ def test_dict_py():
     assert v.validate_python({time(12, 1, 1): 2, time(12, 1, 2): 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 
-def test_dict(py_or_json):
-    v = py_or_json({'type': 'dict', 'keys_schema': 'time', 'values_schema': 'int'})
+def test_dict(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'dict', 'keys_schema': 'time', 'values_schema': 'int'})
     assert v.validate_test({'12:01:01': 2, '12:01:02': 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 

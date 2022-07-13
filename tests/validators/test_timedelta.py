@@ -1,12 +1,13 @@
 import re
 from datetime import timedelta
 from decimal import Decimal
+from typing import Any, Dict
 
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, PyAndJson
 
 
 @pytest.mark.parametrize(
@@ -140,7 +141,7 @@ def test_timedelta_strict_json(input_value, expected):
     ],
     ids=repr,
 )
-def test_timedelta_kwargs(kwargs, input_value, expected):
+def test_timedelta_kwargs(kwargs: Dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'timedelta', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -178,8 +179,8 @@ def test_dict_py():
     }
 
 
-def test_dict_key(py_or_json):
-    v = py_or_json({'type': 'dict', 'keys_schema': 'timedelta', 'values_schema': 'int'})
+def test_dict_key(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'dict', 'keys_schema': 'timedelta', 'values_schema': 'int'})
     assert v.validate_test({'P2DT1H': 2, 'P2DT2H': 4}) == {timedelta(days=2, hours=1): 2, timedelta(days=2, hours=2): 4}
 
     with pytest.raises(
@@ -189,8 +190,8 @@ def test_dict_key(py_or_json):
         v.validate_test({'errordata': 2})
 
 
-def test_dict_value(py_or_json):
-    v = py_or_json({'type': 'dict', 'keys_schema': 'int', 'values_schema': 'timedelta'})
+def test_dict_value(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'dict', 'keys_schema': 'int', 'values_schema': 'timedelta'})
     assert v.validate_test({2: 'P2DT1H', 4: 'P2DT2H'}) == {2: timedelta(days=2, hours=1), 4: timedelta(days=2, hours=2)}
 
     with pytest.raises(
