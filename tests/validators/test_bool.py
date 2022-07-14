@@ -4,7 +4,7 @@ import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -76,6 +76,15 @@ def test_bool_error():
 
 def test_bool_repr():
     v = SchemaValidator({'type': 'bool'})
-    assert repr(v) == 'SchemaValidator(name="bool", validator=Bool(\n    BoolValidator,\n))'
+    assert plain_repr(v) == 'SchemaValidator(name="bool",validator=Bool(BoolValidator{strict:false}))'
     v = SchemaValidator({'type': 'bool', 'strict': True})
-    assert repr(v) == 'SchemaValidator(name="strict-bool", validator=StrictBool(\n    StrictBoolValidator,\n))'
+    assert plain_repr(v) == 'SchemaValidator(name="bool",validator=Bool(BoolValidator{strict:true}))'
+
+
+def test_bool_key(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'dict', 'keys_schema': 'bool', 'values_schema': 'int'})
+    assert v.validate_test({True: 1, False: 2}) == {True: 1, False: 2}
+    assert v.validate_test({'true': 1, 'off': 2}) == {True: 1, False: 2}
+    assert v.validate_test({'true': 1, 'off': 2}, strict=False) == {True: 1, False: 2}
+    with pytest.raises(ValidationError, match='Value must be a valid boolean'):
+        v.validate_test({'true': 1, 'off': 2}, strict=True)

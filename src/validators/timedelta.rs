@@ -4,7 +4,7 @@ use speedate::Duration;
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
-use crate::input::{EitherTimedelta, Input};
+use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::SchemaError;
 
@@ -57,40 +57,11 @@ impl Validator for TimeDeltaValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let timedelta = match self.strict {
-            true => input.strict_timedelta()?,
-            false => input.lax_timedelta()?,
-        };
-        self.validation_comparison(py, input, timedelta)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self.validation_comparison(py, input, input.strict_timedelta()?)
-    }
-
-    fn get_name(&self) -> &str {
-        Self::EXPECTED_TYPE
-    }
-}
-
-impl TimeDeltaValidator {
-    fn validation_comparison<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        timedelta: EitherTimedelta<'data>,
-    ) -> ValResult<'data, PyObject> {
+        let timedelta = input.validate_timedelta(extra.strict.unwrap_or(self.strict))?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.as_raw();
 
@@ -116,6 +87,10 @@ impl TimeDeltaValidator {
         }
         timedelta.try_into_py(py).map_err(Into::<ValError>::into)
     }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
+    }
 }
 
 fn py_timedelta_as_timedelta(schema: &PyDict, field: &str) -> PyResult<Option<Duration>> {
@@ -123,7 +98,7 @@ fn py_timedelta_as_timedelta(schema: &PyDict, field: &str) -> PyResult<Option<Du
         Some(obj) => {
             let prefix = format!(r#"Invalid "{}" constraint for timedelta"#, field);
             let timedelta = obj
-                .lax_timedelta()
+                .validate_timedelta(false)
                 .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
             Ok(Some(timedelta.as_raw()))
         }

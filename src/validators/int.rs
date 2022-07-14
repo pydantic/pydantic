@@ -9,7 +9,9 @@ use crate::recursion_guard::RecursionGuard;
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct IntValidator;
+pub struct IntValidator {
+    strict: bool,
+}
 
 impl BuildValidator for IntValidator {
     const EXPECTED_TYPE: &'static str = "int";
@@ -26,10 +28,11 @@ impl BuildValidator for IntValidator {
             || schema.get_item("gt").is_some();
         if use_constrained {
             ConstrainedIntValidator::build(schema, config)
-        } else if is_strict(schema, config)? {
-            StrictIntValidator::build()
         } else {
-            Ok(Self.into())
+            Ok(Self {
+                strict: is_strict(schema, config)?,
+            }
+            .into())
         }
     }
 }
@@ -39,52 +42,15 @@ impl Validator for IntValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.lax_int()?.into_py(py))
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_int()?.into_py(py))
+        Ok(input.validate_int(extra.strict.unwrap_or(self.strict))?.into_py(py))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct StrictIntValidator;
-
-impl StrictIntValidator {
-    fn build() -> PyResult<CombinedValidator> {
-        Ok(Self.into())
-    }
-}
-
-impl Validator for StrictIntValidator {
-    fn validate<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_int()?.into_py(py))
-    }
-
-    fn get_name(&self) -> &str {
-        "strict-int"
     }
 }
 
@@ -103,47 +69,11 @@ impl Validator for ConstrainedIntValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let int = match self.strict {
-            true => input.strict_int()?,
-            false => input.lax_int()?,
-        };
-        self._validation_logic(py, input, int)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_int()?)
-    }
-
-    fn get_name(&self) -> &str {
-        "constrained-int"
-    }
-}
-
-impl ConstrainedIntValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
-        Ok(Self {
-            strict: is_strict(schema, config)?,
-            multiple_of: schema.get_as("multiple_of")?,
-            le: schema.get_as("le")?,
-            lt: schema.get_as("lt")?,
-            ge: schema.get_as("ge")?,
-            gt: schema.get_as("gt")?,
-        }
-        .into())
-    }
-
-    fn _validation_logic<'a>(&self, py: Python<'a>, input: &'a impl Input<'a>, int: i64) -> ValResult<'a, PyObject> {
+        let int = input.validate_int(extra.strict.unwrap_or(self.strict))?;
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return Err(ValError::new(ErrorKind::IntMultipleOf { multiple_of }, input));
@@ -170,5 +100,23 @@ impl ConstrainedIntValidator {
             }
         }
         Ok(int.into_py(py))
+    }
+
+    fn get_name(&self) -> &str {
+        "constrained-int"
+    }
+}
+
+impl ConstrainedIntValidator {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            multiple_of: schema.get_as("multiple_of")?,
+            le: schema.get_as("le")?,
+            lt: schema.get_as("lt")?,
+            ge: schema.get_as("ge")?,
+            gt: schema.get_as("gt")?,
+        }
+        .into())
     }
 }

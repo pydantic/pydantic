@@ -77,22 +77,22 @@ impl SchemaValidator {
         Ok((cls, args).into_py(py))
     }
 
-    pub fn validate_python(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
+    pub fn validate_python(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<PyObject> {
         let r = self.validator.validate(
             py,
             input,
-            &Extra::default(),
+            &Extra::new(strict),
             &self.slots,
             &mut RecursionGuard::default(),
         );
         r.map_err(|e| self.prepare_validation_err(py, e))
     }
 
-    pub fn isinstance_python(&self, py: Python, input: &PyAny) -> PyResult<bool> {
+    pub fn isinstance_python(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<bool> {
         match self.validator.validate(
             py,
             input,
-            &Extra::default(),
+            &Extra::new(strict),
             &self.slots,
             &mut RecursionGuard::default(),
         ) {
@@ -102,13 +102,13 @@ impl SchemaValidator {
         }
     }
 
-    pub fn validate_json(&self, py: Python, input: &PyAny) -> PyResult<PyObject> {
+    pub fn validate_json(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<PyObject> {
         match parse_json(input)? {
             Ok(input) => {
                 let r = self.validator.validate(
                     py,
                     &input,
-                    &Extra::default(),
+                    &Extra::new(strict),
                     &self.slots,
                     &mut RecursionGuard::default(),
                 );
@@ -122,13 +122,13 @@ impl SchemaValidator {
         }
     }
 
-    pub fn isinstance_json(&self, py: Python, input: &PyAny) -> PyResult<bool> {
+    pub fn isinstance_json(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<bool> {
         match parse_json(input)? {
             Ok(input) => {
                 match self.validator.validate(
                     py,
                     &input,
-                    &Extra::default(),
+                    &Extra::new(strict),
                     &self.slots,
                     &mut RecursionGuard::default(),
                 ) {
@@ -145,6 +145,7 @@ impl SchemaValidator {
         let extra = Extra {
             data: Some(data),
             field: Some(field.as_str()),
+            strict: None,
         };
         let r = self
             .validator
@@ -309,6 +310,27 @@ pub struct Extra<'a> {
     pub data: Option<&'a PyDict>,
     /// The field being assigned to when validating assignment
     pub field: Option<&'a str>,
+    /// whether we're in strict or lax mode
+    pub strict: Option<bool>,
+}
+
+impl<'a> Extra<'a> {
+    pub fn new(strict: Option<bool>) -> Self {
+        Extra {
+            strict,
+            ..Default::default()
+        }
+    }
+}
+
+impl<'a> Extra<'a> {
+    pub fn as_strict(&self) -> Self {
+        Self {
+            data: self.data,
+            field: self.field,
+            strict: Some(true),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -324,18 +346,14 @@ pub enum CombinedValidator {
     ModelClass(model_class::ModelClassValidator),
     // strings
     Str(string::StrValidator),
-    StrictStr(string::StrictStrValidator),
     StrConstrained(string::StrConstrainedValidator),
     // integers
     Int(int::IntValidator),
-    StrictInt(int::StrictIntValidator),
     ConstrainedInt(int::ConstrainedIntValidator),
     // booleans
     Bool(bool::BoolValidator),
-    StrictBool(bool::StrictBoolValidator),
     // floats
     Float(float::FloatValidator),
-    StrictFloat(float::StrictFloatValidator),
     ConstrainedFloat(float::ConstrainedFloatValidator),
     // lists
     List(list::ListValidator),
@@ -366,7 +384,6 @@ pub enum CombinedValidator {
     Any(any::AnyValidator),
     // bytes
     Bytes(bytes::BytesValidator),
-    StrictBytes(bytes::StrictBytesValidator),
     ConstrainedBytes(bytes::BytesConstrainedValidator),
     // dates
     Date(date::DateValidator),
@@ -396,19 +413,6 @@ pub trait Validator: Send + Sync + Clone + Debug {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject>;
-
-    /// This is used in unions for the first pass to see if we have an "exact match",
-    /// implementations should generally use the same logic as with `config.strict = true`
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self.validate(py, input, extra, slots, recursion_guard)
-    }
 
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`

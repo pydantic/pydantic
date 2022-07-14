@@ -62,22 +62,14 @@ impl Validator for DictValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let dict = match self.strict {
-            true => input.strict_dict()?,
-            false => input.lax_dict()?,
-        };
-        self._validation_logic(py, input, dict, extra, slots, recursion_guard)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_dict()?, extra, slots, recursion_guard)
+        let dict = input.validate_dict(extra.strict.unwrap_or(self.strict))?;
+        match dict {
+            GenericMapping::PyDict(py_dict) => self.validate_dict(py, input, py_dict, extra, slots, recursion_guard),
+            GenericMapping::PyGetAttr(_) => unreachable!(),
+            GenericMapping::JsonObject(json_object) => {
+                self.validate_json_object(py, input, json_object, extra, slots, recursion_guard)
+            }
+        }
     }
 
     fn get_name(&self) -> &str {
@@ -159,22 +151,4 @@ macro_rules! build_validate {
 impl DictValidator {
     build_validate!(validate_dict, PyDict);
     build_validate!(validate_json_object, JsonObject);
-
-    fn _validation_logic<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        dict: GenericMapping<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        match dict {
-            GenericMapping::PyDict(py_dict) => self.validate_dict(py, input, py_dict, extra, slots, recursion_guard),
-            GenericMapping::PyGetAttr(_) => unreachable!(),
-            GenericMapping::JsonObject(json_object) => {
-                self.validate_json_object(py, input, json_object, extra, slots, recursion_guard)
-            }
-        }
-    }
 }

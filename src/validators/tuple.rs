@@ -33,44 +33,8 @@ impl Validator for TupleVarLenValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let tuple = match self.strict {
-            true => input.strict_tuple()?,
-            false => input.lax_tuple()?,
-        };
-        self._validation_logic(py, input, tuple, extra, slots, recursion_guard)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_tuple()?, extra, slots, recursion_guard)
-    }
-
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
-        self.item_validator.complete(build_context)
-    }
-}
-
-impl TupleVarLenValidator {
-    fn _validation_logic<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        tuple: GenericSequence<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        let length = tuple.generic_len();
+        let seq = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
+        let length = seq.generic_len();
         if let Some(min_length) = self.min_items {
             if length < min_length {
                 return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
@@ -82,8 +46,16 @@ impl TupleVarLenValidator {
             }
         }
 
-        let output = tuple.validate_to_vec(py, length, &self.item_validator, extra, slots, recursion_guard)?;
+        let output = seq.validate_to_vec(py, length, &self.item_validator, extra, slots, recursion_guard)?;
         Ok(PyTuple::new(py, &output).into_py(py))
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.item_validator.complete(build_context)
     }
 }
 
@@ -130,48 +102,10 @@ impl Validator for TupleFixLenValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let tuple = match self.strict {
-            true => input.strict_tuple()?,
-            false => input.lax_tuple()?,
-        };
-        self._validation_logic(py, input, tuple, extra, slots, recursion_guard)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_tuple()?, extra, slots, recursion_guard)
-    }
-
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
-        self.items_validators
-            .iter_mut()
-            .try_for_each(|v| v.complete(build_context))
-    }
-}
-
-impl TupleFixLenValidator {
-    fn _validation_logic<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        tuple: GenericSequence<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
+        let seq = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
         let expected_length = self.items_validators.len();
 
-        if expected_length != tuple.generic_len() {
+        if expected_length != seq.generic_len() {
             return Err(ValError::new(
                 ErrorKind::TupleLengthMismatch {
                     expected_length,
@@ -199,7 +133,7 @@ impl TupleFixLenValidator {
                 }
             };
         }
-        match tuple {
+        match seq {
             GenericSequence::List(sequence) => iter!(sequence),
             GenericSequence::Tuple(sequence) => iter!(sequence),
             GenericSequence::Set(sequence) => iter!(sequence),
@@ -211,5 +145,15 @@ impl TupleFixLenValidator {
         } else {
             Err(ValError::LineErrors(errors))
         }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.items_validators
+            .iter_mut()
+            .try_for_each(|v| v.complete(build_context))
     }
 }
