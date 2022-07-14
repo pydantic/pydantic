@@ -36,13 +36,6 @@ impl<'a> ValError<'a> {
     }
 }
 
-// ValError used to implement Error, see #78 for removed code
-
-// TODO, remove and replace with just .into()
-pub fn as_internal<'a>(err: PyErr) -> ValError<'a> {
-    err.into()
-}
-
 pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String {
     let py_line_errors: Vec<PyLineError> = line_errors.into_iter().map(|e| e.into_py(py)).collect();
     pretty_py_line_errors(Some(py), py_line_errors.iter())

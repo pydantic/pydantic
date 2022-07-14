@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 use speedate::Time;
 
 use crate::build_tools::{is_strict, SchemaDict, SchemaError};
-use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{EitherTime, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -92,7 +92,7 @@ impl TimeValidator {
         time: EitherTime<'data>,
     ) -> ValResult<'data, PyObject> {
         if let Some(constraints) = &self.constraints {
-            let raw_time = time.as_raw().map_err(as_internal)?;
+            let raw_time = time.as_raw().map_err(Into::<ValError>::into)?;
 
             macro_rules! check_constraint {
                 ($constraint:ident, $error:ident) => {
@@ -114,7 +114,7 @@ impl TimeValidator {
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
         }
-        time.try_into_py(py).map_err(as_internal)
+        time.try_into_py(py).map_err(Into::<ValError>::into)
     }
 }
 

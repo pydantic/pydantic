@@ -6,7 +6,7 @@ use pyo3::{intern, PyTypeInfo};
 use ahash::AHashSet;
 
 use crate::build_tools::{is_strict, py_error, schema_or_config, SchemaDict};
-use crate::errors::{as_internal, py_err_string, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input, JsonInput, JsonObject};
 use crate::recursion_guard::RecursionGuard;
 use crate::SchemaError;
@@ -185,7 +185,7 @@ impl Validator for TypedDictValidator {
                             Ok(value) => {
                                 output_dict
                                     .set_item(&field.name_pystring, value)
-                                    .map_err(as_internal)?;
+                                    .map_err(Into::<ValError>::into)?;
                                 if let Some(ref mut fs) = fields_set_vec {
                                     fs.push(field.name_pystring.clone_ref(py));
                                 }
@@ -201,7 +201,7 @@ impl Validator for TypedDictValidator {
                         // TODO default needs to be copied here
                         output_dict
                             .set_item(&field.name_pystring, default.as_ref(py))
-                            .map_err(as_internal)?;
+                            .map_err(Into::<ValError>::into)?;
                     } else if !field.required {
                         continue;
                     } else {
@@ -253,7 +253,9 @@ impl Validator for TypedDictValidator {
                         if let Some(ref validator) = self.extra_validator {
                             match validator.validate(py, value, &extra, slots, recursion_guard) {
                                 Ok(value) => {
-                                    output_dict.set_item(py_key, value).map_err(as_internal)?;
+                                    output_dict
+                                        .set_item(py_key, value)
+                                        .map_err(Into::<ValError>::into)?;
                                     if let Some(ref mut fs) = fields_set_vec {
                                         fs.push(py_key.into_py(py));
                                     }
@@ -268,7 +270,7 @@ impl Validator for TypedDictValidator {
                         } else {
                             output_dict
                                 .set_item(py_key, value.to_object(py))
-                                .map_err(as_internal)?;
+                                .map_err(Into::<ValError>::into)?;
                             if let Some(ref mut fs) = fields_set_vec {
                                 fs.push(py_key.into_py(py));
                             }
@@ -286,7 +288,7 @@ impl Validator for TypedDictValidator {
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
         } else if let Some(fs) = fields_set_vec {
-            let fields_set = PySet::new(py, &fs).map_err(as_internal)?;
+            let fields_set = PySet::new(py, &fs).map_err(Into::<ValError>::into)?;
             Ok((output_dict, fields_set).to_object(py))
         } else {
             Ok(output_dict.to_object(py))
@@ -324,9 +326,9 @@ impl TypedDictValidator {
         };
 
         let prepare_tuple = |output: PyObject| {
-            data.set_item(field, output).map_err(as_internal)?;
+            data.set_item(field, output).map_err(Into::<ValError>::into)?;
             if self.return_fields_set {
-                let fields_set = PySet::new(py, &[field]).map_err(as_internal)?;
+                let fields_set = PySet::new(py, &[field]).map_err(Into::<ValError>::into)?;
                 Ok((data, fields_set).to_object(py))
             } else {
                 Ok(data.to_object(py))
