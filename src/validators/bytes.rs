@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{EitherBytes, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -142,7 +142,7 @@ impl BytesConstrainedValidator {
         input: &'data impl Input<'data>,
         either_bytes: EitherBytes<'data>,
     ) -> ValResult<'data, PyObject> {
-        let len = either_bytes.len().map_err(as_internal)?;
+        let len = either_bytes.len().map_err(Into::<ValError>::into)?;
 
         if let Some(min_length) = self.min_length {
             if len < min_length {

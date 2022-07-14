@@ -8,7 +8,7 @@ use pyo3::types::{
 };
 use pyo3::{intern, AsPyPointer};
 
-use crate::errors::{as_internal, py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
@@ -72,7 +72,7 @@ impl<'a> Input<'a> for PyAny {
             // be returned as a string
             Err(ValError::new(ErrorKind::StrType, self))
         } else if let Ok(int) = self.cast_as::<PyInt>() {
-            let int = i64::extract(int).map_err(as_internal)?;
+            let int = i64::extract(int).map_err(Into::<ValError>::into)?;
             Ok(int.to_string().into())
         } else if let Ok(float) = f64::extract(self) {
             // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble
@@ -154,7 +154,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn strict_model_check(&self, class: &PyType) -> ValResult<bool> {
-        self.get_type().eq(class).map_err(as_internal)
+        self.get_type().eq(class).map_err(Into::<ValError>::into)
     }
 
     fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
@@ -364,7 +364,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_datetime(self, float)
         } else if let Ok(date) = self.cast_as::<PyDate>() {
-            date_as_datetime(date).map_err(as_internal)
+            date_as_datetime(date).map_err(Into::<ValError>::into)
         } else {
             Err(ValError::new(ErrorKind::DateTimeType, self))
         }

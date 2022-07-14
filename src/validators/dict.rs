@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input, JsonObject};
 use crate::recursion_guard::RecursionGuard;
 
@@ -143,7 +143,7 @@ macro_rules! build_validate {
                     Err(err) => return Err(err),
                 };
                 if let (Some(key), Some(value)) = (output_key, output_value) {
-                    output.set_item(key, value).map_err(as_internal)?;
+                    output.set_item(key, value).map_err(Into::<ValError>::into)?;
                 }
             }
 

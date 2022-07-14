@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 use speedate::Duration;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{EitherTimedelta, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::SchemaError;
@@ -114,7 +114,7 @@ impl TimeDeltaValidator {
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
         }
-        timedelta.try_into_py(py).map_err(as_internal)
+        timedelta.try_into_py(py).map_err(Into::<ValError>::into)
     }
 }
 

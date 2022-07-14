@@ -4,7 +4,7 @@ use pyo3::types::{PyDict, PyList};
 use ahash::AHashSet;
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -297,7 +297,7 @@ impl Validator for LiteralGeneralValidator {
         let py_value = input.to_object(py);
 
         let expected_py = self.expected_py.as_ref(py);
-        if !expected_py.is_empty() && expected_py.contains(&py_value).map_err(as_internal)? {
+        if !expected_py.is_empty() && expected_py.contains(&py_value).map_err(Into::<ValError>::into)? {
             return Ok(py_value);
         }
 

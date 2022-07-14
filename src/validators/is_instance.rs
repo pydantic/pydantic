@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
 
 use crate::build_tools::SchemaDict;
-use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -44,7 +44,10 @@ impl Validator for IsInstanceValidator {
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        match input.is_instance(self.class.as_ref(py)).map_err(as_internal)? {
+        match input
+            .is_instance(self.class.as_ref(py))
+            .map_err(Into::<ValError>::into)?
+        {
             true => Ok(input.to_object(py)),
             false => Err(ValError::new(
                 ErrorKind::IsInstanceOf {
