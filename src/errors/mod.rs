@@ -6,7 +6,7 @@ mod location;
 mod validation_exception;
 
 pub use self::kinds::ErrorKind;
-pub use self::line_error::{as_internal, pretty_line_errors, InputValue, ValError, ValLineError, ValResult};
+pub use self::line_error::{pretty_line_errors, InputValue, ValError, ValLineError, ValResult};
 pub use self::location::LocItem;
 pub use self::validation_exception::ValidationError;
 

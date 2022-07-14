@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 use speedate::DateTime;
 
 use crate::build_tools::{is_strict, SchemaDict, SchemaError};
-use crate::errors::{as_internal, py_err_string, ErrorKind, ValError, ValResult};
+use crate::errors::{py_err_string, ErrorKind, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -121,7 +121,7 @@ impl DateTimeValidator {
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
         }
-        datetime.try_into_py(py).map_err(as_internal)
+        datetime.try_into_py(py).map_err(Into::<ValError>::into)
     }
 }
 

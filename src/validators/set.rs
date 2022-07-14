@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{as_internal, ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{GenericSequence, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -83,6 +83,6 @@ impl SetValidator {
         }
 
         let output = list.validate_to_vec(py, length, &self.item_validator, extra, slots, recursion_guard)?;
-        Ok(PySet::new(py, &output).map_err(as_internal)?.into_py(py))
+        Ok(PySet::new(py, &output).map_err(Into::<ValError>::into)?.into_py(py))
     }
 }
