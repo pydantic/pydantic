@@ -148,14 +148,14 @@ def test_union_set_list(input_value, expected):
                 errors=[
                     {
                         'kind': 'int_type',
-                        'loc': ['set[strict-int]', 1],
+                        'loc': ['set[int]', 1],
                         'message': 'Value must be a valid integer',
                         'input_value': 'a',
                     },
                     # second because validation on the string choice comes second
                     {
                         'kind': 'str_type',
-                        'loc': ['set[strict-str]', 0],
+                        'loc': ['set[str]', 0],
                         'message': 'Value must be a valid string',
                         'input_value': 1,
                     },

@@ -6,7 +6,7 @@ import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -159,7 +159,7 @@ def test_union_int(py_and_json: PyAndJson):
         v.validate_test('5')
 
     assert exc_info.value.errors() == [
-        {'kind': 'int_type', 'loc': ['strict-int'], 'message': 'Value must be a valid integer', 'input_value': '5'},
+        {'kind': 'int_type', 'loc': ['int'], 'message': 'Value must be a valid integer', 'input_value': '5'},
         {
             'kind': 'multiple_of',
             'loc': ['constrained-int'],
@@ -188,11 +188,11 @@ def test_union_int_simple(py_and_json: PyAndJson):
 
 def test_int_repr():
     v = SchemaValidator({'type': 'int'})
-    assert repr(v) == 'SchemaValidator(name="int", validator=Int(\n    IntValidator,\n))'
+    assert plain_repr(v) == 'SchemaValidator(name="int",validator=Int(IntValidator{strict:false}))'
     v = SchemaValidator({'type': 'int', 'strict': True})
-    assert repr(v) == 'SchemaValidator(name="strict-int", validator=StrictInt(\n    StrictIntValidator,\n))'
+    assert plain_repr(v) == 'SchemaValidator(name="int",validator=Int(IntValidator{strict:true}))'
     v = SchemaValidator({'type': 'int', 'multiple_of': 7})
-    assert repr(v).startswith('SchemaValidator(name="constrained-int", validator=ConstrainedInt(\n')
+    assert plain_repr(v).startswith('SchemaValidator(name="constrained-int",validator=ConstrainedInt(')
 
 
 def test_long_int(py_and_json: PyAndJson):
@@ -226,3 +226,10 @@ def test_int_nan(py_and_json: PyAndJson):
 
     with pytest.raises(ValidationError, match='Value must be a valid integer, got NaN'):
         v.validate_test('nan')
+
+
+def test_int_key(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'dict', 'keys_schema': 'int', 'values_schema': 'int'})
+    assert v.validate_test({'1': 1, '2': 2}) == {1: 1, 2: 2}
+    with pytest.raises(ValidationError, match='Value must be a valid integer'):
+        v.validate_test({'1': 1, '2': 2}, strict=True)

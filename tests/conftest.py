@@ -2,6 +2,7 @@ import functools
 import importlib.util
 import json
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, Type
@@ -12,12 +13,19 @@ from typing_extensions import Literal
 
 from pydantic_core import SchemaValidator
 
-__all__ = ('Err', 'PyAndJson')
+__all__ = 'Err', 'PyAndJson', 'plain_repr'
 
 hyp_max_examples = os.getenv('HYPOTHESIS_MAX_EXAMPLES')
 if hyp_max_examples:
     settings.register_profile('custom', max_examples=int(hyp_max_examples))
     settings.load_profile('custom')
+
+
+def plain_repr(obj):
+    r = repr(obj)
+    r = re.sub(r',$', '', r, flags=re.M)
+    r = re.sub(r'\s+', '', r)
+    return r
 
 
 @dataclass
@@ -37,20 +45,20 @@ class PyAndJsonValidator:
         self.validator = SchemaValidator(schema)
         self.validator_type = validator_type
 
-    def validate_python(self, py_input):
-        return self.validator.validate_python(py_input)
+    def validate_python(self, py_input, strict: Optional[bool] = None):
+        return self.validator.validate_python(py_input, strict)
 
-    def validate_test(self, py_input):
+    def validate_test(self, py_input, strict: Optional[bool] = None):
         if self.validator_type == 'json':
-            return self.validator.validate_json(json.dumps(py_input))
+            return self.validator.validate_json(json.dumps(py_input), strict)
         elif self.validator_type == 'python':
-            return self.validator.validate_python(py_input)
+            return self.validator.validate_python(py_input, strict)
 
-    def isinstance_test(self, py_input):
+    def isinstance_test(self, py_input, strict: Optional[bool] = None):
         if self.validator_type == 'json':
-            return self.validator.isinstance_json(json.dumps(py_input))
+            return self.validator.isinstance_json(json.dumps(py_input), strict)
         elif self.validator_type == 'python':
-            return self.validator.isinstance_python(py_input)
+            return self.validator.isinstance_python(py_input, strict)
 
 
 PyAndJson = Type[PyAndJsonValidator]

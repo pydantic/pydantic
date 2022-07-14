@@ -213,6 +213,7 @@ impl Validator for FunctionWrapValidator {
             slots: slots.to_vec(),
             data: extra.data.map(|d| d.into_py(py)),
             field: extra.field.map(|f| f.to_string()),
+            strict: extra.strict,
             recursion_guard: recursion_guard.clone(),
         };
         let kwargs = kwargs!(
@@ -242,6 +243,7 @@ struct ValidatorCallable {
     slots: Vec<CombinedValidator>,
     data: Option<Py<PyDict>>,
     field: Option<String>,
+    strict: Option<bool>,
     recursion_guard: RecursionGuard,
 }
 
@@ -251,6 +253,7 @@ impl ValidatorCallable {
         let extra = Extra {
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             field: self.field.as_deref(),
+            strict: self.strict,
         };
         self.validator
             .validate(py, arg, &extra, &self.slots, &mut self.recursion_guard)

@@ -4,7 +4,7 @@ use speedate::DateTime;
 
 use crate::build_tools::{is_strict, SchemaDict, SchemaError};
 use crate::errors::{py_err_string, ErrorKind, ValError, ValResult};
-use crate::input::{EitherDateTime, Input};
+use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -57,40 +57,11 @@ impl Validator for DateTimeValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let date = match self.strict {
-            true => input.strict_datetime()?,
-            false => input.lax_datetime()?,
-        };
-        self.validation_comparison(py, input, date)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self.validation_comparison(py, input, input.strict_datetime()?)
-    }
-
-    fn get_name(&self) -> &str {
-        Self::EXPECTED_TYPE
-    }
-}
-
-impl DateTimeValidator {
-    fn validation_comparison<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        datetime: EitherDateTime,
-    ) -> ValResult<'data, PyObject> {
+        let datetime = input.validate_datetime(extra.strict.unwrap_or(self.strict))?;
         if let Some(constraints) = &self.constraints {
             // if we get an error from as_speedate, it's probably because the input datetime was invalid
             // specifically had an invalid tzinfo, hence here we return a validation error
@@ -123,6 +94,10 @@ impl DateTimeValidator {
         }
         datetime.try_into_py(py).map_err(Into::<ValError>::into)
     }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
+    }
 }
 
 fn py_datetime_as_datetime(schema: &PyDict, field: &str) -> PyResult<Option<DateTime>> {
@@ -130,7 +105,7 @@ fn py_datetime_as_datetime(schema: &PyDict, field: &str) -> PyResult<Option<Date
         Some(obj) => {
             let prefix = format!(r#"Invalid "{}" constraint for datetime"#, field);
             let date = obj
-                .lax_datetime()
+                .validate_datetime(false)
                 .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
             Ok(Some(date.as_raw()?))
         }

@@ -33,18 +33,7 @@ impl Validator for RecursiveContainerValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        guard_validate(self.validator_id, py, false, input, extra, slots, recursion_guard)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        guard_validate(self.validator_id, py, true, input, extra, slots, recursion_guard)
+        guard_validate(self.validator_id, py, input, extra, slots, recursion_guard)
     }
 
     fn get_name(&self) -> &str {
@@ -89,18 +78,7 @@ impl Validator for RecursiveRefValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        guard_validate(self.validator_id, py, false, input, extra, slots, recursion_guard)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        guard_validate(self.validator_id, py, true, input, extra, slots, recursion_guard)
+        guard_validate(self.validator_id, py, input, extra, slots, recursion_guard)
     }
 
     fn get_name(&self) -> &str {
@@ -118,16 +96,15 @@ impl Validator for RecursiveRefValidator {
 // see #143 this is a backup in case the identity check recursion guard fails
 // if a single validator "depth" (how many times it's called inside itself) exceeds the limit,
 // we raise a recursion error.
-#[cfg(not(PyPy))]
-const BACKUP_GUARD_LIMIT: u16 = 255;
-
-#[cfg(PyPy)]
-const BACKUP_GUARD_LIMIT: u16 = 123;
+const BACKUP_GUARD_LIMIT: u16 = if cfg!(PyPy) || cfg!(target_family = "wasm") {
+    123
+} else {
+    255
+};
 
 fn guard_validate<'s, 'data>(
     validator_id: usize,
     py: Python<'data>,
-    strict: bool,
     input: &'data impl Input<'data>,
     extra: &Extra,
     slots: &'data [CombinedValidator],
@@ -141,29 +118,24 @@ fn guard_validate<'s, 'data>(
             if recursion_guard.incr_depth() > BACKUP_GUARD_LIMIT {
                 return Err(ValError::new(ErrorKind::RecursionLoop, input));
             }
-            let output = validate(validator_id, py, strict, input, extra, slots, recursion_guard);
+            let output = validate(validator_id, py, input, extra, slots, recursion_guard);
             recursion_guard.remove(&id);
             recursion_guard.decr_depth();
             output
         }
     } else {
-        validate(validator_id, py, strict, input, extra, slots, recursion_guard)
+        validate(validator_id, py, input, extra, slots, recursion_guard)
     }
 }
 
 fn validate<'s, 'data>(
     validator_id: usize,
     py: Python<'data>,
-    strict: bool,
     input: &'data impl Input<'data>,
     extra: &Extra,
     slots: &'data [CombinedValidator],
     recursion_guard: &'s mut RecursionGuard,
 ) -> ValResult<'data, PyObject> {
     let validator = unsafe { slots.get_unchecked(validator_id) };
-    if strict {
-        validator.validate_strict(py, input, extra, slots, recursion_guard)
-    } else {
-        validator.validate(py, input, extra, slots, recursion_guard)
-    }
+    validator.validate(py, input, extra, slots, recursion_guard)
 }
