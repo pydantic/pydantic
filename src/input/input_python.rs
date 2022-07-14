@@ -44,6 +44,18 @@ impl<'a> Input<'a> for PyAny {
         self.is_none()
     }
 
+    fn is_type(&self, class: &PyType) -> ValResult<bool> {
+        self.get_type().eq(class).map_err(Into::<ValError>::into)
+    }
+
+    fn is_instance(&self, class: &PyType) -> PyResult<bool> {
+        self.is_instance(class)
+    }
+
+    fn callable(&self) -> bool {
+        self.is_callable()
+    }
+
     fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             Ok(py_str.into())
@@ -79,6 +91,27 @@ impl<'a> Input<'a> for PyAny {
             Ok(float.to_string().into())
         } else {
             Err(ValError::new(ErrorKind::StrType, self))
+        }
+    }
+
+    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+        if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
+            Ok(py_bytes.into())
+        } else {
+            Err(ValError::new(ErrorKind::BytesType, self))
+        }
+    }
+
+    fn lax_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+        if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
+            Ok(py_bytes.into())
+        } else if let Ok(py_str) = self.cast_as::<PyString>() {
+            let string = py_str.to_string_lossy().to_string();
+            Ok(string.into_bytes().into())
+        } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
+            Ok(py_byte_array.to_vec().into())
+        } else {
+            Err(ValError::new(ErrorKind::BytesType, self))
         }
     }
 
@@ -153,10 +186,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_model_check(&self, class: &PyType) -> ValResult<bool> {
-        self.get_type().eq(class).map_err(Into::<ValError>::into)
-    }
-
     fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
@@ -175,12 +204,16 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn typed_dict<'data>(&'data self, from_attributes: bool, from_mapping: bool) -> ValResult<GenericMapping<'data>> {
+    fn validate_typed_dict<'data>(
+        &'data self,
+        strict: bool,
+        from_attributes: bool,
+    ) -> ValResult<GenericMapping<'data>> {
         if from_attributes {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.cast_as::<PyDict>() {
                 return Ok(dict.into());
-            } else if from_mapping {
+            } else if !strict {
                 // we can't do this in one set of if/else because we need to check from_mapping before doing this
                 if let Some(generic_mapping) = mapping_as_dict(self) {
                     return generic_mapping;
@@ -193,12 +226,10 @@ impl<'a> Input<'a> for PyAny {
                 // note the error here gives a hint about from_attributes
                 Err(ValError::new(ErrorKind::DictAttributesType, self))
             }
-        } else if from_mapping {
+        } else {
             // otherwise we just call back to lax_dict if from_mapping is allowed, not there error in this
             // case (correctly) won't hint about from_attributes
-            self.lax_dict()
-        } else {
-            self.strict_dict()
+            self.validate_dict(strict)
         }
     }
 
@@ -221,6 +252,28 @@ impl<'a> Input<'a> for PyAny {
             Ok(frozen_set.into())
         } else {
             Err(ValError::new(ErrorKind::ListType, self))
+        }
+    }
+
+    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(tuple.into())
+        } else {
+            Err(ValError::new(ErrorKind::TupleType, self))
+        }
+    }
+
+    fn lax_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+        if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(tuple.into())
+        } else if let Ok(list) = self.cast_as::<PyList>() {
+            Ok(list.into())
+        } else if let Ok(set) = self.cast_as::<PySet>() {
+            Ok(set.into())
+        } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
+            Ok(frozen_set.into())
+        } else {
+            Err(ValError::new(ErrorKind::TupleType, self))
         }
     }
 
@@ -265,27 +318,6 @@ impl<'a> Input<'a> for PyAny {
             Ok(tuple.into())
         } else {
             Err(ValError::new(ErrorKind::FrozenSetType, self))
-        }
-    }
-
-    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
-        if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
-            Ok(py_bytes.into())
-        } else {
-            Err(ValError::new(ErrorKind::BytesType, self))
-        }
-    }
-
-    fn lax_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
-        if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
-            Ok(py_bytes.into())
-        } else if let Ok(py_str) = self.cast_as::<PyString>() {
-            let string = py_str.to_string_lossy().to_string();
-            Ok(string.into_bytes().into())
-        } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
-            Ok(py_byte_array.to_vec().into())
-        } else {
-            Err(ValError::new(ErrorKind::BytesType, self))
         }
     }
 
@@ -370,28 +402,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
-        if let Ok(tuple) = self.cast_as::<PyTuple>() {
-            Ok(tuple.into())
-        } else {
-            Err(ValError::new(ErrorKind::TupleType, self))
-        }
-    }
-
-    fn lax_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
-        if let Ok(tuple) = self.cast_as::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Ok(list) = self.cast_as::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(set) = self.cast_as::<PySet>() {
-            Ok(set.into())
-        } else if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
-            Ok(frozen_set.into())
-        } else {
-            Err(ValError::new(ErrorKind::TupleType, self))
-        }
-    }
-
     fn strict_timedelta(&self) -> ValResult<EitherTimedelta> {
         if let Ok(dt) = self.cast_as::<PyDelta>() {
             Ok(dt.into())
@@ -414,14 +424,6 @@ impl<'a> Input<'a> for PyAny {
         } else {
             Err(ValError::new(ErrorKind::TimeDeltaType, self))
         }
-    }
-
-    fn is_instance(&self, class: &PyType) -> PyResult<bool> {
-        self.is_instance(class)
-    }
-
-    fn callable(&self) -> bool {
-        self.is_callable()
     }
 }
 

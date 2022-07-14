@@ -9,7 +9,9 @@ use crate::recursion_guard::RecursionGuard;
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct FloatValidator;
+pub struct FloatValidator {
+    strict: bool,
+}
 
 impl BuildValidator for FloatValidator {
     const EXPECTED_TYPE: &'static str = "float";
@@ -26,10 +28,11 @@ impl BuildValidator for FloatValidator {
             || schema.get_item("gt").is_some();
         if use_constrained {
             ConstrainedFloatValidator::build(schema, config)
-        } else if is_strict(schema, config)? {
-            StrictFloatValidator::build()
         } else {
-            Ok(Self.into())
+            Ok(Self {
+                strict: is_strict(schema, config)?,
+            }
+            .into())
         }
     }
 }
@@ -39,52 +42,15 @@ impl Validator for FloatValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.lax_float()?.into_py(py))
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_float()?.into_py(py))
+        Ok(input.validate_float(extra.strict.unwrap_or(self.strict))?.into_py(py))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct StrictFloatValidator;
-
-impl StrictFloatValidator {
-    pub fn build() -> PyResult<CombinedValidator> {
-        Ok(Self.into())
-    }
-}
-
-impl Validator for StrictFloatValidator {
-    fn validate<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        Ok(input.strict_float()?.into_py(py))
-    }
-
-    fn get_name(&self) -> &str {
-        "strict-float"
     }
 }
 
@@ -103,52 +69,11 @@ impl Validator for ConstrainedFloatValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let float = match self.strict {
-            true => input.strict_float()?,
-            false => input.lax_float()?,
-        };
-        self._validation_logic(py, input, float)
-    }
-
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _slots: &'data [CombinedValidator],
-        _recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        self._validation_logic(py, input, input.strict_float()?)
-    }
-
-    fn get_name(&self) -> &str {
-        "constrained-float"
-    }
-}
-
-impl ConstrainedFloatValidator {
-    pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
-        Ok(Self {
-            strict: is_strict(schema, config)?,
-            multiple_of: schema.get_as("multiple_of")?,
-            le: schema.get_as("le")?,
-            lt: schema.get_as("lt")?,
-            ge: schema.get_as("ge")?,
-            gt: schema.get_as("gt")?,
-        }
-        .into())
-    }
-
-    fn _validation_logic<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        float: f64,
-    ) -> ValResult<'data, PyObject> {
+        let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
                 return Err(ValError::new(ErrorKind::FloatMultipleOf { multiple_of }, input));
@@ -175,5 +100,22 @@ impl ConstrainedFloatValidator {
             }
         }
         Ok(float.into_py(py))
+    }
+    fn get_name(&self) -> &str {
+        "constrained-float"
+    }
+}
+
+impl ConstrainedFloatValidator {
+    pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            multiple_of: schema.get_as("multiple_of")?,
+            le: schema.get_as("le")?,
+            lt: schema.get_as("lt")?,
+            ge: schema.get_as("ge")?,
+            gt: schema.get_as("gt")?,
+        }
+        .into())
     }
 }

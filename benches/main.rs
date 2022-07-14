@@ -24,11 +24,11 @@ fn ints_json(bench: &mut Bencher) {
     let py = gil.python();
     let validator = build_schema_validator(py, "{'type': 'int'}");
 
-    let result = validator.validate_json(py, json(py, "123")).unwrap();
+    let result = validator.validate_json(py, json(py, "123"), None).unwrap();
     let result_int: i64 = result.extract(py).unwrap();
     assert_eq!(result_int, 123);
 
-    bench.iter(|| black_box(validator.validate_json(py, json(py, "123")).unwrap()))
+    bench.iter(|| black_box(validator.validate_json(py, json(py, "123"), None).unwrap()))
 }
 
 #[bench]
@@ -39,12 +39,12 @@ fn ints_python(bench: &mut Bencher) {
 
     let input = 123_i64.into_py(py);
     let input = input.as_ref(py);
-    let result = validator.validate_python(py, input).unwrap();
+    let result = validator.validate_python(py, input, None).unwrap();
     let result_int: i64 = result.extract(py).unwrap();
     assert_eq!(result_int, 123);
 
     let input = black_box(input);
-    bench.iter(|| black_box(validator.validate_python(py, input).unwrap()))
+    bench.iter(|| black_box(validator.validate_python(py, input, None).unwrap()))
 }
 
 #[bench]
@@ -57,7 +57,7 @@ fn list_int_json(bench: &mut Bencher) {
         (0..100).map(|x| x.to_string()).collect::<Vec<String>>().join(",")
     );
 
-    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code), None).unwrap()))
 }
 
 fn list_int_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
@@ -78,7 +78,7 @@ fn list_int_python(bench: &mut Bencher) {
     let (validator, input) = list_int_input(py);
     let input = black_box(input.as_ref(py));
     bench.iter(|| {
-        let v = validator.validate_python(py, input).unwrap();
+        let v = validator.validate_python(py, input, None).unwrap();
         black_box(v)
     })
 }
@@ -89,11 +89,11 @@ fn list_int_python_isinstance(bench: &mut Bencher) {
     let py = gil.python();
     let (validator, input) = list_int_input(py);
     let input = black_box(input.as_ref(py));
-    let v = validator.isinstance_python(py, input).unwrap();
+    let v = validator.isinstance_python(py, input, None).unwrap();
     assert_eq!(v, true);
 
     bench.iter(|| {
-        let v = validator.isinstance_python(py, input).unwrap();
+        let v = validator.isinstance_python(py, input, None).unwrap();
         black_box(v)
     })
 }
@@ -111,7 +111,7 @@ fn list_error_json(bench: &mut Bencher) {
             .join(", ")
     );
 
-    match validator.validate_json(py, json(py, &code)) {
+    match validator.validate_json(py, json(py, &code), None) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
@@ -122,7 +122,7 @@ fn list_error_json(bench: &mut Bencher) {
         }
     };
 
-    bench.iter(|| match validator.validate_json(py, json(py, &code)) {
+    bench.iter(|| match validator.validate_json(py, json(py, &code), None) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => black_box(e),
     })
@@ -140,7 +140,7 @@ fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
 
     let input = py.eval(&code, None, None).unwrap();
 
-    match validator.validate_python(py, input) {
+    match validator.validate_python(py, input, None) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
@@ -161,7 +161,7 @@ fn list_error_python(bench: &mut Bencher) {
 
     let input = black_box(input.as_ref(py));
     bench.iter(|| {
-        let result = validator.validate_python(py, input);
+        let result = validator.validate_python(py, input, None);
 
         match result {
             Ok(_) => panic!("unexpectedly valid"),
@@ -175,12 +175,14 @@ fn list_error_python_isinstance(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
     let (validator, input) = list_error_python_input(py);
-    let r = validator.isinstance_python(py, black_box(input.as_ref(py))).unwrap();
+    let r = validator
+        .isinstance_python(py, black_box(input.as_ref(py)), None)
+        .unwrap();
     assert_eq!(r, false);
 
     let input = black_box(input.as_ref(py));
     bench.iter(|| {
-        black_box(validator.isinstance_python(py, input).unwrap());
+        black_box(validator.isinstance_python(py, input, None).unwrap());
     })
 }
 
@@ -194,7 +196,7 @@ fn list_any_json(bench: &mut Bencher) {
         (0..100).map(|x| x.to_string()).collect::<Vec<String>>().join(",")
     );
 
-    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code), None).unwrap()))
 }
 
 #[bench]
@@ -209,7 +211,7 @@ fn list_any_python(bench: &mut Bencher) {
     let input = py.eval(&code, None, None).unwrap();
     let input = black_box(input);
     bench.iter(|| {
-        let v = validator.validate_python(py, input).unwrap();
+        let v = validator.validate_python(py, input, None).unwrap();
         black_box(v)
     })
 }
@@ -236,7 +238,7 @@ fn dict_json(bench: &mut Bencher) {
             .join(", ")
     );
 
-    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code), None).unwrap()))
 }
 
 #[bench]
@@ -255,7 +257,7 @@ fn dict_python(bench: &mut Bencher) {
     let input = py.eval(&code, None, None).unwrap();
     let input = black_box(input);
     bench.iter(|| {
-        let v = validator.validate_python(py, input).unwrap();
+        let v = validator.validate_python(py, input, None).unwrap();
         black_box(v)
     })
 }
@@ -286,7 +288,7 @@ fn dict_value_error(bench: &mut Bencher) {
 
     let input = py.eval(&code, None, None).unwrap();
 
-    match validator.validate_python(py, input) {
+    match validator.validate_python(py, input, None) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
@@ -299,7 +301,7 @@ fn dict_value_error(bench: &mut Bencher) {
 
     let input = black_box(input);
     bench.iter(|| {
-        let result = validator.validate_python(py, input);
+        let result = validator.validate_python(py, input, None);
 
         match result {
             Ok(_) => panic!("unexpectedly valid"),
@@ -334,7 +336,7 @@ fn typed_dict_json(bench: &mut Bencher) {
 
     let code = r#"{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8, "i": 9, "j": 0}"#.to_string();
 
-    bench.iter(|| black_box(validator.validate_json(py, json(py, &code)).unwrap()))
+    bench.iter(|| black_box(validator.validate_json(py, json(py, &code), None).unwrap()))
 }
 
 #[bench]
@@ -365,7 +367,7 @@ fn typed_dict_python(bench: &mut Bencher) {
     let input = py.eval(&code, None, None).unwrap();
     let input = black_box(input);
     bench.iter(|| {
-        let v = validator.validate_python(py, input).unwrap();
+        let v = validator.validate_python(py, input, None).unwrap();
         black_box(v)
     })
 }
@@ -403,7 +405,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
     let input = py.eval(&code, None, None).unwrap();
     let input = black_box(input);
 
-    match validator.validate_python(py, input) {
+    match validator.validate_python(py, input, None) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
@@ -415,7 +417,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
     };
 
     bench.iter(|| {
-        let result = validator.validate_python(py, input);
+        let result = validator.validate_python(py, input, None);
 
         match result {
             Ok(_) => panic!("unexpectedly valid"),
@@ -440,6 +442,6 @@ fn complete_model(bench: &mut Bencher) {
     let input = black_box(input);
 
     bench.iter(|| {
-        black_box(validator.validate_python(py, input).unwrap());
+        black_box(validator.validate_python(py, input, None).unwrap());
     })
 }

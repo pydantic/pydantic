@@ -1,16 +1,9 @@
-import re
-
 import pytest
 from dirty_equals import HasAttributes, IsInstance
 
 from pydantic_core import SchemaValidator, ValidationError
 
-
-def plain_repr(obj):
-    r = repr(obj)
-    r = re.sub(r',$', '', r, flags=re.M)
-    r = re.sub(r'\s+', '', r)
-    return r
+from .conftest import plain_repr
 
 
 def test_on_field():

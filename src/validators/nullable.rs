@@ -44,20 +44,6 @@ impl Validator for NullableValidator {
         }
     }
 
-    fn validate_strict<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        match input.is_none() {
-            true => Ok(py.None()),
-            false => self.validator.validate_strict(py, input, extra, slots, recursion_guard),
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
     }

@@ -144,14 +144,14 @@ def test_union_frozenset_list(input_value, expected):
                 errors=[
                     {
                         'kind': 'int_type',
-                        'loc': ['frozenset[strict-int]', 1],
+                        'loc': ['frozenset[int]', 1],
                         'message': 'Value must be a valid integer',
                         'input_value': 'a',
                     },
                     # second because validation on the string choice comes second
                     {
                         'kind': 'str_type',
-                        'loc': ['frozenset[strict-str]', 0],
+                        'loc': ['frozenset[str]', 0],
                         'message': 'Value must be a valid string',
                         'input_value': 1,
                     },

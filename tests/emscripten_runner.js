@@ -78,7 +78,7 @@ function setupStreams(FS, TTY) {
 async function main() {
   const root_dir = path.resolve(__dirname, '..');
   const wheel_path = await find_wheel(path.join(root_dir, 'dist'));
-  let errcode = 0;
+  let errcode = 1;
   try {
     const pyodide = await loadPyodide();
     const FS = pyodide.FS;
@@ -94,7 +94,7 @@ import importlib
 
 # ugly hack to get tests to work on arm64 (my m1 mac)
 # see https://github.com/pyodide/pyodide/issues/2840
-# import sys; sys.setrecursionlimit(200)
+import sys; sys.setrecursionlimit(200)
 
 await micropip.install([
     'dirty-equals',
