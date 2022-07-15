@@ -4,9 +4,10 @@ from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import __dataclass_transform__, create_model, validate_model
+from .main import create_model, validate_model
 from .typing import resolve_annotations
 from .utils import ClassAttribute
+from typing_extensions import dataclass_transform
 
 if TYPE_CHECKING:
     from .config import BaseConfig
@@ -206,7 +207,7 @@ def _process_class(
     return cls
 
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 @overload
 def dataclass(
     *,
@@ -221,7 +222,7 @@ def dataclass(
     ...
 
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 @overload
 def dataclass(
     _cls: Type[Any],
@@ -237,7 +238,7 @@ def dataclass(
     ...
 
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[Any]] = None,
     *,
