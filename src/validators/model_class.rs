@@ -81,7 +81,7 @@ impl Validator for ModelClassValidator {
             ))
         } else {
             let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-            self.create_class(py, output).map_err(Into::<ValError>::into)
+            Ok(self.create_class(py, output)?)
         }
     }
 

@@ -135,7 +135,7 @@ macro_rules! build_validate {
                     Err(err) => return Err(err),
                 };
                 if let (Some(key), Some(value)) = (output_key, output_value) {
-                    output.set_item(key, value).map_err(Into::<ValError>::into)?;
+                    output.set_item(key, value)?;
                 }
             }
 
