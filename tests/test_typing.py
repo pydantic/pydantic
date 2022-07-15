@@ -15,6 +15,15 @@ def test_schema_typing() -> None:
     # this gets run by pyright, but we also check that it executes
     schema: Schema = {'type': 'union', 'choices': ['int', {'type': 'int', 'ge': 1}, {'type': 'float', 'lt': 1.0}]}
     SchemaValidator(schema)
+    schema: Schema = {
+        'type': 'tagged-union',
+        'tag_key': 'kind',
+        'choices': {
+            'apple': {'type': 'typed-dict', 'fields': {'pips': {'schema': {'type': 'int'}}}},
+            'banana': {'type': 'typed-dict', 'fields': {'curvature': {'schema': {'type': 'float'}}}},
+        },
+    }
+    SchemaValidator(schema)
     schema: Schema = {'type': 'int', 'ge': 1}
     SchemaValidator(schema)
     schema: Schema = {'type': 'float', 'lt': 1.0}
@@ -54,7 +63,7 @@ def test_schema_typing() -> None:
         'fields': {
             'a': {'schema': {'type': 'str'}},
             'b': {'schema': {'type': 'str'}, 'alias': 'foobar'},
-            'c': {'schema': {'type': 'str'}, 'aliases': [['foobar', 0, 'bar'], ['foo']]},
+            'c': {'schema': {'type': 'str'}, 'alias': [['foobar', 0, 'bar'], ['foo']]},
             'd': {'schema': {'type': 'str'}, 'default': 'spam'},
         },
     }
