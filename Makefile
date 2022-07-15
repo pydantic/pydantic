@@ -49,6 +49,12 @@ build-cov-windows:
 	@rm -f target/debug/lib_pydantic_core.rlib
 	mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
 
+.PHONY: build-wasm
+build-wasm:
+	@echo 'This requires python 3.10, maturin and emsdk to be installed'
+	maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.10
+	ls -lh dist
+
 .PHONY: format
 format:
 	$(isort)
@@ -103,7 +109,6 @@ testcov-windows: build-cov-windows test
 	coverage html -d htmlcov/python
 	./tests/rust_coverage_html.sh
 
-
 .PHONY: all
 all: format build-dev lint test
 
@@ -120,7 +125,6 @@ flame:
 	perf script --max-stack 20 | stackcollapse-perf.pl | flamegraph.pl > flame/json.svg
 	perf script --max-stack 20 | stackcollapse-perf.pl > flame/json.txt
 	@rm perf.data
-
 
 .PHONY: clean
 clean:

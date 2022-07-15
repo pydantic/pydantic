@@ -94,7 +94,7 @@ import importlib
 
 # ugly hack to get tests to work on arm64 (my m1 mac)
 # see https://github.com/pyodide/pyodide/issues/2840
-import sys; sys.setrecursionlimit(200)
+# import sys; sys.setrecursionlimit(200)
 
 await micropip.install([
     'dirty-equals',
