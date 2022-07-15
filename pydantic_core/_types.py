@@ -118,6 +118,7 @@ class TypedDictField(TypedDict, total=False):
     schema: Required[Schema]
     required: bool
     default: Any
+    default_factory: Callable[[], Any]
     alias: str
     aliases: List[List[Union[str, int]]]
 
