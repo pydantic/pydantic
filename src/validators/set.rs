@@ -47,7 +47,7 @@ impl Validator for SetValidator {
         }
 
         let output = seq.validate_to_vec(py, length, &self.item_validator, extra, slots, recursion_guard)?;
-        Ok(PySet::new(py, &output).map_err(Into::<ValError>::into)?.into_py(py))
+        Ok(PySet::new(py, &output)?.into_py(py))
     }
 
     fn get_name(&self) -> &str {

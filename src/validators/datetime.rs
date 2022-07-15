@@ -92,7 +92,7 @@ impl Validator for DateTimeValidator {
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
         }
-        datetime.try_into_py(py).map_err(Into::<ValError>::into)
+        Ok(datetime.try_into_py(py)?)
     }
 
     fn get_name(&self) -> &str {

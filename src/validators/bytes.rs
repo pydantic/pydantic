@@ -68,7 +68,7 @@ impl Validator for BytesConstrainedValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_bytes = input.validate_bytes(extra.strict.unwrap_or(self.strict))?;
-        let len = either_bytes.len().map_err(Into::<ValError>::into)?;
+        let len = either_bytes.len()?;
 
         if let Some(min_length) = self.min_length {
             if len < min_length {
