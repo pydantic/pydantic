@@ -1036,3 +1036,51 @@ def test_alias_extra_forbid(py_and_json: PyAndJson):
         }
     )
     assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
+
+
+def test_with_default_factory():
+    v = SchemaValidator(
+        {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'default_factory': lambda: 'pikachu'}}}
+    )
+
+    assert v.validate_python({}) == {'x': 'pikachu'}
+    assert v.validate_python({'x': 'bulbi'}) == {'x': 'bulbi'}
+
+
+def test_default_and_default_factory():
+    """`default` and `default_factory` should not be set together"""
+    with pytest.raises(SchemaError, match="'default' and 'default_factory' cannot be used together"):
+        SchemaValidator(
+            {
+                'type': 'typed-dict',
+                'fields': {
+                    'x': {'schema': {'type': 'str'}, 'default': 'pikachu', 'default_factory': lambda: 'pikachu'}
+                },
+            }
+        )
+
+
+def test_field_required_and_default_factory():
+    """A field cannot be required and have a default factory"""
+    with pytest.raises(SchemaError, match='Field "x": a required field cannot have a default value'):
+        SchemaValidator(
+            {
+                'type': 'typed-dict',
+                'fields': {'x': {'schema': {'type': 'str'}, 'required': True, 'default_factory': lambda: 'pika'}},
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    'default_factory,error_message',
+    [
+        (lambda: 1 + 'a', "unsupported operand type(s) for +: 'int' and 'str'"),
+        (lambda x: 'a' + x, "<lambda>() missing 1 required positional argument: 'x'"),
+    ],
+)
+def test_bad_default_factory(default_factory, error_message):
+    v = SchemaValidator(
+        {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'default_factory': default_factory}}}
+    )
+    with pytest.raises(TypeError, match=re.escape(error_message)):
+        v.validate_python({})
