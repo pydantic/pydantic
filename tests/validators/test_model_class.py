@@ -163,7 +163,7 @@ def test_model_class_instance_subclass():
                 'return_fields_set': True,
                 'fields': {'field_a': {'schema': {'type': 'str'}}},
             },
-            'config': {'typed_dict_from_attributes': True},
+            'config': {'from_attributes': True},
         }
     )
 
