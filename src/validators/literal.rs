@@ -297,7 +297,7 @@ impl Validator for LiteralGeneralValidator {
         let py_value = input.to_object(py);
 
         let expected_py = self.expected_py.as_ref(py);
-        if !expected_py.is_empty() && expected_py.contains(&py_value).map_err(Into::<ValError>::into)? {
+        if !expected_py.is_empty() && expected_py.contains(&py_value)? {
             return Ok(py_value);
         }
 

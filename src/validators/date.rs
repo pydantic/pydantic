@@ -73,7 +73,7 @@ impl Validator for DateValidator {
             }?,
         };
         if let Some(constraints) = &self.constraints {
-            let raw_date = date.as_raw().map_err(Into::<ValError>::into)?;
+            let raw_date = date.as_raw()?;
 
             macro_rules! check_constraint {
                 ($constraint:ident, $error:ident) => {
@@ -95,7 +95,7 @@ impl Validator for DateValidator {
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
         }
-        date.try_into_py(py).map_err(Into::<ValError>::into)
+        Ok(date.try_into_py(py)?)
     }
 
     fn get_name(&self) -> &str {
@@ -134,7 +134,7 @@ fn date_from_datetime<'data>(
             };
         }
     };
-    let dt = either_dt.as_raw().map_err(Into::<ValError>::into)?;
+    let dt = either_dt.as_raw()?;
     let zero_time = Time {
         hour: 0,
         minute: 0,
