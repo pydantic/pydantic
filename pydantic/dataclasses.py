@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Optional, Type, TypeVar, Union, overload
 
+from typing_extensions import dataclass_transform
+
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
@@ -7,7 +9,6 @@ from .fields import Field, FieldInfo, Required, Undefined
 from .main import create_model, validate_model
 from .typing import resolve_annotations
 from .utils import ClassAttribute
-from typing_extensions import dataclass_transform
 
 if TYPE_CHECKING:
     from .config import BaseConfig
