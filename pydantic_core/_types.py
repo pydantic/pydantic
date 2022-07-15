@@ -35,7 +35,8 @@ class Config(TypedDict, total=False):
     typed_dict_extra_behavior: Literal['allow', 'forbid', 'ignore']
     typed_dict_full: bool  # default: True
     typed_dict_populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
-    typed_dict_from_attributes: bool
+    # used on typed-dicts and tagged union keys
+    from_attributes: bool
     # fields related to string fields only
     str_max_length: int
     str_min_length: int
@@ -119,8 +120,7 @@ class TypedDictField(TypedDict, total=False):
     required: bool
     default: Any
     default_factory: Callable[[], Any]
-    alias: str
-    aliases: List[List[Union[str, int]]]
+    alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
 
 
 class TypedDictSchema(TypedDict, total=False):
@@ -189,6 +189,14 @@ class UnionSchema(TypedDict, total=False):
     choices: Required[List[Schema]]
     strict: bool
     ref: str
+
+
+class TaggedUnionSchema(TypedDict):
+    type: Literal['tagged-union']
+    choices: Dict[str, Schema]
+    tag_key: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
+    strict: NotRequired[bool]
+    ref: NotRequired[str]
 
 
 class BytesSchema(TypedDict, total=False):
@@ -312,6 +320,7 @@ Schema = Union[
     TupleFixLenSchema,
     TupleVarLenSchema,
     UnionSchema,
+    TaggedUnionSchema,
     DateSchema,
     TimeSchema,
     DatetimeSchema,

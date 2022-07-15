@@ -34,6 +34,19 @@ impl<'a> ValError<'a> {
     pub fn new_with_loc(kind: ErrorKind, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValError<'a> {
         Self::LineErrors(vec![ValLineError::new_with_loc(kind, input, loc)])
     }
+
+    /// helper function to call with_outer on line items if applicable
+    pub fn with_outer_location(self, loc_item: LocItem) -> Self {
+        match self {
+            Self::LineErrors(mut line_errors) => {
+                for line_error in line_errors.iter_mut() {
+                    line_error.location.with_outer(loc_item.clone());
+                }
+                Self::LineErrors(line_errors)
+            }
+            Self::InternalErr(err) => Self::InternalErr(err),
+        }
+    }
 }
 
 pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String {

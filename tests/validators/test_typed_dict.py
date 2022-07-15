@@ -488,7 +488,7 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     ids=repr,
 )
 def test_alias_path(py_and_json: PyAndJson, input_value, expected):
-    v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'aliases': [['foo', 'bar']], 'schema': 'int'}}})
+    v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'alias': ['foo', 'bar'], 'schema': 'int'}}})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
             v.validate_test(input_value)
@@ -518,7 +518,7 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
         {
             'type': 'typed-dict',
             'return_fields_set': True,
-            'fields': {'field_a': {'aliases': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
+            'fields': {'field_a': {'alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
         }
     )
     if isinstance(expected, Err):
@@ -532,7 +532,7 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
 
 def test_aliases_debug():
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'field_a': {'aliases': [['foo', 'bar', 'bat'], ['foo', 3]], 'schema': 'int'}}}
+        {'type': 'typed-dict', 'fields': {'field_a': {'alias': [['foo', 'bar', 'bat'], ['foo', 3]], 'schema': 'int'}}}
     )
     assert repr(v).startswith('SchemaValidator(name="typed-dict", validator=Model(')
     assert 'PathChoices(' in repr(v)
@@ -540,7 +540,7 @@ def test_aliases_debug():
 
 def get_int_key():
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'field_a': {'aliases': [['foo', 3], ['spam']], 'schema': 'int'}}}
+        {'type': 'typed-dict', 'fields': {'field_a': {'alias': [['foo', 3], ['spam']], 'schema': 'int'}}}
     )
     assert v.validate_python({'foo': {3: 33}}) == ({'field_a': 33}, {'field_a'})
 
@@ -552,7 +552,7 @@ class GetItemThing:
 
 
 def get_custom_getitem():
-    v = SchemaValidator({'type': 'typed-dict', 'fields': {'field_a': {'aliases': [['foo']], 'schema': 'int'}}})
+    v = SchemaValidator({'type': 'typed-dict', 'fields': {'field_a': {'alias': ['foo'], 'schema': 'int'}}})
     assert v.validate_python(GetItemThing()) == ({'field_a': 321}, {'field_a'})
     assert v.validate_python({'bar': GetItemThing()}) == ({'field_a': 321}, {'field_a'})
 
@@ -562,7 +562,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
     v = py_and_json(
         {
             'type': 'typed-dict',
-            'fields': {'field_a': {'aliases': [['foo', 'bar'], ['foo']], 'schema': 'int'}},
+            'fields': {'field_a': {'alias': [['foo', 'bar'], ['foo']], 'schema': 'int'}},
             'populate_by_name': True,
         }
     )
@@ -572,13 +572,12 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 @pytest.mark.parametrize(
     'alias_schema,error',
     [
-        ({'alias': ['foo']}, "TypeError: 'list' object cannot be converted to 'PyString'"),
-        ({'alias': 'foo', 'aliases': []}, "'alias' and 'aliases' cannot be used together"),
-        ({'aliases': []}, 'Aliases must have at least one element'),
-        ({'aliases': [[]]}, 'Each alias path must have at least one element'),
-        ({'aliases': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
-        ({'aliases': [[[]]]}, 'TypeError: Alias path items must be with a string or int'),
-        ({'aliases': [[1, 'foo']]}, 'TypeError: The first item in an alias path must be a string'),
+        ({'alias': ['foo', ['bar']]}, 'TypeError: Alias path items must be with a string or int'),
+        ({'alias': []}, '"alias" must have at least one element'),
+        ({'alias': [[]]}, 'Each alias path must have at least one element'),
+        ({'alias': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
+        ({'alias': [[[]]]}, 'TypeError: Alias path items must be with a string or int'),
+        ({'alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path must be a string'),
     ],
     ids=repr,
 )
@@ -931,7 +930,7 @@ def test_from_attributes_path(input_value, expected):
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'fields': {'my_field': {'aliases': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
+            'fields': {'my_field': {'alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
             'from_attributes': True,
         }
     )
@@ -953,7 +952,7 @@ def test_from_attributes_path_error():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'fields': {'my_field': {'aliases': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
+            'fields': {'my_field': {'alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']], 'schema': 'int'}},
             'from_attributes': True,
         }
     )
@@ -976,7 +975,7 @@ def test_alias_extra(py_and_json: PyAndJson):
         {
             'type': 'typed-dict',
             'typed_dict_extra_behavior': 'allow',
-            'fields': {'field_a': {'aliases': [['FieldA'], ['foo', 2]], 'schema': 'int'}},
+            'fields': {'field_a': {'alias': [['FieldA'], ['foo', 2]], 'schema': 'int'}},
         }
     )
     assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
@@ -1002,7 +1001,7 @@ def test_alias_extra_from_attributes():
             'type': 'typed-dict',
             'typed_dict_extra_behavior': 'allow',
             'from_attributes': True,
-            'fields': {'field_a': {'aliases': [['FieldA'], ['foo', 2]], 'schema': 'int'}},
+            'fields': {'field_a': {'alias': [['FieldA'], ['foo', 2]], 'schema': 'int'}},
         }
     )
     assert v.validate_python({'FieldA': 1}) == {'field_a': 1}

@@ -205,6 +205,10 @@ pub enum ErrorKind {
     IsInstanceOf { class: String },
     #[strum(message = "Input must be callable")]
     CallableType,
+    // ---------------------
+    // union errors
+    #[strum(message = "Input key \"{key}\" must match one of the allowed tags {tags}")]
+    UnionTagNotFound { key: String, tags: String },
 }
 
 macro_rules! render {
@@ -283,6 +287,7 @@ impl ErrorKind {
             Self::DateTimeObjectInvalid { error } => render!(template, error),
             Self::TimeDeltaParsing { error } => render!(template, error),
             Self::IsInstanceOf { class } => render!(template, class),
+            Self::UnionTagNotFound { key, tags } => render!(template, key, tags),
             _ => template.to_string(),
         }
     }
@@ -330,6 +335,7 @@ impl ErrorKind {
             Self::DateTimeObjectInvalid { error } => py_dict!(py, error),
             Self::TimeDeltaParsing { error } => py_dict!(py, error),
             Self::IsInstanceOf { class } => py_dict!(py, class),
+            Self::UnionTagNotFound { key, tags } => py_dict!(py, key, tags),
             _ => Ok(None),
         }
     }

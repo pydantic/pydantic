@@ -250,7 +250,7 @@ def test_recursion_branch():
                 },
             },
         },
-        {'typed_dict_from_attributes': True},
+        {'from_attributes': True},
     )
     assert v.validate_python({'name': 'root'}) == {'name': 'root', 'branch': None}
     assert v.validate_python({'name': 'root', 'branch': {'name': 'b1', 'branch': None}}) == {
