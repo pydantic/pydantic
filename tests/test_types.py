@@ -117,7 +117,7 @@ def test_constrained_bytes_too_long():
     'to_upper, value, result',
     [
         (True, b'abcd', b'ABCD'),
-        (True, b'aBcD', b'aBcD'),
+        (False, b'aBcD', b'aBcD'),
     ],
 )
 def test_constrained_bytes_upper(to_upper, value, result):
@@ -126,6 +126,8 @@ def test_constrained_bytes_upper(to_upper, value, result):
 
     m = Model(v=value)
     assert m.v == result
+
+
 def test_constrained_bytes_lower_enabled():
     class Model(BaseModel):
         v: conbytes(to_lower=True)
