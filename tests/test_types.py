@@ -113,22 +113,19 @@ def test_constrained_bytes_too_long():
     ]
 
 
-def test_constrained_bytes_upper_enabled():
+@pytest.mark.parametrize(
+    'to_upper, value, result',
+    [
+        (True, b'abcd', b'ABCD'),
+        (True, b'aBcD', b'aBcD'),
+    ],
+)
+def test_constrained_bytes_upper(to_upper, value, result):
     class Model(BaseModel):
-        v: conbytes(to_upper=True)
+        v: conbytes(to_upper=to_upper)
 
-    m = Model(v=b'abcd')
-    assert m.v == b'ABCD'
-
-
-def test_constrained_bytes_upper_disabled():
-    class Model(BaseModel):
-        v: conbytes(to_upper=False)
-
-    m = Model(v=b'aBcD')
-    assert m.v == b'aBcD'
-
-
+    m = Model(v=value)
+    assert m.v == result
 def test_constrained_bytes_lower_enabled():
     class Model(BaseModel):
         v: conbytes(to_lower=True)
