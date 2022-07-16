@@ -434,7 +434,7 @@ def test_constrained_set_too_long():
         v: conset(int, max_items=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
-        ConSetModelMax(v=set(str(i) for i in range(11)))
+        ConSetModelMax(v={str(i) for i in range(11)})
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -1422,8 +1422,7 @@ def test_infinite_iterable_validate_first():
 
     def str_iterable():
         while True:
-            for c in 'foobarbaz':
-                yield c
+            yield from 'foobarbaz'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(it=str_iterable(), b=3)
@@ -1650,7 +1649,7 @@ def test_strict_bytes_subclass():
 
     b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
     assert isinstance(b.v, MyStrictBytes)
-    assert b.v == 'foobar'.encode()
+    assert b.v == b'foobar'
 
 
 def test_strict_str():

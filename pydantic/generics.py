@@ -181,7 +181,7 @@ class GenericModel(BaseModel):
         def build_base_model(
             base_model: Type[GenericModel], mapped_types: Parametrization
         ) -> Iterator[Type[GenericModel]]:
-            base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
+            base_parameters = tuple(mapped_types[param] for param in base_model.__parameters__)
             parameterized_base = base_model.__class_getitem__(base_parameters)
             if parameterized_base is base_model or parameterized_base is cls:
                 # Avoid duplication in MRO

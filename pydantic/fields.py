@@ -275,7 +275,7 @@ def Field(
       elements. The schema will have a ``minItems`` validation keyword
     :param max_items: only applies to lists, requires the field to have a maximum number of
       elements. The schema will have a ``maxItems`` validation keyword
-    :param max_items: only applies to lists, requires the field not to have duplicated
+    :param unique_items: only applies to lists, requires the field not to have duplicated
       elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
