@@ -42,7 +42,7 @@ assert user.id == 123
 assert user_x.id == 123
 assert isinstance(user_x.id, int)  # Note that 123.45 was casted to an int and its value is 123
 ```
-More details on the casting in the case of `user_x` can be found [here](#data-conversion).
+More details on the casting in the case of `user_x` can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type
 ```py
