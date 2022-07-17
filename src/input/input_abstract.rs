@@ -12,14 +12,14 @@ use super::{GenericMapping, GenericSequence};
 
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
-/// * `strict_*` & `lax_*` if they have different behaviour
-/// * or, `validate_*` and `strict_*` to just call `validate_*` if the behaviouri for strict and lax is the same
+/// * `strict_*` & `lax_*` if they have different behavior
+/// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
 pub trait Input<'a>: fmt::Debug + ToPyObject {
-    fn as_loc_item(&'a self) -> LocItem;
+    fn as_loc_item(&self) -> LocItem;
 
     fn as_error_value(&'a self) -> InputValue<'a>;
 
-    fn identity(&'a self) -> Option<usize> {
+    fn identity(&self) -> Option<usize> {
         None
     }
 
@@ -37,29 +37,29 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         false
     }
 
-    fn validate_str<'data>(&'data self, strict: bool) -> ValResult<EitherString<'data>> {
+    fn validate_str(&'a self, strict: bool) -> ValResult<EitherString<'a>> {
         if strict {
             self.strict_str()
         } else {
             self.lax_str()
         }
     }
-    fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>>;
+    fn strict_str(&'a self) -> ValResult<EitherString<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+    fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         self.strict_str()
     }
 
-    fn validate_bytes<'data>(&'data self, strict: bool) -> ValResult<EitherBytes<'data>> {
+    fn validate_bytes(&'a self, strict: bool) -> ValResult<EitherBytes<'a>> {
         if strict {
             self.strict_bytes()
         } else {
             self.lax_bytes()
         }
     }
-    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>>;
+    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+    fn lax_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         self.strict_bytes()
     }
 
@@ -102,76 +102,72 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_float()
     }
 
-    fn validate_dict<'data>(&'data self, strict: bool) -> ValResult<GenericMapping<'data>> {
+    fn validate_dict(&'a self, strict: bool) -> ValResult<GenericMapping<'a>> {
         if strict {
             self.strict_dict()
         } else {
             self.lax_dict()
         }
     }
-    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>>;
+    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
+    fn lax_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         self.strict_dict()
     }
 
-    fn validate_typed_dict<'data>(
-        &'data self,
-        strict: bool,
-        _from_attributes: bool,
-    ) -> ValResult<GenericMapping<'data>> {
+    fn validate_typed_dict(&'a self, strict: bool, _from_attributes: bool) -> ValResult<GenericMapping<'a>> {
         self.validate_dict(strict)
     }
 
-    fn validate_list<'data>(&'data self, strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_list(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
         if strict {
             self.strict_list()
         } else {
             self.lax_list()
         }
     }
-    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
+    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_list(&'a self) -> ValResult<GenericSequence<'a>> {
         self.strict_list()
     }
 
-    fn validate_tuple<'data>(&'data self, strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_tuple(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
         if strict {
             self.strict_tuple()
         } else {
             self.lax_tuple()
         }
     }
-    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
+    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
         self.strict_tuple()
     }
 
-    fn validate_set<'data>(&'data self, strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_set(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
         if strict {
             self.strict_set()
         } else {
             self.lax_set()
         }
     }
-    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
+    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_set(&'a self) -> ValResult<GenericSequence<'a>> {
         self.strict_set()
     }
 
-    fn validate_frozenset<'data>(&'data self, strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_frozenset(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
         if strict {
             self.strict_frozenset()
         } else {
             self.lax_frozenset()
         }
     }
-    fn strict_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>>;
+    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
         self.strict_frozenset()
     }
 
