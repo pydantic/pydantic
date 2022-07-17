@@ -17,7 +17,7 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: Schema = {
         'type': 'tagged-union',
-        'tag_key': 'kind',
+        'discriminator': 'kind',
         'choices': {
             'apple': {'type': 'typed-dict', 'fields': {'pips': {'schema': {'type': 'int'}}}},
             'banana': {'type': 'typed-dict', 'fields': {'curvature': {'schema': {'type': 'float'}}}},

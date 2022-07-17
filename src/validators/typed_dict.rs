@@ -93,9 +93,11 @@ impl BuildValidator for TypedDictValidator {
                     (default, default_factory) => (default, default_factory),
                 };
 
-            let alt_alias = if populate_by_name { Some(field_name) } else { None };
-            let lookup_key = match LookupKey::from_py(py, field_info, alt_alias, "alias")? {
-                Some(key) => key,
+            let lookup_key = match field_info.get_item("alias") {
+                Some(alias) => {
+                    let alt_alias = if populate_by_name { Some(field_name) } else { None };
+                    LookupKey::from_py(py, alias, alt_alias)?
+                }
                 None => LookupKey::from_string(py, field_name),
             };
             fields.push(TypedDictField {

@@ -1,12 +1,12 @@
+use std::borrow::Cow;
 use std::fmt::Write;
 
-use pyo3::exceptions::PyKeyError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{is_strict, py_error, schema_or_config, SchemaDict};
+use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
@@ -116,13 +116,37 @@ impl Validator for UnionValidator {
 }
 
 #[derive(Debug, Clone)]
+enum Discriminator {
+    LookupKey(LookupKey),
+    Function(PyObject),
+}
+
+impl Discriminator {
+    fn new(py: Python, raw: &PyAny) -> PyResult<Self> {
+        if raw.is_callable() {
+            Ok(Self::Function(raw.to_object(py)))
+        } else {
+            let lookup_key = LookupKey::from_py(py, raw, None)?;
+            Ok(Self::LookupKey(lookup_key))
+        }
+    }
+
+    fn to_string_py(&self, py: Python) -> PyResult<String> {
+        match self {
+            Self::Function(f) => Ok(format!("{}()", f.getattr(py, "__name__")?)),
+            Self::LookupKey(lookup_key) => Ok(lookup_key.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct TaggedUnionValidator {
     choices: AHashMap<String, CombinedValidator>,
-    lookup_key: LookupKey,
+    discriminator: Discriminator,
     from_attributes: bool,
     strict: bool,
     tags_repr: String,
-    key_repr: String,
+    discriminator_repr: String,
     name: String,
 }
 
@@ -135,10 +159,8 @@ impl BuildValidator for TaggedUnionValidator {
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let lookup_key = match LookupKey::from_py(py, schema, None, "tag_key")? {
-            Some(lookup_key) => lookup_key,
-            None => return py_error!(PyKeyError; "'tag_key' or 'tag_keys' must be set on a tagged union"),
-        };
+        let discriminator = Discriminator::new(py, schema.get_as_req("discriminator")?)?;
+        let discriminator_repr = discriminator.to_string_py(py)?;
 
         let mut choices = AHashMap::new();
         let mut first = true;
@@ -151,10 +173,10 @@ impl BuildValidator for TaggedUnionValidator {
             let validator = build_validator(value, config, build_context)?.0;
             if first {
                 first = false;
-                write!(tags_repr, r#""{}""#, tag).unwrap();
+                write!(tags_repr, "'{}'", tag).unwrap();
                 descr.push_str(validator.get_name());
             } else {
-                write!(tags_repr, r#", "{}""#, tag).unwrap();
+                write!(tags_repr, ", '{}'", tag).unwrap();
                 // no spaces in get_name() output to make loc easy to read
                 write!(descr, ",{}", validator.get_name()).unwrap();
             }
@@ -162,15 +184,14 @@ impl BuildValidator for TaggedUnionValidator {
         }
 
         let from_attributes = schema_or_config(schema, config, "from_attributes", "from_attributes")?.unwrap_or(false);
-        let key_repr = lookup_key.to_string();
 
         Ok(Self {
             choices,
-            lookup_key,
+            discriminator,
             from_attributes,
             strict: is_strict(schema, config)?,
             tags_repr,
-            key_repr,
+            discriminator_repr,
             name: format!("{}[{}]", Self::EXPECTED_TYPE, descr),
         }
         .into())
@@ -186,44 +207,41 @@ impl Validator for TaggedUnionValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let dict = input.validate_typed_dict(self.strict, self.from_attributes)?;
-
-        macro_rules! find_validator {
-            ($dict:ident, $get_method:ident) => {{
-                match self.lookup_key.$get_method($dict)? {
-                    Some((_, value)) => {
-                        let tag = if self.strict {
-                            value.strict_str()?
-                        } else {
-                            value.lax_str()?
-                        };
-                        self.choices.get_key_value(tag.as_cow().as_ref())
-                    }
-                    None => None,
+        match self.discriminator {
+            Discriminator::LookupKey(ref lookup_key) => {
+                macro_rules! find_validator {
+                    ($dict:ident, $get_method:ident) => {{
+                        // note all these methods return PyResult<Option<(data, data)>>, the outer Err is just for
+                        // errors when getting attributes which should be "raised"
+                        match lookup_key.$get_method($dict)? {
+                            Some((_, value)) => {
+                                if self.strict {
+                                    value.strict_str()
+                                } else {
+                                    value.lax_str()
+                                }
+                            }
+                            None => Err(self.tag_not_found(input)),
+                        }
+                    }};
                 }
-            }};
-        }
-
-        // note all these methods return PyResult<Option<(data, data)>>, the outer Err is just for
-        // errors when getting attributes which should be "raised"
-        let tag_validator: Option<(&String, &CombinedValidator)> = match dict {
-            GenericMapping::PyDict(d) => find_validator!(d, py_get_item),
-            GenericMapping::PyGetAttr(d) => find_validator!(d, py_get_attr),
-            GenericMapping::JsonObject(d) => find_validator!(d, json_get),
-        };
-        if let Some((tag, validator)) = tag_validator {
-            match validator.validate(py, input, extra, slots, recursion_guard) {
-                Ok(res) => Ok(res),
-                Err(err) => Err(err.with_outer_location(tag.as_str().into())),
+                let dict = input.validate_typed_dict(self.strict, self.from_attributes)?;
+                let tag = match dict {
+                    GenericMapping::PyDict(dict) => find_validator!(dict, py_get_item),
+                    GenericMapping::PyGetAttr(obj) => find_validator!(obj, py_get_attr),
+                    GenericMapping::JsonObject(mapping) => find_validator!(mapping, json_get),
+                }?;
+                self.find_call_validator(py, tag.as_cow(), input, extra, slots, recursion_guard)
             }
-        } else {
-            Err(ValError::new(
-                ErrorKind::UnionTagNotFound {
-                    key: self.key_repr.clone(),
-                    tags: self.tags_repr.clone(),
-                },
-                input,
-            ))
+            Discriminator::Function(ref func) => {
+                let result = func.call1(py, (input.to_object(py),))?;
+                if result.is_none(py) {
+                    Err(self.tag_not_found(input))
+                } else {
+                    let result_str: &PyString = result.cast_as(py)?;
+                    self.find_call_validator(py, result_str.to_string_lossy(), input, extra, slots, recursion_guard)
+                }
+            }
         }
     }
 
@@ -235,5 +253,42 @@ impl Validator for TaggedUnionValidator {
         self.choices
             .iter_mut()
             .try_for_each(|(_, validator)| validator.complete(build_context))
+    }
+}
+
+impl TaggedUnionValidator {
+    fn find_call_validator<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        tag: Cow<str>,
+        input: &'data impl Input<'data>,
+        extra: &Extra,
+        slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        if let Some(validator) = self.choices.get(tag.as_ref()) {
+            match validator.validate(py, input, extra, slots, recursion_guard) {
+                Ok(res) => Ok(res),
+                Err(err) => Err(err.with_outer_location(tag.as_ref().into())),
+            }
+        } else {
+            Err(ValError::new(
+                ErrorKind::UnionTagInvalid {
+                    discriminator: self.discriminator_repr.clone(),
+                    tag: tag.to_string(),
+                    expected_tags: self.tags_repr.clone(),
+                },
+                input,
+            ))
+        }
+    }
+
+    fn tag_not_found<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValError<'data> {
+        ValError::new(
+            ErrorKind::UnionTagNotFound {
+                discriminator: self.discriminator_repr.clone(),
+            },
+            input,
+        )
     }
 }
