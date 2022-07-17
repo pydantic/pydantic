@@ -19,7 +19,7 @@ use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::{repr_string, EitherBytes, EitherString, EitherTimedelta, GenericMapping, GenericSequence, Input};
 
 impl<'a> Input<'a> for PyAny {
-    fn as_loc_item(&'a self) -> LocItem {
+    fn as_loc_item(&self) -> LocItem {
         if let Ok(key_str) = self.extract::<String>() {
             key_str.into()
         } else if let Ok(key_int) = self.extract::<usize>() {
@@ -36,7 +36,7 @@ impl<'a> Input<'a> for PyAny {
         InputValue::PyAny(self)
     }
 
-    fn identity(&'a self) -> Option<usize> {
+    fn identity(&self) -> Option<usize> {
         Some(self.as_ptr() as usize)
     }
 
@@ -56,7 +56,7 @@ impl<'a> Input<'a> for PyAny {
         self.is_callable()
     }
 
-    fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             Ok(py_str.into())
         } else {
@@ -64,7 +64,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+    fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             Ok(py_str.into())
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
@@ -94,7 +94,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             Ok(py_bytes.into())
         } else {
@@ -102,7 +102,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+    fn lax_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             Ok(py_bytes.into())
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
@@ -186,7 +186,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
+    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
         } else {
@@ -194,7 +194,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
+    fn lax_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
         } else if let Some(generic_mapping) = mapping_as_dict(self) {
@@ -204,11 +204,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn validate_typed_dict<'data>(
-        &'data self,
-        strict: bool,
-        from_attributes: bool,
-    ) -> ValResult<GenericMapping<'data>> {
+    fn validate_typed_dict(&'a self, strict: bool, from_attributes: bool) -> ValResult<GenericMapping<'a>> {
         if from_attributes {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.cast_as::<PyDict>() {
@@ -233,7 +229,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else {
@@ -241,7 +237,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_list(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
@@ -255,7 +251,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else {
@@ -263,7 +259,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -277,7 +273,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else {
@@ -285,7 +281,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_set(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -299,7 +295,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(set) = self.cast_as::<PyFrozenSet>() {
             Ok(set.into())
         } else {
@@ -307,7 +303,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
         if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else if let Ok(set) = self.cast_as::<PySet>() {
