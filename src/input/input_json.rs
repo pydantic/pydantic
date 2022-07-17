@@ -10,7 +10,7 @@ use super::{EitherBytes, EitherString, EitherTimedelta, GenericMapping, GenericS
 impl<'a> Input<'a> for JsonInput {
     /// This is required by since JSON object keys are always strings, I don't think it can be called
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn as_loc_item(&'a self) -> LocItem {
+    fn as_loc_item(&self) -> LocItem {
         match self {
             JsonInput::Int(i) => LocItem::I(*i as usize),
             JsonInput::String(s) => s.as_str().into(),
@@ -26,13 +26,13 @@ impl<'a> Input<'a> for JsonInput {
         matches!(self, JsonInput::Null)
     }
 
-    fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
             _ => Err(ValError::new(ErrorKind::StrType, self)),
         }
     }
-    fn lax_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+    fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
             JsonInput::Int(int) => Ok(int.to_string().into()),
@@ -41,14 +41,14 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn validate_bytes<'data>(&'data self, _strict: bool) -> ValResult<EitherBytes<'data>> {
+    fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_bytes().into()),
             _ => Err(ValError::new(ErrorKind::BytesType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         self.validate_bytes(false)
     }
 
@@ -113,29 +113,29 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn validate_dict<'data>(&'data self, _strict: bool) -> ValResult<GenericMapping<'data>> {
+    fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
         match self {
             JsonInput::Object(dict) => Ok(dict.into()),
             _ => Err(ValError::new(ErrorKind::DictType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
+    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         self.validate_dict(false)
     }
 
-    fn validate_list<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         match self {
             JsonInput::Array(a) => Ok(a.into()),
             _ => Err(ValError::new(ErrorKind::ListType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_list(false)
     }
 
-    fn validate_tuple<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         // just as in set's case, List has to be allowed
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -143,11 +143,11 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_tuple(false)
     }
 
-    fn validate_set<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -155,11 +155,11 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_set(false)
     }
 
-    fn validate_frozenset<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -167,7 +167,7 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_frozenset(false)
     }
 
@@ -232,7 +232,7 @@ impl<'a> Input<'a> for JsonInput {
 
 /// Required for Dict keys so the string can behave like an Input
 impl<'a> Input<'a> for String {
-    fn as_loc_item(&'a self) -> LocItem {
+    fn as_loc_item(&self) -> LocItem {
         self.to_string().into()
     }
 
@@ -245,18 +245,18 @@ impl<'a> Input<'a> for String {
         false
     }
 
-    fn validate_str<'data>(&'data self, _strict: bool) -> ValResult<EitherString<'data>> {
+    fn validate_str(&'a self, _strict: bool) -> ValResult<EitherString<'a>> {
         Ok(self.as_str().into())
     }
-    fn strict_str<'data>(&'data self) -> ValResult<EitherString<'data>> {
+    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         self.validate_str(false)
     }
 
-    fn validate_bytes<'data>(&'data self, _strict: bool) -> ValResult<EitherBytes<'data>> {
+    fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         Ok(self.as_bytes().into())
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_bytes<'data>(&'data self) -> ValResult<EitherBytes<'data>> {
+    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         self.validate_bytes(false)
     }
 
@@ -289,47 +289,47 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_dict<'data>(&'data self, _strict: bool) -> ValResult<GenericMapping<'data>> {
+    fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
         Err(ValError::new(ErrorKind::DictType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_dict<'data>(&'data self) -> ValResult<GenericMapping<'data>> {
+    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         self.validate_dict(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_list<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         Err(ValError::new(ErrorKind::ListType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_list(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_tuple<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         Err(ValError::new(ErrorKind::TupleType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_tuple(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_set<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         Err(ValError::new(ErrorKind::SetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_set(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_frozenset<'data>(&'data self, _strict: bool) -> ValResult<GenericSequence<'data>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
         Err(ValError::new(ErrorKind::FrozenSetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset<'data>(&'data self) -> ValResult<GenericSequence<'data>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
         self.validate_frozenset(false)
     }
 
