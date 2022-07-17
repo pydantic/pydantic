@@ -573,7 +573,7 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
     'alias_schema,error',
     [
         ({'alias': ['foo', ['bar']]}, 'TypeError: Alias path items must be with a string or int'),
-        ({'alias': []}, '"alias" must have at least one element'),
+        ({'alias': []}, 'Lookup paths must have at least one element'),
         ({'alias': [[]]}, 'Each alias path must have at least one element'),
         ({'alias': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
         ({'alias': [[[]]]}, 'TypeError: Alias path items must be with a string or int'),

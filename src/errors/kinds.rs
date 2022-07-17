@@ -207,8 +207,16 @@ pub enum ErrorKind {
     CallableType,
     // ---------------------
     // union errors
-    #[strum(message = "Input key \"{key}\" must match one of the allowed tags {tags}")]
-    UnionTagNotFound { key: String, tags: String },
+    #[strum(
+        message = "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}"
+    )]
+    UnionTagInvalid {
+        discriminator: String,
+        tag: String,
+        expected_tags: String,
+    },
+    #[strum(message = "Unable to extract tag using discriminator {discriminator}")]
+    UnionTagNotFound { discriminator: String },
 }
 
 macro_rules! render {
@@ -287,7 +295,12 @@ impl ErrorKind {
             Self::DateTimeObjectInvalid { error } => render!(template, error),
             Self::TimeDeltaParsing { error } => render!(template, error),
             Self::IsInstanceOf { class } => render!(template, class),
-            Self::UnionTagNotFound { key, tags } => render!(template, key, tags),
+            Self::UnionTagInvalid {
+                discriminator,
+                tag,
+                expected_tags,
+            } => render!(template, discriminator, tag, expected_tags),
+            Self::UnionTagNotFound { discriminator } => render!(template, discriminator),
             _ => template.to_string(),
         }
     }
@@ -335,7 +348,12 @@ impl ErrorKind {
             Self::DateTimeObjectInvalid { error } => py_dict!(py, error),
             Self::TimeDeltaParsing { error } => py_dict!(py, error),
             Self::IsInstanceOf { class } => py_dict!(py, class),
-            Self::UnionTagNotFound { key, tags } => py_dict!(py, key, tags),
+            Self::UnionTagInvalid {
+                discriminator,
+                tag,
+                expected_tags,
+            } => py_dict!(py, discriminator, tag, expected_tags),
+            Self::UnionTagNotFound { discriminator } => py_dict!(py, discriminator),
             _ => Ok(None),
         }
     }

@@ -1,4 +1,6 @@
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
+use pyo3::PyDowncastError;
 
 use crate::input::{Input, JsonInput};
 
@@ -17,6 +19,12 @@ pub enum ValError<'a> {
 impl<'a> From<PyErr> for ValError<'a> {
     fn from(py_err: PyErr) -> Self {
         Self::InternalErr(py_err)
+    }
+}
+
+impl<'a> From<PyDowncastError<'_>> for ValError<'a> {
+    fn from(py_downcast: PyDowncastError) -> Self {
+        Self::InternalErr(PyTypeError::new_err(py_downcast.to_string()))
     }
 }
 
