@@ -25,8 +25,8 @@ pub enum LookupKey {
 impl fmt::Display for LookupKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Simple(key, _) => write!(f, "{}", key),
-            Self::Choice(key1, key2, _, _) => write!(f, "{} | {}", key1, key2),
+            Self::Simple(key, _) => write!(f, "'{}'", key),
+            Self::Choice(key1, key2, _, _) => write!(f, "'{}' | '{}'", key1, key2),
             Self::PathChoices(paths) => write!(
                 f,
                 "{}",
@@ -43,42 +43,38 @@ macro_rules! py_string {
 }
 
 impl LookupKey {
-    pub fn from_py(py: Python, field: &PyDict, alt_alias: Option<&str>, name: &str) -> PyResult<Option<Self>> {
-        if let Some(value) = field.get_item(name) {
-            if let Ok(alias_py) = value.cast_as::<PyString>() {
-                let alias: String = alias_py.extract()?;
-                let alias_py: Py<PyString> = alias_py.into_py(py);
-                match alt_alias {
-                    Some(alt_alias) => Ok(Some(LookupKey::Choice(
-                        alias,
-                        alt_alias.to_string(),
-                        alias_py,
-                        py_string!(py, alt_alias),
-                    ))),
-                    None => Ok(Some(LookupKey::Simple(alias, alias_py))),
-                }
-            } else {
-                let list: &PyList = value.cast_as()?;
-                let first = match list.get_item(0) {
-                    Ok(v) => v,
-                    Err(_) => return py_error!("\"{}\" must have at least one element", name),
-                };
-                let mut locs: Vec<Path> = if first.cast_as::<PyString>().is_ok() {
-                    // list of strings rather than list of lists
-                    vec![Self::path_choice(py, list)?]
-                } else {
-                    list.iter()
-                        .map(|obj| Self::path_choice(py, obj))
-                        .collect::<PyResult<_>>()?
-                };
-
-                if let Some(alt_alias) = alt_alias {
-                    locs.push(vec![PathItem::S(alt_alias.to_string(), py_string!(py, alt_alias))])
-                }
-                Ok(Some(LookupKey::PathChoices(locs)))
+    pub fn from_py(py: Python, value: &PyAny, alt_alias: Option<&str>) -> PyResult<Self> {
+        if let Ok(alias_py) = value.cast_as::<PyString>() {
+            let alias: String = alias_py.extract()?;
+            let alias_py: Py<PyString> = alias_py.into_py(py);
+            match alt_alias {
+                Some(alt_alias) => Ok(LookupKey::Choice(
+                    alias,
+                    alt_alias.to_string(),
+                    alias_py,
+                    py_string!(py, alt_alias),
+                )),
+                None => Ok(LookupKey::Simple(alias, alias_py)),
             }
         } else {
-            Ok(None)
+            let list: &PyList = value.cast_as()?;
+            let first = match list.get_item(0) {
+                Ok(v) => v,
+                Err(_) => return py_error!("Lookup paths must have at least one element"),
+            };
+            let mut locs: Vec<Path> = if first.cast_as::<PyString>().is_ok() {
+                // list of strings rather than list of lists
+                vec![Self::path_choice(py, list)?]
+            } else {
+                list.iter()
+                    .map(|obj| Self::path_choice(py, obj))
+                    .collect::<PyResult<_>>()?
+            };
+
+            if let Some(alt_alias) = alt_alias {
+                locs.push(vec![PathItem::S(alt_alias.to_string(), py_string!(py, alt_alias))])
+            }
+            Ok(LookupKey::PathChoices(locs))
         }
     }
 
@@ -219,7 +215,7 @@ pub enum PathItem {
 impl fmt::Display for PathItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::S(key, _) => write!(f, "{}", key),
+            Self::S(key, _) => write!(f, "'{}'", key),
             Self::I(key) => write!(f, "{}", key),
         }
     }

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Dict, List, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Required
@@ -194,7 +194,7 @@ class UnionSchema(TypedDict, total=False):
 class TaggedUnionSchema(TypedDict):
     type: Literal['tagged-union']
     choices: Dict[str, Schema]
-    tag_key: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
+    discriminator: Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
     strict: NotRequired[bool]
     ref: NotRequired[str]
 
