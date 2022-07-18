@@ -8,7 +8,7 @@ from pydantic_core import SchemaValidator, ValidationError
     [('false', False), ('true', True), ('0', False), ('1', True), ('"yes"', True), ('"no"', False)],
 )
 def test_bool(input_value, output_value):
-    v = SchemaValidator({'type': 'bool', 'title': 'TestModel'})
+    v = SchemaValidator({'type': 'bool'})
     assert v.validate_json(input_value) == output_value
 
 

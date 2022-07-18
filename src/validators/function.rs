@@ -49,7 +49,7 @@ macro_rules! impl_build {
                 let name = format!("{}[{}]", $name, validator.get_name());
                 Ok(Self {
                     validator: Box::new(validator),
-                    func: get_function(schema)?,
+                    func: schema.get_as_req::<&PyAny>("function")?.into_py(schema.py()),
                     config: match config {
                         Some(c) => c.into(),
                         None => schema.py().None(),
@@ -158,7 +158,7 @@ impl FunctionPlainValidator {
             py_error!("Plain functions should not include a sub-schema")
         } else {
             Ok(Self {
-                func: get_function(schema)?,
+                func: schema.get_as_req::<&PyAny>("function")?.into_py(schema.py()),
                 config: match config {
                     Some(c) => c.into(),
                     None => schema.py().None(),
@@ -266,19 +266,6 @@ impl ValidatorCallable {
 
     fn __str__(&self) -> String {
         self.__repr__()
-    }
-}
-
-fn get_function(schema: &PyDict) -> PyResult<PyObject> {
-    match schema.get_item("function") {
-        Some(obj) => {
-            if obj.is_callable() {
-                Ok(obj.into())
-            } else {
-                py_error!("function must be callable")
-            }
-        }
-        None => py_error!(r#""function" key is required"#),
     }
 }
 

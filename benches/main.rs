@@ -228,7 +228,7 @@ fn as_str(i: u8) -> String {
 fn dict_json(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
-    let validator = build_schema_validator(py, "{'type': 'dict', 'keys': 'str', 'values': 'int'}");
+    let validator = build_schema_validator(py, "{'type': 'dict', 'keys_schema': 'str', 'values_schema': 'int'}");
 
     let code = format!(
         "{{{}}}",
@@ -245,7 +245,7 @@ fn dict_json(bench: &mut Bencher) {
 fn dict_python(bench: &mut Bencher) {
     let gil = Python::acquire_gil();
     let py = gil.python();
-    let validator = build_schema_validator(py, "{'type': 'dict', 'keys': 'str', 'values': 'int'}");
+    let validator = build_schema_validator(py, "{'type': 'dict', 'keys_schema': 'str', 'values_schema': 'int'}");
 
     let code = format!(
         "{{{}}}",
@@ -318,7 +318,7 @@ fn typed_dict_json(bench: &mut Bencher) {
         py,
         r#"{
           'type': 'typed-dict',
-          'extra': 'ignore',
+          'extra_behavior': 'ignore',
           'fields': {
             'a': {'schema': 'int'},
             'b': {'schema': 'int'},
@@ -347,7 +347,7 @@ fn typed_dict_python(bench: &mut Bencher) {
         py,
         r#"{
           'type': 'typed-dict',
-          'extra': 'ignore',
+          'extra_behavior': 'ignore',
           'fields': {
             'a': {'schema': 'int'},
             'b': {'schema': 'int'},
