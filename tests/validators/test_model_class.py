@@ -118,7 +118,7 @@ def test_not_return_fields_set():
     class MyModel:
         pass
 
-    with pytest.raises(SchemaError, match='model-class inner schema must have "return_fields_set" set to True'):
+    with pytest.raises(SchemaError, match="model-class inner schema must have 'return_fields_set' set to True"):
         SchemaValidator(
             {
                 'type': 'model-class',
@@ -212,6 +212,7 @@ def test_model_class_strict():
             },
         }
     )
+    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: false'
     m = MyModel()
     m2 = v.validate_python(m)
     assert isinstance(m, MyModel)
@@ -243,3 +244,87 @@ def test_internal_error():
     )
     with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
         v.validate_python({'f': 123})
+
+
+def test_revalidate():
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+
+        def __init__(self, a, b, fields_set):
+            self.field_a = a
+            self.field_b = b
+            self.__fields_set__ = fields_set
+
+    v = SchemaValidator(
+        {
+            'type': 'model-class',
+            'class_type': MyModel,
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'from_attributes': True,
+                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+            },
+            'config': {'revalidate_models': True},
+        }
+    )
+    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: true'
+
+    m = v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
+    assert m.__fields_set__ == {'field_a', 'field_b'}
+
+    m2 = MyModel('x', 42, {'field_a'})
+    m3 = v.validate_python(m2)
+    assert isinstance(m3, MyModel)
+    assert m3 is not m2
+    assert m3.__dict__ == {'field_a': 'x', 'field_b': 42}
+    assert m3.__fields_set__ == {'field_a'}
+
+    m4 = MyModel('x', 'not int', {'field_a'})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(m4)
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['field_b'],
+            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'input_value': 'not int',
+        }
+    ]
+
+
+def test_revalidate_extra():
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    v = SchemaValidator(
+        {
+            'type': 'model-class',
+            'class_type': MyModel,
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'from_attributes': True,
+                'extra_behavior': 'allow',
+                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+            },
+            'config': {'revalidate_models': True},
+        }
+    )
+
+    m = v.validate_python({'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)}
+    assert m.__fields_set__ == {'field_a', 'field_b', 'more'}
+
+    m2 = MyModel(field_a='x', field_b=42, another=42.5)
+    m3 = v.validate_python(m2)
+    assert isinstance(m3, MyModel)
+    assert m3 is not m2
+    assert m3.__dict__ == {'field_a': 'x', 'field_b': 42, 'another': 42.5}
+    assert m3.__fields_set__ == {'field_a', 'field_b', 'another'}

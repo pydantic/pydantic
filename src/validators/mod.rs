@@ -367,7 +367,7 @@ impl<'a> Extra<'a> {
 #[enum_dispatch]
 pub enum CombinedValidator {
     // typed dict e.g. heterogeneous dicts or simply a model
-    Model(typed_dict::TypedDictValidator),
+    TypedDict(typed_dict::TypedDictValidator),
     // unions
     Union(union::UnionValidator),
     TaggedUnion(union::TaggedUnionValidator),
