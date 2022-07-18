@@ -302,6 +302,13 @@ jobs:
       # generate self-schema now, so we don't have to do so inside docker in maturin build
       - run: python generate_self_schema.py
 
+      - name: build sdist
+        if: ${{ matrix.os == 'ubuntu' && matrix.target == 'x86_64' && matrix.manylinux == 'auto' }}
+        uses: messense/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+
       - name: build wheels
         uses: messense/maturin-action@v1
         with:
