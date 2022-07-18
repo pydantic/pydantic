@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use enum_dispatch::enum_dispatch;
 
 use pyo3::exceptions::PyTypeError;
+use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyByteArray, PyBytes, PyDict, PyString};
@@ -180,7 +181,7 @@ impl SchemaValidator {
         let code = include_str!("../self_schema.py");
         let locals = PyDict::new(py);
         py.run(code, None, Some(locals))?;
-        let self_schema: &PyDict = locals.get_as_req("self_schema")?;
+        let self_schema: &PyDict = locals.get_as_req(intern!(py, "self_schema"))?;
 
         let mut build_context = BuildContext::default();
         let validator = match build_validator(self_schema, None, &mut build_context) {
@@ -229,7 +230,8 @@ fn build_single_validator<'a, T: BuildValidator>(
     config: Option<&'a PyDict>,
     build_context: &mut BuildContext,
 ) -> PyResult<(CombinedValidator, &'a PyDict)> {
-    let val: CombinedValidator = if let Some(schema_ref) = schema_dict.get_as::<String>("ref")? {
+    let py = schema_dict.py();
+    let val: CombinedValidator = if let Some(schema_ref) = schema_dict.get_as::<String>(intern!(py, "ref"))? {
         let slot_id = build_context.prepare_slot(schema_ref)?;
         let inner_val = T::build(schema_dict, config, build_context)
             .map_err(|err| SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", val_type, err)))?;
@@ -263,15 +265,16 @@ pub fn build_validator<'a>(
     config: Option<&'a PyDict>,
     build_context: &mut BuildContext,
 ) -> PyResult<(CombinedValidator, &'a PyDict)> {
+    let py = schema.py();
     let dict: &PyDict = match schema.cast_as() {
         Ok(s) => s,
         Err(_) => {
-            let dict = PyDict::new(schema.py());
+            let dict = PyDict::new(py);
             dict.set_item("type", schema)?;
             dict
         }
     };
-    let type_: &str = dict.get_as_req("type")?;
+    let type_: &str = dict.get_as_req(intern!(py, "type"))?;
     validator_match!(
         type_,
         dict,

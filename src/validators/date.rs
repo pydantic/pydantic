@@ -1,5 +1,6 @@
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDict};
+use pyo3::types::{PyDate, PyDict, PyString};
 use speedate::{Date, Time};
 
 use crate::build_tools::{is_strict, SchemaDict};
@@ -31,19 +32,20 @@ impl BuildValidator for DateValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let has_constraints = schema.get_item("le").is_some()
-            || schema.get_item("lt").is_some()
-            || schema.get_item("ge").is_some()
-            || schema.get_item("gt").is_some();
+        let py = schema.py();
+        let has_constraints = schema.get_item(intern!(py, "le")).is_some()
+            || schema.get_item(intern!(py, "lt")).is_some()
+            || schema.get_item(intern!(py, "ge")).is_some()
+            || schema.get_item(intern!(py, "gt")).is_some();
 
         Ok(Self {
             strict: is_strict(schema, config)?,
             constraints: match has_constraints {
                 true => Some(DateConstraints {
-                    le: convert_pydate(schema, "le")?,
-                    lt: convert_pydate(schema, "lt")?,
-                    ge: convert_pydate(schema, "ge")?,
-                    gt: convert_pydate(schema, "gt")?,
+                    le: convert_pydate(schema, intern!(py, "le"))?,
+                    lt: convert_pydate(schema, intern!(py, "lt"))?,
+                    ge: convert_pydate(schema, intern!(py, "ge"))?,
+                    gt: convert_pydate(schema, intern!(py, "gt"))?,
                 }),
                 false => None,
             },
@@ -148,7 +150,7 @@ fn date_from_datetime<'data>(
     }
 }
 
-fn convert_pydate(schema: &PyDict, field: &str) -> PyResult<Option<Date>> {
+fn convert_pydate(schema: &PyDict, field: &PyString) -> PyResult<Option<Date>> {
     match schema.get_as::<&PyDate>(field)? {
         Some(date) => Ok(Some(EitherDate::Py(date).as_raw()?)),
         None => Ok(None),

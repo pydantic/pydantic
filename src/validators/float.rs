@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -21,11 +22,12 @@ impl BuildValidator for FloatValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let use_constrained = schema.get_item("multiple_of").is_some()
-            || schema.get_item("le").is_some()
-            || schema.get_item("lt").is_some()
-            || schema.get_item("ge").is_some()
-            || schema.get_item("gt").is_some();
+        let py = schema.py();
+        let use_constrained = schema.get_item(intern!(py, "multiple_of")).is_some()
+            || schema.get_item(intern!(py, "le")).is_some()
+            || schema.get_item(intern!(py, "lt")).is_some()
+            || schema.get_item(intern!(py, "ge")).is_some()
+            || schema.get_item(intern!(py, "gt")).is_some();
         if use_constrained {
             ConstrainedFloatValidator::build(schema, config)
         } else {
@@ -108,13 +110,14 @@ impl Validator for ConstrainedFloatValidator {
 
 impl ConstrainedFloatValidator {
     pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+        let py = schema.py();
         Ok(Self {
             strict: is_strict(schema, config)?,
-            multiple_of: schema.get_as("multiple_of")?,
-            le: schema.get_as("le")?,
-            lt: schema.get_as("lt")?,
-            ge: schema.get_as("ge")?,
-            gt: schema.get_as("gt")?,
+            multiple_of: schema.get_as(intern!(py, "multiple_of"))?,
+            le: schema.get_as(intern!(py, "le"))?,
+            lt: schema.get_as(intern!(py, "lt"))?,
+            ge: schema.get_as(intern!(py, "ge"))?,
+            gt: schema.get_as(intern!(py, "gt"))?,
         }
         .into())
     }

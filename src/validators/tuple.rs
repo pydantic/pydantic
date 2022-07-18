@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
@@ -74,7 +75,7 @@ impl BuildValidator for TupleFixLenValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let items: &PyList = schema.get_as_req("items_schema")?;
+        let items: &PyList = schema.get_as_req(intern!(schema.py(), "items_schema"))?;
         if items.is_empty() {
             return py_error!("Missing schemas for tuple elements");
         }

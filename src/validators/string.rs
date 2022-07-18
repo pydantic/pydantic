@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
@@ -22,20 +23,21 @@ impl BuildValidator for StrValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let use_constrained = schema.get_item("pattern").is_some()
-            || schema.get_item("max_length").is_some()
-            || schema.get_item("min_length").is_some()
-            || schema.get_item("strip_whitespace").is_some()
-            || schema.get_item("to_lower").is_some()
-            || schema.get_item("to_upper").is_some()
+        let py = schema.py();
+        let use_constrained = schema.get_item(intern!(py, "pattern")).is_some()
+            || schema.get_item(intern!(py, "max_length")).is_some()
+            || schema.get_item(intern!(py, "min_length")).is_some()
+            || schema.get_item(intern!(py, "strip_whitespace")).is_some()
+            || schema.get_item(intern!(py, "to_lower")).is_some()
+            || schema.get_item(intern!(py, "to_upper")).is_some()
             || match config {
                 Some(config) => {
-                    config.get_item("str_pattern").is_some()
-                        || config.get_item("str_max_length").is_some()
-                        || config.get_item("str_min_length").is_some()
-                        || config.get_item("str_strip_whitespace").is_some()
-                        || config.get_item("str_to_lower").is_some()
-                        || config.get_item("str_to_upper").is_some()
+                    config.get_item(intern!(py, "str_pattern")).is_some()
+                        || config.get_item(intern!(py, "str_max_length")).is_some()
+                        || config.get_item(intern!(py, "str_min_length")).is_some()
+                        || config.get_item(intern!(py, "str_strip_whitespace")).is_some()
+                        || config.get_item(intern!(py, "str_to_lower")).is_some()
+                        || config.get_item(intern!(py, "str_to_upper")).is_some()
                 }
                 None => false,
             };
@@ -136,18 +138,29 @@ impl Validator for StrConstrainedValidator {
 
 impl StrConstrainedValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
-        let pattern_str: Option<&str> = schema_or_config(schema, config, "pattern", "str_pattern")?;
+        let py = schema.py();
+        let pattern_str: Option<&str> =
+            schema_or_config(schema, config, intern!(py, "pattern"), intern!(py, "str_pattern"))?;
         let pattern = match pattern_str {
             Some(s) => Some(build_regex(s)?),
             None => None,
         };
-        let min_length: Option<usize> = schema_or_config(schema, config, "min_length", "str_min_length")?;
-        let max_length: Option<usize> = schema_or_config(schema, config, "max_length", "str_max_length")?;
+        let min_length: Option<usize> =
+            schema_or_config(schema, config, intern!(py, "min_length"), intern!(py, "str_min_length"))?;
+        let max_length: Option<usize> =
+            schema_or_config(schema, config, intern!(py, "max_length"), intern!(py, "str_max_length"))?;
 
-        let strip_whitespace: bool =
-            schema_or_config(schema, config, "strip_whitespace", "str_strip_whitespace")?.unwrap_or(false);
-        let to_lower: bool = schema_or_config(schema, config, "to_lower", "str_to_lower")?.unwrap_or(false);
-        let to_upper: bool = schema_or_config(schema, config, "to_upper", "str_to_upper")?.unwrap_or(false);
+        let strip_whitespace: bool = schema_or_config(
+            schema,
+            config,
+            intern!(py, "strip_whitespace"),
+            intern!(py, "str_strip_whitespace"),
+        )?
+        .unwrap_or(false);
+        let to_lower: bool =
+            schema_or_config(schema, config, intern!(py, "to_lower"), intern!(py, "str_to_lower"))?.unwrap_or(false);
+        let to_upper: bool =
+            schema_or_config(schema, config, intern!(py, "to_upper"), intern!(py, "str_to_upper"))?.unwrap_or(false);
 
         Ok(Self {
             strict: is_strict(schema, config)?,

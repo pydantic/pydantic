@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
@@ -21,7 +22,7 @@ impl BuildValidator for LiteralBuilder {
         _config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let expected: &PyList = schema.get_as_req("expected")?;
+        let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
             return py_error!(r#""expected" must have length > 0"#);
         } else if expected.len() == 1 {
