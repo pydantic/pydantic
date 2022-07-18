@@ -134,9 +134,9 @@ def test_self_forward_ref_collection(create_module):
 
         class Foo(BaseModel):
             a: int = 123
-            b: "Foo" = None
-            c: "List[Foo]" = []
-            d: "Dict[str, Foo]" = {}
+            b: 'Foo' = None
+            c: 'List[Foo]' = []
+            d: 'Dict[str, Foo]' = {}
 
         Foo.update_forward_refs()
 
