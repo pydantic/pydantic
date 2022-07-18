@@ -170,7 +170,6 @@ impl BuildValidator for TaggedUnionValidator {
         let py = schema.py();
         let discriminator = Discriminator::new(py, schema.get_as_req("discriminator")?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
-        dbg!(&discriminator_repr);
 
         let mut choices = AHashMap::new();
         let mut first = true;
