@@ -1,8 +1,14 @@
+use std::path::Path;
 use std::process::Command;
 use std::str::from_utf8;
 
 fn generate_self_schema() {
-    let output = Command::new("python")
+    if Path::new("./src/self_schema.py").exists() && option_env!("DEBIAN_FRONTEND") == Some("noninteractive") {
+        // self_schema.py already exists and DEBIAN_FRONTEND indicates we're in a maturin build,
+        // skip running generate_self_schema.py
+        return;
+    }
+    let output = Command::new("python3")
         .arg("generate_self_schema.py")
         .output()
         .expect("failed to execute process");
