@@ -48,6 +48,10 @@ impl<'a> Input<'a> for PyAny {
         Ok(self.get_type().eq(class)?)
     }
 
+    fn get_attr(&self, name: &PyString) -> Option<&PyAny> {
+        self.getattr(name).ok()
+    }
+
     fn is_instance(&self, class: &PyType) -> PyResult<bool> {
         self.is_instance(class)
     }
