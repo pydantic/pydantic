@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -59,7 +60,7 @@ impl BuildValidator for RecursiveRefValidator {
         _config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let name: String = schema.get_as_req("schema_ref")?;
+        let name: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
         let validator_id = build_context.find_slot_id(&name)?;
         Ok(Self {
             validator_id,

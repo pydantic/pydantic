@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -21,7 +22,9 @@ impl BuildValidator for BytesValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let use_constrained = schema.get_item("max_length").is_some() || schema.get_item("min_length").is_some();
+        let py = schema.py();
+        let use_constrained = schema.get_item(intern!(py, "max_length")).is_some()
+            || schema.get_item(intern!(py, "min_length")).is_some();
         if use_constrained {
             BytesConstrainedValidator::build(schema, config)
         } else {
@@ -91,10 +94,11 @@ impl Validator for BytesConstrainedValidator {
 
 impl BytesConstrainedValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+        let py = schema.py();
         Ok(Self {
             strict: is_strict(schema, config)?,
-            min_length: schema.get_as("min_length")?,
-            max_length: schema.get_as("max_length")?,
+            min_length: schema.get_as(intern!(py, "min_length"))?,
+            max_length: schema.get_as(intern!(py, "max_length"))?,
         }
         .into())
     }

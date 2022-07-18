@@ -33,14 +33,15 @@ impl BuildValidator for ModelClassValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
         // models ignore the parent config and always use the config from this model
-        let config = build_config(schema.py(), schema, config)?;
+        let config = build_config(py, schema, config)?;
 
-        let class: &PyType = schema.get_as_req("class_type")?;
-        let sub_schema: &PyAny = schema.get_as_req("schema")?;
+        let class: &PyType = schema.get_as_req(intern!(py, "class_type"))?;
+        let sub_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
         let (comb_validator, td_schema) = build_validator(sub_schema, config, build_context)?;
 
-        if !td_schema.get_as("return_fields_set")?.unwrap_or(false) {
+        if !td_schema.get_as(intern!(py, "return_fields_set"))?.unwrap_or(false) {
             return py_error!("model-class inner schema must have 'return_fields_set' set to True");
         }
 
@@ -52,13 +53,13 @@ impl BuildValidator for ModelClassValidator {
         Ok(Self {
             // we don't use is_strict here since we don't want validation to be strict in this case if
             // `config.strict` is set, only if this specific field is strict
-            strict: schema.get_as("strict")?.unwrap_or(false),
-            revalidate: config.get_as("revalidate_models")?.unwrap_or(false),
+            strict: schema.get_as(intern!(py, "strict"))?.unwrap_or(false),
+            revalidate: config.get_as(intern!(py, "revalidate_models"))?.unwrap_or(false),
             validator,
             class: class.into(),
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
-            name: class.getattr(intern!(schema.py(), "__name__"))?.extract()?,
+            name: class.getattr(intern!(py, "__name__"))?.extract()?,
         }
         .into())
     }
@@ -161,28 +162,31 @@ fn build_config<'a>(
     schema: &'a PyDict,
     parent_config: Option<&'a PyDict>,
 ) -> PyResult<Option<&'a PyDict>> {
-    let child_config: Option<&PyDict> = schema.get_as("config")?;
+    let child_config: Option<&PyDict> = schema.get_as(intern!(py, "config"))?;
     match (parent_config, child_config) {
         (Some(parent), None) => Ok(Some(parent)),
         (None, Some(child)) => Ok(Some(child)),
         (None, None) => Ok(None),
         (Some(parent), Some(child)) => {
-            let parent_choose: i32 = parent.get_as("config_choose_priority")?.unwrap_or_default();
-            let child_choose: i32 = child.get_as("config_choose_priority")?.unwrap_or_default();
+            let key = intern!(py, "config_choose_priority");
+            let parent_choose: i32 = parent.get_as(key)?.unwrap_or_default();
+            let child_choose: i32 = child.get_as(key)?.unwrap_or_default();
             match parent_choose.cmp(&child_choose) {
                 Ordering::Greater => Ok(Some(parent)),
                 Ordering::Less => Ok(Some(child)),
                 Ordering::Equal => {
-                    let parent_merge: i32 = parent.get_as("config_merge_priority")?.unwrap_or_default();
-                    let child_merge: i32 = child.get_as("config_merge_priority")?.unwrap_or_default();
+                    let key = intern!(py, "config_merge_priority");
+                    let parent_merge: i32 = parent.get_as(key)?.unwrap_or_default();
+                    let child_merge: i32 = child.get_as(key)?.unwrap_or_default();
+                    let update = intern!(py, "update");
                     match parent_merge.cmp(&child_merge) {
                         Ordering::Greater => {
-                            child.getattr(intern!(py, "update"))?.call1((parent,))?;
+                            child.getattr(update)?.call1((parent,))?;
                             Ok(Some(child))
                         }
                         // otherwise child is the winner
                         _ => {
-                            parent.getattr(intern!(py, "update"))?.call1((child,))?;
+                            parent.getattr(update)?.call1((child,))?;
                             Ok(Some(parent))
                         }
                     }

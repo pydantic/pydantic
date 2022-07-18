@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -27,11 +28,12 @@ impl BuildValidator for DictValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let key_validator = match schema.get_item("keys_schema") {
+        let py = schema.py();
+        let key_validator = match schema.get_item(intern!(py, "keys_schema")) {
             Some(schema) => Box::new(build_validator(schema, config, build_context)?.0),
             None => Box::new(AnyValidator::build(schema, config, build_context)?),
         };
-        let value_validator = match schema.get_item("values_schema") {
+        let value_validator = match schema.get_item(intern!(py, "values_schema")) {
             Some(d) => Box::new(build_validator(d, config, build_context)?.0),
             None => Box::new(AnyValidator::build(schema, config, build_context)?),
         };
@@ -45,8 +47,8 @@ impl BuildValidator for DictValidator {
             strict: is_strict(schema, config)?,
             key_validator,
             value_validator,
-            min_items: schema.get_as("min_items")?,
-            max_items: schema.get_as("max_items")?,
+            min_items: schema.get_as(intern!(py, "min_items"))?,
+            max_items: schema.get_as(intern!(py, "max_items"))?,
             name,
         }
         .into())

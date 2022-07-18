@@ -3,23 +3,23 @@ use std::fmt;
 
 use pyo3::exceptions::{PyException, PyKeyError};
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
-use pyo3::{FromPyObject, PyErrArguments};
+use pyo3::types::{PyDict, PyString};
+use pyo3::{intern, FromPyObject, PyErrArguments};
 
 use crate::errors::{pretty_line_errors, ValError};
 
 pub trait SchemaDict<'py> {
-    fn get_as<T>(&'py self, key: &str) -> PyResult<Option<T>>
+    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>;
 
-    fn get_as_req<T>(&'py self, key: &str) -> PyResult<T>
+    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
     where
         T: FromPyObject<'py>;
 }
 
 impl<'py> SchemaDict<'py> for PyDict {
-    fn get_as<T>(&'py self, key: &str) -> PyResult<Option<T>>
+    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>,
     {
@@ -29,8 +29,7 @@ impl<'py> SchemaDict<'py> for PyDict {
         }
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
-    fn get_as_req<T>(&'py self, key: &str) -> PyResult<T>
+    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
@@ -42,7 +41,7 @@ impl<'py> SchemaDict<'py> for PyDict {
 }
 
 impl<'py> SchemaDict<'py> for Option<&PyDict> {
-    fn get_as<T>(&'py self, key: &str) -> PyResult<Option<T>>
+    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
     where
         T: FromPyObject<'py>,
     {
@@ -52,7 +51,8 @@ impl<'py> SchemaDict<'py> for Option<&PyDict> {
         }
     }
 
-    fn get_as_req<T>(&'py self, key: &str) -> PyResult<T>
+    #[cfg_attr(has_no_coverage, no_coverage)]
+    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
@@ -66,8 +66,8 @@ impl<'py> SchemaDict<'py> for Option<&PyDict> {
 pub fn schema_or_config<'py, T>(
     schema: &'py PyDict,
     config: Option<&'py PyDict>,
-    schema_key: &str,
-    config_key: &str,
+    schema_key: &PyString,
+    config_key: &PyString,
 ) -> PyResult<Option<T>>
 where
     T: FromPyObject<'py>,
@@ -82,7 +82,9 @@ where
 }
 
 pub fn is_strict(schema: &PyDict, config: Option<&PyDict>) -> PyResult<bool> {
-    Ok(schema_or_config(schema, config, "strict", "strict")?.unwrap_or(false))
+    let py = schema.py();
+    let k = intern!(py, "strict");
+    Ok(schema_or_config(schema, config, k, k)?.unwrap_or(false))
 }
 
 // we could perhaps do clever things here to store each schema error, or have different types for the top

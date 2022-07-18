@@ -1,5 +1,6 @@
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTime};
+use pyo3::types::{PyDict, PyString, PyTime};
 use speedate::Time;
 
 use crate::build_tools::{is_strict, SchemaDict};
@@ -31,19 +32,20 @@ impl BuildValidator for TimeValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let has_constraints = schema.get_item("le").is_some()
-            || schema.get_item("lt").is_some()
-            || schema.get_item("ge").is_some()
-            || schema.get_item("gt").is_some();
+        let py = schema.py();
+        let has_constraints = schema.get_item(intern!(py, "le")).is_some()
+            || schema.get_item(intern!(py, "lt")).is_some()
+            || schema.get_item(intern!(py, "ge")).is_some()
+            || schema.get_item(intern!(py, "gt")).is_some();
 
         Ok(Self {
             strict: is_strict(schema, config)?,
             constraints: match has_constraints {
                 true => Some(TimeConstraints {
-                    le: convert_pytime(schema, "le")?,
-                    lt: convert_pytime(schema, "lt")?,
-                    ge: convert_pytime(schema, "ge")?,
-                    gt: convert_pytime(schema, "gt")?,
+                    le: convert_pytime(schema, intern!(py, "le"))?,
+                    lt: convert_pytime(schema, intern!(py, "lt"))?,
+                    ge: convert_pytime(schema, intern!(py, "ge"))?,
+                    gt: convert_pytime(schema, intern!(py, "gt"))?,
                 }),
                 false => None,
             },
@@ -93,7 +95,7 @@ impl Validator for TimeValidator {
     }
 }
 
-fn convert_pytime(schema: &PyDict, field: &str) -> PyResult<Option<Time>> {
+fn convert_pytime(schema: &PyDict, field: &PyString) -> PyResult<Option<Time>> {
     match schema.get_as::<&PyTime>(field)? {
         Some(date) => Ok(Some(EitherTime::Py(date).as_raw()?)),
         None => Ok(None),

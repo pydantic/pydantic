@@ -183,3 +183,9 @@ def test_complete_pyd_json(benchmark):
     @benchmark
     def t():
         model.parse_raw(json_data, content_type='application/json')
+
+
+@pytest.mark.benchmark(group='build')
+def test_build_schema(benchmark):
+    lax_schema = schema()
+    benchmark(SchemaValidator, lax_schema)
