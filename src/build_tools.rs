@@ -96,12 +96,11 @@ impl SchemaError {
         PyErr::new::<SchemaError, A>(args)
     }
 
-    pub fn from_val_error(py: Python, prefix: &str, error: ValError) -> PyErr {
+    pub fn from_val_error(py: Python, error: ValError) -> PyErr {
         match error {
             ValError::LineErrors(line_errors) => {
-                let join = if line_errors.len() == 1 { ":" } else { ":\n" };
                 let details = pretty_line_errors(py, line_errors);
-                SchemaError::new_err(format!("{}{}{}", prefix, join, details))
+                SchemaError::new_err(format!("Invalid Schema:\n{}", details))
             }
             ValError::InternalErr(py_err) => py_err,
         }

@@ -292,19 +292,6 @@ def test_union_tuple_fix_len(input_value, expected):
         assert v.validate_python(input_value) == expected
 
 
-@pytest.mark.parametrize(
-    'tuple_variant,items,expected',
-    [
-        ('tuple-var-len', {'type': 'mint'}, Err('Error building "tuple-var-len" validator')),
-        ('tuple-fix-len', [{'type': 'mint'}], Err('Error building "tuple-fix-len" validator')),
-    ],
-)
-def test_error_building_tuple_with_wrong_items(tuple_variant: TupleVariant, items, expected):
-
-    with pytest.raises(SchemaError, match=re.escape(expected.message)):
-        SchemaValidator({'type': tuple_variant, 'items_schema': items})
-
-
 def test_tuple_fix_error():
     v = SchemaValidator({'type': 'tuple-fix-len', 'items_schema': ['int', 'str']})
     with pytest.raises(ValidationError) as exc_info:

@@ -28,3 +28,4 @@ docs/_build/
 node_modules/
 package-lock.json
 /pytest-speed/
+/src/self_schema.py

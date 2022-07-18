@@ -184,6 +184,6 @@ def test_union_set_int_set_str(input_value, expected):
 
 
 def test_set_as_dict_keys(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'set'}, 'value': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'set'}, 'values_schema': 'int'})
     with pytest.raises(ValidationError, match=re.escape('Value must be a valid set')):
         v.validate_test({'foo': 'bar'})

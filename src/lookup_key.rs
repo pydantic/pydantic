@@ -241,14 +241,13 @@ impl PathItem {
         if let Ok(str_key) = obj.extract::<String>() {
             let py_str_key = py_string!(py, &str_key);
             Ok(Self::S(str_key, py_str_key))
-        } else if let Ok(int_key) = obj.extract::<usize>() {
+        } else {
+            let int_key = obj.extract::<usize>()?;
             if index == 0 {
                 py_error!(PyTypeError; "The first item in an alias path must be a string")
             } else {
                 Ok(Self::I(int_key))
             }
-        } else {
-            py_error!(PyTypeError; "Alias path items must be with a string or int")
         }
     }
 

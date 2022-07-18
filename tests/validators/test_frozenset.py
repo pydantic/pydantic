@@ -182,7 +182,7 @@ def test_union_frozenset_int_frozenset_str(input_value, expected):
 
 
 def test_frozenset_as_dict_keys(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'frozenset'}, 'value': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'frozenset'}, 'values_schema': 'int'})
     with pytest.raises(ValidationError, match=re.escape('Value must be a valid frozenset')):
         v.validate_test({'foo': 'bar'})
 

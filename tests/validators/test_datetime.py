@@ -257,5 +257,5 @@ def test_union():
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='Invalid "gt" constraint for datetime:  Value must be a valid datetime'):
+    with pytest.raises(SchemaError, match='datetime -> gt\n  Value must be a valid datetime'):
         SchemaValidator({'type': 'datetime', 'gt': 'foobar'})

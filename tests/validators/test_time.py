@@ -168,7 +168,7 @@ def test_time_bound_ctx():
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='Invalid "gt" constraint for time:  Value must be in a valid time format'):
+    with pytest.raises(SchemaError, match='Value must be in a valid time format'):
         SchemaValidator({'type': 'time', 'gt': 'foobar'})
 
 

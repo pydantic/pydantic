@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
-isort = isort pydantic_core tests
-black = black pydantic_core tests
+isort = isort pydantic_core tests generate_self_schema.py
+black = black pydantic_core tests generate_self_schema.py
 
 .PHONY: install
 install:
@@ -132,6 +132,7 @@ clean:
 	rm -f `find . -type f -name '*.py[co]' `
 	rm -f `find . -type f -name '*~' `
 	rm -f `find . -type f -name '.*~' `
+	rm -rf src/self_schema.py
 	rm -rf .cache
 	rm -rf flame
 	rm -rf htmlcov

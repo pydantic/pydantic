@@ -1,12 +1,11 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDelta, PyDict};
 use speedate::Duration;
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{EitherTimedelta, Input};
 use crate::recursion_guard::RecursionGuard;
-use crate::SchemaError;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -94,14 +93,8 @@ impl Validator for TimeDeltaValidator {
 }
 
 fn py_timedelta_as_timedelta(schema: &PyDict, field: &str) -> PyResult<Option<Duration>> {
-    match schema.get_as::<&PyAny>(field)? {
-        Some(obj) => {
-            let prefix = format!(r#"Invalid "{}" constraint for timedelta"#, field);
-            let timedelta = obj
-                .validate_timedelta(false)
-                .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
-            Ok(Some(timedelta.as_raw()))
-        }
+    match schema.get_as::<&PyDelta>(field)? {
+        Some(timedelta) => Ok(Some(EitherTimedelta::Py(timedelta).as_raw())),
         None => Ok(None),
     }
 }

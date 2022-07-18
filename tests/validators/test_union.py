@@ -225,7 +225,11 @@ def test_no_choices():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator({'type': 'union'})
 
-    assert exc_info.value.args[0] == 'Error building "union" validator:\n  KeyError: \'choices\''
+    assert exc_info.value.args[0] == (
+        'Invalid Schema:\n'
+        'union -> choices\n'
+        "  Field required [kind=missing, input_value={'type': 'union'}, input_type=dict]"
+    )
 
 
 def test_strict_union():
