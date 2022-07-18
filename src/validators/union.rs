@@ -8,7 +8,7 @@ use ahash::AHashMap;
 
 use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{GenericMapping, Input};
+use crate::input::{EitherString, GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
 
@@ -117,24 +117,33 @@ impl Validator for UnionValidator {
 
 #[derive(Debug, Clone)]
 enum Discriminator {
+    /// use `LookupKey` to find the tag, same as we do to find values in typed_dict aliases
     LookupKey(LookupKey),
+    /// call a function to find the tag to use
     Function(PyObject),
+    /// Custom discriminator specifically for the root `Schema` union in self-schema
+    SelfSchema,
 }
 
 impl Discriminator {
     fn new(py: Python, raw: &PyAny) -> PyResult<Self> {
         if raw.is_callable() {
-            Ok(Self::Function(raw.to_object(py)))
-        } else {
-            let lookup_key = LookupKey::from_py(py, raw, None)?;
-            Ok(Self::LookupKey(lookup_key))
+            return Ok(Self::Function(raw.to_object(py)));
+        } else if let Ok(str) = raw.strict_str() {
+            if str.as_cow().as_ref() == "self-schema-discriminator" {
+                return Ok(Self::SelfSchema);
+            }
         }
+
+        let lookup_key = LookupKey::from_py(py, raw, None)?;
+        Ok(Self::LookupKey(lookup_key))
     }
 
     fn to_string_py(&self, py: Python) -> PyResult<String> {
         match self {
             Self::Function(f) => Ok(format!("{}()", f.getattr(py, "__name__")?)),
             Self::LookupKey(lookup_key) => Ok(lookup_key.to_string()),
+            Self::SelfSchema => Ok("self-schema".to_string()),
         }
     }
 }
@@ -161,6 +170,7 @@ impl BuildValidator for TaggedUnionValidator {
         let py = schema.py();
         let discriminator = Discriminator::new(py, schema.get_as_req("discriminator")?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
+        dbg!(&discriminator_repr);
 
         let mut choices = AHashMap::new();
         let mut first = true;
@@ -234,12 +244,41 @@ impl Validator for TaggedUnionValidator {
                 self.find_call_validator(py, tag.as_cow(), input, extra, slots, recursion_guard)
             }
             Discriminator::Function(ref func) => {
-                let result = func.call1(py, (input.to_object(py),))?;
-                if result.is_none(py) {
+                let tag = func.call1(py, (input.to_object(py),))?;
+                if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    let result_str: &PyString = result.cast_as(py)?;
-                    self.find_call_validator(py, result_str.to_string_lossy(), input, extra, slots, recursion_guard)
+                    let tag: &PyString = tag.cast_as(py)?;
+                    self.find_call_validator(py, tag.to_string_lossy(), input, extra, slots, recursion_guard)
+                }
+            }
+            Discriminator::SelfSchema => {
+                if input.strict_str().is_ok() {
+                    // input is a string, must be a bare type
+                    self.find_call_validator(py, Cow::Borrowed("plain-string"), input, extra, slots, recursion_guard)
+                } else {
+                    let dict = input.strict_dict()?;
+                    let mut tag = match dict {
+                        GenericMapping::PyDict(dict) => match dict.get_item("type") {
+                            Some(t) => t.strict_str()?,
+                            None => return Err(self.tag_not_found(input)),
+                        },
+                        _ => unreachable!(),
+                    };
+                    // custom logic to distinguish between different function schemas
+                    if tag.as_cow().as_ref() == "function" {
+                        let mode = match dict {
+                            GenericMapping::PyDict(dict) => match dict.get_item("mode") {
+                                Some(m) => m.strict_str()?,
+                                None => return Err(self.tag_not_found(input)),
+                            },
+                            _ => unreachable!(),
+                        };
+                        if mode.as_cow().as_ref() == "plain" {
+                            tag = EitherString::Cow(Cow::Borrowed("function-plain"))
+                        }
+                    }
+                    self.find_call_validator(py, tag.as_cow(), input, extra, slots, recursion_guard)
                 }
             }
         }

@@ -1,10 +1,10 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDateTime, PyDict};
 use speedate::DateTime;
 
-use crate::build_tools::{is_strict, SchemaDict, SchemaError};
+use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{py_err_string, ErrorKind, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{EitherDateTime, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -101,14 +101,8 @@ impl Validator for DateTimeValidator {
 }
 
 fn py_datetime_as_datetime(schema: &PyDict, field: &str) -> PyResult<Option<DateTime>> {
-    match schema.get_as::<&PyAny>(field)? {
-        Some(obj) => {
-            let prefix = format!(r#"Invalid "{}" constraint for datetime"#, field);
-            let date = obj
-                .validate_datetime(false)
-                .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
-            Ok(Some(date.as_raw()?))
-        }
+    match schema.get_as::<&PyDateTime>(field)? {
+        Some(dt) => Ok(Some(EitherDateTime::Py(dt).as_raw()?)),
         None => Ok(None),
     }
 }

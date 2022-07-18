@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDate, PyDict};
 use speedate::{Date, Time};
 
-use crate::build_tools::{is_strict, SchemaDict, SchemaError};
+use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{EitherDate, Input};
 use crate::recursion_guard::RecursionGuard;
@@ -149,14 +149,8 @@ fn date_from_datetime<'data>(
 }
 
 fn convert_pydate(schema: &PyDict, field: &str) -> PyResult<Option<Date>> {
-    match schema.get_as::<&PyAny>(field)? {
-        Some(obj) => {
-            let prefix = format!(r#"Invalid "{}" constraint for date"#, field);
-            let date = obj
-                .validate_date(false)
-                .map_err(|e| SchemaError::from_val_error(obj.py(), &prefix, e))?;
-            Ok(Some(date.as_raw()?))
-        }
+    match schema.get_as::<&PyDate>(field)? {
+        Some(date) => Ok(Some(EitherDate::Py(date).as_raw()?)),
         None => Ok(None),
     }
 }

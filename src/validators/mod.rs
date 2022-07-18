@@ -2,7 +2,8 @@ use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
 
-use pyo3::exceptions::{PyRecursionError, PyTypeError};
+use pyo3::exceptions::PyTypeError;
+use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyByteArray, PyBytes, PyDict, PyString};
 
@@ -49,16 +50,22 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, schema: &PyAny, config: Option<&PyDict>) -> PyResult<Self> {
+        let self_schema = Self::get_self_schema(py);
+
+        let schema_obj = self_schema
+            .validator
+            .validate(
+                py,
+                schema,
+                &Extra::default(),
+                &self_schema.slots,
+                &mut RecursionGuard::default(),
+            )
+            .map_err(|e| SchemaError::from_val_error(py, e))?;
+        let schema = schema_obj.as_ref(py);
+
         let mut build_context = BuildContext::default();
-        let mut validator = match build_validator(schema, config, &mut build_context) {
-            Ok((v, _)) => v,
-            Err(err) => {
-                return Err(match err.is_instance_of::<SchemaError>(py) {
-                    true => err,
-                    false => SchemaError::new_err(format!("Schema build error:\n  {}", err)),
-                });
-            }
-        };
+        let (mut validator, _) = build_validator(schema, config, &mut build_context)?;
         build_context.complete_validators()?;
         validator.complete(&build_context)?;
         let slots = build_context.into_slots()?;
@@ -162,8 +169,33 @@ impl SchemaValidator {
     }
 }
 
+static SCHEMA_DEFINITION: GILOnceCell<SchemaValidator> = GILOnceCell::new();
+
 impl SchemaValidator {
-    pub fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
+    fn get_self_schema(py: Python) -> &Self {
+        SCHEMA_DEFINITION.get_or_init(py, || Self::build_self_schema(py).unwrap())
+    }
+
+    fn build_self_schema(py: Python) -> PyResult<Self> {
+        let code = include_str!("../self_schema.py");
+        let locals = PyDict::new(py);
+        py.run(code, None, Some(locals))?;
+        let self_schema: &PyDict = locals.get_as_req("self_schema")?;
+
+        let mut build_context = BuildContext::default();
+        let validator = match build_validator(self_schema, None, &mut build_context) {
+            Ok((v, _)) => v,
+            Err(err) => return Err(SchemaError::new_err(format!("Error building self-schema:\n  {}", err))),
+        };
+        Ok(Self {
+            validator,
+            slots: build_context.into_slots()?,
+            schema: py.None(),
+            title: "Self Schema".into_py(py),
+        })
+    }
+
+    fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
         ValidationError::from_val_error(py, self.title.clone_ref(py), error)
     }
 }
@@ -197,8 +229,6 @@ fn build_single_validator<'a, T: BuildValidator>(
     config: Option<&'a PyDict>,
     build_context: &mut BuildContext,
 ) -> PyResult<(CombinedValidator, &'a PyDict)> {
-    build_context.incr_check_depth()?;
-
     let val: CombinedValidator = if let Some(schema_ref) = schema_dict.get_as::<String>("ref")? {
         let slot_id = build_context.prepare_slot(schema_ref)?;
         let inner_val = T::build(schema_dict, config, build_context)
@@ -211,7 +241,6 @@ fn build_single_validator<'a, T: BuildValidator>(
             .map_err(|err| SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", val_type, err)))?
     };
 
-    build_context.decr_depth();
     Ok((val, schema_dict))
 }
 
@@ -430,14 +459,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
 #[derive(Default, Clone)]
 pub struct BuildContext {
     slots: Vec<(String, Option<CombinedValidator>)>,
-    depth: usize,
 }
-
-#[cfg(not(PyPy))]
-const MAX_DEPTH: usize = 100;
-
-#[cfg(PyPy)]
-const MAX_DEPTH: usize = 50;
 
 impl BuildContext {
     pub fn prepare_slot(&mut self, slot_ref: String) -> PyResult<usize> {
@@ -454,19 +476,6 @@ impl BuildContext {
             }
             None => py_error!("Recursive reference error: slot {} not found", slot_id),
         }
-    }
-
-    pub fn incr_check_depth(&mut self) -> PyResult<()> {
-        self.depth += 1;
-        if self.depth > MAX_DEPTH {
-            py_error!(PyRecursionError; "Recursive detected, depth exceeded max allowed value of {}", MAX_DEPTH)
-        } else {
-            Ok(())
-        }
-    }
-
-    pub fn decr_depth(&mut self) {
-        self.depth -= 1;
     }
 
     pub fn find_slot_id(&self, val_ref: &str) -> PyResult<usize> {

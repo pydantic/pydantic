@@ -158,17 +158,11 @@ def test_timedelta_kwargs_strict():
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='Invalid "gt" constraint for timedelta:  Value must be a valid timedelta'):
+    with pytest.raises(SchemaError, match='timedelta -> gt\n  Value must be a valid timedelta, invalid digit in'):
         SchemaValidator({'type': 'timedelta', 'gt': 'foobar'})
 
-    with pytest.raises(SchemaError, match='Invalid "le" constraint for timedelta:  Value must be a valid timedelta'):
+    with pytest.raises(SchemaError, match='timedelta -> le\n  Value must be a valid timedelta, invalid digit in'):
         SchemaValidator({'type': 'timedelta', 'le': 'foobar'})
-
-    with pytest.raises(SchemaError, match='Invalid "lt" constraint for timedelta:  Value must be a valid timedelta'):
-        SchemaValidator({'type': 'timedelta', 'lt': 'foobar'})
-
-    with pytest.raises(SchemaError, match='Invalid "ge" constraint for timedelta:  Value must be a valid timedelta'):
-        SchemaValidator({'type': 'timedelta', 'ge': 'foobar'})
 
 
 def test_dict_py():

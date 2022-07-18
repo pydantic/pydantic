@@ -176,7 +176,7 @@ def test_date_kwargs(kwargs: Dict[str, Any], input_value, expected):
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='Invalid "gt" constraint for date:  Value must be a valid date in the forma'):
+    with pytest.raises(SchemaError, match='date -> gt\n  Value must be a valid date or datetime'):
         SchemaValidator({'type': 'date', 'gt': 'foobar'})
 
 

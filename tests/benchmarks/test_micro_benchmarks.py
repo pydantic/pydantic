@@ -48,8 +48,8 @@ class TestBenchmarkSimpleModel:
                     'fields': {
                         'name': {'schema': {'type': 'str'}},
                         'age': {'schema': {'type': 'int'}},
-                        'friends': {'schema': {'type': 'list', 'items': {'type': 'int'}}},
-                        'settings': {'schema': {'type': 'dict', 'keys': {'type': 'str'}, 'values': {'type': 'float'}}},
+                        'friends': {'schema': {'type': 'list', 'items_schema': 'int'}},
+                        'settings': {'schema': {'type': 'dict', 'keys_schema': 'str', 'values_schema': 'float'}},
                     },
                 },
             }
@@ -227,11 +227,7 @@ def test_list_of_dict_models_pyd(benchmark):
 @pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
-        {
-            'type': 'list',
-            'name': 'Branch',
-            'items': {'type': 'typed-dict', 'fields': {'width': {'schema': {'type': 'int'}}}},
-        }
+        {'type': 'list', 'items_schema': {'type': 'typed-dict', 'fields': {'width': {'schema': {'type': 'int'}}}}}
     )
 
     data = [{'width': i} for i in range(100)]
@@ -255,7 +251,7 @@ def test_list_of_ints_pyd_py(benchmark):
 
 @pytest.mark.benchmark(group='List[int]')
 def test_list_of_ints_core_py(benchmark):
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
 
     @benchmark
     def t():
@@ -279,7 +275,7 @@ def test_list_of_ints_pyd_json(benchmark):
 
 @pytest.mark.benchmark(group='List[int] JSON')
 def test_list_of_ints_core_json(benchmark):
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
 
     json_data = [json.dumps(d) for d in list_of_ints_data]
 
@@ -316,7 +312,7 @@ def test_set_of_ints_pyd(benchmark):
 
 @pytest.mark.benchmark(group='Set[int]')
 def test_set_of_ints_core(benchmark):
-    v = SchemaValidator({'type': 'set', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
 
     @benchmark
     def t():
@@ -340,7 +336,7 @@ def test_set_of_ints_pyd_json(benchmark):
 
 @pytest.mark.benchmark(group='Set[int] JSON')
 def test_set_of_ints_core_json(benchmark):
-    v = SchemaValidator({'type': 'set', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
 
     json_data = [json.dumps(list(d)) for d in set_of_ints_data]
 
@@ -364,7 +360,7 @@ def test_frozenset_of_ints_pyd(benchmark):
 
 @pytest.mark.benchmark(group='FrozenSet[int]')
 def test_frozenset_of_ints_core(benchmark):
-    v = SchemaValidator({'type': 'frozenset', 'items': {'type': 'int'}})
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
 
     benchmark(v.validate_python, frozenset_of_ints)
 
@@ -386,7 +382,7 @@ def test_dict_of_ints_pyd(benchmark):
 
 @pytest.mark.benchmark(group='Dict[str, int]')
 def test_dict_of_ints_core(benchmark):
-    v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': 'str', 'values_schema': 'int'})
 
     @benchmark
     def t():
@@ -420,7 +416,7 @@ def test_dict_of_ints_pyd_json(benchmark):
 
 @pytest.mark.benchmark(group='Dict[str, int] JSON')
 def test_dict_of_ints_core_json(benchmark):
-    v = SchemaValidator({'type': 'dict', 'keys': 'str', 'values': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': 'str', 'values_schema': 'int'})
 
     json_data = [json.dumps(d) for d in dict_of_ints_data]
 
@@ -447,7 +443,7 @@ def test_many_models_pyd(benchmark):
 
 @pytest.mark.benchmark(group='List[DictSimpleMode]')
 def test_many_models_core_dict(benchmark):
-    model_schema = {'type': 'list', 'items': {'type': 'typed-dict', 'fields': {'age': {'schema': 'int'}}}}
+    model_schema = {'type': 'list', 'items_schema': {'type': 'typed-dict', 'fields': {'age': {'schema': 'int'}}}}
     v = SchemaValidator(model_schema)
     benchmark(v.validate_python, many_models_data)
 
@@ -460,7 +456,7 @@ def test_many_models_core_model(benchmark):
     v = SchemaValidator(
         {
             'type': 'list',
-            'items': {
+            'items_schema': {
                 'type': 'model-class',
                 'class_type': MyCoreModel,
                 'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'age': {'schema': 'int'}}},
@@ -484,7 +480,7 @@ def test_list_of_nullable_pyd(benchmark):
 
 @pytest.mark.benchmark(group='List[Nullable[int]]')
 def test_list_of_nullable_core(benchmark):
-    v = SchemaValidator({'type': 'list', 'items': {'type': 'nullable', 'schema': 'int'}})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'nullable', 'schema': 'int'}})
 
     benchmark(v.validate_python, list_of_nullable_data)
 

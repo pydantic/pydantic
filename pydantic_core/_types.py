@@ -9,7 +9,7 @@ if sys.version_info < (3, 11):
 else:
     from typing import NotRequired, Required
 
-if sys.version_info < (3, 8):
+if sys.version_info < (3, 9):
     from typing_extensions import Literal, TypedDict
 else:
     from typing import Literal, TypedDict
@@ -70,7 +70,7 @@ class FunctionSchema(TypedDict):
     type: Literal['function']
     mode: Literal['before', 'after', 'wrap']
     function: Callable[..., Any]
-    schema: Schema
+    schema: NotRequired[Schema]
     ref: NotRequired[str]
 
 
@@ -111,6 +111,7 @@ class ModelClassSchema(TypedDict):
     type: Literal['model-class']
     class_type: type
     schema: TypedDictSchema
+    strict: NotRequired[bool]
     ref: NotRequired[str]
     config: NotRequired[Config]
 
@@ -273,30 +274,30 @@ class CallableSchema(TypedDict):
 
 
 # pydantic allows types to be defined via a simple string instead of dict with just `type`, e.g.
-# 'int' is equivalent to {'type': 'int'}
+# 'int' is equivalent to {'type': 'int'}, this only applies to schema types which do not have other required fields
 BareType = Literal[
     'any',
-    'bool',
+    'none',
+    'str',
     'bytes',
     'dict',
-    'float',
-    'function',
     'int',
+    'bool',
+    'float',
+    'dict',
     'list',
-    'model',
-    'model-class',
-    'none',
-    'nullable',
-    'recursive-container',
-    'recursive-reference',
     'set',
-    'str',
-    # tuple-fix-len cannot be created without more typing information
+    'frozenset',
     'tuple-var-len',
-    'union',
+    'date',
+    'time',
+    'datetime',
+    'timedelta',
     'callable',
 ]
 
+# generate_self_schema.py is hard coded to convert this Union[BareType, Union[...rest]] where the second union is tagged
+# so `BareType` MUST come first
 Schema = Union[
     BareType,
     AnySchema,
