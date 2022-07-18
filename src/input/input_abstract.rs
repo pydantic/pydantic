@@ -1,7 +1,7 @@
 use std::fmt;
 
 use pyo3::prelude::*;
-use pyo3::types::PyType;
+use pyo3::types::{PyString, PyType};
 
 use crate::errors::{InputValue, LocItem, ValResult};
 use crate::input::datetime::EitherTime;
@@ -27,6 +27,11 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
 
     fn is_type(&self, _class: &PyType) -> ValResult<bool> {
         Ok(false)
+    }
+
+    #[cfg_attr(has_no_coverage, no_coverage)]
+    fn get_attr(&self, _name: &PyString) -> Option<&PyAny> {
+        None
     }
 
     fn is_instance(&self, _class: &PyType) -> PyResult<bool> {

@@ -13,12 +13,14 @@ use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
+use super::typed_dict::TypedDictValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ModelClassValidator {
     strict: bool,
-    validator: Box<CombinedValidator>,
+    revalidate: bool,
+    validator: TypedDictValidator,
     class: Py<PyType>,
     name: String,
 }
@@ -36,17 +38,23 @@ impl BuildValidator for ModelClassValidator {
 
         let class: &PyType = schema.get_as_req("class_type")?;
         let sub_schema: &PyAny = schema.get_as_req("schema")?;
-        let (validator, td_schema) = build_validator(sub_schema, config, build_context)?;
+        let (comb_validator, td_schema) = build_validator(sub_schema, config, build_context)?;
 
         if !td_schema.get_as("return_fields_set")?.unwrap_or(false) {
-            return py_error!(r#"model-class inner schema must have "return_fields_set" set to True"#);
+            return py_error!("model-class inner schema must have 'return_fields_set' set to True");
         }
+
+        let validator = match comb_validator {
+            CombinedValidator::TypedDict(tdv) => tdv,
+            _ => return py_error!("Wrong validator type, expected 'typed-dict' validator"),
+        };
 
         Ok(Self {
             // we don't use is_strict here since we don't want validation to be strict in this case if
             // `config.strict` is set, only if this specific field is strict
             strict: schema.get_as("strict")?.unwrap_or(false),
-            validator: Box::new(validator),
+            revalidate: config.get_as("revalidate_models")?.unwrap_or(false),
+            validator,
             class: class.into(),
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
@@ -67,7 +75,15 @@ impl Validator for ModelClassValidator {
     ) -> ValResult<'data, PyObject> {
         let class = self.class.as_ref(py);
         if input.is_type(class)? {
-            Ok(input.to_object(py))
+            if self.revalidate {
+                let fields_set = input.get_attr(intern!(py, "__fields_set__"));
+                let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
+                let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+                let fields_set = fields_set.unwrap_or(validation_fields_set);
+                Ok(self.create_class(py, model_dict, fields_set)?)
+            } else {
+                Ok(input.to_object(py))
+            }
         } else if extra.strict.unwrap_or(self.strict) {
             Err(ValError::new(
                 ErrorKind::ModelClassType {
@@ -77,7 +93,8 @@ impl Validator for ModelClassValidator {
             ))
         } else {
             let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-            Ok(self.create_class(py, output)?)
+            let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+            Ok(self.create_class(py, model_dict, fields_set)?)
         }
     }
 
@@ -87,9 +104,7 @@ impl Validator for ModelClassValidator {
 }
 
 impl ModelClassValidator {
-    fn create_class(&self, py: Python, output: PyObject) -> PyResult<PyObject> {
-        let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-
+    fn create_class(&self, py: Python, model_dict: &PyAny, fields_set: &PyAny) -> PyResult<PyObject> {
         // based on the following but with the second argument of new_func set to an empty tuple as required
         // https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
         let args = PyTuple::empty(py);

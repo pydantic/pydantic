@@ -29,12 +29,35 @@ impl<'py> SchemaDict<'py> for PyDict {
         }
     }
 
+    #[cfg_attr(has_no_coverage, no_coverage)]
     fn get_as_req<T>(&'py self, key: &str) -> PyResult<T>
     where
         T: FromPyObject<'py>,
     {
         match self.get_item(key) {
             Some(t) => <T>::extract(t),
+            None => py_error!(PyKeyError; "{}", key),
+        }
+    }
+}
+
+impl<'py> SchemaDict<'py> for Option<&PyDict> {
+    fn get_as<T>(&'py self, key: &str) -> PyResult<Option<T>>
+    where
+        T: FromPyObject<'py>,
+    {
+        match self {
+            Some(d) => d.get_as(key),
+            None => Ok(None),
+        }
+    }
+
+    fn get_as_req<T>(&'py self, key: &str) -> PyResult<T>
+    where
+        T: FromPyObject<'py>,
+    {
+        match self {
+            Some(d) => d.get_as_req(key),
             None => py_error!(PyKeyError; "{}", key),
         }
     }

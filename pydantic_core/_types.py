@@ -37,6 +37,7 @@ class Config(TypedDict, total=False):
     typed_dict_populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
     # used on typed-dicts and tagged union keys
     from_attributes: bool
+    revalidate_models: bool
     # fields related to string fields only
     str_max_length: int
     str_min_length: int
