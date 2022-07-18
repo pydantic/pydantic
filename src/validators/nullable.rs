@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -22,7 +23,7 @@ impl BuildValidator for NullableValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let schema: &PyAny = schema.get_as_req("schema")?;
+        let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
         let validator = Box::new(build_validator(schema, config, build_context)?.0);
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
         Ok(Self { validator, name }.into())

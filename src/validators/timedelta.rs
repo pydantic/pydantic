@@ -1,5 +1,6 @@
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDelta, PyDict};
+use pyo3::types::{PyDelta, PyDict, PyString};
 use speedate::Duration;
 
 use crate::build_tools::{is_strict, SchemaDict};
@@ -30,19 +31,20 @@ impl BuildValidator for TimeDeltaValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let has_constraints = schema.get_item("le").is_some()
-            || schema.get_item("lt").is_some()
-            || schema.get_item("ge").is_some()
-            || schema.get_item("gt").is_some();
+        let py = schema.py();
+        let has_constraints = schema.get_item(intern!(py, "le")).is_some()
+            || schema.get_item(intern!(py, "lt")).is_some()
+            || schema.get_item(intern!(py, "ge")).is_some()
+            || schema.get_item(intern!(py, "gt")).is_some();
 
         Ok(Self {
             strict: is_strict(schema, config)?,
             constraints: match has_constraints {
                 true => Some(TimedeltaConstraints {
-                    le: py_timedelta_as_timedelta(schema, "le")?,
-                    lt: py_timedelta_as_timedelta(schema, "lt")?,
-                    ge: py_timedelta_as_timedelta(schema, "ge")?,
-                    gt: py_timedelta_as_timedelta(schema, "gt")?,
+                    le: py_timedelta_as_timedelta(schema, intern!(py, "le"))?,
+                    lt: py_timedelta_as_timedelta(schema, intern!(py, "lt"))?,
+                    ge: py_timedelta_as_timedelta(schema, intern!(py, "ge"))?,
+                    gt: py_timedelta_as_timedelta(schema, intern!(py, "gt"))?,
                 }),
                 false => None,
             },
@@ -92,7 +94,7 @@ impl Validator for TimeDeltaValidator {
     }
 }
 
-fn py_timedelta_as_timedelta(schema: &PyDict, field: &str) -> PyResult<Option<Duration>> {
+fn py_timedelta_as_timedelta(schema: &PyDict, field: &PyString) -> PyResult<Option<Duration>> {
     match schema.get_as::<&PyDelta>(field)? {
         Some(timedelta) => Ok(Some(EitherTimedelta::Py(timedelta).as_raw())),
         None => Ok(None),

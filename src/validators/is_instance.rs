@@ -1,3 +1,4 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
 
@@ -23,7 +24,7 @@ impl BuildValidator for IsInstanceValidator {
         _config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let class: &PyType = schema.get_as_req("class_")?;
+        let class: &PyType = schema.get_as_req(intern!(schema.py(), "class_"))?;
         let class_repr = class.name()?.to_string();
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, class_repr);
         Ok(Self {

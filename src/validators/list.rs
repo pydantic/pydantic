@@ -25,7 +25,8 @@ macro_rules! sequence_build_function {
             config: Option<&PyDict>,
             build_context: &mut BuildContext,
         ) -> PyResult<CombinedValidator> {
-            let item_validator = match schema.get_item("items_schema") {
+            let py = schema.py();
+            let item_validator = match schema.get_item(pyo3::intern!(py, "items_schema")) {
                 Some(d) => Box::new(build_validator(d, config, build_context)?.0),
                 None => Box::new(AnyValidator::build(schema, config, build_context)?),
             };
@@ -33,8 +34,8 @@ macro_rules! sequence_build_function {
             Ok(Self {
                 strict: crate::build_tools::is_strict(schema, config)?,
                 item_validator,
-                min_items: schema.get_as("min_items")?,
-                max_items: schema.get_as("max_items")?,
+                min_items: schema.get_as(pyo3::intern!(py, "min_items"))?,
+                max_items: schema.get_as(pyo3::intern!(py, "max_items"))?,
                 name,
             }
             .into())

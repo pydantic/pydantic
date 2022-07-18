@@ -43,15 +43,33 @@ impl BuildValidator for TypedDictValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
         let strict = is_strict(schema, config)?;
 
-        let extra_behavior = schema_or_config::<&str>(schema, config, "extra_behavior", "typed_dict_extra_behavior")?;
-        let full = schema_or_config(schema, config, "full", "typed_dict_full")?.unwrap_or(true);
-        let from_attributes = schema_or_config(schema, config, "from_attributes", "from_attributes")?.unwrap_or(false);
-        let populate_by_name =
-            schema_or_config(schema, config, "populate_by_name", "typed_dict_populate_by_name")?.unwrap_or(false);
+        let extra_behavior = schema_or_config::<&str>(
+            schema,
+            config,
+            intern!(py, "extra_behavior"),
+            intern!(py, "typed_dict_extra_behavior"),
+        )?;
+        let full =
+            schema_or_config(schema, config, intern!(py, "full"), intern!(py, "typed_dict_full"))?.unwrap_or(true);
+        let from_attributes = schema_or_config(
+            schema,
+            config,
+            intern!(py, "from_attributes"),
+            intern!(py, "from_attributes"),
+        )?
+        .unwrap_or(false);
+        let populate_by_name = schema_or_config(
+            schema,
+            config,
+            intern!(py, "populate_by_name"),
+            intern!(py, "typed_dict_populate_by_name"),
+        )?
+        .unwrap_or(false);
 
-        let return_fields_set = schema.get_as("return_fields_set")?.unwrap_or(false);
+        let return_fields_set = schema.get_as(intern!(py, "return_fields_set"))?.unwrap_or(false);
 
         let (check_extra, forbid_extra) = match extra_behavior {
             Some(s) => match s {
@@ -63,7 +81,7 @@ impl BuildValidator for TypedDictValidator {
             None => (false, false),
         };
 
-        let extra_validator = match schema.get_item("extra_validator") {
+        let extra_validator = match schema.get_item(intern!(py, "extra_validator")) {
             Some(v) => {
                 if check_extra && !forbid_extra {
                     Some(Box::new(build_validator(v, config, build_context)?.0))
@@ -74,26 +92,27 @@ impl BuildValidator for TypedDictValidator {
             None => None,
         };
 
-        let fields_dict: &PyDict = schema.get_as_req("fields")?;
+        let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<TypedDictField> = Vec::with_capacity(fields_dict.len());
 
-        let py = schema.py();
         for (key, value) in fields_dict.iter() {
             let field_info: &PyDict = value.cast_as()?;
             let field_name: &str = key.extract()?;
             let schema: &PyAny = field_info
-                .get_as_req("schema")
+                .get_as_req(intern!(py, "schema"))
                 .map_err(|err| SchemaError::new_err(format!("Field \"{}\":\n  {}", field_name, err)))?;
 
-            let (default, default_factory) =
-                match (field_info.get_as("default")?, field_info.get_as("default_factory")?) {
-                    (Some(_default), Some(_default_factory)) => {
-                        return py_error!("'default' and 'default_factory' cannot be used together")
-                    }
-                    (default, default_factory) => (default, default_factory),
-                };
+            let (default, default_factory) = match (
+                field_info.get_as(intern!(py, "default"))?,
+                field_info.get_as(intern!(py, "default_factory"))?,
+            ) {
+                (Some(_default), Some(_default_factory)) => {
+                    return py_error!("'default' and 'default_factory' cannot be used together")
+                }
+                (default, default_factory) => (default, default_factory),
+            };
 
-            let lookup_key = match field_info.get_item("alias") {
+            let lookup_key = match field_info.get_item(intern!(py, "alias")) {
                 Some(alias) => {
                     let alt_alias = if populate_by_name { Some(field_name) } else { None };
                     LookupKey::from_py(py, alias, alt_alias)?
@@ -108,7 +127,7 @@ impl BuildValidator for TypedDictValidator {
                     Ok((v, _)) => v,
                     Err(err) => return py_error!("Field \"{}\":\n  {}", field_name, err),
                 },
-                required: match field_info.get_as::<bool>("required")? {
+                required: match field_info.get_as::<bool>(intern!(py, "required"))? {
                     Some(required) => {
                         if required && (default.is_some() || default_factory.is_some()) {
                             return py_error!("Field \"{}\": a required field cannot have a default value", field_name);

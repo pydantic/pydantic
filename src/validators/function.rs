@@ -1,4 +1,5 @@
 use pyo3::exceptions::{PyAssertionError, PyValueError};
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
@@ -20,7 +21,7 @@ impl BuildValidator for FunctionBuilder {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let mode: &str = schema.get_as_req("mode")?;
+        let mode: &str = schema.get_as_req(intern!(schema.py(), "mode"))?;
         match mode {
             "before" => FunctionBeforeValidator::build(schema, config, build_context),
             "after" => FunctionAfterValidator::build(schema, config, build_context),
@@ -45,14 +46,15 @@ macro_rules! impl_build {
                 config: Option<&PyDict>,
                 build_context: &mut BuildContext,
             ) -> PyResult<CombinedValidator> {
-                let validator = build_validator(schema.get_as_req("schema")?, config, build_context)?.0;
+                let py = schema.py();
+                let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?.0;
                 let name = format!("{}[{}]", $name, validator.get_name());
                 Ok(Self {
                     validator: Box::new(validator),
-                    func: schema.get_as_req::<&PyAny>("function")?.into_py(schema.py()),
+                    func: schema.get_as_req::<&PyAny>(intern!(py, "function"))?.into_py(py),
                     config: match config {
                         Some(c) => c.into(),
-                        None => schema.py().None(),
+                        None => py.None(),
                     },
                     name,
                 }
@@ -154,14 +156,15 @@ pub struct FunctionPlainValidator {
 
 impl FunctionPlainValidator {
     pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
-        if schema.get_item("schema").is_some() {
+        let py = schema.py();
+        if schema.get_item(intern!(py, "schema")).is_some() {
             py_error!("Plain functions should not include a sub-schema")
         } else {
             Ok(Self {
-                func: schema.get_as_req::<&PyAny>("function")?.into_py(schema.py()),
+                func: schema.get_as_req::<&PyAny>(intern!(py, "function"))?.into_py(py),
                 config: match config {
                     Some(c) => c.into(),
-                    None => schema.py().None(),
+                    None => py.None(),
                 },
             }
             .into())
