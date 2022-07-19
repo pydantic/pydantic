@@ -1,1 +1,1 @@
-Pydantic didn't support setting fields containing "complex values" like dicts or lists from environment variables using nesting. This PR contains an implementation addressing this issue by checking which field the nested environment variable targets to, checking if the field is a complex value and if so, trying to parse the environment value as a JSON.
+Add support for setting nested fields containing complex values like dict or list from environment variables
