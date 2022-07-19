@@ -1,1 +1,1 @@
-Field aliases are compared with None instead of simple `bool(alias)` because an empty string is a valid JSON attribute name.
+Allow empty string aliases by using a `alias is not None` check, rather than `bool(alias)`
