@@ -48,6 +48,8 @@ source env/bin/activate
 
 # 3. Install pydantic, dependencies, test dependencies and doc dependencies
 make install
+# Should you plan to make changes to the documentation
+make install-docs
 
 # 4. Checkout a new branch and make your changes
 git checkout -b my-new-feature-branch
