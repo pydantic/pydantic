@@ -148,7 +148,7 @@ class FieldInfo(Representation):
         self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
-        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
+        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -395,7 +395,7 @@ class ModelField(Representation):
 
         self.name: str = name
         self.has_alias: bool = bool(alias)
-        self.alias: str = alias or name
+        self.alias: str = alias if alias is not None else name
         self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
