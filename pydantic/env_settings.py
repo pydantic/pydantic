@@ -242,7 +242,7 @@ class EnvSettingsSource:
                 continue
             _, *keys, last_key = env_name.split(self.env_nested_delimiter)
             env_var = result
-            target_field: Union[ModelField, None] = field
+            target_field: Optional[ModelField] = field
 
             for key in keys:
                 target_field = self.next_field(target_field, key)
