@@ -7,16 +7,14 @@ use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericSequence, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::any::AnyValidator;
 use super::list::sequence_build_function;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TupleVarLenValidator {
     strict: bool,
-    item_validator: Box<CombinedValidator>,
-    min_items: Option<usize>,
-    max_items: Option<usize>,
+    item_validator: Option<Box<CombinedValidator>>,
+    size_range: Option<(Option<usize>, Option<usize>)>,
     name: String,
 }
 
@@ -35,19 +33,13 @@ impl Validator for TupleVarLenValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let seq = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
-        let length = seq.generic_len();
-        if let Some(min_length) = self.min_items {
-            if length < min_length {
-                return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
-            }
-        }
-        if let Some(max_length) = self.max_items {
-            if length > max_length {
-                return Err(ValError::new(ErrorKind::TooLong { max_length }, input));
-            }
-        }
 
-        let output = seq.validate_to_vec(py, length, &self.item_validator, extra, slots, recursion_guard)?;
+        let length = seq.check_len(self.size_range, input)?;
+
+        let output = match self.item_validator {
+            Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
+            None => seq.to_vec(py),
+        };
         Ok(PyTuple::new(py, &output).into_py(py))
     }
 
@@ -56,7 +48,10 @@ impl Validator for TupleVarLenValidator {
     }
 
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
-        self.item_validator.complete(build_context)
+        match self.item_validator {
+            Some(ref mut v) => v.complete(build_context),
+            None => Ok(()),
+        }
     }
 }
 

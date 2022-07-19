@@ -5,7 +5,7 @@ import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -189,18 +189,10 @@ def test_frozenset_as_dict_keys(py_and_json: PyAndJson):
 
 def test_repr():
     v = SchemaValidator({'type': 'frozenset', 'strict': True, 'min_items': 42})
-    assert repr(v) == (
-        'SchemaValidator(name="frozenset[any]", validator=FrozenSet(\n'
-        '    FrozenSetValidator {\n'
-        '        strict: true,\n'
-        '        item_validator: Any(\n'
-        '            AnyValidator,\n'
-        '        ),\n'
-        '        min_items: Some(\n'
-        '            42,\n'
-        '        ),\n'
-        '        max_items: None,\n'
-        '        name: "frozenset[any]",\n'
-        '    },\n'
-        '))'
+    assert plain_repr(v) == (
+        'SchemaValidator('
+        'name="frozenset[any]",'
+        'validator=FrozenSet(FrozenSetValidator{'
+        'strict:true,item_validator:None,size_range:Some((Some(42),None)),name:"frozenset[any]"'
+        '}))'
     )
