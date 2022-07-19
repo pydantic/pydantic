@@ -88,7 +88,7 @@ impl Validator for RecursiveRefValidator {
 
     /// don't need to call complete on the inner validator here, complete_validators takes care of that.
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
-        let validator = build_context.get_validator(self.validator_id)?;
+        let validator = build_context.find_validator(self.validator_id)?;
         self.inner_name = validator.get_name().to_string();
         Ok(())
     }

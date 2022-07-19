@@ -200,7 +200,7 @@ def test_model_class():
 
 
 def test_invalid_schema():
-    with pytest.raises(SchemaError, match="Recursive reference error: ref 'Branch' not found"):
+    with pytest.raises(SchemaError, match="Slots Error: ref 'Branch' not found"):
         SchemaValidator(
             {
                 'type': 'list',
