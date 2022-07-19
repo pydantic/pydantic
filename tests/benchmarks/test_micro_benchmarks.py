@@ -285,6 +285,18 @@ def test_list_of_ints_core_json(benchmark):
         v.validate_json(json_data[1])
 
 
+@skip_pydantic
+@pytest.mark.benchmark(group='List[Any]')
+def test_list_of_any_pyd_py(benchmark):
+    class PydanticModel(BaseModel):
+        __root__: list
+
+    @benchmark
+    def t():
+        PydanticModel.parse_obj(list_of_ints_data[0])
+        PydanticModel.parse_obj(list_of_ints_data[1])
+
+
 @pytest.mark.benchmark(group='List[Any]')
 def test_list_of_any_core_py(benchmark):
     v = SchemaValidator({'type': 'list'})

@@ -38,6 +38,7 @@ mod timedelta;
 mod tuple;
 mod typed_dict;
 mod union;
+
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {

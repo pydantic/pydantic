@@ -23,7 +23,7 @@ if hyp_max_examples:
 
 def plain_repr(obj):
     r = repr(obj)
-    r = re.sub(r',$', '', r, flags=re.M)
+    r = re.sub(r',\s*([)}])', r'\1', r)
     r = re.sub(r'\s+', '', r)
     return r
 
