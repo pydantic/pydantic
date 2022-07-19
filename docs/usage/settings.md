@@ -87,6 +87,7 @@ export SUB_MODEL='{"v1": "json-1", "v2": "json-2"}'
 export SUB_MODEL__V2=nested-2
 export SUB_MODEL__V3=3
 export SUB_MODEL__DEEP__V4=v4
+export SUB_MODEL__DEEP__COMPLEX='["one", "two", "tree"]'
 ```
 
 You could load a settings module thus:

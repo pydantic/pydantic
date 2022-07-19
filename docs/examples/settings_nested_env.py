@@ -1,8 +1,10 @@
+from typing import List
 from pydantic import BaseModel, BaseSettings
 
 
 class DeepSubModel(BaseModel):
     v4: str
+    complex: List[str]
 
 
 class SubModel(BaseModel):
