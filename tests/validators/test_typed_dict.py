@@ -460,6 +460,19 @@ def test_alias(py_and_json: PyAndJson):
         assert v.validate_test({'field_a': '123'})
 
 
+def test_empty_string_field_name(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'typed-dict', 'fields': {'': {'schema': {'type': 'int'}}}})
+    assert v.validate_test({'': 123}) == {'': 123}
+
+
+def test_empty_string_aliases(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'alias': '', 'schema': {'type': 'int'}}}})
+    assert v.validate_test({'': 123}) == {'field_a': 123}
+
+    v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'alias': ['', ''], 'schema': {'type': 'int'}}}})
+    assert v.validate_test({'': {'': 123}}) == {'field_a': 123}
+
+
 def test_alias_allow_pop(py_and_json: PyAndJson):
     v = py_and_json(
         {
