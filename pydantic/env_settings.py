@@ -218,7 +218,7 @@ class EnvSettingsSource:
         return True, allow_json_failure
 
     @staticmethod
-    def next_field(field: Union[ModelField, None], key: str) -> Union[ModelField, None]:
+    def next_field(field: Optional[ModelField], key: str) -> Optional[ModelField]:
         if not field:
             return None
 
