@@ -219,10 +219,7 @@ class EnvSettingsSource:
 
     @staticmethod
     def next_field(field: Optional[ModelField], key: str) -> Optional[ModelField]:
-        if not field:
-            return None
-
-        if field.sub_fields:
+        if not field or field.sub_fields:
             # no support for Unions of complex BaseSettings fields
             return None
         elif field.type_ and field.type_.__fields__.get(key):
