@@ -394,7 +394,7 @@ class ModelField(Representation):
     ) -> None:
 
         self.name: str = name
-        self.has_alias: bool = bool(alias)
+        self.has_alias: bool = alias is not None
         self.alias: str = alias if alias is not None else name
         self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
