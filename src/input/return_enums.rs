@@ -3,11 +3,12 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTuple};
 
-use crate::errors::{ValError, ValLineError, ValResult};
+use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
 use super::parse_json::{JsonArray, JsonObject};
+use super::Input;
 
 #[derive(Debug)]
 pub enum GenericSequence<'a> {
@@ -85,15 +86,39 @@ impl<'a> GenericSequence<'a> {
         }
     }
 
+    pub fn check_len<'s, 'data>(
+        &'s self,
+        size_range: Option<(Option<usize>, Option<usize>)>,
+        input: &'data impl Input<'data>,
+    ) -> ValResult<'data, Option<usize>> {
+        let mut length: Option<usize> = None;
+        if let Some((min_items, max_items)) = size_range {
+            let len = self.generic_len();
+            if let Some(min_length) = min_items {
+                if len < min_length {
+                    return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
+                }
+            }
+            if let Some(max_length) = max_items {
+                if len > max_length {
+                    return Err(ValError::new(ErrorKind::TooLong { max_length }, input));
+                }
+            }
+            length = Some(len);
+        }
+        Ok(length)
+    }
+
     pub fn validate_to_vec<'s>(
         &self,
         py: Python<'a>,
-        length: usize,
+        length: Option<usize>,
         validator: &'s CombinedValidator,
         extra: &Extra,
         slots: &'a [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'a, Vec<PyObject>> {
+        let length = length.unwrap_or_else(|| self.generic_len());
         match self {
             Self::List(sequence) => {
                 validate_to_vec_list(py, sequence, length, validator, extra, slots, recursion_guard)
@@ -108,6 +133,16 @@ impl<'a> GenericSequence<'a> {
             Self::JsonArray(sequence) => {
                 validate_to_vec_jsonarray(py, sequence, length, validator, extra, slots, recursion_guard)
             }
+        }
+    }
+
+    pub fn to_vec(&self, py: Python) -> Vec<PyObject> {
+        match self {
+            Self::List(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
+            Self::Tuple(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
+            Self::Set(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
+            Self::FrozenSet(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
+            Self::JsonArray(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
         }
     }
 }
