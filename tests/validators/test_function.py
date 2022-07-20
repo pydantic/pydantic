@@ -169,7 +169,7 @@ def test_function_after_data():
     )
 
     assert v.validate_python({'field_a': '123', 'field_b': 321}) == {'field_a': 123, 'field_b': '321 Changed'}
-    assert f_kwargs == {'data': {'field_a': 123}, 'config': None}
+    assert f_kwargs == {'data': {'field_a': 123}, 'config': None, 'context': None}
 
 
 def test_function_after_config():
@@ -193,7 +193,7 @@ def test_function_after_config():
     )
 
     assert v.validate_python({'test_field': 321}) == {'test_field': '321 Changed'}
-    assert f_kwargs == {'data': {}, 'config': {'config_choose_priority': 2}}
+    assert f_kwargs == {'data': {}, 'config': {'config_choose_priority': 2}, 'context': None}
 
 
 def test_config_no_model():
@@ -207,7 +207,7 @@ def test_config_no_model():
     v = SchemaValidator({'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_python(123) == '123 Changed'
-    assert f_kwargs == {'data': None, 'config': None}
+    assert f_kwargs == {'data': None, 'config': None, 'context': None}
 
 
 def test_function_plain():
@@ -252,7 +252,7 @@ def test_function_wrong_sig():
 
     # exception messages differ between python and pypy
     if platform.python_implementation() == 'PyPy':
-        error_message = 'f() got 2 unexpected keyword arguments'
+        error_message = 'f() got 3 unexpected keyword arguments'
     else:
         error_message = "f() got an unexpected keyword argument 'data'"
 
