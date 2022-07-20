@@ -5,7 +5,7 @@ use super::datetime::{
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
-use super::{EitherBytes, EitherString, EitherTimedelta, GenericMapping, GenericSequence, Input, JsonInput};
+use super::{EitherBytes, EitherString, EitherTimedelta, GenericListLike, GenericMapping, Input, JsonInput};
 
 impl<'a> Input<'a> for JsonInput {
     /// This is required by since JSON object keys are always strings, I don't think it can be called
@@ -124,18 +124,18 @@ impl<'a> Input<'a> for JsonInput {
         self.validate_dict(false)
     }
 
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         match self {
             JsonInput::Array(a) => Ok(a.into()),
             _ => Err(ValError::new(ErrorKind::ListType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_list(false)
     }
 
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         // just as in set's case, List has to be allowed
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -143,11 +143,11 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_tuple(false)
     }
 
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -155,11 +155,11 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_set(false)
     }
 
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -167,7 +167,7 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_frozenset(false)
     }
 
@@ -298,38 +298,38 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         Err(ValError::new(ErrorKind::ListType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_list(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         Err(ValError::new(ErrorKind::TupleType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_tuple(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         Err(ValError::new(ErrorKind::SetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_set(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
         Err(ValError::new(ErrorKind::FrozenSetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
         self.validate_frozenset(false)
     }
 

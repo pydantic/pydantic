@@ -8,7 +8,7 @@ use crate::input::datetime::EitherTime;
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
-use super::{GenericMapping, GenericSequence};
+use super::{GenericListLike, GenericMapping};
 
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
@@ -124,55 +124,55 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.validate_dict(strict)
     }
 
-    fn validate_list(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_list(&'a self, strict: bool) -> ValResult<GenericListLike<'a>> {
         if strict {
             self.strict_list()
         } else {
             self.lax_list()
         }
     }
-    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>>;
+    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_list(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_list(&'a self) -> ValResult<GenericListLike<'a>> {
         self.strict_list()
     }
 
-    fn validate_tuple(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_tuple(&'a self, strict: bool) -> ValResult<GenericListLike<'a>> {
         if strict {
             self.strict_tuple()
         } else {
             self.lax_tuple()
         }
     }
-    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>>;
+    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
         self.strict_tuple()
     }
 
-    fn validate_set(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_set(&'a self, strict: bool) -> ValResult<GenericListLike<'a>> {
         if strict {
             self.strict_set()
         } else {
             self.lax_set()
         }
     }
-    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>>;
+    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_set(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_set(&'a self) -> ValResult<GenericListLike<'a>> {
         self.strict_set()
     }
 
-    fn validate_frozenset(&'a self, strict: bool) -> ValResult<GenericSequence<'a>> {
+    fn validate_frozenset(&'a self, strict: bool) -> ValResult<GenericListLike<'a>> {
         if strict {
             self.strict_frozenset()
         } else {
             self.lax_frozenset()
         }
     }
-    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>>;
+    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
         self.strict_frozenset()
     }
 

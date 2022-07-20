@@ -4,10 +4,10 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, py_error, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{GenericSequence, Input};
+use crate::input::{GenericListLike, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::list::sequence_build_function;
+use super::list::generic_list_like_build;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -20,7 +20,7 @@ pub struct TupleVarLenValidator {
 
 impl BuildValidator for TupleVarLenValidator {
     const EXPECTED_TYPE: &'static str = "tuple-var-len";
-    sequence_build_function!();
+    generic_list_like_build!();
 }
 
 impl Validator for TupleVarLenValidator {
@@ -38,7 +38,10 @@ impl Validator for TupleVarLenValidator {
 
         let output = match self.item_validator {
             Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
-            None => seq.to_vec(py),
+            None => match seq {
+                GenericListLike::Tuple(tuple) => return Ok(tuple.into_py(py)),
+                _ => seq.to_vec(py),
+            },
         };
         Ok(PyTuple::new(py, &output).into_py(py))
     }
@@ -113,8 +116,8 @@ impl Validator for TupleFixLenValidator {
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
         let mut errors: Vec<ValLineError> = Vec::new();
         macro_rules! iter {
-            ($sequence:expr) => {
-                for (validator, (index, item)) in self.items_validators.iter().zip($sequence.iter().enumerate()) {
+            ($list_like:expr) => {
+                for (validator, (index, item)) in self.items_validators.iter().zip($list_like.iter().enumerate()) {
                     match validator.validate(py, item, extra, slots, recursion_guard) {
                         Ok(item) => output.push(item),
                         Err(ValError::LineErrors(line_errors)) => {
@@ -130,11 +133,11 @@ impl Validator for TupleFixLenValidator {
             };
         }
         match seq {
-            GenericSequence::List(sequence) => iter!(sequence),
-            GenericSequence::Tuple(sequence) => iter!(sequence),
-            GenericSequence::Set(sequence) => iter!(sequence),
-            GenericSequence::FrozenSet(sequence) => iter!(sequence),
-            GenericSequence::JsonArray(sequence) => iter!(sequence),
+            GenericListLike::List(list_like) => iter!(list_like),
+            GenericListLike::Tuple(list_like) => iter!(list_like),
+            GenericListLike::Set(list_like) => iter!(list_like),
+            GenericListLike::FrozenSet(list_like) => iter!(list_like),
+            GenericListLike::JsonArray(list_like) => iter!(list_like),
         }
         if errors.is_empty() {
             Ok(PyTuple::new(py, &output).into_py(py))
