@@ -85,22 +85,34 @@ impl SchemaValidator {
         Ok((cls, args).into_py(py))
     }
 
-    pub fn validate_python(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<PyObject> {
+    pub fn validate_python(
+        &self,
+        py: Python,
+        input: &PyAny,
+        strict: Option<bool>,
+        context: Option<&PyAny>,
+    ) -> PyResult<PyObject> {
         let r = self.validator.validate(
             py,
             input,
-            &Extra::new(strict),
+            &Extra::new(strict, context),
             &self.slots,
             &mut RecursionGuard::default(),
         );
         r.map_err(|e| self.prepare_validation_err(py, e))
     }
 
-    pub fn isinstance_python(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<bool> {
+    pub fn isinstance_python(
+        &self,
+        py: Python,
+        input: &PyAny,
+        strict: Option<bool>,
+        context: Option<&PyAny>,
+    ) -> PyResult<bool> {
         match self.validator.validate(
             py,
             input,
-            &Extra::new(strict),
+            &Extra::new(strict, context),
             &self.slots,
             &mut RecursionGuard::default(),
         ) {
@@ -110,13 +122,19 @@ impl SchemaValidator {
         }
     }
 
-    pub fn validate_json(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<PyObject> {
+    pub fn validate_json(
+        &self,
+        py: Python,
+        input: &PyAny,
+        strict: Option<bool>,
+        context: Option<&PyAny>,
+    ) -> PyResult<PyObject> {
         match parse_json(input)? {
             Ok(input) => {
                 let r = self.validator.validate(
                     py,
                     &input,
-                    &Extra::new(strict),
+                    &Extra::new(strict, context),
                     &self.slots,
                     &mut RecursionGuard::default(),
                 );
@@ -130,13 +148,19 @@ impl SchemaValidator {
         }
     }
 
-    pub fn isinstance_json(&self, py: Python, input: &PyAny, strict: Option<bool>) -> PyResult<bool> {
+    pub fn isinstance_json(
+        &self,
+        py: Python,
+        input: &PyAny,
+        strict: Option<bool>,
+        context: Option<&PyAny>,
+    ) -> PyResult<bool> {
         match parse_json(input)? {
             Ok(input) => {
                 match self.validator.validate(
                     py,
                     &input,
-                    &Extra::new(strict),
+                    &Extra::new(strict, context),
                     &self.slots,
                     &mut RecursionGuard::default(),
                 ) {
@@ -154,6 +178,7 @@ impl SchemaValidator {
             data: Some(data),
             field: Some(field.as_str()),
             strict: None,
+            context: None,
         };
         let r = self
             .validator
@@ -345,12 +370,15 @@ pub struct Extra<'a> {
     pub field: Option<&'a str>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
+    /// context used in validator functions
+    pub context: Option<&'a PyAny>,
 }
 
 impl<'a> Extra<'a> {
-    pub fn new(strict: Option<bool>) -> Self {
+    pub fn new(strict: Option<bool>, context: Option<&'a PyAny>) -> Self {
         Extra {
             strict,
+            context,
             ..Default::default()
         }
     }
@@ -362,6 +390,7 @@ impl<'a> Extra<'a> {
             data: self.data,
             field: self.field,
             strict: Some(true),
+            context: self.context,
         }
     }
 }
