@@ -1,3 +1,4 @@
+import copy
 from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
@@ -34,6 +35,7 @@ from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
+    convert_generics,
     display_as_type,
     get_args,
     get_origin,
@@ -273,7 +275,7 @@ def Field(
       elements. The schema will have a ``minItems`` validation keyword
     :param max_items: only applies to lists, requires the field to have a maximum number of
       elements. The schema will have a ``maxItems`` validation keyword
-    :param max_items: only applies to lists, requires the field not to have duplicated
+    :param unique_items: only applies to lists, requires the field not to have duplicated
       elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
@@ -354,7 +356,6 @@ class ModelField(Representation):
     __slots__ = (
         'type_',
         'outer_type_',
-        'annotation',
         'sub_fields',
         'sub_fields_mapping',
         'key_field',
@@ -395,8 +396,7 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = bool(alias)
         self.alias: str = alias or name
-        self.annotation = type_
-        self.type_: Any = type_
+        self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
@@ -448,6 +448,7 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
+                field_info = copy.copy(field_info)
                 field_info.update_from_config(field_info_from_config)
                 if field_info.default is not Undefined:
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
@@ -556,7 +557,6 @@ class ModelField(Representation):
         if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
-            self.annotation = self.type_
 
         if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
