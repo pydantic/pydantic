@@ -258,7 +258,7 @@ class TupleFixLenSchema(TypedDict, total=False):
 
 class TupleVarLenSchema(TypedDict, total=False):
     type: Required[Literal['tuple-var-len']]
-    items_schema: Schema  # default: AnySchema
+    items_schema: Schema
     min_items: int
     max_items: int
     strict: bool

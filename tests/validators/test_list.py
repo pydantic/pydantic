@@ -40,14 +40,32 @@ def test_list_strict():
 @pytest.mark.parametrize(
     'input_value,expected',
     [
+        ([1, 2, '3'], [1, 2, 3]),
         ((1, 2, '3'), [1, 2, 3]),
         ({1, 2, '3'}, IsList(1, 2, 3, check_order=False)),
         (frozenset([1, 2, '3']), IsList(1, 2, 3, check_order=False)),
     ],
 )
-def test_list(input_value, expected):
+def test_list_int(input_value, expected):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     assert v.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ([], []),
+        ([1, '2', b'3'], [1, '2', b'3']),
+        (frozenset([1, '2', b'3']), IsList(1, '2', b'3', check_order=False)),
+        ((), []),
+        ((1, '2', b'3'), [1, '2', b'3']),
+        ({1, '2', b'3'}, IsList(1, '2', b'3', check_order=False)),
+    ],
+)
+def test_list_any(input_value, expected):
+    v = SchemaValidator('list')
+    output = v.validate_python(input_value)
+    assert output == expected
 
 
 @pytest.mark.parametrize(
@@ -120,3 +138,49 @@ def test_length_ctx():
             'context': {'max_length': 3},
         }
     ]
+
+
+def test_list_function():
+    def f(input_value, **kwargs):
+        return input_value * 2
+
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'function', 'mode': 'plain', 'function': f}})
+
+    assert v.validate_python([1, 2, 3]) == [2, 4, 6]
+
+
+def test_list_function_val_error():
+    def f(input_value, **kwargs):
+        raise ValueError(f'error {input_value}')
+
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'function', 'mode': 'plain', 'function': f}})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1, 2])
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'value_error',
+            'loc': [0],
+            'message': 'Invalid value: error 1',
+            'input_value': 1,
+            'context': {'error': 'error 1'},
+        },
+        {
+            'kind': 'value_error',
+            'loc': [1],
+            'message': 'Invalid value: error 2',
+            'input_value': 2,
+            'context': {'error': 'error 2'},
+        },
+    ]
+
+
+def test_list_function_internal_error():
+    def f(input_value, **kwargs):
+        raise RuntimeError(f'error {input_value}')
+
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'function', 'mode': 'plain', 'function': f}})
+
+    with pytest.raises(RuntimeError, match='^error 1$') as exc_info:
+        v.validate_python([1, 2])
+    assert exc_info.value.args[0] == 'error 1'

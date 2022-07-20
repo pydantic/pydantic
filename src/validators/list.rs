@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
-use crate::input::Input;
+use crate::input::{GenericListLike, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -16,7 +16,7 @@ pub struct ListValidator {
     name: String,
 }
 
-macro_rules! sequence_build_function {
+macro_rules! generic_list_like_build {
     () => {
         fn build(
             schema: &PyDict,
@@ -47,11 +47,11 @@ macro_rules! sequence_build_function {
         }
     };
 }
-pub(crate) use sequence_build_function;
+pub(crate) use generic_list_like_build;
 
 impl BuildValidator for ListValidator {
     const EXPECTED_TYPE: &'static str = "list";
-    sequence_build_function!();
+    generic_list_like_build!();
 }
 
 impl Validator for ListValidator {
@@ -69,7 +69,10 @@ impl Validator for ListValidator {
 
         let output = match self.item_validator {
             Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
-            None => seq.to_vec(py),
+            None => match seq {
+                GenericListLike::List(list) => return Ok(list.into_py(py)),
+                _ => seq.to_vec(py),
+            },
         };
         Ok(output.into_py(py))
     }

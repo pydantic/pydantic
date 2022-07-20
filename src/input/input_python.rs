@@ -16,7 +16,7 @@ use super::datetime::{
     EitherTime,
 };
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
-use super::{repr_string, EitherBytes, EitherString, EitherTimedelta, GenericMapping, GenericSequence, Input};
+use super::{repr_string, EitherBytes, EitherString, EitherTimedelta, GenericListLike, GenericMapping, Input};
 
 impl<'a> Input<'a> for PyAny {
     fn as_loc_item(&self) -> LocItem {
@@ -233,7 +233,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_list(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else {
@@ -241,7 +241,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_list(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_list(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
@@ -255,7 +255,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else {
@@ -263,7 +263,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_tuple(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -277,7 +277,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_set(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else {
@@ -285,7 +285,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_set(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_set(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -299,7 +299,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(set) = self.cast_as::<PyFrozenSet>() {
             Ok(set.into())
         } else {
@@ -307,7 +307,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_frozenset(&'a self) -> ValResult<GenericSequence<'a>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
         if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else if let Ok(set) = self.cast_as::<PySet>() {
