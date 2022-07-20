@@ -34,6 +34,7 @@ import hypothesis.strategies as st
 import pydantic
 import pydantic.color
 import pydantic.types
+from pydantic.utils import lenient_issubclass
 
 # FilePath and DirectoryPath are explicitly unsupported, as we'd have to create
 # them on-disk, and that's unsafe in general without being told *where* to do so.
@@ -222,8 +223,9 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
             extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
         )
+    inner_type = getattr(cls, 'inner_type', None)
     return st.builds(
-        json.dumps,
+        cls.inner_type.json if lenient_issubclass(inner_type, pydantic.BaseModel) else json.dumps,
         inner,
         ensure_ascii=st.booleans(),
         indent=st.none() | st.integers(0, 16),

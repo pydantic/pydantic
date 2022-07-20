@@ -67,6 +67,7 @@ def gen_models():
         json_str: pydantic.Json[str]
         json_int_or_str: pydantic.Json[typing.Union[int, str]]
         json_list_of_float: pydantic.Json[typing.List[float]]
+        json_pydantic_model: pydantic.Json[pydantic.BaseModel]
 
     class ConstrainedNumbersModel(pydantic.BaseModel):
         conintt: pydantic.conint(gt=10, lt=100)
