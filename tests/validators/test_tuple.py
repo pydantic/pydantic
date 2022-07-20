@@ -40,6 +40,15 @@ def test_tuple_json(py_and_json: PyAndJson, tuple_variant: TupleVariant, items, 
         assert v.validate_test(input_value) == expected
 
 
+def test_any_no_copy():
+    v = SchemaValidator('tuple-var-len')
+    input_value = (1, '2', b'3')
+    output = v.validate_python(input_value)
+    assert output == input_value
+    assert output is input_value
+    assert id(output) == id(input_value)
+
+
 @pytest.mark.parametrize(
     'tuple_variant,items,input,expected',
     [

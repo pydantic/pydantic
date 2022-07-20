@@ -21,6 +21,26 @@ def test_frozenset_ints_both(py_and_json: PyAndJson, input_value, expected):
 
 @pytest.mark.parametrize(
     'input_value,expected',
+    [([], frozenset()), ([1, '2', b'3'], {1, '2', b'3'}), (frozenset([1, '2', b'3']), {1, '2', b'3'})],
+)
+def test_frozenset_any(input_value, expected):
+    v = SchemaValidator('frozenset')
+    output = v.validate_python(input_value)
+    assert output == expected
+    assert isinstance(output, frozenset)
+
+
+def test_no_copy():
+    v = SchemaValidator('frozenset')
+    input_value = frozenset([1, 2, 3])
+    output = v.validate_python(input_value)
+    assert output == input_value
+    assert output is input_value
+    assert id(output) == id(input_value)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
     [
         ([1, 2.5, '3'], {1, 2.5, '3'}),
         ('foo', Err('Value must be a valid frozenset')),

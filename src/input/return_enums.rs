@@ -10,8 +10,11 @@ use crate::validators::{CombinedValidator, Extra, Validator};
 use super::parse_json::{JsonArray, JsonObject};
 use super::Input;
 
+/// Container for all the "list-like" types which can be converted to each other in lax mode.
+/// This cannot be called `GenericSequence` (as it previously was) or `GenericIterable` since it's
+/// members don't match python's definition of `Sequence` or `Iterable`.
 #[derive(Debug)]
-pub enum GenericSequence<'a> {
+pub enum GenericListLike<'a> {
     List(&'a PyList),
     Tuple(&'a PyTuple),
     Set(&'a PySet),
@@ -28,17 +31,17 @@ macro_rules! derive_from {
         }
     };
 }
-derive_from!(GenericSequence, List, PyList);
-derive_from!(GenericSequence, Tuple, PyTuple);
-derive_from!(GenericSequence, Set, PySet);
-derive_from!(GenericSequence, FrozenSet, PyFrozenSet);
-derive_from!(GenericSequence, JsonArray, JsonArray);
+derive_from!(GenericListLike, List, PyList);
+derive_from!(GenericListLike, Tuple, PyTuple);
+derive_from!(GenericListLike, Set, PySet);
+derive_from!(GenericListLike, FrozenSet, PyFrozenSet);
+derive_from!(GenericListLike, JsonArray, JsonArray);
 
 macro_rules! build_validate_to_vec {
-    ($name:ident, $sequence_type:ty) => {
+    ($name:ident, $list_like_type:ty) => {
         fn $name<'a, 's>(
             py: Python<'a>,
-            sequence: &'a $sequence_type,
+            list_like: &'a $list_like_type,
             length: usize,
             validator: &'s CombinedValidator,
             extra: &Extra,
@@ -47,7 +50,7 @@ macro_rules! build_validate_to_vec {
         ) -> ValResult<'a, Vec<PyObject>> {
             let mut output: Vec<PyObject> = Vec::with_capacity(length);
             let mut errors: Vec<ValLineError> = Vec::new();
-            for (index, item) in sequence.iter().enumerate() {
+            for (index, item) in list_like.iter().enumerate() {
                 match validator.validate(py, item, extra, slots, recursion_guard) {
                     Ok(item) => output.push(item),
                     Err(ValError::LineErrors(line_errors)) => {
@@ -75,7 +78,7 @@ build_validate_to_vec!(validate_to_vec_set, PySet);
 build_validate_to_vec!(validate_to_vec_frozenset, PyFrozenSet);
 build_validate_to_vec!(validate_to_vec_jsonarray, JsonArray);
 
-impl<'a> GenericSequence<'a> {
+impl<'a> GenericListLike<'a> {
     pub fn generic_len(&self) -> usize {
         match self {
             Self::List(v) => v.len(),
@@ -120,29 +123,31 @@ impl<'a> GenericSequence<'a> {
     ) -> ValResult<'a, Vec<PyObject>> {
         let length = length.unwrap_or_else(|| self.generic_len());
         match self {
-            Self::List(sequence) => {
-                validate_to_vec_list(py, sequence, length, validator, extra, slots, recursion_guard)
+            Self::List(list_like) => {
+                validate_to_vec_list(py, list_like, length, validator, extra, slots, recursion_guard)
             }
-            Self::Tuple(sequence) => {
-                validate_to_vec_tuple(py, sequence, length, validator, extra, slots, recursion_guard)
+            Self::Tuple(list_like) => {
+                validate_to_vec_tuple(py, list_like, length, validator, extra, slots, recursion_guard)
             }
-            Self::Set(sequence) => validate_to_vec_set(py, sequence, length, validator, extra, slots, recursion_guard),
-            Self::FrozenSet(sequence) => {
-                validate_to_vec_frozenset(py, sequence, length, validator, extra, slots, recursion_guard)
+            Self::Set(list_like) => {
+                validate_to_vec_set(py, list_like, length, validator, extra, slots, recursion_guard)
             }
-            Self::JsonArray(sequence) => {
-                validate_to_vec_jsonarray(py, sequence, length, validator, extra, slots, recursion_guard)
+            Self::FrozenSet(list_like) => {
+                validate_to_vec_frozenset(py, list_like, length, validator, extra, slots, recursion_guard)
+            }
+            Self::JsonArray(list_like) => {
+                validate_to_vec_jsonarray(py, list_like, length, validator, extra, slots, recursion_guard)
             }
         }
     }
 
     pub fn to_vec(&self, py: Python) -> Vec<PyObject> {
         match self {
-            Self::List(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
-            Self::Tuple(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
-            Self::Set(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
-            Self::FrozenSet(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
-            Self::JsonArray(sequence) => sequence.iter().map(|i| i.to_object(py)).collect(),
+            Self::List(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
+            Self::Tuple(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
+            Self::Set(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
+            Self::FrozenSet(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
+            Self::JsonArray(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
         }
     }
 }
