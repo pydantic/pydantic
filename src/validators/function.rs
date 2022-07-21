@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult, ValidationError};
+use crate::errors::{ErrorKind, PydanticValueError, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -276,37 +276,38 @@ impl ValidatorCallable {
     }
 }
 
+macro_rules! py_err_string {
+    ($error_value:expr, $kind_member:ident, $input:ident) => {
+        match $error_value.str() {
+            Ok(py_string) => match py_string.to_str() {
+                Ok(s) => {
+                    let error = match s.is_empty() {
+                        true => "Unknown error".to_string(),
+                        false => s.to_string(),
+                    };
+                    ValError::new(ErrorKind::$kind_member { error }, $input)
+                }
+                Err(e) => ValError::InternalErr(e),
+            },
+            Err(e) => ValError::InternalErr(e),
+        }
+    };
+}
+
 fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError<'a> {
     // Only ValueError and AssertionError are considered as validation errors,
     // TypeError is now considered as a runtime error to catch errors in function signatures
     if err.is_instance_of::<PyValueError>(py) {
-        if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
+        if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticValueError>() {
+            pydantic_value_error.into_val_error(input)
+        } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
             validation_error.into()
         } else {
-            match py_err_string(py, err) {
-                Ok(error) => ValError::new(ErrorKind::ValueError { error }, input),
-                Err(e) => e,
-            }
+            py_err_string!(err.value(py), ValueError, input)
         }
     } else if err.is_instance_of::<PyAssertionError>(py) {
-        match py_err_string(py, err) {
-            Ok(error) => ValError::new(ErrorKind::AssertionError { error }, input),
-            Err(e) => e,
-        }
+        py_err_string!(err.value(py), AssertionError, input)
     } else {
         ValError::InternalErr(err)
-    }
-}
-
-fn py_err_string(py: Python, err: PyErr) -> ValResult<String> {
-    match err.value(py).str() {
-        Ok(py_string) => match py_string.to_str() {
-            Ok(s) => match s.is_empty() {
-                true => Ok("Unknown error".to_string()),
-                false => Ok(s.to_string()),
-            },
-            Err(e) => Err(ValError::InternalErr(e)),
-        },
-        Err(e) => Err(ValError::InternalErr(e)),
     }
 }

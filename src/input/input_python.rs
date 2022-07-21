@@ -1,6 +1,6 @@
 use std::str::from_utf8;
 
-use pyo3::exceptions::{PyAttributeError, PyTypeError};
+use pyo3::exceptions::PyAttributeError;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyInt, PyList, PyMapping,
@@ -462,22 +462,8 @@ fn mapping_as_dict(obj: &PyAny) -> Option<ValResult<GenericMapping>> {
 fn mapping_seq_as_dict(seq: &PySequence) -> PyResult<&PyDict> {
     let dict = PyDict::new(seq.py());
     for r in seq.iter()? {
-        let t: &PyTuple = r?.extract()?;
-
-        if t.len() != 2 {
-            return Err(PyTypeError::new_err("mapping items must be a tuple with 2 elements"));
-        }
-
-        #[cfg(PyPy)]
-        let k = t.get_item(0)?;
-        #[cfg(PyPy)]
-        let v = t.get_item(1)?;
-
-        #[cfg(not(PyPy))]
-        let k = unsafe { t.get_item_unchecked(0) };
-        #[cfg(not(PyPy))]
-        let v = unsafe { t.get_item_unchecked(1) };
-        dict.set_item(k, v)?;
+        let (key, value): (&PyAny, &PyAny) = r?.extract()?;
+        dict.set_item(key, value)?;
     }
     Ok(dict)
 }

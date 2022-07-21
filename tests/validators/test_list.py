@@ -161,14 +161,14 @@ def test_list_function_val_error():
         {
             'kind': 'value_error',
             'loc': [0],
-            'message': 'Invalid value: error 1',
+            'message': 'Value error, error 1',
             'input_value': 1,
             'context': {'error': 'error 1'},
         },
         {
             'kind': 'value_error',
             'loc': [1],
-            'message': 'Invalid value: error 2',
+            'message': 'Value error, error 2',
             'input_value': 2,
             'context': {'error': 'error 2'},
         },

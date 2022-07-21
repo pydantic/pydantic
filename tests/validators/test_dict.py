@@ -183,10 +183,10 @@ def test_mapping_error_yield_1():
             'loc': [],
             'message': (
                 'Unable to convert mapping to a dictionary, error: '
-                'TypeError: mapping items must be a tuple with 2 elements'
+                'ValueError: Expected tuple of length 2, but got tuple of length 1.'
             ),
             'input_value': HasRepr(IsStr(regex='.+BadMapping object at.+')),
-            'context': {'error': 'TypeError: mapping items must be a tuple with 2 elements'},
+            'context': {'error': 'ValueError: Expected tuple of length 2, but got tuple of length 1.'},
         }
     ]
 
