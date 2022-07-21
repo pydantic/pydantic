@@ -59,7 +59,7 @@ impl<'a> ValError<'a> {
 
 pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String {
     let py_line_errors: Vec<PyLineError> = line_errors.into_iter().map(|e| e.into_py(py)).collect();
-    pretty_py_line_errors(Some(py), py_line_errors.iter())
+    pretty_py_line_errors(py, py_line_errors.iter())
 }
 
 /// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`
