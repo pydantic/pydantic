@@ -9,7 +9,7 @@ from typing import Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError as CoreValidationError
+from pydantic_core import PydanticValueError, SchemaValidator, ValidationError, ValidationError as CoreValidationError
 
 if os.getenv('BENCHMARK_VS_PYDANTIC'):
     try:
@@ -706,3 +706,49 @@ class TestBenchmarkUnion:
                 assert True
 
         benchmark(validate_with_expected_error)
+
+
+@pytest.mark.benchmark(group='raise-error')
+def test_dont_raise_error(benchmark):
+    def f(input_value, **kwargs):
+        return input_value
+
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+
+    @benchmark
+    def t():
+        v.validate_python(42)
+
+
+@pytest.mark.benchmark(group='raise-error')
+def test_raise_error_value_error(benchmark):
+    def f(input_value, **kwargs):
+        raise ValueError('this is a custom error')
+
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+
+    @benchmark
+    def t():
+        try:
+            v.validate_python(42)
+        except ValidationError:
+            pass
+        else:
+            raise RuntimeError('expected ValidationError')
+
+
+@pytest.mark.benchmark(group='raise-error')
+def test_raise_error_custom(benchmark):
+    def f(input_value, **kwargs):
+        raise PydanticValueError('my_error', 'this is a custom error {foo}', {'foo': 'FOOBAR'})
+
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+
+    @benchmark
+    def t():
+        try:
+            v.validate_python(42)
+        except ValidationError:
+            pass
+        else:
+            raise RuntimeError('expected ValidationError')

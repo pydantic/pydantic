@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::fmt;
 use std::fmt::Write;
 
@@ -20,13 +19,6 @@ pub struct ValidationError {
     title: PyObject,
 }
 
-impl fmt::Display for ValidationError {
-    #[cfg_attr(has_no_coverage, no_coverage)]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.display(None))
-    }
-}
-
 impl ValidationError {
     pub fn from_val_error(py: Python, title: PyObject, error: ValError) -> PyErr {
         match error {
@@ -38,24 +30,12 @@ impl ValidationError {
         }
     }
 
-    fn display(&self, py: Option<Python>) -> String {
+    fn display(&self, py: Python) -> String {
         let count = self.line_errors.len();
         let plural = if count == 1 { "" } else { "s" };
-        let title: &str = match py {
-            Some(py) => self.title.extract(py).unwrap(),
-            None => "Schema",
-        };
+        let title: &str = self.title.extract(py).unwrap();
         let line_errors = pretty_py_line_errors(py, self.line_errors.iter());
         format!("{} validation error{} for {}\n{}", count, plural, title, line_errors)
-    }
-}
-
-impl Error for ValidationError {
-    #[cfg_attr(has_no_coverage, no_coverage)]
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        // we could in theory set self.source as `ValError::LineErrors(line_errors.clone())`, then return that here
-        // source is not used, and I can't imagine why it would be
-        None
     }
 }
 
@@ -97,7 +77,7 @@ impl ValidationError {
     }
 
     fn __repr__(&self, py: Python) -> String {
-        self.display(Some(py))
+        self.display(py)
     }
 
     fn __str__(&self, py: Python) -> String {
@@ -120,10 +100,7 @@ macro_rules! truncate_input_value {
     };
 }
 
-pub fn pretty_py_line_errors<'a>(
-    py: Option<Python>,
-    line_errors_iter: impl Iterator<Item = &'a PyLineError>,
-) -> String {
+pub fn pretty_py_line_errors<'a>(py: Python, line_errors_iter: impl Iterator<Item = &'a PyLineError>) -> String {
     line_errors_iter
         .map(|i| i.pretty(py))
         .collect::<Result<Vec<_>, _>>()
@@ -164,9 +141,9 @@ impl<'a> From<PyLineError> for ValLineError<'a> {
 impl PyLineError {
     pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
-        dict.set_item("kind", self.kind.to_string())?;
+        dict.set_item("kind", self.kind.kind())?;
         dict.set_item("loc", self.location.to_object(py))?;
-        dict.set_item("message", self.kind.render())?;
+        dict.set_item("message", self.kind.render_message(py)?)?;
         dict.set_item("input_value", &self.input_value)?;
         if let Some(context) = self.kind.py_dict(py)? {
             dict.set_item("context", context)?;
@@ -174,25 +151,25 @@ impl PyLineError {
         Ok(dict.into_py(py))
     }
 
-    fn pretty(&self, py: Option<Python>) -> Result<String, fmt::Error> {
+    fn pretty(&self, py: Python) -> Result<String, fmt::Error> {
         let mut output = String::with_capacity(200);
         write!(output, "{}", self.location)?;
 
-        write!(output, "  {} [kind={}", self.kind.render(), self.kind)?;
+        let message = match self.kind.render_message(py) {
+            Ok(message) => message,
+            Err(err) => format!("(error rendering message: {})", err),
+        };
+        write!(output, "  {} [kind={}", message, self.kind.kind())?;
 
-        if let Some(py) = py {
-            let input_value = self.input_value.as_ref(py);
-            let input_str = match repr_string(input_value) {
-                Ok(s) => s,
-                Err(_) => input_value.to_string(),
-            };
-            truncate_input_value!(output, input_str);
+        let input_value = self.input_value.as_ref(py);
+        let input_str = match repr_string(input_value) {
+            Ok(s) => s,
+            Err(_) => input_value.to_string(),
+        };
+        truncate_input_value!(output, input_str);
 
-            if let Ok(type_) = input_value.get_type().name() {
-                write!(output, ", input_type={}", type_)?;
-            }
-        } else {
-            truncate_input_value!(output, self.input_value.to_string());
+        if let Ok(type_) = input_value.get_type().name() {
+            write!(output, ", input_type={}", type_)?;
         }
         output.push(']');
         Ok(output)
