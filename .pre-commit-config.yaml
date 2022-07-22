@@ -17,3 +17,8 @@ repos:
     entry: make mypy
     types: [python]
     language: system
+  - id: pyupgrade
+    name: Pyupgrade
+    entry: make pyupgrade
+    types: [python]
+    language: system

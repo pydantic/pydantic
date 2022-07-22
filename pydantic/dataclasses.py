@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
+from .main import __dataclass_transform__, create_model, validate_model
 from .typing import resolve_annotations
 from .utils import ClassAttribute
 
@@ -16,11 +16,11 @@ if TYPE_CHECKING:
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
     class Dataclass:
-        __pydantic_model__: Type[BaseModel]
-        __initialised__: bool
-        __post_init_original__: Optional[Callable[..., None]]
-        __processed__: Optional[ClassAttribute]
-        __has_field_info_default__: bool  # whether or not a `pydantic.Field` is used as default value
+        __pydantic_model__: ClassVar[Type[BaseModel]]
+        __initialised__: ClassVar[bool]
+        __post_init_original__: ClassVar[Optional[Callable[..., None]]]
+        __processed__: ClassVar[Optional[ClassAttribute]]
+        __has_field_info_default__: ClassVar[bool]  # whether or not a `pydantic.Field` is used as default value
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
@@ -184,7 +184,12 @@ def _process_class(
 
     validators = gather_all_validators(cls)
     cls.__pydantic_model__ = create_model(
-        cls.__name__, __config__=config, __module__=_cls.__module__, __validators__=validators, **field_definitions
+        cls.__name__,
+        __config__=config,
+        __module__=_cls.__module__,
+        __validators__=validators,
+        __cls_kwargs__={'__resolve_forward_refs__': False},
+        **field_definitions,
     )
 
     cls.__initialised__ = False
@@ -196,9 +201,12 @@ def _process_class(
     if cls.__pydantic_model__.__config__.validate_assignment and not frozen:
         cls.__setattr__ = setattr_validate_assignment  # type: ignore[assignment]
 
+    cls.__pydantic_model__.__try_update_forward_refs__(**{cls.__name__: cls})
+
     return cls
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 @overload
 def dataclass(
     *,
@@ -213,6 +221,7 @@ def dataclass(
     ...
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 @overload
 def dataclass(
     _cls: Type[Any],
@@ -228,6 +237,7 @@ def dataclass(
     ...
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[Any]] = None,
     *,
