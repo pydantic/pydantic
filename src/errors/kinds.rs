@@ -116,11 +116,6 @@ pub enum ErrorKind {
     // tuple errors
     #[strum(message = "Value must be a valid tuple")]
     TupleType,
-    #[strum(message = "Tuple must have exactly {expected_length} item{plural}")]
-    TupleLengthMismatch {
-        expected_length: usize,
-        plural: bool,
-    },
     // ---------------------
     // set errors
     #[strum(message = "Value must be a valid set")]
@@ -359,13 +354,6 @@ impl ErrorKind {
             Self::StrTooLong { max_length } => to_string_render!(self, max_length),
             Self::StrPatternMismatch { pattern } => render!(self, pattern),
             Self::DictFromMapping { error } => render!(self, error),
-            Self::TupleLengthMismatch {
-                expected_length,
-                plural,
-            } => {
-                let plural = if *plural { "s" } else { "" };
-                to_string_render!(self, expected_length, plural)
-            }
             Self::IntNan { nan_value } => render!(self, nan_value),
             Self::IntMultipleOf { multiple_of } => to_string_render!(self, multiple_of),
             Self::IntGreaterThan { gt } => to_string_render!(self, gt),
@@ -416,10 +404,6 @@ impl ErrorKind {
             Self::StrTooLong { max_length } => py_dict!(py, max_length),
             Self::StrPatternMismatch { pattern } => py_dict!(py, pattern),
             Self::DictFromMapping { error } => py_dict!(py, error),
-            Self::TupleLengthMismatch {
-                expected_length,
-                plural,
-            } => py_dict!(py, expected_length, plural),
             Self::IntNan { nan_value } => py_dict!(py, nan_value),
             Self::IntMultipleOf { multiple_of } => py_dict!(py, multiple_of),
             Self::IntGreaterThan { gt } => py_dict!(py, gt),

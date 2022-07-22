@@ -253,6 +253,7 @@ class TuplePositionalSchema(TypedDict, total=False):
     type: Required[Literal['tuple']]
     mode: Required[Literal['positional']]
     items_schema: Required[List[Schema]]
+    extra_schema: Schema
     strict: bool
     ref: str
 

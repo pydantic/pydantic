@@ -170,8 +170,8 @@ def test_tuple_fix_len_errors(input_value, items, index):
 @pytest.mark.parametrize(
     'items,input_value,expected',
     [
-        ([{'type': 'int'}], [1, 2, 3], Err('Tuple must have exactly 1 item')),
-        ([{'type': 'int'}, {'type': 'int'}], [1], Err('Tuple must have exactly 2 items')),
+        ([{'type': 'int'}], [1, 2, 3], Err('Input must have at most 1 items [kind=too_long')),
+        ([{'type': 'int'}, {'type': 'int'}], [1], Err('Input must have at least 2 items [kind=too_short')),
     ],
     ids=['input too long', 'input too short'],
 )
@@ -305,10 +305,30 @@ def test_tuple_fix_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'tuple_length_mismatch',
+            'kind': 'too_short',
             'loc': [],
-            'message': 'Tuple must have exactly 2 items',
+            'message': 'Input must have at least 2 items',
             'input_value': [1],
-            'context': {'expected_length': 2, 'plural': True},
+            'context': {'min_length': 2},
         }
     ]
+
+
+def test_tuple_fix_extra():
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'str'], 'extra_schema': 'str'})
+    assert v.validate_python([1, 'a']) == (1, 'a')
+    assert v.validate_python((1, 'a')) == (1, 'a')
+    assert v.validate_python((1, 'a', 'b')) == (1, 'a', 'b')
+    assert v.validate_python([1, 'a', 'b', 'c', 'd']) == (1, 'a', 'b', 'c', 'd')
+    with pytest.raises(ValidationError, match='Input must have at least 2 items'):
+        v.validate_python([1])
+
+
+def test_tuple_fix_extra_any():
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['str'], 'extra_schema': 'any'})
+    assert v.validate_python([1]) == ('1',)
+    assert v.validate_python([1, 2]) == ('1', 2)
+    assert v.validate_python((1, 2)) == ('1', 2)
+    assert v.validate_python([1, 2, b'3']) == ('1', 2, b'3')
+    with pytest.raises(ValidationError, match='Input must have at least 1 items'):
+        v.validate_python([])
