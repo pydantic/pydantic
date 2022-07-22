@@ -752,3 +752,19 @@ def test_raise_error_custom(benchmark):
             pass
         else:
             raise RuntimeError('expected ValidationError')
+
+
+@pytest.mark.benchmark(group='tuple')
+def test_positional_tuple(benchmark):
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'int', 'int', 'int', 'int']})
+    assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
+
+    benchmark(v.validate_python, (1, 2, 3, '4', 5))
+
+
+@pytest.mark.benchmark(group='tuple')
+def test_variable_tuple(benchmark):
+    v = SchemaValidator({'type': 'tuple', 'items_schema': 'int'})
+    assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
+
+    benchmark(v.validate_python, (1, 2, 3, '4', 5))
