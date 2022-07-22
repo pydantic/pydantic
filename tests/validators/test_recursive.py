@@ -224,7 +224,12 @@ def test_outside_parent():
             'type': 'typed-dict',
             'fields': {
                 'tuple1': {
-                    'schema': {'type': 'tuple-fix-len', 'ref': 'tuple-iis', 'items_schema': ['int', 'int', 'str']}
+                    'schema': {
+                        'type': 'tuple',
+                        'mode': 'positional',
+                        'items_schema': ['int', 'int', 'str'],
+                        'ref': 'tuple-iis',
+                    }
                 },
                 'tuple2': {'schema': {'type': 'recursive-ref', 'schema_ref': 'tuple-iis'}},
             },
@@ -320,12 +325,13 @@ def multiple_tuple_schema() -> SchemaValidator:
             'fields': {
                 'f1': {
                     'schema': {
-                        'type': 'tuple-fix-len',
-                        'ref': 't',
+                        'type': 'tuple',
+                        'mode': 'positional',
                         'items_schema': [
                             {'type': 'int'},
                             {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 't'}},
                         ],
+                        'ref': 't',
                     }
                 },
                 'f2': {
@@ -425,7 +431,8 @@ def test_recursive_wrap():
             'mode': 'wrap',
             'function': wrap_func,
             'schema': {
-                'type': 'tuple-fix-len',
+                'type': 'tuple',
+                'mode': 'positional',
                 'items_schema': [
                     {'type': 'int'},
                     {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'wrapper'}},

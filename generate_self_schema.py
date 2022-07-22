@@ -156,6 +156,12 @@ def main():
         value = get_schema(s)
         if key == 'function' and value['fields']['mode']['schema']['expected'] == ['plain']:
             key = 'function-plain'
+        elif key == 'tuple':
+            if value['fields']['mode']['schema']['expected'] == ['positional']:
+                key = 'tuple-positional'
+            else:
+                key = 'tuple-variable'
+
         schema['choices'][key] = value
 
     python_code = (

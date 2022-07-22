@@ -10,20 +10,37 @@ use crate::recursion_guard::RecursionGuard;
 use super::list::generic_list_like_build;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
+#[derive(Debug)]
+pub struct TupleBuilder;
+
+impl BuildValidator for TupleBuilder {
+    const EXPECTED_TYPE: &'static str = "tuple";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext,
+    ) -> PyResult<CombinedValidator> {
+        match schema.get_as::<&str>(intern!(schema.py(), "mode"))? {
+            Some("positional") => TuplePositionalValidator::build(schema, config, build_context),
+            _ => TupleVariableValidator::build(schema, config, build_context),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct TupleVarLenValidator {
+pub struct TupleVariableValidator {
     strict: bool,
     item_validator: Option<Box<CombinedValidator>>,
     size_range: Option<(Option<usize>, Option<usize>)>,
     name: String,
 }
 
-impl BuildValidator for TupleVarLenValidator {
-    const EXPECTED_TYPE: &'static str = "tuple-var-len";
-    generic_list_like_build!();
+impl TupleVariableValidator {
+    generic_list_like_build!("{}[{}, ...]", "tuple");
 }
 
-impl Validator for TupleVarLenValidator {
+impl Validator for TupleVariableValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -59,15 +76,13 @@ impl Validator for TupleVarLenValidator {
 }
 
 #[derive(Debug, Clone)]
-pub struct TupleFixLenValidator {
+pub struct TuplePositionalValidator {
     strict: bool,
     items_validators: Vec<CombinedValidator>,
     name: String,
 }
 
-impl BuildValidator for TupleFixLenValidator {
-    const EXPECTED_TYPE: &'static str = "tuple-fix-len";
-
+impl TuplePositionalValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
@@ -75,7 +90,7 @@ impl BuildValidator for TupleFixLenValidator {
     ) -> PyResult<CombinedValidator> {
         let items: &PyList = schema.get_as_req(intern!(schema.py(), "items_schema"))?;
         if items.is_empty() {
-            return py_error!("Missing schemas for tuple elements");
+            return py_error!("Empty positional items schema");
         }
         let validators: Vec<CombinedValidator> = items
             .iter()
@@ -86,13 +101,13 @@ impl BuildValidator for TupleFixLenValidator {
         Ok(Self {
             strict: is_strict(schema, config)?,
             items_validators: validators,
-            name: format!("{}[{}]", Self::EXPECTED_TYPE, descr),
+            name: format!("tuple[{}]", descr),
         }
         .into())
     }
 }
 
-impl Validator for TupleFixLenValidator {
+impl Validator for TuplePositionalValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,

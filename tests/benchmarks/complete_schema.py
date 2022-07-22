@@ -49,13 +49,13 @@ def schema(*, strict: bool = False) -> dict:
                 'field_frozenset_bytes_con': {
                     'schema': {'type': 'frozenset', 'items_schema': 'bytes', 'min_items': 3, 'max_items': 42}
                 },
-                'field_tuple_var_len_any': {'schema': 'tuple-var-len'},
-                'field_tuple_var_len_float': {'schema': {'type': 'tuple-var-len', 'items_schema': 'float'}},
+                'field_tuple_var_len_any': {'schema': 'tuple'},
+                'field_tuple_var_len_float': {'schema': {'type': 'tuple', 'items_schema': 'float'}},
                 'field_tuple_var_len_float_con': {
-                    'schema': {'type': 'tuple-var-len', 'items_schema': 'float', 'min_items': 3, 'max_items': 42}
+                    'schema': {'type': 'tuple', 'items_schema': 'float', 'min_items': 3, 'max_items': 42}
                 },
                 'field_tuple_fix_len': {
-                    'schema': {'type': 'tuple-fix-len', 'items_schema': ['str', 'int', 'float', 'bool']}
+                    'schema': {'type': 'tuple', 'mode': 'positional', 'items_schema': ['str', 'int', 'float', 'bool']}
                 },
                 'field_dict_any': {'schema': 'dict'},
                 'field_dict_str_float': {'schema': {'type': 'dict', 'keys_schema': 'str', 'values_schema': 'float'}},

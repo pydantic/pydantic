@@ -44,9 +44,9 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: Schema = {'type': 'set', 'items_schema': {'type': 'str'}, 'max_items': 3}
     SchemaValidator(schema)
-    schema: Schema = {'type': 'tuple-var-len', 'items_schema': {'type': 'str'}, 'max_items': 3}
+    schema: Schema = {'type': 'tuple', 'mode': 'variable', 'items_schema': {'type': 'str'}, 'max_items': 3}
     SchemaValidator(schema)
-    schema: Schema = {'type': 'tuple-fix-len', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
+    schema: Schema = {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
     SchemaValidator(schema)
     schema: Schema = {'type': 'frozenset', 'items_schema': {'type': 'str'}, 'max_items': 3}
     SchemaValidator(schema)
