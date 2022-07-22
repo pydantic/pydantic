@@ -79,6 +79,7 @@ impl Validator for TupleVariableValidator {
 pub struct TuplePositionalValidator {
     strict: bool,
     items_validators: Vec<CombinedValidator>,
+    extra_validator: Option<Box<CombinedValidator>>,
     name: String,
 }
 
@@ -88,7 +89,8 @@ impl TuplePositionalValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let items: &PyList = schema.get_as_req(intern!(schema.py(), "items_schema"))?;
+        let py = schema.py();
+        let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
         if items.is_empty() {
             return py_error!("Empty positional items schema");
         }
@@ -101,6 +103,10 @@ impl TuplePositionalValidator {
         Ok(Self {
             strict: is_strict(schema, config)?,
             items_validators: validators,
+            extra_validator: match schema.get_item(intern!(py, "extra_schema")) {
+                Some(v) => Some(Box::new(build_validator(v, config, build_context)?.0)),
+                None => None,
+            },
             name: format!("tuple[{}]", descr),
         }
         .into())
@@ -119,11 +125,10 @@ impl Validator for TuplePositionalValidator {
         let seq = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
         let expected_length = self.items_validators.len();
 
-        if expected_length != seq.generic_len() {
+        if seq.generic_len() < expected_length {
             return Err(ValError::new(
-                ErrorKind::TupleLengthMismatch {
-                    expected_length,
-                    plural: expected_length != 1,
+                ErrorKind::TooShort {
+                    min_length: expected_length,
                 },
                 input,
             ));
@@ -132,7 +137,22 @@ impl Validator for TuplePositionalValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         macro_rules! iter {
             ($list_like:expr) => {
-                for (validator, (index, item)) in self.items_validators.iter().zip($list_like.iter().enumerate()) {
+                for (index, item) in $list_like.iter().enumerate() {
+                    let validator = match self.items_validators.get(index) {
+                        Some(ref v) => v,
+                        None => match self.extra_validator {
+                            Some(ref v) => v.as_ref(),
+                            None => {
+                                return Err(ValError::new(
+                                    ErrorKind::TooLong {
+                                        max_length: expected_length,
+                                    },
+                                    input,
+                                ));
+                            }
+                        },
+                    };
+
                     match validator.validate(py, item, extra, slots, recursion_guard) {
                         Ok(item) => output.push(item),
                         Err(ValError::LineErrors(line_errors)) => {
