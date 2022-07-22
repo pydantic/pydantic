@@ -9,7 +9,7 @@ use ahash::AHashMap;
 
 use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{EitherString, GenericMapping, Input};
+use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
 
@@ -253,35 +253,14 @@ impl Validator for TaggedUnionValidator {
                     self.find_call_validator(py, tag.to_string_lossy(), input, extra, slots, recursion_guard)
                 }
             }
-            Discriminator::SelfSchema => {
-                if input.strict_str().is_ok() {
-                    // input is a string, must be a bare type
-                    self.find_call_validator(py, Cow::Borrowed("plain-string"), input, extra, slots, recursion_guard)
-                } else {
-                    let dict = input.strict_dict()?;
-                    let mut tag = match dict {
-                        GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type")) {
-                            Some(t) => t.strict_str()?,
-                            None => return Err(self.tag_not_found(input)),
-                        },
-                        _ => unreachable!(),
-                    };
-                    // custom logic to distinguish between different function schemas
-                    if tag.as_cow().as_ref() == "function" {
-                        let mode = match dict {
-                            GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode")) {
-                                Some(m) => m.strict_str()?,
-                                None => return Err(self.tag_not_found(input)),
-                            },
-                            _ => unreachable!(),
-                        };
-                        if mode.as_cow().as_ref() == "plain" {
-                            tag = EitherString::Cow(Cow::Borrowed("function-plain"))
-                        }
-                    }
-                    self.find_call_validator(py, tag.as_cow(), input, extra, slots, recursion_guard)
-                }
-            }
+            Discriminator::SelfSchema => self.find_call_validator(
+                py,
+                self.self_schema_tag(py, input)?,
+                input,
+                extra,
+                slots,
+                recursion_guard,
+            ),
         }
     }
 
@@ -297,6 +276,53 @@ impl Validator for TaggedUnionValidator {
 }
 
 impl TaggedUnionValidator {
+    fn self_schema_tag<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data impl Input<'data>,
+    ) -> ValResult<'data, Cow<'data, str>> {
+        if input.strict_str().is_ok() {
+            // input is a string, must be a bare type
+            Ok(Cow::Borrowed("plain-string"))
+        } else {
+            let dict = input.strict_dict()?;
+            let either_tag = match dict {
+                GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type")) {
+                    Some(t) => t.strict_str()?,
+                    None => return Err(self.tag_not_found(input)),
+                },
+                _ => unreachable!(),
+            };
+            let tag_cow = either_tag.as_cow();
+            let tag = tag_cow.as_ref();
+            // custom logic to distinguish between different function and tuple schemas
+            if tag == "function" || tag == "tuple" {
+                let mode = match dict {
+                    GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode")) {
+                        Some(m) => Some(m.strict_str()?),
+                        None => None,
+                    },
+                    _ => unreachable!(),
+                };
+                if tag == "function" {
+                    let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
+                    if mode.as_cow().as_ref() == "plain" {
+                        return Ok(Cow::Borrowed("function-plain"));
+                    }
+                } else {
+                    // tag == "tuple"
+                    if let Some(mode) = mode {
+                        if mode.as_cow().as_ref() == "positional" {
+                            return Ok(Cow::Borrowed("tuple-positional"));
+                        }
+                    }
+                    return Ok(Cow::Borrowed("tuple-variable"));
+                }
+            }
+            return Ok(Cow::Owned(tag.to_string()));
+        }
+    }
+
     fn find_call_validator<'s, 'data>(
         &'s self,
         py: Python<'data>,

@@ -323,8 +323,7 @@ pub fn build_validator<'a>(
         // floats
         float::FloatValidator,
         // tuples
-        tuple::TupleVarLenValidator,
-        tuple::TupleFixLenValidator,
+        tuple::TupleBuilder,
         // list/arrays
         list::ListValidator,
         // sets - unique lists
@@ -423,8 +422,8 @@ pub enum CombinedValidator {
     // sets - unique lists
     Set(set::SetValidator),
     // tuples
-    TupleVarLen(tuple::TupleVarLenValidator),
-    TupleFixLen(tuple::TupleFixLenValidator),
+    TuplePositional(tuple::TuplePositionalValidator),
+    TupleVariable(tuple::TupleVariableValidator),
     // dicts/objects (recursive)
     Dict(dict::DictValidator),
     // None/null
