@@ -132,6 +132,8 @@ else:
         """
         if hasattr(tp, '_nparams'):
             return (Any,) * tp._nparams
+        if tp == Tuple[()]:
+            return ((),)
         return ()
 
     def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
