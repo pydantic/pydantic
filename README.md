@@ -1,8 +1,7 @@
 # pydantic-core
 
 [![CI](https://github.com/samuelcolvin/pydantic-core/workflows/ci/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic-core/actions?query=event%3Apush+branch%3Amain+workflow%3Aci)
-[![Coverage](https://codecov.io/gh/samuelcolvin/pydantic-core/branch/main/graph/badge.svg?token=L2JQIWfqyv)](https://codecov.io/gh/samuelcolvin/pydantic-core)
-
+[![Coverage](https://codecov.io/gh/samuelcolvin/pydantic-core/branch/main/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/pydantic-core)
 
 This package provides the core functionality for pydantic.
 
@@ -103,7 +102,7 @@ You might find it useful to look at [`pydantic_core/_pydantic_core.pyi`](./pydan
 [`pydantic_core/_types.py`](./pydantic_core/_types.py) for more information on the python API,
 beyond that, [`tests/`](./tests) provide a large number of examples of usage.
 
-If you want to contribute to pydantic-core, you'll some other make commands:
+If you want to contribute to pydantic-core, you'll want to use some other make commands:
 * `make build-dev` to build the package during development
 * `make build-prod` to perform an optimised build for benchmarking
 * `make test` to run the tests
