@@ -1839,35 +1839,22 @@ def test_anystr_strip_whitespace_disabled():
     assert m.bytes_check == b'  456  '
 
 
-def test_anystr_upper_enabled():
+@pytest.mark.parametrize(
+    'anystr_upper_input, str_check, bytes_check, result_str_check, result_bytes_check',
+    [(True, 'ABCDefG', b'abCD1Fg', 'ABCDEFG', b'ABCD1FG'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+)
+def test_anystr_upper(anystr_upper_input, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_upper = True
+            anystr_upper = anystr_upper_input
 
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+    m = Model(str_check=str_check, bytes_check=bytes_check)
 
-    assert m.str_check == 'ABCDEFG'
-    assert m.bytes_check == b'ABCD1FG'
-
-
-def test_anystr_upper_disabled():
-    class Model(BaseModel):
-        str_check: str
-        bytes_check: bytes
-
-        class Config:
-            anystr_upper = False
-
-    str_check_value = 'ABCDefG'
-    bytes_check_value = b'abCD1Fg'
-
-    m = Model(str_check=str_check_value, bytes_check=bytes_check_value)
-
-    assert m.str_check == str_check_value
-    assert m.bytes_check == bytes_check_value
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
 def test_anystr_lower_enabled():
