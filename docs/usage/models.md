@@ -33,12 +33,16 @@ default value, and so a type annotation is not required (however note [this](#fi
 order when some fields do not have type annotations).
 ```py
 user = User(id='123')
+user_x = User(id='123.45')
 ```
 `user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
 if no `ValidationError` is raised, you know the resulting model instance is valid.
 ```py
 assert user.id == 123
+assert user_x.id == 123
+assert isinstance(user_x.id, int)  # Note that 123.45 was casted to an int and its value is 123
 ```
+More details on the casting in the case of `user_x` can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type
 ```py
