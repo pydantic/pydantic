@@ -1,6 +1,6 @@
 import warnings
 from abc import ABCMeta
-from copy import deepcopy
+from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -1035,7 +1035,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
             if check_extra:
                 names_used.add(field.name if using_name else field.alias)
 
-        v_, errors_ = field.validate(value, values, loc=field.alias, cls=cls_)
+        v_, errors_ = field.validate(value, copy(values), loc=field.alias, cls=cls_)
         if isinstance(errors_, ErrorWrapper):
             errors.append(errors_)
         elif isinstance(errors_, list):

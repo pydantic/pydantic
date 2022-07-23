@@ -1301,3 +1301,53 @@ def test_overridden_root_validators(mocker):
 
     B(x='pika')
     assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
+
+
+def test_mutated_values():
+    class A(BaseModel):
+        a: int
+        b: int
+
+        @validator("a")
+        def v_a(cls, value, values):
+            assert value < 10
+            return value
+
+        @validator("b")
+        def v_b(cls, value, values):
+            values["a"] = 50
+            return value
+    
+    with pytest.raises(ValidationError):
+        A(a=50, b=1)
+
+    a = A(a=1, b=1)
+    assert a.a == 1
+    assert a.b == 1
+
+def test_assignement_mutated_values():
+    class A(BaseModel):
+        a: int = 1
+        b: int = 1
+
+        class Config:
+            validate_assignment = True
+            
+        @validator("a")
+        def v_a(cls, value, values):
+            assert value < 10
+            return value
+
+        @validator("b")
+        def v_b(cls, value, values):
+            values["a"] = 50
+            return value
+    
+    a = A()
+    a.a = 9
+    assert a.a == 9
+    assert a.b == 1
+
+    a.b = 2
+    assert a.a == 9
+    assert a.b == 2
