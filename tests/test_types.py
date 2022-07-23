@@ -714,20 +714,19 @@ def test_constrained_str_too_long():
     ]
 
 
-def test_constrained_str_upper_enabled():
+@pytest.mark.parametrize(
+    'to_upper, value, result',
+    [
+        (True, 'abcd', 'ABCD'),
+        (False, 'aBcD', 'aBcD'),
+    ],
+)
+def test_constrained_str_upper(to_upper, value, result):
     class Model(BaseModel):
-        v: constr(to_upper=True)
+        v: constr(to_upper=to_upper)
 
-    m = Model(v='abcd')
-    assert m.v == 'ABCD'
-
-
-def test_constrained_str_upper_disabled():
-    class Model(BaseModel):
-        v: constr(to_upper=False)
-
-    m = Model(v='aBcD')
-    assert m.v == 'aBcD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_str_lower_enabled():
