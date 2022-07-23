@@ -729,20 +729,19 @@ def test_constrained_str_upper(to_upper, value, result):
     assert m.v == result
 
 
-def test_constrained_str_lower_enabled():
+@pytest.mark.parametrize(
+    'to_lower, value, result',
+    [
+        (True, 'ABCD', 'abcd'),
+        (False, 'ABCD', 'ABCD'),
+    ],
+)
+def test_constrained_str_lower(to_lower, value, result):
     class Model(BaseModel):
-        v: constr(to_lower=True)
+        v: constr(to_lower=to_lower)
 
-    m = Model(v='ABCD')
-    assert m.v == 'abcd'
-
-
-def test_constrained_str_lower_disabled():
-    class Model(BaseModel):
-        v: constr(to_lower=False)
-
-    m = Model(v='ABCD')
-    assert m.v == 'ABCD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_str_max_length_0():
