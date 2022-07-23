@@ -1833,16 +1833,16 @@ def test_anystr_strip_whitespace(enabled, str_check, bytes_check, result_str_che
 
 
 @pytest.mark.parametrize(
-    'anystr_upper_input, str_check, bytes_check, result_str_check, result_bytes_check',
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
     [(True, 'ABCDefG', b'abCD1Fg', 'ABCDEFG', b'ABCD1FG'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
 )
-def test_anystr_upper(anystr_upper_input, str_check, bytes_check, result_str_check, result_bytes_check):
+def test_anystr_upper(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_upper = anystr_upper_input
+            anystr_upper = enabled
 
     m = Model(str_check=str_check, bytes_check=bytes_check)
 
@@ -1851,16 +1851,16 @@ def test_anystr_upper(anystr_upper_input, str_check, bytes_check, result_str_che
 
 
 @pytest.mark.parametrize(
-    'anystr_lower_input, str_check, bytes_check, result_str_check, result_bytes_check',
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
     [(True, 'ABCDefG', b'abCD1Fg', 'abcdefg', b'abcd1fg'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
 )
-def test_anystr_lower(anystr_lower_input, str_check, bytes_check, result_str_check, result_bytes_check):
+def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_lower = anystr_lower_input
+            anystr_lower = enabled
 
     m = Model(str_check=str_check, bytes_check=bytes_check)
 
