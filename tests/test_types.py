@@ -1812,30 +1812,24 @@ def test_uuid_validation():
     ]
 
 
-def test_anystr_strip_whitespace_enabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [
+        (True, '  123  ', b'  456  ', '123', b'456'),
+        (False, '  123  ', b'  456  ', '  123  ', b'  456  '),
+    ],
+)
+def test_anystr_strip_whitespace(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_strip_whitespace = True
+            anystr_strip_whitespace = enabled
 
-    m = Model(str_check='  123  ', bytes_check=b'  456  ')
-    assert m.str_check == '123'
-    assert m.bytes_check == b'456'
-
-
-def test_anystr_strip_whitespace_disabled():
-    class Model(BaseModel):
-        str_check: str
-        bytes_check: bytes
-
-        class Config:
-            anystr_strip_whitespace = False
-
-    m = Model(str_check='  123  ', bytes_check=b'  456  ')
-    assert m.str_check == '  123  '
-    assert m.bytes_check == b'  456  '
+    m = Model(str_check=str_check, bytes_check=bytes_check)
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
 @pytest.mark.parametrize(
