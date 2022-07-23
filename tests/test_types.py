@@ -128,20 +128,19 @@ def test_constrained_bytes_upper(to_upper, value, result):
     assert m.v == result
 
 
-def test_constrained_bytes_lower_enabled():
+@pytest.mark.parametrize(
+    'to_lower, value, result',
+    [
+        (True, b'ABCD', b'abcd'),
+        (False, b'ABCD', b'ABCD'),
+    ],
+)
+def test_constrained_bytes_lower(to_lower, value, result):
     class Model(BaseModel):
-        v: conbytes(to_lower=True)
+        v: conbytes(to_lower=to_lower)
 
-    m = Model(v=b'ABCD')
-    assert m.v == b'abcd'
-
-
-def test_constrained_bytes_lower_disabled():
-    class Model(BaseModel):
-        v: conbytes(to_lower=False)
-
-    m = Model(v=b'ABCD')
-    assert m.v == b'ABCD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_bytes_strict_true():
