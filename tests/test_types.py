@@ -1857,32 +1857,22 @@ def test_anystr_upper(anystr_upper_input, str_check, bytes_check, result_str_che
     assert m.bytes_check == result_bytes_check
 
 
-def test_anystr_lower_enabled():
+@pytest.mark.parametrize(
+    'anystr_lower_input, str_check, bytes_check, result_str_check, result_bytes_check',
+    [(True, 'ABCDefG', b'abCD1Fg', 'abcdefg', b'abcd1fg'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+)
+def test_anystr_lower(anystr_lower_input, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_lower = True
+            anystr_lower = anystr_lower_input
 
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+    m = Model(str_check=str_check, bytes_check=bytes_check)
 
-    assert m.str_check == 'abcdefg'
-    assert m.bytes_check == b'abcd1fg'
-
-
-def test_anystr_lower_disabled():
-    class Model(BaseModel):
-        str_check: str
-        bytes_check: bytes
-
-        class Config:
-            anystr_lower = False
-
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
-
-    assert m.str_check == 'ABCDefG'
-    assert m.bytes_check == b'abCD1Fg'
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
 @pytest.mark.parametrize(
