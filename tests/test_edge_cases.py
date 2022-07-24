@@ -14,6 +14,7 @@ from pydantic import (
     NoneStrBytes,
     StrBytes,
     ValidationError,
+    compiled,
     constr,
     errors,
     validate_model,
@@ -243,7 +244,9 @@ def test_tuple_more():
         (dict, frozenset, list, set, tuple, type),
     ],
 )
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above')
+@pytest.mark.skipif(
+    sys.version_info < (3, 9) or compiled, reason='PEP585 generics only supported for python 3.9 and above'
+)
 def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_cls, type_cls):
     class Type1:
         pass

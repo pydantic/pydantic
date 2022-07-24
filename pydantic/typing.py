@@ -135,8 +135,12 @@ else:
         # Special case for `tuple[()]`, which used to return ((),) with `typing.Tuple`
         # in python 3.10- but now returns () for `tuple` and `Tuple`.
         # This will probably be clarified in pydantic v2
-        if tp == Tuple[()] or sys.version_info >= (3, 9) and tp == tuple[()]:  # type: ignore[misc]
-            return ((),)
+        try:
+            if tp == Tuple[()] or sys.version_info >= (3, 9) and tp == tuple[()]:  # type: ignore[misc]
+                return ((),)
+        # there is a TypeError when compiled with cython
+        except TypeError:  # pragma: no cover
+            pass
         return ()
 
     def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
