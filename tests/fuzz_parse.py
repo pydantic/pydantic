@@ -1,9 +1,13 @@
+import sys
+
 import atheris
-from pydantic.parse import load_str_bytes, Protocol
+
+from pydantic.parse import Protocol, load_str_bytes
+
 
 def TestOneInput(data):
     try:
-        r = load_str_bytes(b=data, proto=Protocol.json)
+        _ = load_str_bytes(b=data, proto=Protocol.json)
     except ValueError:
         None
 
@@ -13,5 +17,6 @@ def main():
     atheris.Setup(sys.argv, TestOneInput)
     atheris.Fuzz()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
