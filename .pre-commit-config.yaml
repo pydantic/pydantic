@@ -12,6 +12,11 @@ repos:
 
 - repo: local
   hooks:
+  - id: debug-check
+    name: Check for debug statements
+    entry: tests/check-debug.sh
+    language: script
+    types: [python]
   - id: lint-python
     name: Lint Python
     entry: make lint-python
