@@ -64,7 +64,7 @@ class ValidationError(Representation, ValueError):
             self._error_cache = list(flatten_errors(self.raw_errors, config))
         return self._error_cache
 
-    def json(self, *, indent: Union[None, int, str] = 2) -> str:
+    def json(self, *, indent: Optional[Union[int, str]] = 2) -> str:
         return json.dumps(self.errors(), indent=indent, default=pydantic_encoder)
 
     def __str__(self) -> str:

@@ -63,7 +63,7 @@ MAX_NUMBER = int(3e20)
 StrBytesIntFloat = Union[str, bytes, int, float]
 
 
-def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[None, int, float]:
+def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Optional[Union[int, float]]:
     if isinstance(value, (int, float)):
         return value
     try:
@@ -86,7 +86,7 @@ def from_unix_seconds(seconds: Union[int, float]) -> datetime:
     return dt.replace(tzinfo=timezone.utc)
 
 
-def _parse_timezone(value: Optional[str], error: Type[Exception]) -> Union[None, int, timezone]:
+def _parse_timezone(value: Optional[str], error: Type[Exception]) -> Optional[Union[int, timezone]]:
     if value == 'Z':
         return timezone.utc
     elif value is not None:
@@ -163,7 +163,7 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
     tzinfo = _parse_timezone(kw.pop('tzinfo'), errors.TimeError)
-    kw_: Dict[str, Union[None, int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    kw_: Dict[str, Optional[Union[int, timezone]]] = {k: int(v) for k, v in kw.items() if v is not None}
     kw_['tzinfo'] = tzinfo
 
     try:
@@ -201,7 +201,7 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
     tzinfo = _parse_timezone(kw.pop('tzinfo'), errors.DateTimeError)
-    kw_: Dict[str, Union[None, int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    kw_: Dict[str, Optional[Union[int, timezone]]] = {k: int(v) for k, v in kw.items() if v is not None}
     kw_['tzinfo'] = tzinfo
 
     try:

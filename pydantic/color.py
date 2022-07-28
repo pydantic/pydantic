@@ -290,7 +290,7 @@ def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
         raise ColorError(reason=f'color values must be in the range 0 to {max_val}')
 
 
-def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
+def parse_float_alpha(value: Optional[Union[str, float, int]]) -> Optional[float]:
     """
     Parse a value checking it's a valid float in the range 0 to 1
     """

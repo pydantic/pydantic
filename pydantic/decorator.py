@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .typing import AnyCallable
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
-    ConfigType = Union[None, Type[Any], Dict[str, Any]]
+    ConfigType = Optional[Union[Type[Any], Dict[str, Any]]]
 
 
 @overload

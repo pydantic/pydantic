@@ -1096,7 +1096,7 @@ def test_unable_to_infer():
 
 def test_multiple_errors():
     class Model(BaseModel):
-        a: Union[None, int, float, Decimal]
+        a: Optional[Union[int, float, Decimal]]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1395,7 +1395,7 @@ class DisplayGen(Generic[T1, T2]):
     [
         (int, 'int'),
         (Optional[int], 'Optional[int]'),
-        (Union[None, int, str], 'Union[NoneType, int, str]'),
+        (Optional[Union[int, str]], 'Union[int, str, NoneType]'),
         (Union[int, str, bytes], 'Union[int, str, bytes]'),
         (List[int], 'List[int]'),
         (Tuple[int, str, bytes], 'Tuple[int, str, bytes]'),

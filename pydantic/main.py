@@ -926,7 +926,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: Optional[Type[BaseConfig]] = None,
-    __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
+    __base__: Optional[Union[Type['Model'], Tuple[Type['Model'], ...]]] = None,
     __module__: str = __name__,
     __validators__: Dict[str, 'AnyClassMethod'] = None,
     __cls_kwargs__: Dict[str, Any] = None,
