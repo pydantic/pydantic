@@ -3,13 +3,14 @@ use std::hash::BuildHasherDefault;
 
 use nohash_hasher::NoHashHasher;
 
-type BuildNoHashHasher = BuildHasherDefault<NoHashHasher<usize>>;
+type BuildNoHashHasher<T> = BuildHasherDefault<NoHashHasher<T>>;
+pub type NoHashSet<T> = HashSet<T, BuildNoHashHasher<T>>;
 
 /// This is used to avoid cyclic references in input data causing recursive validation and a nasty segmentation fault.
 /// It's used in `validators/recursive.rs` to detect when a reference is reused within itself.
 #[derive(Debug, Clone, Default)]
 pub struct RecursionGuard {
-    ids: Option<HashSet<usize, BuildNoHashHasher>>,
+    ids: Option<NoHashSet<usize>>,
     // see validators/recursive.rs::BACKUP_GUARD_LIMIT for details
     // depth could be a hashmap {validator_id => depth} but for simplicity and performance it's easier to just
     // use one number for all validators
@@ -24,8 +25,7 @@ impl RecursionGuard {
             // "If the set did not have this value present, `true` is returned."
             Some(ref mut set) => !set.insert(id),
             None => {
-                let mut set: HashSet<usize, BuildNoHashHasher> =
-                    HashSet::with_capacity_and_hasher(10, BuildHasherDefault::default());
+                let mut set: NoHashSet<usize> = NoHashSet::with_capacity_and_hasher(10, BuildHasherDefault::default());
                 set.insert(id);
                 self.ids = Some(set);
                 false

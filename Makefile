@@ -63,7 +63,7 @@ format:
 
 .PHONY: lint-python
 lint-python:
-	flake8 --max-complexity 10 --max-line-length 120 --ignore E203,W503 pydantic_core tests
+	flake8 --max-line-length 120 pydantic_core tests
 	$(isort) --check-only --df
 	$(black) --check --diff
 

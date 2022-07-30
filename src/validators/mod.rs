@@ -14,6 +14,7 @@ use crate::input::{Input, JsonInput};
 use crate::recursion_guard::RecursionGuard;
 
 mod any;
+mod arguments;
 mod bool;
 mod bytes;
 mod callable;
@@ -355,6 +356,8 @@ pub fn build_validator<'a>(
         // introspection types
         is_instance::IsInstanceValidator,
         callable::CallableValidator,
+        // arguments
+        arguments::ArgumentsValidator,
     )
 }
 
@@ -460,6 +463,8 @@ pub enum CombinedValidator {
     // introspection types
     IsInstance(is_instance::IsInstanceValidator),
     Callable(callable::CallableValidator),
+    // arguments
+    Arguments(arguments::ArgumentsValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
