@@ -13,7 +13,7 @@ use super::Input;
 /// Container for all the "list-like" types which can be converted to each other in lax mode.
 /// This cannot be called `GenericSequence` (as it previously was) or `GenericIterable` since it's
 /// members don't match python's definition of `Sequence` or `Iterable`.
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum GenericListLike<'a> {
     List(&'a PyList),
     Tuple(&'a PyTuple),
@@ -165,7 +165,7 @@ impl<'a> GenericListLike<'a> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum GenericMapping<'a> {
     PyDict(&'a PyDict),
     PyGetAttr(&'a PyAny),
@@ -176,7 +176,7 @@ derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyGetAttr, PyAny);
 derive_from!(GenericMapping, JsonObject, JsonObject);
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyArgs<'a> {
     pub args: Option<&'a PyTuple>,
     pub kwargs: Option<&'a PyDict>,
@@ -188,7 +188,7 @@ impl<'a> PyArgs<'a> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct JsonArgs<'a> {
     pub args: Option<&'a [JsonInput]>,
     pub kwargs: Option<&'a JsonObject>,
@@ -200,7 +200,7 @@ impl<'a> JsonArgs<'a> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum GenericArguments<'a> {
     Py(PyArgs<'a>),
     Json(JsonArgs<'a>),
@@ -218,7 +218,7 @@ impl<'a> From<JsonArgs<'a>> for GenericArguments<'a> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherString<'a> {
     Cow(Cow<'a, str>),
     Py(&'a PyString),
@@ -264,7 +264,7 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherBytes<'a> {
     Cow(Cow<'a, [u8]>),
     Py(&'a PyBytes),

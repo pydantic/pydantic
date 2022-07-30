@@ -13,7 +13,8 @@ use super::location::Location;
 use super::ValError;
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
     line_errors: Vec<PyLineError>,
     title: PyObject,
@@ -110,7 +111,8 @@ pub fn pretty_py_line_errors<'a>(py: Python, line_errors_iter: impl Iterator<Ite
 
 /// `PyLineError` are the public version of `ValLineError`, as help and used in `ValidationError`s
 #[pyclass]
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyLineError {
     kind: ErrorKind,
     location: Location,

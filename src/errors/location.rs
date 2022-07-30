@@ -5,7 +5,8 @@ use pyo3::types::PyList;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum LocItem {
     /// string type key, used to identify items from a dict or anything that implements `__getitem__`
     S(String),
@@ -55,7 +56,8 @@ impl ToPyObject for LocItem {
 /// Note: location in List is stored in **REVERSE** so adding an "outer" item to location involves
 /// pushing to the vec which is faster than inserting and shifting everything along.
 /// Then when "using" location in `Display` and `ToPyObject` order has to be reversed
-#[derive(Debug, Clone)]
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum Location {
     // no location, avoid creating an unnecessary vec
     Empty,
