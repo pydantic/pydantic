@@ -48,7 +48,7 @@ def get_schema(obj):
         return 'any'
 
     origin = get_origin(obj)
-    assert origin is not None, f'origin cannot be None, obj={obj}'
+    assert origin is not None, f'origin cannot be None, obj={obj}, you probably need to fix generate_self_schema.py'
     if origin is Union:
         return union_schema(obj)
     elif obj is Callable or origin is Callable:

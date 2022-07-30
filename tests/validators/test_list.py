@@ -98,9 +98,11 @@ def test_list_error(input_value, index):
     [
         ({}, [1, 2, 3, 4], [1, 2, 3, 4]),
         ({'min_items': 3}, [1, 2, 3, 4], [1, 2, 3, 4]),
-        ({'min_items': 3}, [1, 2], Err('Input must have at least 3 items [kind=too_short')),
+        ({'min_items': 3}, [1, 2], Err('Input must have at least 3 items, got 2 items [kind=too_short,')),
+        ({'min_items': 1}, [], Err('Input must have at least 1 item, got 0 items [kind=too_short,')),
         ({'max_items': 4}, [1, 2, 3, 4], [1, 2, 3, 4]),
-        ({'max_items': 3}, [1, 2, 3, 4], Err('Input must have at most 3 items [kind=too_long')),
+        ({'max_items': 3}, [1, 2, 3, 4], Err('Input must have at most 3 items, got 4 items [kind=too_long,')),
+        ({'max_items': 1}, [1, 2], Err('Input must have at most 1 item, got 2 items [kind=too_long,')),
     ],
 )
 def test_list_length_constraints(kwargs: Dict[str, Any], input_value, expected):
@@ -120,9 +122,9 @@ def test_length_ctx():
         {
             'kind': 'too_short',
             'loc': [],
-            'message': 'Input must have at least 2 items',
+            'message': 'Input must have at least 2 items, got 1 item',
             'input_value': [1],
-            'context': {'min_length': 2},
+            'context': {'min_length': 2, 'input_length': 1},
         }
     ]
 
@@ -133,9 +135,9 @@ def test_length_ctx():
         {
             'kind': 'too_long',
             'loc': [],
-            'message': 'Input must have at most 3 items',
+            'message': 'Input must have at most 3 items, got 4 items',
             'input_value': [1, 2, 3, 4],
-            'context': {'max_length': 3},
+            'context': {'max_length': 3, 'input_length': 4},
         }
     ]
 

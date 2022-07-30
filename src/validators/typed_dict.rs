@@ -4,7 +4,7 @@ use pyo3::{intern, PyTypeInfo};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{is_strict, py_error, schema_or_config, SchemaDict};
+use crate::build_tools::{is_strict, py_error, schema_or_config, schema_or_config_same, SchemaDict};
 use crate::errors::{py_err_string, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
@@ -54,20 +54,8 @@ impl BuildValidator for TypedDictValidator {
         )?;
         let full =
             schema_or_config(schema, config, intern!(py, "full"), intern!(py, "typed_dict_full"))?.unwrap_or(true);
-        let from_attributes = schema_or_config(
-            schema,
-            config,
-            intern!(py, "from_attributes"),
-            intern!(py, "from_attributes"),
-        )?
-        .unwrap_or(false);
-        let populate_by_name = schema_or_config(
-            schema,
-            config,
-            intern!(py, "populate_by_name"),
-            intern!(py, "typed_dict_populate_by_name"),
-        )?
-        .unwrap_or(false);
+        let from_attributes = schema_or_config_same(schema, config, intern!(py, "from_attributes"))?.unwrap_or(false);
+        let populate_by_name = schema_or_config_same(schema, config, intern!(py, "populate_by_name"))?.unwrap_or(false);
 
         let return_fields_set = schema.get_as(intern!(py, "return_fields_set"))?.unwrap_or(false);
 
@@ -191,7 +179,7 @@ impl Validator for TypedDictValidator {
         };
 
         macro_rules! process {
-            ($dict:ident, $get_method:ident, $iter:block) => {{
+            ($dict:ident, $get_method:ident, $iter_method:ident) => {{
                 for field in &self.fields {
                     let op_key_value = match field.lookup_key.$get_method($dict) {
                         Ok(v) => v,
@@ -249,7 +237,7 @@ impl Validator for TypedDictValidator {
                         Some(v) => v,
                         None => unreachable!(),
                     };
-                    for (raw_key, value) in $iter {
+                    for (raw_key, value) in $dict.$iter_method() {
                         let either_str = match raw_key.strict_str() {
                             Ok(k) => k,
                             Err(ValError::LineErrors(line_errors)) => {
@@ -270,7 +258,7 @@ impl Validator for TypedDictValidator {
                         if self.forbid_extra {
                             errors.push(ValLineError::new_with_loc(
                                 ErrorKind::ExtraForbidden,
-                                input,
+                                value,
                                 raw_key.as_loc_item(),
                             ));
                             continue;
@@ -307,9 +295,9 @@ impl Validator for TypedDictValidator {
             }};
         }
         match dict {
-            GenericMapping::PyDict(d) => process!(d, py_get_item, { d.iter() }),
-            GenericMapping::PyGetAttr(d) => process!(d, py_get_attr, { IterAttributes::new(d) }),
-            GenericMapping::JsonObject(d) => process!(d, json_get, { d.iter() }),
+            GenericMapping::PyDict(d) => process!(d, py_get_item, iter),
+            GenericMapping::PyGetAttr(d) => process!(d, py_get_attr, iter_attrs),
+            GenericMapping::JsonObject(d) => process!(d, json_get, iter),
         }
 
         if !errors.is_empty() {
@@ -395,23 +383,27 @@ impl TypedDictValidator {
     }
 }
 
-pub struct IterAttributes<'a> {
-    object: &'a PyAny,
-    attributes: &'a PyList,
-    index: usize,
+trait IterAttributes<'a> {
+    fn iter_attrs(&self) -> AttributesIterator<'a>;
 }
 
-impl<'a> IterAttributes<'a> {
-    pub fn new(object: &'a PyAny) -> Self {
-        Self {
-            object,
-            attributes: object.dir(),
+impl<'a> IterAttributes<'a> for &'a PyAny {
+    fn iter_attrs(&self) -> AttributesIterator<'a> {
+        AttributesIterator {
+            object: self,
+            attributes: self.dir(),
             index: 0,
         }
     }
 }
 
-impl<'a> Iterator for IterAttributes<'a> {
+struct AttributesIterator<'a> {
+    object: &'a PyAny,
+    attributes: &'a PyList,
+    index: usize,
+}
+
+impl<'a> Iterator for AttributesIterator<'a> {
     type Item = (&'a PyAny, &'a PyAny);
 
     fn next(&mut self) -> Option<(&'a PyAny, &'a PyAny)> {

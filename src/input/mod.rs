@@ -11,7 +11,9 @@ mod shared;
 pub use datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 pub use input_abstract::Input;
 pub use parse_json::{JsonInput, JsonObject};
-pub use return_enums::{EitherBytes, EitherString, GenericListLike, GenericMapping};
+pub use return_enums::{
+    EitherBytes, EitherString, GenericArguments, GenericListLike, GenericMapping, JsonArgs, PyArgs,
+};
 
 pub fn repr_string(v: &PyAny) -> PyResult<String> {
     v.repr()?.extract()

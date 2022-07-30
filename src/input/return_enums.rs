@@ -7,7 +7,7 @@ use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
-use super::parse_json::{JsonArray, JsonObject};
+use super::parse_json::{JsonArray, JsonInput, JsonObject};
 use super::Input;
 
 /// Container for all the "list-like" types which can be converted to each other in lax mode.
@@ -19,7 +19,7 @@ pub enum GenericListLike<'a> {
     Tuple(&'a PyTuple),
     Set(&'a PySet),
     FrozenSet(&'a PyFrozenSet),
-    JsonArray(&'a JsonArray),
+    JsonArray(&'a [JsonInput]),
 }
 
 macro_rules! derive_from {
@@ -36,6 +36,7 @@ derive_from!(GenericListLike, Tuple, PyTuple);
 derive_from!(GenericListLike, Set, PySet);
 derive_from!(GenericListLike, FrozenSet, PyFrozenSet);
 derive_from!(GenericListLike, JsonArray, JsonArray);
+derive_from!(GenericListLike, JsonArray, [JsonInput]);
 
 macro_rules! build_validate_to_vec {
     ($name:ident, $list_like_type:ty) => {
@@ -76,7 +77,7 @@ build_validate_to_vec!(validate_to_vec_list, PyList);
 build_validate_to_vec!(validate_to_vec_tuple, PyTuple);
 build_validate_to_vec!(validate_to_vec_set, PySet);
 build_validate_to_vec!(validate_to_vec_frozenset, PyFrozenSet);
-build_validate_to_vec!(validate_to_vec_jsonarray, JsonArray);
+build_validate_to_vec!(validate_to_vec_jsonarray, [JsonInput]);
 
 impl<'a> GenericListLike<'a> {
     pub fn generic_len(&self) -> usize {
@@ -96,18 +97,30 @@ impl<'a> GenericListLike<'a> {
     ) -> ValResult<'data, Option<usize>> {
         let mut length: Option<usize> = None;
         if let Some((min_items, max_items)) = size_range {
-            let len = self.generic_len();
+            let input_length = self.generic_len();
             if let Some(min_length) = min_items {
-                if len < min_length {
-                    return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
+                if input_length < min_length {
+                    return Err(ValError::new(
+                        ErrorKind::TooShort {
+                            min_length,
+                            input_length,
+                        },
+                        input,
+                    ));
                 }
             }
             if let Some(max_length) = max_items {
-                if len > max_length {
-                    return Err(ValError::new(ErrorKind::TooLong { max_length }, input));
+                if input_length > max_length {
+                    return Err(ValError::new(
+                        ErrorKind::TooLong {
+                            max_length,
+                            input_length,
+                        },
+                        input,
+                    ));
                 }
             }
-            length = Some(len);
+            length = Some(input_length);
         }
         Ok(length)
     }
@@ -162,6 +175,48 @@ pub enum GenericMapping<'a> {
 derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyGetAttr, PyAny);
 derive_from!(GenericMapping, JsonObject, JsonObject);
+
+#[derive(Debug)]
+pub struct PyArgs<'a> {
+    pub args: Option<&'a PyTuple>,
+    pub kwargs: Option<&'a PyDict>,
+}
+
+impl<'a> PyArgs<'a> {
+    pub fn new(args: Option<&'a PyTuple>, kwargs: Option<&'a PyDict>) -> Self {
+        Self { args, kwargs }
+    }
+}
+
+#[derive(Debug)]
+pub struct JsonArgs<'a> {
+    pub args: Option<&'a [JsonInput]>,
+    pub kwargs: Option<&'a JsonObject>,
+}
+
+impl<'a> JsonArgs<'a> {
+    pub fn new(args: Option<&'a [JsonInput]>, kwargs: Option<&'a JsonObject>) -> Self {
+        Self { args, kwargs }
+    }
+}
+
+#[derive(Debug)]
+pub enum GenericArguments<'a> {
+    Py(PyArgs<'a>),
+    Json(JsonArgs<'a>),
+}
+
+impl<'a> From<PyArgs<'a>> for GenericArguments<'a> {
+    fn from(s: PyArgs<'a>) -> GenericArguments<'a> {
+        Self::Py(s)
+    }
+}
+
+impl<'a> From<JsonArgs<'a>> for GenericArguments<'a> {
+    fn from(s: JsonArgs<'a>) -> GenericArguments<'a> {
+        Self::Json(s)
+    }
+}
 
 #[derive(Debug)]
 pub enum EitherString<'a> {

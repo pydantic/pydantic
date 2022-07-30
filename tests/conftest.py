@@ -104,5 +104,7 @@ def import_execute(request, tmp_work_path: Path):
             spec.loader.exec_module(module)
         except KeyboardInterrupt:
             print('KeyboardInterrupt')
+        else:
+            return module
 
     return _import_execute

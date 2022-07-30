@@ -4,7 +4,7 @@ from typing import Any, Dict, Type
 import pytest
 from dirty_equals import IsNonNegative, IsTuple
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson
 
@@ -83,9 +83,9 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
     [
         ({}, (1, 2, 3, 4), (1, 2, 3, 4)),
         ({'min_items': 3}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'min_items': 3}, (1, 2), Err('Input must have at least 3 items [kind=too_short')),
+        ({'min_items': 3}, (1, 2), Err('Input must have at least 3 items, got 2 items [kind=too_short,')),
         ({'max_items': 4}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'max_items': 3}, (1, 2, 3, 4), Err('Input must have at most 3 items [kind=too_long')),
+        ({'max_items': 3}, (1, 2, 3, 4), Err('Input must have at most 3 items, got 4 items [kind=too_long,')),
     ],
 )
 def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
@@ -167,23 +167,53 @@ def test_tuple_fix_len_errors(input_value, items, index):
     ]
 
 
-@pytest.mark.parametrize(
-    'items,input_value,expected',
-    [
-        ([{'type': 'int'}], [1, 2, 3], Err('Input must have at most 1 items [kind=too_long')),
-        ([{'type': 'int'}, {'type': 'int'}], [1], Err('Input must have at least 2 items [kind=too_short')),
-    ],
-    ids=['input too long', 'input too short'],
-)
-def test_tuple_fix_len_input_and_schemas_len_mismatch(items, input_value, expected):
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': items})
-    with pytest.raises(ValidationError, match=re.escape(expected.message)):
-        v.validate_python(input_value)
+def test_multiple_missing(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'int', 'int', 'int']})
+    assert v.validate_test([1, 2, 3, 4]) == (1, 2, 3, 4)
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_test([1])
+    assert exc_info.value.errors() == [
+        {'kind': 'missing', 'loc': [1], 'message': 'Field required', 'input_value': [1]},
+        {'kind': 'missing', 'loc': [2], 'message': 'Field required', 'input_value': [1]},
+        {'kind': 'missing', 'loc': [3], 'message': 'Field required', 'input_value': [1]},
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_test([1, 2, 3])
+    assert exc_info.value.errors() == [
+        {'kind': 'missing', 'loc': [3], 'message': 'Field required', 'input_value': [1, 2, 3]}
+    ]
 
 
-def test_tuple_fix_len_schema_error():
-    with pytest.raises(SchemaError, match='SchemaError: Empty positional items schema'):
-        SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': []})
+def test_extra_arguments(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'int']})
+    assert v.validate_test([1, 2]) == (1, 2)
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_test([1, 2, 3, 4])
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'too_long',
+            'loc': [],
+            'message': 'Input must have at most 2 items, got 4 items',
+            'input_value': [1, 2, 3, 4],
+            'context': {'max_length': 2, 'input_length': 4},
+        }
+    ]
+
+
+def test_positional_empty(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': []})
+    assert v.validate_test([]) == ()
+    assert v.validate_python(()) == ()
+    with pytest.raises(ValidationError, match='kind=too_long,'):
+        v.validate_test([1])
+
+
+def test_positional_empty_extra(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': 'int'})
+    assert v.validate_test([]) == ()
+    assert v.validate_python(()) == ()
+    assert v.validate_test([1]) == (1,)
+    assert v.validate_test(list(range(100))) == tuple(range(100))
 
 
 @pytest.mark.parametrize('input_value,expected', [((1, 2, 3), (1, 2, 3)), ([1, 2, 3], [1, 2, 3])])
@@ -303,15 +333,7 @@ def test_tuple_fix_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1])
 
-    assert exc_info.value.errors() == [
-        {
-            'kind': 'too_short',
-            'loc': [],
-            'message': 'Input must have at least 2 items',
-            'input_value': [1],
-            'context': {'min_length': 2},
-        }
-    ]
+    assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [1], 'message': 'Field required', 'input_value': [1]}]
 
 
 def test_tuple_fix_extra():
@@ -320,8 +342,9 @@ def test_tuple_fix_extra():
     assert v.validate_python((1, 'a')) == (1, 'a')
     assert v.validate_python((1, 'a', 'b')) == (1, 'a', 'b')
     assert v.validate_python([1, 'a', 'b', 'c', 'd']) == (1, 'a', 'b', 'c', 'd')
-    with pytest.raises(ValidationError, match='Input must have at least 2 items'):
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1])
+    assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [1], 'message': 'Field required', 'input_value': [1]}]
 
 
 def test_tuple_fix_extra_any():
@@ -330,5 +353,6 @@ def test_tuple_fix_extra_any():
     assert v.validate_python([1, 2]) == ('1', 2)
     assert v.validate_python((1, 2)) == ('1', 2)
     assert v.validate_python([1, 2, b'3']) == ('1', 2, b'3')
-    with pytest.raises(ValidationError, match='Input must have at least 1 items'):
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_python([])
+    assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [0], 'message': 'Field required', 'input_value': []}]

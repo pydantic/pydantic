@@ -81,10 +81,20 @@ where
     }
 }
 
+pub fn schema_or_config_same<'py, T>(
+    schema: &'py PyDict,
+    config: Option<&'py PyDict>,
+    key: &PyString,
+) -> PyResult<Option<T>>
+where
+    T: FromPyObject<'py>,
+{
+    schema_or_config(schema, config, key, key)
+}
+
 pub fn is_strict(schema: &PyDict, config: Option<&PyDict>) -> PyResult<bool> {
     let py = schema.py();
-    let k = intern!(py, "strict");
-    Ok(schema_or_config(schema, config, k, k)?.unwrap_or(false))
+    Ok(schema_or_config_same(schema, config, intern!(py, "strict"))?.unwrap_or(false))
 }
 
 // we could perhaps do clever things here to store each schema error, or have different types for the top
