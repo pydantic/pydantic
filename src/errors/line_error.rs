@@ -10,7 +10,7 @@ use super::validation_exception::{pretty_py_line_errors, PyLineError};
 
 pub type ValResult<'a, T> = Result<T, ValError<'a>>;
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum ValError<'a> {
     LineErrors(Vec<ValLineError<'a>>),
     InternalErr(PyErr),
@@ -65,7 +65,7 @@ pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String 
 /// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`
 /// to eventually form a `ValidationError`.
 /// I don't like the name `ValLineError`, but it's the best I could come up with (for now).
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValLineError<'a> {
     pub kind: ErrorKind,
     // location is reversed so that adding an "outer" location item is pushing, it's reversed before showing to the user
@@ -112,7 +112,7 @@ impl<'a> ValLineError<'a> {
     }
 }
 
-#[derive(Debug)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub enum InputValue<'a> {
     PyAny(&'a PyAny),
     JsonInput(&'a JsonInput),
