@@ -768,3 +768,38 @@ def test_variable_tuple(benchmark):
     assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
 
     benchmark(v.validate_python, (1, 2, 3, '4', 5))
+
+
+@pytest.mark.benchmark(group='tuple-many')
+def test_tuple_many_variable(benchmark):
+    v = SchemaValidator({'type': 'tuple', 'items_schema': 'int'})
+    assert v.validate_python(list(range(10))) == tuple(range(10))
+
+    benchmark(v.validate_python, list(range(10)))
+
+
+@pytest.mark.benchmark(group='tuple-many')
+def test_tuple_many_positional(benchmark):
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': 'int'})
+    assert v.validate_python(list(range(10))) == tuple(range(10))
+
+    benchmark(v.validate_python, list(range(10)))
+
+
+@pytest.mark.benchmark(group='arguments')
+def test_arguments(benchmark):
+    v = SchemaValidator(
+        {
+            'type': 'arguments',
+            'arguments_schema': [
+                {'name': 'args1', 'mode': 'positional_only', 'schema': 'int'},
+                {'name': 'args2', 'mode': 'positional_only', 'schema': 'str'},
+                {'name': 'a', 'mode': 'positional_or_keyword', 'schema': 'bool'},
+                {'name': 'b', 'mode': 'keyword_only', 'schema': 'str'},
+                {'name': 'c', 'mode': 'keyword_only', 'schema': 'int'},
+            ],
+        }
+    )
+    assert v.validate_python(((1, 'a', 'true'), {'b': 'bb', 'c': 3})) == ((1, 'a', True), {'b': 'bb', 'c': 3})
+
+    benchmark(v.validate_python, ((1, 'a', 'true'), {'b': 'bb', 'c': 3}))

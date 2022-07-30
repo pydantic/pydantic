@@ -2,7 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
-use crate::build_tools::{is_strict, py_error, SchemaDict};
+use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericListLike, Input};
 use crate::recursion_guard::RecursionGuard;
@@ -91,9 +91,6 @@ impl TuplePositionalValidator {
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
-        if items.is_empty() {
-            return py_error!("Empty positional items schema");
-        }
         let validators: Vec<CombinedValidator> = items
             .iter()
             .map(|item| build_validator(item, config, build_context).map(|result| result.0))
@@ -122,15 +119,15 @@ impl Validator for TuplePositionalValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let seq = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
+        let list_like = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
         let expected_length = self.items_validators.len();
 
-        if seq.generic_len() < expected_length {
-            return Err(ValError::new(
-                ErrorKind::TooShort {
-                    min_length: expected_length,
-                },
-                input,
+        let ll_length = list_like.generic_len();
+        if ll_length < expected_length {
+            return Err(ValError::LineErrors(
+                (ll_length..expected_length)
+                    .map(|index| ValLineError::new_with_loc(ErrorKind::Missing, input, index))
+                    .collect(),
             ));
         }
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
@@ -146,6 +143,7 @@ impl Validator for TuplePositionalValidator {
                                 return Err(ValError::new(
                                     ErrorKind::TooLong {
                                         max_length: expected_length,
+                                        input_length: ll_length,
                                     },
                                     input,
                                 ));
@@ -167,7 +165,7 @@ impl Validator for TuplePositionalValidator {
                 }
             };
         }
-        match seq {
+        match list_like {
             GenericListLike::List(list_like) => iter!(list_like),
             GenericListLike::Tuple(list_like) => iter!(list_like),
             GenericListLike::Set(list_like) => iter!(list_like),

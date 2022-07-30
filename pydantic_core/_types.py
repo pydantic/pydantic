@@ -34,10 +34,11 @@ class Config(TypedDict, total=False):
     # settings related to typed_dicts only
     typed_dict_extra_behavior: Literal['allow', 'forbid', 'ignore']
     typed_dict_full: bool  # default: True
-    typed_dict_populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
     # used on typed-dicts and tagged union keys
     from_attributes: bool
     revalidate_models: bool
+    # used on typed-dicts and arguments
+    populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
     # fields related to string fields only
     str_max_length: int
     str_min_length: int
@@ -277,6 +278,24 @@ class CallableSchema(TypedDict):
     type: Literal['callable']
 
 
+class ArgumentInfo(TypedDict):
+    name: str
+    mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only']
+    schema: Schema
+    default: NotRequired[Any]
+    default_factory: NotRequired[Callable[[], Any]]
+    alias: NotRequired[Union[str, List[Union[str, int]], List[List[Union[str, int]]]]]
+
+
+class ArgumentsSchema(TypedDict, total=False):
+    type: Required[Literal['arguments']]
+    arguments_schema: Required[List[ArgumentInfo]]
+    populate_by_name: bool
+    var_args_schema: Schema
+    var_kwargs_schema: Schema
+    ref: str
+
+
 # pydantic allows types to be defined via a simple string instead of dict with just `type`, e.g.
 # 'int' is equivalent to {'type': 'int'}, this only applies to schema types which do not have other required fields
 BareType = Literal[
@@ -332,4 +351,5 @@ Schema = Union[
     TimedeltaSchema,
     IsInstanceSchema,
     CallableSchema,
+    ArgumentsSchema,
 ]

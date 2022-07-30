@@ -8,7 +8,7 @@ use crate::input::datetime::EitherTime;
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
-use super::{GenericListLike, GenericMapping};
+use super::{GenericArguments, GenericListLike, GenericMapping};
 
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
@@ -41,6 +41,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     fn callable(&self) -> bool {
         false
     }
+
+    fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>>;
 
     fn validate_str(&'a self, strict: bool) -> ValResult<EitherString<'a>> {
         if strict {

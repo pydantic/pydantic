@@ -96,13 +96,27 @@ macro_rules! build_validate {
             recursion_guard: &'s mut RecursionGuard,
         ) -> ValResult<'data, PyObject> {
             if let Some(min_length) = self.min_items {
-                if dict.len() < min_length {
-                    return Err(ValError::new(ErrorKind::TooShort { min_length }, input));
+                let input_length = dict.len();
+                if input_length < min_length {
+                    return Err(ValError::new(
+                        ErrorKind::TooShort {
+                            min_length,
+                            input_length,
+                        },
+                        input,
+                    ));
                 }
             }
             if let Some(max_length) = self.max_items {
-                if dict.len() > max_length {
-                    return Err(ValError::new(ErrorKind::TooLong { max_length }, input));
+                let input_length = dict.len();
+                if input_length > max_length {
+                    return Err(ValError::new(
+                        ErrorKind::TooLong {
+                            max_length,
+                            input_length,
+                        },
+                        input,
+                    ));
                 }
             }
             let output = PyDict::new(py);

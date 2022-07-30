@@ -110,11 +110,7 @@ field_b
         ({}, {b'a': '123'}, Err('Field required [kind=missing,')),
         ({}, {'a': '123', 'c': 4}, {'a': 123}),
         ({'typed_dict_extra_behavior': 'allow'}, {'a': '123', 'c': 4}, {'a': 123, 'c': 4}),
-        (
-            {'typed_dict_extra_behavior': 'allow'},
-            {'a': '123', b'c': 4},
-            Err('Model keys must be strings [kind=invalid_key,'),
-        ),
+        ({'typed_dict_extra_behavior': 'allow'}, {'a': '123', b'c': 4}, Err('Keys must be strings [kind=invalid_key,')),
         ({'strict': True}, Map(a=123), Err('Value must be a valid dictionary [kind=dict_type,')),
     ],
     ids=repr,
@@ -157,8 +153,12 @@ def test_forbid_extra():
         }
     )
 
-    with pytest.raises(ValidationError, match='field_b | Extra values are not permitted'):
+    with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': 123, 'field_b': 1})
+
+    assert exc_info.value.errors() == [
+        {'kind': 'extra_forbidden', 'loc': ['field_b'], 'message': 'Extra values are not permitted', 'input_value': 1}
+    ]
 
 
 def test_allow_extra():
