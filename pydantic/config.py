@@ -48,6 +48,7 @@ class BaseConfig:
     frozen: bool = False
     allow_population_by_field_name: bool = False
     use_enum_values: bool = False
+    use_enum_values_as_keys: bool = False
     fields: Dict[str, Union[str, Dict[str, str]]] = {}
     validate_assignment: bool = False
     error_msg_templates: Dict[str, str] = {}

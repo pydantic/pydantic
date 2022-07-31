@@ -58,6 +58,10 @@ _(This script is complete, it should run "as is")_
 : whether to populate models with the `value` property of enums, rather than the raw enum.
   This may be useful if you want to serialise `model.dict()` later (default: `False`)
 
+**`use_enum_values_as_keys`**
+: whether to populate models keys with the `value` property of enums, rather than the raw enum when a model field is of type `Dict[Enum, ...]`
+  This may be useful if you want to serialise `model.dict()` later (default: `False`)
+
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to
   using [the `Field` class](schema.md) (default: `None`)
