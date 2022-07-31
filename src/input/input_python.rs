@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::str::from_utf8;
 
 use pyo3::exceptions::PyAttributeError;
@@ -159,8 +160,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_bool(&self) -> ValResult<bool> {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
-        } else if let Some(either_str) = maybe_as_string(self, ErrorKind::BoolParsing)? {
-            str_as_bool(self, &either_str.as_cow())
+        } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::BoolParsing)? {
+            str_as_bool(self, &cow_str)
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_bool(self, int)
         } else if let Ok(float) = self.extract::<f64>() {
@@ -187,8 +188,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_int(&self) -> ValResult<i64> {
         if let Ok(int) = self.extract::<i64>() {
             Ok(int)
-        } else if let Some(either_str) = maybe_as_string(self, ErrorKind::IntParsing)? {
-            str_as_int(self, &either_str.as_cow())
+        } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::IntParsing)? {
+            str_as_int(self, &cow_str)
         } else if let Ok(float) = self.lax_float() {
             float_as_int(self, float)
         } else {
@@ -209,8 +210,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_float(&self) -> ValResult<f64> {
         if let Ok(float) = self.extract::<f64>() {
             Ok(float)
-        } else if let Some(either_str) = maybe_as_string(self, ErrorKind::FloatParsing)? {
-            match either_str.as_cow().as_ref().parse() {
+        } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::FloatParsing)? {
+            match cow_str.as_ref().parse() {
                 Ok(i) => Ok(i),
                 Err(_) => Err(ValError::new(ErrorKind::FloatParsing, self)),
             }
@@ -515,12 +516,12 @@ fn from_attributes_applicable(obj: &PyAny) -> bool {
 }
 
 /// Utility for extracting a string from a PyAny, if possible.
-fn maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<EitherString>> {
+fn maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Cow<str>>> {
     if let Ok(py_string) = v.cast_as::<PyString>() {
-        Ok(Some(py_string.into()))
+        Ok(Some(py_string.to_string_lossy()))
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
         match from_utf8(bytes.as_bytes()) {
-            Ok(s) => Ok(Some(s.into())),
+            Ok(s) => Ok(Some(Cow::Owned(s.to_string()))),
             Err(_) => Err(ValError::new(unicode_error, v)),
         }
     } else {
