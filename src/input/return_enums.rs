@@ -38,46 +38,33 @@ derive_from!(GenericListLike, FrozenSet, PyFrozenSet);
 derive_from!(GenericListLike, JsonArray, JsonArray);
 derive_from!(GenericListLike, JsonArray, [JsonInput]);
 
-macro_rules! build_validate_to_vec {
-    ($name:ident, $list_like_type:ty) => {
-        fn $name<'a, 's>(
-            py: Python<'a>,
-            list_like: &'a $list_like_type,
-            length: usize,
-            validator: &'s CombinedValidator,
-            extra: &Extra,
-            slots: &'a [CombinedValidator],
-            recursion_guard: &'s mut RecursionGuard,
-        ) -> ValResult<'a, Vec<PyObject>> {
-            let mut output: Vec<PyObject> = Vec::with_capacity(length);
-            let mut errors: Vec<ValLineError> = Vec::new();
-            for (index, item) in list_like.iter().enumerate() {
-                match validator.validate(py, item, extra, slots, recursion_guard) {
-                    Ok(item) => output.push(item),
-                    Err(ValError::LineErrors(line_errors)) => {
-                        errors.extend(
-                            line_errors
-                                .into_iter()
-                                .map(|err| err.with_outer_location(index.into())),
-                        );
-                    }
-                    Err(err) => return Err(err),
-                }
+fn validate_iter_to_vec<'a, 's>(
+    py: Python<'a>,
+    iter: impl Iterator<Item = &'a (impl Input<'a> + 'a)>,
+    length: usize,
+    validator: &'s CombinedValidator,
+    extra: &Extra,
+    slots: &'a [CombinedValidator],
+    recursion_guard: &'s mut RecursionGuard,
+) -> ValResult<'a, Vec<PyObject>> {
+    let mut output: Vec<PyObject> = Vec::with_capacity(length);
+    let mut errors: Vec<ValLineError> = Vec::new();
+    for (index, item) in iter.enumerate() {
+        match validator.validate(py, item, extra, slots, recursion_guard) {
+            Ok(item) => output.push(item),
+            Err(ValError::LineErrors(line_errors)) => {
+                errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
             }
-
-            if errors.is_empty() {
-                Ok(output)
-            } else {
-                Err(ValError::LineErrors(errors))
-            }
+            Err(err) => return Err(err),
         }
-    };
+    }
+
+    if errors.is_empty() {
+        Ok(output)
+    } else {
+        Err(ValError::LineErrors(errors))
+    }
 }
-build_validate_to_vec!(validate_to_vec_list, PyList);
-build_validate_to_vec!(validate_to_vec_tuple, PyTuple);
-build_validate_to_vec!(validate_to_vec_set, PySet);
-build_validate_to_vec!(validate_to_vec_frozenset, PyFrozenSet);
-build_validate_to_vec!(validate_to_vec_jsonarray, [JsonInput]);
 
 impl<'a> GenericListLike<'a> {
     pub fn generic_len(&self) -> usize {
@@ -137,19 +124,19 @@ impl<'a> GenericListLike<'a> {
         let length = length.unwrap_or_else(|| self.generic_len());
         match self {
             Self::List(list_like) => {
-                validate_to_vec_list(py, list_like, length, validator, extra, slots, recursion_guard)
+                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
             }
             Self::Tuple(list_like) => {
-                validate_to_vec_tuple(py, list_like, length, validator, extra, slots, recursion_guard)
+                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
             }
             Self::Set(list_like) => {
-                validate_to_vec_set(py, list_like, length, validator, extra, slots, recursion_guard)
+                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
             }
             Self::FrozenSet(list_like) => {
-                validate_to_vec_frozenset(py, list_like, length, validator, extra, slots, recursion_guard)
+                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
             }
             Self::JsonArray(list_like) => {
-                validate_to_vec_jsonarray(py, list_like, length, validator, extra, slots, recursion_guard)
+                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
             }
         }
     }
