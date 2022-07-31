@@ -26,7 +26,7 @@ async def main(tests_zip: str):
     count = 0
     for name in zip_file.namelist():
         if name.endswith('.py'):
-            path, subs = re.subn(r'^pydantic-core-main/tests/', 'tests/', name)
+            path, subs = re.subn(r'^pydantic-core-.+?/tests/', 'tests/', name)
             if subs:
                 count += 1
                 path = Path(path)

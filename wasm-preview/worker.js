@@ -74,25 +74,24 @@ async function get(url, mode) {
 
 self.onmessage = async () => {
   self.postMessage('Downloading repo archive to get tests...\n')
-  const [python_code, tests_zip,] = await Promise.all([
-    get(`./run_tests.py?v=${Date.now()}`, 'text'),
-    // 95c4f56 commit matches the pydantic-core wheel being used, so tests should pass
-    get('https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/archive/refs/95c4f56/main.zip', 'blob'),
-    importScripts('https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js')
-  ])
-
-  const pyodide = await loadPyodide()
-  const {FS} = pyodide
-  setupStreams(FS, pyodide._module.TTY)
-  FS.mkdir('/test_dir')
-  FS.chdir('/test_dir')
-  await pyodide.loadPackage(['micropip', 'pytest', 'pytz'])
   try {
+    const [python_code, tests_zip,] = await Promise.all([
+      get(`./run_tests.py?v=${Date.now()}`, 'text'),
+      // e4cf2e2 commit matches the pydantic-core wheel being used, so tests should pass
+      get('https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/archive/e4cf2e2.zip', 'blob'),
+      importScripts('https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js')
+    ])
+
+    const pyodide = await loadPyodide()
+    const {FS} = pyodide
+    setupStreams(FS, pyodide._module.TTY)
+    FS.mkdir('/test_dir')
+    FS.chdir('/test_dir')
+    await pyodide.loadPackage(['micropip', 'pytest', 'pytz'])
     await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({tests_zip})})
+    post()
   } catch (err) {
     console.error(err)
-    const raw_error = Array.from(new TextEncoder().encode(err.toString()))
-    self.postMessage(raw_error)
+    self.postMessage(`Error: ${err}\n`)
   }
-  post()
 }
