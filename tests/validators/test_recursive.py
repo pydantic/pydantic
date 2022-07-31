@@ -63,13 +63,13 @@ def test_nullable_error():
         {
             'kind': 'none_required',
             'loc': ['sub_branch', 'none'],
-            'message': 'Value must be None/null',
+            'message': 'Input should be None/null',
             'input_value': {'width': 'wrong'},
         },
         {
             'kind': 'int_parsing',
             'loc': ['sub_branch', 'typed-dict', 'width'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         },
     ]
@@ -352,10 +352,10 @@ def multiple_tuple_schema() -> SchemaValidator:
             {'f1': [1, (3, None)], 'f2': [2, (4, (4, (5, None)))]},
             {'f1': (1, (3, None)), 'f2': (2, (4, (4, (5, None))))},
         ),
-        ({'f1': [1, 2]}, Err(r'f1 -> 1\s+Value must be a valid tuple')),
+        ({'f1': [1, 2]}, Err(r'f1 -> 1\s+Input should be a valid tuple')),
         (
             {'f1': [1, (3, None)], 'f2': [2, (4, (4, (5, 6)))]},
-            Err(r'f2 -> 1 -> 1 -> 1 -> 1\s+Value must be a valid tuple'),
+            Err(r'f2 -> 1 -> 1 -> 1 -> 1\s+Input should be a valid tuple'),
         ),
     ],
 )
@@ -478,8 +478,8 @@ def test_union_ref_strictness():
         v.validate_python({'a': 1, 'b': []})
 
     assert exc_info.value.errors() == [
-        {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Value must be a valid integer', 'input_value': []},
-        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Value must be a valid string', 'input_value': []},
+        {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Input should be a valid integer', 'input_value': []},
+        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Input should be a valid string', 'input_value': []},
     ]
 
 
@@ -500,8 +500,8 @@ def test_union_container_strictness():
         v.validate_python({'a': 1, 'b': []})
 
     assert exc_info.value.errors() == [
-        {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Value must be a valid integer', 'input_value': []},
-        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Value must be a valid string', 'input_value': []},
+        {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Input should be a valid integer', 'input_value': []},
+        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Input should be a valid string', 'input_value': []},
     ]
 
 
@@ -578,7 +578,7 @@ def test_function_name():
         {
             'kind': 'int_parsing',
             'loc': ['int'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'input value',
         },
     ]
@@ -642,7 +642,7 @@ def test_many_uses_of_ref():
         'other_names': ['Bob', 'Charlie'],
     }
 
-    with pytest.raises(ValidationError, match=r'other_names -> 2\s+String must have at most 8 characters'):
+    with pytest.raises(ValidationError, match=r'other_names -> 2\s+String should have at most 8 characters'):
         v.validate_python({'name': 'Anne', 'other_names': ['Bob', 'Charlie', 'Daveeeeee']})
 
     long_input = {'name': 'Anne', 'other_names': [f'p-{i}' for i in range(300)]}

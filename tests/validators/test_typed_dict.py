@@ -63,8 +63,8 @@ def test_strict():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'field_a': 123, 'field_b': '123'})
     assert exc_info.value.errors() == [
-        {'kind': 'str_type', 'loc': ['field_a'], 'message': 'Value must be a valid string', 'input_value': 123},
-        {'kind': 'int_type', 'loc': ['field_b'], 'message': 'Value must be a valid integer', 'input_value': '123'},
+        {'kind': 'str_type', 'loc': ['field_a'], 'message': 'Input should be a valid string', 'input_value': 123},
+        {'kind': 'int_type', 'loc': ['field_b'], 'message': 'Input should be a valid integer', 'input_value': '123'},
     ]
 
 
@@ -110,8 +110,12 @@ field_b
         ({}, {b'a': '123'}, Err('Field required [kind=missing,')),
         ({}, {'a': '123', 'c': 4}, {'a': 123}),
         ({'typed_dict_extra_behavior': 'allow'}, {'a': '123', 'c': 4}, {'a': 123, 'c': 4}),
-        ({'typed_dict_extra_behavior': 'allow'}, {'a': '123', b'c': 4}, Err('Keys must be strings [kind=invalid_key,')),
-        ({'strict': True}, Map(a=123), Err('Value must be a valid dictionary [kind=dict_type,')),
+        (
+            {'typed_dict_extra_behavior': 'allow'},
+            {'a': '123', b'c': 4},
+            Err('Keys should be strings [kind=invalid_key,'),
+        ),
+        ({'strict': True}, Map(a=123), Err('Input should be a valid dictionary [kind=dict_type,')),
     ],
     ids=repr,
 )
@@ -157,7 +161,7 @@ def test_forbid_extra():
         v.validate_python({'field_a': 123, 'field_b': 1})
 
     assert exc_info.value.errors() == [
-        {'kind': 'extra_forbidden', 'loc': ['field_b'], 'message': 'Extra values are not permitted', 'input_value': 1}
+        {'kind': 'extra_forbidden', 'loc': ['field_b'], 'message': 'Extra inputs are not permitted', 'input_value': 1}
     ]
 
 
@@ -199,7 +203,7 @@ def test_allow_extra_validate():
         {
             'kind': 'int_from_float',
             'loc': ['other_value'],
-            'message': 'Value must be a valid integer, got a number with a fractional part',
+            'message': 'Input should be a valid integer, got a number with a fractional part',
             'input_value': 12.5,
         }
     ]
@@ -223,7 +227,7 @@ def test_str_config():
     )
     assert v.validate_python({'field_a': 'test'}) == {'field_a': 'test'}
 
-    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
+    with pytest.raises(ValidationError, match='String should have at most 5 characters'):
         v.validate_python({'field_a': 'test long'})
 
 
@@ -292,7 +296,7 @@ def test_validate_assignment_ignore_extra():
         {
             'kind': 'extra_forbidden',
             'loc': ['other_field'],
-            'message': 'Extra values are not permitted',
+            'message': 'Extra inputs are not permitted',
             'input_value': 456,
         }
     ]
@@ -326,7 +330,7 @@ def test_validate_assignment_allow_extra_validate():
         {
             'kind': 'int_parsing',
             'loc': ['other_field'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'xyz',
         }
     ]
@@ -343,7 +347,7 @@ def test_json_error():
         {
             'kind': 'int_parsing',
             'loc': ['field_a', 1],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
@@ -415,7 +419,7 @@ def test_all_optional_fields():
         assert v.validate_python({'x': 123})
 
     assert exc_info.value.errors() == [
-        {'kind': 'str_type', 'loc': ['x'], 'message': 'Value must be a valid string', 'input_value': 123}
+        {'kind': 'str_type', 'loc': ['x'], 'message': 'Input should be a valid string', 'input_value': 123}
     ]
 
 
@@ -585,12 +589,12 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 @pytest.mark.parametrize(
     'alias_schema,error',
     [
-        ({'alias': ['foo', ['bar']]}, 'Value must be a valid string'),
-        ({'alias': []}, 'Lookup paths must have at least one element'),
-        ({'alias': [[]]}, 'Each alias path must have at least one element'),
+        ({'alias': ['foo', ['bar']]}, 'Input should be a valid string'),
+        ({'alias': []}, 'Lookup paths should have at least one element'),
+        ({'alias': [[]]}, 'Each alias path should have at least one element'),
         ({'alias': [123]}, "TypeError: 'int' object cannot be converted to 'PyList'"),
-        ({'alias': [[[]]]}, 'Value must be a valid string'),
-        ({'alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path must be a string'),
+        ({'alias': [[[]]]}, 'Input should be a valid string'),
+        ({'alias': [[1, 'foo']]}, 'TypeError: The first item in an alias path should be a string'),
     ],
     ids=repr,
 )
@@ -602,7 +606,7 @@ def test_alias_build_error(alias_schema, error):
 def test_empty_model():
     v = SchemaValidator({'type': 'typed-dict', 'fields': {}, 'return_fields_set': True})
     assert v.validate_python({}) == ({}, set())
-    with pytest.raises(ValidationError, match=re.escape('Value must be a valid dictionary [kind=dict_type,')):
+    with pytest.raises(ValidationError, match=re.escape('Input should be a valid dictionary [kind=dict_type,')):
         v.validate_python('x')
 
 
@@ -650,7 +654,7 @@ def test_model_deep():
         {
             'kind': 'int_parsing',
             'loc': ['field_b', 'field_d', 'field_f'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'xx',
         }
     ]
@@ -683,7 +687,10 @@ class MyDataclass:
         (Map(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
         # using type gives `__module__ == 'builtins'`
         (type('Testing', (), {}), Err('[kind=dict_attributes_type,')),
-        ('123', Err('Value must be a valid dictionary or instance to extract fields from [kind=dict_attributes_type,')),
+        (
+            '123',
+            Err('Input should be a valid dictionary or instance to extract fields from [kind=dict_attributes_type,'),
+        ),
         ([(1, 2)], Err('kind=dict_attributes_type,')),
         (((1, 2),), Err('kind=dict_attributes_type,')),
     ],
@@ -722,7 +729,7 @@ def test_from_attributes_type_error():
         {
             'kind': 'dict_attributes_type',
             'loc': [],
-            'message': 'Value must be a valid dictionary or instance to extract fields from',
+            'message': 'Input should be a valid dictionary or instance to extract fields from',
             'input_value': '123',
         }
     ]
@@ -935,7 +942,7 @@ def test_from_attributes_error_error():
         (Cls(x={2: 33}), Err(r'my_field\n +Field required \[kind=missing,')),
         (Cls(foo='01234'), Err(r'my_field\n +Field required \[kind=missing,')),
         (Cls(foo=[1]), Err(r'my_field\n +Field required \[kind=missing,')),
-        (Cls, Err(r'Value must be a valid dictionary')),
+        (Cls, Err(r'Input should be a valid dictionary')),
     ],
     ids=repr,
 )
@@ -1002,7 +1009,7 @@ def test_alias_extra(py_and_json: PyAndJson):
         {
             'kind': 'int_parsing',
             'loc': ['field_a'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': '...',
         }
     ]

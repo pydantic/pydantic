@@ -237,7 +237,7 @@ fn parse_json(input: &PyAny) -> PyResult<serde_json::Result<JsonInput>> {
         Ok(serde_json::from_slice(unsafe { py_byte_array.as_bytes() }))
     } else {
         let input_type = input.get_type().name().unwrap_or("unknown");
-        py_error!(PyTypeError; "JSON input must be str, bytes or bytearray, not {}", input_type)
+        py_error!(PyTypeError; "JSON input should be str, bytes or bytearray, not {}", input_type)
     }
 }
 

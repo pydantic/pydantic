@@ -331,7 +331,7 @@ pub fn int_as_time<'a>(
         t if t < 0_i64 => {
             return Err(ValError::new(
                 ErrorKind::TimeParsing {
-                    error: "time in seconds must be positive",
+                    error: "time in seconds should be positive",
                 },
                 input,
             ));

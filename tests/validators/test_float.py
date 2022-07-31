@@ -23,8 +23,8 @@ from ..conftest import Err, PyAndJson, plain_repr
         (1e10, 1e10),
         (True, 1),
         (False, 0),
-        ('wrong', Err('Value must be a valid number, unable to parse string as an number [kind=float_parsing')),
-        ([1, 2], Err('Value must be a valid number [kind=float_type, input_value=[1, 2], input_type=list]')),
+        ('wrong', Err('Input should be a valid number, unable to parse string as an number [kind=float_parsing')),
+        ([1, 2], Err('Input should be a valid number [kind=float_type, input_value=[1, 2], input_type=list]')),
     ],
 )
 def test_float(py_and_json: PyAndJson, input_value, expected):
@@ -46,8 +46,8 @@ def test_float(py_and_json: PyAndJson, input_value, expected):
         (42, 42),
         (42.0, 42.0),
         (42.5, 42.5),
-        ('42', Err("Value must be a valid number [kind=float_type, input_value='42', input_type=str]")),
-        (True, Err('Value must be a valid number [kind=float_type, input_value=True, input_type=bool]')),
+        ('42', Err("Input should be a valid number [kind=float_type, input_value='42', input_type=str]")),
+        (True, Err('Input should be a valid number [kind=float_type, input_value=True, input_type=bool]')),
     ],
     ids=repr,
 )
@@ -72,20 +72,20 @@ def test_float_strict(py_and_json: PyAndJson, input_value, expected):
             {'ge': 0},
             -0.1,
             Err(
-                'Value must be greater than or equal to 0 '
+                'Input should be greater than or equal to 0 '
                 '[kind=greater_than_equal, input_value=-0.1, input_type=float]'
             ),
         ),
         ({'gt': 0}, 0.1, 0.1),
-        ({'gt': 0}, 0, Err('Value must be greater than 0 [kind=greater_than, input_value=0, input_type=int]')),
+        ({'gt': 0}, 0, Err('Input should be greater than 0 [kind=greater_than, input_value=0, input_type=int]')),
         ({'le': 0}, 0, 0),
         ({'le': 0}, -1, -1),
-        ({'le': 0}, 0.1, Err('Value must be less than or equal to 0')),
-        ({'lt': 0}, 0, Err('Value must be less than 0')),
-        ({'lt': 0.123456}, 1, Err('Value must be less than 0.123456')),
+        ({'le': 0}, 0.1, Err('Input should be less than or equal to 0')),
+        ({'lt': 0}, 0, Err('Input should be less than 0')),
+        ({'lt': 0.123456}, 1, Err('Input should be less than 0.123456')),
         ({'multiple_of': 0.5}, 0.5, 0.5),
         ({'multiple_of': 0.5}, 1, 1),
-        ({'multiple_of': 0.5}, 0.6, Err('Value must be a multiple of 0.5')),
+        ({'multiple_of': 0.5}, 0.6, Err('Input should be a multiple of 0.5')),
     ],
 )
 def test_float_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
@@ -112,11 +112,11 @@ def test_union_float(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('5')
     assert exc_info.value.errors() == [
-        {'kind': 'float_type', 'loc': ['float'], 'message': 'Value must be a valid number', 'input_value': '5'},
+        {'kind': 'float_type', 'loc': ['float'], 'message': 'Input should be a valid number', 'input_value': '5'},
         {
             'kind': 'multiple_of',
             'loc': ['constrained-float'],
-            'message': 'Value must be a multiple of 7',
+            'message': 'Input should be a multiple of 7',
             'input_value': '5',
             'context': {'multiple_of': 7.0},
         },
@@ -133,7 +133,7 @@ def test_union_float_simple(py_and_json: PyAndJson):
         {
             'kind': 'float_parsing',
             'loc': ['float'],
-            'message': 'Value must be a valid number, unable to parse string as an number',
+            'message': 'Input should be a valid number, unable to parse string as an number',
             'input_value': 'xxx',
         }
     ]
@@ -172,5 +172,5 @@ def test_float_key(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'keys_schema': 'float', 'values_schema': 'int'})
     assert v.validate_test({'1': 1, '2': 2}) == {1: 1, 2: 2}
     assert v.validate_test({'1.5': 1, '2.4': 2}) == {1.5: 1, 2.4: 2}
-    with pytest.raises(ValidationError, match='Value must be a valid number'):
+    with pytest.raises(ValidationError, match='Input should be a valid number'):
         v.validate_test({'1.5': 1, '2.5': 2}, strict=True)

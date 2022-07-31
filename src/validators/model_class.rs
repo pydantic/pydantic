@@ -42,7 +42,7 @@ impl BuildValidator for ModelClassValidator {
         let (comb_validator, td_schema) = build_validator(sub_schema, config, build_context)?;
 
         if !td_schema.get_as(intern!(py, "return_fields_set"))?.unwrap_or(false) {
-            return py_error!("model-class inner schema must have 'return_fields_set' set to True");
+            return py_error!("model-class inner schema should have 'return_fields_set' set to True");
         }
 
         let validator = match comb_validator {

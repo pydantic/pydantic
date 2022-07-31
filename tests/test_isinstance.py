@@ -10,7 +10,7 @@ def test_isinstance():
     assert v.validate_python('123') == 123
     assert v.isinstance_python('123') is True
 
-    with pytest.raises(ValidationError, match='Value must be a valid integer'):
+    with pytest.raises(ValidationError, match='Input should be a valid integer'):
         v.validate_python('foo')
 
     assert v.isinstance_python('foo') is False
@@ -21,7 +21,7 @@ def test_isinstance_strict():
     assert v.validate_python(123) == 123
     assert v.isinstance_python(123) is True
 
-    with pytest.raises(ValidationError, match='Value must be a valid integer'):
+    with pytest.raises(ValidationError, match='Input should be a valid integer'):
         v.validate_python('123')
 
     assert v.isinstance_python('123') is False
@@ -34,7 +34,7 @@ def test_isinstance_json():
     assert v.validate_json('"123"') == 123
     assert v.isinstance_json('"123"') is True
 
-    with pytest.raises(ValidationError, match='Value must be a valid integer'):
+    with pytest.raises(ValidationError, match='Input should be a valid integer'):
         v.validate_json('"foo"')
 
     assert v.isinstance_json('"foo"') is False

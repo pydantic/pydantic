@@ -99,7 +99,7 @@ def test_model_class_bad_model():
     class MyModel:
         pass
 
-    with pytest.raises(SchemaError, match="model-class -> schema -> type\n  Value must be 'typed-dict'"):
+    with pytest.raises(SchemaError, match="model-class -> schema -> type\n  Input should be 'typed-dict'"):
         SchemaValidator({'type': 'model-class', 'class_type': MyModel, 'schema': {'type': 'str'}})
 
 
@@ -118,7 +118,7 @@ def test_not_return_fields_set():
     class MyModel:
         pass
 
-    with pytest.raises(SchemaError, match="model-class inner schema must have 'return_fields_set' set to True"):
+    with pytest.raises(SchemaError, match="model-class inner schema should have 'return_fields_set' set to True"):
         SchemaValidator(
             {
                 'type': 'model-class',
@@ -226,7 +226,7 @@ def test_model_class_strict():
         {
             'kind': 'model_class_type',
             'loc': [],
-            'message': 'Value must be an instance of MyModel',
+            'message': 'Input should be an instance of MyModel',
             'input_value': {'field_a': 'test', 'field_b': 12},
             'context': {'class_name': 'MyModel'},
         }
@@ -289,7 +289,7 @@ def test_revalidate():
         {
             'kind': 'int_parsing',
             'loc': ['field_b'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'not int',
         }
     ]

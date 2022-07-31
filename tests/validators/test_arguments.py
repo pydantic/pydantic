@@ -99,13 +99,13 @@ from ..conftest import Err, PyAndJson, plain_repr
                     {
                         'kind': 'int_parsing',
                         'loc': [0],
-                        'message': 'Value must be a valid integer, unable to parse string as an integer',
+                        'message': 'Input should be a valid integer, unable to parse string as an integer',
                         'input_value': 'x',
                     },
                     {
                         'kind': 'bool_parsing',
                         'loc': [2],
-                        'message': 'Value must be a valid boolean, unable to interpret input',
+                        'message': 'Input should be a valid boolean, unable to interpret input',
                         'input_value': 'wrong',
                     },
                 ],
@@ -209,13 +209,13 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
                     {
                         'kind': 'int_parsing',
                         'loc': ['a'],
-                        'message': 'Value must be a valid integer, unable to parse string as an integer',
+                        'message': 'Input should be a valid integer, unable to parse string as an integer',
                         'input_value': 'x',
                     },
                     {
                         'kind': 'bool_parsing',
                         'loc': ['c'],
-                        'message': 'Value must be a valid boolean, unable to interpret input',
+                        'message': 'Input should be a valid boolean, unable to interpret input',
                         'input_value': 'wrong',
                     },
                 ],
@@ -438,7 +438,7 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
                     {
                         'kind': 'int_parsing',
                         'loc': [0],
-                        'message': 'Value must be a valid integer, unable to parse string as an integer',
+                        'message': 'Input should be a valid integer, unable to parse string as an integer',
                         'input_value': 'x',
                     }
                 ],
@@ -452,13 +452,13 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
                     {
                         'kind': 'int_parsing',
                         'loc': [1],
-                        'message': 'Value must be a valid integer, unable to parse string as an integer',
+                        'message': 'Input should be a valid integer, unable to parse string as an integer',
                         'input_value': 'x',
                     },
                     {
                         'kind': 'int_parsing',
                         'loc': [2],
-                        'message': 'Value must be a valid integer, unable to parse string as an integer',
+                        'message': 'Input should be a valid integer, unable to parse string as an integer',
                         'input_value': 'y',
                     },
                 ],
@@ -832,7 +832,7 @@ def test_function_types():
         {
             'kind': 'int_parsing',
             'loc': [1],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'b',
         },
         {
@@ -850,13 +850,13 @@ def test_function_types():
         {
             'kind': 'int_parsing',
             'loc': [1],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'b',
         },
         {
             'kind': 'int_parsing',
             'loc': ['c'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'c',
         },
     ]

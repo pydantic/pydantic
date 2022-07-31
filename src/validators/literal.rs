@@ -26,7 +26,7 @@ impl BuildValidator for LiteralBuilder {
     ) -> PyResult<CombinedValidator> {
         let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
-            return py_error!(r#""expected" must have length > 0"#);
+            return py_error!(r#""expected" should have length > 0"#);
         } else if expected.len() == 1 {
             let first = expected.get_item(0)?;
             if let Ok(str) = first.extract::<String>() {

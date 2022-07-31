@@ -43,10 +43,10 @@ def test_no_copy():
     'input_value,expected',
     [
         ([1, 2.5, '3'], {1, 2.5, '3'}),
-        ('foo', Err('Value must be a valid frozenset')),
-        (1, Err('Value must be a valid frozenset')),
-        (1.0, Err('Value must be a valid frozenset')),
-        (False, Err('Value must be a valid frozenset')),
+        ('foo', Err('Input should be a valid frozenset')),
+        (1, Err('Input should be a valid frozenset')),
+        (1.0, Err('Input should be a valid frozenset')),
+        (False, Err('Input should be a valid frozenset')),
     ],
 )
 def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expected):
@@ -70,10 +70,10 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
         ((1, 2, 3, 2, 3), {1, 2, 3}),
         ((), frozenset()),
         (frozenset([1, 2, 3, 2, 3]), {1, 2, 3}),
-        ({'abc'}, Err('0\n  Value must be a valid integer')),
-        ({1, 2, 'wrong'}, Err('Value must be a valid integer')),
-        ({1: 2}, Err('1 validation error for frozenset[int]\n  Value must be a valid frozenset')),
-        ('abc', Err('Value must be a valid frozenset')),
+        ({'abc'}, Err('0\n  Input should be a valid integer')),
+        ({1, 2, 'wrong'}, Err('Input should be a valid integer')),
+        ({1: 2}, Err('1 validation error for frozenset[int]\n  Input should be a valid frozenset')),
+        ('abc', Err('Input should be a valid frozenset')),
         # Technically correct, but does anyone actually need this? I think needs a new type in pyo3
         pytest.param({1: 10, 2: 20, 3: 30}.keys(), {1, 2, 3}, marks=pytest.mark.xfail(raises=ValidationError)),
     ],
@@ -105,11 +105,11 @@ def test_frozenset_multiple_errors():
         {
             'kind': 'int_parsing',
             'loc': [0],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'a',
         },
-        {'kind': 'int_type', 'loc': [1], 'message': 'Value must be a valid integer', 'input_value': (1, 2)},
-        {'kind': 'int_type', 'loc': [2], 'message': 'Value must be a valid integer', 'input_value': []},
+        {'kind': 'int_type', 'loc': [1], 'message': 'Input should be a valid integer', 'input_value': (1, 2)},
+        {'kind': 'int_type', 'loc': [2], 'message': 'Input should be a valid integer', 'input_value': []},
     ]
 
 
@@ -118,17 +118,17 @@ def test_frozenset_multiple_errors():
     [
         ({'strict': True}, frozenset(), frozenset()),
         ({'strict': True}, frozenset([1, 2, 3]), {1, 2, 3}),
-        ({'strict': True}, {1, 2, 3}, Err('Value must be a valid frozenset')),
-        ({'strict': True}, [1, 2, 3, 2, 3], Err('Value must be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, [], Err('Value must be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, (), Err('Value must be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, (1, 2, 3), Err('Value must be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, {1, 2, 3}, Err('Value must be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, 'abc', Err('Value must be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, {1, 2, 3}, Err('Input should be a valid frozenset')),
+        ({'strict': True}, [1, 2, 3, 2, 3], Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, [], Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, (), Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, (1, 2, 3), Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, {1, 2, 3}, Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, 'abc', Err('Input should be a valid frozenset [kind=frozen_set_type,')),
         ({'min_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'min_items': 3}, {1, 2}, Err('Input must have at least 3 items, got 2 items [kind=too_short,')),
+        ({'min_items': 3}, {1, 2}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
         ({'max_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'max_items': 3}, {1, 2, 3, 4}, Err('Input must have at most 3 items, got 4 items [kind=too_long,')),
+        ({'max_items': 3}, {1, 2, 3, 4}, Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
     ],
 )
 def test_frozenset_kwargs_python(kwargs: Dict[str, Any], input_value, expected):
@@ -165,14 +165,14 @@ def test_union_frozenset_list(input_value, expected):
                     {
                         'kind': 'int_type',
                         'loc': ['frozenset[int]', 1],
-                        'message': 'Value must be a valid integer',
+                        'message': 'Input should be a valid integer',
                         'input_value': 'a',
                     },
                     # second because validation on the string choice comes second
                     {
                         'kind': 'str_type',
                         'loc': ['frozenset[str]', 0],
-                        'message': 'Value must be a valid string',
+                        'message': 'Input should be a valid string',
                         'input_value': 1,
                     },
                 ],
@@ -203,7 +203,7 @@ def test_union_frozenset_int_frozenset_str(input_value, expected):
 
 def test_frozenset_as_dict_keys(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'frozenset'}, 'values_schema': 'int'})
-    with pytest.raises(ValidationError, match=re.escape('Value must be a valid frozenset')):
+    with pytest.raises(ValidationError, match=re.escape('Input should be a valid frozenset')):
         v.validate_test({'foo': 'bar'})
 
 
