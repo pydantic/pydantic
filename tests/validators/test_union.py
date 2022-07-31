@@ -180,11 +180,11 @@ def test_nullable_via_union():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('hello')
     assert exc_info.value.errors() == [
-        {'kind': 'none_required', 'loc': ['none'], 'message': 'Value must be None/null', 'input_value': 'hello'},
+        {'kind': 'none_required', 'loc': ['none'], 'message': 'Input should be None/null', 'input_value': 'hello'},
         {
             'kind': 'int_parsing',
             'loc': ['int'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'hello',
         },
     ]
@@ -209,13 +209,13 @@ def test_union_list_bool_int():
         {
             'kind': 'bool_parsing',
             'loc': ['list[bool]', 0],
-            'message': 'Value must be a valid boolean, unable to interpret input',
+            'message': 'Input should be a valid boolean, unable to interpret input',
             'input_value': 3,
         },
         {
             'kind': 'int_parsing',
             'loc': ['list[int]', 1],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'true',
         },
     ]
@@ -241,6 +241,6 @@ def test_strict_union():
         v.validate_python('123')
 
     assert exc_info.value.errors() == [
-        {'kind': 'bool_type', 'loc': ['bool'], 'message': 'Value must be a valid boolean', 'input_value': '123'},
-        {'kind': 'int_type', 'loc': ['int'], 'message': 'Value must be a valid integer', 'input_value': '123'},
+        {'kind': 'bool_type', 'loc': ['bool'], 'message': 'Input should be a valid boolean', 'input_value': '123'},
+        {'kind': 'int_type', 'loc': ['int'], 'message': 'Input should be a valid integer', 'input_value': '123'},
     ]

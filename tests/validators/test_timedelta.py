@@ -23,7 +23,7 @@ from ..conftest import Err, PyAndJson
         ),
         ('P0Y0M3D2WT1H2M3.5S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
         (b'P0Y0M3D2WT1H2M3.5S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
-        ((-1,), Err('Value must be a valid timedelta [kind=time_delta_type')),
+        ((-1,), Err('Input should be a valid timedelta [kind=time_delta_type')),
         (3601, timedelta(hours=1, seconds=1)),
         (Decimal('3601.123456'), timedelta(hours=1, seconds=1, microseconds=123456)),
         (Decimal('3601.1234562'), timedelta(hours=1, seconds=1, microseconds=123456)),
@@ -50,8 +50,8 @@ def test_timedelta(input_value, expected):
     'input_value,expected',
     [
         ('"P0Y0M3D2WT1H2M3.5S"', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
-        ('"errordata"', Err('Value must be a valid timedelta, invalid digit in duration [kind=time_delta_parsing')),
-        ('true', Err('Value must be a valid timedelta [kind=time_delta_type')),
+        ('"errordata"', Err('Input should be a valid timedelta, invalid digit in duration [kind=time_delta_parsing')),
+        ('true', Err('Input should be a valid timedelta [kind=time_delta_type')),
         ('3601', timedelta(hours=1, seconds=1)),
         ('3601.123456', timedelta(hours=1, seconds=1, microseconds=123456)),
         ('-3601', timedelta(hours=-2, seconds=3599)),
@@ -78,8 +78,8 @@ def test_timedelta_json(input_value, expected):
             timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500),
             timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500),
         ),
-        ('P0Y0M3D2WT1H2M3.5S', Err('Value must be a valid timedelta [kind=time_delta_type')),
-        (b'P0Y0M3D2WT1H2M3.5S', Err('Value must be a valid timedelta [kind=time_delta_type')),
+        ('P0Y0M3D2WT1H2M3.5S', Err('Input should be a valid timedelta [kind=time_delta_type')),
+        (b'P0Y0M3D2WT1H2M3.5S', Err('Input should be a valid timedelta [kind=time_delta_type')),
     ],
 )
 def test_timedelta_strict(input_value, expected):
@@ -96,8 +96,8 @@ def test_timedelta_strict(input_value, expected):
     'input_value,expected',
     [
         ('"P0Y0M3D2WT1H2M3.5S"', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
-        ('"12345"', Err('Value must be a valid timedelta')),
-        ('true', Err('Value must be a valid timedelta [kind=time_delta_type')),
+        ('"12345"', Err('Input should be a valid timedelta')),
+        ('true', Err('Input should be a valid timedelta [kind=time_delta_type')),
     ],
 )
 def test_timedelta_strict_json(input_value, expected):
@@ -116,27 +116,27 @@ def test_timedelta_strict_json(input_value, expected):
         ({}, 'P0Y0M3D2WT1H2M3S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3)),
         ({'le': timedelta(days=3)}, 'P2DT1H', timedelta(days=2, hours=1)),
         ({'le': timedelta(days=3)}, 'P3DT0H', timedelta(days=3)),
-        ({'le': timedelta(days=3)}, 'P3DT1H', Err('Value must be less than or equal to P3D')),
+        ({'le': timedelta(days=3)}, 'P3DT1H', Err('Input should be less than or equal to P3D')),
         ({'lt': timedelta(days=3)}, 'P2DT1H', timedelta(days=2, hours=1)),
-        ({'lt': timedelta(days=3)}, 'P3DT1H', Err('Value must be less than P3D')),
+        ({'lt': timedelta(days=3)}, 'P3DT1H', Err('Input should be less than P3D')),
         ({'ge': timedelta(days=3)}, 'P3DT1H', timedelta(days=3, hours=1)),
         ({'ge': timedelta(days=3)}, 'P3D', timedelta(days=3)),
-        ({'ge': timedelta(days=3)}, 'P2DT1H', Err('Value must be greater than or equal to P3D')),
+        ({'ge': timedelta(days=3)}, 'P2DT1H', Err('Input should be greater than or equal to P3D')),
         ({'gt': timedelta(days=3)}, 'P3DT1H', timedelta(days=3, hours=1)),
-        ({'gt': 'P3D'}, 'P2DT1H', Err('Value must be greater than P3D')),
+        ({'gt': 'P3D'}, 'P2DT1H', Err('Input should be greater than P3D')),
         ({'le': timedelta(seconds=-86400.123)}, '-PT86400.123S', timedelta(seconds=-86400.123)),
         ({'le': timedelta(seconds=-86400.123)}, '-PT86400.124S', timedelta(seconds=-86400.124)),
         (
             {'le': timedelta(seconds=-86400.123)},
             '-PT86400.122S',
-            Err('Value must be less than or equal to -P1DT0.123S [kind=less_than_equal'),
+            Err('Input should be less than or equal to -P1DT0.123S [kind=less_than_equal'),
         ),
         ({'gt': timedelta(seconds=-86400.123)}, timedelta(seconds=-86400.122), timedelta(seconds=-86400.122)),
         ({'gt': timedelta(seconds=-86400.123)}, '-PT86400.122S', timedelta(seconds=-86400.122)),
         (
             {'gt': timedelta(seconds=-86400.123)},
             '-PT86400.124S',
-            Err('Value must be greater than -P1DT0.123S [kind=greater_than'),
+            Err('Input should be greater than -P1DT0.123S [kind=greater_than'),
         ),
     ],
     ids=repr,
@@ -158,10 +158,10 @@ def test_timedelta_kwargs_strict():
 
 
 def test_invalid_constraint():
-    with pytest.raises(SchemaError, match='timedelta -> gt\n  Value must be a valid timedelta, invalid digit in'):
+    with pytest.raises(SchemaError, match='timedelta -> gt\n  Input should be a valid timedelta, invalid digit in'):
         SchemaValidator({'type': 'timedelta', 'gt': 'foobar'})
 
-    with pytest.raises(SchemaError, match='timedelta -> le\n  Value must be a valid timedelta, invalid digit in'):
+    with pytest.raises(SchemaError, match='timedelta -> le\n  Input should be a valid timedelta, invalid digit in'):
         SchemaValidator({'type': 'timedelta', 'le': 'foobar'})
 
 
@@ -179,7 +179,7 @@ def test_dict_key(py_and_json: PyAndJson):
 
     with pytest.raises(
         ValidationError,
-        match=re.escape('Value must be a valid timedelta, invalid digit in duration [kind=time_delta_parsing'),
+        match=re.escape('Input should be a valid timedelta, invalid digit in duration [kind=time_delta_parsing'),
     ):
         v.validate_test({'errordata': 2})
 
@@ -190,7 +190,7 @@ def test_dict_value(py_and_json: PyAndJson):
 
     with pytest.raises(
         ValidationError,
-        match=re.escape('Value must be a valid timedelta, invalid digit in duration [kind=time_delta_parsing'),
+        match=re.escape('Input should be a valid timedelta, invalid digit in duration [kind=time_delta_parsing'),
     ):
         v.validate_test({4: 'errordata'})
 
@@ -240,5 +240,5 @@ def test_large_value():
     v = SchemaValidator({'type': 'timedelta'})
     assert v.validate_python('123days, 12:34') == timedelta(days=123, hours=12, minutes=34)
     assert v.validate_python(f'{999_999_999}days, 12:34') == timedelta(days=999_999_999, hours=12, minutes=34)
-    with pytest.raises(ValidationError, match='must be a valid timedelta, durations may not exceed 999,999,999 days'):
+    with pytest.raises(ValidationError, match='should be a valid timedelta, durations may not exceed 999,999,999 days'):
         v.validate_python(f'{999_999_999 + 1}days, 12:34')

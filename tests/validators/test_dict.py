@@ -17,7 +17,7 @@ def test_dict(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
     assert v.validate_test({}) == {}
-    with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
         v.validate_test([])
 
 
@@ -27,13 +27,13 @@ def test_dict(py_and_json: PyAndJson):
         ({'1': 1, '2': 2}, {'1': '1', '2': '2'}),
         (OrderedDict(a=1, b=2), {'a': '1', 'b': '2'}),
         ({}, {}),
-        ('foobar', Err("Value must be a valid dictionary [kind=dict_type, input_value='foobar', input_type=str]")),
-        ([], Err('Value must be a valid dictionary [kind=dict_type,')),
-        ([('x', 'y')], Err('Value must be a valid dictionary [kind=dict_type,')),
-        ([('x', 'y'), ('z', 'z')], Err('Value must be a valid dictionary [kind=dict_type,')),
-        ((), Err('Value must be a valid dictionary [kind=dict_type,')),
-        ((('x', 'y'),), Err('Value must be a valid dictionary [kind=dict_type,')),
-        ((type('Foobar', (), {'x': 1})()), Err('Value must be a valid dictionary [kind=dict_type,')),
+        ('foobar', Err("Input should be a valid dictionary [kind=dict_type, input_value='foobar', input_type=str]")),
+        ([], Err('Input should be a valid dictionary [kind=dict_type,')),
+        ([('x', 'y')], Err('Input should be a valid dictionary [kind=dict_type,')),
+        ([('x', 'y'), ('z', 'z')], Err('Input should be a valid dictionary [kind=dict_type,')),
+        ((), Err('Input should be a valid dictionary [kind=dict_type,')),
+        ((('x', 'y'),), Err('Input should be a valid dictionary [kind=dict_type,')),
+        ((type('Foobar', (), {'x': 1})()), Err('Input should be a valid dictionary [kind=dict_type,')),
     ],
     ids=repr,
 )
@@ -49,13 +49,13 @@ def test_dict_cases(input_value, expected):
 def test_dict_value_error(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'values_schema': 'int'})
     assert v.validate_test({'a': 2, 'b': '4'}) == {'a': 2, 'b': 4}
-    with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
+    with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_test({'a': 2, 'b': 'wrong'})
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
             'loc': ['b'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
@@ -63,13 +63,13 @@ def test_dict_value_error(py_and_json: PyAndJson):
 
 def test_dict_error_key_int():
     v = SchemaValidator({'type': 'dict', 'values_schema': 'int'})
-    with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
+    with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, 3: 'wrong'})
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
             'loc': [3],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
@@ -77,13 +77,13 @@ def test_dict_error_key_int():
 
 def test_dict_error_key_other():
     v = SchemaValidator({'type': 'dict', 'values_schema': 'int'})
-    with pytest.raises(ValidationError, match='Value must be a valid integer') as exc_info:
+    with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, (1, 2): 'wrong'})
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
             'loc': ['(1, 2)'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
@@ -114,20 +114,20 @@ def test_mapping():
     v = SchemaValidator(
         {'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}}
     )
-    with pytest.raises(ValidationError, match='Value must be a valid dictionary'):
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
         v.validate_python(MyMapping({'1': 2, 3: '4'}))
 
 
 def test_key_error():
     v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({'1': True}) == {1: 1}
-    with pytest.raises(ValidationError, match=re.escape('x -> [key]\n  Value must be a valid integer')) as exc_info:
+    with pytest.raises(ValidationError, match=re.escape('x -> [key]\n  Input should be a valid integer')) as exc_info:
         v.validate_python({'x': 1})
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
             'loc': ['x', '[key]'],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'x',
         }
     ]
@@ -200,12 +200,12 @@ def test_mapping_error_yield_1():
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
         ),
-        ({'min_items': 3}, {1: '2', 3: '4'}, Err('Input must have at least 3 items, got 2 items [kind=too_short,')),
+        ({'min_items': 3}, {1: '2', 3: '4'}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
         ({'max_items': 4}, {'1': 1, '2': 2, '3': 3.0}, {'1': 1, '2': 2, '3': 3.0}),
         (
             {'max_items': 3},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
-            Err('Input must have at most 3 items, got 4 items [kind=too_long,'),
+            Err('Input should have at most 3 items, got 4 items [kind=too_long,'),
         ),
     ],
 )

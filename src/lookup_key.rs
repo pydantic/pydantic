@@ -60,7 +60,7 @@ impl LookupKey {
             let list: &PyList = value.cast_as()?;
             let first = match list.get_item(0) {
                 Ok(v) => v,
-                Err(_) => return py_error!("Lookup paths must have at least one element"),
+                Err(_) => return py_error!("Lookup paths should have at least one element"),
             };
             let mut locs: Vec<Path> = if first.cast_as::<PyString>().is_ok() {
                 // list of strings rather than list of lists
@@ -91,7 +91,7 @@ impl LookupKey {
             .collect::<PyResult<Path>>()?;
 
         if path.is_empty() {
-            py_error!("Each alias path must have at least one element")
+            py_error!("Each alias path should have at least one element")
         } else {
             Ok(path)
         }
@@ -181,7 +181,7 @@ impl LookupKey {
                     let mut path_iter = path.iter();
 
                     // first step is different from the rest as we already know dict is JsonObject
-                    // because of above checks, we know that path must have at least one element, hence unwrap
+                    // because of above checks, we know that path should have at least one element, hence unwrap
                     let v: &JsonInput = match path_iter.next().unwrap().json_obj_get(dict) {
                         Some(v) => v,
                         None => continue,
@@ -244,7 +244,7 @@ impl PathItem {
         } else {
             let int_key = obj.extract::<usize>()?;
             if index == 0 {
-                py_error!(PyTypeError; "The first item in an alias path must be a string")
+                py_error!(PyTypeError; "The first item in an alias path should be a string")
             } else {
                 Ok(Self::I(int_key))
             }

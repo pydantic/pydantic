@@ -54,7 +54,7 @@ def test_function_before_error():
         {
             'kind': 'too_long',
             'loc': [],
-            'message': 'String must have at most 5 characters',
+            'message': 'String should have at most 5 characters',
             'input_value': '12345x',
             'context': {'max_length': 5},
         }
@@ -83,7 +83,7 @@ def test_function_before_error_model():
         {
             'kind': 'too_long',
             'loc': ['my_field'],
-            'message': 'String must have at most 5 characters',
+            'message': 'String should have at most 5 characters',
             'input_value': '12345x',
             'context': {'max_length': 5},
         }
@@ -119,7 +119,7 @@ def test_function_wrap_str():
 
 
 def test_function_wrap_not_callable():
-    with pytest.raises(SchemaError, match='function -> function\n  Input must be callable'):
+    with pytest.raises(SchemaError, match='function -> function\n  Input should be callable'):
         SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': [], 'schema': 'str'})
 
     with pytest.raises(SchemaError, match='function -> function\n  Field required'):
@@ -139,14 +139,14 @@ def test_wrap_error():
         {
             'kind': 'int_parsing',
             'loc': [],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
 
 
 def test_wrong_mode():
-    with pytest.raises(SchemaError, match='function -> mode\n  Value must be one of'):
+    with pytest.raises(SchemaError, match='function -> mode\n  Input should be one of'):
         SchemaValidator({'type': 'function', 'mode': 'foobar', 'schema': 'str'})
 
 
@@ -221,7 +221,7 @@ def test_function_plain():
 
 
 def test_plain_with_schema():
-    with pytest.raises(SchemaError, match='function-plain -> schema\n  Extra values are not permitted'):
+    with pytest.raises(SchemaError, match='function-plain -> schema\n  Extra inputs are not permitted'):
         SchemaValidator({'type': 'function', 'mode': 'plain', 'function': lambda x: x, 'schema': 'str'})
 
 
@@ -287,7 +287,7 @@ def test_class_with_validator():
         v.validate_python(True)
 
     assert exc_info.value.errors() == [
-        {'kind': 'str_type', 'loc': [], 'message': 'Value must be a valid string', 'input_value': True}
+        {'kind': 'str_type', 'loc': [], 'message': 'Input should be a valid string', 'input_value': True}
     ]
 
 

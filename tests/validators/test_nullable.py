@@ -14,7 +14,7 @@ def test_nullable():
         {
             'kind': 'int_parsing',
             'loc': [],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'hello',
         }
     ]

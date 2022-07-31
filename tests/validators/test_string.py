@@ -15,9 +15,9 @@ from ..conftest import Err, PyAndJson
         ('foobar', 'foobar'),
         (123, '123'),
         (123.456, '123.456'),
-        (False, Err('Value must be a valid string [kind=str_type')),
-        (True, Err('Value must be a valid string [kind=str_type')),
-        ([], Err('Value must be a valid string [kind=str_type, input_value=[], input_type=list]')),
+        (False, Err('Input should be a valid string [kind=str_type')),
+        (True, Err('Input should be a valid string [kind=str_type')),
+        ([], Err('Input should be a valid string [kind=str_type, input_value=[], input_type=list]')),
     ],
 )
 def test_str(py_and_json: PyAndJson, input_value, expected):
@@ -35,10 +35,13 @@ def test_str(py_and_json: PyAndJson, input_value, expected):
         ('foobar', 'foobar'),
         (b'foobar', 'foobar'),
         (bytearray(b'foobar'), 'foobar'),
-        (b'\x81', Err('Value must be a valid string, unable to parse raw data as a unicode string [kind=str_unicode')),
+        (
+            b'\x81',
+            Err('Input should be a valid string, unable to parse raw data as a unicode string [kind=str_unicode'),
+        ),
         (
             bytearray(b'\x81'),
-            Err('Value must be a valid string, unable to parse raw data as a unicode string [kind=str_unicode'),
+            Err('Input should be a valid string, unable to parse raw data as a unicode string [kind=str_unicode'),
         ),
         # null bytes are very annoying, but we can't really block them here
         (b'\x00', '\x00'),
@@ -60,23 +63,23 @@ def test_str_not_json(input_value, expected):
     [
         ({}, 123, '123'),
         ({'strict': True}, 'Foobar', 'Foobar'),
-        ({'strict': True}, 123, Err('Value must be a valid string [kind=str_type, input_value=123, input_type=int]')),
+        ({'strict': True}, 123, Err('Input should be a valid string [kind=str_type, input_value=123, input_type=int]')),
         ({'to_upper': True}, 'fooBar', 'FOOBAR'),
         ({'to_lower': True}, 'fooBar', 'foobar'),
         ({'strip_whitespace': True}, ' foobar  ', 'foobar'),
         ({'strip_whitespace': True, 'to_upper': True}, ' fooBar', 'FOOBAR'),
         ({'min_length': 5}, '12345', '12345'),
-        ({'min_length': 5}, '1234', Err('String must have at least 5 characters [kind=too_short')),
+        ({'min_length': 5}, '1234', Err('String should have at least 5 characters [kind=too_short')),
         ({'max_length': 5}, '12345', '12345'),
-        ({'max_length': 5}, '123456', Err('String must have at most 5 characters [kind=too_long')),
+        ({'max_length': 5}, '123456', Err('String should have at most 5 characters [kind=too_long')),
         ({'pattern': r'^\d+$'}, '12345', '12345'),
         ({'pattern': r'\d+$'}, 'foobar 123', 'foobar 123'),
-        ({'pattern': r'^\d+$'}, '12345a', Err("String must match pattern '^\\d+$' [kind=str_pattern_mismatch")),
+        ({'pattern': r'^\d+$'}, '12345a', Err("String should match pattern '^\\d+$' [kind=str_pattern_mismatch")),
         # strip comes after length check
-        ({'max_length': 5, 'strip_whitespace': True}, '1234  ', Err('String must have at most 5 characters')),
+        ({'max_length': 5, 'strip_whitespace': True}, '1234  ', Err('String should have at most 5 characters')),
         # to_upper and strip comes after pattern check
         ({'to_upper': True, 'pattern': 'abc'}, 'abc', 'ABC'),
-        ({'strip_whitespace': True, 'pattern': r'\d+$'}, 'foobar 123 ', Err("String must match pattern '\\d+$'")),
+        ({'strip_whitespace': True, 'pattern': r'\d+$'}, 'foobar 123 ', Err("String should match pattern '\\d+$'")),
     ],
 )
 def test_constrained_str(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
@@ -92,7 +95,7 @@ def test_str_constrained():
     v = SchemaValidator({'type': 'str', 'max_length': 5})
     assert v.validate_python('test') == 'test'
 
-    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
+    with pytest.raises(ValidationError, match='String should have at most 5 characters'):
         v.validate_python('test long')
 
 
@@ -100,7 +103,7 @@ def test_str_constrained_config():
     v = SchemaValidator({'type': 'str'}, {'str_max_length': 5})
     assert v.validate_python('test') == 'test'
 
-    with pytest.raises(ValidationError, match='String must have at most 5 characters'):
+    with pytest.raises(ValidationError, match='String should have at most 5 characters'):
         v.validate_python('test long')
 
 
@@ -130,7 +133,7 @@ def test_regex_error():
         {
             'kind': 'str_pattern_mismatch',
             'loc': [],
-            'message': "String must match pattern '11'",
+            'message': "String should match pattern '11'",
             'input_value': '12',
             'context': {'pattern': '11'},
         }

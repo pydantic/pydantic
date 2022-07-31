@@ -45,7 +45,7 @@ def test_datetime_binary(datetime_schema, data):
             {
                 'kind': 'datetime_parsing',
                 'loc': [],
-                'message': IsStr(regex='Value must be a valid datetime, .+'),
+                'message': IsStr(regex='Input should be a valid datetime, .+'),
                 'input_value': IsBytes(),
                 'context': {'error': IsStr()},
             }
