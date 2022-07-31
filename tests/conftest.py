@@ -5,7 +5,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Type
+from typing import Any, Type
 
 import pytest
 from hypothesis import settings
@@ -41,20 +41,20 @@ class Err:
 
 
 class PyAndJsonValidator:
-    def __init__(self, schema, validator_type: Optional[Literal['json', 'python']] = None):
+    def __init__(self, schema, validator_type: 'Literal["json", "python"] | None' = None):
         self.validator = SchemaValidator(schema)
         self.validator_type = validator_type
 
-    def validate_python(self, py_input, strict: Optional[bool] = None):
+    def validate_python(self, py_input, strict: 'bool | None' = None):
         return self.validator.validate_python(py_input, strict)
 
-    def validate_test(self, py_input, strict: Optional[bool] = None):
+    def validate_test(self, py_input, strict: 'bool | None' = None):
         if self.validator_type == 'json':
             return self.validator.validate_json(json.dumps(py_input), strict)
         elif self.validator_type == 'python':
             return self.validator.validate_python(py_input, strict)
 
-    def isinstance_test(self, py_input, strict: Optional[bool] = None):
+    def isinstance_test(self, py_input, strict: 'bool | None' = None):
         if self.validator_type == 'json':
             return self.validator.isinstance_json(json.dumps(py_input), strict)
         elif self.validator_type == 'python':
@@ -87,7 +87,7 @@ def tmp_work_path(tmp_path: Path):
 
 @pytest.fixture
 def import_execute(request, tmp_work_path: Path):
-    def _import_execute(source: str, *, custom_module_name: Optional[str] = None):
+    def _import_execute(source: str, *, custom_module_name: 'str | None' = None):
         example_bash_file = tmp_work_path / 'example.sh'
         example_bash_file.write_text('#!/bin/sh\necho testing')
         example_bash_file.chmod(0o755)
