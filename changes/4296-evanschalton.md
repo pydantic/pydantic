@@ -1,0 +1,1 @@
+Allow support for Enum keys in model dictionaries
