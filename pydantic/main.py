@@ -734,7 +734,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, dict):
             return {
-                k_: cls._get_value(
+                k_.value if isinstance(k_, Enum) and getattr(cls.Config, 'use_enum_values_as_keys', False) else k_: cls._get_value(
                     v_,
                     to_dict=to_dict,
                     by_alias=by_alias,
@@ -838,6 +838,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 dict_key = self.__fields__[field_key].alias
             else:
                 dict_key = field_key
+
+            if isinstance(dict_key, Enum) and getattr(cls.Config, 'use_enum_values_as_keys', False):
+                dict_key = dict_key.value
 
             if to_dict or value_include or value_exclude:
                 v = self._get_value(

@@ -37,6 +37,7 @@ from pydantic import (
     validator,
 )
 from pydantic.typing import Literal
+import json
 
 
 def test_success():
@@ -814,6 +815,46 @@ def test_enum_values():
     # this is the actual value, so has not "values" field
     assert not isinstance(m.foo, FooEnum)
     assert m.foo == 'foo'
+
+
+def test_enum_values_as_keys_in_dict():
+    """
+    Config: use_enum_values_as_keys = True
+    should resolve enum keys into their values in BaseModel.dict()
+    """
+    FooEnum = Enum('FooEnum', {'FOO': 'foo', 'BAR': 'bar'})
+
+    class Model(BaseModel):
+        foo_dict: Dict[FooEnum, int]
+
+        class Config:
+            use_enum_values_as_keys = True
+
+    m = Model(foo_dict={FooEnum.FOO: 1, FooEnum.BAR: 2})
+    # this is the actual value, so has not "values" field
+    assert m.foo_dict.get(FooEnum.FOO) == 1
+    assert m.dict()['foo_dict'][FooEnum.FOO.value] == 1
+    assert m.dict()['foo_dict'][FooEnum.BAR.value] == 2
+
+
+def test_enum_values_as_keys_in_json():
+    """
+    Config: use_enum_values_as_keys = True
+    should resolve enum keys into their values in BaseModel.json()
+    """
+    FooEnum = Enum('FooEnum', {'FOO': 'foo', 'BAR': 'bar'})
+
+    class Model(BaseModel):
+        foo_dict: Dict[FooEnum, int]
+
+        class Config:
+            use_enum_values_as_keys = True
+
+    m = Model(foo_dict={FooEnum.FOO: 1, FooEnum.BAR: 2})
+
+    model_json = json.loads(m.json())
+    assert model_json['foo_dict'][FooEnum.FOO.value] == 1
+    assert model_json['foo_dict'][FooEnum.BAR.value] == 2
 
 
 def test_literal_enum_values():
