@@ -95,6 +95,7 @@ macro_rules! build_validate {
             slots: &'data [CombinedValidator],
             recursion_guard: &'s mut RecursionGuard,
         ) -> ValResult<'data, PyObject> {
+            let mut op_len: Option<usize> = None;
             if let Some(min_length) = self.min_items {
                 let input_length = dict.len();
                 if input_length < min_length {
@@ -106,9 +107,10 @@ macro_rules! build_validate {
                         input,
                     ));
                 }
+                op_len = Some(input_length);
             }
             if let Some(max_length) = self.max_items {
-                let input_length = dict.len();
+                let input_length = op_len.unwrap_or_else(|| dict.len());
                 if input_length > max_length {
                     return Err(ValError::new(
                         ErrorKind::TooLong {
