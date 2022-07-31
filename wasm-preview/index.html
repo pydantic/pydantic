@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<title>pydantic-core unit tests</title>
+<style>
+  html, body {
+    height: 100%;
+    background: rgb(30, 31, 46);
+    color: white;
+    font-family: monospace;
+    overflow: hidden;
+  }
+  main {
+    max-width: 800px;
+    height: 100%;
+    margin: 10px auto;
+  }
+  section {
+    margin-top: 20px;
+    padding: 10px 15px;
+    height: calc(100% - 160px);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+  }
+  pre {
+    margin: 0;
+    padding: 0;
+    white-space: pre-wrap;
+  }
+  a {
+    color: #58a6ff;
+    text-decoration: none;
+  }
+</style>
+<main>
+  <h1>
+    <a href="https://github.com/samuelcolvin/pydantic-core/tree/main/wasm-preview">pydantic-core</a> unit tests
+  </h1>
+  <aside>
+    pydantic-core is compiled to webassembly and run in the browser using
+    <a href="https://pyodide.org/en/stable/">pyodide</a>.
+  </aside>
+  <section>
+    <pre id="output">loading...</pre>
+  </section>
+</main>
+
+<script src="https://smokeshow.helpmanual.io/2d1p666q3x5f0j26223o/ansi-to-html.browser.js"></script>
+<script>
+  const output_el = document.getElementById('output')
+  const decoder = new TextDecoder()
+  const Convert = require('ansi-to-html')
+  const ansi_converter = new Convert()
+  let terminal_output = ''
+
+  output_el.innerText = 'Starting worker...'
+  const worker = new Worker(`./worker.js?v=${Date.now()}`)
+  worker.onmessage = ({data}) => {
+    if (typeof data == 'string') {
+      terminal_output += data
+    } else {
+      for (let chunk of data) {
+        let arr = new Uint8Array(chunk)
+        let extra = decoder.decode(arr)
+        terminal_output += extra
+      }
+    }
+    output_el.innerHTML = ansi_converter.toHtml(terminal_output)
+    // scrolls to the bottom of the div
+    output_el.scrollIntoView(false)
+  }
+  worker.postMessage({})
+</script>
