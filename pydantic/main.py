@@ -306,6 +306,13 @@ class ModelMetaclass(ABCMeta):
 
 object_setattr = object.__setattr__
 
+def use_enum_key_value(key):
+    """
+    Returns the key.value if the use_enum_values_as_keys flag is True
+    """
+    if isinstance(key, Enum) and getattr(cls.Config, 'use_enum_values_as_keys', False):
+        return key.value
+    return key
 
 class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
@@ -732,9 +739,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         value_exclude = ValueItems(v, exclude) if exclude else None
         value_include = ValueItems(v, include) if include else None
 
+
+
         if isinstance(v, dict):
             return {
-                k_.value if isinstance(k_, Enum) and getattr(cls.Config, 'use_enum_values_as_keys', False) else k_: cls._get_value(
+                use_enum_key_value(k_): cls._get_value(
                     v_,
                     to_dict=to_dict,
                     by_alias=by_alias,
@@ -837,10 +846,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if by_alias and field_key in self.__fields__:
                 dict_key = self.__fields__[field_key].alias
             else:
-                dict_key = field_key
-
-            if isinstance(dict_key, Enum) and getattr(cls.Config, 'use_enum_values_as_keys', False):
-                dict_key = dict_key.value
+                dict_key = use_enum_key_value(dict_key)
 
             if to_dict or value_include or value_exclude:
                 v = self._get_value(
