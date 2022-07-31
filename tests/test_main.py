@@ -1,3 +1,4 @@
+import json
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -37,7 +38,6 @@ from pydantic import (
     validator,
 )
 from pydantic.typing import Literal
-import json
 
 
 def test_success():
