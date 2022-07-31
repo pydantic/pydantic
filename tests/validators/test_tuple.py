@@ -17,14 +17,14 @@ from ..conftest import Err, PyAndJson
             'variable',
             {'type': 'int'},
             1,
-            Err('Value must be a valid tuple [kind=tuple_type, input_value=1, input_type=int]'),
+            Err('Input should be a valid tuple [kind=tuple_type, input_value=1, input_type=int]'),
         ),
         ('positional', [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}], [1, 2, '3'], (1, 2, 3)),
         (
             'positional',
             [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
             5,
-            Err('Value must be a valid tuple [kind=tuple_type, input_value=5, input_type=int]'),
+            Err('Input should be a valid tuple [kind=tuple_type, input_value=5, input_type=int]'),
         ),
     ],
     ids=repr,
@@ -72,7 +72,7 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
         {
             'kind': 'tuple_type',
             'loc': [],
-            'message': 'Value must be a valid tuple',
+            'message': 'Input should be a valid tuple',
             'input_value': wrong_coll_type([1, 2, '33']),
         }
     ]
@@ -83,9 +83,9 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
     [
         ({}, (1, 2, 3, 4), (1, 2, 3, 4)),
         ({'min_items': 3}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'min_items': 3}, (1, 2), Err('Input must have at least 3 items, got 2 items [kind=too_short,')),
+        ({'min_items': 3}, (1, 2), Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
         ({'max_items': 4}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'max_items': 3}, (1, 2, 3, 4), Err('Input must have at most 3 items, got 4 items [kind=too_long,')),
+        ({'max_items': 3}, (1, 2, 3, 4), Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
     ],
 )
 def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
@@ -132,7 +132,7 @@ def test_tuple_var_len_errors(input_value, index):
         {
             'kind': 'int_parsing',
             'loc': [index],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
@@ -161,7 +161,7 @@ def test_tuple_fix_len_errors(input_value, items, index):
         {
             'kind': 'int_parsing',
             'loc': [index],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]
@@ -193,7 +193,7 @@ def test_extra_arguments(py_and_json: PyAndJson):
         {
             'kind': 'too_long',
             'loc': [],
-            'message': 'Input must have at most 2 items, got 4 items',
+            'message': 'Input should have at most 2 items, got 4 items',
             'input_value': [1, 2, 3, 4],
             'context': {'max_length': 2, 'input_length': 4},
         }
@@ -237,14 +237,14 @@ def test_union_tuple_list(input_value, expected):
                         # first of all, not a tuple of ints ..
                         'kind': 'tuple_type',
                         'loc': ['tuple[int, ...]'],
-                        'message': 'Value must be a valid tuple',
+                        'message': 'Input should be a valid tuple',
                         'input_value': [5],
                     },
                     # .. and not a tuple of strings, either
                     {
                         'kind': 'tuple_type',
                         'loc': ['tuple[str, ...]'],
-                        'message': 'Value must be a valid tuple',
+                        'message': 'Input should be a valid tuple',
                         'input_value': [5],
                     },
                 ],
@@ -285,13 +285,13 @@ def test_union_tuple_var_len(input_value, expected):
                     {
                         'kind': 'tuple_type',
                         'loc': ['tuple[int, int, int]'],
-                        'message': 'Value must be a valid tuple',
+                        'message': 'Input should be a valid tuple',
                         'input_value': [5, '1', 1],
                     },
                     {
                         'kind': 'tuple_type',
                         'loc': ['tuple[str, str, str]'],
-                        'message': 'Value must be a valid tuple',
+                        'message': 'Input should be a valid tuple',
                         'input_value': [5, '1', 1],
                     },
                 ],

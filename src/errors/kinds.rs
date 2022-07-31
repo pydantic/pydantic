@@ -26,13 +26,13 @@ pub enum ErrorKind {
     RecursionLoop,
     // ---------------------
     // typed dict specific errors
-    #[strum(message = "Value must be a valid dictionary or instance to extract fields from")]
+    #[strum(message = "Input should be a valid dictionary or instance to extract fields from")]
     DictAttributesType,
     #[strum(message = "Field required")]
     Missing,
-    #[strum(message = "Extra values are not permitted")]
+    #[strum(message = "Extra inputs are not permitted")]
     ExtraForbidden,
-    #[strum(message = "Keys must be strings")]
+    #[strum(message = "Keys should be strings")]
     InvalidKey,
     #[strum(message = "Error extracting attribute: {error}")]
     GetAttributeError {
@@ -40,47 +40,47 @@ pub enum ErrorKind {
     },
     // ---------------------
     // model class specific errors
-    #[strum(message = "Value must be an instance of {class_name}")]
+    #[strum(message = "Input should be an instance of {class_name}")]
     ModelClassType {
         class_name: String,
     },
     // ---------------------
     // None errors
-    #[strum(message = "Value must be None/null")]
+    #[strum(message = "Input should be None/null")]
     NoneRequired,
     // boolean errors
-    #[strum(message = "Value must be a valid boolean")]
+    #[strum(message = "Input should be a valid boolean")]
     Bool,
     // ---------------------
     // generic comparison errors - used for all inequality comparisons except int and float which have their
     // own type, bounds arguments are Strings so they can be created from any type
-    #[strum(message = "Value must be greater than {gt}")]
+    #[strum(message = "Input should be greater than {gt}")]
     GreaterThan {
         gt: String,
     },
-    #[strum(message = "Value must be greater than or equal to {ge}")]
+    #[strum(message = "Input should be greater than or equal to {ge}")]
     GreaterThanEqual {
         ge: String,
     },
-    #[strum(message = "Value must be less than {lt}")]
+    #[strum(message = "Input should be less than {lt}")]
     LessThan {
         lt: String,
     },
-    #[strum(message = "Value must be less than or equal to {le}")]
+    #[strum(message = "Input should be less than or equal to {le}")]
     LessThanEqual {
         le: String,
     },
     // ---------------------
     // generic length errors - used for everything with a length except strings and bytes which need custom messages
     #[strum(
-        message = "Input must have at least {min_length} item{expected_plural}, got {input_length} item{input_plural}"
+        message = "Input should have at least {min_length} item{expected_plural}, got {input_length} item{input_plural}"
     )]
     TooShort {
         min_length: usize,
         input_length: usize,
     },
     #[strum(
-        message = "Input must have at most {max_length} item{expected_plural}, got {input_length} item{input_plural}"
+        message = "Input should have at most {max_length} item{expected_plural}, got {input_length} item{input_plural}"
     )]
     TooLong {
         max_length: usize,
@@ -88,28 +88,31 @@ pub enum ErrorKind {
     },
     // ---------------------
     // string errors
-    #[strum(message = "Value must be a valid string")]
+    #[strum(message = "Input should be a valid string")]
     StrType,
-    #[strum(message = "Value must be a valid string, unable to parse raw data as a unicode string")]
+    #[strum(message = "Input should be a valid string, unable to parse raw data as a unicode string")]
     StrUnicode,
     #[strum(
-        message = "String must have at least {min_length} characters",
+        message = "String should have at least {min_length} characters",
         serialize = "too_short"
     )]
     StrTooShort {
         min_length: usize,
     },
-    #[strum(message = "String must have at most {max_length} characters", serialize = "too_long")]
+    #[strum(
+        message = "String should have at most {max_length} characters",
+        serialize = "too_long"
+    )]
     StrTooLong {
         max_length: usize,
     },
-    #[strum(message = "String must match pattern '{pattern}'")]
+    #[strum(message = "String should match pattern '{pattern}'")]
     StrPatternMismatch {
         pattern: String,
     },
     // ---------------------
     // dict errors
-    #[strum(message = "Value must be a valid dictionary")]
+    #[strum(message = "Input should be a valid dictionary")]
     DictType,
     #[strum(message = "Unable to convert mapping to a dictionary, error: {error}")]
     DictFromMapping {
@@ -117,95 +120,101 @@ pub enum ErrorKind {
     },
     // ---------------------
     // list errors
-    #[strum(message = "Value must be a valid list/array")]
+    #[strum(message = "Input should be a valid list/array")]
     ListType,
     // ---------------------
     // tuple errors
-    #[strum(message = "Value must be a valid tuple")]
+    #[strum(message = "Input should be a valid tuple")]
     TupleType,
     // ---------------------
     // set errors
-    #[strum(message = "Value must be a valid set")]
+    #[strum(message = "Input should be a valid set")]
     SetType,
     // ---------------------
     // bool errors
-    #[strum(message = "Value must be a valid boolean")]
+    #[strum(message = "Input should be a valid boolean")]
     BoolType,
-    #[strum(message = "Value must be a valid boolean, unable to interpret input")]
+    #[strum(message = "Input should be a valid boolean, unable to interpret input")]
     BoolParsing,
     // ---------------------
     // int errors
-    #[strum(message = "Value must be a valid integer")]
+    #[strum(message = "Input should be a valid integer")]
     IntType,
-    #[strum(message = "Value must be a valid integer, unable to parse string as an integer")]
+    #[strum(message = "Input should be a valid integer, unable to parse string as an integer")]
     IntParsing,
-    #[strum(message = "Value must be a valid integer, got a number with a fractional part")]
+    #[strum(message = "Input should be a valid integer, got a number with a fractional part")]
     IntFromFloat,
-    #[strum(message = "Value must be a valid integer, got {nan_value}")]
+    #[strum(message = "Input should be a valid integer, got {nan_value}")]
     IntNan {
         nan_value: &'static str,
     },
-    #[strum(serialize = "multiple_of", message = "Value must be a multiple of {multiple_of}")]
+    #[strum(serialize = "multiple_of", message = "Input should be a multiple of {multiple_of}")]
     IntMultipleOf {
         multiple_of: i64,
     },
-    #[strum(serialize = "greater_than", message = "Value must be greater than {gt}")]
+    #[strum(serialize = "greater_than", message = "Input should be greater than {gt}")]
     IntGreaterThan {
         gt: i64,
     },
     #[strum(
         serialize = "greater_than_equal",
-        message = "Value must be greater than or equal to {ge}"
+        message = "Input should be greater than or equal to {ge}"
     )]
     IntGreaterThanEqual {
         ge: i64,
     },
-    #[strum(serialize = "less_than", message = "Value must be less than {lt}")]
+    #[strum(serialize = "less_than", message = "Input should be less than {lt}")]
     IntLessThan {
         lt: i64,
     },
-    #[strum(serialize = "less_than_equal", message = "Value must be less than or equal to {le}")]
+    #[strum(
+        serialize = "less_than_equal",
+        message = "Input should be less than or equal to {le}"
+    )]
     IntLessThanEqual {
         le: i64,
     },
     // ---------------------
     // float errors
-    #[strum(message = "Value must be a valid number")]
+    #[strum(message = "Input should be a valid number")]
     FloatType,
-    #[strum(message = "Value must be a valid number, unable to parse string as an number")]
+    #[strum(message = "Input should be a valid number, unable to parse string as an number")]
     FloatParsing,
-    #[strum(serialize = "multiple_of", message = "Value must be a multiple of {multiple_of}")]
+    #[strum(serialize = "multiple_of", message = "Input should be a multiple of {multiple_of}")]
     FloatMultipleOf {
         multiple_of: f64,
     },
-    #[strum(serialize = "greater_than", message = "Value must be greater than {gt}")]
+    #[strum(serialize = "greater_than", message = "Input should be greater than {gt}")]
     FloatGreaterThan {
         gt: f64,
     },
     #[strum(
         serialize = "greater_than_equal",
-        message = "Value must be greater than or equal to {ge}"
+        message = "Input should be greater than or equal to {ge}"
     )]
     FloatGreaterThanEqual {
         ge: f64,
     },
-    #[strum(serialize = "less_than", message = "Value must be less than {lt}")]
+    #[strum(serialize = "less_than", message = "Input should be less than {lt}")]
     FloatLessThan {
         lt: f64,
     },
-    #[strum(serialize = "less_than_equal", message = "Value must be less than or equal to {le}")]
+    #[strum(
+        serialize = "less_than_equal",
+        message = "Input should be less than or equal to {le}"
+    )]
     FloatLessThanEqual {
         le: f64,
     },
     // ---------------------
     // bytes errors
-    #[strum(message = "Value must be a valid bytes")]
+    #[strum(message = "Input should be a valid bytes")]
     BytesType,
-    #[strum(message = "Data must have at least {min_length} bytes", serialize = "too_short")]
+    #[strum(message = "Data should have at least {min_length} bytes", serialize = "too_short")]
     BytesTooShort {
         min_length: usize,
     },
-    #[strum(message = "Data must have at most {max_length} bytes", serialize = "too_long")]
+    #[strum(message = "Data should have at most {max_length} bytes", serialize = "too_long")]
     BytesTooLong {
         max_length: usize,
     },
@@ -225,41 +234,44 @@ pub enum ErrorKind {
     },
     // ---------------------
     // literals
-    #[strum(serialize = "literal_error", message = "Value must be {expected}")]
+    #[strum(serialize = "literal_error", message = "Input should be {expected}")]
     LiteralSingleError {
         expected: String,
     },
-    #[strum(serialize = "literal_error", message = "Value must be one of: {expected}")]
+    #[strum(serialize = "literal_error", message = "Input should be one of: {expected}")]
     LiteralMultipleError {
         expected: String,
     },
     // ---------------------
     // date errors
-    #[strum(message = "Value must be a valid date")]
+    #[strum(message = "Input should be a valid date")]
     DateType,
-    #[strum(message = "Value must be a valid date in the format YYYY-MM-DD, {error}")]
+    #[strum(message = "Input should be a valid date in the format YYYY-MM-DD, {error}")]
     DateParsing {
         error: &'static str,
     },
-    #[strum(message = "Value must be a valid date or datetime, {error}")]
+    #[strum(message = "Input should be a valid date or datetime, {error}")]
     DateFromDatetimeParsing {
         error: String,
     },
-    #[strum(message = "Datetimes provided to dates must have zero time - e.g. be exact dates")]
+    #[strum(message = "Datetimes provided to dates should have zero time - e.g. be exact dates")]
     DateFromDatetimeInexact,
     // ---------------------
     // date errors
-    #[strum(message = "Value must be a valid time")]
+    #[strum(message = "Input should be a valid time")]
     TimeType,
-    #[strum(message = "Value must be in a valid time format, {error}")]
+    #[strum(message = "Input should be in a valid time format, {error}")]
     TimeParsing {
         error: &'static str,
     },
     // ---------------------
     // datetime errors
-    #[strum(serialize = "datetime_type", message = "Value must be a valid datetime")]
+    #[strum(serialize = "datetime_type", message = "Input should be a valid datetime")]
     DateTimeType,
-    #[strum(serialize = "datetime_parsing", message = "Value must be a valid datetime, {error}")]
+    #[strum(
+        serialize = "datetime_parsing",
+        message = "Input should be a valid datetime, {error}"
+    )]
     DateTimeParsing {
         error: &'static str,
     },
@@ -272,23 +284,23 @@ pub enum ErrorKind {
     },
     // ---------------------
     // timedelta errors
-    #[strum(message = "Value must be a valid timedelta")]
+    #[strum(message = "Input should be a valid timedelta")]
     TimeDeltaType,
-    #[strum(message = "Value must be a valid timedelta, {error}")]
+    #[strum(message = "Input should be a valid timedelta, {error}")]
     TimeDeltaParsing {
         error: &'static str,
     },
     // ---------------------
     // frozenset errors
-    #[strum(message = "Value must be a valid frozenset")]
+    #[strum(message = "Input should be a valid frozenset")]
     FrozenSetType,
     // ---------------------
     // introspection types - e.g. isinstance, callable
-    #[strum(message = "Input must be an instance of {class}")]
+    #[strum(message = "Input should be an instance of {class}")]
     IsInstanceOf {
         class: String,
     },
-    #[strum(message = "Input must be callable")]
+    #[strum(message = "Input should be callable")]
     CallableType,
     // ---------------------
     // union errors

@@ -11,12 +11,12 @@ def test_build_error_type():
 
 
 def test_build_error_internal():
-    with pytest.raises(SchemaError, match='Value must be a valid integer, unable to parse string as an integer'):
+    with pytest.raises(SchemaError, match='Input should be a valid integer, unable to parse string as an integer'):
         SchemaValidator({'type': 'str', 'min_length': 'xxx', 'title': 'TestModel'})
 
 
 def test_build_error_deep():
-    with pytest.raises(SchemaError, match='Value must be a valid integer, unable to parse string as an integer'):
+    with pytest.raises(SchemaError, match='Input should be a valid integer, unable to parse string as an integer'):
         SchemaValidator(
             {
                 'title': 'MyTestModel',
@@ -35,7 +35,7 @@ def test_schema_wrong_type():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(1)
     assert exc_info.value.args[0] == (
-        'Invalid Schema:\n  Value must be a valid dictionary [kind=dict_type, input_value=1, input_type=int]'
+        'Invalid Schema:\n  Input should be a valid dictionary [kind=dict_type, input_value=1, input_type=int]'
     )
 
 

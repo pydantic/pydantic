@@ -20,7 +20,7 @@ def test_input_types(input_value):
 
 def test_input_type_invalid():
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
-    with pytest.raises(TypeError, match='^JSON input must be str, bytes or bytearray, not list$'):
+    with pytest.raises(TypeError, match='^JSON input should be str, bytes or bytearray, not list$'):
         v.validate_json([])
 
 
@@ -31,7 +31,7 @@ def test_null():
 def test_str():
     assert SchemaValidator({'type': 'str'}).validate_json('"foobar"') == 'foobar'
     assert SchemaValidator({'type': 'str'}).validate_json('123') == '123'
-    with pytest.raises(ValidationError, match=r'Value must be a valid string \[kind=str_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=str_type,'):
         SchemaValidator({'type': 'str'}).validate_json('false')
 
 
@@ -81,7 +81,7 @@ def test_error_loc():
         {
             'kind': 'int_parsing',
             'loc': ['field_a', 2],
-            'message': 'Value must be a valid integer, unable to parse string as an integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'wrong',
         }
     ]

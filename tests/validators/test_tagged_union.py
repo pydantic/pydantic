@@ -14,12 +14,12 @@ from .test_typed_dict import Cls
         (
             {'foo': 'apple', 'bar': 'wrong'},
             Err(
-                'Value must be a valid integer',
+                'Input should be a valid integer',
                 [
                     {
                         'kind': 'int_parsing',
                         'loc': ['apple', 'bar'],
-                        'message': 'Value must be a valid integer, unable to parse string as an integer',
+                        'message': 'Input should be a valid integer, unable to parse string as an integer',
                         'input_value': 'wrong',
                     }
                 ],
@@ -80,7 +80,7 @@ from .test_typed_dict import Cls
                     {
                         'kind': 'dict_type',
                         'loc': [],
-                        'message': 'Value must be a valid dictionary',
+                        'message': 'Input should be a valid dictionary',
                         'input_value': 'not a dict',
                     }
                 ],
@@ -155,7 +155,7 @@ def test_discriminator_path(py_and_json: PyAndJson):
                     {
                         'kind': 'literal_error',
                         'loc': ['str'],
-                        'message': "Value must be one of: 'foo', 'bar'",
+                        'message': "Input should be one of: 'foo', 'bar'",
                         'input_value': 'baz',
                         'context': {'expected': "'foo', 'bar'"},
                     }

@@ -31,7 +31,7 @@ def test_is_instance():
         {
             'kind': 'is_instance_of',
             'loc': [],
-            'message': 'Input must be an instance of Foo',
+            'message': 'Input should be an instance of Foo',
             'input_value': s,
             'context': {'class': 'Foo'},
         }
@@ -98,5 +98,5 @@ def test_repr():
     assert v.isinstance_python(Bar()) is True
     assert v.isinstance_python('foo') is False
 
-    with pytest.raises(ValidationError, match=r'is-instance\[Foo\]\s+Input must be an instance of Foo'):
+    with pytest.raises(ValidationError, match=r'is-instance\[Foo\]\s+Input should be an instance of Foo'):
         v.validate_python('foo')

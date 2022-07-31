@@ -26,7 +26,7 @@ def test_callable():
         v.validate_python(42)
 
     assert exc_info.value.errors() == [
-        {'kind': 'callable_type', 'loc': [], 'message': 'Input must be callable', 'input_value': 42}
+        {'kind': 'callable_type', 'loc': [], 'message': 'Input should be callable', 'input_value': 42}
     ]
 
 
@@ -58,5 +58,5 @@ def test_repr():
     assert v.isinstance_python(func) is True
     assert v.isinstance_python('foo') is False
 
-    with pytest.raises(ValidationError, match=r'callable\s+Input must be callable'):
+    with pytest.raises(ValidationError, match=r'callable\s+Input should be callable'):
         v.validate_python('foo')
