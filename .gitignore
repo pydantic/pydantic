@@ -33,5 +33,5 @@ pydantic/*.so
 /fastapi/
 /codecov.sh
 
-.devcontainer/ # useful for using docker as a dev environment
-._devcontainer/ # useful for using docker as a dev environment
+# useful for using docker as a dev environment
+.devcontainer/
