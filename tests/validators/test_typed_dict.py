@@ -449,7 +449,7 @@ def test_all_optional_fields_with_required_fields():
 
 def test_field_required_and_default():
     """A field cannot be required and have a default value"""
-    with pytest.raises(SchemaError, match='Field "x": a required field cannot have a default value'):
+    with pytest.raises(SchemaError, match="Field 'x': a required field cannot have a default value"):
         SchemaValidator(
             {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'required': True, 'default': 'pika'}}}
         )
@@ -1077,7 +1077,7 @@ def test_default_and_default_factory():
 
 def test_field_required_and_default_factory():
     """A field cannot be required and have a default factory"""
-    with pytest.raises(SchemaError, match='Field "x": a required field cannot have a default value'):
+    with pytest.raises(SchemaError, match="Field 'x': a required field cannot have a default value"):
         SchemaValidator(
             {
                 'type': 'typed-dict',
@@ -1099,3 +1099,115 @@ def test_bad_default_factory(default_factory, error_message):
     )
     with pytest.raises(TypeError, match=re.escape(error_message)):
         v.validate_python({})
+
+
+class TestOnError:
+    def test_on_error_bad_name(self):
+        with pytest.raises(SchemaError, match="Input should be one of: 'raise', 'omit', 'fallback_on_default'"):
+            SchemaValidator({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'rais'}}})
+
+    def test_on_error_bad_omit(self):
+        with pytest.raises(SchemaError, match="Field 'x': 'on_error = omit' cannot be set for required fields"):
+            SchemaValidator({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'omit'}}})
+
+    def test_on_error_bad_fallback_on_default(self):
+        with pytest.raises(
+            SchemaError, match="Field 'x': 'on_error = fallback_on_default' requires a `default` or `default_factory`"
+        ):
+            SchemaValidator(
+                {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'fallback_on_default'}}}
+            )
+
+    def test_on_error_raise_by_default(self, py_and_json: PyAndJson):
+        v = py_and_json({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}}}})
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        with pytest.raises(ValidationError) as exc_info:
+            v.validate_test({'x': ['foo']})
+        assert exc_info.value.errors() == [
+            {'input_value': ['foo'], 'kind': 'str_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
+        ]
+
+    def test_on_error_raise_explicit(self, py_and_json: PyAndJson):
+        v = py_and_json({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'raise'}}})
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        with pytest.raises(ValidationError) as exc_info:
+            v.validate_test({'x': ['foo']})
+        assert exc_info.value.errors() == [
+            {'input_value': ['foo'], 'kind': 'str_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
+        ]
+
+    def test_on_error_omit(self, py_and_json: PyAndJson):
+        v = py_and_json(
+            {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'omit', 'required': False}}}
+        )
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        assert v.validate_test({}) == {}
+        assert v.validate_test({'x': ['foo']}) == {}
+
+    def test_on_error_omit_with_default(self, py_and_json: PyAndJson):
+        v = py_and_json(
+            {
+                'type': 'typed-dict',
+                'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'omit', 'default': 'pika', 'required': False}},
+            }
+        )
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        assert v.validate_test({}) == {'x': 'pika'}
+        assert v.validate_test({'x': ['foo']}) == {}
+
+    def test_on_error_fallback_on_default(self, py_and_json: PyAndJson):
+        v = py_and_json(
+            {
+                'type': 'typed-dict',
+                'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'fallback_on_default', 'default': 'pika'}},
+            }
+        )
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        assert v.validate_test({'x': ['foo']}) == {'x': 'pika'}
+
+    def test_on_error_fallback_on_default_factory(self, py_and_json: PyAndJson):
+        v = py_and_json(
+            {
+                'type': 'typed-dict',
+                'fields': {
+                    'x': {
+                        'schema': {'type': 'str'},
+                        'on_error': 'fallback_on_default',
+                        'default_factory': lambda: 'pika',
+                    }
+                },
+            }
+        )
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        assert v.validate_test({'x': ['foo']}) == {'x': 'pika'}
+
+    def test_wrap_on_error(self, py_and_json: PyAndJson):
+        def wrap_function(input_value, *, validator, **kwargs):
+            try:
+                return validator(input_value)
+            except ValidationError:
+                if isinstance(input_value, list):
+                    return str(len(input_value))
+                else:
+                    return repr(input_value)
+
+        v = py_and_json(
+            {
+                'type': 'typed-dict',
+                'fields': {
+                    'x': {
+                        'schema': {
+                            'type': 'function',
+                            'mode': 'wrap',
+                            'function': wrap_function,
+                            'schema': {'type': 'str'},
+                        },
+                        'on_error': 'raise',
+                    }
+                },
+            }
+        )
+        assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
+        assert v.validate_test({'x': ['foo']}) == {'x': '1'}
+        assert v.validate_test({'x': ['foo', 'bar']}) == {'x': '2'}
+        assert v.validate_test({'x': {'a': 'b'}}) == {'x': "{'a': 'b'}"}
