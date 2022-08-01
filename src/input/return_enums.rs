@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTuple};
 
-use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
@@ -212,10 +212,10 @@ pub enum EitherString<'a> {
 }
 
 impl<'a> EitherString<'a> {
-    pub fn as_cow(&self) -> Cow<str> {
+    pub fn as_cow(&self) -> ValResult<'a, Cow<str>> {
         match self {
-            Self::Cow(data) => data.clone(),
-            Self::Py(py_str) => py_str.to_string_lossy(),
+            Self::Cow(data) => Ok(data.clone()),
+            Self::Py(py_str) => Ok(Cow::Borrowed(py_string_str(py_str)?)),
         }
     }
 
@@ -249,6 +249,12 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         self.as_py_string(py).into_py(py)
     }
+}
+
+pub fn py_string_str(py_str: &PyString) -> ValResult<&str> {
+    py_str.to_str().map_err(|_| {
+        ValError::new_custom_input(ErrorKind::StrUnicode, InputValue::PyObject(py_str.into_py(py_str.py())))
+    })
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

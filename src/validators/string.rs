@@ -90,7 +90,7 @@ impl Validator for StrConstrainedValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_str = input.validate_str(extra.strict.unwrap_or(self.strict))?;
-        let cow = either_str.as_cow();
+        let cow = either_str.as_cow()?;
         let mut str = cow.as_ref();
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {

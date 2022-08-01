@@ -281,7 +281,7 @@ impl Validator for ArgumentsValidator {
                             }
                             Err(err) => return Err(err),
                         };
-                        if !used_kwargs.contains(either_str.as_cow().as_ref()) {
+                        if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
                             match self.var_kwargs_validator {
                                 Some(ref validator) => match validator.validate(py, value, extra, slots, recursion_guard) {
                                     Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,

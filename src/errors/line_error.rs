@@ -43,6 +43,10 @@ impl<'a> ValError<'a> {
         Self::LineErrors(vec![ValLineError::new_with_loc(kind, input, loc)])
     }
 
+    pub fn new_custom_input(kind: ErrorKind, input_value: InputValue<'a>) -> ValError<'a> {
+        Self::LineErrors(vec![ValLineError::new_custom_input(kind, input_value)])
+    }
+
     /// helper function to call with_outer on line items if applicable
     pub fn with_outer_location(self, loc_item: LocItem) -> Self {
         match self {
@@ -87,6 +91,14 @@ impl<'a> ValLineError<'a> {
             kind,
             input_value: input.as_error_value(),
             location: Location::new_some(loc.into()),
+        }
+    }
+
+    pub fn new_custom_input(kind: ErrorKind, input_value: InputValue<'a>) -> ValLineError<'a> {
+        Self {
+            kind,
+            input_value,
+            location: Location::default(),
         }
     }
 

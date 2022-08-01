@@ -29,6 +29,20 @@ def test_lax_bytes_validator():
 
     assert v.validate_json('"foo"') == b'foo'
 
+    assert v.validate_python('🐈 Hello') == b'\xf0\x9f\x90\x88 Hello'
+    # `.to_str()` Returns a `UnicodeEncodeError` if the input is not valid unicode (containing unpaired surrogates).
+    # https://github.com/PyO3/pyo3/blob/6503128442b8f3e767c663a6a8d96376d7fb603d/src/types/string.rs#L477
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('🐈 Hello \ud800World')
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'str_unicode',
+            'loc': [],
+            'message': 'Input should be a valid string, unable to parse raw data as a unicode string',
+            'input_value': '🐈 Hello \ud800World',
+        }
+    ]
+
 
 @pytest.mark.parametrize(
     'opts,input,expected',
