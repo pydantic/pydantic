@@ -313,7 +313,7 @@ impl Validator for TypedDictValidator {
                             }
                             Err(err) => return Err(err),
                         };
-                        if used_keys.contains(either_str.as_cow().as_ref()) {
+                        if used_keys.contains(either_str.as_cow()?.as_ref()) {
                             continue;
                         }
 

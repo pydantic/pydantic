@@ -134,8 +134,8 @@ impl Discriminator {
     fn new(py: Python, raw: &PyAny) -> PyResult<Self> {
         if raw.is_callable() {
             return Ok(Self::Function(raw.to_object(py)));
-        } else if let Ok(str) = raw.strict_str() {
-            if str.as_cow().as_ref() == "self-schema-discriminator" {
+        } else if let Ok(py_str) = raw.cast_as::<PyString>() {
+            if py_str.to_str()? == "self-schema-discriminator" {
                 return Ok(Self::SelfSchema);
             }
         }
@@ -246,7 +246,7 @@ impl Validator for TaggedUnionValidator {
                     GenericMapping::PyGetAttr(obj) => find_validator!(obj, py_get_attr),
                     GenericMapping::JsonObject(mapping) => find_validator!(mapping, json_get),
                 }?;
-                self.find_call_validator(py, tag.as_cow(), input, extra, slots, recursion_guard)
+                self.find_call_validator(py, tag.as_cow()?, input, extra, slots, recursion_guard)
             }
             Discriminator::Function(ref func) => {
                 let tag = func.call1(py, (input.to_object(py),))?;
@@ -301,7 +301,7 @@ impl TaggedUnionValidator {
                 },
                 _ => unreachable!(),
             };
-            let tag_cow = either_tag.as_cow();
+            let tag_cow = either_tag.as_cow()?;
             let tag = tag_cow.as_ref();
             // custom logic to distinguish between different function and tuple schemas
             if tag == "function" || tag == "tuple" {
@@ -314,13 +314,13 @@ impl TaggedUnionValidator {
                 };
                 if tag == "function" {
                     let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
-                    if mode.as_cow().as_ref() == "plain" {
+                    if mode.as_cow()?.as_ref() == "plain" {
                         return Ok(Cow::Borrowed("function-plain"));
                     }
                 } else {
                     // tag == "tuple"
                     if let Some(mode) = mode {
-                        if mode.as_cow().as_ref() == "positional" {
+                        if mode.as_cow()?.as_ref() == "positional" {
                             return Ok(Cow::Borrowed("tuple-positional"));
                         }
                     }

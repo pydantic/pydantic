@@ -64,11 +64,9 @@ impl LookupKey {
             };
             let mut locs: Vec<Path> = if first.cast_as::<PyString>().is_ok() {
                 // list of strings rather than list of lists
-                vec![Self::path_choice(py, list)?]
+                vec![Self::path_choice(list)?]
             } else {
-                list.iter()
-                    .map(|obj| Self::path_choice(py, obj))
-                    .collect::<PyResult<_>>()?
+                list.iter().map(Self::path_choice).collect::<PyResult<_>>()?
             };
 
             if let Some(alt_alias) = alt_alias {
@@ -82,12 +80,12 @@ impl LookupKey {
         LookupKey::Simple(key.to_string(), py_string!(py, key))
     }
 
-    fn path_choice(py: Python, obj: &PyAny) -> PyResult<Path> {
+    fn path_choice(obj: &PyAny) -> PyResult<Path> {
         let path = obj
             .extract::<&PyList>()?
             .iter()
             .enumerate()
-            .map(|(index, obj)| PathItem::from_py(py, index, obj))
+            .map(|(index, obj)| PathItem::from_py(index, obj))
             .collect::<PyResult<Path>>()?;
 
         if path.is_empty() {
@@ -237,10 +235,10 @@ fn path_to_string(path: &Path) -> String {
 }
 
 impl PathItem {
-    pub fn from_py(py: Python, index: usize, obj: &PyAny) -> PyResult<Self> {
-        if let Ok(str_key) = obj.extract::<String>() {
-            let py_str_key = py_string!(py, &str_key);
-            Ok(Self::S(str_key, py_str_key))
+    pub fn from_py(index: usize, obj: &PyAny) -> PyResult<Self> {
+        if let Ok(py_str_key) = obj.cast_as::<PyString>() {
+            let str_key = py_str_key.to_str()?.to_string();
+            Ok(Self::S(str_key, py_str_key.into()))
         } else {
             let int_key = obj.extract::<usize>()?;
             if index == 0 {
