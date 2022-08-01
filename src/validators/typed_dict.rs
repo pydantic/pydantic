@@ -94,7 +94,7 @@ impl BuildValidator for TypedDictValidator {
         let extra_validator = match schema.get_item(intern!(py, "extra_validator")) {
             Some(v) => {
                 if check_extra && !forbid_extra {
-                    Some(Box::new(build_validator(v, config, build_context)?.0))
+                    Some(Box::new(build_validator(v, config, build_context)?))
                 } else {
                     return py_error!("extra_validator can only be used if extra_behavior=allow");
                 }
@@ -175,7 +175,7 @@ impl BuildValidator for TypedDictValidator {
                 lookup_key,
                 name_pystring: PyString::intern(py, field_name).into(),
                 validator: match build_validator(schema, config, build_context) {
-                    Ok((v, _)) => v,
+                    Ok(v) => v,
                     Err(err) => return py_error!("Field \"{}\":\n  {}", field_name, err),
                 },
                 required,
@@ -374,6 +374,14 @@ impl Validator for TypedDictValidator {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
+    }
+
+    fn ask(&self, question: &str) -> bool {
+        if question == "return_fields_set" {
+            self.return_fields_set
+        } else {
+            false
+        }
     }
 
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {

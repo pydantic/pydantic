@@ -93,7 +93,7 @@ impl TuplePositionalValidator {
         let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
         let validators: Vec<CombinedValidator> = items
             .iter()
-            .map(|item| build_validator(item, config, build_context).map(|result| result.0))
+            .map(|item| build_validator(item, config, build_context))
             .collect::<PyResult<Vec<CombinedValidator>>>()?;
 
         let descr = validators.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(", ");
@@ -101,7 +101,7 @@ impl TuplePositionalValidator {
             strict: is_strict(schema, config)?,
             items_validators: validators,
             extra_validator: match schema.get_item(intern!(py, "extra_schema")) {
-                Some(v) => Some(Box::new(build_validator(v, config, build_context)?.0)),
+                Some(v) => Some(Box::new(build_validator(v, config, build_context)?)),
                 None => None,
             },
             name: format!("tuple[{}]", descr),
