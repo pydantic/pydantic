@@ -68,7 +68,7 @@ impl SchemaValidator {
         let schema = schema_obj.as_ref(py);
 
         let mut build_context = BuildContext::default();
-        let (mut validator, _) = build_validator(schema, config, &mut build_context)?;
+        let mut validator = build_validator(schema, config, &mut build_context)?;
         validator.complete(&build_context)?;
         let slots = build_context.into_slots()?;
         let title = validator.get_name().into_py(py);
@@ -211,7 +211,7 @@ impl SchemaValidator {
 
         let mut build_context = BuildContext::default();
         let validator = match build_validator(self_schema, None, &mut build_context) {
-            Ok((v, _)) => v,
+            Ok(v) => v,
             Err(err) => return Err(SchemaError::new_err(format!("Error building self-schema:\n  {}", err))),
         };
         Ok(Self {
@@ -255,7 +255,7 @@ fn build_single_validator<'a, T: BuildValidator>(
     schema_dict: &'a PyDict,
     config: Option<&'a PyDict>,
     build_context: &mut BuildContext,
-) -> PyResult<(CombinedValidator, &'a PyDict)> {
+) -> PyResult<CombinedValidator> {
     let py = schema_dict.py();
     let val: CombinedValidator = if let Some(schema_ref) = schema_dict.get_as::<String>(intern!(py, "ref"))? {
         let slot_id = build_context.prepare_slot(schema_ref)?;
@@ -269,7 +269,7 @@ fn build_single_validator<'a, T: BuildValidator>(
             .map_err(|err| SchemaError::new_err(format!("Error building \"{}\" validator:\n  {}", val_type, err)))?
     };
 
-    Ok((val, schema_dict))
+    Ok(val)
 }
 
 // macro to build the match statement for validator selection
@@ -290,7 +290,7 @@ pub fn build_validator<'a>(
     schema: &'a PyAny,
     config: Option<&'a PyDict>,
     build_context: &mut BuildContext,
-) -> PyResult<(CombinedValidator, &'a PyDict)> {
+) -> PyResult<CombinedValidator> {
     let py = schema.py();
     let dict: &PyDict = match schema.cast_as() {
         Ok(s) => s,
@@ -484,6 +484,14 @@ pub trait Validator: Send + Sync + Clone + Debug {
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self) -> &str;
+
+    /// allows validators to ask specific questions of sub-validators in a general way, could be extended
+    /// to do more, validators which don't know the question and have sub-validators
+    /// should return the result them in an `...iter().all(|v| v.ask(question))` way, ONLY
+    /// if they return the value of the sub-validator, e.g. functions, unions
+    fn ask(&self, _question: &str) -> bool {
+        false
+    }
 
     /// this method must be implemented for any validator which holds references to other validators,
     /// it is used by `RecursiveRefValidator` to set its name

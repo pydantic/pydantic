@@ -3,14 +3,13 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorKind, PydanticValueError, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
-#[derive(Debug)]
 pub struct FunctionBuilder;
 
 impl BuildValidator for FunctionBuilder {
@@ -25,9 +24,9 @@ impl BuildValidator for FunctionBuilder {
         match mode {
             "before" => FunctionBeforeValidator::build(schema, config, build_context),
             "after" => FunctionAfterValidator::build(schema, config, build_context),
-            "plain" => FunctionPlainValidator::build(schema, config),
             "wrap" => FunctionWrapValidator::build(schema, config, build_context),
-            _ => py_error!("Unexpected function mode {:?}", mode),
+            // must be "plain"
+            _ => FunctionPlainValidator::build(schema, config),
         }
     }
 }
@@ -47,7 +46,7 @@ macro_rules! impl_build {
                 build_context: &mut BuildContext,
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
-                let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?.0;
+                let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?;
                 let name = format!("{}[{}]", $name, validator.get_name());
                 Ok(Self {
                     validator: Box::new(validator),
@@ -110,6 +109,10 @@ impl Validator for FunctionBeforeValidator {
         &self.name
     }
 
+    fn ask(&self, question: &str) -> bool {
+        self.validator.ask(question)
+    }
+
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
         self.validator.complete(build_context)
     }
@@ -143,6 +146,10 @@ impl Validator for FunctionAfterValidator {
         &self.name
     }
 
+    fn ask(&self, question: &str) -> bool {
+        self.validator.ask(question)
+    }
+
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
         self.validator.complete(build_context)
     }
@@ -157,18 +164,14 @@ pub struct FunctionPlainValidator {
 impl FunctionPlainValidator {
     pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        if schema.get_item(intern!(py, "schema")).is_some() {
-            py_error!("Plain functions should not include a sub-schema")
-        } else {
-            Ok(Self {
-                func: schema.get_as_req::<&PyAny>(intern!(py, "function"))?.into_py(py),
-                config: match config {
-                    Some(c) => c.into(),
-                    None => py.None(),
-                },
-            }
-            .into())
+        Ok(Self {
+            func: schema.get_as_req::<&PyAny>(intern!(py, "function"))?.into_py(py),
+            config: match config {
+                Some(c) => c.into(),
+                None => py.None(),
+            },
         }
+        .into())
     }
 }
 
@@ -234,6 +237,10 @@ impl Validator for FunctionWrapValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn ask(&self, question: &str) -> bool {
+        self.validator.ask(question)
     }
 
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {

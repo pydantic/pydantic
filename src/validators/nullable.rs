@@ -24,7 +24,7 @@ impl BuildValidator for NullableValidator {
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(schema, config, build_context)?.0);
+        let validator = Box::new(build_validator(schema, config, build_context)?);
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
         Ok(Self { validator, name }.into())
     }

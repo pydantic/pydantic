@@ -112,7 +112,7 @@ class LiteralSchema(TypedDict):
 class ModelClassSchema(TypedDict):
     type: Literal['model-class']
     class_type: type
-    schema: TypedDictSchema
+    schema: Schema
     strict: NotRequired[bool]
     ref: NotRequired[str]
     config: NotRequired[Config]
