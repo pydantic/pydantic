@@ -6,4 +6,4 @@ mypy==0.950
 pytest==7.1.2
 pytest-cov==3.0.0
 pytest-mock==3.8.1
-pytest-sugar==0.9.4
+pytest-sugar==0.9.5
