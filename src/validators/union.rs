@@ -33,7 +33,7 @@ impl BuildValidator for UnionValidator {
         let choices: Vec<CombinedValidator> = schema
             .get_as_req::<&PyList>(intern!(schema.py(), "choices"))?
             .iter()
-            .map(|choice| build_validator(choice, config, build_context).map(|result| result.0))
+            .map(|choice| build_validator(choice, config, build_context))
             .collect::<PyResult<Vec<CombinedValidator>>>()?;
 
         let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
@@ -111,6 +111,10 @@ impl Validator for UnionValidator {
         &self.name
     }
 
+    fn ask(&self, question: &str) -> bool {
+        self.choices.iter().all(|v| v.ask(question))
+    }
+
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
         self.choices.iter_mut().try_for_each(|v| v.complete(build_context))
     }
@@ -180,7 +184,7 @@ impl BuildValidator for TaggedUnionValidator {
         for item in schema.get_as_req::<&PyDict>(intern!(py, "choices"))?.items().iter() {
             let tag: String = item.get_item(0)?.extract()?;
             let value = item.get_item(1)?;
-            let validator = build_validator(value, config, build_context)?.0;
+            let validator = build_validator(value, config, build_context)?;
             if first {
                 first = false;
                 write!(tags_repr, "'{}'", tag).unwrap();
@@ -266,6 +270,10 @@ impl Validator for TaggedUnionValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn ask(&self, question: &str) -> bool {
+        self.choices.values().all(|v| v.ask(question))
     }
 
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {

@@ -28,7 +28,7 @@ macro_rules! generic_list_like_build {
         ) -> PyResult<CombinedValidator> {
             let py = schema.py();
             let item_validator = match schema.get_item(pyo3::intern!(py, "items_schema")) {
-                Some(d) => Some(Box::new(build_validator(d, config, build_context)?.0)),
+                Some(d) => Some(Box::new(build_validator(d, config, build_context)?)),
                 None => None,
             };
             let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
