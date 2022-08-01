@@ -33,6 +33,7 @@ def test_str(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         ('foobar', 'foobar'),
+        ('🐈 Hello \ud800World', '🐈 Hello \ud800World'),
         (b'foobar', 'foobar'),
         (bytearray(b'foobar'), 'foobar'),
         (
@@ -80,6 +81,7 @@ def test_str_not_json(input_value, expected):
         # to_upper and strip comes after pattern check
         ({'to_upper': True, 'pattern': 'abc'}, 'abc', 'ABC'),
         ({'strip_whitespace': True, 'pattern': r'\d+$'}, 'foobar 123 ', Err("String should match pattern '\\d+$'")),
+        ({'min_length': 1}, '🐈 Hello', '🐈 Hello'),
     ],
 )
 def test_constrained_str(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
@@ -89,6 +91,24 @@ def test_constrained_str(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_v
             v.validate_test(input_value)
     else:
         assert v.validate_test(input_value) == expected
+
+
+def test_unicode_error():
+    # `.to_str()` Returns a `UnicodeEncodeError` if the input is not valid unicode (containing unpaired surrogates).
+    # https://github.com/PyO3/pyo3/blob/6503128442b8f3e767c663a6a8d96376d7fb603d/src/types/string.rs#L477
+    v = SchemaValidator({'type': 'str', 'min_length': 1})
+    assert v.validate_python('🐈 Hello') == '🐈 Hello'
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('🐈 Hello \ud800World')
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'str_unicode',
+            'loc': [],
+            'message': 'Input should be a valid string, unable to parse raw data as a unicode string',
+            'input_value': '🐈 Hello \ud800World',
+        }
+    ]
 
 
 def test_str_constrained():

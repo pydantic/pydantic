@@ -18,14 +18,14 @@ use super::datetime::{
 };
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::{
-    repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericListLike, GenericMapping, Input,
-    PyArgs,
+    py_string_str, repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericListLike,
+    GenericMapping, Input, PyArgs,
 };
 
 impl<'a> Input<'a> for PyAny {
     fn as_loc_item(&self) -> LocItem {
-        if let Ok(key_str) = self.extract::<String>() {
-            key_str.into()
+        if let Ok(py_str) = self.cast_as::<PyString>() {
+            py_str.to_string_lossy().as_ref().into()
         } else if let Ok(key_int) = self.extract::<usize>() {
             key_int.into()
         } else {
@@ -140,8 +140,8 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             Ok(py_bytes.into())
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
-            let string = py_str.to_string_lossy().to_string();
-            Ok(string.into_bytes().into())
+            let str = py_string_str(py_str)?;
+            Ok(str.as_bytes().into())
         } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
             Ok(py_byte_array.to_vec().into())
         } else {
@@ -369,7 +369,8 @@ impl<'a> Input<'a> for PyAny {
             Err(ValError::new(ErrorKind::DateType, self))
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date.into())
-        } else if let Ok(str) = self.extract::<String>() {
+        } else if let Ok(py_str) = self.cast_as::<PyString>() {
+            let str = py_string_str(py_str)?;
             bytes_as_date(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_date(self, py_bytes.as_bytes())
@@ -389,7 +390,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_time(&self) -> ValResult<EitherTime> {
         if let Ok(time) = self.cast_as::<PyTime>() {
             Ok(time.into())
-        } else if let Ok(str) = self.extract::<String>() {
+        } else if let Ok(py_str) = self.cast_as::<PyString>() {
+            let str = py_string_str(py_str)?;
             bytes_as_time(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_time(self, py_bytes.as_bytes())
@@ -415,7 +417,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_datetime(&self) -> ValResult<EitherDateTime> {
         if let Ok(dt) = self.cast_as::<PyDateTime>() {
             Ok(dt.into())
-        } else if let Ok(str) = self.extract::<String>() {
+        } else if let Ok(py_str) = self.cast_as::<PyString>() {
+            let str = py_string_str(py_str)?;
             bytes_as_datetime(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_datetime(self, py_bytes.as_bytes())
@@ -444,7 +447,8 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(dt) = self.cast_as::<PyDelta>() {
             Ok(dt.into())
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
-            bytes_as_timedelta(self, py_str.to_string_lossy().as_bytes())
+            let str = py_string_str(py_str)?;
+            bytes_as_timedelta(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_timedelta(self, py_bytes.as_bytes())
         } else if let Ok(int) = self.extract::<i64>() {
@@ -518,7 +522,8 @@ fn from_attributes_applicable(obj: &PyAny) -> bool {
 /// Utility for extracting a string from a PyAny, if possible.
 fn maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Cow<str>>> {
     if let Ok(py_string) = v.cast_as::<PyString>() {
-        Ok(Some(py_string.to_string_lossy()))
+        let str = py_string_str(py_string)?;
+        Ok(Some(Cow::Borrowed(str)))
     } else if let Ok(bytes) = v.cast_as::<PyBytes>() {
         match from_utf8(bytes.as_bytes()) {
             Ok(s) => Ok(Some(Cow::Owned(s.to_string()))),

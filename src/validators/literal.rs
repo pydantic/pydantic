@@ -2,7 +2,7 @@ use std::hash::BuildHasherDefault;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashSet;
 
@@ -29,8 +29,8 @@ impl BuildValidator for LiteralBuilder {
             return py_error!(r#""expected" should have length > 0"#);
         } else if expected.len() == 1 {
             let first = expected.get_item(0)?;
-            if let Ok(str) = first.extract::<String>() {
-                return Ok(LiteralSingleStringValidator::new(str).into());
+            if let Ok(py_str) = first.cast_as::<PyString>() {
+                return Ok(LiteralSingleStringValidator::new(py_str.to_str()?.to_string()).into());
             }
             if let Ok(int) = first.extract::<i64>() {
                 return Ok(LiteralSingleIntValidator::new(int).into());
@@ -72,7 +72,7 @@ impl Validator for LiteralSingleStringValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_str = input.strict_str()?;
-        if either_str.as_cow().as_ref() == self.expected.as_str() {
+        if either_str.as_cow()?.as_ref() == self.expected.as_str() {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
@@ -166,7 +166,7 @@ impl Validator for LiteralMultipleStringsValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_str = input.strict_str()?;
-        if self.expected.contains(either_str.as_cow().as_ref()) {
+        if self.expected.contains(either_str.as_cow()?.as_ref()) {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
@@ -255,8 +255,8 @@ impl LiteralGeneralValidator {
             repr_args.push(item.repr()?.extract()?);
             if let Ok(int) = item.extract::<i64>() {
                 expected_int.insert(int);
-            } else if let Ok(str) = item.extract::<String>() {
-                expected_str.insert(str);
+            } else if let Ok(py_str) = item.cast_as::<PyString>() {
+                expected_str.insert(py_str.to_str()?.to_string());
             } else {
                 expected_py.append(item)?;
             }
@@ -291,7 +291,7 @@ impl Validator for LiteralGeneralValidator {
         }
         if !self.expected_str.is_empty() {
             if let Ok(either_str) = input.strict_str() {
-                if self.expected_str.contains(either_str.as_cow().as_ref()) {
+                if self.expected_str.contains(either_str.as_cow()?.as_ref()) {
                     return Ok(input.to_object(py));
                 }
             }

@@ -46,8 +46,8 @@ impl PydanticValueError {
         if let Some(ref context) = self.context {
             for item in context.as_ref(py).items().iter() {
                 let (key, value): (&PyString, &PyAny) = item.extract()?;
-                if let Ok(value_str) = value.extract::<&PyString>() {
-                    message = message.replace(&format!("{{{}}}", key.to_str()?), value_str.to_str()?);
+                if let Ok(py_str) = value.cast_as::<PyString>() {
+                    message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
                 } else if let Ok(value_int) = value.extract::<i64>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());
                 } else {
