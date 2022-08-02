@@ -24,8 +24,8 @@ def test_dict(py_and_json: PyAndJson):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ({'1': 1, '2': 2}, {'1': '1', '2': '2'}),
-        (OrderedDict(a=1, b=2), {'a': '1', 'b': '2'}),
+        ({'1': b'1', '2': b'2'}, {'1': '1', '2': '2'}),
+        (OrderedDict(a=b'1', b='2'), {'a': '1', 'b': '2'}),
         ({}, {}),
         ('foobar', Err("Input should be a valid dictionary [kind=dict_type, input_value='foobar', input_type=str]")),
         ([], Err('Input should be a valid dictionary [kind=dict_type,')),

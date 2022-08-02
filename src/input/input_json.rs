@@ -62,8 +62,6 @@ impl<'a> Input<'a> for JsonInput {
     fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
-            JsonInput::Int(int) => Ok(int.to_string().into()),
-            JsonInput::Float(float) => Ok(float.to_string().into()),
             _ => Err(ValError::new(ErrorKind::StrType, self)),
         }
     }

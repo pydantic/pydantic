@@ -168,7 +168,7 @@ def test_function_after_data():
         }
     )
 
-    assert v.validate_python({'field_a': '123', 'field_b': 321}) == {'field_a': 123, 'field_b': '321 Changed'}
+    assert v.validate_python({'field_a': '123', 'field_b': b'321'}) == {'field_a': 123, 'field_b': '321 Changed'}
     assert f_kwargs == {'data': {'field_a': 123}, 'config': None, 'context': None}
 
 
@@ -192,7 +192,7 @@ def test_function_after_config():
         {'config_choose_priority': 2},
     )
 
-    assert v.validate_python({'test_field': 321}) == {'test_field': '321 Changed'}
+    assert v.validate_python({'test_field': b'321'}) == {'test_field': '321 Changed'}
     assert f_kwargs == {'data': {}, 'config': {'config_choose_priority': 2}, 'context': None}
 
 
@@ -206,7 +206,7 @@ def test_config_no_model():
 
     v = SchemaValidator({'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}})
 
-    assert v.validate_python(123) == '123 Changed'
+    assert v.validate_python(b'abc') == 'abc Changed'
     assert f_kwargs == {'data': None, 'config': None, 'context': None}
 
 
@@ -241,7 +241,7 @@ def test_validate_assignment():
 
     m = {'field_a': 'test', 'more': 'foobar'}
     assert v.validate_python({'field_a': 'test'}) == m
-    assert v.validate_assignment('field_a', 456, m) == {'field_a': '456', 'more': 'foobar'}
+    assert v.validate_assignment('field_a', b'abc', m) == {'field_a': 'abc', 'more': 'foobar'}
 
 
 def test_function_wrong_sig():
@@ -279,9 +279,9 @@ def test_class_with_validator():
     assert isinstance(f, Foobar)
     assert f.a == 'foofoo'
 
-    f = v.validate_python(1)
+    f = v.validate_python(b'a')
     assert isinstance(f, Foobar)
-    assert f.a == '11'
+    assert f.a == 'aa'
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(True)

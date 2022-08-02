@@ -51,8 +51,8 @@ def test_any_no_copy():
     'mode,items,input_value,expected',
     [
         ('variable', {'type': 'int'}, (1, 2, '33'), (1, 2, 33)),
-        ('variable', {'type': 'str'}, (1, 2, '33'), ('1', '2', '33')),
-        ('positional', [{'type': 'int'}, {'type': 'str'}, {'type': 'float'}], (1, 2, 33), (1, '2', 33.0)),
+        ('variable', {'type': 'str'}, (b'1', b'2', '33'), ('1', '2', '33')),
+        ('positional', [{'type': 'int'}, {'type': 'str'}, {'type': 'float'}], (1, b'a', 33), (1, 'a', 33.0)),
     ],
 )
 def test_tuple_strict_passes_with_tuple(mode, items, input_value, expected):
@@ -227,7 +227,7 @@ def test_union_tuple_list(input_value, expected):
     [
         ((1, 2, 3), (1, 2, 3)),
         (('a', 'b', 'c'), ('a', 'b', 'c')),
-        (('a', 1, 'c'), ('a', '1', 'c')),
+        (('a', b'a', 'c'), ('a', 'a', 'c')),
         (
             [5],
             Err(
@@ -251,6 +251,7 @@ def test_union_tuple_list(input_value, expected):
             ),
         ),
     ],
+    ids=repr,
 )
 def test_union_tuple_var_len(input_value, expected):
     v = SchemaValidator(
@@ -276,7 +277,6 @@ def test_union_tuple_var_len(input_value, expected):
     [
         ((1, 2, 3), (1, 2, 3)),
         (('a', 'b', 'c'), ('a', 'b', 'c')),
-        (('a', 1, 'c'), ('a', '1', 'c')),
         (
             [5, '1', 1],
             Err(
@@ -298,6 +298,7 @@ def test_union_tuple_var_len(input_value, expected):
             ),
         ),
     ],
+    ids=repr,
 )
 def test_union_tuple_fix_len(input_value, expected):
     v = SchemaValidator(
@@ -349,10 +350,10 @@ def test_tuple_fix_extra():
 
 def test_tuple_fix_extra_any():
     v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['str'], 'extra_schema': 'any'})
-    assert v.validate_python([1]) == ('1',)
-    assert v.validate_python([1, 2]) == ('1', 2)
-    assert v.validate_python((1, 2)) == ('1', 2)
-    assert v.validate_python([1, 2, b'3']) == ('1', 2, b'3')
+    assert v.validate_python([b'1']) == ('1',)
+    assert v.validate_python([b'1', 2]) == ('1', 2)
+    assert v.validate_python((b'1', 2)) == ('1', 2)
+    assert v.validate_python([b'1', 2, b'3']) == ('1', 2, b'3')
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([])
     assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [0], 'message': 'Field required', 'input_value': []}]
