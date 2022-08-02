@@ -227,12 +227,6 @@ impl<'a> EitherString<'a> {
     }
 }
 
-impl<'a> From<String> for EitherString<'a> {
-    fn from(data: String) -> Self {
-        Self::Cow(Cow::Owned(data))
-    }
-}
-
 impl<'a> From<&'a str> for EitherString<'a> {
     fn from(data: &'a str) -> Self {
         Self::Cow(Cow::Borrowed(data))

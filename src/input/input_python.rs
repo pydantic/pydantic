@@ -4,8 +4,8 @@ use std::str::from_utf8;
 use pyo3::exceptions::PyAttributeError;
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyInt, PyList, PyMapping,
-    PySequence, PySet, PyString, PyTime, PyTuple, PyType,
+    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyList, PyMapping, PySequence,
+    PySet, PyString, PyTime, PyTuple, PyType,
 };
 use pyo3::{intern, AsPyPointer};
 
@@ -113,16 +113,6 @@ impl<'a> Input<'a> for PyAny {
                 Err(_) => return Err(ValError::new(ErrorKind::StrUnicode, self)),
             };
             Ok(str.into())
-        } else if self.cast_as::<PyBool>().is_ok() {
-            // do this before int and float parsing as `False` is cast to `0` and we don't want False to
-            // be returned as a string
-            Err(ValError::new(ErrorKind::StrType, self))
-        } else if let Ok(int) = self.cast_as::<PyInt>() {
-            let int = i64::extract(int)?;
-            Ok(int.to_string().into())
-        } else if let Ok(float) = f64::extract(self) {
-            // don't cast_as here so Decimals are covered - internally f64:extract uses PyFloat_AsDouble
-            Ok(float.to_string().into())
         } else {
             Err(ValError::new(ErrorKind::StrType, self))
         }
