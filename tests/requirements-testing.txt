@@ -1,4 +1,4 @@
-coverage==6.4.1
+coverage==6.4.2
 hypothesis==6.53.0
 # pin importlib-metadata as upper versions need typing-extensions to work if on Python < 3.8
 importlib-metadata==3.1.0;python_version<"3.8"
