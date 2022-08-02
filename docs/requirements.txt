@@ -1,5 +1,5 @@
 ansi2html==1.8.0
-flake8==4.0.1
+flake8==5.0.3
 flake8-quotes==3.3.1
 hypothesis==6.53.0
 markdown-include==0.7.0
