@@ -7,5 +7,5 @@ pyupgrade==2.37.3
 mypy==0.950
 pre-commit==2.20.0
 pycodestyle==2.9.0
-pyflakes==2.4.0
+pyflakes==2.5.0
 twine==4.0.1
