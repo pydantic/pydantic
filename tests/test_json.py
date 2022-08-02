@@ -29,10 +29,12 @@ def test_null():
 
 
 def test_str():
-    assert SchemaValidator({'type': 'str'}).validate_json('"foobar"') == 'foobar'
-    assert SchemaValidator({'type': 'str'}).validate_json('123') == '123'
+    s = SchemaValidator({'type': 'str'})
+    assert s.validate_json('"foobar"') == 'foobar'
     with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=str_type,'):
-        SchemaValidator({'type': 'str'}).validate_json('false')
+        s.validate_json('false')
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=str_type,'):
+        s.validate_json('123')
 
 
 @pytest.mark.parametrize(
@@ -53,8 +55,8 @@ def test_model():
     )
 
     # language=json
-    input_str = '{"field_a": 123, "field_b": 1}'
-    assert v.validate_json(input_str) == {'field_a': '123', 'field_b': 1}
+    input_str = '{"field_a": "abc", "field_b": 1}'
+    assert v.validate_json(input_str) == {'field_a': 'abc', 'field_b': 1}
 
 
 def test_float_no_remainder():

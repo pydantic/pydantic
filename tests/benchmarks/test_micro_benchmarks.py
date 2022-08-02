@@ -415,7 +415,7 @@ def test_frozenset_of_ints_core(benchmark):
     benchmark(v.validate_python, frozenset_of_ints)
 
 
-dict_of_ints_data = ({i: i for i in range(1000)}, {i: str(i) for i in range(1000)})
+dict_of_ints_data = ({str(i): i for i in range(1000)}, {str(i): str(i) for i in range(1000)})
 
 
 @skip_pydantic

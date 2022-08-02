@@ -46,7 +46,7 @@ def test_simple():
         }
     )
 
-    assert v.validate_python({'field_a': 123, 'field_b': 1}) == {'field_a': '123', 'field_b': 1}
+    assert v.validate_python({'field_a': b'abc', 'field_b': 1}) == {'field_a': 'abc', 'field_b': 1}
 
 
 def test_strict():
@@ -77,9 +77,9 @@ def test_with_default():
         }
     )
 
-    assert v.validate_python({'field_a': 123}) == ({'field_a': '123', 'field_b': 666}, {'field_a'})
-    assert v.validate_python({'field_a': 123, 'field_b': 1}) == (
-        {'field_a': '123', 'field_b': 1},
+    assert v.validate_python({'field_a': b'abc'}) == ({'field_a': 'abc', 'field_b': 666}, {'field_a'})
+    assert v.validate_python({'field_a': b'abc', 'field_b': 1}) == (
+        {'field_a': 'abc', 'field_b': 1},
         {'field_b', 'field_a'},
     )
 
@@ -92,13 +92,13 @@ def test_missing_error():
         }
     )
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python({'field_a': 123})
+        v.validate_python({'field_a': b'abc'})
     assert (
         str(exc_info.value)
         == """\
 1 validation error for typed-dict
 field_b
-  Field required [kind=missing, input_value={'field_a': 123}, input_type=dict]"""
+  Field required [kind=missing, input_value={'field_a': b'abc'}, input_type=dict]"""
     )
 
 
@@ -141,7 +141,7 @@ def test_ignore_extra():
         }
     )
 
-    assert v.validate_python({'field_a': 123, 'field_b': 1, 'field_c': 123}) == (
+    assert v.validate_python({'field_a': b'123', 'field_b': 1, 'field_c': 123}) == (
         {'field_a': '123', 'field_b': 1},
         {'field_b', 'field_a'},
     )
@@ -158,7 +158,7 @@ def test_forbid_extra():
     )
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python({'field_a': 123, 'field_b': 1})
+        v.validate_python({'field_a': 'abc', 'field_b': 1})
 
     assert exc_info.value.errors() == [
         {'kind': 'extra_forbidden', 'loc': ['field_b'], 'message': 'Extra inputs are not permitted', 'input_value': 1}
@@ -175,8 +175,8 @@ def test_allow_extra():
         }
     )
 
-    assert v.validate_python({'field_a': 123, 'field_b': (1, 2)}) == (
-        {'field_a': '123', 'field_b': (1, 2)},
+    assert v.validate_python({'field_a': b'abc', 'field_b': (1, 2)}) == (
+        {'field_a': 'abc', 'field_b': (1, 2)},
         {'field_a', 'field_b'},
     )
 
@@ -238,7 +238,7 @@ def test_validate_assignment():
 
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
-    assert v.validate_assignment('field_a', 456, {'field_a': 'test'}) == ({'field_a': '456'}, {'field_a'})
+    assert v.validate_assignment('field_a', b'abc', {'field_a': 'test'}) == ({'field_a': 'abc'}, {'field_a'})
 
 
 def test_validate_assignment_functions():
