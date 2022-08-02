@@ -140,6 +140,17 @@ def test_complete_core_error(benchmark):
             raise RuntimeError('expected ValueError')
 
 
+@pytest.mark.benchmark(group='complete-wrong')
+def test_complete_core_isinstance(benchmark):
+    v = SchemaValidator(schema())
+    data = input_data_wrong()
+    assert v.isinstance_python(data) is False
+
+    @benchmark
+    def f():
+        v.isinstance_python(data)
+
+
 @skip_pydantic
 @pytest.mark.benchmark(group='complete-wrong')
 def test_complete_pyd_error(benchmark):
