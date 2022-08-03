@@ -638,7 +638,7 @@ def test_repr():
             ],
         }
     )
-    assert 'positional_args_count:1,' in plain_repr(v)
+    assert 'positional_params_count:1,' in plain_repr(v)
 
 
 def test_build_non_default_follows():
