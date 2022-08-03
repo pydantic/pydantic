@@ -43,8 +43,9 @@ async def main(tests_zip: str, version: str):
     print('Running tests...')
     pytest.main()
 
+
 try:
-    await main(tests_zip, version)
-except Exception as e:
+    await main(tests_zip, version)  # noqa: F704
+except Exception:
     traceback.print_exc()
     raise
