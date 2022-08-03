@@ -335,3 +335,13 @@ def test_alias_priority():
         'd_config_parent',
         'e_generator_child',
     ]
+
+
+def test_empty_string_alias():
+    class Model(BaseModel):
+        empty_string_key: int = Field(alias='')
+
+    data = {'': 123}
+    m = Model(**data)
+    assert m.empty_string_key == 123
+    assert m.dict(by_alias=True) == data
