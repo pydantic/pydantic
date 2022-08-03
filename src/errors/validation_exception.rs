@@ -41,12 +41,11 @@ impl ValidationError {
 }
 
 // used to convert a validation error back to ValError for wrap functions
-impl<'a> From<ValidationError> for ValError<'a> {
-    fn from(val_error: ValidationError) -> Self {
-        val_error
-            .line_errors
+impl<'a> IntoPy<ValError<'a>> for ValidationError {
+    fn into_py(self, py: Python) -> ValError<'a> {
+        self.line_errors
             .into_iter()
-            .map(|e| e.into())
+            .map(|e| e.into_py(py))
             .collect::<Vec<_>>()
             .into()
     }
@@ -130,12 +129,12 @@ impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
 }
 
 /// opposite of above, used to extract line errors from a validation error for wrap functions
-impl<'a> From<PyLineError> for ValLineError<'a> {
-    fn from(py_line_error: PyLineError) -> Self {
-        Self {
-            kind: py_line_error.kind,
-            location: py_line_error.location,
-            input_value: py_line_error.input_value.into(),
+impl<'a> IntoPy<ValLineError<'a>> for PyLineError {
+    fn into_py(self, _py: Python) -> ValLineError<'a> {
+        ValLineError {
+            kind: self.kind,
+            location: self.location,
+            input_value: self.input_value.into(),
         }
     }
 }

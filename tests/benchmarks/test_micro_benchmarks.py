@@ -40,7 +40,7 @@ class TestBenchmarkSimpleModel:
 
         return SchemaValidator(
             {
-                'type': 'model-class',
+                'type': 'new-class',
                 'class_type': CoreModel,
                 'schema': {
                     'type': 'typed-dict',
@@ -62,7 +62,7 @@ class TestBenchmarkSimpleModel:
 
         return SchemaValidator(
             {
-                'type': 'model-class',
+                'type': 'new-class',
                 'class_type': CoreModel,
                 'schema': {
                     'type': 'typed-dict',
@@ -179,7 +179,7 @@ def test_small_class_core_model(benchmark):
 
     model_schema_validator = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyCoreModel,
             'schema': {
                 'type': 'typed-dict',
@@ -231,7 +231,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
     v = SchemaValidator(
         {
             'ref': 'Branch',
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': CoreBranch,
             'schema': {
                 'type': 'typed-dict',
@@ -507,7 +507,7 @@ def test_many_models_core_model(benchmark):
         {
             'type': 'list',
             'items_schema': {
-                'type': 'model-class',
+                'type': 'new-class',
                 'class_type': MyCoreModel,
                 'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'age': {'schema': 'int'}}},
             },
@@ -569,7 +569,7 @@ class TestBenchmarkDateTime:
 
         return SchemaValidator(
             {
-                'type': 'model-class',
+                'type': 'new-class',
                 'class_type': CoreModel,
                 'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'dt': {'schema': 'datetime'}}},
             }

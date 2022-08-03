@@ -340,7 +340,7 @@ def test_positional_or_keyword(py_and_json: PyAndJson, input_value, expected):
             'type': 'arguments',
             'arguments_schema': [
                 {'name': 'a', 'mode': 'positional_or_keyword', 'schema': 'int'},
-                {'name': 'b', 'mode': 'positional_or_keyword', 'schema': 'str'},
+                {'name': 'b', 'schema': 'str'},  # default mode is positional_or_keyword
                 {'name': 'c', 'mode': 'keyword_only', 'schema': 'bool'},
             ],
         }
