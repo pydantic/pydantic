@@ -87,22 +87,9 @@ impl Validator for FunctionBeforeValidator {
             .func
             .call(py, (input.to_object(py),), kwargs)
             .map_err(|e| convert_err(py, e, input))?;
-        // maybe there's some way to get the PyAny here and explicitly tell rust it should have lifespan 'a?
-        let new_input: &PyAny = value.as_ref(py);
-        match self.validator.validate(py, new_input, extra, slots, recursion_guard) {
-            Ok(v) => Ok(v),
-            Err(ValError::InternalErr(err)) => Err(ValError::InternalErr(err)),
-            Err(ValError::LineErrors(line_errors)) => {
-                // we have to be explicit about clone line errors to a new lifetime since new_input doesn't have
-                // the 'data lifetime
-                Err(ValError::LineErrors(
-                    line_errors
-                        .into_iter()
-                        .map(|line_error| line_error.into_new(py))
-                        .collect(),
-                ))
-            }
-        }
+
+        self.validator
+            .validate(py, value.into_ref(py), extra, slots, recursion_guard)
     }
 
     fn get_name(&self) -> &str {
@@ -308,7 +295,7 @@ fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> Val
         if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticValueError>() {
             pydantic_value_error.into_val_error(input)
         } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
-            validation_error.into()
+            validation_error.into_py(py)
         } else {
             py_err_string!(err.value(py), ValueError, input)
         }

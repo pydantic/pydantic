@@ -164,7 +164,7 @@ def test_model_class():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'ref': 'Branch',
             'class_type': Branch,
             'schema': {

@@ -16,7 +16,7 @@ def test_model_class():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'typed-dict',
@@ -53,7 +53,7 @@ def test_model_class_setattr():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'typed-dict',
@@ -83,7 +83,7 @@ def test_model_class_root_validator():
             'mode': 'wrap',
             'function': f,
             'schema': {
-                'type': 'model-class',
+                'type': 'new-class',
                 'class_type': MyModel,
                 'schema': {
                     'type': 'typed-dict',
@@ -110,7 +110,7 @@ def test_function_ask(mode, return_fields_set):
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'function',
@@ -136,7 +136,7 @@ def test_function_plain_ask():
         return input_value
 
     v = SchemaValidator(
-        {'type': 'model-class', 'class_type': MyModel, 'schema': {'type': 'function', 'mode': 'plain', 'function': f}}
+        {'type': 'new-class', 'class_type': MyModel, 'schema': {'type': 'function', 'mode': 'plain', 'function': f}}
     )
     assert 'expect_fields_set:false' in plain_repr(v)
     m = v.validate_python({'field_a': 'test'})
@@ -151,7 +151,7 @@ def test_union_sub_schema():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'union',
@@ -179,7 +179,7 @@ def test_tagged_union_sub_schema():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'tagged-union',
@@ -213,7 +213,7 @@ def test_bad_sub_schema():
     class MyModel:
         pass
 
-    v = SchemaValidator({'type': 'model-class', 'class_type': MyModel, 'schema': 'int'})
+    v = SchemaValidator({'type': 'new-class', 'class_type': MyModel, 'schema': 'int'})
     assert 'expect_fields_set:false' in plain_repr(v)
     with pytest.raises(TypeError):
         v.validate_python(123)
@@ -229,7 +229,7 @@ def test_model_class_function_after():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'function',
@@ -253,7 +253,7 @@ def test_model_class_not_type():
     with pytest.raises(SchemaError, match=re.escape("TypeError: 'int' object cannot be converted to 'PyType'")):
         SchemaValidator(
             {
-                'type': 'model-class',
+                'type': 'new-class',
                 'class_type': 123,
                 'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'field_a': {'schema': 'str'}}},
             }
@@ -266,7 +266,7 @@ def test_not_return_fields_set():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {'type': 'typed-dict', 'fields': {'field_a': {'schema': 'str'}}},
         }
@@ -289,7 +289,7 @@ def test_model_class_instance_direct():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'typed-dict',
@@ -326,7 +326,7 @@ def test_model_class_instance_subclass():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'typed-dict',
@@ -353,7 +353,7 @@ def test_model_class_strict():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'strict': True,
             'class_type': MyModel,
             'schema': {
@@ -388,7 +388,7 @@ def test_model_class_strict():
 def test_internal_error():
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': int,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'int'}}},
         }
@@ -409,7 +409,7 @@ def test_revalidate():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'typed-dict',
@@ -463,7 +463,7 @@ def test_revalidate_extra():
 
     v = SchemaValidator(
         {
-            'type': 'model-class',
+            'type': 'new-class',
             'class_type': MyModel,
             'schema': {
                 'type': 'typed-dict',

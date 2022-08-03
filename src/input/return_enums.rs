@@ -246,9 +246,9 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
 }
 
 pub fn py_string_str(py_str: &PyString) -> ValResult<&str> {
-    py_str.to_str().map_err(|_| {
-        ValError::new_custom_input(ErrorKind::StrUnicode, InputValue::PyObject(py_str.into_py(py_str.py())))
-    })
+    py_str
+        .to_str()
+        .map_err(|_| ValError::new_custom_input(ErrorKind::StrUnicode, InputValue::PyAny(py_str as &PyAny)))
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

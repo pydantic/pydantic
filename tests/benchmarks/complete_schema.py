@@ -10,7 +10,7 @@ def schema(*, strict: bool = False) -> dict:
         return f'Input {validator(input_value)} Changed'
 
     return {
-        'type': 'model-class',
+        'type': 'new-class',
         'class_type': MyModel,
         'config': {'strict': strict},
         'schema': {
