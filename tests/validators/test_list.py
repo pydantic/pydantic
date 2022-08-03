@@ -1,8 +1,9 @@
+import platform
 import re
 from typing import Any, Dict
 
 import pytest
-from dirty_equals import IsList, IsNonNegative
+from dirty_equals import HasRepr, IsStr
 
 from pydantic_core import SchemaValidator, ValidationError
 
@@ -42,13 +43,35 @@ def test_list_strict():
     [
         ([1, 2, '3'], [1, 2, 3]),
         ((1, 2, '3'), [1, 2, 3]),
-        ({1, 2, '3'}, IsList(1, 2, 3, check_order=False)),
-        (frozenset([1, 2, '3']), IsList(1, 2, 3, check_order=False)),
+        ({1, 2, '3'}, Err('Input should be a valid list/array [kind=list_type,')),
+        (frozenset({1, 2, '3'}), Err('Input should be a valid list/array [kind=list_type,')),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.keys(),
+            [1, 2, 3],
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.values(),
+            [10, 20, 30],
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid list/array [kind=list_type,')),
+        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid list/array [kind=list_type,')),
+        ((x for x in [1, 2, '3']), [1, 2, 3]),
     ],
 )
 def test_list_int(input_value, expected):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
-    assert v.validate_python(input_value) == expected
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
 
 
 @pytest.mark.parametrize(
@@ -56,33 +79,28 @@ def test_list_int(input_value, expected):
     [
         ([], []),
         ([1, '2', b'3'], [1, '2', b'3']),
-        (frozenset([1, '2', b'3']), IsList(1, '2', b'3', check_order=False)),
+        (frozenset([1, '2', b'3']), Err('Input should be a valid list/array [kind=list_type,')),
         ((), []),
         ((1, '2', b'3'), [1, '2', b'3']),
-        ({1, '2', b'3'}, IsList(1, '2', b'3', check_order=False)),
+        ({1, '2', b'3'}, Err('Input should be a valid list/array [kind=list_type,')),
     ],
 )
 def test_list_any(input_value, expected):
     v = SchemaValidator('list')
-    output = v.validate_python(input_value)
-    assert output == expected
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
 
 
 @pytest.mark.parametrize(
-    'input_value,index',
-    [
-        (['wrong'], 0),
-        (('wrong',), 0),
-        ({'wrong'}, 0),
-        ([1, 2, 3, 'wrong'], 3),
-        ((1, 2, 3, 'wrong', 4), 3),
-        ({1, 2, 'wrong'}, IsNonNegative()),
-    ],
+    'input_value,index', [(['wrong'], 0), (('wrong',), 0), ([1, 2, 3, 'wrong'], 3), ((1, 2, 3, 'wrong', 4), 3)]
 )
 def test_list_error(input_value, index):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
-        assert v.validate_python(input_value)
+        v.validate_python(input_value)
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
@@ -186,3 +204,25 @@ def test_list_function_internal_error():
     with pytest.raises(RuntimeError, match='^error 1$') as exc_info:
         v.validate_python([1, 2])
     assert exc_info.value.args[0] == 'error 1'
+
+
+def test_generator_error():
+    def gen(error: bool):
+        yield 1
+        yield 2
+        if error:
+            raise RuntimeError('error')
+        yield 3
+
+    v = SchemaValidator({'type': 'list', 'items_schema': 'int'})
+    assert v.validate_python(gen(False)) == [1, 2, 3]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(gen(True))
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'iteration_error',
+            'loc': [],
+            'message': 'Error iterating over object',
+            'input_value': HasRepr(IsStr(regex='<generator object test_generator_error.<locals>.gen at 0x[0-9a-f]+>')),
+        }
+    ]
