@@ -279,7 +279,7 @@ class CallableSchema(TypedDict):
     type: Literal['callable']
 
 
-class ArgumentInfo(TypedDict):
+class Parameter(TypedDict):
     name: str
     mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only']
     schema: Schema
@@ -290,7 +290,7 @@ class ArgumentInfo(TypedDict):
 
 class ArgumentsSchema(TypedDict, total=False):
     type: Required[Literal['arguments']]
-    arguments_schema: Required[List[ArgumentInfo]]
+    arguments_schema: Required[List[Parameter]]
     populate_by_name: bool
     var_args_schema: Schema
     var_kwargs_schema: Schema

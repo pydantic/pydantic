@@ -58,10 +58,10 @@ impl Validator for UnionValidator {
     ) -> ValResult<'data, PyObject> {
         if extra.strict.unwrap_or(self.strict) {
             let mut errors: Vec<ValLineError> = Vec::with_capacity(self.choices.len());
-            let strict_strict = extra.as_strict();
+            let strict_extra = extra.as_strict();
 
             for validator in &self.choices {
-                let line_errors = match validator.validate(py, input, &strict_strict, slots, recursion_guard) {
+                let line_errors = match validator.validate(py, input, &strict_extra, slots, recursion_guard) {
                     Err(ValError::LineErrors(line_errors)) => line_errors,
                     otherwise => return otherwise,
                 };
@@ -77,11 +77,11 @@ impl Validator for UnionValidator {
         } else {
             // 1st pass: check if the value is an exact instance of one of the Union types,
             // e.g. use validate in strict mode
-            let strict_strict = extra.as_strict();
+            let strict_extra = extra.as_strict();
             if let Some(res) = self
                 .choices
                 .iter()
-                .map(|validator| validator.validate(py, input, &strict_strict, slots, recursion_guard))
+                .map(|validator| validator.validate(py, input, &strict_extra, slots, recursion_guard))
                 .find(ValResult::is_ok)
             {
                 return res;
