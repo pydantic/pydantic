@@ -114,14 +114,6 @@ impl<'a> ValLineError<'a> {
         self.kind = kind;
         self
     }
-
-    pub fn into_new<'b>(self, py: Python) -> ValLineError<'b> {
-        ValLineError {
-            kind: self.kind,
-            location: self.location,
-            input_value: self.input_value.to_object(py).into(),
-        }
-    }
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

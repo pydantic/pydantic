@@ -53,7 +53,9 @@ impl BuildValidator for ArgumentsValidator {
             let arg: &PyDict = arg.cast_as()?;
 
             let name: String = arg.get_as_req(intern!(py, "name"))?;
-            let mode: &str = arg.get_as_req(intern!(py, "mode"))?;
+            let mode = arg
+                .get_as::<&str>(intern!(py, "mode"))?
+                .unwrap_or("positional_or_keyword");
             let positional = mode == "positional_only" || mode == "positional_or_keyword";
             if positional {
                 positional_params_count = arg_index + 1;

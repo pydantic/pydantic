@@ -57,7 +57,7 @@ class TestModelClass:
                 'type': 'union',
                 'choices': [
                     {
-                        'type': 'model-class',
+                        'type': 'new-class',
                         'class_type': self.ModelA,
                         'schema': {
                             'type': 'typed-dict',
@@ -66,7 +66,7 @@ class TestModelClass:
                         },
                     },
                     {
-                        'type': 'model-class',
+                        'type': 'new-class',
                         'class_type': self.ModelB,
                         'schema': {
                             'type': 'typed-dict',
@@ -121,7 +121,7 @@ class TestModelClassSimilar:
                 'type': 'union',
                 'choices': [
                     {
-                        'type': 'model-class',
+                        'type': 'new-class',
                         'class_type': self.ModelA,
                         'schema': {
                             'type': 'typed-dict',
@@ -130,7 +130,7 @@ class TestModelClassSimilar:
                         },
                     },
                     {
-                        'type': 'model-class',
+                        'type': 'new-class',
                         'class_type': self.ModelB,
                         'schema': {
                             'type': 'typed-dict',

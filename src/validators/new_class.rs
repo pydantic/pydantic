@@ -16,7 +16,7 @@ use crate::recursion_guard::RecursionGuard;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct ModelClassValidator {
+pub struct NewClassValidator {
     strict: bool,
     revalidate: bool,
     validator: Box<CombinedValidator>,
@@ -25,8 +25,8 @@ pub struct ModelClassValidator {
     expect_fields_set: bool,
 }
 
-impl BuildValidator for ModelClassValidator {
-    const EXPECTED_TYPE: &'static str = "model-class";
+impl BuildValidator for NewClassValidator {
+    const EXPECTED_TYPE: &'static str = "new-class";
 
     fn build(
         schema: &PyDict,
@@ -59,7 +59,7 @@ impl BuildValidator for ModelClassValidator {
     }
 }
 
-impl Validator for ModelClassValidator {
+impl Validator for NewClassValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -106,7 +106,7 @@ impl Validator for ModelClassValidator {
     }
 }
 
-impl ModelClassValidator {
+impl NewClassValidator {
     fn create_class(&self, py: Python, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
         // based on the following but with the second argument of new_func set to an empty tuple as required
         // https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
