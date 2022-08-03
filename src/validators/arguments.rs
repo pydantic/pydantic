@@ -13,7 +13,7 @@ use crate::SchemaError;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-struct Argument {
+struct Parameter {
     positional: bool,
     name: String,
     kw_lookup_key: Option<LookupKey>,
@@ -25,8 +25,8 @@ struct Argument {
 
 #[derive(Debug, Clone)]
 pub struct ArgumentsValidator {
-    arguments: Vec<Argument>,
-    positional_args_count: usize,
+    parameters: Vec<Parameter>,
+    positional_params_count: usize,
     var_args_validator: Option<Box<CombinedValidator>>,
     var_kwargs_validator: Option<Box<CombinedValidator>>,
 }
@@ -43,20 +43,20 @@ impl BuildValidator for ArgumentsValidator {
 
         let populate_by_name = schema_or_config_same(schema, config, intern!(py, "populate_by_name"))?.unwrap_or(false);
 
-        let arguments_list: &PyList = schema.get_as_req(intern!(py, "arguments_schema"))?;
-        let mut arguments: Vec<Argument> = Vec::with_capacity(arguments_list.len());
+        let arguments_schema: &PyList = schema.get_as_req(intern!(py, "arguments_schema"))?;
+        let mut parameters: Vec<Parameter> = Vec::with_capacity(arguments_schema.len());
 
-        let mut positional_args_count = 0;
+        let mut positional_params_count = 0;
         let mut had_default_arg = false;
 
-        for (arg_index, arg) in arguments_list.iter().enumerate() {
+        for (arg_index, arg) in arguments_schema.iter().enumerate() {
             let arg: &PyDict = arg.cast_as()?;
 
             let name: String = arg.get_as_req(intern!(py, "name"))?;
             let mode: &str = arg.get_as_req(intern!(py, "mode"))?;
             let positional = mode == "positional_only" || mode == "positional_or_keyword";
             if positional {
-                positional_args_count = arg_index + 1;
+                positional_params_count = arg_index + 1;
             }
 
             let mut kw_lookup_key = None;
@@ -74,7 +74,7 @@ impl BuildValidator for ArgumentsValidator {
 
             let schema: &PyAny = arg
                 .get_as_req(intern!(py, "schema"))
-                .map_err(|err| SchemaError::new_err(format!("Argument \"{}\":\n  {}", name, err)))?;
+                .map_err(|err| SchemaError::new_err(format!("Parameter \"{}\":\n  {}", name, err)))?;
 
             let validator = build_validator(schema, config, build_context)?;
 
@@ -87,7 +87,7 @@ impl BuildValidator for ArgumentsValidator {
             } else if default.is_some() || default_factory.is_some() {
                 had_default_arg = true;
             }
-            arguments.push(Argument {
+            parameters.push(Parameter {
                 positional,
                 kw_lookup_key,
                 name,
@@ -99,8 +99,8 @@ impl BuildValidator for ArgumentsValidator {
         }
 
         Ok(Self {
-            arguments,
-            positional_args_count,
+            parameters,
+            positional_params_count,
             var_args_validator: match schema.get_item(intern!(py, "var_args_schema")) {
                 Some(v) => Some(Box::new(build_validator(v, config, build_context)?)),
                 None => None,
@@ -149,24 +149,24 @@ impl Validator for ArgumentsValidator {
     ) -> ValResult<'data, PyObject> {
         let args = input.validate_args()?;
 
-        let mut output_args: Vec<PyObject> = Vec::with_capacity(self.positional_args_count);
+        let mut output_args: Vec<PyObject> = Vec::with_capacity(self.positional_params_count);
         let output_kwargs = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
-        let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.arguments.len());
+        let mut used_kwargs: AHashSet<&str> = AHashSet::with_capacity(self.parameters.len());
 
         macro_rules! process {
             ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
                 // go through arguments getting the value from args or kwargs and validating it
-                for (index, argument_info) in self.arguments.iter().enumerate() {
+                for (index, parameter) in self.parameters.iter().enumerate() {
                     let mut pos_value = None;
                     if let Some(args) = $args.args {
-                        if argument_info.positional {
+                        if parameter.positional {
                             pos_value = $get_macro!(args, index);
                         }
                     }
                     let mut kw_value = None;
                     if let Some(kwargs) = $args.kwargs {
-                        if let Some(ref lookup_key) = argument_info.kw_lookup_key {
+                        if let Some(ref lookup_key) = parameter.kw_lookup_key {
                             if let Some((key, value)) = lookup_key.$get_method(kwargs)? {
                                 used_kwargs.insert(key);
                                 kw_value = Some(value);
@@ -179,11 +179,11 @@ impl Validator for ArgumentsValidator {
                             errors.push(ValLineError::new_with_loc(
                                 ErrorKind::MultipleArgumentValues,
                                 kw_value,
-                                argument_info.name.clone(),
+                                parameter.name.clone(),
                             ));
                         }
                         (Some(pos_value), None) => {
-                            match argument_info
+                            match parameter
                                 .validator
                                 .validate(py, pos_value, extra, slots, recursion_guard)
                             {
@@ -195,40 +195,40 @@ impl Validator for ArgumentsValidator {
                             }
                         }
                         (None, Some(kw_value)) => {
-                            match argument_info
+                            match parameter
                                 .validator
                                 .validate(py, kw_value, extra, slots, recursion_guard)
                             {
-                                Ok(value) => output_kwargs.set_item(argument_info.kwarg_key.as_ref().unwrap(), value)?,
+                                Ok(value) => output_kwargs.set_item(parameter.kwarg_key.as_ref().unwrap(), value)?,
                                 Err(ValError::LineErrors(line_errors)) => {
                                     errors.extend(
                                         line_errors
                                             .into_iter()
-                                            .map(|err| err.with_outer_location(argument_info.name.clone().into())),
+                                            .map(|err| err.with_outer_location(parameter.name.clone().into())),
                                     );
                                 }
                                 Err(err) => return Err(err),
                             }
                         }
                         (None, None) => {
-                            if let Some(ref default) = argument_info.default {
-                                if let Some(ref kwarg_key) = argument_info.kwarg_key {
+                            if let Some(ref default) = parameter.default {
+                                if let Some(ref kwarg_key) = parameter.kwarg_key {
                                     output_kwargs.set_item(kwarg_key, default)?;
                                 } else {
                                     output_args.push(default.clone_ref(py));
                                 }
-                            } else if let Some(ref default_factory) = argument_info.default_factory {
+                            } else if let Some(ref default_factory) = parameter.default_factory {
                                 let default = default_factory.call0(py)?;
-                                if let Some(ref kwarg_key) = argument_info.kwarg_key {
+                                if let Some(ref kwarg_key) = parameter.kwarg_key {
                                     output_kwargs.set_item(kwarg_key, default)?;
                                 } else {
                                     output_args.push(default);
                                 }
-                            } else if argument_info.kwarg_key.is_some() {
+                            } else if parameter.kwarg_key.is_some() {
                                 errors.push(ValLineError::new_with_loc(
                                     ErrorKind::MissingKeywordArgument,
                                     input,
-                                    argument_info.name.clone(),
+                                    parameter.name.clone(),
                                 ));
                             } else {
                                 errors.push(ValLineError::new_with_loc(ErrorKind::MissingPositionalArgument, input, index));
@@ -236,30 +236,30 @@ impl Validator for ArgumentsValidator {
                         }
                     }
                 }
-                // if there are args check any where index > positional_args_count since they won't have been checked yet
+                // if there are args check any where index > positional_params_count since they won't have been checked yet
                 if let Some(args) = $args.args {
                     let len = args.len();
-                    if len > self.positional_args_count {
+                    if len > self.positional_params_count {
                         if let Some(ref validator) = self.var_args_validator {
-                            for (index, item) in $slice_macro!(args, self.positional_args_count, len).iter().enumerate() {
+                            for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
                                 match validator.validate(py, item, extra, slots, recursion_guard) {
                                     Ok(value) => output_args.push(value),
                                     Err(ValError::LineErrors(line_errors)) => {
                                         errors.extend(
                                             line_errors
                                                 .into_iter()
-                                                .map(|err| err.with_outer_location((index + self.positional_args_count).into())),
+                                                .map(|err| err.with_outer_location((index + self.positional_params_count).into())),
                                         );
                                     }
                                     Err(err) => return Err(err),
                                 }
                             }
                         } else {
-                            for (index, item) in $slice_macro!(args, self.positional_args_count, len).iter().enumerate() {
+                            for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
                                 errors.push(ValLineError::new_with_loc(
                                     ErrorKind::UnexpectedPositionalArgument,
                                     item,
-                                    index + self.positional_args_count,
+                                    index + self.positional_params_count,
                                 ));
                             }
                         }
