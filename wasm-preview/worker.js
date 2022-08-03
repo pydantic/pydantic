@@ -72,13 +72,15 @@ async function get(url, mode) {
   }
 }
 
-self.onmessage = async () => {
-  self.postMessage('Downloading repo archive to get tests...\n')
+self.onmessage = async ({data}) => {
+  const {version} = data
+  self.postMessage(`Downloading repo v${version} archive to get tests...\n`)
+  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/archive/refs/tags/v${version}.zip`
   try {
     const [python_code, tests_zip,] = await Promise.all([
       get(`./run_tests.py?v=${Date.now()}`, 'text'),
       // e4cf2e2 commit matches the pydantic-core wheel being used, so tests should pass
-      get('https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/archive/e4cf2e2.zip', 'blob'),
+      get(zip_url, 'blob'),
       importScripts('https://cdn.jsdelivr.net/pyodide/v0.21.0a3/full/pyodide.js')
     ])
 
@@ -88,7 +90,7 @@ self.onmessage = async () => {
     FS.mkdir('/test_dir')
     FS.chdir('/test_dir')
     await pyodide.loadPackage(['micropip', 'pytest', 'pytz'])
-    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({tests_zip})})
+    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({version, tests_zip})})
     post()
   } catch (err) {
     console.error(err)

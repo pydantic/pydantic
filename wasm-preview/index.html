@@ -34,7 +34,7 @@
 </style>
 <main>
   <h1>
-    <a href="https://github.com/samuelcolvin/pydantic-core/tree/main/wasm-preview">pydantic-core</a> unit tests
+    <a href="https://github.com/samuelcolvin/pydantic-core/tree/main/wasm-preview">pydantic-core</a> v<span id="version">0.1.0</span> unit tests
   </h1>
   <aside>
     pydantic-core is compiled to webassembly and run in the browser using
@@ -52,6 +52,7 @@
   const Convert = require('ansi-to-html')
   const ansi_converter = new Convert()
   let terminal_output = ''
+  const version = document.getElementById('version').textContent
 
   output_el.innerText = 'Starting worker...'
   const worker = new Worker(`./worker.js?v=${Date.now()}`)
@@ -69,5 +70,5 @@
     // scrolls to the bottom of the div
     output_el.scrollIntoView(false)
   }
-  worker.postMessage({})
+  worker.postMessage({version})
 </script>
