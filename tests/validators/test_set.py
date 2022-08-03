@@ -1,3 +1,4 @@
+import platform
 import re
 from typing import Any, Dict
 
@@ -62,11 +63,27 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
         ((1, 2, 3, 2, 3), {1, 2, 3}),
         ((), set()),
         (frozenset([1, 2, 3, 2, 3]), {1, 2, 3}),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.keys(),
+            {1, 2, 3},
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.values(),
+            {10, 20, 30},
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid set [kind=set_type,')),
+        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid set [kind=set_type,')),
+        ((x for x in [1, 2, '3']), {1, 2, 3}),
         ({'abc'}, Err('0\n  Input should be a valid integer')),
         ({1: 2}, Err('1 validation error for set[int]\n  Input should be a valid set')),
         ('abc', Err('Input should be a valid set')),
-        # Technically correct, but does anyone actually need this? I think needs a new type in pyo3
-        pytest.param({1: 10, 2: 20, 3: 30}.keys(), {1, 2, 3}, marks=pytest.mark.xfail(raises=ValidationError)),
     ],
 )
 def test_set_ints_python(input_value, expected):
@@ -187,3 +204,20 @@ def test_set_as_dict_keys(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'set'}, 'values_schema': 'int'})
     with pytest.raises(ValidationError, match=re.escape('Input should be a valid set')):
         v.validate_test({'foo': 'bar'})
+
+
+def test_generator_error():
+    def gen(error: bool):
+        yield 1
+        yield 2
+        if error:
+            raise RuntimeError('error')
+        yield 3
+
+    v = SchemaValidator({'type': 'set', 'items_schema': 'int'})
+    r = v.validate_python(gen(False))
+    assert r == {1, 2, 3}
+    assert isinstance(r, set)
+
+    with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
+        v.validate_python(gen(True))

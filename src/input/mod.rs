@@ -1,5 +1,7 @@
 use pyo3::prelude::*;
 
+#[cfg(not(PyPy))]
+mod _pyo3_dict;
 mod datetime;
 mod input_abstract;
 mod input_json;

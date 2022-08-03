@@ -1,3 +1,4 @@
+import platform
 import re
 from typing import Any, Dict
 
@@ -63,19 +64,35 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ({1, 2, 3}, {1, 2, 3}),
+        ({1, 2, 3}, frozenset({1, 2, 3})),
         (frozenset(), frozenset()),
-        ([1, 2, 3, 2, 3], {1, 2, 3}),
+        ([1, 2, 3, 2, 3], frozenset({1, 2, 3})),
         ([], frozenset()),
-        ((1, 2, 3, 2, 3), {1, 2, 3}),
+        ((1, 2, 3, 2, 3), frozenset({1, 2, 3})),
         ((), frozenset()),
-        (frozenset([1, 2, 3, 2, 3]), {1, 2, 3}),
+        (frozenset([1, 2, 3, 2, 3]), frozenset({1, 2, 3})),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.keys(),
+            frozenset({1, 2, 3}),
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.values(),
+            frozenset({10, 20, 30}),
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ((x for x in [1, 2, '3']), frozenset({1, 2, 3})),
         ({'abc'}, Err('0\n  Input should be a valid integer')),
         ({1, 2, 'wrong'}, Err('Input should be a valid integer')),
         ({1: 2}, Err('1 validation error for frozenset[int]\n  Input should be a valid frozenset')),
         ('abc', Err('Input should be a valid frozenset')),
-        # Technically correct, but does anyone actually need this? I think needs a new type in pyo3
-        pytest.param({1: 10, 2: 20, 3: 30}.keys(), {1, 2, 3}, marks=pytest.mark.xfail(raises=ValidationError)),
     ],
 )
 def test_frozenset_ints_python(input_value, expected):
@@ -89,7 +106,10 @@ def test_frozenset_ints_python(input_value, expected):
         assert isinstance(output, frozenset)
 
 
-@pytest.mark.parametrize('input_value,expected', [([1, 2.5, '3'], {1, 2.5, '3'}), ([(1, 2), (3, 4)], {(1, 2), (3, 4)})])
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [(frozenset([1, 2.5, '3']), {1, 2.5, '3'}), ([1, 2.5, '3'], {1, 2.5, '3'}), ([(1, 2), (3, 4)], {(1, 2), (3, 4)})],
+)
 def test_frozenset_no_validators_python(input_value, expected):
     v = SchemaValidator({'type': 'frozenset'})
     output = v.validate_python(input_value)
@@ -216,3 +236,20 @@ def test_repr():
         'strict:true,item_validator:None,size_range:Some((Some(42),None)),name:"frozenset[any]"'
         '}))'
     )
+
+
+def test_generator_error():
+    def gen(error: bool):
+        yield 1
+        yield 2
+        if error:
+            raise RuntimeError('error')
+        yield 3
+
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': 'int'})
+    r = v.validate_python(gen(False))
+    assert r == {1, 2, 3}
+    assert isinstance(r, frozenset)
+
+    with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
+        v.validate_python(gen(True))

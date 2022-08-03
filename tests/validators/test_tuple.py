@@ -1,8 +1,9 @@
+import platform
 import re
 from typing import Any, Dict, Type
 
 import pytest
-from dirty_equals import IsNonNegative, IsTuple
+from dirty_equals import IsNonNegative
 
 from pydantic_core import SchemaValidator, ValidationError
 
@@ -104,13 +105,46 @@ def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
     'input_value,expected',
     [
         ((1, 2, '3'), (1, 2, 3)),
-        ({1, 2, '3'}, IsTuple(1, 2, 3, check_order=False)),
-        (frozenset([1, 2, '3']), IsTuple(1, 2, 3, check_order=False)),
+        ([1, 2, '3'], (1, 2, 3)),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.keys(),
+            (1, 2, 3),
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.values(),
+            (10, 20, 30),
+            marks=pytest.mark.skipif(
+                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
+            ),
+        ),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid tuple [kind=tuple_type,')),
+        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid tuple [kind=tuple_type,')),
+        ({1, 2, '3'}, Err('Input should be a valid tuple [kind=tuple_type,')),
+        (frozenset([1, 2, '3']), Err('Input should be a valid tuple [kind=tuple_type,')),
     ],
 )
 def test_tuple_validate(input_value, expected, mode, items):
     v = SchemaValidator({'type': 'tuple', 'mode': mode, 'items_schema': items})
-    assert v.validate_python(input_value) == expected
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        assert v.validate_python(input_value) == expected
+
+
+# Since `test_tuple_validate` is parametrized above, the generator is consumed
+# on the first test run. This is a workaround to make sure the generator is
+# always recreated.
+@pytest.mark.parametrize(
+    'mode,items', [('variable', {'type': 'int'}), ('positional', [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}])]
+)
+def test_tuple_validate_iterator(mode, items):
+    v = SchemaValidator({'type': 'tuple', 'mode': mode, 'items_schema': items})
+    assert v.validate_python((x for x in [1, 2, '3'])) == (1, 2, 3)
 
 
 @pytest.mark.parametrize(
@@ -118,7 +152,6 @@ def test_tuple_validate(input_value, expected, mode, items):
     [
         (['wrong'], 0),
         (('wrong',), 0),
-        ({'wrong'}, 0),
         ((1, 2, 3, 'wrong'), 3),
         ((1, 2, 3, 'wrong', 4), 3),
         ((1, 2, 'wrong'), IsNonNegative()),
@@ -143,7 +176,6 @@ def test_tuple_var_len_errors(input_value, index):
     [
         (['wrong'], [{'type': 'int'}], 0),
         (('wrong',), [{'type': 'int'}], 0),
-        ({'wrong'}, [{'type': 'int'}], 0),
         ((1, 2, 3, 'wrong'), [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}], 3),
         (
             (1, 2, 3, 'wrong', 4),
@@ -357,3 +389,18 @@ def test_tuple_fix_extra_any():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([])
     assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [0], 'message': 'Field required', 'input_value': []}]
+
+
+def test_generator_error():
+    def gen(error: bool):
+        yield 1
+        yield 2
+        if error:
+            raise RuntimeError('error')
+        yield 3
+
+    v = SchemaValidator({'type': 'tuple', 'items_schema': 'int'})
+    assert v.validate_python(gen(False)) == (1, 2, 3)
+
+    with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
+        v.validate_python(gen(True))

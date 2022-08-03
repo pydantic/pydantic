@@ -119,6 +119,10 @@ pub enum ErrorKind {
         error: String,
     },
     // ---------------------
+    // generic list-list errors
+    #[strum(message = "Error iterating over object")]
+    IterationError,
+    // ---------------------
     // list errors
     #[strum(message = "Input should be a valid list/array")]
     ListType,
