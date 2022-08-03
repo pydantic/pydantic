@@ -13,15 +13,14 @@ import pytest
 # this seems to be required for me on M1 Mac
 sys.setrecursionlimit(200)
 
-# compiled manually an uploaded to smokeshow, there seems to be no nice way of getting a file from a CI build
-pydantic_core_wheel = (
-    'https://smokeshow.helpmanual.io'
-    '/4o4l4x0t2m6z1w4n6u4b/pydantic_core-0.0.1-cp310-cp310-emscripten_3_1_14_wasm32.whl'
-)
 
-
-async def main(tests_zip: str):
+async def main(tests_zip: str, version: str):
     print(f'Extracting test files (size: {len(tests_zip):,})...')
+    # File saved on the GH release
+    pydantic_core_wheel = (
+        'https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/releases/'
+        f'download/v{version}/pydantic_core-{version}-cp310-cp310-emscripten_3_1_14_wasm32.whl'
+    )
     zip_file = ZipFile(BytesIO(base64.b64decode(tests_zip)))
     count = 0
     for name in zip_file.namelist():
@@ -45,7 +44,7 @@ async def main(tests_zip: str):
     pytest.main()
 
 try:
-    await main(tests_zip)
+    await main(tests_zip, version)
 except Exception as e:
     traceback.print_exc()
     raise

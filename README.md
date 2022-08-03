@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/samuelcolvin/pydantic-core/workflows/ci/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic-core/actions?query=event%3Apush+branch%3Amain+workflow%3Aci)
 [![Coverage](https://codecov.io/gh/samuelcolvin/pydantic-core/branch/main/graph/badge.svg)](https://codecov.io/gh/samuelcolvin/pydantic-core)
+[![pypi](https://img.shields.io/pypi/v/pydantic-core.svg)](https://pypi.python.org/pypi/pydantic-core)
+[![versions](https://img.shields.io/pypi/pyversions/pydantic-core.svg)](https://github.com/samuelcolvin/pydantic-core)
+[![license](https://img.shields.io/github/license/samuelcolvin/pydantic-core.svg)](https://github.com/samuelcolvin/pydantic-core/blob/main/LICENSE)
 
 This package provides the core functionality for pydantic.
 
