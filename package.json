@@ -12,8 +12,8 @@
   },
   "scripts": {
     "test": "node tests/emscripten_runner.js",
-    "format": "prettier --write 'tests/emscripten_runner.js'",
-    "lint": "prettier --check 'tests/emscripten_runner.js'"
+    "format": "prettier --write 'tests/emscripten_runner.js' 'wasm-preview/*.{html,js}'",
+    "lint": "prettier --check 'tests/emscripten_runner.js' 'wasm-preview/*.{html,js}'"
   },
   "prettier": {
     "singleQuote": true,
