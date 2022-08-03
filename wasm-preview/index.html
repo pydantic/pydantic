@@ -4,7 +4,8 @@
   <head>
     <title>pydantic-core unit tests</title>
     <style>
-      html, body {
+      html,
+      body {
         height: 100%;
         background: rgb(30, 31, 46);
         color: white;
@@ -35,11 +36,13 @@
         text-decoration: none;
       }
     </style>
-    </head>
+  </head>
   <body>
     <main>
       <h1>
-        <a href="https://github.com/samuelcolvin/pydantic-core/tree/main/wasm-preview">pydantic-core</a> v<span id="version">0.1.0</span> unit tests
+        <a href="https://github.com/samuelcolvin/pydantic-core/tree/main/wasm-preview">pydantic-core</a>
+        v<span id="version">0.1.0</span>
+        unit tests
       </h1>
       <aside>
         pydantic-core is compiled to webassembly and run in the browser using
@@ -52,30 +55,30 @@
 
     <script src="https://smokeshow.helpmanual.io/2d1p666q3x5f0j26223o/ansi-to-html.browser.js"></script>
     <script>
-      const output_el = document.getElementById('output')
-      const decoder = new TextDecoder()
-      const Convert = require('ansi-to-html')
-      const ansi_converter = new Convert()
-      let terminal_output = ''
-      const version = document.getElementById('version').textContent
+      const output_el = document.getElementById('output');
+      const decoder = new TextDecoder();
+      const Convert = require('ansi-to-html');
+      const ansi_converter = new Convert();
+      let terminal_output = '';
+      const version = document.getElementById('version').textContent;
 
-      output_el.innerText = 'Starting worker...'
-      const worker = new Worker(`./worker.js?v=${Date.now()}`)
+      output_el.innerText = 'Starting worker...';
+      const worker = new Worker(`./worker.js?v=${Date.now()}`);
       worker.onmessage = ({data}) => {
         if (typeof data == 'string') {
-          terminal_output += data
+          terminal_output += data;
         } else {
           for (let chunk of data) {
-            let arr = new Uint8Array(chunk)
-            let extra = decoder.decode(arr)
-            terminal_output += extra
+            let arr = new Uint8Array(chunk);
+            let extra = decoder.decode(arr);
+            terminal_output += extra;
           }
         }
-        output_el.innerHTML = ansi_converter.toHtml(terminal_output)
+        output_el.innerHTML = ansi_converter.toHtml(terminal_output);
         // scrolls to the bottom of the div
-        output_el.scrollIntoView(false)
-      }
-      worker.postMessage({version})
+        output_el.scrollIntoView(false);
+      };
+      worker.postMessage({version});
     </script>
   </body>
 </html>
