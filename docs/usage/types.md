@@ -7,7 +7,7 @@ with custom properties and validation.
 
 ## Standard Library Types
 
-*pydantic* supports many common types from the python standard library. If you need stricter processing see
+*pydantic* supports many common types from the Python standard library. If you need stricter processing see
 [Strict Types](#strict-types); if you need to constrain the values allowed (e.g. to require a positive int) see
 [Constrained Types](#constrained-types).
 
@@ -70,7 +70,7 @@ with custom properties and validation.
 : see [Datetime Types](#datetime-types) below for more detail on parsing and validation
 
 `typing.Any`
-: allows any value include `None`, thus an `Any` field is optional
+: allows any value including `None`, thus an `Any` field is optional
 
 `typing.Annotated`
 : allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The
@@ -234,21 +234,33 @@ _(This script is complete, it should run "as is")_
 
 The `Union` type allows a model attribute to accept different types, e.g.:
 
-!!! warning
-    This script is complete, it should run "as is". However, it may not reflect the desired behavior; see below.
+!!! info
+    You may get unexpected coercion with `Union`; see below.<br />
+    Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
 
 ```py
 {!.tmp_examples/types_union_incorrect.py!}
 ```
+_(This script is complete, it should run "as is")_
 
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
 the first one that matches. In the above example the `id` of `user_03` was defined as a `uuid.UUID` class (which
 is defined under the attribute's `Union` annotation) but as the `uuid.UUID` can be marshalled into an `int` it
 chose to match against the `int` type and disregarded the other types.
 
+!!! warning
+    `typing.Union` also ignores order when [defined](https://docs.python.org/3/library/typing.html#typing.Union),
+    so `Union[int, float] == Union[float, int]` which can lead to unexpected behaviour
+    when combined with matching based on the `Union` type order inside other type definitions, such as `List` and `Dict`
+    types (because Python treats these definitions as singletons).
+    For example, `Dict[str, Union[int, float]] == Dict[str, Union[float, int]]` with the order based on the first time it was defined.
+    Please note that this can also be [affected by third party libraries](https://github.com/samuelcolvin/pydantic/issues/2835)
+    and their internal type definitions and the import orders.
+
 As such, it is recommended that, when defining `Union` annotations, the most specific type is included first and
-followed by less specific types. In the above example, the `UUID` class should precede the `int` and `str`
-classes to preclude the unexpected representation as such:
+followed by less specific types.
+
+In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
 ```py
 {!.tmp_examples/types_union_correct.py!}
@@ -262,9 +274,48 @@ _(This script is complete, it should run "as is")_
 
     See more details in [Required Fields](models.md#required-fields).
 
+#### Discriminated Unions (a.k.a. Tagged Unions)
+
+When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
+be checked and validated and want to enforce this.
+To do that you can set the same field - let's call it `my_discriminator` - in each of the submodels
+with a discriminated value, which is one (or many) `Literal` value(s).
+For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+
+Setting a discriminated union has many benefits:
+
+- validation is faster since it is only attempted against one model
+- only one explicit error is raised in case of failure
+- the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
+
+```py
+{!.tmp_examples/types_union_discriminated.py!}
+```
+_(This script is complete, it should run "as is")_
+
+!!! note
+    Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
+    the `Union` and `discriminator` information. See below for an example!
+
+!!! warning
+    Discriminated unions cannot be used with only a single variant, such as `Union[Cat]`.
+
+    Python changes `Union[T]` into `T` at interpretation time, so it is not possible for `pydantic` to
+    distinguish fields of `Union[T]` from `T`.
+
+#### Nested Discriminated Unions
+
+Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
+In this case you can always create "intermediate" models with `__root__` and add your discriminator.
+
+```py
+{!.tmp_examples/types_union_discriminated_nested.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ### Enums and Choices
 
-*pydantic* uses python's standard `enum` classes to define choices.
+*pydantic* uses Python's standard `enum` classes to define choices.
 
 ```py
 {!.tmp_examples/types_choices.py!}
@@ -309,7 +360,7 @@ types:
   * `str`, following formats work:
 
     * `[-][DD ][HH:MM]SS[.ffffff]`
-    * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
+    * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
 ```py
 {!.tmp_examples/types_dt.py!}
@@ -385,10 +436,10 @@ _(This script is complete, it should run "as is")_
 ## Literal Type
 
 !!! note
-    This is a new feature of the python standard library as of python 3.8;
-    prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+    This is a new feature of the Python standard library as of Python 3.8;
+    prior to Python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
-*pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to python 3.8)
+*pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
 as a lightweight way to specify that a field may accept only specific literal values:
 
 ```py
@@ -423,10 +474,10 @@ _(This script is complete, it should run "as is")_
 ### TypedDict
 
 !!! note
-    This is a new feature of the python standard library as of python 3.8.
-    Prior to python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
-    But required and optional fields are properly differentiated only since python 3.9.
-    We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with python 3.8 as well.
+    This is a new feature of the Python standard library as of Python 3.8.
+    Prior to Python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
+    But required and optional fields are properly differentiated only since Python 3.9.
+    We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with Python 3.8 as well.
 
 
 ```py
@@ -465,7 +516,7 @@ _(This script is complete, it should run "as is")_
 
 
 `PyObject`
-: expects a string and loads the python object importable at that dotted path;
+: expects a string and loads the Python object importable at that dotted path;
   e.g. if `'math.cos'` was provided, the resulting field value would be the function `cos`
 
 `Color`
@@ -492,8 +543,17 @@ _(This script is complete, it should run "as is")_
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
 
+`RabbitMqDsn`
+: an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
+
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
+
+`MongoDsn`
+: a MongoDB DSN style URL; see [URLs](#urls)
+
+`KafkaDsn`
+: a kafka DSN style URL; see [URLs](#urls)
 
 `stricturl`
 : a type method for arbitrary URL constraints; see [URLs](#urls)
@@ -565,6 +625,10 @@ _(This script is complete, it should run "as is")_
 : type method for constraining sets;
   see [Constrained Types](#constrained-types)
 
+`confrozenset`
+: type method for constraining frozen sets;
+  see [Constrained Types](#constrained-types)
+
 `constr`
 : type method for constraining strs;
   see [Constrained Types](#constrained-types)
@@ -584,7 +648,9 @@ For URI/URL validation the following types are available:
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
+- `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+- `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port not required  
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
@@ -718,7 +784,7 @@ The `__str__` method for `Color` returns `self.as_named(fallback=True)`.
 
 !!! note
     the `as_hsl*` refer to hue, saturation, lightness "HSL" as used in html and most of the world, **not**
-    "HLS" as used in python's `colorsys`.
+    "HLS" as used in Python's `colorsys`.
 
 ### Secret Types
 
@@ -784,6 +850,7 @@ The following arguments are available when using the `conlist` type function
 - `item_type: Type[T]`: type of the list items
 - `min_items: int = None`: minimum number of items in the list
 - `max_items: int = None`: maximum number of items in the list
+- `unique_items: bool = None`: enforces list elements to be unique
 
 ### Arguments to `conset`
 The following arguments are available when using the `conset` type function
@@ -791,6 +858,13 @@ The following arguments are available when using the `conset` type function
 - `item_type: Type[T]`: type of the set items
 - `min_items: int = None`: minimum number of items in the set
 - `max_items: int = None`: maximum number of items in the set
+
+### Arguments to `confrozenset`
+The following arguments are available when using the `confrozenset` type function
+
+- `item_type: Type[T]`: type of the frozenset items
+- `min_items: int = None`: minimum number of items in the frozenset
+- `max_items: int = None`: maximum number of items in the frozenset
 
 ### Arguments to `conint`
 The following arguments are available when using the `conint` type function
