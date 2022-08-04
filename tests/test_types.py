@@ -22,11 +22,12 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
 )
 from uuid import UUID
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from pydantic import (
     UUID1,
@@ -64,6 +65,7 @@ from pydantic import (
     conbytes,
     condecimal,
     confloat,
+    confrozenset,
     conint,
     conlist,
     conset,
@@ -214,6 +216,39 @@ def test_constrained_list_too_short():
     ]
 
 
+def test_constrained_list_not_unique_hashable_items():
+    class ConListModelUnique(BaseModel):
+        v: conlist(int, unique_items=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelUnique(v=[1, 1, 2, 2, 2, 3])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'the list has duplicated items',
+            'type': 'value_error.list.unique_items',
+        }
+    ]
+
+
+def test_constrained_list_not_unique_unhashable_items():
+    class ConListModelUnique(BaseModel):
+        v: conlist(Set[int], unique_items=True)
+
+    m = ConListModelUnique(v=[{1}, {2}, {3}])
+    assert m.v == [{1}, {2}, {3}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        ConListModelUnique(v=[{1}, {1}, {2}, {2}, {2}, {3}])
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'the list has duplicated items',
+            'type': 'value_error.list.unique_items',
+        }
+    ]
+
+
 def test_constrained_list_optional():
     class Model(BaseModel):
         req: Optional[conlist(str, min_items=1)] = ...
@@ -294,8 +329,8 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4)
-        bar: conlist(str, min_items=1, max_items=4) = None
+        foo: List[int] = Field(..., min_items=2, max_items=4, unique_items=True)
+        bar: conlist(str, min_items=1, max_items=4, unique_items=False) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
@@ -305,12 +340,29 @@ def test_conlist():
     with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
         Model(foo=list(range(5)))
 
+    with pytest.raises(ValidationError, match='the list has duplicated items'):
+        Model(foo=[1, 1, 2, 2])
+
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'title': 'Foo', 'type': 'array', 'items': {'type': 'integer'}, 'minItems': 2, 'maxItems': 4},
-            'bar': {'title': 'Bar', 'type': 'array', 'items': {'type': 'string'}, 'minItems': 1, 'maxItems': 4},
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'minItems': 2,
+                'maxItems': 4,
+                'uniqueItems': True,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'minItems': 1,
+                'maxItems': 4,
+                'uniqueItems': False,
+            },
         },
         'required': ['foo'],
     }
@@ -366,7 +418,7 @@ def test_constrained_set_too_long():
         v: conset(int, max_items=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
-        ConSetModelMax(v=set(str(i) for i in range(11)))
+        ConSetModelMax(v={str(i) for i in range(11)})
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -529,6 +581,97 @@ def test_conset_not_required():
     assert Model().foo is None
 
 
+def test_confrozenset():
+    class Model(BaseModel):
+        foo: FrozenSet[int] = Field(..., min_items=2, max_items=4)
+        bar: confrozenset(str, min_items=1, max_items=4) = None
+
+    m = Model(foo=[1, 2], bar=['spoon'])
+    assert m.dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert isinstance(m.foo, frozenset)
+    assert isinstance(m.bar, frozenset)
+
+    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+
+    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+        Model(foo=[1])
+
+    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+        Model(foo=list(range(5)))
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'foo': {
+                'title': 'Foo',
+                'type': 'array',
+                'items': {'type': 'integer'},
+                'uniqueItems': True,
+                'minItems': 2,
+                'maxItems': 4,
+            },
+            'bar': {
+                'title': 'Bar',
+                'type': 'array',
+                'items': {'type': 'string'},
+                'uniqueItems': True,
+                'minItems': 1,
+                'maxItems': 4,
+            },
+        },
+        'required': ['foo'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=[1, 'x', 'y'])
+    errors = exc_info.value.errors()
+    assert len(errors) == 2
+    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=1)
+    assert exc_info.value.errors() == [
+        {'loc': ('foo',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+    ]
+
+
+def test_confrozenset_not_required():
+    class Model(BaseModel):
+        foo: Optional[FrozenSet[int]] = None
+
+    assert Model(foo=None).foo is None
+    assert Model().foo is None
+
+
+def test_constrained_frozenset_optional():
+    class Model(BaseModel):
+        req: Optional[confrozenset(str, min_items=1)] = ...
+        opt: Optional[confrozenset(str, min_items=1)]
+
+    assert Model(req=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(req=frozenset(), opt=frozenset())
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('req',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.frozenset.min_items',
+            'ctx': {'limit_value': 1},
+        },
+        {
+            'loc': ('opt',),
+            'msg': 'ensure this value has at least 1 items',
+            'type': 'value_error.frozenset.min_items',
+            'ctx': {'limit_value': 1},
+        },
+    ]
+
+    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
+
+
 class ConStringModel(BaseModel):
     v: constr(max_length=10) = 'foobar'
 
@@ -570,6 +713,24 @@ def test_constrained_str_lower_disabled():
 
     m = Model(v='ABCD')
     assert m.v == 'ABCD'
+
+
+def test_constrained_str_max_length_0():
+    class Model(BaseModel):
+        v: constr(max_length=0)
+
+    m = Model(v='')
+    assert m.v == ''
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='qwe')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('v',),
+            'msg': 'ensure this value has at most 0 characters',
+            'type': 'value_error.any_str.max_length',
+            'ctx': {'limit_value': 0},
+        }
+    ]
 
 
 def test_module_import():
@@ -983,7 +1144,7 @@ def test_dict():
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
         ({1, 2, '3'}, list({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), [0, 1, 4, 9, 16]),
+        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
@@ -1023,7 +1184,7 @@ def test_ordered_dict():
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
         ({1, 2, '3'}, tuple({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
@@ -1049,7 +1210,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i ** 2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
@@ -1089,7 +1250,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
         ({1, 2, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
-        ({i ** 2 for i in range(5)}, {0, 1, 4, 9, 16}),
+        ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
     ),
 )
 def test_set_success(value, result):
@@ -1229,8 +1390,7 @@ def test_infinite_iterable_validate_first():
 
     def str_iterable():
         while True:
-            for c in 'foobarbaz':
-                yield c
+            yield from 'foobarbaz'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(it=str_iterable(), b=3)
@@ -1457,7 +1617,7 @@ def test_strict_bytes_subclass():
 
     b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
     assert isinstance(b.v, MyStrictBytes)
-    assert b.v == 'foobar'.encode()
+    assert b.v == b'foobar'
 
 
 def test_strict_str():
@@ -1466,10 +1626,13 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(v=FruitEnum.banana)
+
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=123)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='str type expected'):
         Model(v=b'foobar')
 
 
@@ -1676,11 +1839,11 @@ def test_anystr_lower_disabled():
 
 
 @pytest.mark.parametrize(
-    'type_,value,result',
+    'type_args,value,result',
     [
-        (condecimal(gt=Decimal('42.24')), Decimal('43'), Decimal('43')),
+        (dict(gt=Decimal('42.24')), Decimal('43'), Decimal('43')),
         (
-            condecimal(gt=Decimal('42.24')),
+            dict(gt=Decimal('42.24')),
             Decimal('42'),
             [
                 {
@@ -1691,9 +1854,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
+        (dict(lt=Decimal('42.24')), Decimal('42'), Decimal('42')),
         (
-            condecimal(lt=Decimal('42.24')),
+            dict(lt=Decimal('42.24')),
             Decimal('43'),
             [
                 {
@@ -1704,10 +1867,10 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(ge=Decimal('42.24')), Decimal('43'), Decimal('43')),
-        (condecimal(ge=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
+        (dict(ge=Decimal('42.24')), Decimal('43'), Decimal('43')),
+        (dict(ge=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
         (
-            condecimal(ge=Decimal('42.24')),
+            dict(ge=Decimal('42.24')),
             Decimal('42'),
             [
                 {
@@ -1718,10 +1881,10 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(le=Decimal('42.24')), Decimal('42'), Decimal('42')),
-        (condecimal(le=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
+        (dict(le=Decimal('42.24')), Decimal('42'), Decimal('42')),
+        (dict(le=Decimal('42.24')), Decimal('42.24'), Decimal('42.24')),
         (
-            condecimal(le=Decimal('42.24')),
+            dict(le=Decimal('42.24')),
             Decimal('43'),
             [
                 {
@@ -1732,9 +1895,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
+        (dict(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
         (
-            condecimal(max_digits=2, decimal_places=1),
+            dict(max_digits=2, decimal_places=1),
             Decimal('0.99'),
             [
                 {
@@ -1746,7 +1909,7 @@ def test_anystr_lower_disabled():
             ],
         ),
         (
-            condecimal(max_digits=3, decimal_places=1),
+            dict(max_digits=3, decimal_places=1),
             Decimal('999'),
             [
                 {
@@ -1757,11 +1920,11 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
-        (condecimal(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
-        (condecimal(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
+        (dict(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
+        (dict(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
+        (dict(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
         (
-            condecimal(max_digits=20, decimal_places=2),
+            dict(max_digits=20, decimal_places=2),
             Decimal('7424742403889818000000'),
             [
                 {
@@ -1772,9 +1935,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
+        (dict(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
         (
-            condecimal(max_digits=5, decimal_places=2),
+            dict(max_digits=5, decimal_places=2),
             Decimal('7304E-3'),
             [
                 {
@@ -1785,9 +1948,9 @@ def test_anystr_lower_disabled():
                 }
             ],
         ),
-        (condecimal(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
+        (dict(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
         (
-            condecimal(max_digits=5, decimal_places=5),
+            dict(max_digits=5, decimal_places=5),
             Decimal('70E-6'),
             [
                 {
@@ -1800,7 +1963,7 @@ def test_anystr_lower_disabled():
         ),
         *[
             (
-                condecimal(decimal_places=2, max_digits=10),
+                dict(decimal_places=2, max_digits=10),
                 value,
                 [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
             )
@@ -1821,7 +1984,7 @@ def test_anystr_lower_disabled():
         ],
         *[
             (
-                condecimal(decimal_places=2, max_digits=10),
+                dict(decimal_places=2, max_digits=10),
                 Decimal(value),
                 [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
             )
@@ -1841,7 +2004,7 @@ def test_anystr_lower_disabled():
             )
         ],
         (
-            condecimal(multiple_of=Decimal('5')),
+            dict(multiple_of=Decimal('5')),
             Decimal('42'),
             [
                 {
@@ -1854,16 +2017,18 @@ def test_anystr_lower_disabled():
         ),
     ],
 )
-def test_decimal_validation(type_, value, result):
-    model = create_model('DecimalModel', foo=(type_, ...))
+def test_decimal_validation(type_args, value, result):
+    modela = create_model('DecimalModel', foo=(condecimal(**type_args), ...))
+    modelb = create_model('DecimalModel', foo=(Decimal, Field(..., **type_args)))
 
-    if not isinstance(result, Decimal):
-        with pytest.raises(ValidationError) as exc_info:
-            model(foo=value)
-        assert exc_info.value.errors() == result
-        assert exc_info.value.json().startswith('[')
-    else:
-        assert model(foo=value).foo == result
+    for model in (modela, modelb):
+        if not isinstance(result, Decimal):
+            with pytest.raises(ValidationError) as exc_info:
+                model(foo=value)
+            assert exc_info.value.errors() == result
+            assert exc_info.value.json().startswith('[')
+        else:
+            assert model(foo=value).foo == result
 
 
 @pytest.mark.parametrize('value,result', (('/test/path', Path('/test/path')), (Path('/test/path'), Path('/test/path'))))
@@ -2293,8 +2458,7 @@ def test_pattern():
         pattern: Pattern
 
     f = Foobar(pattern=r'^whatev.r\d$')
-    # SRE_Pattern for 3.6, Pattern for 3.7
-    assert f.pattern.__class__.__name__ in {'SRE_Pattern', 'Pattern'}
+    assert f.pattern.__class__.__name__ == 'Pattern'
     # check it's really a proper pattern
     assert f.pattern.match('whatever1')
     assert not f.pattern.match(' whatever1')
@@ -2815,6 +2979,153 @@ def test_none(value_type):
         {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
         {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
     ]
+
+
+def test_default_union_types():
+    class DefaultModel(BaseModel):
+        v: Union[int, bool, str]
+
+    assert DefaultModel(v=True).dict() == {'v': 1}
+    assert DefaultModel(v=1).dict() == {'v': 1}
+    assert DefaultModel(v='1').dict() == {'v': 1}
+
+    assert DefaultModel.schema() == {
+        'title': 'DefaultModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+        'required': ['v'],
+    }
+
+
+def test_smart_union_types():
+    class SmartModel(BaseModel):
+        v: Union[int, bool, str]
+
+        class Config:
+            smart_union = True
+
+    assert SmartModel(v=1).dict() == {'v': 1}
+    assert SmartModel(v=True).dict() == {'v': True}
+    assert SmartModel(v='1').dict() == {'v': '1'}
+
+    assert SmartModel.schema() == {
+        'title': 'SmartModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+        'required': ['v'],
+    }
+
+
+def test_default_union_class():
+    class A(BaseModel):
+        x: str
+
+    class B(BaseModel):
+        x: str
+
+    class Model(BaseModel):
+        y: Union[A, B]
+
+    assert isinstance(Model(y=A(x='a')).y, A)
+    # `B` instance is coerced to `A`
+    assert isinstance(Model(y=B(x='b')).y, A)
+
+
+def test_smart_union_class():
+    class A(BaseModel):
+        x: str
+
+    class B(BaseModel):
+        x: str
+
+    class Model(BaseModel):
+        y: Union[A, B]
+
+        class Config:
+            smart_union = True
+
+    assert isinstance(Model(y=A(x='a')).y, A)
+    assert isinstance(Model(y=B(x='b')).y, B)
+
+
+def test_default_union_subclass():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, str]
+
+    assert Model(x=MyStr('1')).x == 1
+
+
+def test_smart_union_subclass():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, str]
+
+        class Config:
+            smart_union = True
+
+    assert Model(x=MyStr('1')).x == '1'
+
+
+def test_default_union_compound_types():
+    class Model(BaseModel):
+        values: Union[Dict[str, str], List[str]]
+
+    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).dict() == {'values': {'L': '1'}}  # dict(['L1']) == {'L': '1'}
+
+
+def test_smart_union_compound_types():
+    class Model(BaseModel):
+        values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
+
+        class Config:
+            smart_union = True
+
+    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).dict() == {'values': ['L1']}
+    assert Model(values=('L1',)).dict() == {'values': {'L': '1'}}  # expected coercion into first dict if not a list
+    assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ('pika',)}).dict() == {'values': {'x': ['pika']}}
+    with pytest.raises(ValidationError) as e:
+        Model(values={'x': {'a': 'b'}})
+    assert e.value.errors() == [
+        {'loc': ('values', 'x'), 'msg': 'str type expected', 'type': 'type_error.str'},
+        {'loc': ('values',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {'loc': ('values', 'x'), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+    ]
+
+
+def test_smart_union_compouned_types_edge_case():
+    """For now, `smart_union` does not support well compound types"""
+
+    class Model(BaseModel, smart_union=True):
+        x: Union[List[str], List[int]]
+
+    # should consider [1, 2] valid and not coerce once `smart_union` is improved
+    assert Model(x=[1, 2]).x == ['1', '2']
+    # still coerce if needed
+    assert Model(x=[1, '2']).x == ['1', '2']
+
+
+def test_smart_union_typeddict():
+    class Dict1(TypedDict):
+        foo: str
+
+    class Dict2(TypedDict):
+        bar: str
+
+    class M(BaseModel):
+        d: Union[Dict2, Dict1]
+
+        class Config:
+            smart_union = True
+
+    assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
 
 @pytest.mark.parametrize(
