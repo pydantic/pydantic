@@ -156,6 +156,7 @@ def dataclass(
 
         should_validate_on_init = default_validate_on_init if validate_on_init is None else validate_on_init
         _add_pydantic_validation_attributes(cls, the_config, should_validate_on_init, dc_cls_doc)
+        dc_cls.__pydantic_model__.__try_update_forward_refs__(**{cls.__name__: cls})
         return dc_cls
 
     if _cls is None:
