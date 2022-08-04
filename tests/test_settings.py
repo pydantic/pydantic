@@ -890,36 +890,31 @@ def test_secrets_path(tmp_path):
     assert Settings().dict() == {'foo': 'foo_secret_value_str'}
 
 
-def test_secrets_uppercase_with_case_sensitive(tmp_path):
+def test_secrets_case_sensitive(tmp_path):
     (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
 
     class Settings(BaseSettings):
-        SECRET_VAR: str
         secret_var: Optional[str]
 
         class Config:
             secrets_dir = tmp_path
             case_sensitive = True
 
-    with pytest.warns(UserWarning) as record:
-        settings = Settings().dict()
-        path = Path(f'{tmp_path}/secret_var')
-        assert str(record[0].message) == f'Path "{str(path)}" does not exit'
-        assert settings == {'SECRET_VAR': 'foo_env_value_str', 'secret_var': None}
+    assert Settings().dict() == {'secret_var': None}
 
 
-def test_secrets_uppercase_without_case_sensitive(tmp_path):
+def test_secrets_case_insensitive(tmp_path):
     (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
 
     class Settings(BaseSettings):
-        SECRET_VAR: str
-        secret_var: str
+        secret_var: Optional[str]
 
         class Config:
             secrets_dir = tmp_path
+            case_sensitive = False
 
     settings = Settings().dict()
-    assert settings == {'SECRET_VAR': 'foo_env_value_str', 'secret_var': 'foo_env_value_str'}
+    assert settings == {'secret_var': 'foo_env_value_str'}
 
 
 def test_secrets_path_url(tmp_path):
@@ -970,11 +965,10 @@ def test_secrets_missing(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.warns(UserWarning) as record, pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         Settings()
-        path = Path(f'{tmp_path}/secret_var')
-        assert str(record[0].message) == f'Path "{str(path)}" does not exit'
-        assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
+
+    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_secrets_invalid_secrets_dir(tmp_path):
