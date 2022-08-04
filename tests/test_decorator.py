@@ -402,14 +402,10 @@ def test_validate(mocker):
 
 def test_annotated_use_of_alias():
     @validate_arguments
-    def foo(
-        a: Annotated[int, Field(alias='b')],
-        c: Annotated[int, Field()],
-        d: Annotated[int, Field(alias='')]
-    ):
+    def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field()], d: Annotated[int, Field(alias='')]):
         return a + c + d
 
-    assert foo(**{"b": 10, "c": 12, "": 1}) == 23
+    assert foo(**{'b': 10, 'c': 12, '': 1}) == 23
 
     with pytest.raises(ValidationError) as exc_info:
         assert foo(a=10, c=12, d=1) == 10
@@ -424,10 +420,7 @@ def test_annotated_use_of_alias():
 
 def test_use_of_alias():
     @validate_arguments
-    def foo(
-        c: int = Field(default_factory=lambda: 20),
-        a: int = Field(default_factory=lambda: 10, alias='b')
-    ):
+    def foo(c: int = Field(default_factory=lambda: 20), a: int = Field(default_factory=lambda: 10, alias='b')):
         return a + c
 
     assert foo(b=10) == 30

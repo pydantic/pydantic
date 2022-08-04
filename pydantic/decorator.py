@@ -149,7 +149,7 @@ class ValidatedFunction:
                     values[self.v_args_name] = [a] + [a for _, a in arg_iter]
                     break
 
-        var_kwargs = {}
+        var_kwargs: Dict[str, Any] = {}
         wrong_positional_args = []
         duplicate_kwargs = []
         fields_alias = [
