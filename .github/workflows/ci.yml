@@ -13,20 +13,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            ${{ env.pythonLocation }}
+            .mypy_cache
+          key: >
+            lint
+            ${{ runner.os }}
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements-linting.txt') }}
+
       - name: install
+        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           make install-linting
           pip freeze
 
       - name: lint
         run: make lint
+
+      - name: pyupgrade
+        run: make pyupgrade
 
       - name: mypy
         run: make mypy
@@ -37,51 +53,83 @@ jobs:
       - name: check dist
         run: make check-dist
 
+      - name: install node for pyright
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - run: npm install -g pyright
+
+      - run: make pyright
+
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.8
+        python-version: 3.9
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          docs-build
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('docs/requirements.txt') }}
 
     - name: install
+      if: steps.cache.outputs.cache-hit != 'true'
       run: make install-docs
 
     - name: build site
       run: make docs
 
     - name: Store docs site
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: docs
         path: site
 
-  test-linux:
-    name: test py${{ matrix.python-version }} on linux
+  test-linux-compiled:
+    name: test py${{ matrix.python-version }} on linux compiled
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-beta.5']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          test-linux-compiled
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('tests/requirements-testing.txt') }}
+
     - name: install
-      run: |
-        make install-testing
-        pip freeze
+      run: make install-testing
 
     - name: compile
       run: |
@@ -92,104 +140,150 @@ jobs:
 
     - run: mkdir coverage
 
-    - name: test compiled and deps
+    - name: test
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dY
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-yes
-
-    - name: uninstall deps
-      run: pip uninstall -y cython email-validator devtools python-dotenv
-
-    - name: test compiled without deps
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cY-dN
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled-yes-deps-no
-
-    - name: remove compiled binaries
-      run: |
-        rm -r pydantic/*.so pydantic/*.c pydantic/__pycache__
-        ls -alh
-        ls -alh pydantic/
-
-    - name: test uncompiled without deps
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-cN-dN
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled-no-deps-no
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-compiled
+        CONTEXT: linux-py${{ matrix.python-version }}-compiled
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
 
-  test-windows-mac:
+  test-not-compiled:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos, windows]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        os: [ubuntu, macos, windows]
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+        include:
+        - os: ubuntu
+
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
       COMPILED: no
       DEPS: yes
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          test-not-compiled
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('tests/requirements-testing.txt') }}
 
     - name: install
       run: make install-testing
 
+    - run: pip freeze
+
     - run: mkdir coverage
 
-    - name: test
+    - name: test with deps
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ matrix.os }}-py${{ matrix.python-version }}
-        CONTEXT: ${{ matrix.os }}-py${{ matrix.python-version }}
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
+        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
+
+    - name: uninstall deps
+      run: pip uninstall -y cython email-validator devtools python-dotenv
+
+    - name: test without deps
+      run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: store coverage files
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: coverage
+
+  test-old-mypy:
+    name: test mypy v${{ matrix.mypy-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mypy-version: ['0.910', '0.921', '0.931', '0.942', '0.950']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: install
+      run: |
+        make install-testing
+        pip freeze
+
+    - name: uninstall deps
+      run: pip uninstall -y mypy tomli toml
+
+    - name: install specific mypy version
+      run: pip install mypy==${{ matrix.mypy-version }}
+
+    - run: mkdir coverage
+
+    - name: run tests
+      run: pytest --cov=pydantic tests/mypy
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
+        CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v3
       with:
         name: coverage
         path: coverage
 
   coverage-combine:
-    needs: [test-linux, test-windows-mac]
+    needs: [test-linux-compiled, test-not-compiled, test-old-mypy]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
       - name: get coverage files
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: coverage
           path: coverage
 
       - run: pip install coverage
 
-      - run: ls -la
+      - run: ls -la coverage
       - run: coverage combine coverage
       - run: coverage report
       - run: coverage html --show-contexts
 
       - name: Store coverage html
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-html
           path: htmlcov
@@ -198,12 +292,12 @@ jobs:
     name: test fastAPI
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.7'
+        python-version: '3.10'
 
     - name: install
       run: make install-testing
@@ -211,50 +305,27 @@ jobs:
     - name: test
       run: make test-fastapi
 
-  benchmark:
-    name: run benchmarks
-    runs-on: ubuntu-latest
-    env:
-      BENCHMARK_REPEATS: 1
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: set up python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-
-    - name: install and build
-      run: |
-        make build
-        make install-benchmarks
-
-    - run: make benchmark-pydantic
-    - run: make benchmark-all
-    - run: make benchmark-json
-
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux, test-windows-mac, test-fastapi, benchmark]
+    needs: [lint, test-linux-compiled, test-not-compiled, test-old-mypy, test-fastapi]
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['6', '7', '8', '9', '10']
+        python-version: ['7', '8', '9', '10']
         include:
         - os: ubuntu
           platform: linux
         - os: windows
           ls: dir
 
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: set up python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.8'
 
@@ -290,7 +361,7 @@ jobs:
         twine check dist/*
 
     - name: Store dist artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pypi_files
         path: dist
@@ -302,21 +373,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: set up python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
 
       - name: get dist artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: pypi_files
           path: dist
 
       - name: get docs
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docs
           path: site

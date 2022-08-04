@@ -219,7 +219,7 @@ def test_post_init_post_parse():
 
 def test_post_init_post_parse_types():
     @pydantic.dataclasses.dataclass
-    class CustomType(object):
+    class CustomType:
         b: int
 
     @pydantic.dataclasses.dataclass
@@ -1338,3 +1338,11 @@ def test_post_init_allow_extra():
             self.a *= 2
 
     assert Foobar(a=1, b='a', c=4).__dict__ == {'a': 2, 'b': 'a', 'c': 4, '__pydantic_initialised__': True}
+
+
+def test_self_reference_dataclass():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        self_reference: 'MyDataclass'
+
+    assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass

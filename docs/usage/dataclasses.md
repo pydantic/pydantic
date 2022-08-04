@@ -1,7 +1,5 @@
 If you don't want to use _pydantic_'s `BaseModel` you can instead get the same data validation on standard
-[dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in python 3.7).
-
-Dataclasses work in python 3.6 using the [dataclasses backport package](https://github.com/ericvsmith/dataclasses).
+[dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in Python 3.7).
 
 ```py
 {!.tmp_examples/dataclasses_main.py!}
@@ -144,7 +142,7 @@ _(This script is complete, it should run "as is")_
 
 ### Difference with stdlib dataclasses
 
-Note that the `dataclasses.dataclass` from python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
+Note that the `dataclasses.dataclass` from Python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
 
 When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` method to the `__post_init_post_parse__` method, and only leave behind part of code which needs to be executed before validation.
 

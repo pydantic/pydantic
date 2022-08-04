@@ -7,7 +7,7 @@ from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
 from .typing import display_as_type
 
-__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema', 'schema_json')
+__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema_of', 'schema_json_of')
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
@@ -82,11 +82,11 @@ def parse_raw_as(
     return parse_obj_as(type_, obj, type_name=type_name)
 
 
-def schema(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
+def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema(**schema_kwargs)
 
 
-def schema_json(type_: Any, *, title: Optional[NameFactory] = None, **schema_json_kwargs: Any) -> str:
+def schema_json_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_json_kwargs: Any) -> str:
     """Generate a JSON schema (as JSON) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema_json(**schema_json_kwargs)

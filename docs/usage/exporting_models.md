@@ -97,7 +97,7 @@ the values should be functions which serialise that type (see the example below)
 _(This script is complete, it should run "as is")_
 
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
-as an optional alternative which implements ISO 8601 time diff encoding.
+as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time diff encoding.
 
 The `json_encoders` are also merged during the models inheritance with the child
 encoders taking precedence over the parent one.
@@ -109,6 +109,9 @@ _(This script is complete, it should run "as is")_
 
 ### Serialising self-reference or other models
 
+By default, models are serialised as dictionaries.
+If you want to serialise them differently, you can add `models_as_dict=False` when calling `json()` method
+and add the classes of the model in `json_encoders`.
 In case of forward references, you can use a string with the class name instead of the class itself
 ```py
 {!.tmp_examples/exporting_models_json_forward_ref.py!}

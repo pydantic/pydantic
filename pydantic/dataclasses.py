@@ -33,14 +33,14 @@ validation without altering default `M` behaviour.
 """
 from contextlib import contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
 from .class_validators import gather_all_validators
 from .config import BaseConfig, ConfigDict, Extra, get_config
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
+from .main import __dataclass_transform__, create_model, validate_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
@@ -53,17 +53,17 @@ if TYPE_CHECKING:
 
     class Dataclass:
         # stdlib attributes
-        __dataclass_fields__: Dict[str, Any]
-        __dataclass_params__: Any  # in reality `dataclasses._DataclassParams`
-        __post_init__: Callable[..., None]
+        __dataclass_fields__: ClassVar[Dict[str, Any]]
+        __dataclass_params__: ClassVar[Any]  # in reality `dataclasses._DataclassParams`
+        __post_init__: ClassVar[Callable[..., None]]
 
         # Added by pydantic
-        __pydantic_run_validation__: bool
-        __post_init_post_parse__: Callable[..., None]
-        __pydantic_initialised__: bool
-        __pydantic_model__: Type[BaseModel]
-        __pydantic_validate_values__: Callable[['Dataclass'], None]
-        __pydantic_has_field_info_default__: bool  # whether or not a `pydantic.Field` is used as default value
+        __pydantic_run_validation__: ClassVar[bool]
+        __post_init_post_parse__: ClassVar[Callable[..., None]]
+        __pydantic_initialised__: ClassVar[bool]
+        __pydantic_model__: ClassVar[Type[BaseModel]]
+        __pydantic_validate_values__: ClassVar[Callable[['Dataclass'], None]]
+        __pydantic_has_field_info_default__: ClassVar[bool]  # whether a `pydantic.Field` is used as default value
 
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             pass
@@ -86,6 +86,7 @@ __all__ = [
 ]
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 @overload
 def dataclass(
     *,
@@ -101,6 +102,7 @@ def dataclass(
     ...
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 @overload
 def dataclass(
     _cls: Type[Any],
@@ -117,6 +119,7 @@ def dataclass(
     ...
 
 
+@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[Any]] = None,
     *,
@@ -305,9 +308,8 @@ def create_pydantic_model_from_dataclass(
 
         if field.default is not dataclasses.MISSING:
             default = field.default
-        # mypy issue 7020 and 708
-        elif field.default_factory is not dataclasses.MISSING:  # type: ignore
-            default_factory = field.default_factory  # type: ignore
+        elif field.default_factory is not dataclasses.MISSING:
+            default_factory = field.default_factory
         else:
             default = Required
 
@@ -321,7 +323,12 @@ def create_pydantic_model_from_dataclass(
 
     validators = gather_all_validators(dc_cls)
     model: Type['BaseModel'] = create_model(
-        dc_cls.__name__, __config__=config, __module__=dc_cls.__module__, __validators__=validators, **field_definitions
+        dc_cls.__name__,
+        __config__=config,
+        __module__=dc_cls.__module__,
+        __validators__=validators,
+        __cls_kwargs__={'__resolve_forward_refs__': False},
+        **field_definitions,
     )
     model.__doc__ = dc_cls_doc if dc_cls_doc is not None else dc_cls.__doc__ or ''
     return model

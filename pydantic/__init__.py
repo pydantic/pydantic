@@ -67,8 +67,8 @@ __all__ = [
     'parse_file_as',
     'parse_obj_as',
     'parse_raw_as',
-    'schema',
-    'schema_json',
+    'schema_of',
+    'schema_json_of',
     # types
     'NoneStr',
     'NoneBytes',

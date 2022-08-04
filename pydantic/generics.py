@@ -24,20 +24,20 @@ from .fields import DeferredType
 from .main import BaseModel, create_model
 from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .utils import all_identical, lenient_issubclass
+from .utils import LimitedDict, all_identical, lenient_issubclass
 
-_generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
+_generic_types_cache: LimitedDict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = LimitedDict()
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
-_assigned_parameters: Dict[Type[Any], Parametrization] = {}
+_assigned_parameters: LimitedDict[Type[Any], Parametrization] = LimitedDict()
 
 
 class GenericModel(BaseModel):
@@ -98,6 +98,7 @@ class GenericModel(BaseModel):
                 __base__=(cls,) + tuple(cls.__parameterized_bases__(typevars_map)),
                 __config__=None,
                 __validators__=validators,
+                __cls_kwargs__=None,
                 **fields,
             ),
         )
@@ -180,7 +181,7 @@ class GenericModel(BaseModel):
         def build_base_model(
             base_model: Type[GenericModel], mapped_types: Parametrization
         ) -> Iterator[Type[GenericModel]]:
-            base_parameters = tuple([mapped_types[param] for param in base_model.__parameters__])
+            base_parameters = tuple(mapped_types[param] for param in base_model.__parameters__)
             parameterized_base = base_model.__class_getitem__(base_parameters)
             if parameterized_base is base_model or parameterized_base is cls:
                 # Avoid duplication in MRO
@@ -258,6 +259,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             # `type` or `collections.abc.Callable` need to be translated.
             # See: https://www.python.org/dev/peps/pep-0585
             origin_type = getattr(typing, type_._name)
+        assert origin_type is not None
         return origin_type[resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same

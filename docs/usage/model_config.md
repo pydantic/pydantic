@@ -91,7 +91,7 @@ _(This script is complete, it should run "as is")_
 for validation, for use with `orm_mode`; see [Data binding](models.md#data-binding).
 
 **`alias_generator`**
-: a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
+: a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
 
 **`keep_untouched`**
 : a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
@@ -110,7 +110,7 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
 
 **`underscore_attrs_are_private`**
-: whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
+: whether to treat any underscore non-class var attrs as private, or leave them as is; see [Private model attributes](models.md#private-model-attributes)
 
 **`copy_on_model_validation`**
 : whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
