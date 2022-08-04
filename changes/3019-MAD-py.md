@@ -1,1 +1,1 @@
-added alias functionality in the validate_arguments decorator
+`validate_arguments` decorator now supports `alias`
