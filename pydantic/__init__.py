@@ -59,6 +59,7 @@ __all__ = [
     'PostgresDsn',
     'AmqpDsn',
     'RedisDsn',
+    'MongoDsn',
     'KafkaDsn',
     'validate_email',
     # parse
