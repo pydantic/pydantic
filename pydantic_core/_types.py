@@ -33,7 +33,7 @@ class Config(TypedDict, total=False):
     config_merge_priority: int
     # settings related to typed_dicts only
     typed_dict_extra_behavior: Literal['allow', 'forbid', 'ignore']
-    typed_dict_full: bool  # default: True
+    typed_dict_total: bool  # default: True
     # used on typed-dicts and tagged union keys
     from_attributes: bool
     revalidate_models: bool
@@ -136,7 +136,7 @@ class TypedDictSchema(TypedDict, total=False):
     ref: str
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: Literal['allow', 'forbid', 'ignore']
-    full: bool  # default: True
+    total: bool  # default: True
     populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
     from_attributes: bool
 

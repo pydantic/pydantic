@@ -74,8 +74,8 @@ impl BuildValidator for TypedDictValidator {
             intern!(py, "extra_behavior"),
             intern!(py, "typed_dict_extra_behavior"),
         )?;
-        let full =
-            schema_or_config(schema, config, intern!(py, "full"), intern!(py, "typed_dict_full"))?.unwrap_or(true);
+        let total =
+            schema_or_config(schema, config, intern!(py, "total"), intern!(py, "typed_dict_total"))?.unwrap_or(true);
         let from_attributes = schema_or_config_same(schema, config, intern!(py, "from_attributes"))?.unwrap_or(false);
         let populate_by_name = schema_or_config_same(schema, config, intern!(py, "populate_by_name"))?.unwrap_or(false);
 
@@ -137,7 +137,7 @@ impl BuildValidator for TypedDictValidator {
                     }
                     required
                 }
-                None => full,
+                None => total,
             };
 
             let on_error = match field_info.get_as::<&str>(intern!(py, "on_error"))? {

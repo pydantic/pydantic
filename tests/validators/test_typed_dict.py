@@ -401,11 +401,11 @@ def test_fields_required_by_default_with_default():
 
 
 def test_all_optional_fields():
-    """By default all fields should be optional if `full` is set to `False`"""
+    """By default all fields should be optional if `total` is set to `False`"""
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'full': False,
+            'total': False,
             'return_fields_set': True,
             'fields': {'x': {'schema': {'type': 'str', 'strict': True}}, 'y': {'schema': {'type': 'str'}}},
         }
@@ -427,7 +427,7 @@ def test_all_optional_fields_with_required_fields():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'full': False,
+            'total': False,
             'return_fields_set': True,
             'fields': {
                 'x': {'schema': {'type': 'str', 'strict': True}, 'required': True},
