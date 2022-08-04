@@ -22,12 +22,22 @@ from typing_extensions import Annotated
 from .class_validators import gather_all_validators
 from .fields import DeferredType
 from .main import BaseModel, create_model
+from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .utils import all_identical, lenient_issubclass
+from .utils import LimitedDict, all_identical, lenient_issubclass
 
-_generic_types_cache: Dict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = {}
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
+
+Parametrization = Mapping[TypeVarType, Type[Any]]
+
+_generic_types_cache: LimitedDict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = LimitedDict()
+# _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
+# as captured during construction of the class (not instances).
+# E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
+# `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
+# (This information is only otherwise available after creation from the class name string).
+_assigned_parameters: LimitedDict[Type[Any], Parametrization] = LimitedDict()
 
 
 class GenericModel(BaseModel):
@@ -85,12 +95,15 @@ class GenericModel(BaseModel):
             create_model(
                 model_name,
                 __module__=model_module or cls.__module__,
-                __base__=cls,
+                __base__=(cls,) + tuple(cls.__parameterized_bases__(typevars_map)),
                 __config__=None,
                 __validators__=validators,
+                __cls_kwargs__=None,
                 **fields,
             ),
         )
+
+        _assigned_parameters[created_model] = typevars_map
 
         if called_globally:  # create global reference and therefore allow pickling
             object_by_reference = None
@@ -141,9 +154,73 @@ class GenericModel(BaseModel):
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 
+    @classmethod
+    def __parameterized_bases__(cls, typevars_map: Parametrization) -> Iterator[Type[Any]]:
+        """
+        Returns unbound bases of cls parameterised to given type variables
+
+        :param typevars_map: Dictionary of type applications for binding subclasses.
+            Given a generic class `Model` with 2 type variables [S, T]
+            and a concrete model `Model[str, int]`,
+            the value `{S: str, T: int}` would be passed to `typevars_map`.
+        :return: an iterator of generic sub classes, parameterised by `typevars_map`
+            and other assigned parameters of `cls`
+
+        e.g.:
+        ```
+        class A(GenericModel, Generic[T]):
+            ...
+
+        class B(A[V], Generic[V]):
+            ...
+
+        assert A[int] in B.__parameterized_bases__({V: int})
+        ```
+        """
+
+        def build_base_model(
+            base_model: Type[GenericModel], mapped_types: Parametrization
+        ) -> Iterator[Type[GenericModel]]:
+            base_parameters = tuple(mapped_types[param] for param in base_model.__parameters__)
+            parameterized_base = base_model.__class_getitem__(base_parameters)
+            if parameterized_base is base_model or parameterized_base is cls:
+                # Avoid duplication in MRO
+                return
+            yield parameterized_base
+
+        for base_model in cls.__bases__:
+            if not issubclass(base_model, GenericModel):
+                # not a class that can be meaningfully parameterized
+                continue
+            elif not getattr(base_model, '__parameters__', None):
+                # base_model is "GenericModel"  (and has no __parameters__)
+                # or
+                # base_model is already concrete, and will be included transitively via cls.
+                continue
+            elif cls in _assigned_parameters:
+                if base_model in _assigned_parameters:
+                    # cls is partially parameterised but not from base_model
+                    # e.g. cls = B[S], base_model = A[S]
+                    # B[S][int] should subclass A[int],  (and will be transitively via B[int])
+                    # but it's not viable to consistently subclass types with arbitrary construction
+                    # So don't attempt to include A[S][int]
+                    continue
+                else:  # base_model not in _assigned_parameters:
+                    # cls is partially parameterized, base_model is original generic
+                    # e.g.  cls = B[str, T], base_model = B[S, T]
+                    # Need to determine the mapping for the base_model parameters
+                    mapped_types: Parametrization = {
+                        key: typevars_map.get(value, value) for key, value in _assigned_parameters[cls].items()
+                    }
+                    yield from build_base_model(base_model, mapped_types)
+            else:
+                # cls is base generic, so base_class has a distinct base
+                # can construct the Parameterised base model using typevars_map directly
+                yield from build_base_model(base_model, typevars_map)
+
 
 def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
-    """Return type with all occurances of `type_map` keys recursively replaced with their values.
+    """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
     :param type_: Any type, class or generic alias
     :param type_map: Mapping from `TypeVar` instance to concrete types.
@@ -182,6 +259,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             # `type` or `collections.abc.Callable` need to be translated.
             # See: https://www.python.org/dev/peps/pep-0585
             origin_type = getattr(typing, type_._name)
+        assert origin_type is not None
         return origin_type[resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
@@ -200,6 +278,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
         if all_identical(type_, resolved_list):
             return type_
         return resolved_list
+
+    # For JsonWrapperValue, need to handle its inner type to allow correct parsing
+    # of generic Json arguments like Json[T]
+    if not origin_type and lenient_issubclass(type_, JsonWrapper):
+        type_.inner_type = replace_types(type_.inner_type, type_map)
+        return type_
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
