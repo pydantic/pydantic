@@ -1,12 +1,15 @@
 import pytest
 
 from pydantic import (
+    AmqpDsn,
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
     EmailStr,
     FileUrl,
     HttpUrl,
     KafkaDsn,
+    MongoDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
@@ -443,6 +446,37 @@ def test_postgres_dsns():
     assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
 
+def test_amqp_dsns():
+    class Model(BaseModel):
+        a: AmqpDsn
+
+    m = Model(a='amqp://user:pass@localhost:1234/app')
+    assert m.a == 'amqp://user:pass@localhost:1234/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
+
+    m = Model(a='amqps://user:pass@localhost:5432//')
+    assert m.a == 'amqps://user:pass@localhost:5432//'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    # Password is not required for AMQP protocol
+    m = Model(a='amqp://localhost:1234/app')
+    assert m.a == 'amqp://localhost:1234/app'
+    assert m.a.user is None
+    assert m.a.password is None
+
+    # Only schema is required for AMQP protocol.
+    # https://www.rabbitmq.com/uri-spec.html
+    m = Model(a='amqps://')
+    assert m.a.scheme == 'amqps'
+    assert m.a.host is None
+    assert m.a.port is None
+    assert m.a.path is None
+
+
 def test_redis_dsns():
     class Model(BaseModel):
         a: RedisDsn
@@ -475,6 +509,33 @@ def test_redis_dsns():
     assert m.a.host == 'localhost'
     assert m.a.port == '6379'
     assert m.a.path == '/0'
+
+
+def test_mongodb_dsns():
+    class Model(BaseModel):
+        a: MongoDsn
+
+    # TODO: Need to unit tests about "Replica Set", "Sharded cluster" and other deployment modes of MongoDB
+    m = Model(a='mongodb://user:pass@localhost:1234/app')
+    assert m.a == 'mongodb://user:pass@localhost:1234/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    # Password is not required for MongoDB protocol
+    m = Model(a='mongodb://localhost:1234/app')
+    assert m.a == 'mongodb://localhost:1234/app'
+    assert m.a.user is None
+    assert m.a.password is None
+
+    # Only schema and host is required for MongoDB protocol
+    m = Model(a='mongodb://localhost')
+    assert m.a.scheme == 'mongodb'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '27017'
 
 
 def test_kafka_dsns():
@@ -530,6 +591,41 @@ def test_custom_schemes():
 )
 def test_build_url(kwargs, expected):
     assert AnyUrl(None, **kwargs) == expected
+
+
+@pytest.mark.parametrize(
+    'kwargs,expected',
+    [
+        (dict(scheme='http', host='example.net'), 'http://example.net'),
+        (dict(scheme='https', host='example.net'), 'https://example.net'),
+        (dict(scheme='http', user='foo', host='example.net'), 'http://foo@example.net'),
+        (dict(scheme='https', user='foo', host='example.net'), 'https://foo@example.net'),
+        (dict(scheme='http', user='foo', host='example.net', port='123'), 'http://foo@example.net:123'),
+        (dict(scheme='https', user='foo', host='example.net', port='123'), 'https://foo@example.net:123'),
+        (dict(scheme='http', user='foo', password='x', host='example.net'), 'http://foo:x@example.net'),
+        (dict(scheme='http2', user='foo', password='x', host='example.net'), 'http2://foo:x@example.net'),
+        (dict(scheme='http', host='example.net', query='a=b', fragment='c=d'), 'http://example.net?a=b#c=d'),
+        (dict(scheme='http2', host='example.net', query='a=b', fragment='c=d'), 'http2://example.net?a=b#c=d'),
+        (dict(scheme='http', host='example.net', port='1234'), 'http://example.net:1234'),
+        (dict(scheme='https', host='example.net', port='1234'), 'https://example.net:1234'),
+    ],
+)
+@pytest.mark.parametrize('klass', [AnyHttpUrl, HttpUrl])
+def test_build_any_http_url(klass, kwargs, expected):
+    assert klass(None, **kwargs) == expected
+
+
+@pytest.mark.parametrize(
+    'klass, kwargs,expected',
+    [
+        (AnyHttpUrl, dict(scheme='http', user='foo', host='example.net', port='80'), 'http://foo@example.net:80'),
+        (AnyHttpUrl, dict(scheme='https', user='foo', host='example.net', port='443'), 'https://foo@example.net:443'),
+        (HttpUrl, dict(scheme='http', user='foo', host='example.net', port='80'), 'http://foo@example.net'),
+        (HttpUrl, dict(scheme='https', user='foo', host='example.net', port='443'), 'https://foo@example.net'),
+    ],
+)
+def test_build_http_url_port(klass, kwargs, expected):
+    assert klass(None, **kwargs) == expected
 
 
 def test_son():

@@ -5,7 +5,6 @@ Do a little skipping about with types to demonstrate its usage.
 """
 import json
 import os
-import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path, PurePath
 from typing import Any, Dict, Generic, List, Optional, TypeVar
@@ -134,23 +133,24 @@ assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
 
 
-if sys.version_info >= (3, 7):
-    T = TypeVar('T')
+T = TypeVar('T')
 
-    class WrapperModel(GenericModel, Generic[T]):
-        payload: T
 
-    int_instance = WrapperModel[int](payload=1)
-    int_instance.payload += 1
-    assert int_instance.payload == 2
+class WrapperModel(GenericModel, Generic[T]):
+    payload: T
 
-    str_instance = WrapperModel[str](payload='a')
-    str_instance.payload += 'a'
-    assert str_instance.payload == 'aa'
 
-    model_instance = WrapperModel[Model](payload=m)
-    model_instance.payload.list_of_ints.append(4)
-    assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
+int_instance = WrapperModel[int](payload=1)
+int_instance.payload += 1
+assert int_instance.payload == 2
+
+str_instance = WrapperModel[str](payload='a')
+str_instance.payload += 'a'
+assert str_instance.payload == 'aa'
+
+model_instance = WrapperModel[Model](payload=m)
+model_instance.payload.list_of_ints.append(4)
+assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
 
 
 class WithField(BaseModel):
