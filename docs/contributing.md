@@ -10,7 +10,7 @@ To make it as simple as possible for us to help you, please include the output o
 ```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
-If you're using *pydantic* prior to **v1.3** (when `version_info()` was added), please manually include OS, python
+If you're using *pydantic* prior to **v1.3** (when `version_info()` was added), please manually include OS, Python
 version and pydantic version.
 
 Please try to always include the above unless you're unable to install *pydantic* or **know** it's not relevant
@@ -33,7 +33,7 @@ To make contributing as easy and fast as possible, you'll want to run tests and 
 *pydantic* has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
 Because of this, setting up and running the tests should be very simple.
 
-You'll need to have **python 3.6**, **3.7**, **3.8**, or **3.9**, **virtualenv**, **git**, and **make** installed.
+You'll need to have a version between **Python 3.7 and 3.10**, **virtualenv**, **git**, and **make** installed.
 
 ```bash
 # 1. clone your fork and cd into the repo directory
@@ -41,9 +41,10 @@ git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
 # 2. Set up a virtualenv for running tests
-virtualenv -p `which python3.7` env
+virtualenv -p `which python3.8` env
 source env/bin/activate
-# (or however you prefer to setup a python environment, 3.6 will work too)
+# Building docs requires 3.8. If you don't need to build docs you can use
+# whichever version; 3.7 will work too.
 
 # 3. Install pydantic, dependencies, test dependencies and doc dependencies
 make install

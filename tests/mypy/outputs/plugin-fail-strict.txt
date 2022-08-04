@@ -15,7 +15,7 @@
 87: error: Missing named argument "c" for "DefaultTestingModel"  [call-arg]
 87: error: Missing named argument "d" for "DefaultTestingModel"  [call-arg]
 87: error: Missing named argument "e" for "DefaultTestingModel"  [call-arg]
-91: error: Name 'Undefined' is not defined  [name-defined]
+91: error: Name "Undefined" is not defined  [name-defined]
 94: error: Missing named argument "undefined" for "UndefinedAnnotationModel"  [call-arg]
 101: error: Missing named argument "y" for "construct" of "Model"  [call-arg]
 103: error: Argument "x" to "construct" of "Model" has incompatible type "str"; expected "int"  [arg-type]
@@ -31,9 +31,5 @@
 181: error: Untyped fields disallowed  [pydantic-field]
 185: error: Unexpected keyword argument "x" for "AliasGeneratorModel2"  [call-arg]
 186: error: Unexpected keyword argument "z" for "AliasGeneratorModel2"  [call-arg]
-189: error: Name 'Missing' is not defined  [name-defined]
-197: error: No overload variant of "dataclass" matches argument type "Dict[<nothing>, <nothing>]"  [call-overload]
-197: note: Possible overload variant:
-197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], Type[Dataclass]]
-197: note:     <1 more non-matching overload not shown>
+189: error: Name "Missing" is not defined  [name-defined]
 219: error: Property "y" defined in "FrozenModel" is read-only  [misc]

@@ -4,16 +4,21 @@ Test pydantic's compliance with mypy.
 Do a little skipping about with types to demonstrate its usage.
 """
 import json
-import sys
+import os
 from datetime import date, datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Dict, Generic, List, Optional, TypeVar
 from uuid import UUID
 
+from typing_extensions import TypedDict
+
 from pydantic import (
     UUID1,
+    BaseConfig,
     BaseModel,
+    BaseSettings,
     DirectoryPath,
+    Extra,
     FilePath,
     FutureDate,
     Json,
@@ -33,7 +38,10 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    create_model,
+    create_model_from_typeddict,
     root_validator,
+    stricturl,
     validate_arguments,
     validator,
 )
@@ -125,23 +133,24 @@ assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
 
 
-if sys.version_info >= (3, 7):
-    T = TypeVar('T')
+T = TypeVar('T')
 
-    class WrapperModel(GenericModel, Generic[T]):
-        payload: T
 
-    int_instance = WrapperModel[int](payload=1)
-    int_instance.payload += 1
-    assert int_instance.payload == 2
+class WrapperModel(GenericModel, Generic[T]):
+    payload: T
 
-    str_instance = WrapperModel[str](payload='a')
-    str_instance.payload += 'a'
-    assert str_instance.payload == 'aa'
 
-    model_instance = WrapperModel[Model](payload=m)
-    model_instance.payload.list_of_ints.append(4)
-    assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
+int_instance = WrapperModel[int](payload=1)
+int_instance.payload += 1
+assert int_instance.payload == 2
+
+str_instance = WrapperModel[str](payload='a')
+str_instance.payload += 'a'
+assert str_instance.payload == 'aa'
+
+model_instance = WrapperModel[Model](payload=m)
+model_instance.payload.list_of_ints.append(4)
+assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
 
 
 class WithField(BaseModel):
@@ -239,3 +248,45 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+
+stricturl(allowed_schemes={'http'})
+stricturl(allowed_schemes=frozenset({'http'}))
+stricturl(allowed_schemes=('s3', 's3n', 's3a'))
+
+
+class SomeDict(TypedDict):
+    val: int
+    name: str
+
+
+obj: SomeDict = {
+    'val': 12,
+    'name': 'John',
+}
+
+
+class Config(BaseConfig):
+    title = 'Record'
+    extra = Extra.ignore
+    max_anystr_length = 1234
+
+
+class Settings(BaseSettings):
+    ...
+
+
+class CustomPath(PurePath):
+    def __init__(self, *args: str):
+        self.path = os.path.join(*args)
+
+    def __fspath__(self) -> str:
+        return f'a/custom/{self.path}'
+
+
+def dont_check_path_existence() -> None:
+    Settings(_env_file='a/path', _secrets_dir='a/path')
+    Settings(_env_file=CustomPath('a/path'), _secrets_dir=CustomPath('a/path'))
+
+
+create_model_from_typeddict(SomeDict)(**obj)
+DynamicModel = create_model('DynamicModel')

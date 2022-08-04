@@ -1,8 +1,9 @@
 import os
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
@@ -78,7 +79,7 @@ def test_nested_env_with_basemodel(env):
     assert s.top == {'apple': 'value', 'banana': 'secret_value'}
 
 
-def test_nested_env_with_dict(env):
+def test_merge_dict(env):
     class Settings(BaseSettings):
         top: Dict[str, str]
 
@@ -87,6 +88,80 @@ def test_nested_env_with_dict(env):
     env.set('top', '{"banana": "secret_value"}')
     s = Settings(top={'apple': 'value'})
     assert s.top == {'apple': 'value', 'banana': 'secret_value'}
+
+
+def test_nested_env_delimiter(env):
+    class SubSubValue(BaseSettings):
+        v6: str
+
+    class SubValue(BaseSettings):
+        v4: str
+        v5: int
+        sub_sub: SubSubValue
+
+    class TopValue(BaseSettings):
+        v1: str
+        v2: str
+        v3: str
+        sub: SubValue
+
+    class Cfg(BaseSettings):
+        v0: str
+        v0_union: Union[SubValue, int]
+        top: TopValue
+
+        class Config:
+            env_nested_delimiter = '__'
+
+    env.set('top', '{"v1": "json-1", "v2": "json-2", "sub": {"v5": "xx"}}')
+    env.set('top__sub__v5', '5')
+    env.set('v0', '0')
+    env.set('top__v2', '2')
+    env.set('top__v3', '3')
+    env.set('v0_union', '0')
+    env.set('top__sub__sub_sub__v6', '6')
+    env.set('top__sub__v4', '4')
+    cfg = Cfg()
+    assert cfg.dict() == {
+        'v0': '0',
+        'v0_union': 0,
+        'top': {
+            'v1': 'json-1',
+            'v2': '2',
+            'v3': '3',
+            'sub': {'v4': '4', 'v5': 5, 'sub_sub': {'v6': '6'}},
+        },
+    }
+
+
+def test_nested_env_delimiter_complex_required(env):
+    class Cfg(BaseSettings):
+        v: str = 'default'
+
+        class Config:
+            env_nested_delimiter = '__'
+
+    env.set('v__x', 'x')
+    env.set('v__y', 'y')
+    cfg = Cfg()
+    assert cfg.dict() == {'v': 'default'}
+
+
+def test_nested_env_delimiter_aliases(env):
+    class SubModel(BaseSettings):
+        v1: str
+        v2: str
+
+    class Cfg(BaseSettings):
+        sub_model: SubModel
+
+        class Config:
+            fields = {'sub_model': {'env': ['foo', 'bar']}}
+            env_nested_delimiter = '__'
+
+    env.set('foo__v1', '-1-')
+    env.set('bar__v2', '-2-')
+    assert Cfg().dict() == {'sub_model': {'v1': '-1-', 'v2': '-2-'}}
 
 
 class DateModel(BaseModel):
@@ -463,6 +538,45 @@ def test_config_file_settings_nornir(env):
     assert s.param_c == 'env setting c'
 
 
+def test_env_union_with_complex_subfields_parses_json(env):
+    class A(BaseSettings):
+        a: str
+
+    class B(BaseSettings):
+        b: int
+
+    class Settings(BaseSettings):
+        content: Union[A, B, int]
+
+    env.set('content', '{"a": "test"}')
+    s = Settings()
+    assert s.content == A(a='test')
+
+
+def test_env_union_with_complex_subfields_parses_plain_if_json_fails(env):
+    class A(BaseSettings):
+        a: str
+
+    class B(BaseSettings):
+        b: int
+
+    class Settings(BaseSettings):
+        content: Union[A, B, datetime]
+
+    env.set('content', '2020-07-05T00:00:00Z')
+    s = Settings()
+    assert s.content == datetime(2020, 7, 5, 0, 0, tzinfo=timezone.utc)
+
+
+def test_env_union_without_complex_subfields_does_not_parse_json(env):
+    class Settings(BaseSettings):
+        content: Union[datetime, str]
+
+    env.set('content', '2020-07-05T00:00:00Z')
+    s = Settings()
+    assert s.content == datetime(2020, 7, 5, 0, 0, tzinfo=timezone.utc)
+
+
 test_env_file = """\
 # this is a comment
 A=good string
@@ -790,6 +904,33 @@ def test_secrets_path_url(tmp_path):
     assert Settings().dict() == {'foo': 'http://www.example.com', 'bar': SecretStr('snap')}
 
 
+def test_secrets_path_json(tmp_path):
+    p = tmp_path / 'foo'
+    p.write_text('{"a": "b"}')
+
+    class Settings(BaseSettings):
+        foo: Dict[str, str]
+
+        class Config:
+            secrets_dir = tmp_path
+
+    assert Settings().dict() == {'foo': {'a': 'b'}}
+
+
+def test_secrets_path_invalid_json(tmp_path):
+    p = tmp_path / 'foo'
+    p.write_text('{"a": "b"')
+
+    class Settings(BaseSettings):
+        foo: Dict[str, str]
+
+        class Config:
+            secrets_dir = tmp_path
+
+    with pytest.raises(SettingsError, match='error parsing JSON for "foo"'):
+        Settings()
+
+
 def test_secrets_missing(tmp_path):
     class Settings(BaseSettings):
         foo: str
@@ -943,6 +1084,6 @@ def test_builtins_settings_source_repr():
     )
     assert (
         repr(EnvSettingsSource(env_file='.env', env_file_encoding='utf-8'))
-        == "EnvSettingsSource(env_file='.env', env_file_encoding='utf-8')"
+        == "EnvSettingsSource(env_file='.env', env_file_encoding='utf-8', env_nested_delimiter=None)"
     )
     assert repr(SecretsSettingsSource(secrets_dir='/secrets')) == "SecretsSettingsSource(secrets_dir='/secrets')"

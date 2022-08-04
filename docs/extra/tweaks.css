@@ -14,14 +14,18 @@
   background: hsla(0, 0%, 92.5%, 0.5);
 }
 
-#_default_ a._default_, #_default_ .default-text {
-  width: 100% !important;
+.sponsors {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
 }
 
-.md-nav__link[data-md-state=blur]:not(.md-nav__link--active) {
-  color: rgba(0, 0, 0, 0.87);
+.sponsors div {
+  text-align: center;
 }
 
-.md-nav__link--active {
-  font-weight: 700;
+.sponsors img {
+  width: 75%;
+  border-radius: 5px;
 }

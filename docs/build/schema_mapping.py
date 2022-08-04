@@ -82,9 +82,16 @@ table = [
         'And equivalently for any other sub type, e.g. `List[int]`.'
     ],
     [
+        'Tuple[str, ...]',
+        'array',
+        {'items': {'type': 'string'}},
+        'JSON Schema Validation',
+        'And equivalently for any other sub type, e.g. `Tuple[int, ...]`.'
+    ],
+    [
         'Tuple[str, int]',
         'array',
-        {'items': [{'type': 'string'}, {'type': 'integer'}]},
+        {'items': [{'type': 'string'}, {'type': 'integer'}], 'minItems': 2, 'maxItems': 2},
         'JSON Schema Validation',
         (
             'And equivalently for any other set of subtypes. Note: If using schemas for OpenAPI, '

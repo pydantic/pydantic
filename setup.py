@@ -7,7 +7,7 @@ from pathlib import Path
 from setuptools import setup
 
 if os.name == 'nt':
-    from distutils.command import build_ext
+    from setuptools.command import build_ext
 
     def get_export_symbols(self, ext):
         """
@@ -56,15 +56,15 @@ class ReplaceLinks:
         return '\n\n' + '\n'.join(sorted(self.links)) + '\n'
 
 
-description = 'Data validation and settings management using python 3.6 type hinting'
+description = 'Data validation and settings management using python type hints'
 THIS_DIR = Path(__file__).resolve().parent
 try:
-    history = (THIS_DIR / 'HISTORY.md').read_text()
+    history = (THIS_DIR / 'HISTORY.md').read_text(encoding='utf-8')
     history = re.sub(r'#(\d+)', r'[#\1](https://github.com/samuelcolvin/pydantic/issues/\1)', history)
     history = re.sub(r'( +)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub('@@', '@', history)
 
-    long_description = (THIS_DIR / 'README.md').read_text() + '\n\n' + history
+    long_description = (THIS_DIR / 'README.md').read_text(encoding='utf-8') + '\n\n' + history
 except FileNotFoundError:
     long_description = description + '.\n\nSee https://pydantic-docs.helpmanual.io/ for documentation.'
 
@@ -104,10 +104,10 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
@@ -126,10 +126,9 @@ setup(
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
-    python_requires='>=3.6.1',
+    python_requires='>=3.7',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
-        'dataclasses>=0.6;python_version<"3.7"',
         'typing-extensions>=3.7.4.3'
     ],
     extras_require={

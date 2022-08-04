@@ -4,10 +4,9 @@ Installation is as simple as:
 pip install pydantic
 ```
 
-*pydantic* has no required dependencies except python 3.6, 3.7, 3.8, or 3.9,
-[`typing-extensions`](https://pypi.org/project/typing-extensions/), and the
-[`dataclasses`](https://pypi.org/project/dataclasses/) backport package for python 3.6.
-If you've got python 3.6+ and `pip` installed, you're good to go.
+*pydantic* has no required dependencies except Python 3.7, 3.8, 3.9 or 3.10 and
+[`typing-extensions`](https://pypi.org/project/typing-extensions/).
+If you've got Python 3.7+ and `pip` installed, you're good to go.
 
 Pydantic is also available on [conda](https://www.anaconda.com) under the [conda-forge](https://conda-forge.org)
 channel:
@@ -68,7 +67,7 @@ pip install pydantic[dotenv]
 pip install pydantic[email,dotenv]
 ```
 
-Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install`.
+Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install python-dotenv`.
 
 
 ## Install from repository

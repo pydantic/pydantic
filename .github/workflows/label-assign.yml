@@ -16,6 +16,6 @@ jobs:
       - uses: docker://samuelcolvin/label-and-assign:latest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          reviewers: samuelcolvin,PrettyWood
+          reviewers: samuelcolvin,PrettyWood,hramezani
           awaiting_update_label: 'awaiting author revision'
           awaiting_review_label: 'ready for review'
