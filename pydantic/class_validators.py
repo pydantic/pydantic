@@ -77,7 +77,7 @@ def validator(
         )
     elif not all(isinstance(field, str) for field in fields):
         raise ConfigError(
-            "validator fields should be passed as separate string args. "
+            "validator fields should be passed as separate string args. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
         )
 

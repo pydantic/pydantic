@@ -659,10 +659,11 @@ def test_validator_always_post_optional():
 
 
 def test_validator_bad_fields_throws_configerror():
-    """Attempts to create a validator with fields set as a list of strings,
+    """
+    Attempts to create a validator with fields set as a list of strings,
     rather than just multiple string args. Expects ConfigError to be raised.
     """
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(ConfigError, match='validator fields should be passed as separate string args.'):
 
         class Model(BaseModel):
             a: str
@@ -671,8 +672,6 @@ def test_validator_bad_fields_throws_configerror():
             @validator(['a', 'b'])
             def check_fields(cls, v):
                 return v
-
-    assert 'validator fields should be passed as separate string args.' in str(exc_info.value)
 
 
 def test_datetime_validator():
