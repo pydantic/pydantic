@@ -338,6 +338,8 @@ class AnyUrl(str):
 class AnyHttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
 
+    __slots__ = ()
+
 
 class HttpUrl(AnyHttpUrl):
     tld_required = True
@@ -354,6 +356,8 @@ class FileUrl(AnyUrl):
     allowed_schemes = {'file'}
     host_required = False
 
+    __slots__ = ()
+
 
 class PostgresDsn(AnyUrl):
     allowed_schemes = {
@@ -368,6 +372,8 @@ class PostgresDsn(AnyUrl):
     }
     user_required = True
 
+    __slots__ = ()
+
 
 class AmqpDsn(AnyUrl):
     allowed_schemes = {'amqp', 'amqps'}
@@ -375,6 +381,7 @@ class AmqpDsn(AnyUrl):
 
 
 class RedisDsn(AnyUrl):
+    __slots__ = ()
     allowed_schemes = {'redis', 'rediss'}
     host_required = False
 
@@ -477,6 +484,8 @@ class NameEmail(Representation):
 
 
 class IPvAnyAddress(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyaddress')
@@ -499,6 +508,8 @@ class IPvAnyAddress(_BaseAddress):
 
 
 class IPvAnyInterface(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyinterface')
