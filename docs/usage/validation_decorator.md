@@ -46,7 +46,7 @@ combinations of these:
 * variable positional arguments defined via `*` (often `*args`)
 * variable keyword arguments defined via `**` (often `**kwargs`)
 * keyword only arguments - arguments after `*,`
-* positional only arguments - arguments before `, /` (new in python 3.8)
+* positional only arguments - arguments before `, /` (new in Python 3.8)
 
 To demonstrate all the above parameter types:
 
@@ -141,7 +141,7 @@ see [model error handling](models.md#error-handling).
 
 This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
 `.errors()` and `.json()` can be useful when exposing the errors to end users, however `ValidationError` inherits
-from `ValueError` **not** `TypeError` which may be unexpected since python would raise a `TypeError` upon invalid
+from `ValueError` **not** `TypeError` which may be unexpected since Python would raise a `TypeError` upon invalid
 or missing arguments. This may be addressed in future by either allow a custom error or raising a different
 exception by default, or both.
 
@@ -156,7 +156,7 @@ to use this, it may even become the default for the decorator.
 
 ### Performance
 
-We've made a big effort to make *pydantic* as performant as possible (see [the benchmarks](../benchmarks.md))
+We've made a big effort to make *pydantic* as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
 there will still be a performance impact to using the `validate_arguments` decorator compared to
 calling the raw function.

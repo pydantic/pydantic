@@ -6,14 +6,14 @@ Tests for annotated types that _pydantic_ can validate like
 import json
 import sys
 from collections import namedtuple
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import pytest
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, PositiveInt, ValidationError
 
-if sys.version_info < (3, 9):
+if sys.version_info < (3, 9, 2):
     try:
         from typing import TypedDict as LegacyTypedDict
     except ImportError:
@@ -79,6 +79,8 @@ def test_namedtuple_schema():
                     {'title': 'X', 'type': 'integer'},
                     {'title': 'Y', 'type': 'integer'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
             'pos2': {
                 'title': 'Pos2',
@@ -87,6 +89,8 @@ def test_namedtuple_schema():
                     {'title': 'X'},
                     {'title': 'Y'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
             'pos3': {
                 'title': 'Pos3',
@@ -95,6 +99,8 @@ def test_namedtuple_schema():
                     {'type': 'integer'},
                     {'type': 'integer'},
                 ],
+                'minItems': 2,
+                'maxItems': 2,
             },
         },
         'required': ['pos1', 'pos2', 'pos3'],
@@ -121,6 +127,23 @@ def test_namedtuple_right_length():
             'ctx': {'limit_value': 2},
         }
     ]
+
+
+def test_namedtuple_postponed_annotation():
+    """
+    https://github.com/samuelcolvin/pydantic/issues/2760
+    """
+
+    class Tup(NamedTuple):
+        v: 'PositiveInt'
+
+    class Model(BaseModel):
+        t: Tup
+
+    # The effect of issue #2760 is that this call raises a `ConfigError` even though the type declared on `Tup.v`
+    # references a binding in this module's global scope.
+    with pytest.raises(ValidationError):
+        Model.parse_obj({'t': [-1]})
 
 
 def test_typeddict():
@@ -198,7 +221,10 @@ def test_partial_legacy_typeddict():
     class User(OptionalUser):
         id: int
 
-    with pytest.raises(TypeError, match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict`'):
+    with pytest.raises(
+        TypeError,
+        match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2.',
+    ):
 
         class Model(BaseModel):
             user: User
@@ -253,3 +279,53 @@ def test_typeddict_schema():
             },
         },
     }
+
+
+def test_typeddict_postponed_annotation():
+    class DataTD(TypedDict):
+        v: 'PositiveInt'
+
+    class Model(BaseModel):
+        t: DataTD
+
+    with pytest.raises(ValidationError):
+        Model.parse_obj({'t': {'v': -1}})
+
+
+def test_typeddict_annotated_nonoptional():
+    class DataTD(TypedDict):
+        a: Optional[int]
+        b: Annotated[Optional[int], Field(...)]
+        c: Annotated[Optional[int], Field(..., description='Test')]
+        d: Annotated[Optional[int], Field()]
+
+    class Model(BaseModel):
+        data_td: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'data_td': {'$ref': '#/definitions/DataTD'}},
+        'required': ['data_td'],
+        'definitions': {
+            'DataTD': {
+                'type': 'object',
+                'title': 'DataTD',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'integer'},
+                    'c': {'title': 'C', 'type': 'integer', 'description': 'Test'},
+                    'd': {'title': 'D', 'type': 'integer'},
+                },
+                'required': ['a', 'b', 'c'],
+            },
+        },
+    }
+
+    for bad_obj in ({}, {'data_td': []}, {'data_td': {'a': 1, 'b': 2, 'd': 4}}):
+        with pytest.raises(ValidationError):
+            Model.parse_obj(bad_obj)
+
+    valid_data = {'a': 1, 'b': 2, 'c': 3}
+    parsed_model = Model.parse_obj({'data_td': valid_data})
+    assert parsed_model and parsed_model == Model(data_td=valid_data)

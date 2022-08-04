@@ -7,7 +7,5 @@ class Foo(BaseModel):
     sibling: 'Foo' = None
 
 
-Foo.update_forward_refs()
-
 print(Foo())
 print(Foo(sibling={'a': '321'}))
