@@ -1,15 +1,18 @@
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
 from .parse import Protocol, load_file, load_str_bytes
 from .types import StrBytes
 from .typing import display_as_type
 
-__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as')
+__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema_of', 'schema_json_of')
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
+
+if TYPE_CHECKING:
+    from .typing import DictStrAny
 
 
 def _generate_parsing_type_name(type_: Any) -> str:
@@ -77,3 +80,13 @@ def parse_raw_as(
         json_loads=json_loads,
     )
     return parse_obj_as(type_, obj, type_name=type_name)
+
+
+def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
+    """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
+    return _get_parsing_type(type_, type_name=title).schema(**schema_kwargs)
+
+
+def schema_json_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_json_kwargs: Any) -> str:
+    """Generate a JSON schema (as JSON) for the passed model or dynamically generated one"""
+    return _get_parsing_type(type_, type_name=title).schema_json(**schema_json_kwargs)

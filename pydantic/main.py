@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from .types import ModelOrDc
     from .typing import (
         AbstractSetIntStr,
+        AnyClassMethod,
         CallableGenerator,
         DictAny,
         DictStrAny,
@@ -77,18 +78,7 @@ if TYPE_CHECKING:
 
     Model = TypeVar('Model', bound='BaseModel')
 
-
-try:
-    import cython  # type: ignore
-except ImportError:
-    compiled: bool = False
-else:  # pragma: no cover
-    try:
-        compiled = cython.compiled
-    except AttributeError:
-        compiled = False
-
-__all__ = 'BaseModel', 'compiled', 'create_model', 'validate_model'
+__all__ = 'BaseModel', 'create_model', 'validate_model'
 
 _T = TypeVar('_T')
 
@@ -153,6 +143,7 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
+        resolve_forward_refs = kwargs.pop('__resolve_forward_refs__', True)
         allowed_config_kwargs: SetStr = {
             key
             for key in dir(config)
@@ -288,9 +279,18 @@ class ModelMetaclass(ABCMeta):
         cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
         # set __signature__ attr only for model class, but not for its instances
         cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, config))
-        cls.__try_update_forward_refs__()
+        if resolve_forward_refs:
+            cls.__try_update_forward_refs__()
 
         return cls
+
+    def __instancecheck__(self, instance: Any) -> bool:
+        """
+        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
 
 
 object_setattr = object.__setattr__
@@ -306,7 +306,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __pre_root_validators__: ClassVar[List[AnyCallable]]
         __post_root_validators__: ClassVar[List[Tuple[bool, AnyCallable]]]
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
-        __root__: ClassVar[Any] = None
         __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
         __schema_cache__: ClassVar['DictAny'] = {}
         __custom_root_type__: ClassVar[bool] = False
@@ -455,6 +454,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
+        models_as_dict: bool = True,
         **dumps_kwargs: Any,
     ) -> str:
         """
@@ -470,11 +470,12 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             exclude_unset = skip_defaults
         encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
 
-        # We don't directly call `self.dict()`, which does exactly the same thing but
-        # with `to_dict = True` because we want to keep raw `BaseModel` instances and not as `dict`.
+        # We don't directly call `self.dict()`, which does exactly this with `to_dict=True`
+        # because we want to be able to keep raw `BaseModel` instances and not as `dict`.
         # This allows users to write custom JSON encoders for given `BaseModel` classes.
         data = dict(
             self._iter(
+                to_dict=models_as_dict,
                 by_alias=by_alias,
                 include=include,
                 exclude=exclude,
@@ -587,6 +588,24 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m._init_private_attributes()
         return m
 
+    def _copy_and_set_values(self: 'Model', values: 'DictStrAny', fields_set: 'SetStr', *, deep: bool) -> 'Model':
+        if deep:
+            # chances of having empty dict here are quite low for using smart_deepcopy
+            values = deepcopy(values)
+
+        cls = self.__class__
+        m = cls.__new__(cls)
+        object_setattr(m, '__dict__', values)
+        object_setattr(m, '__fields_set__', fields_set)
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                if deep:
+                    value = deepcopy(value)
+                object_setattr(m, name, value)
+
+        return m
+
     def copy(
         self: 'Model',
         *,
@@ -606,32 +625,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         :return: new model instance
         """
 
-        v = dict(
+        values = dict(
             self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
             **(update or {}),
         )
 
-        if deep:
-            # chances of having empty dict here are quite low for using smart_deepcopy
-            v = deepcopy(v)
-
-        cls = self.__class__
-        m = cls.__new__(cls)
-        object_setattr(m, '__dict__', v)
         # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
             fields_set = self.__fields_set__ | update.keys()
         else:
             fields_set = set(self.__fields_set__)
-        object_setattr(m, '__fields_set__', fields_set)
-        for name in self.__private_attributes__:
-            value = getattr(self, name, Undefined)
-            if value is not Undefined:
-                if deep:
-                    value = deepcopy(value)
-                object_setattr(m, name, value)
 
-        return m
+        return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
     def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> 'DictStrAny':
@@ -659,14 +664,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
-            return value.copy() if cls.__config__.copy_on_model_validation else value
+            if cls.__config__.copy_on_model_validation:
+                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=True)
+            else:
+                return value
 
         value = cls._enforce_dict_if_root(value)
 
-        if cls.__config__.orm_mode:
-            return cls.from_orm(value)
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return cls(**value)
+        elif cls.__config__.orm_mode:
+            return cls.from_orm(value)
         else:
             try:
                 value_as_dict = dict(value)
@@ -676,6 +684,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+        if isinstance(obj, GetterDict):
+            return obj
         return cls.__config__.getter_dict(obj)
 
     @classmethod
@@ -754,19 +764,19 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
-    def __try_update_forward_refs__(cls) -> None:
+    def __try_update_forward_refs__(cls, **localns: Any) -> None:
         """
         Same as update_forward_refs but will not raise exception
         when forward references are not defined.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), {}, (NameError,))
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns, (NameError,))
 
     @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
         Try to update ForwardRefs on fields based on this Model, globalns and localns.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), localns)
+        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns)
 
     def __iter__(self) -> 'TupleGenerator':
         """
@@ -865,7 +875,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return self.dict() == other
 
     def __repr_args__(self) -> 'ReprArgs':
-        return [(k, v) for k, v in self.__dict__.items() if self.__fields__[k].field_info.repr]
+        return [
+            (k, v) for k, v in self.__dict__.items() if k not in self.__fields__ or self.__fields__[k].field_info.repr
+        ]
 
 
 _is_base_model_class_defined = True
@@ -878,7 +890,8 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: Dict[str, Any] = None,
     **field_definitions: Any,
 ) -> Type['BaseModel']:
     ...
@@ -891,7 +904,8 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: Dict[str, Any] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     ...
@@ -903,7 +917,8 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
-    __validators__: Dict[str, classmethod] = None,
+    __validators__: Dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: Dict[str, Any] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     """
@@ -913,6 +928,7 @@ def create_model(
     :param __base__: base class for the new model to inherit from
     :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
+    :param __cls_kwargs__: a dict for class creation
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
@@ -926,6 +942,8 @@ def create_model(
             __base__ = (__base__,)
     else:
         __base__ = (cast(Type['Model'], BaseModel),)
+
+    __cls_kwargs__ = __cls_kwargs__ or {}
 
     fields = {}
     annotations = {}
@@ -956,7 +974,7 @@ def create_model(
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
 
-    return type(__model_name, __base__, namespace)
+    return type(__model_name, __base__, namespace, **__cls_kwargs__)
 
 
 _missing = object()

@@ -5,10 +5,7 @@ import pytest
 
 from pydantic import BaseModel, ConfigError, ValidationError
 
-skip_pre_37 = pytest.mark.skipif(sys.version_info < (3, 7), reason='testing >= 3.7 behaviour only')
 
-
-@skip_pre_37
 def test_postponed_annotations(create_module):
     module = create_module(
         # language=Python
@@ -24,7 +21,6 @@ class Model(BaseModel):
     assert m.dict() == {'a': 123}
 
 
-@skip_pre_37
 def test_postponed_annotations_optional(create_module):
     module = create_module(
         # language=Python
@@ -41,7 +37,6 @@ class Model(BaseModel):
     assert module.Model().dict() == {'a': None}
 
 
-@skip_pre_37
 def test_postponed_annotations_auto_update_forward_refs(create_module):
     module = create_module(
         # language=Python
@@ -215,7 +210,6 @@ def test_forward_ref_dataclass(create_module):
     assert m.url == 'http://example.com'
 
 
-@skip_pre_37
 def test_forward_ref_dataclass_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -330,7 +324,6 @@ def test_self_reference_json_schema(create_module):
     }
 
 
-@skip_pre_37
 def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -415,7 +408,6 @@ def test_circular_reference_json_schema(create_module):
     }
 
 
-@skip_pre_37
 def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -485,7 +477,6 @@ def test_forward_ref_with_field(create_module):
                 c: List[Foo] = Field(..., gt=0)
 
 
-@skip_pre_37
 def test_forward_ref_optional(create_module):
     module = create_module(
         # language=Python
@@ -531,7 +522,6 @@ def test_forward_ref_with_create_model(create_module):
         assert instance.sub.dict() == {'foo': 'bar'}
 
 
-@skip_pre_37
 def test_resolve_forward_ref_dataclass(create_module):
     module = create_module(
         # language=Python
@@ -564,7 +554,53 @@ def test_nested_forward_ref():
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
-@skip_pre_37
+def test_discriminated_union_forward_ref(create_module):
+    @create_module
+    def module():
+        from typing import Union
+
+        from typing_extensions import Literal
+
+        from pydantic import BaseModel, Field
+
+        class Pet(BaseModel):
+            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')  # noqa: F821
+
+        class Cat(BaseModel):
+            type: Literal['cat']
+
+        class Dog(BaseModel):
+            type: Literal['dog']
+
+    with pytest.raises(ConfigError, match='you might need to call Pet.update_forward_refs()'):
+        module.Pet.parse_obj({'type': 'pika'})
+
+    module.Pet.update_forward_refs()
+
+    with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
+        module.Pet.parse_obj({'type': 'pika'})
+
+    assert module.Pet.schema() == {
+        'title': 'Pet',
+        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
+        'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+        'definitions': {
+            'Cat': {
+                'title': 'Cat',
+                'type': 'object',
+                'properties': {'type': {'title': 'Type', 'enum': ['cat'], 'type': 'string'}},
+                'required': ['type'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {'type': {'title': 'Type', 'enum': ['dog'], 'type': 'string'}},
+                'required': ['type'],
+            },
+        },
+    }
+
+
 def test_class_var_as_string(create_module):
     module = create_module(
         # language=Python
@@ -579,3 +615,116 @@ class Model(BaseModel):
     )
 
     assert module.Model.__class_vars__ == {'a'}
+
+
+def test_json_encoder_str(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    x: str
+
+
+FooUser = User
+
+
+class User(BaseModel):
+    y: str
+
+
+class Model(BaseModel):
+    foo_user: FooUser
+    user: User
+
+    class Config:
+        json_encoders = {
+            'User': lambda v: f'User({v.y})',
+        }
+"""
+    )
+
+    m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
+    assert m.json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
+
+
+def test_json_encoder_forward_ref(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+from typing import ForwardRef, List, Optional
+
+class User(BaseModel):
+    name: str
+    friends: Optional[List['User']] = None
+
+    class Config:
+        json_encoders = {
+            ForwardRef('User'): lambda v: f'User({v.name})',
+        }
+"""
+    )
+
+    m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
+    assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+
+
+skip_pep585 = pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
+)
+
+
+@skip_pep585
+def test_pep585_self_referencing_generics():
+    class SelfReferencing(BaseModel):
+        names: list['SelfReferencing']  # noqa: F821
+
+    SelfReferencing.update_forward_refs()  # will raise an exception if the forward ref isn't resolvable
+    # test the class
+    assert SelfReferencing.__fields__['names'].type_ is SelfReferencing
+    # NOTE: outer_type_ is not converted
+    assert SelfReferencing.__fields__['names'].outer_type_ == list['SelfReferencing']
+    # test that object creation works
+    obj = SelfReferencing(names=[SelfReferencing(names=[])])
+    assert obj.names == [SelfReferencing(names=[])]
+
+
+@skip_pep585
+def test_pep585_recursive_generics(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        class Team(BaseModel):
+            name: str
+            heroes: list['Hero']  # noqa: F821
+
+        class Hero(BaseModel):
+            name: str
+            teams: list[Team]
+
+        Team.update_forward_refs()
+
+    assert module.Team.__fields__['heroes'].type_ is module.Hero
+    assert module.Hero.__fields__['teams'].type_ is module.Team
+
+    module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
+def test_class_var_forward_ref(create_module):
+    # see #3679
+    create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import ClassVar
+from pydantic import BaseModel
+
+class WithClassVar(BaseModel):
+    Instances: ClassVar[dict[str, WithClassVar]] = {}
+"""
+    )
