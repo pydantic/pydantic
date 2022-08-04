@@ -1,6 +1,7 @@
 import math
 import re
 import warnings
+from datetime import date
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    FrozenSet,
     List,
     Optional,
     Pattern,
@@ -26,6 +28,7 @@ from uuid import UUID
 from weakref import WeakSet
 
 from . import errors
+from .datetime_parse import parse_date
 from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
@@ -34,6 +37,7 @@ from .validators import (
     constr_strip_whitespace,
     decimal_validator,
     float_validator,
+    frozenset_validator,
     int_validator,
     list_validator,
     number_multiple_validator,
@@ -60,6 +64,8 @@ __all__ = [
     'conlist',
     'ConstrainedSet',
     'conset',
+    'ConstrainedFrozenSet',
+    'confrozenset',
     'ConstrainedStr',
     'constr',
     'PyObject',
@@ -93,6 +99,8 @@ __all__ = [
     'StrictFloat',
     'PaymentCardNumber',
     'ByteSize',
+    'PastDate',
+    'FutureDate',
 ]
 
 NoneStr = Optional[str]
@@ -105,11 +113,11 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass  # noqa: F401
-    from .main import BaseConfig, BaseModel  # noqa: F401
+    from .dataclasses import Dataclass
+    from .main import BaseModel
     from .typing import CallableGenerator
 
-    ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
+    ModelOrDc = Type[Union[BaseModel, Dataclass]]
 
 T = TypeVar('T')
 _DEFINED_TYPES: 'WeakSet[type]' = WeakSet()
@@ -480,6 +488,48 @@ def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) 
     return new_class('ConstrainedSetValue', (ConstrainedSet,), {}, lambda ns: ns.update(namespace))
 
 
+# This types superclass should be FrozenSet[T], but cython chokes on that...
+class ConstrainedFrozenSet(frozenset):  # type: ignore
+    # Needed for pydantic to detect that this is a set
+    __origin__ = frozenset
+    __args__: FrozenSet[Type[T]]  # type: ignore
+
+    min_items: Optional[int] = None
+    max_items: Optional[int] = None
+    item_type: Type[T]  # type: ignore
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield cls.frozenset_length_validator
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
+
+    @classmethod
+    def frozenset_length_validator(cls, v: 'Optional[FrozenSet[T]]') -> 'Optional[FrozenSet[T]]':
+        if v is None:
+            return None
+
+        v = frozenset_validator(v)
+        v_len = len(v)
+
+        if cls.min_items is not None and v_len < cls.min_items:
+            raise errors.FrozenSetMinLengthError(limit_value=cls.min_items)
+
+        if cls.max_items is not None and v_len > cls.max_items:
+            raise errors.FrozenSetMaxLengthError(limit_value=cls.max_items)
+
+        return v
+
+
+def confrozenset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[FrozenSet[T]]:
+    # __args__ is needed to conform to typing generics api
+    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
+    # We use new_class to be able to deal with Generic types
+    return new_class('ConstrainedFrozenSetValue', (ConstrainedFrozenSet,), {}, lambda ns: ns.update(namespace))
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LIST TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # This types superclass should be List[T], but cython chokes on that...
@@ -490,15 +540,18 @@ class ConstrainedList(list):  # type: ignore
 
     min_items: Optional[int] = None
     max_items: Optional[int] = None
+    unique_items: Optional[bool] = None
     item_type: Type[T]  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.list_length_validator
+        if cls.unique_items:
+            yield cls.unique_items_validator
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
+        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items, uniqueItems=cls.unique_items)
 
     @classmethod
     def list_length_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
@@ -516,10 +569,22 @@ class ConstrainedList(list):  # type: ignore
 
         return v
 
+    @classmethod
+    def unique_items_validator(cls, v: 'List[T]') -> 'List[T]':
+        for i, value in enumerate(v, start=1):
+            if value in v[i:]:
+                raise errors.ListUniqueItemsError()
 
-def conlist(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[List[T]]:
+        return v
+
+
+def conlist(
+    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = None
+) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': (item_type,)}
+    namespace = dict(
+        min_items=min_items, max_items=max_items, unique_items=unique_items, item_type=item_type, __args__=(item_type,)
+    )
     # We use new_class to be able to deal with Generic types
     return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
 
@@ -945,18 +1010,18 @@ class PaymentCardNumber(str):
 
 BYTE_SIZES = {
     'b': 1,
-    'kb': 10 ** 3,
-    'mb': 10 ** 6,
-    'gb': 10 ** 9,
-    'tb': 10 ** 12,
-    'pb': 10 ** 15,
-    'eb': 10 ** 18,
-    'kib': 2 ** 10,
-    'mib': 2 ** 20,
-    'gib': 2 ** 30,
-    'tib': 2 ** 40,
-    'pib': 2 ** 50,
-    'eib': 2 ** 60,
+    'kb': 10**3,
+    'mb': 10**6,
+    'gb': 10**9,
+    'tb': 10**12,
+    'pb': 10**15,
+    'eb': 10**18,
+    'kib': 2**10,
+    'mib': 2**20,
+    'gib': 2**30,
+    'tib': 2**40,
+    'pib': 2**50,
+    'eib': 2**60,
 }
 BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
 byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
@@ -1017,3 +1082,37 @@ class ByteSize(int):
             raise errors.InvalidByteSizeUnit(unit=unit)
 
         return self / unit_div
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if TYPE_CHECKING:
+    PastDate = date
+    FutureDate = date
+else:
+
+    class PastDate(date):
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield parse_date
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, value: date) -> date:
+            if value >= date.today():
+                raise errors.DateNotInThePastError()
+
+            return value
+
+    class FutureDate(date):
+        @classmethod
+        def __get_validators__(cls) -> 'CallableGenerator':
+            yield parse_date
+            yield cls.validate
+
+        @classmethod
+        def validate(cls, value: date) -> date:
+            if value <= date.today():
+                raise errors.DateNotInTheFutureError()
+
+            return value

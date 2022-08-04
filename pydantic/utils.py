@@ -9,12 +9,14 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Collection,
     Dict,
     Generator,
     Iterable,
     Iterator,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
     Tuple,
@@ -23,22 +25,36 @@ from typing import (
     Union,
 )
 
-from .typing import GenericAlias, NoneType, display_as_type
+from typing_extensions import Annotated
+
+from .errors import ConfigError
+from .typing import (
+    NoneType,
+    WithArgsTypes,
+    all_literal_values,
+    display_as_type,
+    get_args,
+    get_origin,
+    is_literal_type,
+    is_union,
+)
 from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
-    from .dataclasses import Dataclass  # noqa: F401
-    from .fields import ModelField  # noqa: F401
-    from .main import BaseConfig, BaseModel  # noqa: F401
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs  # noqa: F401
+    from .config import BaseConfig
+    from .dataclasses import Dataclass
+    from .fields import ModelField
+    from .main import BaseModel
+    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
 __all__ = (
     'import_string',
     'sequence_like',
     'validate_field_name',
+    'lenient_isinstance',
     'lenient_issubclass',
     'in_ipython',
     'deep_update',
@@ -56,6 +72,9 @@ __all__ = (
     'ClassAttribute',
     'path_type',
     'ROOT_KEY',
+    'get_unique_discriminator_alias',
+    'get_discriminator_alias_and_values',
+    'LimitedDict',
 )
 
 ROOT_KEY = '__root__'
@@ -131,7 +150,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     return v
 
 
-def sequence_like(v: Type[Any]) -> bool:
+def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
@@ -147,11 +166,18 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...]]) -> bool:
+def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
     try:
-        return isinstance(cls, type) and issubclass(cls, class_or_tuple)
+        return isinstance(o, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
-        if isinstance(cls, GenericAlias):
+        return False
+
+
+def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
+    try:
+        return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
+    except TypeError:
+        if isinstance(cls, WithArgsTypes):
             return False
         raise  # pragma: no cover
 
@@ -201,6 +227,8 @@ def generate_model_signature(
     """
     from inspect import Parameter, Signature, signature
 
+    from .config import Extra
+
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
     var_kw = None
@@ -231,7 +259,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
             )
 
-    if config.extra is config.extra.allow:
+    if config.extra is Extra.allow:
         use_var_kw = True
 
     if var_kw and use_var_kw:
@@ -257,7 +285,7 @@ def generate_model_signature(
 
 
 def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     try:
         model_cls = obj.__pydantic_model__  # type: ignore
@@ -276,16 +304,25 @@ def to_camel(string: str) -> str:
 T = TypeVar('T')
 
 
-def unique_list(input_list: Union[List[T], Tuple[T, ...]]) -> List[T]:
+def unique_list(
+    input_list: Union[List[T], Tuple[T, ...]],
+    *,
+    name_factory: Callable[[T], str] = str,
+) -> List[T]:
     """
     Make a list unique while maintaining order.
+    We update the list if another one with the same name is set
+    (e.g. root validator overridden in subclass)
     """
-    result = []
-    unique_set = set()
+    result: List[T] = []
+    result_names: List[str] = []
     for v in input_list:
-        if v not in unique_set:
-            unique_set.add(v)
+        v_name = name_factory(v)
+        if v_name not in result_names:
+            result_names.append(v_name)
             result.append(v)
+        else:
+            result[result_names.index(v_name)] = v
 
     return result
 
@@ -448,7 +485,7 @@ class ValueItems(Representation):
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
-        :return: raw values for elemet if self._items is dict and contain needed element
+        :return: raw values for element if self._items is dict and contain needed element
         """
 
         item = self._items.get(e)
@@ -539,7 +576,8 @@ class ValueItems(Representation):
         elif isinstance(items, AbstractSet):
             items = dict.fromkeys(items, ...)
         else:
-            raise TypeError(f'Unexpected type of exclude value {items.__class__}')
+            class_name = getattr(items, '__class__', '???')
+            raise TypeError(f'Unexpected type of exclude value {class_name}')
         return items
 
     @classmethod
@@ -653,3 +691,99 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
         if left_item is not right_item:
             return False
     return True
+
+
+def get_unique_discriminator_alias(all_aliases: Collection[str], discriminator_key: str) -> str:
+    """Validate that all aliases are the same and if that's the case return the alias"""
+    unique_aliases = set(all_aliases)
+    if len(unique_aliases) > 1:
+        raise ConfigError(
+            f'Aliases for discriminator {discriminator_key!r} must be the same (got {", ".join(sorted(all_aliases))})'
+        )
+    return unique_aliases.pop()
+
+
+def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple[str, Tuple[str, ...]]:
+    """
+    Get alias and all valid values in the `Literal` type of the discriminator field
+    `tp` can be a `BaseModel` class or directly an `Annotated` `Union` of many.
+    """
+    is_root_model = getattr(tp, '__custom_root_type__', False)
+
+    if get_origin(tp) is Annotated:
+        tp = get_args(tp)[0]
+
+    if hasattr(tp, '__pydantic_model__'):
+        tp = tp.__pydantic_model__
+
+    if is_union(get_origin(tp)):
+        alias, all_values = _get_union_alias_and_all_values(tp, discriminator_key)
+        return alias, tuple(v for values in all_values for v in values)
+    elif is_root_model:
+        union_type = tp.__fields__[ROOT_KEY].type_
+        alias, all_values = _get_union_alias_and_all_values(union_type, discriminator_key)
+
+        if len(set(all_values)) > 1:
+            raise ConfigError(
+                f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}'
+            )
+
+        return alias, all_values[0]
+
+    else:
+        try:
+            t_discriminator_type = tp.__fields__[discriminator_key].type_
+        except AttributeError as e:
+            raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`') from e
+        except KeyError as e:
+            raise ConfigError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}') from e
+
+        if not is_literal_type(t_discriminator_type):
+            raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
+
+        return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)
+
+
+def _get_union_alias_and_all_values(
+    union_type: Type[Any], discriminator_key: str
+) -> Tuple[str, Tuple[Tuple[str, ...], ...]]:
+    zipped_aliases_values = [get_discriminator_alias_and_values(t, discriminator_key) for t in get_args(union_type)]
+    # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
+    all_aliases, all_values = zip(*zipped_aliases_values)
+    return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values
+
+
+KT = TypeVar('KT')
+VT = TypeVar('VT')
+if TYPE_CHECKING:
+    # Annoying inheriting from `MutableMapping` and `dict` breaks cython, hence this work around
+    class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+        def __init__(self, size_limit: int = 1000):
+            ...
+
+else:
+
+    class LimitedDict(dict):
+        """
+        Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
+
+        Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
+
+        Annoying inheriting from `MutableMapping` breaks cython.
+        """
+
+        def __init__(self, size_limit: int = 1000):
+            self.size_limit = size_limit
+            super().__init__()
+
+        def __setitem__(self, __key: Any, __value: Any) -> None:
+            super().__setitem__(__key, __value)
+            if len(self) > self.size_limit:
+                excess = len(self) - self.size_limit + self.size_limit // 10
+                to_remove = list(self.keys())[:excess]
+                for key in to_remove:
+                    del self[key]
+
+        def __class_getitem__(cls, *args: Any) -> Any:
+            # to avoid errors with 3.7
+            pass

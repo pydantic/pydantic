@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import Any, Dict, List
 
 import pytest
@@ -273,8 +274,7 @@ def test_custom_getter_dict_derived_model_class():
         __custom__ = True
 
         def __iter__(self):
-            for elem in range(5):
-                yield elem
+            yield from range(5)
 
     class Example:
         def __init__(self, *args, **kwargs):
@@ -302,3 +302,58 @@ def test_custom_getter_dict_derived_model_class():
 
     model = ExampleOrm.from_orm(Example())
     assert model.dict() == {'name': 'name', 'col': [0, 1, 2, 3, 4], 'id': 1}
+
+
+def test_recursive_parsing():
+    class Getter(GetterDict):
+        # try to read the modified property name
+        # either as an attribute or as a key
+        def get(self, key, default):
+            key = key + key
+            try:
+                v = self._obj[key]
+                return Getter(v) if isinstance(v, dict) else v
+            except TypeError:
+                return getattr(self._obj, key, default)
+            except KeyError:
+                return default
+
+    class Model(BaseModel):
+        class Config:
+            orm_mode = True
+            getter_dict = Getter
+
+    class ModelA(Model):
+        a: int
+
+    class ModelB(Model):
+        b: ModelA
+
+    # test recursive parsing with object attributes
+    dct = dict(bb=SimpleNamespace(aa=1))
+    assert ModelB.from_orm(dct) == ModelB(b=ModelA(a=1))
+
+    # test recursive parsing with dict keys
+    obj = dict(bb=dict(aa=1))
+    assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
+
+
+def test_nested_orm():
+    class User(BaseModel):
+        first_name: str
+        last_name: str
+
+        class Config:
+            orm_mode = True
+
+    class State(BaseModel):
+        user: User
+
+        class Config:
+            orm_mode = True
+
+    # Pass an "orm instance"
+    State.from_orm(SimpleNamespace(user=SimpleNamespace(first_name='John', last_name='Appleseed')))
+
+    # Pass dictionary data directly
+    State(**{'user': {'first_name': 'John', 'last_name': 'Appleseed'}})
