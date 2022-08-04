@@ -117,7 +117,7 @@ if TYPE_CHECKING:
     from .main import BaseModel
     from .typing import CallableGenerator
 
-    ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
+    ModelOrDc = Type[Union[BaseModel, Dataclass]]
 
 T = TypeVar('T')
 _DEFINED_TYPES: 'WeakSet[type]' = WeakSet()

@@ -1131,8 +1131,8 @@ class ModelField(Representation):
 
         return (
             self.shape != SHAPE_SINGLETON
+            or hasattr(self.type_, '__pydantic_model__')
             or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
-            or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
     def _type_display(self) -> PyObjectStr:
