@@ -101,7 +101,7 @@ class PydanticPlugin(Plugin):
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
         if fullname == DATACLASS_FULLNAME:
-            return dataclasses.dataclass_class_maker_callback
+            return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
         return None
 
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:

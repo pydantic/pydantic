@@ -148,7 +148,7 @@ class FieldInfo(Representation):
         self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
-        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
+        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -395,8 +395,8 @@ class ModelField(Representation):
     ) -> None:
 
         self.name: str = name
-        self.has_alias: bool = bool(alias)
-        self.alias: str = alias or name
+        self.has_alias: bool = alias is not None
+        self.alias: str = alias if alias is not None else name
         self.annotation = type_
         self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
@@ -452,7 +452,7 @@ class ModelField(Representation):
             if field_info is not None:
                 field_info = copy.copy(field_info)
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default is not Undefined:
+                if field_info.default not in (Undefined, Required):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value is not Undefined and value is not Required:
                     # check also `Required` because of `validate_arguments` that sets `...` as default value
@@ -1134,8 +1134,8 @@ class ModelField(Representation):
 
         return (
             self.shape != SHAPE_SINGLETON
+            or hasattr(self.type_, '__pydantic_model__')
             or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
-            or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
     def _type_display(self) -> PyObjectStr:

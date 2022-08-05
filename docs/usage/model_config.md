@@ -118,6 +118,10 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`smart_union`**
 : whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion; see [the dedicated section](#smart-union)
 
+**`post_init_call`**
+: whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
+  or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
