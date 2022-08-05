@@ -125,7 +125,7 @@ def int_validator(v: Any) -> int:
 
     try:
         return int(v)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raise errors.IntegerError()
 
 
@@ -698,7 +698,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
 
     class_ = get_class(type_)
     if class_ is not None:
-        if isinstance(class_, type):
+        if class_ is not Any and isinstance(class_, type):
             yield make_class_validator(class_)
         else:
             yield any_class_validator

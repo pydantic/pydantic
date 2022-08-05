@@ -381,21 +381,14 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
-    from .dataclasses import dataclass, is_builtin_dataclass
     from .main import BaseModel
 
     flat_models: TypeModelSet = set()
 
-    # Handle dataclass-based models
-    if is_builtin_dataclass(field.type_):
-        field.type_ = dataclass(field.type_)
-        was_dataclass = True
-    else:
-        was_dataclass = False
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if field.sub_fields and (not lenient_issubclass(field_type, BaseModel) or was_dataclass):
+    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
@@ -667,13 +660,11 @@ def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None)
 
     This is similar to the `model_process_schema` function, but applies to ``Enum`` objects.
     """
-    from inspect import getdoc
-
     schema_: Dict[str, Any] = {
         'title': enum.__name__,
         # Python assigns all enums a default docstring value of 'An enumeration', so
         # all enums will have a description field even if not explicitly provided.
-        'description': getdoc(enum),
+        'description': enum.__doc__ or 'An enumeration.',
         # Add enum values and the enum field type to the schema.
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }

@@ -274,8 +274,7 @@ def test_custom_getter_dict_derived_model_class():
         __custom__ = True
 
         def __iter__(self):
-            for elem in range(5):
-                yield elem
+            yield from range(5)
 
     class Example:
         def __init__(self, *args, **kwargs):
