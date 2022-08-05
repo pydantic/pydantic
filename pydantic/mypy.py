@@ -114,7 +114,7 @@ class PydanticPlugin(Plugin):
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
         if fullname == DATACLASS_FULLNAME:
-            return dataclasses.dataclass_class_maker_callback
+            return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
         return None
 
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
@@ -358,7 +358,7 @@ class PydanticModelTransformer:
                     known_fields.add(name)
                     superclass_fields.append(field)
                 else:
-                    (field,) = [a for a in all_fields if a.name == name]
+                    (field,) = (a for a in all_fields if a.name == name)
                     all_fields.remove(field)
                     superclass_fields.append(field)
             all_fields = superclass_fields + all_fields

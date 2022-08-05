@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from typing_extensions import Annotated
 
@@ -132,3 +134,21 @@ def test_config_field_info():
     assert Foo.schema(by_alias=True)['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
     }
+
+
+def test_annotated_alias() -> None:
+    # https://github.com/samuelcolvin/pydantic/issues/2971
+
+    StrAlias = Annotated[str, Field(max_length=3)]
+    IntAlias = Annotated[int, Field(default_factory=lambda: 2)]
+
+    Nested = Annotated[List[StrAlias], Field(description='foo')]
+
+    class MyModel(BaseModel):
+        a: StrAlias = 'abc'
+        b: StrAlias
+        c: IntAlias
+        d: IntAlias
+        e: Nested
+
+    assert MyModel(b='def', e=['xyz']) == MyModel(a='abc', b='def', c=2, d=2, e=['xyz'])

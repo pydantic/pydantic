@@ -22,12 +22,7 @@
 175: error: Unused "type: ignore" comment
 182: error: Unused "type: ignore" comment
 189: error: Name "Missing" is not defined  [name-defined]
-197: error: No overload variant of "dataclass" matches argument type "Dict[<nothing>, <nothing>]"  [call-overload]
-197: note: Possible overload variants:
-197: note:     def dataclass(*, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Callable[[Type[Any]], Type[Dataclass]]
-197: note:     def dataclass(_cls: Type[Any], *, init: bool = ..., repr: bool = ..., eq: bool = ..., order: bool = ..., unsafe_hash: bool = ..., frozen: bool = ..., config: Optional[Type[Any]] = ...) -> Type[Dataclass]
 219: error: Property "y" defined in "FrozenModel" is read-only  [misc]
 233: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
 234: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
-237: error: Incompatible types in assignment (expression has type "Set[_T]", variable has type "str")  [assignment]
 240: error: Field default and default_factory cannot be specified together  [pydantic-field]
