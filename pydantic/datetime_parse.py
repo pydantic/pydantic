@@ -223,7 +223,7 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     if isinstance(value, (int, float)):
         # below code requires a string
-        value = str(value)
+        value = f'{value:f}'
     elif isinstance(value, bytes):
         value = value.decode()
 
@@ -245,4 +245,4 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     kw_ = {k: float(v) for k, v in kw.items() if v is not None}
 
-    return sign * timedelta(**kw_)  # type: ignore
+    return sign * timedelta(**kw_)

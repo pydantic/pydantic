@@ -114,7 +114,7 @@ class Blah(BaseModel):
     fields_set: Optional[Set[str]] = None
 
 
-# Need to test generic checking here since generics don't work in 3.6, and plugin-success.py is executed
+# (comment to keep line numbers unchanged)
 T = TypeVar('T')
 
 

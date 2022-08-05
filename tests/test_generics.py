@@ -23,10 +23,7 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
-skip_36 = pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 
-
-@skip_36
 def test_generic_name():
     data_type = TypeVar('data_type')
 
@@ -39,7 +36,6 @@ def test_generic_name():
     assert Result[int].__name__ == 'Result[int]'
 
 
-@skip_36
 def test_double_parameterize_error():
     data_type = TypeVar('data_type')
 
@@ -52,7 +48,6 @@ def test_double_parameterize_error():
     assert str(exc_info.value) == 'Cannot parameterize a concrete instantiation of a generic model'
 
 
-@skip_36
 def test_value_validation():
     T = TypeVar('T')
 
@@ -87,7 +82,6 @@ def test_value_validation():
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'sum too large', 'type': 'value_error'}]
 
 
-@skip_36
 def test_methods_are_inherited():
     class CustomGenericModel(GenericModel):
         def method(self):
@@ -103,7 +97,6 @@ def test_methods_are_inherited():
     assert instance.method() == 1
 
 
-@skip_36
 def test_config_is_inherited():
     class CustomGenericModel(GenericModel):
         class Config:
@@ -122,7 +115,6 @@ def test_config_is_inherited():
     assert str(exc_info.value) == '"Model[int]" is immutable and does not support item assignment'
 
 
-@skip_36
 def test_default_argument():
     T = TypeVar('T')
 
@@ -134,7 +126,6 @@ def test_default_argument():
     assert result.other is True
 
 
-@skip_36
 def test_default_argument_for_typevar():
     T = TypeVar('T')
 
@@ -151,7 +142,6 @@ def test_default_argument_for_typevar():
     assert result.data == 1
 
 
-@skip_36
 def test_classvar():
     T = TypeVar('T')
 
@@ -165,7 +155,6 @@ def test_classvar():
     assert 'other' not in Result.__fields__
 
 
-@skip_36
 def test_non_annotated_field():
     T = TypeVar('T')
 
@@ -180,7 +169,6 @@ def test_non_annotated_field():
     assert result.other is True
 
 
-@skip_36
 def test_must_inherit_from_generic():
     with pytest.raises(TypeError) as exc_info:
 
@@ -192,7 +180,6 @@ def test_must_inherit_from_generic():
     assert str(exc_info.value) == 'Type Result must inherit from typing.Generic before being parameterized'
 
 
-@skip_36
 def test_parameters_placed_on_generic():
     T = TypeVar('T')
     with pytest.raises(TypeError, match='Type parameters should be placed on typing.Generic, not GenericModel'):
@@ -201,7 +188,6 @@ def test_parameters_placed_on_generic():
             pass
 
 
-@skip_36
 def test_parameters_must_be_typevar():
     with pytest.raises(TypeError, match='Type GenericModel must inherit from typing.Generic before being '):
 
@@ -209,7 +195,6 @@ def test_parameters_must_be_typevar():
             pass
 
 
-@skip_36
 def test_subclass_can_be_genericized():
     T = TypeVar('T')
 
@@ -219,7 +204,6 @@ def test_subclass_can_be_genericized():
     Result[T]
 
 
-@skip_36
 def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -237,7 +221,6 @@ def test_parameter_count():
     assert str(exc_info.value) == 'Too few parameters for Model; actual 1, expected 2'
 
 
-@skip_36
 def test_cover_cache():
     cache_size = len(_generic_types_cache)
     T = TypeVar('T')
@@ -251,7 +234,6 @@ def test_cover_cache():
     assert len(_generic_types_cache) == cache_size + 2
 
 
-@skip_36
 def test_generic_config():
     data_type = TypeVar('data_type')
 
@@ -267,7 +249,6 @@ def test_generic_config():
         result.data = 2
 
 
-@skip_36
 def test_enum_generic():
     T = TypeVar('T')
 
@@ -282,7 +263,6 @@ def test_enum_generic():
     Model[MyEnum](enum=2)
 
 
-@skip_36
 def test_generic():
     data_type = TypeVar('data_type')
     error_type = TypeVar('error_type')
@@ -337,7 +317,6 @@ def test_generic():
     ]
 
 
-@skip_36
 def test_alongside_concrete_generics():
     from pydantic.generics import GenericModel
 
@@ -352,7 +331,6 @@ def test_alongside_concrete_generics():
     assert model.metadata == {}
 
 
-@skip_36
 def test_complex_nesting():
     from pydantic.generics import GenericModel
 
@@ -366,7 +344,6 @@ def test_complex_nesting():
     assert model.item == item
 
 
-@skip_36
 def test_required_value():
     T = TypeVar('T')
 
@@ -378,7 +355,6 @@ def test_required_value():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
-@skip_36
 def test_optional_value():
     T = TypeVar('T')
 
@@ -389,7 +365,6 @@ def test_optional_value():
     assert model.dict() == {'a': 1}
 
 
-@skip_36
 def test_custom_schema():
     T = TypeVar('T')
 
@@ -400,7 +375,6 @@ def test_custom_schema():
     assert schema['properties']['a'].get('description') == 'Custom'
 
 
-@skip_36
 def test_child_schema():
     T = TypeVar('T')
 
@@ -419,7 +393,6 @@ def test_child_schema():
     }
 
 
-@skip_36
 def test_custom_generic_naming():
     T = TypeVar('T')
 
@@ -436,7 +409,6 @@ def test_custom_generic_naming():
     assert repr(MyModel[str](value=None)) == 'OptionalStrWrapper(value=None)'
 
 
-@skip_36
 def test_nested():
     AT = TypeVar('AT')
 
@@ -468,7 +440,6 @@ def test_nested():
     ]
 
 
-@skip_36
 def test_partial_specification():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -488,7 +459,6 @@ def test_partial_specification():
     ]
 
 
-@skip_36
 def test_partial_specification_with_inner_typevar():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -508,7 +478,6 @@ def test_partial_specification_with_inner_typevar():
     assert nested_resolved.b == [456]
 
 
-@skip_36
 def test_partial_specification_name():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -523,7 +492,6 @@ def test_partial_specification_name():
     assert concrete_model.__name__ == 'Model[int, BT][str]'
 
 
-@skip_36
 def test_partial_specification_instantiation():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -544,7 +512,6 @@ def test_partial_specification_instantiation():
     ]
 
 
-@skip_36
 def test_partial_specification_instantiation_bounded():
     AT = TypeVar('AT')
     BT = TypeVar('BT', bound=int)
@@ -569,7 +536,6 @@ def test_partial_specification_instantiation_bounded():
     ]
 
 
-@skip_36
 def test_typevar_parametrization():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -589,7 +555,6 @@ def test_typevar_parametrization():
     ]
 
 
-@skip_36
 def test_multiple_specification():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -610,7 +575,6 @@ def test_multiple_specification():
     ]
 
 
-@skip_36
 def test_generic_subclass_of_concrete_generic():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -632,7 +596,6 @@ def test_generic_subclass_of_concrete_generic():
     ConcreteSub(data=2, extra=3)
 
 
-@skip_36
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
     # objects with <locals> in their __qualname__  (e. g. defined in function)
@@ -661,7 +624,6 @@ def test_generic_model_pickle(create_module):
         assert loaded == original
 
 
-@skip_36
 def test_generic_model_from_function_pickle_fail(create_module):
     @create_module
     def module():
@@ -690,7 +652,6 @@ def test_generic_model_from_function_pickle_fail(create_module):
             pickle.dumps(original)
 
 
-@skip_36
 def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
 
     # match identity checker otherwise we never get to the redefinition check
@@ -772,7 +733,6 @@ def test_get_caller_frame_info_when_sys_getframe_undefined():
         sys._getframe = getframe
 
 
-@skip_36
 def test_iter_contained_typevars():
     T = TypeVar('T')
     T2 = TypeVar('T2')
@@ -786,7 +746,6 @@ def test_iter_contained_typevars():
     assert list(iter_contained_typevars(Optional[List[Union[str, Model[T], Callable[[T2, T], str]]]])) == [T, T2, T]
 
 
-@skip_36
 def test_nested_identity_parameterization():
     T = TypeVar('T')
     T2 = TypeVar('T2')
@@ -799,7 +758,6 @@ def test_nested_identity_parameterization():
     assert Model[T2] is not Model
 
 
-@skip_36
 def test_replace_types():
     T = TypeVar('T')
 
@@ -823,7 +781,6 @@ def test_replace_types():
         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
 
 
-@skip_36
 def test_replace_types_with_user_defined_generic_type_field():
     """Test that using user defined generic types as generic model fields are handled correctly."""
 
@@ -847,7 +804,6 @@ def test_replace_types_with_user_defined_generic_type_field():
     assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
 
 
-@skip_36
 def test_replace_types_identity_on_unchanged():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -856,7 +812,6 @@ def test_replace_types_identity_on_unchanged():
     assert replace_types(type_, {T: int}) is type_
 
 
-@skip_36
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -888,7 +843,6 @@ def test_deep_generic():
     assert inner_model.__concrete__ is True
 
 
-@skip_36
 def test_deep_generic_with_inner_typevar():
     T = TypeVar('T')
 
@@ -906,7 +860,6 @@ def test_deep_generic_with_inner_typevar():
     assert InnerModel[int](a=['1']).a == [1]
 
 
-@skip_36
 def test_deep_generic_with_referenced_generic():
     T = TypeVar('T')
     R = TypeVar('R')
@@ -928,7 +881,6 @@ def test_deep_generic_with_referenced_generic():
     assert InnerModel[int](a={'a': 1}).a.a == 1
 
 
-@skip_36
 def test_deep_generic_with_referenced_inner_generic():
     T = TypeVar('T')
 
@@ -952,7 +904,6 @@ def test_deep_generic_with_referenced_inner_generic():
     assert (InnerModel[int].__fields__['a'].sub_fields[0].sub_fields[0].outer_type_.__fields__['a'].outer_type_) == int
 
 
-@skip_36
 def test_deep_generic_with_multiple_typevars():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -970,7 +921,6 @@ def test_deep_generic_with_multiple_typevars():
     assert ConcreteInnerModel(data=['1'], extra='2').dict() == {'data': [1.0], 'extra': 2}
 
 
-@skip_36
 def test_deep_generic_with_multiple_inheritance():
     K = TypeVar('K')
     V = TypeVar('V')
@@ -998,7 +948,6 @@ def test_deep_generic_with_multiple_inheritance():
     }
 
 
-@skip_36
 def test_generic_with_referenced_generic_type_1():
     T = TypeVar('T')
 
@@ -1013,7 +962,6 @@ def test_generic_with_referenced_generic_type_1():
     ReferenceModel[int]
 
 
-@skip_36
 def test_generic_with_referenced_nested_typevar():
     T = TypeVar('T')
 
@@ -1029,7 +977,6 @@ def test_generic_with_referenced_nested_typevar():
     ReferenceModel[int]
 
 
-@skip_36
 def test_generic_with_callable():
     T = TypeVar('T')
 
@@ -1041,7 +988,6 @@ def test_generic_with_callable():
     Model.__concrete__ is False
 
 
-@skip_36
 def test_generic_with_partial_callable():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -1057,7 +1003,6 @@ def test_generic_with_partial_callable():
     Model[str, int].__concrete__ is False
 
 
-@skip_36
 def test_generic_recursive_models(create_module):
     @create_module
     def module():
@@ -1081,7 +1026,6 @@ def test_generic_recursive_models(create_module):
     assert result == Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
 
 
-@skip_36
 def test_generic_enum():
     T = TypeVar('T')
 
@@ -1099,7 +1043,6 @@ def test_generic_enum():
     assert m.my_gen.some_field is SomeStringEnum.A
 
 
-@skip_36
 def test_generic_literal():
     FieldType = TypeVar('FieldType')
     ValueType = TypeVar('ValueType')
@@ -1112,7 +1055,6 @@ def test_generic_literal():
     assert m.dict() == {'field': {'foo': 'x'}}
 
 
-@skip_36
 def test_generic_enums():
     T = TypeVar('T')
 
@@ -1132,7 +1074,6 @@ def test_generic_enums():
     assert set(Model.schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
 
-@skip_36
 def test_generic_with_user_defined_generic_field():
     T = TypeVar('T')
 
@@ -1150,7 +1091,6 @@ def test_generic_with_user_defined_generic_field():
         model = Model[int](field=['a'])
 
 
-@skip_36
 def test_generic_annotated():
     T = TypeVar('T')
 
@@ -1160,7 +1100,87 @@ def test_generic_annotated():
     SomeGenericModel[str](the_alias='qwe')
 
 
-@skip_36
+def test_generic_subclass():
+    T = TypeVar('T')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[T], Generic[T]):
+        ...
+
+    assert B[int].__name__ == 'B[int]'
+    assert issubclass(B[int], B)
+    assert issubclass(B[int], A[int])
+    assert not issubclass(B[int], A[str])
+
+
+def test_generic_subclass_with_partial_application():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[S], Generic[T, S]):
+        ...
+
+    PartiallyAppliedB = B[str, T]
+    assert issubclass(PartiallyAppliedB[int], A[int])
+    assert not issubclass(PartiallyAppliedB[int], A[str])
+    assert not issubclass(PartiallyAppliedB[str], A[int])
+
+
+def test_multilevel_generic_binding():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(GenericModel, Generic[T, S]):
+        ...
+
+    class B(A[str, T], Generic[T]):
+        ...
+
+    assert B[int].__name__ == 'B[int]'
+    assert issubclass(B[int], A[str, int])
+    assert not issubclass(B[str], A[str, int])
+
+
+def test_generic_subclass_with_extra_type():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[S], Generic[T, S]):
+        ...
+
+    assert B[int, str].__name__ == 'B[int, str]', B[int, str].__name__
+    assert issubclass(B[str, int], B)
+    assert issubclass(B[str, int], A[int])
+    assert not issubclass(B[int, str], A[int])
+
+
+def test_multi_inheritance_generic_binding():
+    T = TypeVar('T')
+
+    class A(GenericModel, Generic[T]):
+        ...
+
+    class B(A[int], Generic[T]):
+        ...
+
+    class C(B[str], Generic[T]):
+        ...
+
+    assert C[float].__name__ == 'C[float]'
+    assert issubclass(C[float], B[str])
+    assert not issubclass(C[float], B[int])
+    assert issubclass(C[float], A[int])
+    assert not issubclass(C[float], A[str])
+
+
 def test_parse_generic_json():
     T = TypeVar('T')
 

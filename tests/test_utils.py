@@ -28,6 +28,7 @@ from pydantic.typing import (
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
+    LimitedDict,
     ValueItems,
     all_identical,
     deep_update,
@@ -36,9 +37,9 @@ from pydantic.utils import (
     lenient_issubclass,
     path_type,
     smart_deepcopy,
+    to_lower_camel,
     truncate,
     unique_list,
-    to_lower_camel
 )
 from pydantic.version import version_info
 
@@ -464,7 +465,6 @@ def test_smart_deepcopy_collection(collection, mocker):
 T = TypeVar('T')
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='get_origin is only consistent for python >= 3.7')
 @pytest.mark.parametrize(
     'input_value,output_value',
     [
@@ -532,9 +532,50 @@ def test_undefined_pickle():
 def test_on_lower_camel_zero_length():
     assert to_lower_camel('') == ''
 
+
 def test_on_lower_camel_one_length():
     assert to_lower_camel('a') == 'a'
+
 
 def test_on_lower_camel_many_length():
     assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
 
+
+def test_limited_dict():
+    d = LimitedDict(10)
+    d[1] = '1'
+    d[2] = '2'
+    assert list(d.items()) == [(1, '1'), (2, '2')]
+    for no in '34567890':
+        d[int(no)] = no
+    assert list(d.items()) == [
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+    ]
+    d[11] = '11'
+
+    # reduce size to 9 after setting 11
+    assert len(d) == 9
+    assert list(d.items()) == [
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+        (11, '11'),
+    ]
+    d[12] = '12'
+    assert len(d) == 10
+    d[13] = '13'
+    assert len(d) == 9

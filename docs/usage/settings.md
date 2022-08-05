@@ -56,8 +56,12 @@ so in this example
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
 
+In Pydantic **v1** `case_sensitive` is `False` by default and all variable names are converted to lower-case internally.
+If you want to define upper-case variable names on nested models like `SubModel` you have to
+set `case_sensitive=True` to disable this behaviour.
+
 !!! note
-    On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+    On Windows, Python's `os` module always treats environment variables as case-insensitive, so the
     `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
 
 ## Parsing environment variable values
@@ -68,6 +72,36 @@ be if passed directly to the initialiser (as a string).
 
 Complex types like `list`, `set`, `dict`, and sub-models are populated from the environment
 by treating the environment variable's value as a JSON-encoded string.
+
+Another way to populate nested complex variables is to configure your model with the `env_nested_delimiter`
+config setting, then use an env variable with a name pointing to the nested module fields.
+What it does is simply explodes your variable into nested models or dicts.
+So if you define a variable `FOO__BAR__BAZ=123` it will convert it into `FOO={'BAR': {'BAZ': 123}}`
+If you have multiple variables with the same structure they will be merged.
+
+With the following environment variables:
+```bash
+# your environment
+export V0=0
+export SUB_MODEL='{"v1": "json-1", "v2": "json-2"}'
+export SUB_MODEL__V2=nested-2
+export SUB_MODEL__V3=3
+export SUB_MODEL__DEEP__V4=v4
+```
+
+You could load a settings module thus:
+```py
+{!.tmp_examples/settings_nested_env.py!}
+```
+
+`env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
+`_env_nested_delimiter` keyword argument on instantiation.
+
+JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
+validators on those models.
+
+Nested environment variables take precedence over the top-level environment variable JSON
+(e.g. in the example above, `SUB_MODEL__V2` trumps `SUB_MODEL`).
 
 ## Dotenv (.env) support
 
@@ -113,6 +147,10 @@ settings = Settings(_env_file='prod.env', _env_file_encoding='utf-8')
 In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
 validating them.
+
+!!! note
+    If a filename is specified for `env_file`, Pydantic will only check the current working directory and
+    won't check any parent directories for the `.env` file.
 
 Even when using a dotenv file, *pydantic* will still read environment variables as well as the dotenv file,
 **environment variables will always take priority over values loaded from a dotenv file**.
@@ -248,6 +286,3 @@ You might also want to disable a source:
 {!.tmp_examples/settings_disable_source.py!}
 ```
 _(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_
-
-Because of the callables approach of `customise_sources`, evaluation of sources is lazy so unused sources don't
-have an adverse effect on performance.

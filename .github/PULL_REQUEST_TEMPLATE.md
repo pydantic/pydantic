@@ -1,6 +1,7 @@
 <!-- Thank you for your contribution! -->
 <!-- Unless your change is trivial, please create an issue to discuss the change before creating a PR -->
 <!-- See https://pydantic-docs.helpmanual.io/contributing/ for help on Contributing -->
+<!-- PLEASE DO **NOT** put issue ids in the PR title! Instead, add a descriptive title and put ids in the body -->
 
 ## Change Summary
 
@@ -9,6 +10,7 @@
 ## Related issue number
 
 <!-- Are there any issues opened that will be resolved by merging this change? -->
+<!-- WARNING: please use "fix #123" style references so the issue is closed when this PR is merged. -->
 
 ## Checklist
 

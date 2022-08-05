@@ -358,7 +358,7 @@ def resolve_constr(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
 
 
 # Finally, register all previously-defined types, and patch in our new function
-for typ in pydantic.types._DEFINED_TYPES:
+for typ in list(pydantic.types._DEFINED_TYPES):
     _registered(typ)
 pydantic.types._registered = _registered
 st.register_type_strategy(pydantic.Json, resolve_json)
