@@ -91,7 +91,7 @@ _(This script is complete, it should run "as is")_
 for validation, for use with `orm_mode`; see [Data binding](models.md#data-binding).
 
 **`alias_generator`**
-: a callable that takes a field name and returns an alias for it (see [the dedicated section](#alias-generator))
+: a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
 
 **`keep_untouched`**
 : a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
@@ -110,13 +110,17 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
 
 **`underscore_attrs_are_private`**
-: whether to treat any underscore non-class var attrs as private, or leave them as is; See [Private model attributes](models.md#private-model-attributes)
+: whether to treat any underscore non-class var attrs as private, or leave them as is; see [Private model attributes](models.md#private-model-attributes)
 
 **`copy_on_model_validation`**
 : whether inherited models used as fields should be reconstructed (copied) on validation instead of being kept untouched (default: `True`)
 
 **`smart_union`**
-: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion (see [the dedicated section](#smart-union)
+: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion; see [the dedicated section](#smart-union)
+
+**`post_init_call`**
+: whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
+  or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
 
 ## Change behaviour globally
 
@@ -139,7 +143,7 @@ _(This script is complete, it should run "as is")_
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
 e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
-it should be trivial to modify the `to_camel` function above.
+instead use the `to_lower_camel` function.
 
 ## Alias Precedence
 

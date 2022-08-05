@@ -82,8 +82,6 @@ const lookup = {
   'id7': '/usage/postponed_annotations/',
   'id8': '/usage/postponed_annotations/',
   'usage-of-union-in-annotations-and-type-order': '/usage/types/#unions',
-  'benchmarks': '/benchmarks/',
-  'benchmarks-tag': '/benchmarks/',
   'contributing-to-pydantic': '/contributing/',
   'pycharm-plugin': '/pycharm_plugin/',
   'id9': '/pycharm_plugin/',

@@ -329,7 +329,7 @@ def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set
 
 
 def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, 'AnyClassMethod']:
-    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
+    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])  # type: ignore[arg-type,var-annotated]
     return {
         k: v
         for k, v in all_attributes.items()

@@ -138,7 +138,7 @@ class Color(Representation):
           True - always include alpha,
           False - always omit alpha,
         """
-        r, g, b = [float_to_255(c) for c in self._rgba[:3]]
+        r, g, b = (float_to_255(c) for c in self._rgba[:3])
         if alpha is None:
             if self._rgba.alpha is None:
                 return r, g, b
@@ -207,10 +207,10 @@ def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
     Parse a tuple or list as a color.
     """
     if len(value) == 3:
-        r, g, b = [parse_color_value(v) for v in value]
+        r, g, b = (parse_color_value(v) for v in value)
         return RGBA(r, g, b, None)
     elif len(value) == 4:
-        r, g, b = [parse_color_value(v) for v in value[:3]]
+        r, g, b = (parse_color_value(v) for v in value[:3])
         return RGBA(r, g, b, parse_float_alpha(value[3]))
     else:
         raise ColorError(reason='tuples must have length 3 or 4')
@@ -236,7 +236,7 @@ def parse_str(value: str) -> RGBA:
     m = re.fullmatch(r_hex_short, value_lower)
     if m:
         *rgb, a = m.groups()
-        r, g, b = [int(v * 2, 16) for v in rgb]
+        r, g, b = (int(v * 2, 16) for v in rgb)
         if a:
             alpha: Optional[float] = int(a * 2, 16) / 255
         else:
@@ -246,7 +246,7 @@ def parse_str(value: str) -> RGBA:
     m = re.fullmatch(r_hex_long, value_lower)
     if m:
         *rgb, a = m.groups()
-        r, g, b = [int(v, 16) for v in rgb]
+        r, g, b = (int(v, 16) for v in rgb)
         if a:
             alpha = int(a, 16) / 255
         else:
