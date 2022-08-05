@@ -444,7 +444,7 @@ def is_typeddict_special(type_: Any) -> bool:
     """
     Check if type is a TypedDict special form (Required or NotRequired).
     """
-    return type_ is not None and (type_ is TypedDictRequired or type_ is TypedDictNotRequired)
+    return type_ is TypedDictRequired or type_ is TypedDictNotRequired
 
 
 def update_typeddict_keys(
