@@ -258,7 +258,7 @@ def generate_model_signature(
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {'default': field.default} if not field.required else {}
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.annotation, **kwargs
             )
 
     if config.extra is Extra.allow:
