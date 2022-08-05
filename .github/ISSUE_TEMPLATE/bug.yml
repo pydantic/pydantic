@@ -8,7 +8,7 @@ body:
       value:  Thank you for contributing to pydantic! ✊
 
   - type: checkboxes
-    id: searched
+    id: checks
     attributes:
       label: Initial Checks
       description: |
@@ -16,7 +16,9 @@ body:
         
         _Sorry to sound so draconian 👿; but every second spend replying to issues is time not spent improving pydantic_
       options:
-        - label: I have searched Google, GitHub & StackOverflow for similar issues and couldn't find anything
+        - label: I have searched GitHub for a duplicate issue and I'm sure this is something new
+          required: true
+        - label: I have searched Google & StackOverflow for a solution and couldn't find anything
           required: true
         - label: I have read and followed [the docs](https://pydantic-docs.helpmanual.io) and still think this is a bug
           required: true
@@ -57,7 +59,8 @@ body:
       label: Python, Pydantic & OS Version
       description: |
         Which version Python & Pydantic are you using, and which Operating System?
-        Please run the following command and copy the output below.
+        
+        Please run the following command and copy the output below:
 
         ```bash
         python -c "import pydantic.utils; print(pydantic.utils.version_info())"
