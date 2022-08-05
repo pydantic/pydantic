@@ -16,6 +16,7 @@ from typing import (
     Dict,
     Generator,
     List,
+    Match,
     Optional,
     Pattern,
     Set,
@@ -58,7 +59,6 @@ if TYPE_CHECKING:
         host_type: Optional[str]
         port: Optional[str]
         rebuild: Optional[str]
-
 
 else:
     email_validator = None
@@ -263,11 +263,11 @@ class AnyUrl(str):
         yield cls.validate
 
     @staticmethod
-    def match_url(url: str) -> Optional[re.Match[str]]:
+    def match_url(url: str) -> Optional[Match[str]]:
         return url_regex().match(url)
 
     @classmethod
-    def validate_with_host(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
+    def validate_with_host(cls, m: Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
         host, tld, host_type, rebuild = cls.validate_host(parts)
 
         return cls(
@@ -453,7 +453,7 @@ class MultiHostDsn(AnyUrl):
         return hosts_parts
 
     @staticmethod
-    def match_url(url: str) -> Optional[re.Match[str]]:
+    def match_url(url: str) -> Optional[Match[str]]:
         return multi_host_url_regex().match(url)
 
     @classmethod
@@ -461,7 +461,7 @@ class MultiHostDsn(AnyUrl):
         return super().validate_parts(parts, validate_port=False)
 
     @classmethod
-    def validate_with_host(cls, m: re.Match[str], url: str, parts: 'Parts') -> 'PostgresDsn':
+    def validate_with_host(cls, m: Match[str], url: str, parts: 'Parts') -> 'PostgresDsn':
         hosts = m.groupdict()['hosts']
         if hosts is None and cls.host_required:
             raise errors.UrlHostError()
