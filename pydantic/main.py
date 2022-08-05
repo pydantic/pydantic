@@ -28,7 +28,16 @@ from .class_validators import ValidatorGroup, extract_root_validators, extract_v
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import (
+    MAPPING_LIKE_SHAPES,
+    Field,
+    FieldInfo,
+    ModelField,
+    ModelPrivateAttr,
+    PrivateAttr,
+    Undefined,
+    is_finalvar_with_default_val,
+)
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -38,7 +47,6 @@ from .typing import (
     get_args,
     get_origin,
     is_classvar,
-    is_finalvar,
     is_namedtuple,
     is_union,
     resolve_annotations,
@@ -173,9 +181,6 @@ class ModelMetaclass(ABCMeta):
 
         def is_untouched(v: Any) -> bool:
             return isinstance(v, untouched_types) or v.__class__.__name__ == 'cython_function_or_method'
-
-        def is_finalvar_with_default_val(type_: Type[Any], val: Any) -> bool:
-            return is_finalvar(type_) and val is not Undefined and not isinstance(val, FieldInfo)
 
         if (namespace.get('__module__'), namespace.get('__qualname__')) != ('pydantic.main', 'BaseModel'):
             annotations = resolve_annotations(namespace.get('__annotations__', {}), namespace.get('__module__', None))

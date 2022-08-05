@@ -460,6 +460,9 @@ def _check_classvar(v: Optional[Type[Any]]) -> bool:
 
 
 def _check_finalvar(v: Optional[Type[Any]]) -> bool:
+    """
+    Check if a given type is a `typing.Final` type.
+    """
     if v is None:
         return False
 

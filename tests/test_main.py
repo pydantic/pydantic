@@ -2225,3 +2225,10 @@ def test_final_field_reassignment():
         match=r'^"Model" object "a" field is final and does not support reassignment$',
     ):
         obj.a = 20
+
+
+def test_field_by_default_is_not_final():
+    class Model(BaseModel):
+        a: int
+
+    assert not Model.__fields__['a'].final
