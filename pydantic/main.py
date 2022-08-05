@@ -571,10 +571,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def from_orm(cls: Type['Model'], obj: Any, **kwargs: Any) -> 'Model':
         if not cls.__config__.orm_mode:
             raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
-        obj = {ROOT_KEY: obj} if cls.__custom_root_type__ else cls._decompose_class(obj)
+        obj = {ROOT_KEY: obj} if cls.__custom_root_type__ else cls._decompose_class(obj, **kwargs)
         m = cls.__new__(cls)
-        if kwargs:
-            obj = {**obj, **kwargs}
         values, fields_set, validation_error = validate_model(cls, obj)
         if validation_error:
             raise validation_error
@@ -700,10 +698,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return cls(**value_as_dict)
 
     @classmethod
-    def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
+    def _decompose_class(cls: Type['Model'], obj: Any, **kwargs: Any) -> GetterDict:
         if isinstance(obj, GetterDict):
             return obj
-        return cls.__config__.getter_dict(obj)
+        return cls.__config__.getter_dict(obj, **kwargs)
 
     @classmethod
     @no_type_check

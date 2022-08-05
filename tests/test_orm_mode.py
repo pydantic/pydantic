@@ -381,3 +381,23 @@ def test_orm_mode_with_kwargs():
 
     assert user.username == converted.username
     assert user.full_name == converted.name
+
+
+def test_orm_mode_with_kwargs_property_wont_be_acessed():
+    class Model(BaseModel):
+        a: int
+
+        class Config:
+            orm_mode = True
+
+    class Test:
+        a = 1
+
+        @property
+        def test(self):
+            self.was_called = True
+
+    test = Test()
+    Model.from_orm(test, extra=42)
+
+    assert not hasattr(test, 'was_called')

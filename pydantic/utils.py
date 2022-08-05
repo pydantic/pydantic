@@ -413,19 +413,20 @@ class GetterDict(Representation):
     We can't inherit from Mapping[str, Any] because it upsets cython so we have to implement all methods ourselves.
     """
 
-    __slots__ = ('_obj',)
+    __slots__ = ('_obj', '_kwargs')
 
-    def __init__(self, obj: Any):
+    def __init__(self, obj: Any, **kwargs: Any):
         self._obj = obj
+        self._kwargs = kwargs
 
     def __getitem__(self, key: str) -> Any:
         try:
-            return getattr(self._obj, key)
+            return self._kwargs.get(key, getattr(self._obj, key))
         except AttributeError as e:
             raise KeyError(key) from e
 
     def get(self, key: Any, default: Any = None) -> Any:
-        return getattr(self._obj, key, default)
+        return self._kwargs.get(key, getattr(self._obj, key, default))
 
     def extra_keys(self) -> Set[Any]:
         """
