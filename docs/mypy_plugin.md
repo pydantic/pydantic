@@ -55,7 +55,7 @@ There are other benefits too! See below for more details.
   cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
 
 #### Generate a signature for `dataclasses`
-* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
+* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard Python dataclasses
 * The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
 
 ### Optional Capabilities:

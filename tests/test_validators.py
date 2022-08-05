@@ -43,6 +43,18 @@ def test_int_validation():
     assert Model(a=4.5).a == 4
 
 
+@pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
+def test_int_overflow_validation(value):
+    class Model(BaseModel):
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=value)
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
 def test_frozenset_validation():
     class Model(BaseModel):
         a: frozenset

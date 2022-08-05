@@ -269,7 +269,11 @@ class SecretsSettingsSource:
 
         for field in settings.__fields__.values():
             for env_name in field.field_info.extra['env_names']:
-                path = secrets_path / env_name
+                path = find_case_path(secrets_path, env_name, settings.__config__.case_sensitive)
+                if not path:
+                    # path does not exist, we curently don't return a warning for this
+                    continue
+
                 if path.is_file():
                     secret_value = path.read_text().strip()
                     if field.is_complex():
@@ -279,12 +283,11 @@ class SecretsSettingsSource:
                             raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
                     secrets[field.alias] = secret_value
-                elif path.exists():
+                else:
                     warnings.warn(
                         f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
                         stacklevel=4,
                     )
-
         return secrets
 
     def __repr__(self) -> str:
@@ -304,3 +307,15 @@ def read_env_file(
         return {k.lower(): v for k, v in file_vars.items()}
     else:
         return file_vars
+
+
+def find_case_path(dir_path: Path, file_name: str, case_sensitive: bool) -> Optional[Path]:
+    """
+    Find a file within path's directory matching filename, optionally ignoring case.
+    """
+    for f in dir_path.iterdir():
+        if f.name == file_name:
+            return f
+        elif not case_sensitive and f.name.lower() == file_name.lower():
+            return f
+    return None

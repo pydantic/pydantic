@@ -38,6 +38,12 @@ except ImportError:
     # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
     TypingGenericAlias = ()
 
+try:
+    from types import UnionType as TypesUnionType  # type: ignore
+except ImportError:
+    # python < 3.10 does not have UnionType (str | int, byte | bool and so on)
+    TypesUnionType = ()
+
 
 if sys.version_info < (3, 9):
 
@@ -126,6 +132,15 @@ else:
         """
         if hasattr(tp, '_nparams'):
             return (Any,) * tp._nparams
+        # Special case for `tuple[()]`, which used to return ((),) with `typing.Tuple`
+        # in python 3.10- but now returns () for `tuple` and `Tuple`.
+        # This will probably be clarified in pydantic v2
+        try:
+            if tp == Tuple[()] or sys.version_info >= (3, 9) and tp == tuple[()]:  # type: ignore[misc]
+                return ((),)
+        # there is a TypeError when compiled with cython
+        except TypeError:  # pragma: no cover
+            pass
         return ()
 
     def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
@@ -143,6 +158,63 @@ else:
             return tp.__args__ + tp.__metadata__
         # the fallback is needed for the same reasons as `get_origin` (see above)
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
+
+
+if sys.version_info < (3, 9):
+
+    def convert_generics(tp: Type[Any]) -> Type[Any]:
+        """Python 3.9 and older only supports generics from `typing` module.
+        They convert strings to ForwardRef automatically.
+
+        Examples::
+            typing.List['Hero'] == typing.List[ForwardRef('Hero')]
+        """
+        return tp
+
+else:
+    from typing import _UnionGenericAlias  # type: ignore
+
+    from typing_extensions import _AnnotatedAlias
+
+    def convert_generics(tp: Type[Any]) -> Type[Any]:
+        """
+        Recursively searches for `str` type hints and replaces them with ForwardRef.
+
+        Examples::
+            convert_generics(list['Hero']) == list[ForwardRef('Hero')]
+            convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
+            convert_generics(typing.Dict['Hero', 'Team']) == typing.Dict[ForwardRef('Hero'), ForwardRef('Team')]
+            convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
+        """
+        origin = get_origin(tp)
+        if not origin or not hasattr(tp, '__args__'):
+            return tp
+
+        args = get_args(tp)
+
+        # typing.Annotated needs special treatment
+        if origin is Annotated:
+            return _AnnotatedAlias(convert_generics(args[0]), args[1:])
+
+        # recursively replace `str` instances inside of `GenericAlias` with `ForwardRef(arg)`
+        converted = tuple(
+            ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
+            for arg in args
+        )
+
+        if converted == args:
+            return tp
+        elif isinstance(tp, TypingGenericAlias):
+            return TypingGenericAlias(origin, converted)
+        elif isinstance(tp, TypesUnionType):
+            # recreate types.UnionType (PEP604, Python >= 3.10)
+            return _UnionGenericAlias(origin, converted)
+        else:
+            try:
+                setattr(tp, '__args__', converted)
+            except AttributeError:
+                pass
+            return tp
 
 
 if sys.version_info < (3, 10):
@@ -428,7 +500,15 @@ def _check_classvar(v: Optional[Type[Any]]) -> bool:
 
 
 def is_classvar(ann_type: Type[Any]) -> bool:
-    return _check_classvar(ann_type) or _check_classvar(get_origin(ann_type))
+    if _check_classvar(ann_type) or _check_classvar(get_origin(ann_type)):
+        return True
+
+    # this is an ugly workaround for class vars that contain forward references and are therefore themselves
+    # forward references, see #3679
+    if ann_type.__class__ == ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):
+        return True
+
+    return False
 
 
 def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:
