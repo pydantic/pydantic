@@ -59,7 +59,7 @@ body:
     attributes:
       label: Python, Pydantic & OS Version
       description: |
-        Which version Python & Pydantic are you using, and which Operating System?
+        Which version of Python & Pydantic are you using, and which Operating System?
         
         Please run the following command and copy the output below:
 
