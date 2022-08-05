@@ -1,0 +1,33 @@
+name: 🚀 Feature request
+description: Suggest a new feature or change to pydantic
+labels: [feature request]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in pydantic! 😎
+
+        Please provide as much detail as possible about the feature you would like to suggest. 🙏
+
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Initial Checks
+      description: |
+        Just a few checks to make sure you need to create a feature request.
+        
+        _Sorry to sound so draconian; but every second spend replying to issues is time not spent improving pydantic :-)_
+      options:
+        - label: I have searched Google & GitHub for similar requests and couldn't find anything
+          required: true
+        - label: I have read and followed [the docs](https://pydantic-docs.helpmanual.io) and still this feature is missing
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please explain what you're seeing and what you would expect to see.
+    validations:
+      required: true
