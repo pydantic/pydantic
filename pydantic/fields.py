@@ -1,3 +1,4 @@
+import copy
 from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
@@ -34,6 +35,7 @@ from .typing import (
     Callable,
     ForwardRef,
     NoArgAnyCallable,
+    convert_generics,
     display_as_type,
     get_args,
     get_origin,
@@ -146,7 +148,7 @@ class FieldInfo(Representation):
         self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
-        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
+        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -273,7 +275,7 @@ def Field(
       elements. The schema will have a ``minItems`` validation keyword
     :param max_items: only applies to lists, requires the field to have a maximum number of
       elements. The schema will have a ``maxItems`` validation keyword
-    :param max_items: only applies to lists, requires the field not to have duplicated
+    :param unique_items: only applies to lists, requires the field not to have duplicated
       elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
@@ -354,6 +356,7 @@ class ModelField(Representation):
     __slots__ = (
         'type_',
         'outer_type_',
+        'annotation',
         'sub_fields',
         'sub_fields_mapping',
         'key_field',
@@ -392,9 +395,10 @@ class ModelField(Representation):
     ) -> None:
 
         self.name: str = name
-        self.has_alias: bool = bool(alias)
-        self.alias: str = alias or name
-        self.type_: Any = type_
+        self.has_alias: bool = alias is not None
+        self.alias: str = alias if alias is not None else name
+        self.annotation = type_
+        self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
@@ -446,8 +450,9 @@ class ModelField(Representation):
                 raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
             field_info = next(iter(field_infos), None)
             if field_info is not None:
+                field_info = copy.copy(field_info)
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default is not Undefined:
+                if field_info.default not in (Undefined, Required):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value is not Undefined and value is not Required:
                     # check also `Required` because of `validate_arguments` that sets `...` as default value
@@ -554,6 +559,7 @@ class ModelField(Representation):
         if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
+            self.annotation = self.type_
 
         if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
@@ -600,7 +606,7 @@ class ModelField(Representation):
             return
 
         if self.discriminator_key is not None and not is_union(origin):
-            raise TypeError('`discriminator` can only be used with `Union` type')
+            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
         # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
         if origin is None or origin is CollectionsHashable:
@@ -1128,14 +1134,13 @@ class ModelField(Representation):
 
         return (
             self.shape != SHAPE_SINGLETON
+            or hasattr(self.type_, '__pydantic_model__')
             or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
-            or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
-        # have to do this since display_as_type(self.outer_type_) is different (and wrong) on python 3.6
         if self.shape in MAPPING_LIKE_SHAPES:
             t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
         elif self.shape == SHAPE_TUPLE:

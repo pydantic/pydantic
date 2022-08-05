@@ -6,12 +6,12 @@ Tests for annotated types that _pydantic_ can validate like
 import json
 import sys
 from collections import namedtuple
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import pytest
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, PositiveInt, ValidationError
+from pydantic import BaseModel, Field, PositiveInt, ValidationError
 
 if sys.version_info < (3, 9, 2):
     try:
@@ -290,3 +290,42 @@ def test_typeddict_postponed_annotation():
 
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': {'v': -1}})
+
+
+def test_typeddict_annotated_nonoptional():
+    class DataTD(TypedDict):
+        a: Optional[int]
+        b: Annotated[Optional[int], Field(...)]
+        c: Annotated[Optional[int], Field(..., description='Test')]
+        d: Annotated[Optional[int], Field()]
+
+    class Model(BaseModel):
+        data_td: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'data_td': {'$ref': '#/definitions/DataTD'}},
+        'required': ['data_td'],
+        'definitions': {
+            'DataTD': {
+                'type': 'object',
+                'title': 'DataTD',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'integer'},
+                    'c': {'title': 'C', 'type': 'integer', 'description': 'Test'},
+                    'd': {'title': 'D', 'type': 'integer'},
+                },
+                'required': ['a', 'b', 'c'],
+            },
+        },
+    }
+
+    for bad_obj in ({}, {'data_td': []}, {'data_td': {'a': 1, 'b': 2, 'd': 4}}):
+        with pytest.raises(ValidationError):
+            Model.parse_obj(bad_obj)
+
+    valid_data = {'a': 1, 'b': 2, 'c': 3}
+    parsed_model = Model.parse_obj({'data_td': valid_data})
+    assert parsed_model and parsed_model == Model(data_td=valid_data)
