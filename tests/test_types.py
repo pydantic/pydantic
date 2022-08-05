@@ -9,6 +9,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
+    Any,
     Deque,
     Dict,
     FrozenSet,
@@ -2312,6 +2313,11 @@ def test_new_type_fails():
     ]
 
 
+def test_json_any_is_json():
+    """Mypy doesn't allow plain Json, so Json[Any] must behave just as Json did."""
+    assert Json[Any] is Json
+
+
 def test_valid_simple_json():
     class JsonModel(BaseModel):
         json_obj: Json
@@ -2320,9 +2326,27 @@ def test_valid_simple_json():
     assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
+def test_valid_simple_json_any():
+    class JsonModel(BaseModel):
+        json_obj: Json[Any]
+
+    obj = '{"a": 1, "b": [2, 3]}'
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+
+
 def test_invalid_simple_json():
     class JsonModel(BaseModel):
         json_obj: Json
+
+    obj = '{a: 1, b: [2, 3]}'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
+
+
+def test_invalid_simple_json_any():
+    class JsonModel(BaseModel):
+        json_obj: Json[Any]
 
     obj = '{a: 1, b: [2, 3]}'
     with pytest.raises(ValidationError) as exc_info:
@@ -2362,6 +2386,38 @@ def test_valid_detailed_json_bytes():
 
     obj = b'[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+
+
+def test_valid_model_json():
+    class Model(BaseModel):
+        a: int
+        b: List[int]
+
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[Model]
+
+    obj = '{"a": 1, "b": [2, 3]}'
+    m = JsonDetailedModel(json_obj=obj)
+    assert isinstance(m.json_obj, Model)
+    assert m.json_obj.a == 1
+    assert m.dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+
+
+def test_invalid_model_json():
+    class Model(BaseModel):
+        a: int
+        b: List[int]
+
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[Model]
+
+    obj = '{"a": 1, "c": [2, 3]}'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('json_obj', 'b'), 'msg': 'field required', 'type': 'value_error.missing'}
+    ]
 
 
 def test_invalid_detailed_json_type_error():
