@@ -5,10 +5,7 @@ labels: [feature request]
 body:
   - type: markdown
     attributes:
-      value: |
-        Thanks for your interest in pydantic! 😎
-
-        Please provide as much detail as possible about the feature you would like to suggest. 🙏
+      value: Thank you for contributing to pydantic! ✊
 
   - type: checkboxes
     id: searched
@@ -29,7 +26,7 @@ body:
     attributes:
       label: Description
       description: |
-        Please give as much detail as possible about the feature you would like to suggest.
+        Please give as much detail as possible about the feature you would like to suggest. 🙏
         
         You might like to add:
         * A demo of how code might look when using the feature

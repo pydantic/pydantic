@@ -5,10 +5,7 @@ labels: [bug, unconfirmed]
 body:
   - type: markdown
     attributes:
-      value: |
-        Thanks for your interest in pydantic! 😎
-
-        Please provide as much detail as possible to make understanding and solving your problem as quick as possible. 🙏
+      value:  Thank you for contributing to pydantic! ✊
 
   - type: checkboxes
     id: searched
@@ -33,7 +30,10 @@ body:
     id: description
     attributes:
       label: Description
-      description: Please explain what you're seeing and what you would expect to see.
+      description: |
+        Please explain what you're seeing and what you would expect to see.
+
+        Please provide as much detail as possible to make understanding and solving your problem as quick as possible. 🙏
     validations:
       required: true
 
