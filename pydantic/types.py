@@ -113,6 +113,8 @@ OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
+    from typing_extensions import Annotated
+
     from .dataclasses import Dataclass
     from .main import BaseModel
     from .typing import CallableGenerator
@@ -782,11 +784,14 @@ class JsonWrapper:
 
 class JsonMeta(type):
     def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
+        if t is Any:
+            return Json  # allow Json[Any] to replecate plain Json
         return _registered(type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t}))
 
 
 if TYPE_CHECKING:
-    Json = str
+    Json = Annotated[T, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+
 else:
 
     class Json(metaclass=JsonMeta):
