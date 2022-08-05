@@ -54,6 +54,10 @@ if TYPE_CHECKING:
 else:
     email_validator = None
 
+    class Parts(dict):
+        pass
+
+
 NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
 __all__ = [
@@ -70,6 +74,7 @@ __all__ = [
     'PostgresDsn',
     'AmqpDsn',
     'RedisDsn',
+    'MongoDsn',
     'KafkaDsn',
     'validate_email',
 ]
@@ -176,6 +181,18 @@ class AnyUrl(str):
         fragment: Optional[str] = None,
         **_kwargs: str,
     ) -> str:
+        parts = Parts(
+            scheme=scheme,
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+            path=path,
+            query=query,
+            fragment=fragment,
+            **_kwargs,  # type: ignore[misc]
+        )
+
         url = scheme + '://'
         if user:
             url += user
@@ -184,7 +201,7 @@ class AnyUrl(str):
         if user or password:
             url += '@'
         url += host
-        if port and 'port' not in cls.hidden_parts:
+        if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
             url += path
@@ -322,6 +339,8 @@ class AnyUrl(str):
 class AnyHttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
 
+    __slots__ = ()
+
 
 class HttpUrl(AnyHttpUrl):
     tld_required = True
@@ -338,6 +357,8 @@ class FileUrl(AnyUrl):
     allowed_schemes = {'file'}
     host_required = False
 
+    __slots__ = ()
+
 
 class PostgresDsn(AnyUrl):
     allowed_schemes = {
@@ -352,6 +373,8 @@ class PostgresDsn(AnyUrl):
     }
     user_required = True
 
+    __slots__ = ()
+
 
 class AmqpDsn(AnyUrl):
     allowed_schemes = {'amqp', 'amqps'}
@@ -359,6 +382,7 @@ class AmqpDsn(AnyUrl):
 
 
 class RedisDsn(AnyUrl):
+    __slots__ = ()
     allowed_schemes = {'redis', 'rediss'}
     host_required = False
 
@@ -368,6 +392,17 @@ class RedisDsn(AnyUrl):
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '6379',
             'path': '/0',
+        }
+
+
+class MongoDsn(AnyUrl):
+    allowed_schemes = {'mongodb'}
+
+    # TODO: Needed to generic "Parts" for "Replica Set", "Sharded Cluster", and other mongodb deployment modes
+    @staticmethod
+    def get_default_parts(parts: 'Parts') -> 'Parts':
+        return {
+            'port': '27017',
         }
 
 
@@ -461,6 +496,8 @@ class NameEmail(Representation):
 
 
 class IPvAnyAddress(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyaddress')
@@ -483,6 +520,8 @@ class IPvAnyAddress(_BaseAddress):
 
 
 class IPvAnyInterface(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyinterface')

@@ -56,8 +56,12 @@ so in this example
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
 
+In Pydantic **v1** `case_sensitive` is `False` by default and all variable names are converted to lower-case internally.
+If you want to define upper-case variable names on nested models like `SubModel` you have to
+set `case_sensitive=True` to disable this behaviour.
+
 !!! note
-    On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+    On Windows, Python's `os` module always treats environment variables as case-insensitive, so the
     `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
 
 ## Parsing environment variable values
@@ -143,6 +147,10 @@ settings = Settings(_env_file='prod.env', _env_file_encoding='utf-8')
 In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
 validating them.
+
+!!! note
+    If a filename is specified for `env_file`, Pydantic will only check the current working directory and
+    won't check any parent directories for the `.env` file.
 
 Even when using a dotenv file, *pydantic* will still read environment variables as well as the dotenv file,
 **environment variables will always take priority over values loaded from a dotenv file**.
