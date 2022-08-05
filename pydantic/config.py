@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol
 
-from .typing import AnyCallable
+from .typing import AnyArgTCallable, AnyCallable
 from .utils import GetterDict
 from .version import compiled
 
@@ -62,10 +62,10 @@ if not compiled:
         getter_dict: Type[GetterDict]
         alias_generator: Optional[Callable[[str], str]]
         keep_untouched: Tuple[type, ...]
-        schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable']
-        json_loads: Callable[[str], Any]
-        json_dumps: Callable[..., str]
-        json_encoders: Dict[Type[Any], AnyCallable]
+        schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
+        json_loads: Callable[[str], object]
+        json_dumps: AnyArgTCallable[str]
+        json_encoders: Dict[Type[object], AnyCallable]
         underscore_attrs_are_private: bool
 
         # whether or not inherited models as fields should be reconstructed as base model
@@ -146,7 +146,7 @@ class BaseConfig:
         pass
 
 
-def get_config(config: Union[ConfigDict, Type[BaseConfig], None]) -> Type[BaseConfig]:
+def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig]:
     if config is None:
         return BaseConfig
 
