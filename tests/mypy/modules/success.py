@@ -230,8 +230,8 @@ class PydanticTypes(BaseModel):
     my_dir_path: DirectoryPath = Path('.')
     my_dir_path_str: DirectoryPath = '.'  # type: ignore
     # Json
-    my_json: Json[dict[str, str]] = '{"hello": "world"}'  # type: ignore
-    my_json_list: Json[list[str]] = '["hello", "world"]'  # type: ignore
+    my_json: Json[Dict[str, str]] = '{"hello": "world"}'  # type: ignore
+    my_json_list: Json[List[str]] = '["hello", "world"]'  # type: ignore
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)

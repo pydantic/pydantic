@@ -14,7 +14,7 @@ class Model(BaseModel):
     last_name: NoneStr = None
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
-    json_list_of_ints: Json[list[int]]
+    json_list_of_ints: Json[List[int]]
 
 
 m = Model(age=42, list_of_ints=[1, '2', b'3'])
