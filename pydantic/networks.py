@@ -58,7 +58,7 @@ if TYPE_CHECKING:
         tld: Optional[str]
         host_type: Optional[str]
         port: Optional[str]
-        rebuild: Optional[str]
+        rebuild: bool
 
 else:
     email_validator = None
@@ -262,12 +262,34 @@ class AnyUrl(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.validate
 
-    @staticmethod
-    def match_url(url: str) -> Optional[Match[str]]:
-        return url_regex().match(url)
+    @classmethod
+    def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
+        if value.__class__ == cls:
+            return value
+        value = str_validator(value)
+        if cls.strip_whitespace:
+            value = value.strip()
+        url: str = cast(str, constr_length_validator(value, field, config))
+
+        m = cls._match_url(url)
+        # the regex should always match, if it doesn't please report with details of the URL tried
+        assert m, 'URL regex failed unexpectedly'
+
+        original_parts = cast('Parts', m.groupdict())
+        parts = cls.apply_default_parts(original_parts)
+        parts = cls.validate_parts(parts)
+
+        if m.end() != len(url):
+            raise errors.UrlExtraError(extra=url[m.end() :])
+
+        return cls._build_url(m, url, parts)
 
     @classmethod
-    def validate_with_host(cls, m: Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
+    def _build_url(cls, m: Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
+        """
+        Validate hosts and build the AnyUrl object. Split from `validate` so this method
+        can be altered in `MultiHostDsn`.
+        """
         host, tld, host_type, rebuild = cls.validate_host(parts)
 
         return cls(
@@ -284,38 +306,19 @@ class AnyUrl(str):
             fragment=parts['fragment'],
         )
 
-    @classmethod
-    def validate(cls, value: Any, field: 'ModelField', config: 'BaseConfig') -> 'AnyUrl':
-        if value.__class__ == cls:
-            return value
-        value = str_validator(value)
-        if cls.strip_whitespace:
-            value = value.strip()
-        url: str = cast(str, constr_length_validator(value, field, config))
-
-        m = cls.match_url(url)
-        # the regex should always match, if it doesn't please report with details of the URL tried
-        assert m, 'URL regex failed unexpectedly'
-
-        original_parts = cast('Parts', m.groupdict())
-        parts = cls.apply_default_parts(original_parts)
-        parts = cls.validate_parts(parts)
-
-        if m.end() != len(url):
-            raise errors.UrlExtraError(extra=url[m.end() :])
-
-        return cls.validate_with_host(m, url, parts)
+    @staticmethod
+    def _match_url(url: str) -> Optional[Match[str]]:
+        return url_regex().match(url)
 
     @staticmethod
-    def _valiadate_port(port: Any) -> str:
+    def _validate_port(port: Optional[str]) -> None:
         if port is not None and int(port) > 65_535:
             raise errors.UrlPortError()
-        return port
 
     @classmethod
     def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
         """
-        A method used to validate parts of an URL.
+        A method used to validate parts of a URL.
         Could be overridden to set default values for parts if missing
         """
         scheme = parts['scheme']
@@ -326,7 +329,7 @@ class AnyUrl(str):
             raise errors.UrlSchemePermittedError(set(cls.allowed_schemes))
 
         if validate_port:
-            cls._valiadate_port(parts['port'])
+            cls._validate_port(parts['port'])
 
         user = parts['user']
         if cls.user_required and user is None:
@@ -335,16 +338,8 @@ class AnyUrl(str):
         return parts
 
     @classmethod
-    def validate_host_parts(cls, parts: 'HostParts') -> 'HostParts':
-        """
-        A method used to validate host parts of an URL.
-        """
-        cls._valiadate_port(parts['port'])
-        return parts
-
-    @classmethod
     def validate_host(cls, parts: 'Parts') -> Tuple[str, Optional[str], str, bool]:
-        host, tld, host_type, rebuild = None, None, None, False
+        tld, host_type, rebuild = None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
             host = parts[f]  # type: ignore[literal-required]
             if host:
@@ -431,42 +426,32 @@ class MultiHostDsn(AnyUrl):
         super().__init__(*args, **kwargs)
         self.hosts = hosts
 
+    @staticmethod
+    def _match_url(url: str) -> Optional[Match[str]]:
+        return multi_host_url_regex().match(url)
+
     @classmethod
-    def validate_multi_host(cls, hosts: List[str]) -> List['HostParts']:
+    def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
+        return super().validate_parts(parts, validate_port=False)
+
+    @classmethod
+    def _build_url(cls, m: Match[str], url: str, parts: 'Parts') -> 'MultiHostDsn':
         hosts_parts: List['HostParts'] = []
-        for host in hosts:
-            hm = host_regex().match(host)
-            original_parts = cast('Parts', hm.groupdict())  # type: ignore
-            host, tld, host_type, rebuild = cls.validate_host(original_parts)
-            host_parts = cast(
-                'HostParts',
+        host_re = host_regex()
+        for host in m.groupdict()['hosts'].split(','):
+            d: Parts = host_re.match(host).groupdict()  # type: ignore
+            host, tld, host_type, rebuild = cls.validate_host(d)
+            port = d.get('port')
+            cls._validate_port(port)
+            hosts_parts.append(
                 {
                     'host': host,
                     'host_type': host_type,
                     'tld': tld,
                     'rebuild': rebuild,
-                    'port': original_parts.get('port'),
-                },
+                    'port': port,
+                }
             )
-            host_parts = cls.validate_host_parts(host_parts)
-            hosts_parts.append(host_parts)
-        return hosts_parts
-
-    @staticmethod
-    def match_url(url: str) -> Optional[Match[str]]:
-        return multi_host_url_regex().match(url)
-
-    @classmethod
-    def validate_parts(cls, parts: 'Parts') -> 'Parts':  # type: ignore
-        return super().validate_parts(parts, validate_port=False)
-
-    @classmethod
-    def validate_with_host(cls, m: Match[str], url: str, parts: 'Parts') -> 'PostgresDsn':
-        hosts = m.groupdict()['hosts']
-        if hosts is None and cls.host_required:
-            raise errors.UrlHostError()
-
-        hosts_parts = cls.validate_multi_host(hosts.split(','))
 
         if len(hosts_parts) > 1:
             return cls(
@@ -480,22 +465,22 @@ class MultiHostDsn(AnyUrl):
                 host_type=None,
                 hosts=hosts_parts,
             )
-
-        # Keep the back compatibility with single host
-        _host_part = hosts_parts[0]
-        return cls(
-            None if _host_part['rebuild'] else url,
-            scheme=parts['scheme'],
-            user=parts['user'],
-            password=parts['password'],
-            host=_host_part['host'],
-            tld=_host_part['tld'],
-            host_type=_host_part['host_type'],
-            port=_host_part.get('port'),
-            path=parts['path'],
-            query=parts['query'],
-            fragment=parts['fragment'],
-        )
+        else:
+            # backwards compatibility with single host
+            host_part = hosts_parts[0]
+            return cls(
+                None if host_part['rebuild'] else url,
+                scheme=parts['scheme'],
+                user=parts['user'],
+                password=parts['password'],
+                host=host_part['host'],
+                tld=host_part['tld'],
+                host_type=host_part['host_type'],
+                port=host_part.get('port'),
+                path=parts['path'],
+                query=parts['query'],
+                fragment=parts['fragment'],
+            )
 
 
 class PostgresDsn(MultiHostDsn):
