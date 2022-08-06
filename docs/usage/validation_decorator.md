@@ -11,10 +11,7 @@ boilerplate.
 
 Example of usage:
 
-```py
-{!.tmp_examples/validation_decorator_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_main.md!}
 
 ## Argument Types
 
@@ -23,10 +20,7 @@ as `Any`. Since `validate_arguments` internally uses a standard `BaseModel`, all
 [types](types.md) can be validated, including *pydantic* models and [custom types](types.md#custom-data-types).
 As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
-```py
-{!.tmp_examples/validation_decorator_types.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_types.md!}
 
 A few notes:
 
@@ -50,10 +44,7 @@ combinations of these:
 
 To demonstrate all the above parameter types:
 
-```py
-{!.tmp_examples/validation_decorator_parameter_types.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_parameter_types.md!}
 
 ## Using Field to describe function arguments
 
@@ -62,17 +53,12 @@ the field and validations. In general it should be used in a type hint with
 [Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:
 
-```py
-{!.tmp_examples/validation_decorator_field.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_field.md!}
 
 The [alias](model_config#alias-precedence) can be used with the decorator as normal.
 
-```py
-{!.tmp_examples/validation_decorator_field_alias.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_field_alias.md!}
+
 
 ## Usage with mypy
 
@@ -87,28 +73,20 @@ By default, arguments validation is done by directly calling the decorated funct
 But what if you wanted to validate them without *actually* calling the function?
 To do that you can call the `validate` method bound to the decorated function.
 
-```py
-{!.tmp_examples/validation_decorator_validate.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_validate.md!}
 
 ## Raw function
 
 The raw function which was decorated is accessible, this is useful if in some scenarios you trust your input
 arguments and want to call the function in the most performant way (see [notes on performance](#performance) below):
 
-```py
-{!.tmp_examples/validation_decorator_raw_function.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_raw_function.md!}
 
 ## Async Functions
 
 `validate_arguments` can also be used on async functions:
 
-```py
-{!.tmp_examples/validation_decorator_async.py!}
-```
+{!.tmp_examples/validation_decorator_async.md!}
 
 ## Custom Config
 
@@ -122,10 +100,7 @@ setting the `Config` sub-class in normal models.
 Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.
 
-```py
-{!.tmp_examples/validation_decorator_config.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_config.md!}
 
 ## Limitations
 

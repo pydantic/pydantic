@@ -4,10 +4,7 @@
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
 
-```py
-{!.tmp_examples/postponed_annotations_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/postponed_annotations_main.md!}
 
 Internally, *pydantic*  will call a method similar to `typing.get_type_hints` to resolve annotations.
 
@@ -19,10 +16,7 @@ In some cases, a `ForwardRef` won't be able to be resolved during model creation
 For example, this happens whenever a model references itself as a field type.
 When this happens, you'll need to call `update_forward_refs` after the model has been created before it can be used:
 
-```py
-{!.tmp_examples/postponed_annotations_forward_ref.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/postponed_annotations_forward_ref.md!}
 
 !!! warning
     To resolve strings (type names) into annotations (types), *pydantic* needs a namespace dict in which to
@@ -31,15 +25,11 @@ _(This script is complete, it should run "as is")_
 
 For example, this works fine:
 
-```py
-{!.tmp_examples/postponed_annotations_works.py!}
-```
+{!.tmp_examples/postponed_annotations_works.md!}
 
 While this will break:
 
-```py
-{!.tmp_examples/postponed_annotations_broken.py!}
-```
+{!.tmp_examples/postponed_annotations_broken.md!}
 
 Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
 
@@ -50,16 +40,10 @@ resolved after model creation.
 
 Within the model, you can refer to the not-yet-constructed model using a string:
 
-```py
-{!.tmp_examples/postponed_annotations_self_referencing_string.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/postponed_annotations_self_referencing_string.md!}
 
 Since Python 3.7, you can also refer it by its type, provided you import `annotations` (see
 [above](postponed_annotations.md) for support depending on Python
 and *pydantic* versions).
 
-```py
-{!.tmp_examples/postponed_annotations_self_referencing_annotations.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/postponed_annotations_self_referencing_annotations.md!}

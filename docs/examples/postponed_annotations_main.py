@@ -1,10 +1,11 @@
 from __future__ import annotations
-from typing import List
+from typing import Any
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    a: List[int]
+    a: list[int]
+    b: Any
 
 
-print(Model(a=('1', 2, 3)))
+print(Model(a=('1', 2, 3), b='ok'))

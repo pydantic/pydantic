@@ -3,11 +3,12 @@ from pydantic import BaseModel
 
 
 def this_is_broken():
-    # List is defined inside the function so is not in the module's
+    # Any is defined inside the function so is not in the module's
     # global scope!
-    from typing import List
+    from typing import Any
 
     class Model(BaseModel):
-        a: List[int]
+        a: list[int]
+        b: Any
 
-    print(Model(a=(1, 2)))
+    print(Model(a=(1, 2), b=3))

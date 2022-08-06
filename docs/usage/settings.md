@@ -12,10 +12,7 @@ This makes it easy to:
 
 For example:
 
-```py
-{!.tmp_examples/settings_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/settings_main.md!}
 
 ## Environment variable names
 
@@ -46,9 +43,7 @@ The following rules are used to determine which environment variable(s) are read
 
 Case-sensitivity can be turned on through the `Config`:
 
-```py
-{!.tmp_examples/settings_case_sensitive.py!}
-```
+{!.tmp_examples/settings_case_sensitive.md!}
 
 When `case_sensitive` is `True`, the environment variable names must match field names (optionally with a prefix),
 so in this example
@@ -90,9 +85,7 @@ export SUB_MODEL__DEEP__V4=v4
 ```
 
 You could load a settings module thus:
-```py
-{!.tmp_examples/settings_nested_env.py!}
-```
+{!.tmp_examples/settings_nested_env.md!}
 
 `env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
 `_env_nested_delimiter` keyword argument on instantiation.
@@ -276,10 +269,7 @@ Each callable should take an instance of the settings class as its sole argument
 
 The order of the returned callables decides the priority of inputs; first item is the highest priority.
 
-```py
-{!.tmp_examples/settings_env_priority.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/settings_env_priority.md!}
 
 By flipping `env_settings` and `init_settings`, environment variables now have precedence over `__init__` kwargs.
 
@@ -288,16 +278,11 @@ By flipping `env_settings` and `init_settings`, environment variables now have p
 As explained earlier, *pydantic* ships with multiples built-in settings sources. However, you may occasionally
 need to add your own custom sources, `customise_sources` makes this very easy:
 
-```py
-{!.tmp_examples/settings_add_custom_source.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/settings_add_custom_source.md!}
 
 ### Removing sources
 
 You might also want to disable a source:
 
-```py
-{!.tmp_examples/settings_disable_source.py!}
-```
+{!.tmp_examples/settings_disable_source.md!}
 _(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_

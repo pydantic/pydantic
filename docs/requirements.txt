@@ -10,3 +10,5 @@ mkdocs-material==8.3.9
 sqlalchemy
 orjson
 ujson
+autoflake
+pyupgrade
