@@ -2675,7 +2675,7 @@ def test_discriminated_union():
                         'lizard': '#/definitions/Lizard',
                     },
                 },
-                'anyOf': [
+                'oneOf': [
                     {'$ref': '#/definitions/Cat'},
                     {'$ref': '#/definitions/Dog'},
                     {'$ref': '#/definitions/Lizard'},
@@ -2708,7 +2708,7 @@ def test_discriminated_union():
                     'propertyName': 'color',
                     'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
                 },
-                'anyOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
+                'oneOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
             },
             'Dog': {
                 'title': 'Dog',
@@ -2775,11 +2775,11 @@ def test_discriminated_annotated_union():
                         'dog': '#/definitions/Dog',
                     },
                 },
-                'anyOf': [
+                'oneOf': [
                     {
-                        'anyOf': [
+                        'oneOf': [
                             {
-                                'anyOf': [
+                                'oneOf': [
                                     {'$ref': '#/definitions/BlackCatWithHeight'},
                                     {'$ref': '#/definitions/BlackCatWithWeight'},
                                 ]
@@ -2858,7 +2858,7 @@ def test_alias_same():
         'properties': {
             'number': {'title': 'Number', 'type': 'integer'},
             'pet': {
-                'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
                 'discriminator': {
                     'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
                     'propertyName': 'typeOfPet',
@@ -2960,9 +2960,9 @@ def test_discriminated_union_in_list():
                         'dog': '#/definitions/Dog',
                     },
                 },
-                'anyOf': [
+                'oneOf': [
                     {
-                        'anyOf': [
+                        'oneOf': [
                             {'$ref': '#/definitions/BlackCat'},
                             {'$ref': '#/definitions/WhiteCat'},
                         ],

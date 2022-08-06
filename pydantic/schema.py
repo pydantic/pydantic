@@ -705,7 +705,8 @@ def field_singleton_sub_fields_schema(
     else:
         s: Dict[str, Any] = {}
         # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
-        if field.discriminator_key is not None:
+        field_has_discriminator: bool = field.discriminator_key is not None
+        if field_has_discriminator:
             assert field.sub_fields_mapping is not None
 
             discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
@@ -748,16 +749,16 @@ def field_singleton_sub_fields_schema(
             definitions.update(sub_definitions)
             if schema_overrides and 'allOf' in sub_schema:
                 # if the sub_field is a referenced schema we only need the referenced
-                # object. Otherwise we will end up with several allOf inside anyOf.
+                # object. Otherwise we will end up with several allOf inside anyOf/oneOf.
                 # See https://github.com/pydantic/pydantic/issues/1209
                 sub_schema = sub_schema['allOf'][0]
 
-            if sub_schema.keys() == {'discriminator', 'anyOf'}:
-                # we don't want discriminator information inside anyOf choices, this is dealt with elsewhere
+            if sub_schema.keys() == {'discriminator', 'oneOf'}:
+                # we don't want discriminator information inside oneOf choices, this is dealt with elsewhere
                 sub_schema.pop('discriminator')
             sub_field_schemas.append(sub_schema)
             nested_models.update(sub_nested_models)
-        s['anyOf'] = sub_field_schemas
+        s['oneOf' if field_has_discriminator else 'anyOf'] = sub_field_schemas
         return s, definitions, nested_models
 
 
