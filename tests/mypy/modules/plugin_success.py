@@ -195,6 +195,14 @@ class Response(GenericModel, Generic[T]):
 response = Response[Model](data=model, error=None)
 
 
+def _default_factory_str() -> str:
+    ...
+
+
+def _default_factory_list() -> List[int]:
+    ...
+
+
 class FieldDefaultTestingModel(BaseModel):
     # Required
     a: int
@@ -205,4 +213,6 @@ class FieldDefaultTestingModel(BaseModel):
     d: int = Field(1)
 
     # Default factory
-    g: List[int] = Field(default_factory=list)
+    g: List[int] = Field(default_factory=_default_factory_list)
+    h: str = Field(default_factory=_default_factory_str)
+    i: str = Field(default_factory=lambda: 'test')

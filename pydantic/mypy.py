@@ -50,6 +50,7 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
+    Overloaded,
     Type,
     TypeOfAny,
     TypeType,
@@ -154,6 +155,12 @@ class PydanticPlugin(Plugin):
 
             if isinstance(default_factory_type, CallableType):
                 return default_factory_type.ret_type
+            # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
+            # Pydantic calls the default factory without any argument, so we retrieve the first item
+            elif isinstance(default_factory_type, Overloaded) and isinstance(
+                (overloaded_callable := default_factory_type.items[0]), CallableType
+            ):
+                return overloaded_callable.ret_type
 
         return default_any_type
 
