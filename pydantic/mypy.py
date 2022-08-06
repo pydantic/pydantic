@@ -156,7 +156,11 @@ class PydanticPlugin(Plugin):
             # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
             # Pydantic calls the default factory without any argument, so we retrieve the first item
             if isinstance(default_factory_type, Overloaded):
-                default_factory_type = default_factory_type.items[0]
+                if float(mypy_version) > 0.910:
+                    default_factory_type = default_factory_type.items[0]
+                else:
+                    # Mypy0.910 exposes the items of overloaded types in a function
+                    default_factory_type = default_factory_type.items()[0]  # type: ignore[operator]
 
             if isinstance(default_factory_type, CallableType):
                 return default_factory_type.ret_type
