@@ -153,14 +153,13 @@ class PydanticPlugin(Plugin):
         elif default_factory_args:
             default_factory_type = ctx.arg_types[1][0]
 
-            if isinstance(default_factory_type, CallableType):
-                return default_factory_type.ret_type
             # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
             # Pydantic calls the default factory without any argument, so we retrieve the first item
-            elif isinstance(default_factory_type, Overloaded) and isinstance(
-                (overloaded_callable := default_factory_type.items[0]), CallableType
-            ):
-                return overloaded_callable.ret_type
+            if isinstance(default_factory_type, Overloaded):
+                default_factory_type = default_factory_type.items[0]
+
+            if isinstance(default_factory_type, CallableType):
+                return default_factory_type.ret_type
 
         return default_any_type
 
