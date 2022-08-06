@@ -324,6 +324,8 @@ def exec_examples():
                 upgraded_lines, upgraded_json_output = exec_file(
                     new_file, upgraded, error, new_files
                 )
+            else:
+                upgraded_json_output = None
         else:
             upgraded_json_output = None
             lines = file_text.split('\n')
