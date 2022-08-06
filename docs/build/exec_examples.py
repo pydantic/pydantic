@@ -258,7 +258,7 @@ def exec_examples():
         )
     else:
         example_3_10_dir = TMP_EXAMPLES_DIR / "3.10"
-        example_3_10_dir.mkdir(exist_ok=True)
+        example_3_10_dir.mkdir(parents=True, exist_ok=True)
         sys.path.append(str(example_3_10_dir))
         execute_latest_version = True
 
