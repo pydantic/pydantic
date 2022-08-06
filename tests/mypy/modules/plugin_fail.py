@@ -241,9 +241,10 @@ class FieldDefaultTestingModel(BaseModel):
     f: int = None
 
     # Default factory
-    h: str = Field(default_factory=set)
-    i: int = Field(default_factory=_default_factory)
-    g: List[int] = Field(default_factory=list)
+    g: str = Field(default_factory=set)
+    h: int = Field(default_factory=_default_factory)
+    i: List[int] = Field(default_factory=list)
+    l: str = Field(default_factory=3)
 
     # Default and default factory
-    l: int = Field(default=1, default_factory=list)
+    m: int = Field(default=1, default_factory=list)

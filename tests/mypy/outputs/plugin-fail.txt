@@ -28,4 +28,5 @@
 244: error: Incompatible types in assignment (expression has type "Set[_T]", variable has type "str")  [assignment]
 245: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
 246: error: Incompatible types in assignment (expression has type "List[_T]", variable has type "List[int]")  [assignment]
-249: error: Field default and default_factory cannot be specified together  [pydantic-field]
+247: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
+250: error: Field default and default_factory cannot be specified together  [pydantic-field]
