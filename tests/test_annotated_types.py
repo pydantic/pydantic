@@ -22,6 +22,11 @@ if sys.version_info < (3, 9, 2):
 else:
     LegacyTypedDict = None
 
+if (3, 9, 2) < sys.version_info < (3, 11):
+    from typing import TypedDict as LegacyRequiredTypedDict
+else:
+    LegacyRequiredTypedDict = None
+
 
 def test_namedtuple():
     Position = namedtuple('Pos', 'x y')
@@ -416,3 +421,30 @@ def test_typeddict_annotated_nonoptional():
     valid_data = {'a': 1, 'b': 2, 'c': 3}
     parsed_model = Model.parse_obj({'data_td': valid_data})
     assert parsed_model and parsed_model == Model(data_td=valid_data)
+
+
+@pytest.mark.skipif(not LegacyRequiredTypedDict, reason='python 3.11+ used')
+def test_legacy_typeddict_required_not_required():
+    class TDRequired(LegacyRequiredTypedDict):
+        a: Required[int]
+
+    class TDNotRequired(LegacyRequiredTypedDict):
+        a: Required[int]
+
+    for cls in (TDRequired, TDNotRequired):
+        with pytest.raises(
+            TypeError,
+            match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.11.',
+        ):
+
+            class Model(BaseModel):
+                t: cls
+
+
+@pytest.mark.skipif(not LegacyRequiredTypedDict, reason='python 3.11+ used')
+def test_legacy_typeddict_no_required_not_required():
+    class TD(LegacyRequiredTypedDict):
+        a: int
+
+    class Model(BaseModel):
+        t: TD

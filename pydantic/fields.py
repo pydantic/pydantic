@@ -616,7 +616,7 @@ class ModelField(Representation):
 
         origin = get_origin(self.type_)
 
-        if origin is Annotated or (origin is not None and is_typeddict_special(origin)):
+        if origin is Annotated or is_typeddict_special(origin):
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
