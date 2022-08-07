@@ -258,7 +258,7 @@ def generate_model_signature(
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {'default': field.default} if not field.required else {}
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.annotation, **kwargs
             )
 
     if config.extra is Extra.allow:
@@ -301,6 +301,13 @@ def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseMod
 
 def to_camel(string: str) -> str:
     return ''.join(word.capitalize() for word in string.split('_'))
+
+
+def to_lower_camel(string: str) -> str:
+    if len(string) >= 1:
+        pascal_string = to_camel(string)
+        return pascal_string[0].lower() + pascal_string[1:]
+    return string.lower()
 
 
 T = TypeVar('T')

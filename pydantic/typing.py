@@ -25,7 +25,7 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from typing_extensions import Annotated, Literal, NotRequired as TypedDictNotRequired, Required as TypedDictRequired
+from typing_extensions import Annotated, Final, Literal, NotRequired as TypedDictNotRequired, Required as TypedDictRequired
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -263,7 +263,6 @@ if TYPE_CHECKING:
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
     AnyClassMethod = classmethod[Any]
 
-
 __all__ = (
     'ForwardRef',
     'Callable',
@@ -283,6 +282,7 @@ __all__ = (
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
+    'is_finalvar',
     'update_field_forward_refs',
     'update_model_forward_refs',
     'TupleGenerator',
@@ -499,6 +499,16 @@ def _check_classvar(v: Optional[Type[Any]]) -> bool:
     return v.__class__ == ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
 
 
+def _check_finalvar(v: Optional[Type[Any]]) -> bool:
+    """
+    Check if a given type is a `typing.Final` type.
+    """
+    if v is None:
+        return False
+
+    return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, '_name', None) == 'Final')
+
+
 def is_classvar(ann_type: Type[Any]) -> bool:
     if _check_classvar(ann_type) or _check_classvar(get_origin(ann_type)):
         return True
@@ -509,6 +519,10 @@ def is_classvar(ann_type: Type[Any]) -> bool:
         return True
 
     return False
+
+
+def is_finalvar(ann_type: Type[Any]) -> bool:
+    return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
 def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:

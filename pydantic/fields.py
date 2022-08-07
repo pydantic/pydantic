@@ -24,7 +24,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Final
 
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
@@ -39,6 +39,7 @@ from .typing import (
     display_as_type,
     get_args,
     get_origin,
+    is_finalvar,
     is_literal_type,
     is_new_type,
     is_none_type,
@@ -357,6 +358,7 @@ class ModelField(Representation):
     __slots__ = (
         'type_',
         'outer_type_',
+        'annotation',
         'sub_fields',
         'sub_fields_mapping',
         'key_field',
@@ -366,6 +368,7 @@ class ModelField(Representation):
         'default',
         'default_factory',
         'required',
+        'final',
         'model_config',
         'name',
         'alias',
@@ -390,6 +393,7 @@ class ModelField(Representation):
         default: Any = None,
         default_factory: Optional[NoArgAnyCallable] = None,
         required: 'BoolUndefined' = Undefined,
+        final: bool = False,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
@@ -397,12 +401,14 @@ class ModelField(Representation):
         self.name: str = name
         self.has_alias: bool = alias is not None
         self.alias: str = alias if alias is not None else name
+        self.annotation = type_
         self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.default_factory: Optional[NoArgAnyCallable] = default_factory
         self.required: 'BoolUndefined' = required
+        self.final: bool = final
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
         self.discriminator_key: Optional[str] = self.field_info.discriminator
@@ -558,6 +564,7 @@ class ModelField(Representation):
         if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
+            self.annotation = self.type_
 
         if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
@@ -594,6 +601,17 @@ class ModelField(Representation):
         elif is_literal_type(self.type_):
             return
         elif is_typeddict(self.type_):
+            return
+
+        if is_finalvar(self.type_):
+            self.final = True
+
+            if self.type_ is Final:
+                self.type_ = Any
+            else:
+                self.type_ = get_args(self.type_)[0]
+
+            self._type_analysis()
             return
 
         origin = get_origin(self.type_)
@@ -1215,3 +1233,7 @@ class DeferredType:
     """
     Used to postpone field preparation, while creating recursive generic models.
     """
+
+
+def is_finalvar_with_default_val(type_: Type[Any], val: Any) -> bool:
+    return is_finalvar(type_) and val is not Undefined and not isinstance(val, FieldInfo)

@@ -419,31 +419,92 @@ def test_http_urls_default_port(url, port):
     assert m.v == url
 
 
-def test_postgres_dsns():
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'postgres://user:pass@localhost:5432/app',
+        'postgresql://user:pass@localhost:5432/app',
+        'postgresql+asyncpg://user:pass@localhost:5432/app',
+        'postgres://user:pass@host1.db.net,host2.db.net:6432/app',
+    ],
+)
+def test_postgres_dsns(dsn):
     class Model(BaseModel):
         a: PostgresDsn
 
-    assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
-    assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
-    assert (
-        Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
-        == 'postgresql+asyncpg://user:pass@localhost:5432/app'
-    )
+    assert Model(a=dsn).a == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn,error_message',
+    (
+        (
+            'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'postgres://user:pass@host1.db.net,/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'postgres://localhost:5432/app',
+            {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'},
+        ),
+        (
+            'postgres://user@/foo/bar:5432/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'http://example.org',
+            {
+                'loc': ('a',),
+                'msg': 'URL scheme not permitted',
+                'type': 'value_error.url.scheme',
+                'ctx': {'allowed_schemes': PostgresDsn.allowed_schemes},
+            },
+        ),
+    ),
+)
+def test_postgres_dsns_validation_error(dsn, error_message):
+    class Model(BaseModel):
+        a: PostgresDsn
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
-    assert exc_info.value.json().startswith('[')
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='postgres://localhost:5432/app')
+        Model(a=dsn)
     error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+    assert error == error_message
 
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='postgres://user@/foo/bar:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+
+def test_multihost_postgres_dsns():
+    class Model(BaseModel):
+        a: PostgresDsn
+
+    any_multihost_url = Model(a='postgres://user:pass@host1.db.net:4321,host2.db.net:6432/app').a
+    assert any_multihost_url == 'postgres://user:pass@host1.db.net:4321,host2.db.net:6432/app'
+    assert any_multihost_url.scheme == 'postgres'
+    assert any_multihost_url.host is None
+    assert any_multihost_url.host_type is None
+    assert any_multihost_url.tld is None
+    assert any_multihost_url.port is None
+    assert any_multihost_url.path == '/app'
+    assert any_multihost_url.hosts == [
+        {'host': 'host1.db.net', 'port': '4321', 'tld': 'net', 'host_type': 'domain', 'rebuild': False},
+        {'host': 'host2.db.net', 'port': '6432', 'tld': 'net', 'host_type': 'domain', 'rebuild': False},
+    ]
+
+    any_multihost_url = Model(a='postgres://user:pass@host.db.net:4321/app').a
+    assert any_multihost_url.scheme == 'postgres'
+    assert any_multihost_url == 'postgres://user:pass@host.db.net:4321/app'
+    assert any_multihost_url.host == 'host.db.net'
+    assert any_multihost_url.host_type == 'domain'
+    assert any_multihost_url.tld == 'net'
+    assert any_multihost_url.port == '4321'
+    assert any_multihost_url.path == '/app'
+    assert any_multihost_url.hosts is None
 
 
 def test_amqp_dsns():
