@@ -238,7 +238,7 @@ def upgrade_code(content: str, min_version: Version = HIGHEST_VERSION) -> str:
             min_version=min_version,
             keep_percent_format=True,
             keep_mock=False,
-            keep_runtime_typing=False,
+            keep_runtime_typing=True,
         ),
     )
     upgraded = autoflake.fix_code(upgraded, remove_all_unused_imports=True)
