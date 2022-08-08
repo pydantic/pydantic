@@ -58,6 +58,10 @@ There are other benefits too! See below for more details.
 * classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard Python dataclasses
 * The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
 
+#### Respect the type of the `Field`'s `default` and `default_factory`
+* Field with both a `default` and a `default_factory` will result in an error during static checking.
+* The type of the `default` and `default_factory` value must be compatible with the one of the field.
+
 ### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy
