@@ -5,6 +5,7 @@ from pydantic import (
     AnyHttpUrl,
     AnyUrl,
     BaseModel,
+    CockroachDsn,
     EmailStr,
     FileUrl,
     HttpUrl,
@@ -505,6 +506,36 @@ def test_multihost_postgres_dsns():
     assert any_multihost_url.port == '4321'
     assert any_multihost_url.path == '/app'
     assert any_multihost_url.hosts is None
+
+
+def test_cockroach_dsns():
+    class Model(BaseModel):
+        a: CockroachDsn
+
+    assert Model(a='cockroachdb://user:pass@localhost:5432/app').a == 'cockroachdb://user:pass@localhost:5432/app'
+    assert (
+        Model(a='cockroachdb+psycopg2://user:pass@localhost:5432/app').a
+        == 'cockroachdb+psycopg2://user:pass@localhost:5432/app'
+    )
+    assert (
+        Model(a='cockroachdb+asyncpg://user:pass@localhost:5432/app').a
+        == 'cockroachdb+asyncpg://user:pass@localhost:5432/app'
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+    assert exc_info.value.json().startswith('[')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='cockroachdb://localhost:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='cockroachdb://user@/foo/bar:5432/app')
+    error = exc_info.value.errors()[0]
+    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
 
 def test_amqp_dsns():

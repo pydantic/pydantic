@@ -57,6 +57,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'CockroachDsn',
     'AmqpDsn',
     'RedisDsn',
     'MongoDsn',

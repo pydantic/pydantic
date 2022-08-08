@@ -81,6 +81,7 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'CockroachDsn',
     'AmqpDsn',
     'RedisDsn',
     'MongoDsn',
@@ -497,6 +498,15 @@ class PostgresDsn(MultiHostDsn):
     user_required = True
 
     __slots__ = ()
+
+
+class CockroachDsn(AnyUrl):
+    allowed_schemes = {
+        'cockroachdb',
+        'cockroachdb+psycopg2',
+        'cockroachdb+asyncpg',
+    }
+    user_required = True
 
 
 class AmqpDsn(AnyUrl):
