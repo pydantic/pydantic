@@ -25,6 +25,9 @@ _(This script is complete, it should run "as is")_
 **`anystr_strip_whitespace`**
 : whether to strip leading and trailing whitespace for str & byte types (default: `False`)
 
+**`anystr_upper`**
+: whether to make all characters uppercase for str & byte types (default: `False`)
+
 **`anystr_lower`**
 : whether to make all characters lowercase for str & byte types (default: `False`)
 
