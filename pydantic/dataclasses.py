@@ -31,6 +31,7 @@ This means we **don't want to create a new dataclass that inherits from it**
 The trick is to create a wrapper around `M` that will act as a proxy to trigger
 validation without altering default `M` behaviour.
 """
+import sys
 from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Optional, Type, TypeVar, Union, overload
@@ -85,38 +86,73 @@ __all__ = [
     'make_dataclass_validator',
 ]
 
+if sys.version_info >= (3, 10):
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
-@overload
-def dataclass(
-    *,
-    init: bool = True,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool = False,
-    config: Union[ConfigDict, Type[Any], None] = None,
-    validate_on_init: Optional[bool] = None,
-) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
-    ...
+    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @overload
+    def dataclass(
+        *,
+        init: bool = True,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: Union[ConfigDict, Type[Any], None] = None,
+        validate_on_init: Optional[bool] = None,
+        kw_only: bool = ...,
+    ) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
+        ...
 
+    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @overload
+    def dataclass(
+        _cls: Type[Any],
+        *,
+        init: bool = True,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: Union[ConfigDict, Type[Any], None] = None,
+        validate_on_init: Optional[bool] = None,
+        kw_only: bool = ...,
+    ) -> 'DataclassClassOrWrapper':
+        ...
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
-@overload
-def dataclass(
-    _cls: Type[Any],
-    *,
-    init: bool = True,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool = False,
-    config: Union[ConfigDict, Type[Any], None] = None,
-    validate_on_init: Optional[bool] = None,
-) -> 'DataclassClassOrWrapper':
-    ...
+else:
+
+    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @overload
+    def dataclass(
+        *,
+        init: bool = True,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: Union[ConfigDict, Type[Any], None] = None,
+        validate_on_init: Optional[bool] = None,
+    ) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
+        ...
+
+    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @overload
+    def dataclass(
+        _cls: Type[Any],
+        *,
+        init: bool = True,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: Union[ConfigDict, Type[Any], None] = None,
+        validate_on_init: Optional[bool] = None,
+    ) -> 'DataclassClassOrWrapper':
+        ...
 
 
 @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
@@ -131,6 +167,7 @@ def dataclass(
     frozen: bool = False,
     config: Union[ConfigDict, Type[Any], None] = None,
     validate_on_init: Optional[bool] = None,
+    kw_only: bool = False,
 ) -> Union[Callable[[Type[Any]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
     """
     Like the python standard lib dataclasses but with type validation.
@@ -149,9 +186,21 @@ def dataclass(
             default_validate_on_init = False
         else:
             dc_cls_doc = cls.__doc__ or ''  # needs to be done before generating dataclass
-            dc_cls = dataclasses.dataclass(  # type: ignore
-                cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
-            )
+            if sys.version_info >= (3, 10):
+                dc_cls = dataclasses.dataclass(
+                    cls,
+                    init=init,
+                    repr=repr,
+                    eq=eq,
+                    order=order,
+                    unsafe_hash=unsafe_hash,
+                    frozen=frozen,
+                    kw_only=kw_only,
+                )
+            else:
+                dc_cls = dataclasses.dataclass(  # type: ignore
+                    cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
+                )
             default_validate_on_init = True
 
         should_validate_on_init = default_validate_on_init if validate_on_init is None else validate_on_init
