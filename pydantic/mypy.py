@@ -494,8 +494,15 @@ class PydanticModelTransformer:
             return True
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             # The "default value" is a call to `Field`; at this point, the field is
-            # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`)
-            return len(expr.args) > 0 and expr.args[0].__class__ is EllipsisExpr
+            # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`) or if default_factory
+            # is specified.
+            for arg, name in zip(expr.args, expr.arg_names):
+                # If name is None, then this arg is the default because it is the only positonal argument.
+                if name is None or name == 'default':
+                    return arg.__class__ is EllipsisExpr
+                if name == 'default_factory':
+                    return False
+            return True
         # Only required if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return isinstance(expr, EllipsisExpr)
 
