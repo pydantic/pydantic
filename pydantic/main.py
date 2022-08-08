@@ -53,6 +53,7 @@ from .typing import (
     update_model_forward_refs,
 )
 from .utils import (
+    DUNDER_ATTRIBUTES,
     ROOT_KEY,
     ClassAttribute,
     GetterDict,
@@ -350,7 +351,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @no_type_check
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
-        if name in self.__private_attributes__:
+        if name in self.__private_attributes__ or name in DUNDER_ATTRIBUTES:
             return object_setattr(self, name, value)
 
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
@@ -891,7 +892,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [
-            (k, v) for k, v in self.__dict__.items() if k not in self.__fields__ or self.__fields__[k].field_info.repr
+            (k, v)
+            for k, v in self.__dict__.items()
+            if k not in DUNDER_ATTRIBUTES and (k not in self.__fields__ or self.__fields__[k].field_info.repr)
         ]
 
 
