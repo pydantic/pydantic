@@ -530,6 +530,7 @@ def test_set():
     class Model(BaseModel):
         a: Set[int]
         b: set
+        c: set = {1}
 
     assert Model.schema() == {
         'title': 'Model',
@@ -537,6 +538,7 @@ def test_set():
         'properties': {
             'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
             'b': {'title': 'B', 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'type': 'array', 'items': {}, 'default': [1], 'uniqueItems': True},
         },
         'required': ['a', 'b'],
     }
@@ -2187,13 +2189,13 @@ def test_frozen_set():
         'properties': {
             'a': {
                 'title': 'A',
-                'default': frozenset({1, 2, 3}),
+                'default': [1, 2, 3],
                 'type': 'array',
                 'items': {'type': 'integer'},
                 'uniqueItems': True,
             },
-            'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
-            'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'b': {'title': 'B', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
             'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
         'required': ['d'],
