@@ -75,6 +75,11 @@ def validator(
             "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
+    elif not all(isinstance(field, str) for field in fields):
+        raise ConfigError(
+            "validator fields should be passed as separate string args. "  # noqa: Q000
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
 
     if whole is not None:
         warnings.warn(

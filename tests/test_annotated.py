@@ -137,7 +137,7 @@ def test_config_field_info():
 
 
 def test_annotated_alias() -> None:
-    # https://github.com/samuelcolvin/pydantic/issues/2971
+    # https://github.com/pydantic/pydantic/issues/2971
 
     StrAlias = Annotated[str, Field(max_length=3)]
     IntAlias = Annotated[int, Field(default_factory=lambda: 2)]

@@ -338,6 +338,16 @@ def test_alias_priority():
     ]
 
 
+def test_empty_string_alias():
+    class Model(BaseModel):
+        empty_string_key: int = Field(alias='')
+
+    data = {'': 123}
+    m = Model(**data)
+    assert m.empty_string_key == 123
+    assert m.dict(by_alias=True) == data
+
+
 @pytest.mark.parametrize(
     'use_construct, allow_population_by_field_name_config, arg_name, expectation',
     [

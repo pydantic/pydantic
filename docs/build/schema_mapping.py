@@ -75,6 +75,13 @@ table = [
         ''
     ],
     [
+        'frozenset',
+        'array',
+        {'items': {}, 'uniqueItems': True},
+        'JSON Schema Validation',
+        ''
+    ],
+    [
         'List[str]',
         'array',
         {'items': {'type': 'string'}},

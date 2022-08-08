@@ -25,6 +25,7 @@ cases = [
     ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
     ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
     ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
+    ('mypy-plugin-strict.ini', 'fail_defaults.py', 'fail_defaults.txt'),
     ('mypy-default.ini', 'success.py', None),
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
@@ -40,6 +41,7 @@ cases = [
     ('pyproject-plugin.toml', 'plugin_fail.py', 'plugin-fail.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_success.py', 'plugin-success-strict.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt'),
+    ('pyproject-plugin-strict.toml', 'fail_defaults.py', 'fail_defaults.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 

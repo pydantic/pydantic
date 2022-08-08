@@ -530,6 +530,7 @@ def test_set():
     class Model(BaseModel):
         a: Set[int]
         b: set
+        c: set = {1}
 
     assert Model.schema() == {
         'title': 'Model',
@@ -537,6 +538,7 @@ def test_set():
         'properties': {
             'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
             'b': {'title': 'B', 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'type': 'array', 'items': {}, 'default': [1], 'uniqueItems': True},
         },
         'required': ['a', 'b'],
     }
@@ -549,7 +551,7 @@ def test_const_str():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string'}},
+        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string', 'default': 'some string'}},
     }
 
 
@@ -1134,7 +1136,7 @@ def test_flat_models_unique_models():
     from pydantic_schema_test.moduled.modeld import Model as ModelD
 
     flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
-    assert flat_models == set([ModelA, ModelB])
+    assert flat_models == {ModelA, ModelB}
 
 
 def test_flat_models_with_submodels():
@@ -1148,7 +1150,7 @@ def test_flat_models_with_submodels():
         c: Dict[str, Bar]
 
     flat_models = get_flat_models_from_model(Baz)
-    assert flat_models == set([Foo, Bar, Baz])
+    assert flat_models == {Foo, Bar, Baz}
 
 
 def test_flat_models_with_submodels_from_sequence():
@@ -1166,7 +1168,7 @@ def test_flat_models_with_submodels_from_sequence():
         ingredients: List[Ingredient]
 
     flat_models = get_flat_models_from_models([Bar, Pizza])
-    assert flat_models == set([Foo, Bar, Ingredient, Pizza])
+    assert flat_models == {Foo, Bar, Ingredient, Pizza}
 
 
 def test_model_name_maps():
@@ -2187,13 +2189,13 @@ def test_frozen_set():
         'properties': {
             'a': {
                 'title': 'A',
-                'default': frozenset({1, 2, 3}),
+                'default': [1, 2, 3],
                 'type': 'array',
                 'items': {'type': 'integer'},
                 'uniqueItems': True,
             },
-            'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
-            'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'b': {'title': 'B', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
             'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
         'required': ['d'],
@@ -3000,4 +3002,28 @@ def test_discriminated_union_in_list():
                 'required': ['pet_type', 'name'],
             },
         },
+    }
+
+
+def test_extra_inheritance():
+    class A(BaseModel):
+        root: Optional[str]
+
+        class Config:
+            fields = {
+                'root': {'description': 'root path of data', 'level': 1},
+            }
+
+    class Model(A):
+        root: str = Field('asa', description='image height', level=3)
+
+    m = Model()
+    assert m.schema()['properties'] == {
+        'root': {
+            'title': 'Root',
+            'type': 'string',
+            'description': 'image height',
+            'default': 'asa',
+            'level': 3,
+        }
     }

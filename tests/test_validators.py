@@ -43,6 +43,18 @@ def test_int_validation():
     assert Model(a=4.5).a == 4
 
 
+@pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
+def test_int_overflow_validation(value):
+    class Model(BaseModel):
+        a: int
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=value)
+    assert exc_info.value.errors() == [
+        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
+
+
 def test_frozenset_validation():
     class Model(BaseModel):
         a: frozenset
@@ -656,6 +668,22 @@ def test_validator_always_post_optional():
 
     assert Model(a='y').a == 'y'
     assert Model().a == 'default value'
+
+
+def test_validator_bad_fields_throws_configerror():
+    """
+    Attempts to create a validator with fields set as a list of strings,
+    rather than just multiple string args. Expects ConfigError to be raised.
+    """
+    with pytest.raises(ConfigError, match='validator fields should be passed as separate string args.'):
+
+        class Model(BaseModel):
+            a: str
+            b: str
+
+            @validator(['a', 'b'])
+            def check_fields(cls, v):
+                return v
 
 
 def test_datetime_validator():
