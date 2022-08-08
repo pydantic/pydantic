@@ -223,7 +223,7 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     if isinstance(value, (int, float)):
         # below code requires a string
-        value = str(value)
+        value = f'{value:f}'
     elif isinstance(value, bytes):
         value = value.decode()
 
