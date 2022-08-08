@@ -67,6 +67,13 @@ as the default value of the field:
 ```
 _(This script is complete, it should run "as is")_
 
+The [alias](model_config#alias-precedence) can be used with the decorator as normal.
+
+```py
+{!.tmp_examples/validation_decorator_field_alias.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Usage with mypy
 
 The `validate_arguments` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
