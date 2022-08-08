@@ -754,7 +754,7 @@ def field_singleton_sub_fields_schema(
             if schema_overrides and 'allOf' in sub_schema:
                 # if the sub_field is a referenced schema we only need the referenced
                 # object. Otherwise we will end up with several allOf inside anyOf.
-                # See https://github.com/samuelcolvin/pydantic/issues/1209
+                # See https://github.com/pydantic/pydantic/issues/1209
                 sub_schema = sub_schema['allOf'][0]
 
             if sub_schema.keys() == {'discriminator', 'anyOf'}:

@@ -12,7 +12,7 @@ _(This script is complete, it should run "as is")_
     `pydantic.BaseModel` is the better choice.
 
     For more information and discussion see
-    [samuelcolvin/pydantic#710](https://github.com/samuelcolvin/pydantic/issues/710).
+    [samuelcolvin/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
 You can use all the standard _pydantic_ field types, and the resulting dataclass will be identical to the one
 created by the standard library `dataclass` decorator.

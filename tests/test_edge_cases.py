@@ -1898,7 +1898,7 @@ return Model
 
 
 def test_resolve_annotations_module_missing(tmp_path):
-    # see https://github.com/samuelcolvin/pydantic/issues/2363
+    # see https://github.com/pydantic/pydantic/issues/2363
     file_path = tmp_path / 'module_to_load.py'
     # language=Python
     file_path.write_text(

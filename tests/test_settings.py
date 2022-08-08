@@ -509,7 +509,7 @@ def test_env_takes_precedence(env):
 
 def test_config_file_settings_nornir(env):
     """
-    See https://github.com/samuelcolvin/pydantic/pull/341#issuecomment-450378771
+    See https://github.com/pydantic/pydantic/pull/341#issuecomment-450378771
     """
 
     def nornir_settings_source(settings: BaseSettings) -> Dict[str, Any]:

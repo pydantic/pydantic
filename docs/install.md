@@ -74,7 +74,7 @@ Of course, you can also install these requirements manually with `pip install em
 
 And if you prefer to install *pydantic* directly from the repository:
 ```bash
-pip install git+git://github.com/samuelcolvin/pydantic@master#egg=pydantic
+pip install git+git://github.com/pydantic/pydantic@master#egg=pydantic
 # or with extras
-pip install git+git://github.com/samuelcolvin/pydantic@master#egg=pydantic[email,dotenv]
+pip install git+git://github.com/pydantic/pydantic@master#egg=pydantic[email,dotenv]
 ```

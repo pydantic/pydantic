@@ -124,11 +124,11 @@ for their kind support.
 
 !!! warning
     A security vulnerability, level "moderate" is fixed in v1.8.2. Please upgrade **ASAP**.
-    See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+    See security advisory [CVE-2021-29510](https://github.com/pydantic/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 * **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
   (or their negative values) does not cause an infinite loop, 
-  see security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+  see security advisory [CVE-2021-29510](https://github.com/pydantic/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 * fix schema generation with Enum by generating a valid name, #2575 by @PrettyWood
 * fix JSON schema generation with a `Literal` of an enum member, #2536 by @PrettyWood
 * Fix bug with configurations declarations that are passed as
@@ -247,7 +247,7 @@ for their kind support.
 
 * **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
   (or their negative values) does not cause an infinite loop,
-  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+  See security advisory [CVE-2021-29510](https://github.com/pydantic/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 ## v1.7.3 (2020-11-30)
 
@@ -342,7 +342,7 @@ for their kind support.
 
 * **Security fix:** Fix `date` and `datetime` parsing so passing either `'infinity'` or `float('inf')` 
   (or their negative values) does not cause an infinite loop,
-  See security advisory [CVE-2021-29510](https://github.com/samuelcolvin/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
+  See security advisory [CVE-2021-29510](https://github.com/pydantic/pydantic/security/advisories/GHSA-5jqp-qgf6-3pvh)
 
 ## v1.6.1 (2020-07-15)
 
