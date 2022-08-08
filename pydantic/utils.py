@@ -16,6 +16,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
     Tuple,
@@ -49,6 +50,8 @@ if TYPE_CHECKING:
     from .main import BaseModel
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
+    RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
+
 __all__ = (
     'import_string',
     'sequence_like',
@@ -73,6 +76,7 @@ __all__ = (
     'ROOT_KEY',
     'get_unique_discriminator_alias',
     'get_discriminator_alias_and_values',
+    'LimitedDict',
 )
 
 ROOT_KEY = '__root__'
@@ -254,7 +258,7 @@ def generate_model_signature(
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {'default': field.default} if not field.required else {}
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.annotation, **kwargs
             )
 
     if config.extra is Extra.allow:
@@ -297,6 +301,13 @@ def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseMod
 
 def to_camel(string: str) -> str:
     return ''.join(word.capitalize() for word in string.split('_'))
+
+
+def to_lower_camel(string: str) -> str:
+    if len(string) >= 1:
+        pascal_string = to_camel(string)
+        return pascal_string[0].lower() + pascal_string[1:]
+    return string.lower()
 
 
 T = TypeVar('T')
@@ -385,6 +396,14 @@ class Representation:
 
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
+
+    def __rich_repr__(self) -> 'RichReprResult':
+        """Get fields for Rich library"""
+        for name, field_repr in self.__repr_args__():
+            if name is None:
+                yield field_repr
+            else:
+                yield name, field_repr
 
 
 class GetterDict(Representation):
@@ -749,3 +768,39 @@ def _get_union_alias_and_all_values(
     # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
     all_aliases, all_values = zip(*zipped_aliases_values)
     return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values
+
+
+KT = TypeVar('KT')
+VT = TypeVar('VT')
+if TYPE_CHECKING:
+    # Annoying inheriting from `MutableMapping` and `dict` breaks cython, hence this work around
+    class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+        def __init__(self, size_limit: int = 1000):
+            ...
+
+else:
+
+    class LimitedDict(dict):
+        """
+        Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
+
+        Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
+
+        Annoying inheriting from `MutableMapping` breaks cython.
+        """
+
+        def __init__(self, size_limit: int = 1000):
+            self.size_limit = size_limit
+            super().__init__()
+
+        def __setitem__(self, __key: Any, __value: Any) -> None:
+            super().__setitem__(__key, __value)
+            if len(self) > self.size_limit:
+                excess = len(self) - self.size_limit + self.size_limit // 10
+                to_remove = list(self.keys())[:excess]
+                for key in to_remove:
+                    del self[key]
+
+        def __class_getitem__(cls, *args: Any) -> Any:
+            # to avoid errors with 3.7
+            pass

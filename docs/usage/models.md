@@ -33,12 +33,16 @@ default value, and so a type annotation is not required (however note [this](#fi
 order when some fields do not have type annotations).
 ```py
 user = User(id='123')
+user_x = User(id='123.45')
 ```
 `user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
 if no `ValidationError` is raised, you know the resulting model instance is valid.
 ```py
 assert user.id == 123
+assert user_x.id == 123
+assert isinstance(user_x.id, int)  # Note that 123.45 was casted to an int and its value is 123
 ```
+More details on the casting in the case of `user_x` can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type
 ```py
@@ -83,7 +87,7 @@ Models possess the following methods and attributes:
 : a utility for loading strings of numerous formats; cf. [helper functions](#helper-functions)
 
 `parse_file()`
-: like `parse_raw()` but for file paths; cf. [helper function](#helper-functions)
+: like `parse_raw()` but for file paths; cf. [helper functions](#helper-functions)
 
 `from_orm()`
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
@@ -163,7 +167,7 @@ _(This script is complete, it should run "as is")_
 ### Data binding
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
-[utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
+[utils.py](https://github.com/pydantic/pydantic/blob/master/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
@@ -192,7 +196,7 @@ _(This script is complete, it should run "as is")_
 One exception will be raised regardless of the number of errors found, that `ValidationError` will
 contain information about all the errors and how they happened.
 
-You can access these errors in a several ways:
+You can access these errors in several ways:
 
 `e.errors()`
 : method will return list of errors found in the input data.
@@ -379,7 +383,7 @@ Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 !!! warning
     See the note in [Required Optional Fields](#required-optional-fields) for the distinction between an ellipsis as a
     field default and annotation-only fields. 
-    See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
+    See [samuelcolvin/pydantic#1047](https://github.com/pydantic/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
@@ -450,7 +454,7 @@ Models can be configured to be immutable via `allow_mutation = False`. When this
 values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
 
 !!! warning
-    Immutability in python is never strict. If developers are determined/stupid they can always
+    Immutability in Python is never strict. If developers are determined/stupid they can always
     modify a so-called "immutable" object.
 
 ```py
@@ -490,7 +494,7 @@ _(This script is complete, it should run "as is")_
 
 !!! warning
     As demonstrated by the example above, combining the use of annotated and non-annotated fields
-    in the same model can result in surprising field orderings. (This is due to limitations of python)
+    in the same model can result in surprising field orderings. (This is due to limitations of Python)
 
     Therefore, **we recommend adding type annotations to all fields**, even when a default value
     would determine the type by itself to guarantee field order is preserved.
@@ -538,7 +542,7 @@ To do this, you may want to use a `default_factory`.
     The `default_factory` argument is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its signature or behaviour will not
     be concrete until **v2**. Feedback from the community while it's still provisional would be extremely useful;
-    either comment on [#866](https://github.com/samuelcolvin/pydantic/issues/866) or create a new issue.
+    either comment on [#866](https://github.com/pydantic/pydantic/issues/866) or create a new issue.
 
 Example of usage:
 
@@ -609,7 +613,7 @@ For example:
 _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
-[here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+[here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
 
@@ -629,8 +633,8 @@ The generated signature will also respect custom `__init__` functions:
 {!.tmp_examples/models_signature_custom_init.py!}
 ```
 
-To be included in the signature, a field's alias or name must be a valid python identifier. 
-*pydantic* prefers aliases over names, but may use field names if the alias is not a valid python identifier. 
+To be included in the signature, a field's alias or name must be a valid Python identifier. 
+*pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier. 
 
 If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
 In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
@@ -638,4 +642,4 @@ In addition, the `**data` argument will always be present in the signature if `C
 !!! note
     Types in the model signature are the same as declared in model annotations, 
     not necessarily all the types that can actually be provided to that field.
-    This may be fixed one day once [#1055](https://github.com/samuelcolvin/pydantic/issues/1055) is solved.
+    This may be fixed one day once [#1055](https://github.com/pydantic/pydantic/issues/1055) is solved.

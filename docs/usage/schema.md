@@ -110,7 +110,7 @@ It has the following arguments:
       or explicitly allow an arbitrary prefix with `.*?`
       (e.g. `.*?foo` to match any string containing the substring `foo`).
 
-      See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
+      See [#1631](https://github.com/pydantic/pydantic/issues/1631)
       for a discussion of possible changes to *pydantic* behavior in **v2**.
 
 * `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.

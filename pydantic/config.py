@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from .typing import AnyCallable
 from .utils import GetterDict
+from .version import compiled
 
 if TYPE_CHECKING:
     from typing import overload
@@ -27,13 +28,53 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'Extra', 'inherit_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'inherit_config', 'prepare_config'
 
 
 class Extra(str, Enum):
     allow = 'allow'
     ignore = 'ignore'
     forbid = 'forbid'
+
+
+# https://github.com/cython/cython/issues/4003
+# Will be fixed with Cython 3 but still in alpha right now
+if not compiled:
+    from typing_extensions import Literal, TypedDict
+
+    class ConfigDict(TypedDict, total=False):
+        title: Optional[str]
+        anystr_lower: bool
+        anystr_strip_whitespace: bool
+        min_anystr_length: int
+        max_anystr_length: Optional[int]
+        validate_all: bool
+        extra: Extra
+        allow_mutation: bool
+        frozen: bool
+        allow_population_by_field_name: bool
+        use_enum_values: bool
+        fields: Dict[str, Union[str, Dict[str, str]]]
+        validate_assignment: bool
+        error_msg_templates: Dict[str, str]
+        arbitrary_types_allowed: bool
+        orm_mode: bool
+        getter_dict: Type[GetterDict]
+        alias_generator: Optional[Callable[[str], str]]
+        keep_untouched: Tuple[type, ...]
+        schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable']
+        json_loads: Callable[[str], Any]
+        json_dumps: Callable[..., str]
+        json_encoders: Dict[Type[Any], AnyCallable]
+        underscore_attrs_are_private: bool
+
+        # whether or not inherited models as fields should be reconstructed as base model
+        copy_on_model_validation: bool
+        # whether dataclass `__post_init__` should be run after validation
+        post_init_call: Literal['before_validation', 'after_validation']
+
+else:
+    ConfigDict = dict  # type: ignore
 
 
 class BaseConfig:
@@ -66,6 +107,8 @@ class BaseConfig:
     copy_on_model_validation: bool = True
     # whether `Union` should check all allowed types before even trying to coerce
     smart_union: bool = False
+    # whether dataclass `__post_init__` should be run before or after validation
+    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
@@ -98,6 +141,25 @@ class BaseConfig:
         Optional hook to check or modify fields during model creation.
         """
         pass
+
+
+def get_config(config: Union[ConfigDict, Type[BaseConfig], None]) -> Type[BaseConfig]:
+    if config is None:
+        return BaseConfig
+
+    else:
+        config_dict = (
+            config
+            if isinstance(config, dict)
+            else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
+        )
+
+        class Config(BaseConfig):
+            ...
+
+        for k, v in config_dict.items():
+            setattr(Config, k, v)
+        return Config
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
