@@ -419,7 +419,7 @@ def test_constrained_set_too_long():
         v: conset(int, max_items=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
-        ConSetModelMax(v=set(str(i) for i in range(11)))
+        ConSetModelMax(v={str(i) for i in range(11)})
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -1145,7 +1145,7 @@ def test_dict():
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
         ({1, 2, '3'}, list({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), [0, 1, 4, 9, 16]),
+        ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
@@ -1185,7 +1185,7 @@ def test_ordered_dict():
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
         ({1, 2, '3'}, tuple({1, 2, '3'})),
-        ((i ** 2 for i in range(5)), (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
@@ -1211,7 +1211,7 @@ def test_tuple_fails(value):
     (
         ([1, 2, '3'], int, (1, 2, 3)),
         ((1, 2, '3'), int, (1, 2, 3)),
-        ((i ** 2 for i in range(5)), int, (0, 1, 4, 9, 16)),
+        ((i**2 for i in range(5)), int, (0, 1, 4, 9, 16)),
         (('a', 'b', 'c'), str, ('a', 'b', 'c')),
     ),
 )
@@ -1251,7 +1251,7 @@ def test_tuple_variable_len_fails(value, cls, exc):
         ({1, 2, 2, '3'}, {1, 2, '3'}),
         ((1, 2, 2, '3'), {1, 2, '3'}),
         ([1, 2, 2, '3'], {1, 2, '3'}),
-        ({i ** 2 for i in range(5)}, {0, 1, 4, 9, 16}),
+        ({i**2 for i in range(5)}, {0, 1, 4, 9, 16}),
     ),
 )
 def test_set_success(value, result):
@@ -1391,8 +1391,7 @@ def test_infinite_iterable_validate_first():
 
     def str_iterable():
         while True:
-            for c in 'foobarbaz':
-                yield c
+            yield from 'foobarbaz'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(it=str_iterable(), b=3)
@@ -1619,7 +1618,7 @@ def test_strict_bytes_subclass():
 
     b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
     assert isinstance(b.v, MyStrictBytes)
-    assert b.v == 'foobar'.encode()
+    assert b.v == b'foobar'
 
 
 def test_strict_str():
