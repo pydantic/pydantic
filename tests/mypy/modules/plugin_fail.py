@@ -1,4 +1,4 @@
-from typing import Any, Generic, Optional, Set, TypeVar, Union
+from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Extra, Field
 from pydantic.dataclasses import dataclass
@@ -226,3 +226,25 @@ class InheritingModel2(FrozenModel):
 
 inheriting2 = InheritingModel2(x=1, y='c')
 inheriting2.y = 'd'
+
+
+def _default_factory() -> str:
+    ...
+
+
+test: List[str] = []
+
+
+class FieldDefaultTestingModel(BaseModel):
+    # Default
+    e: int = Field(None)
+    f: int = None
+
+    # Default factory
+    g: str = Field(default_factory=set)
+    h: int = Field(default_factory=_default_factory)
+    i: List[int] = Field(default_factory=list)
+    l: str = Field(default_factory=3)
+
+    # Default and default factory
+    m: int = Field(default=1, default_factory=list)
