@@ -86,6 +86,16 @@ def test_use_field_name():
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
 
+def test_does_not_use_reserved_word():
+    class Foo(BaseModel):
+        from_: str = Field(..., alias='from')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
+
+
 def test_extra_allow_no_conflict():
     class Model(BaseModel):
         spam: str
