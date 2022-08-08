@@ -1,6 +1,6 @@
 from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, BaseSettings, Extra, Field
+from pydantic import BaseModel, BaseSettings, Extra, Field, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
@@ -248,3 +248,17 @@ class FieldDefaultTestingModel(BaseModel):
 
     # Default and default factory
     m: int = Field(default=1, default_factory=list)
+
+
+class ModelWithAnnotatedValidator(BaseModel):
+    name: str
+
+    @validator('name')
+    def noop_validator_with_annotations(self, name: str) -> str:
+        # This is a mistake: the first argument to a validator is the class itself,
+        # like a classmethod.
+        self.instance_method()
+        return name
+
+    def instance_method(self) -> None:
+        ...

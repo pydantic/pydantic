@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, List, Optional, Type, TypeVar, Union
+from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
@@ -199,7 +199,7 @@ class ModelWithAnnotatedValidator(BaseModel):
     name: str
 
     @validator('name')
-    def noop_validator_with_annotations(cls: Type['ModelWithAnnotatedValidator'], name: str) -> str:
+    def noop_validator_with_annotations(cls, name: str) -> str:
         return name
 
 

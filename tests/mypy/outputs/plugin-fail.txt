@@ -30,3 +30,4 @@
 246: error: Incompatible types in assignment (expression has type "List[_T]", variable has type "List[int]")  [assignment]
 247: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
 250: error: Field default and default_factory cannot be specified together  [pydantic-field]
+260: error: Missing positional argument "self" in call to "instance_method" of "ModelWithAnnotatedValidator"  [call-arg]
