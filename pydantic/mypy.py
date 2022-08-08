@@ -61,6 +61,7 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 from mypy.version import __version__ as mypy_version
+from typing_extensions import Literal
 
 from pydantic.utils import is_valid_field
 
@@ -76,8 +77,15 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
-MYPY_VERSION = tuple(int(part) for part in mypy_version.split('+')[0].split('.'))
-BUILTINS_NAME = 'builtins' if MYPY_VERSION >= (0, 930) else '__builtins__'
+MYPY_VERSION: Tuple[int, ...]
+BUILTINS_NAME: Literal['builtins', '__builtins__'] = 'builtins'
+
+
+def _parse_version(version: str) -> Tuple[Tuple[int, ...], Literal['builtins', '__builtins__']]:
+    return (
+        tuple(int(part) for part in version.split('+', 1)[0].split('.')),
+        'builtins' if MYPY_VERSION >= (0, 930) else '__builtins__',
+    )
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -87,6 +95,8 @@ def plugin(version: str) -> 'TypingType[Plugin]':
     We might want to use this to print a warning if the mypy version being used is
     newer, or especially older, than we expect (or need).
     """
+    global MYPY_VERSION, BUILTINS_NAME
+    MYPY_VERSION, BUILTINS_NAME = _parse_version(version)
     return PydanticPlugin
 
 
