@@ -131,7 +131,7 @@ def test_namedtuple_right_length():
 
 def test_namedtuple_postponed_annotation():
     """
-    https://github.com/samuelcolvin/pydantic/issues/2760
+    https://github.com/pydantic/pydantic/issues/2760
     """
 
     class Tup(NamedTuple):

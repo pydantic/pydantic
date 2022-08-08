@@ -25,8 +25,8 @@ theme:
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
-repo_name: samuelcolvin/pydantic
-repo_url: https://github.com/samuelcolvin/pydantic
+repo_name: pydantic/pydantic
+repo_url: https://github.com/pydantic/pydantic
 extra:
   analytics:
     provider: google

@@ -95,7 +95,7 @@ else:
         We can't directly use `typing.get_origin` since we need a fallback to support
         custom generic classes like `ConstrainedList`
         It should be useless once https://github.com/cython/cython/issues/3537 is
-        solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
+        solved and https://github.com/pydantic/pydantic/pull/1753 is merged.
         """
         if type(tp).__name__ in AnnotatedTypeNames:
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
@@ -370,7 +370,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
         try:
             module = sys.modules[module_name]
         except KeyError:
-            # happens occasionally, see https://github.com/samuelcolvin/pydantic/issues/2363
+            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
         else:
             base_globals = module.__dict__
