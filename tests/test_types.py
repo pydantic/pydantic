@@ -113,20 +113,34 @@ def test_constrained_bytes_too_long():
     ]
 
 
-def test_constrained_bytes_lower_enabled():
+@pytest.mark.parametrize(
+    'to_upper, value, result',
+    [
+        (True, b'abcd', b'ABCD'),
+        (False, b'aBcD', b'aBcD'),
+    ],
+)
+def test_constrained_bytes_upper(to_upper, value, result):
     class Model(BaseModel):
-        v: conbytes(to_lower=True)
+        v: conbytes(to_upper=to_upper)
 
-    m = Model(v=b'ABCD')
-    assert m.v == b'abcd'
+    m = Model(v=value)
+    assert m.v == result
 
 
-def test_constrained_bytes_lower_disabled():
+@pytest.mark.parametrize(
+    'to_lower, value, result',
+    [
+        (True, b'ABCD', b'abcd'),
+        (False, b'ABCD', b'ABCD'),
+    ],
+)
+def test_constrained_bytes_lower(to_lower, value, result):
     class Model(BaseModel):
-        v: conbytes(to_lower=False)
+        v: conbytes(to_lower=to_lower)
 
-    m = Model(v=b'ABCD')
-    assert m.v == b'ABCD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_bytes_strict_true():
@@ -418,7 +432,7 @@ def test_constrained_set_too_long():
         v: conset(int, max_items=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
-        ConSetModelMax(v=set(str(i) for i in range(11)))
+        ConSetModelMax(v={str(i) for i in range(11)})
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
@@ -699,20 +713,34 @@ def test_constrained_str_too_long():
     ]
 
 
-def test_constrained_str_lower_enabled():
+@pytest.mark.parametrize(
+    'to_upper, value, result',
+    [
+        (True, 'abcd', 'ABCD'),
+        (False, 'aBcD', 'aBcD'),
+    ],
+)
+def test_constrained_str_upper(to_upper, value, result):
     class Model(BaseModel):
-        v: constr(to_lower=True)
+        v: constr(to_upper=to_upper)
 
-    m = Model(v='ABCD')
-    assert m.v == 'abcd'
+    m = Model(v=value)
+    assert m.v == result
 
 
-def test_constrained_str_lower_disabled():
+@pytest.mark.parametrize(
+    'to_lower, value, result',
+    [
+        (True, 'ABCD', 'abcd'),
+        (False, 'ABCD', 'ABCD'),
+    ],
+)
+def test_constrained_str_lower(to_lower, value, result):
     class Model(BaseModel):
-        v: constr(to_lower=False)
+        v: constr(to_lower=to_lower)
 
-    m = Model(v='ABCD')
-    assert m.v == 'ABCD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_str_max_length_0():
@@ -1390,8 +1418,7 @@ def test_infinite_iterable_validate_first():
 
     def str_iterable():
         while True:
-            for c in 'foobarbaz':
-                yield c
+            yield from 'foobarbaz'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(it=str_iterable(), b=3)
@@ -1618,7 +1645,7 @@ def test_strict_bytes_subclass():
 
     b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
     assert isinstance(b.v, MyStrictBytes)
-    assert b.v == 'foobar'.encode()
+    assert b.v == b'foobar'
 
 
 def test_strict_str():
@@ -1785,58 +1812,60 @@ def test_uuid_validation():
     ]
 
 
-def test_anystr_strip_whitespace_enabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [
+        (True, '  123  ', b'  456  ', '123', b'456'),
+        (False, '  123  ', b'  456  ', '  123  ', b'  456  '),
+    ],
+)
+def test_anystr_strip_whitespace(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_strip_whitespace = True
+            anystr_strip_whitespace = enabled
 
-    m = Model(str_check='  123  ', bytes_check=b'  456  ')
-    assert m.str_check == '123'
-    assert m.bytes_check == b'456'
+    m = Model(str_check=str_check, bytes_check=bytes_check)
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
-def test_anystr_strip_whitespace_disabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [(True, 'ABCDefG', b'abCD1Fg', 'ABCDEFG', b'ABCD1FG'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+)
+def test_anystr_upper(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_strip_whitespace = False
+            anystr_upper = enabled
 
-    m = Model(str_check='  123  ', bytes_check=b'  456  ')
-    assert m.str_check == '  123  '
-    assert m.bytes_check == b'  456  '
+    m = Model(str_check=str_check, bytes_check=bytes_check)
+
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
-def test_anystr_lower_enabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [(True, 'ABCDefG', b'abCD1Fg', 'abcdefg', b'abcd1fg'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+)
+def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_lower = True
+            anystr_lower = enabled
 
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+    m = Model(str_check=str_check, bytes_check=bytes_check)
 
-    assert m.str_check == 'abcdefg'
-    assert m.bytes_check == b'abcd1fg'
-
-
-def test_anystr_lower_disabled():
-    class Model(BaseModel):
-        str_check: str
-        bytes_check: bytes
-
-        class Config:
-            anystr_lower = False
-
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
-
-    assert m.str_check == 'ABCDefG'
-    assert m.bytes_check == b'abCD1Fg'
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
 @pytest.mark.parametrize(

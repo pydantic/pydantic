@@ -264,7 +264,7 @@ configured via environment variables and therefore "required" fields do not have
 initialising a settings instance. However, pyright considers these fields as "required" and will therefore
 show an error when they're not set.
 
-See [#3753](https://github.com/samuelcolvin/pydantic/issues/3753#issuecomment-1087417884) for an explanation of the
+See [#3753](https://github.com/pydantic/pydantic/issues/3753#issuecomment-1087417884) for an explanation of the
 reasons behind this, and why we can't avoid the problem.
 
 There are two potential workarounds:

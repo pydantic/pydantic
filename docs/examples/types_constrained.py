@@ -22,10 +22,12 @@ from pydantic import (
 
 
 class Model(BaseModel):
+    upper_bytes: conbytes(to_upper=True)
     lower_bytes: conbytes(to_lower=True)
     short_bytes: conbytes(min_length=2, max_length=10)
     strip_bytes: conbytes(strip_whitespace=True)
 
+    upper_str: constr(to_upper=True)
     lower_str: constr(to_lower=True)
     short_str: constr(min_length=2, max_length=10)
     regex_str: constr(regex=r'^apple (pie|tart|sandwich)$')

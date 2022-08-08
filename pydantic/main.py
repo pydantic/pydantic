@@ -28,7 +28,16 @@ from .class_validators import ValidatorGroup, extract_root_validators, extract_v
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
-from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelField, ModelPrivateAttr, PrivateAttr, Undefined
+from .fields import (
+    MAPPING_LIKE_SHAPES,
+    Field,
+    FieldInfo,
+    ModelField,
+    ModelPrivateAttr,
+    PrivateAttr,
+    Undefined,
+    is_finalvar_with_default_val,
+)
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
@@ -44,6 +53,7 @@ from .typing import (
     update_model_forward_refs,
 )
 from .utils import (
+    DUNDER_ATTRIBUTES,
     ROOT_KEY,
     ClassAttribute,
     GetterDict,
@@ -78,18 +88,7 @@ if TYPE_CHECKING:
 
     Model = TypeVar('Model', bound='BaseModel')
 
-
-try:
-    import cython  # type: ignore
-except ImportError:
-    compiled: bool = False
-else:  # pragma: no cover
-    try:
-        compiled = cython.compiled
-    except AttributeError:
-        compiled = False
-
-__all__ = 'BaseModel', 'compiled', 'create_model', 'validate_model'
+__all__ = 'BaseModel', 'create_model', 'validate_model'
 
 _T = TypeVar('_T')
 
@@ -189,6 +188,8 @@ class ModelMetaclass(ABCMeta):
             # annotation only fields need to come first in fields
             for ann_name, ann_type in annotations.items():
                 if is_classvar(ann_type):
+                    class_vars.add(ann_name)
+                elif is_finalvar_with_default_val(ann_type, namespace.get(ann_name, Undefined)):
                     class_vars.add(ann_name)
                 elif is_valid_field(ann_name):
                     validate_field_name(bases, ann_name)
@@ -350,13 +351,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @no_type_check
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
-        if name in self.__private_attributes__:
+        if name in self.__private_attributes__ or name in DUNDER_ATTRIBUTES:
             return object_setattr(self, name, value)
 
         if self.__config__.extra is not Extra.allow and name not in self.__fields__:
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif not self.__config__.allow_mutation or self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
+        elif name in self.__fields__ and self.__fields__[name].final:
+            raise TypeError(
+                f'"{self.__class__.__name__}" object "{name}" field is final and does not support reassignment'
+            )
         elif self.__config__.validate_assignment:
             new_values = {**self.__dict__, name: value}
 
@@ -430,6 +435,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        encode_as_json: bool = False,
     ) -> 'DictStrAny':
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -451,6 +457,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                encode_as_json=encode_as_json,
             )
         )
 
@@ -466,6 +473,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
         encoder: Optional[Callable[[Any], Any]] = None,
         models_as_dict: bool = True,
+        use_nested_encoders: bool = False,
         **dumps_kwargs: Any,
     ) -> str:
         """
@@ -493,6 +501,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
+                encode_as_json=use_nested_encoders,
             )
         )
         if self.__custom_root_type__:
@@ -711,6 +720,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
+        encode_as_json: bool = False,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -722,6 +732,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     include=include,
                     exclude=exclude,
                     exclude_none=exclude_none,
+                    encode_as_json=encode_as_json,
                 )
                 if ROOT_KEY in v_dict:
                     return v_dict[ROOT_KEY]
@@ -771,6 +782,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
             return v.value
 
+        elif encode_as_json:
+            return cls.__json_encoder__(v)
+
         else:
             return v
 
@@ -804,6 +818,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        encode_as_json: bool = False,
     ) -> 'TupleGenerator':
 
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
@@ -849,6 +864,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
                     exclude_none=exclude_none,
+                    encode_as_json=encode_as_json,
                 )
             yield dict_key, v
 
@@ -887,7 +903,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     def __repr_args__(self) -> 'ReprArgs':
         return [
-            (k, v) for k, v in self.__dict__.items() if k not in self.__fields__ or self.__fields__[k].field_info.repr
+            (k, v)
+            for k, v in self.__dict__.items()
+            if k not in DUNDER_ATTRIBUTES and (k not in self.__fields__ or self.__fields__[k].field_info.repr)
         ]
 
 
@@ -943,7 +961,9 @@ def create_model(
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
-        `<name>=<FieldInfo>`, e.g. `foo=Field(default_factory=datetime.utcnow, alias='bar')`
+        `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`, e.g.
+        `foo=Field(datetime, default_factory=datetime.utcnow, alias='bar')` or
+        `foo=(str, FieldInfo(title='Foo'))`
     """
 
     if __base__ is not None:
