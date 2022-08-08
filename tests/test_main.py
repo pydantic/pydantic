@@ -586,12 +586,14 @@ def test_const_list():
         'properties': {
             'a': {
                 'const': [SubModel(b=1), SubModel(b=2), SubModel(b=3)],
+                'default': [{'b': 1}, {'b': 2}, {'b': 3}],
                 'items': {'$ref': '#/definitions/SubModel'},
                 'title': 'A',
                 'type': 'array',
             },
             'b': {
                 'const': [{'b': 4}, {'b': 5}, {'b': 6}],
+                'default': [{'b': 4}, {'b': 5}, {'b': 6}],
                 'items': {'$ref': '#/definitions/SubModel'},
                 'title': 'B',
                 'type': 'array',

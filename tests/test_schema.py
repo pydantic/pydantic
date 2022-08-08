@@ -549,7 +549,7 @@ def test_const_str():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string'}},
+        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string', 'default': 'some string'}},
     }
 
 
