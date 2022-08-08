@@ -1,9 +1,9 @@
-[![CI](https://github.com/samuelcolvin/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
-[![Coverage](https://coverage-badge.samuelcolvin.workers.dev/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
+[![CI](https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
+[![Coverage](https://coverage-badge.samuelcolvin.workers.dev/samuelcolvin/pydantic.svg)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
 [![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)
-[![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
+[![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/pydantic/pydantic/blob/master/LICENSE)
 
 {!.version.md!}
 
@@ -137,7 +137,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
 
 [Project Jupyter](https://jupyter.org/)
 : developers of the Jupyter notebook are using *pydantic* 
-  [for subprojects](https://github.com/samuelcolvin/pydantic/issues/773), through the FastAPI-based Jupyter server
+  [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server
   [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
   configuration management.
 
@@ -176,7 +176,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
   *pydantic* models.
 
 For a more comprehensive list of open-source projects using *pydantic* see the 
-[list of dependents on github](https://github.com/samuelcolvin/pydantic/network/dependents).
+[list of dependents on github](https://github.com/pydantic/pydantic/network/dependents).
 
 ## Discussion of Pydantic
 
