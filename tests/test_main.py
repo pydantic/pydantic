@@ -2182,6 +2182,7 @@ def test_annotated_class():
     PydanticAlias = Annotated[PydanticModel, 'bar baz']
 
     pa = PydanticAlias()
+    assert isinstance(pa, PydanticModel)
     pa.__doc__ = 'qwe'
     assert repr(pa) == "PydanticModel(foo='123')"
     assert pa.__doc__ == 'qwe'
