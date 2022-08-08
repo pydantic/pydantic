@@ -130,9 +130,17 @@ Below are several techniques to achieve it.
 
 You can disable the errors for a specific line using a comment of:
 
-```
+```py
 # type: ignore
 ```
+
+or (to be specific to pylance/pyright):
+
+```py
+# pyright: ignore
+```
+
+([pyright](https://github.com/microsoft/pyright) is the language server used by Pylance.).
 
 coming back to the example with `age='23'`, it would be:
 
@@ -146,7 +154,7 @@ class Knight(BaseModel):
     color: str = 'blue'
 
 
-lancelot = Knight(title='Sir Lancelot', age='23')  # type: ignore
+lancelot = Knight(title='Sir Lancelot', age='23')  # pyright: ignore
 ```
 
 that way Pylance and mypy will ignore errors in that line.
@@ -243,9 +251,43 @@ The specific configuration **`frozen`** (in beta) has a special meaning.
 
 It prevents other code from changing a model instance once it's created, keeping it **"frozen"**.
 
-When using the second version to declare `frozen=True` (with **keyword arguments** in the class definition), Pylance can use it to help you check in your code and **detect errors** when something is trying to set values in a model that is "frozen".
+When using the second version to declare `frozen=True` (with **keyword arguments** in the class definition), 
+Pylance can use it to help you check in your code and **detect errors** when something is trying to set values 
+in a model that is "frozen".
 
 ![VS Code strict type errors with model](./img/vs_code_08.png)
+
+## BaseSettings and ignoring Pylance/pyright errors
+
+Pylance/pyright does not work well with [`BaseSettings`](./usage/settings.md) - fields in settings classes can be 
+configured via environment variables and therefore "required" fields do not have to be explicitly set when
+initialising a settings instance. However, pyright considers these fields as "required" and will therefore
+show an error when they're not set.
+
+See [#3753](https://github.com/pydantic/pydantic/issues/3753#issuecomment-1087417884) for an explanation of the
+reasons behind this, and why we can't avoid the problem.
+
+There are two potential workarounds:
+
+* use an ignore comment (`# pyright: ignore`) when initialising `settings`
+* or, use `settings.parse_obj({})` to avoid the warning
+
+## Adding a default with `Field`
+
+Pylance/pyright requires `default` to be a keyword argument to `Field` in order to infer that the field is optional.
+
+```py
+from pydantic import BaseModel, Field
+
+
+class Knight(BaseModel):
+    title: str = Field(default='Sir Lancelot')  # this is okay
+    age: int = Field(23)  # this works fine at runtime but will case an error for pyright
+
+lance = Knight()  # error: Argument missing for parameter "age" 
+```
+
+Like the issue with `BaseSettings`, this is a limitation of dataclass transforms and cannot be fixed in pydantic.
 
 ## Technical Details
 

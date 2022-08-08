@@ -184,3 +184,12 @@ def test_str_repr():
     assert repr(Color('red')) == "Color('red', rgb=(255, 0, 0))"
     assert str(Color((1, 2, 3))) == '#010203'
     assert repr(Color((1, 2, 3))) == "Color('#010203', rgb=(1, 2, 3))"
+
+
+def test_eq():
+    assert Color('red') == Color('red')
+    assert Color('red') != Color('blue')
+    assert Color('red') != 'red'
+
+    assert Color('red') == Color((255, 0, 0))
+    assert Color('red') != Color((0, 0, 255))

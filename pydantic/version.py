@@ -1,6 +1,16 @@
-__all__ = 'VERSION', 'version_info'
+__all__ = 'compiled', 'VERSION', 'version_info'
 
 VERSION = '1.9.0'
+
+try:
+    import cython  # type: ignore
+except ImportError:
+    compiled: bool = False
+else:  # pragma: no cover
+    try:
+        compiled = cython.compiled
+    except AttributeError:
+        compiled = False
 
 
 def version_info() -> str:
@@ -8,8 +18,6 @@ def version_info() -> str:
     import sys
     from importlib import import_module
     from pathlib import Path
-
-    from .main import compiled
 
     optional_deps = []
     for p in ('devtools', 'dotenv', 'email-validator', 'typing-extensions'):

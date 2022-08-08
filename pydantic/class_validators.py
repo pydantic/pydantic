@@ -75,6 +75,11 @@ def validator(
             "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
+    elif not all(isinstance(field, str) for field in fields):
+        raise ConfigError(
+            "validator fields should be passed as separate string args. "  # noqa: Q000
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
 
     if whole is not None:
         warnings.warn(
@@ -329,7 +334,7 @@ def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set
 
 
 def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, 'AnyClassMethod']:
-    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
+    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])  # type: ignore[arg-type,var-annotated]
     return {
         k: v
         for k, v in all_attributes.items()

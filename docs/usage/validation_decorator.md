@@ -7,7 +7,7 @@ boilerplate.
     The `validate_arguments` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
-    on [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) or create a new issue.
+    on [#1205](https://github.com/pydantic/pydantic/issues/1205) or create a new issue.
 
 Example of usage:
 
@@ -46,7 +46,7 @@ combinations of these:
 * variable positional arguments defined via `*` (often `*args`)
 * variable keyword arguments defined via `**` (often `**kwargs`)
 * keyword only arguments - arguments after `*,`
-* positional only arguments - arguments before `, /` (new in python 3.8)
+* positional only arguments - arguments before `, /` (new in Python 3.8)
 
 To demonstrate all the above parameter types:
 
@@ -64,6 +64,13 @@ as the default value of the field:
 
 ```py
 {!.tmp_examples/validation_decorator_field.py!}
+```
+_(This script is complete, it should run "as is")_
+
+The [alias](model_config#alias-precedence) can be used with the decorator as normal.
+
+```py
+{!.tmp_examples/validation_decorator_field_alias.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -123,7 +130,7 @@ _(This script is complete, it should run "as is")_
 ## Limitations
 
 `validate_arguments` has been released on a provisional basis without all the bells and whistles, which may
-be added later, see [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) for some more discussion of this.
+be added later, see [#1205](https://github.com/pydantic/pydantic/issues/1205) for some more discussion of this.
 
 In particular:
 
@@ -134,7 +141,7 @@ see [model error handling](models.md#error-handling).
 
 This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
 `.errors()` and `.json()` can be useful when exposing the errors to end users, however `ValidationError` inherits
-from `ValueError` **not** `TypeError` which may be unexpected since python would raise a `TypeError` upon invalid
+from `ValueError` **not** `TypeError` which may be unexpected since Python would raise a `TypeError` upon invalid
 or missing arguments. This may be addressed in future by either allow a custom error or raising a different
 exception by default, or both.
 
@@ -143,13 +150,13 @@ exception by default, or both.
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
 see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
 
-See [#1098](https://github.com/samuelcolvin/pydantic/issues/1098) and other issues with the "strictness" label
+See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
 for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_arguments` will have an option
 to use this, it may even become the default for the decorator.
 
 ### Performance
 
-We've made a big effort to make *pydantic* as performant as possible (see [the benchmarks](../benchmarks.md))
+We've made a big effort to make *pydantic* as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
 there will still be a performance impact to using the `validate_arguments` decorator compared to
 calling the raw function.

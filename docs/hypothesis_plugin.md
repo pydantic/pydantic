@@ -12,8 +12,13 @@ Hypothesis will automatically load support for [custom types](usage/types.md) li
 and [`st.from_type()`](https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.from_type)
 strategies support them without any user configuration.
 
+!!! warning
+    Please note, while the plugin supports these types, hypothesis will(currently) generate values outside 
+    of given args for the constrained function types.
+
 
 ### Example tests
+
 ```py
 {!.tmp_examples/hypothesis_property_based_test.py!}
 ```
@@ -21,6 +26,7 @@ _(This script is complete, it should run "as is")_
 
 
 ### Use with JSON Schemas
+
 To test client-side code, you can use [`Model.schema()`](usage/models.md) with the
 [`hypothesis-jsonschema` package](https://pypi.org/project/hypothesis-jsonschema/)
 to generate arbitrary JSON instances matching the schema.

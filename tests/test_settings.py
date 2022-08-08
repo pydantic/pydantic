@@ -509,7 +509,7 @@ def test_env_takes_precedence(env):
 
 def test_config_file_settings_nornir(env):
     """
-    See https://github.com/samuelcolvin/pydantic/pull/341#issuecomment-450378771
+    See https://github.com/pydantic/pydantic/pull/341#issuecomment-450378771
     """
 
     def nornir_settings_source(settings: BaseSettings) -> Dict[str, Any]:
@@ -890,6 +890,33 @@ def test_secrets_path(tmp_path):
     assert Settings().dict() == {'foo': 'foo_secret_value_str'}
 
 
+def test_secrets_case_sensitive(tmp_path):
+    (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
+
+    class Settings(BaseSettings):
+        secret_var: Optional[str]
+
+        class Config:
+            secrets_dir = tmp_path
+            case_sensitive = True
+
+    assert Settings().dict() == {'secret_var': None}
+
+
+def test_secrets_case_insensitive(tmp_path):
+    (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
+
+    class Settings(BaseSettings):
+        secret_var: Optional[str]
+
+        class Config:
+            secrets_dir = tmp_path
+            case_sensitive = False
+
+    settings = Settings().dict()
+    assert settings == {'secret_var': 'foo_env_value_str'}
+
+
 def test_secrets_path_url(tmp_path):
     (tmp_path / 'foo').write_text('http://www.example.com')
     (tmp_path / 'bar').write_text('snap')
@@ -940,6 +967,7 @@ def test_secrets_missing(tmp_path):
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
+
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
