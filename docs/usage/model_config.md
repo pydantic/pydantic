@@ -62,8 +62,8 @@ _(This script is complete, it should run "as is")_
 : a `dict` containing schema information for each field; this is equivalent to
   using [the `Field` class](schema.md), except when a field is already
   defined trough annotation or the Field class, in which case only
-  alias, include, excude, min_length, max_length, regex, gt, lt, gt, le,
-  multiple_of, max_digits, decimal_places, min_items, max_items, unique_items
+  `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
+  `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
   and allow_mutation can be set (for example you cannot set default of default_factory)
    (default: `None`)
 
