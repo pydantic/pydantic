@@ -46,6 +46,7 @@ class MyEnum(Enum):
         (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
         (datetime.time(12, 34, 56), '"12:34:56"'),
         (datetime.timedelta(days=12, seconds=34, microseconds=56), '1036834.000056'),
+        (datetime.timedelta(seconds=-1), '-1.0'),
         ({1, 2, 3}, '[1, 2, 3]'),
         (frozenset([1, 2, 3]), '[1, 2, 3]'),
         ((v for v in range(4)), '[0, 1, 2, 3]'),
@@ -142,6 +143,8 @@ def test_invalid_model():
     [
         (datetime.timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
         (datetime.timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654_321), 'P1001DT1H2M3.654321S'),
+        (datetime.timedelta(seconds=-1), '-P1DT23H59M59.000000S'),
+        (datetime.timedelta(), 'P0DT0H0M0.000000S'),
     ],
 )
 def test_iso_timedelta(input, output):
