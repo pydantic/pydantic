@@ -25,7 +25,13 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from typing_extensions import Annotated, Final, Literal
+from typing_extensions import (
+    Annotated,
+    Final,
+    Literal,
+    NotRequired as TypedDictNotRequired,
+    Required as TypedDictRequired,
+)
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -275,6 +281,7 @@ __all__ = (
     'all_literal_values',
     'is_namedtuple',
     'is_typeddict',
+    'is_typeddict_special',
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
@@ -434,6 +441,17 @@ def is_typeddict(type_: Type[Any]) -> bool:
     from .utils import lenient_issubclass
 
     return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
+
+
+def _check_typeddict_special(type_: Any) -> bool:
+    return type_ is TypedDictRequired or type_ is TypedDictNotRequired
+
+
+def is_typeddict_special(type_: Any) -> bool:
+    """
+    Check if type is a TypedDict special form (Required or NotRequired).
+    """
+    return _check_typeddict_special(type_) or _check_typeddict_special(get_origin(type_))
 
 
 test_type = NewType('test_type', str)

@@ -44,6 +44,7 @@ from .typing import (
     is_new_type,
     is_none_type,
     is_typeddict,
+    is_typeddict_special,
     is_union,
     new_type_supertype,
 )
@@ -615,7 +616,7 @@ class ModelField(Representation):
 
         origin = get_origin(self.type_)
 
-        if origin is Annotated:
+        if origin is Annotated or is_typeddict_special(origin):
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
