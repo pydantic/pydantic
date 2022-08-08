@@ -97,7 +97,7 @@ the values should be functions which serialise that type (see the example below)
 _(This script is complete, it should run "as is")_
 
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
-as an optional alternative which implements ISO 8601 time diff encoding.
+as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time diff encoding.
 
 The `json_encoders` are also merged during the models inheritance with the child
 encoders taking precedence over the parent one.
