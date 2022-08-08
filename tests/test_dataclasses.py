@@ -1356,7 +1356,7 @@ def test_kw_only():
         a: int | None = None
         b: str
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match='takes 1 positional argument but 3 were given'):
         A(1, '')
 
     assert A(b='hi').b == 'hi'
