@@ -3030,7 +3030,7 @@ def test_extra_inheritance():
     }
 
 
-def test_sub_model_with_type_attributes():
+def test_model_with_type_attributes():
     class Foo(BaseModel):
         b: float
 
