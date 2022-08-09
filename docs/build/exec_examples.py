@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import importlib
-import inspect
 import json
 import os
 import re
@@ -21,9 +20,11 @@ THIS_DIR = Path(__file__).parent
 DOCS_DIR = (THIS_DIR / '..').resolve()
 EXAMPLES_DIR = DOCS_DIR / 'examples'
 TMP_EXAMPLES_DIR = DOCS_DIR / '.tmp_examples'
-UPGRADED_TMP_EXAMPLES_DIR = TMP_EXAMPLES_DIR / "upgraded"
+UPGRADED_TMP_EXAMPLES_DIR = TMP_EXAMPLES_DIR / 'upgraded'
 
-MAX_LINE_LENGTH = int(re.search(r'max_line_length = (\d+)', (EXAMPLES_DIR / '.editorconfig').read_text()).group(1))
+MAX_LINE_LENGTH = int(
+    re.search(r'max_line_length = (\d+)', (EXAMPLES_DIR / '.editorconfig').read_text()).group(1)  # type: ignore
+)
 LONG_LINE = 50
 LOWEST_VERSION = (3, 7)
 HIGHEST_VERSION = (3, 10)
@@ -32,7 +33,7 @@ Error = Callable[..., None]
 Version = tuple[int, int]
 
 PYTHON_CODE_MD_TMPL = """
-=== "Python {version} and above"    
+=== "Python {version} and above"
 
     ```py
 {code}
@@ -71,10 +72,9 @@ class MockPrint:
         self.file = file
         self.statements: list[tuple[int, str]] = []
 
-    def __call__(self, *args: Any, sep: str = ' ', **kwargs) -> None:
-        frame = inspect.currentframe().f_back.f_back.f_back
-        if sys.version_info >= (3, 8):
-            frame = frame.f_back
+    def __call__(self, *args: Any, sep: str = ' ', **kwargs: Any) -> None:
+        frame = sys._getframe(4) if sys.version_info >= (3, 8) else sys._getframe(3)
+
         if not self.file.samefile(frame.f_code.co_filename):
             # happens when index_error.py imports index_main.py
             return
@@ -185,7 +185,7 @@ def exec_file(file: Path, file_text: str, error: Error) -> tuple[list[str], str 
     mp = MockPrint(file)
     mod = None
 
-    with patch.object(Path, "read_text", MockPath.read_text), patch('builtins.print') as patch_print:
+    with patch.object(Path, 'read_text', MockPath.read_text), patch('builtins.print') as patch_print:
         if print_intercept:
             patch_print.side_effect = mp
         try:
@@ -230,14 +230,14 @@ def filter_lines(lines: list[str], error: Any) -> tuple[list[str], bool]:
         lines = lines[:ignore_below]
 
     lines = '\n'.join(lines).split('\n')
-    if any(len(l) > MAX_LINE_LENGTH for l in lines):
+    if any(len(line) > MAX_LINE_LENGTH for line in lines):
         error(f'lines longer than {MAX_LINE_LENGTH} characters')
     return lines, ignored_above
 
 
 def upgrade_code(content: str, min_version: Version = HIGHEST_VERSION) -> str:
-    import pyupgrade._main
-    import autoflake
+    import pyupgrade._main  # type: ignore
+    import autoflake  # type: ignore
 
     upgraded = pyupgrade._main._fix_plugins(
         content,
@@ -261,7 +261,7 @@ def ensure_used(file: Path, all_md: str, error: Error) -> None:
             error(
                 f'incorrect usage, change filename to {md_name!r} in docs.'
                 "make sure you don't specify ```py code blocks around examples,"
-                "they are automatically generated now."
+                'they are automatically generated now.'
             )
         else:
             error(
@@ -282,20 +282,20 @@ def check_style(file_text: str, error: Error) -> None:
 def populate_upgraded_versions(file: Path, file_text: str, lowest_version: Version) -> list[tuple[Path, str, Version]]:
     versions = []
     major, minor = lowest_version
-    assert major == HIGHEST_VERSION[0], "Wow, Python 4 is out? Congrats!"
+    assert major == HIGHEST_VERSION[0], 'Wow, Python 4 is out? Congrats!'
     upgraded_file_text = file_text
     while minor < HIGHEST_VERSION[1]:
         minor += 1
         new_file_text = upgrade_code(file_text, min_version=(major, minor))
         if upgraded_file_text != new_file_text:
             upgraded_file_text = new_file_text
-            new_file = UPGRADED_TMP_EXAMPLES_DIR / (file.stem + f"_{major}_{minor}" + file.suffix)
+            new_file = UPGRADED_TMP_EXAMPLES_DIR / (file.stem + f'_{major}_{minor}' + file.suffix)
             new_file.write_text(upgraded_file_text)
             versions.append((new_file, upgraded_file_text, (major, minor)))
     return versions
 
 
-def exec_examples() -> int:
+def exec_examples() -> int:  # noqa: C901 (I really don't want to decompose it any further)
     errors = []
     all_md = all_md_contents()
     new_files = {}
@@ -324,7 +324,7 @@ def exec_examples() -> int:
         def error(*desc: str) -> None:
             errors.append((file, desc))
             previous_frame = sys._getframe(1)
-            filename = Path(previous_frame.f_globals["__file__"]).relative_to(Path.cwd())
+            filename = Path(previous_frame.f_globals['__file__']).relative_to(Path.cwd())
             location = f'{filename}:{previous_frame.f_lineno}'
             sys.stderr.write(f'{location}: error in {file.relative_to(Path.cwd())}:\n{" ".join(desc)}\n')
 
@@ -368,7 +368,7 @@ def exec_examples() -> int:
             final_content.append(
                 PYTHON_CODE_MD_TMPL.format(
                     version='.'.join(map(str, lowest_version)),
-                    code=textwrap.indent('\n'.join(lines), "    "),
+                    code=textwrap.indent('\n'.join(lines), '    '),
                 )
             )
 
@@ -378,9 +378,10 @@ def exec_examples() -> int:
             final_content.append(f'_(This script requires {requirements})_')
         else:
             error(
-                "script may not run as is, but requirements were not specified.",
-                "specify `# requires: ` in the end of the script",
+                'script may not run as is, but requirements were not specified.',
+                'specify `# requires: ` in the end of the script',
             )
+
         if len(json_outputs) > 1:
             error('json output should not differ between versions')
 
@@ -389,7 +390,7 @@ def exec_examples() -> int:
             if json_output:
                 final_content.append(JSON_OUTPUT_MD_TMPL.format(output=json_output))
 
-        new_files[markdown_name] = "\n".join(final_content)
+        new_files[markdown_name] = '\n'.join(final_content)
 
     if errors:
         print(f'\n{len(errors)} errors, not writing files\n')
@@ -403,6 +404,7 @@ def exec_examples() -> int:
     for file_name, content in new_files.items():
         (TMP_EXAMPLES_DIR / file_name).write_text(content, 'utf-8')
     gen_ansi_output()
+
     return 0
 
 

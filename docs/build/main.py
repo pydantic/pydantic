@@ -8,7 +8,7 @@ THIS_DIR = Path(__file__).parent
 PROJECT_ROOT = THIS_DIR / '..' / '..'
 
 
-def main():
+def main() -> int:
     history = (PROJECT_ROOT / 'HISTORY.md').read_text()
     history = re.sub(r'#(\d+)', r'[#\1](https://github.com/pydantic/pydantic/issues/\1)', history)
     history = re.sub(r'(\s)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
