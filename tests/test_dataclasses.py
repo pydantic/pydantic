@@ -1360,3 +1360,27 @@ def test_kw_only():
         A(1, '')
 
     assert A(b='hi').b == 'hi'
+
+
+def test_extra_forbid_list_no_error():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    class Bar:
+        ...
+
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        a: List[Bar]
+
+    assert isinstance(Foo(a=[Bar()]).a[0], Bar)
+
+
+def test_extra_forbid_list_error():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    class Bar:
+        ...
+
+    with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'a'")):
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            a: List[Bar(a=1)]
