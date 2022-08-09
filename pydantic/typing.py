@@ -268,7 +268,6 @@ if TYPE_CHECKING:
     AnyClassMethod = classmethod[Any]
 
 __all__ = (
-    'Callable',
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',

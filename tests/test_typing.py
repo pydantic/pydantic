@@ -1,6 +1,6 @@
 import sys
 from collections import namedtuple
-from typing import Any, Callable as TypingCallable, ForwardRef, NamedTuple, NewType  # noqa: F401
+from typing import Any, Callable as TypingCallable, Dict, ForwardRef, List, NamedTuple, NewType, Union  # noqa: F401
 
 import pytest
 from typing_extensions import Annotated  # noqa: F401
