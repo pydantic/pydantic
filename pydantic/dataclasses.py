@@ -310,8 +310,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
                             # set arg value by default
                             initvars_and_values[f.name] = args[i]
                         except IndexError:
-                            initvars_and_values[f.name] = f.default
-                initvars_and_values.update(kwargs)
+                            initvars_and_values[f.name] = kwargs.get(f.name, f.default)
 
                 self.__post_init_post_parse__(**initvars_and_values)
 

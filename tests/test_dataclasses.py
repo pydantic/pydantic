@@ -600,6 +600,17 @@ def test_initvars_post_init_post_parse():
     assert PathDataPostInitPostParse('world', base_path='/hello').path == Path('/hello/world')
 
 
+def test_post_init_post_parse_without_initvars():
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        a: int
+
+        def __post_init_post_parse__(self):
+            ...
+
+    Foo(a=1)
+
+
 def test_classvar():
     @pydantic.dataclasses.dataclass
     class TestClassVar:
