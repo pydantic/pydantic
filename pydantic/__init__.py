@@ -110,6 +110,7 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
+    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',

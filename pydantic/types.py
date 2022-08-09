@@ -1,3 +1,4 @@
+import abc
 import math
 import re
 import warnings
@@ -92,6 +93,7 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
+    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -812,7 +814,29 @@ else:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class SecretStr:
+class SecretField(abc.ABC):
+    """
+    Note: this should be implemented as a generic like `SecretField(ABC, Generic[T])`,
+          the `__init__()` should be part of the abstract class and the
+          `get_secret_value()` method should use the generic `T` type.
+
+          However Cython doesn't support very well generics at the moment and
+          the generated code fails to be imported (see
+          https://github.com/cython/cython/issues/2753).
+    """
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
+
+    def __str__(self) -> str:
+        return '**********' if self.get_secret_value() else ''
+
+    @abc.abstractmethod
+    def get_secret_value(self) -> Any:  # pragma: no cover
+        ...
+
+
+class SecretStr(SecretField):
     min_length: OptionalInt = None
     max_length: OptionalInt = None
 
@@ -845,12 +869,6 @@ class SecretStr:
     def __repr__(self) -> str:
         return f"SecretStr('{self}')"
 
-    def __str__(self) -> str:
-        return '**********' if self._secret_value else ''
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
-
     def __len__(self) -> int:
         return len(self._secret_value)
 
@@ -862,7 +880,7 @@ class SecretStr:
         return self._secret_value
 
 
-class SecretBytes:
+class SecretBytes(SecretField):
     min_length: OptionalInt = None
     max_length: OptionalInt = None
 
@@ -894,12 +912,6 @@ class SecretBytes:
 
     def __repr__(self) -> str:
         return f"SecretBytes(b'{self}')"
-
-    def __str__(self) -> str:
-        return '**********' if self._secret_value else ''
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
 
     def __len__(self) -> int:
         return len(self._secret_value)
