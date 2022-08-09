@@ -951,6 +951,7 @@ def test_json_type():
     class Model(BaseModel):
         a: Json
         b: Json[int]
+        c: Json[Any]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -958,6 +959,7 @@ def test_json_type():
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
             'b': {'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'string', 'format': 'json-string'},
         },
         'required': ['b'],
     }

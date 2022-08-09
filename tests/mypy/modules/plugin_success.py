@@ -195,6 +195,14 @@ class Response(GenericModel, Generic[T]):
 response = Response[Model](data=model, error=None)
 
 
+class ModelWithAnnotatedValidator(BaseModel):
+    name: str
+
+    @validator('name')
+    def noop_validator_with_annotations(cls, name: str) -> str:
+        return name
+
+
 def _default_factory_str() -> str:
     ...
 
