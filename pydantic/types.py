@@ -818,7 +818,7 @@ class SecretField(abc.ABC):
         return '**********' if self.get_secret_value() else ''
 
     @abc.abstractmethod
-    def get_secret_value(self) -> Any:
+    def get_secret_value(self) -> Any:  # pragma: no cover
         ...
 
 
