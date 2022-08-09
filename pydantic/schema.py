@@ -912,8 +912,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     if f_schema:
         return f_schema, definitions, nested_models
 
+    # Handle dataclass-based models
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
-        # Handle dataclass-based models
         field_type = field_type.__pydantic_model__
 
     if issubclass(field_type, BaseModel):
