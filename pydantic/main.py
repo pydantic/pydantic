@@ -681,7 +681,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             if copy_on_model_validation not in {'deep', 'shallow', 'none'}:
                 # Warn about deprecated behavior
                 warnings.warn(
-                    "`copy_on_model_validation` should be a string: 'deep', 'shallow' or 'none'", RuntimeWarning
+                    "`copy_on_model_validation` should be a string: 'deep', 'shallow' or 'none'", DeprecationWarning
                 )
                 if copy_on_model_validation:
                     deep_copy = False

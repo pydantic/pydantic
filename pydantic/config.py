@@ -2,13 +2,13 @@ import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Union
 
+from typing_extensions import Literal, Protocol
+
 from .typing import AnyCallable
 from .utils import GetterDict
 
 if TYPE_CHECKING:
     from typing import overload
-
-    from typing_extensions import Literal, Protocol
 
     from .fields import ModelField
     from .main import BaseModel
@@ -65,7 +65,7 @@ class BaseConfig:
 
     # whether inherited models as fields should be reconstructed as base model,
     # and whether such a copy should be shallow or deep
-    copy_on_model_validation: 'Literal["none", "deep", "shallow"]' = 'deep'
+    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'deep'
 
     # whether `Union` should check all allowed types before even trying to coerce
     smart_union: bool = False

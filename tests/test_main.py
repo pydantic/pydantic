@@ -1582,11 +1582,34 @@ def test_model_exclude_copy_on_model_validation_shallow():
     class Transaction(BaseModel):
         user: User = Field(...)
 
-    t = Transaction(
-        user=my_user,
-    )
+    t = Transaction(user=my_user)
 
+    assert t.user is not my_user
     assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
+
+
+@pytest.mark.parametrize('comv_value', [True, False])
+def test_copy_on_model_validation_warning(comv_value):
+    class User(BaseModel):
+        class Config:
+            # True interpreted as 'shallow', False interpreted as 'none'
+            copy_on_model_validation = comv_value
+
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User
+
+    with pytest.warns(DeprecationWarning, match="`copy_on_model_validation` should be a string: 'deep', 'shallow' or"):
+        t = Transaction(user=my_user)
+
+    if comv_value:
+        assert t.user is not my_user
+    else:
+        assert t.user is my_user
+    assert t.user.hobbies is my_user.hobbies
 
 
 def test_validation_deep_copy():
@@ -2009,7 +2032,7 @@ def test_inherited_model_field_untouched():
             return id(self)
 
         class Config:
-            copy_on_model_validation = False
+            copy_on_model_validation = 'none'
 
     class Item(BaseModel):
         images: List[Image]
