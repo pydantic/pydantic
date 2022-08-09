@@ -14,5 +14,8 @@ def find_file(path: DirectoryPath, regex: Pattern, max=None) -> Optional[Path]:
             return f
 
 
-print(find_file(os.path.dirname(__file__), '^validation.*'))
-print(find_file(os.path.dirname(__file__), '^foobar.*', max=3))
+# note: this_dir is a string here
+this_dir = os.path.dirname(__file__)
+
+print(find_file(this_dir, '^validation.*'))
+print(find_file(this_dir, '^foobar.*', max=3))
