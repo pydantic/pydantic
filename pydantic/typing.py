@@ -308,6 +308,7 @@ __all__ = (
     'get_all_type_hints',
     'is_union',
     'StrPath',
+    'MappingIntStrAny',
 )
 
 
