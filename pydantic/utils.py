@@ -18,6 +18,7 @@ from typing import (
     List,
     Mapping,
     MutableMapping,
+    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -606,7 +607,10 @@ class ValueItems(Representation):
             items = dict.fromkeys(items, ...)
         else:
             class_name = getattr(items, '__class__', '???')
-            raise TypeError(f'Unexpected type of exclude value {class_name}')
+            assert_never(
+                items,
+                f'Unexpected type of exclude value {class_name}',
+            )
         return items
 
     @classmethod
@@ -724,6 +728,16 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
         if left_item is not right_item:
             return False
     return True
+
+
+def assert_never(obj: NoReturn, msg: str) -> NoReturn:
+    """
+    Helper to make sure that we have covered all possible types.
+
+    This is mostly useful for ``mypy``, docs:
+    https://mypy.readthedocs.io/en/latest/literal_types.html#exhaustive-checks
+    """
+    raise TypeError(msg)
 
 
 def get_unique_discriminator_alias(all_aliases: Collection[str], discriminator_key: str) -> str:

@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pytest
 
@@ -131,15 +131,12 @@ def test_self_forward_ref_collection(create_module):
         from typing import Dict, List
 
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
-
-        Foo = ForwardRef('Foo')
 
         class Foo(BaseModel):
             a: int = 123
-            b: Foo = None
-            c: List[Foo] = []
-            d: Dict[str, Foo] = {}
+            b: 'Foo' = None
+            c: 'List[Foo]' = []
+            d: 'Dict[str, Foo]' = {}
 
         Foo.update_forward_refs()
 
@@ -156,6 +153,14 @@ def test_self_forward_ref_collection(create_module):
     assert exc_info.value.errors() == [
         {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
     ]
+
+    assert module.Foo.__fields__['a'].type_ is int
+    assert module.Foo.__fields__['b'].type_ is module.Foo
+    assert module.Foo.__fields__['b'].outer_type_ is module.Foo
+    assert module.Foo.__fields__['c'].type_ is module.Foo
+    assert module.Foo.__fields__['c'].outer_type_ == List[module.Foo]
+    assert module.Foo.__fields__['d'].type_ is module.Foo
+    assert module.Foo.__fields__['d'].outer_type_ == Dict[str, module.Foo]
 
 
 def test_self_forward_ref_local(create_module):

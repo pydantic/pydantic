@@ -24,6 +24,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import dataclass_transform
+
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -93,16 +95,6 @@ __all__ = 'BaseModel', 'create_model', 'validate_model'
 _T = TypeVar('_T')
 
 
-def __dataclass_transform__(
-    *,
-    eq_default: bool = True,
-    order_default: bool = False,
-    kw_only_default: bool = False,
-    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
-) -> Callable[[_T], _T]:
-    return lambda a: a
-
-
 def validate_custom_root_type(fields: Dict[str, ModelField]) -> None:
     if len(fields) > 1:
         raise ValueError(f'{ROOT_KEY} cannot be mixed with other fields')
@@ -126,7 +118,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
@@ -428,10 +420,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def dict(
         self,
         *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         by_alias: bool = False,
-        skip_defaults: bool = None,
+        skip_defaults: Optional[bool] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -464,10 +456,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def json(
         self,
         *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         by_alias: bool = False,
-        skip_defaults: bool = None,
+        skip_defaults: Optional[bool] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -629,9 +621,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def copy(
         self: 'Model',
         *,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        update: 'DictStrAny' = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        update: Optional['DictStrAny'] = None,
         deep: bool = False,
     ) -> 'Model':
         """
@@ -813,8 +805,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         self,
         to_dict: bool = False,
         by_alias: bool = False,
-        include: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
-        exclude: Union['AbstractSetIntStr', 'MappingIntStrAny'] = None,
+        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,

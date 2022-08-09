@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Pattern, Optional
 
@@ -13,5 +14,8 @@ def find_file(path: DirectoryPath, regex: Pattern, max=None) -> Optional[Path]:
             return f
 
 
-print(find_file('/etc/', '^sys.*'))
-print(find_file('/etc/', '^foobar.*', max=3))
+# note: this_dir is a string here
+this_dir = os.path.dirname(__file__)
+
+print(find_file(this_dir, '^validation.*'))
+print(find_file(this_dir, '^foobar.*', max=3))

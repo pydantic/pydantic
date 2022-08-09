@@ -211,7 +211,7 @@ Each error object contains:
 
 `loc`
 : the error's location as a list. The first item in the list will be the field where the error occurred,
-  and if the field is a [sub-model](models.md#recursive_models), subsequent items will be present to indicate
+  and if the field is a [sub-model](models.md#recursive-models), subsequent items will be present to indicate
   the nested location of the error.
 
 `type`

@@ -36,12 +36,14 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
+from typing_extensions import dataclass_transform
+
 from .class_validators import gather_all_validators
 from .config import BaseConfig, ConfigDict, Extra, get_config
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import __dataclass_transform__, create_model, validate_model
+from .main import create_model, validate_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
@@ -88,7 +90,7 @@ __all__ = [
 
 if sys.version_info >= (3, 10):
 
-    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -104,7 +106,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
         ...
 
-    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[Any],
@@ -123,7 +125,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -138,7 +140,7 @@ else:
     ) -> Callable[[Type[Any]], 'DataclassClassOrWrapper']:
         ...
 
-    @__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[Any],
@@ -155,7 +157,7 @@ else:
         ...
 
 
-@__dataclass_transform__(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[Any]] = None,
     *,

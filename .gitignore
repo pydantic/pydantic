@@ -1,6 +1,7 @@
 .idea/
 env/
 venv/
+.venv/
 env3*/
 Pipfile
 *.lock
