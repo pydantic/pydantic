@@ -253,7 +253,7 @@ def test_custom_getter_dict():
         x = 1
         y = 2
 
-    def custom_getter_dict(obj):
+    def custom_getter_dict(obj, _):
         assert isinstance(obj, TestCls)
         return {'x': 42, 'y': 24}
 

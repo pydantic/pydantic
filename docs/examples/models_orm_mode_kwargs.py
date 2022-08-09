@@ -1,12 +1,12 @@
-import typing
-
 from pydantic import BaseModel
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 
 
 class MyModel(BaseModel):
-    metadata: typing.Dict[str, str]
+    foo: str
+    bar: int
+    spam: bytes
 
     class Config:
         orm_mode = True
@@ -18,14 +18,12 @@ BaseModel = declarative_base()
 class SQLModel(BaseModel):
     __tablename__ = 'my_table'
     id = sa.Column('id', sa.Integer, primary_key=True)
-    # 'metadata' is reserved by SQLAlchemy, hence the '_'
-    metadata_ = sa.Column('metadata', sa.JSON)
+    foo = sa.Column('metadata', sa.String(32))
+    bar = sa.Column('metadata', sa.Integer)
 
+sql_model = SQLModel(id=1, foo="hello world", bar=123)
 
-sql_model = SQLModel(metadata_={'key': 'val'}, id=1)
-
-# notice that we are explicitly setting the value of 'metadata'
-pydantic_model = MyModel.from_orm(sql_model, metadata=sql_model.metadata_)
+pydantic_model = MyModel.from_orm(sql_model, bar=456, spam=b"placeholder")
 
 print(pydantic_model.dict())
 print(pydantic_model.dict(by_alias=True))
