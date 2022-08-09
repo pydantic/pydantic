@@ -3033,24 +3033,19 @@ def test_extra_inheritance():
 
 
 def test_model_with_type_attributes():
-    class Foo(BaseModel):
-        b: float
+    class Foo:
+        a: float
 
     class Bar(BaseModel):
-        a: int
-        b: Type[Foo]
+        b: int
 
-    assert Bar.schema() == {
-        'title': 'Bar',
+    class Baz(BaseModel):
+        a: Type[Foo]
+        b: Type[Bar]
+
+    assert Baz.schema() == {
+        'title': 'Baz',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'integer'}, 'b': {'$ref': '#/definitions/Foo'}},
+        'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
         'required': ['a', 'b'],
-        'definitions': {
-            'Foo': {
-                'title': 'Foo',
-                'type': 'object',
-                'properties': {'b': {'title': 'B', 'type': 'number'}},
-                'required': ['b'],
-            }
-        },
     }
