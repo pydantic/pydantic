@@ -7,7 +7,7 @@ boilerplate.
     The `validate_arguments` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
-    on [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) or create a new issue.
+    on [#1205](https://github.com/pydantic/pydantic/issues/1205) or create a new issue.
 
 Example of usage:
 
@@ -67,6 +67,13 @@ as the default value of the field:
 ```
 _(This script is complete, it should run "as is")_
 
+The [alias](model_config#alias-precedence) can be used with the decorator as normal.
+
+```py
+{!.tmp_examples/validation_decorator_field_alias.py!}
+```
+_(This script is complete, it should run "as is")_
+
 ## Usage with mypy
 
 The `validate_arguments` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
@@ -123,7 +130,7 @@ _(This script is complete, it should run "as is")_
 ## Limitations
 
 `validate_arguments` has been released on a provisional basis without all the bells and whistles, which may
-be added later, see [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) for some more discussion of this.
+be added later, see [#1205](https://github.com/pydantic/pydantic/issues/1205) for some more discussion of this.
 
 In particular:
 
@@ -143,7 +150,7 @@ exception by default, or both.
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
 see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
 
-See [#1098](https://github.com/samuelcolvin/pydantic/issues/1098) and other issues with the "strictness" label
+See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
 for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_arguments` will have an option
 to use this, it may even become the default for the decorator.
 

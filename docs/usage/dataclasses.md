@@ -12,13 +12,13 @@ _(This script is complete, it should run "as is")_
     `pydantic.BaseModel` is the better choice.
 
     For more information and discussion see
-    [samuelcolvin/pydantic#710](https://github.com/samuelcolvin/pydantic/issues/710).
+    [samuelcolvin/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
 You can use all the standard _pydantic_ field types, and the resulting dataclass will be identical to the one
 created by the standard library `dataclass` decorator.
 
 The underlying model and its schema can be accessed through `__pydantic_model__`.
-Also, fields that require a `default_factory` can be specified by a `dataclasses.field`.
+Also, fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
 ```py
 {!.tmp_examples/dataclasses_default_schema.py!}
@@ -33,6 +33,20 @@ keyword argument `config` which has the same meaning as [Config](model_config.md
 
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
+
+## Dataclass Config
+
+If you want to modify the `Config` like you would with a `BaseModel`, you have three options:
+
+```py
+{!.tmp_examples/dataclasses_config.py!}
+```
+
+!!! warning
+    After v1.10, _pydantic_ dataclasses support `Config.extra` but some default behaviour of stdlib dataclasses
+    may prevail. For example, when `print`ing a _pydantic_ dataclass with allowed extra fields, it will still
+    use the `__str__` method of stdlib dataclass and show only the required fields.
+    This may be improved further in the future.
 
 ## Nested dataclasses
 
@@ -51,9 +65,22 @@ Dataclasses attributes can be populated by tuples, dictionaries or instances of 
 
 Stdlib dataclasses (nested or not) can be easily converted into _pydantic_ dataclasses by just decorating
 them with `pydantic.dataclasses.dataclass`.
+_Pydantic_ will enhance the given stdlib dataclass but won't alter the default behaviour (i.e. without validation).
+It will instead create a wrapper around it to trigger validation that will act like a plain proxy.
+The stdlib dataclass can still be accessed via the `__dataclass__` attribute (see example below).
 
 ```py
 {!.tmp_examples/dataclasses_stdlib_to_pydantic.py!}
+```
+_(This script is complete, it should run "as is")_
+
+### Choose when to trigger validation
+
+As soon as your stdlib dataclass has been decorated with _pydantic_ dataclass decorator, magic methods have been
+added to validate input data. If you want, you can still keep using your dataclass and choose when to trigger it.
+
+```py
+{!.tmp_examples/dataclasses_stdlib_run_validation.py!}
 ```
 _(This script is complete, it should run "as is")_
 
@@ -94,6 +121,11 @@ _(This script is complete, it should run "as is")_
 When you initialize a dataclass, it is possible to execute code *after* validation
 with the help of `__post_init_post_parse__`. This is not the same as `__post_init__`, which executes
 code *before* validation.
+
+!!! tip
+    If you use a stdlib `dataclass`, you may only have `__post_init__` available and wish the validation to
+    be done before. In this case you can set `Config.post_init_call = 'after_validation'`
+
 
 ```py
 {!.tmp_examples/dataclasses_post_init_post_parse.py!}

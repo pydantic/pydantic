@@ -44,7 +44,7 @@ class ReplaceLinks:
 
     def replace_issues(self, m):
         id = m.group(1)
-        self.links.add(f'.. _#{id}: https://github.com/samuelcolvin/pydantic/issues/{id}')
+        self.links.add(f'.. _#{id}: https://github.com/pydantic/pydantic/issues/{id}')
         return f'`#{id}`_'
 
     def replace_users(self, m):
@@ -60,7 +60,7 @@ description = 'Data validation and settings management using python type hints'
 THIS_DIR = Path(__file__).resolve().parent
 try:
     history = (THIS_DIR / 'HISTORY.md').read_text(encoding='utf-8')
-    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/samuelcolvin/pydantic/issues/\1)', history)
+    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/pydantic/pydantic/issues/\1)', history)
     history = re.sub(r'( +)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub('@@', '@', history)
 
@@ -122,14 +122,14 @@ setup(
     ],
     author='Samuel Colvin',
     author_email='s@muelcolvin.com',
-    url='https://github.com/samuelcolvin/pydantic',
+    url='https://github.com/pydantic/pydantic',
     license='MIT',
     packages=['pydantic'],
     package_data={'pydantic': ['py.typed']},
     python_requires='>=3.7',
     zip_safe=False,  # https://mypy.readthedocs.io/en/latest/installed_packages.html
     install_requires=[
-        'typing-extensions>=3.7.4.3'
+        'typing-extensions>=4.0.1'
     ],
     extras_require={
         'email': ['email-validator>=1.0.3'],

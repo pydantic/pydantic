@@ -6,12 +6,12 @@ Tests for annotated types that _pydantic_ can validate like
 import json
 import sys
 from collections import namedtuple
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import pytest
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, NotRequired, Required, TypedDict
 
-from pydantic import BaseModel, PositiveInt, ValidationError
+from pydantic import BaseModel, Field, PositiveInt, ValidationError
 
 if sys.version_info < (3, 9, 2):
     try:
@@ -21,6 +21,11 @@ if sys.version_info < (3, 9, 2):
 
 else:
     LegacyTypedDict = None
+
+if (3, 9, 2) < sys.version_info < (3, 11):
+    from typing import TypedDict as LegacyRequiredTypedDict
+else:
+    LegacyRequiredTypedDict = None
 
 
 def test_namedtuple():
@@ -131,7 +136,7 @@ def test_namedtuple_right_length():
 
 def test_namedtuple_postponed_annotation():
     """
-    https://github.com/samuelcolvin/pydantic/issues/2760
+    https://github.com/pydantic/pydantic/issues/2760
     """
 
     class Tup(NamedTuple):
@@ -144,6 +149,29 @@ def test_namedtuple_postponed_annotation():
     # references a binding in this module's global scope.
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': [-1]})
+
+
+def test_namedtuple_arbitrary_type():
+    class CustomClass:
+        pass
+
+    class Tup(NamedTuple):
+        c: CustomClass
+
+    class Model(BaseModel):
+        x: Tup
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    data = {'x': Tup(c=CustomClass())}
+    model = Model.parse_obj(data)
+    assert isinstance(model.x.c, CustomClass)
+
+    with pytest.raises(RuntimeError):
+
+        class ModelNoArbitraryTypes(BaseModel):
+            x: Tup
 
 
 def test_typeddict():
@@ -290,3 +318,156 @@ def test_typeddict_postponed_annotation():
 
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': {'v': -1}})
+
+
+def test_typeddict_required():
+    class DataTD(TypedDict, total=False):
+        a: int
+        b: Required[str]
+
+    class Model(BaseModel):
+        t: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'t': {'$ref': '#/definitions/DataTD'}},
+        'required': ['t'],
+        'definitions': {
+            'DataTD': {
+                'title': 'DataTD',
+                'type': 'object',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'string'},
+                },
+                'required': ['b'],
+            }
+        },
+    }
+
+
+def test_typeddict_not_required():
+    class DataTD(TypedDict, total=True):
+        a: NotRequired[int]
+        b: str
+
+    class Model(BaseModel):
+        t: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'t': {'$ref': '#/definitions/DataTD'}},
+        'required': ['t'],
+        'definitions': {
+            'DataTD': {
+                'title': 'DataTD',
+                'type': 'object',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'string'},
+                },
+                'required': ['b'],
+            }
+        },
+    }
+
+
+def test_typed_dict_inheritance():
+    class DataTDBase(TypedDict, total=True):
+        a: NotRequired[int]
+        b: str
+
+    class DataTD(DataTDBase, total=False):
+        c: Required[int]
+        d: str
+
+    class Model(BaseModel):
+        t: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'t': {'$ref': '#/definitions/DataTD'}},
+        'required': ['t'],
+        'definitions': {
+            'DataTD': {
+                'title': 'DataTD',
+                'type': 'object',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'string'},
+                    'c': {'title': 'C', 'type': 'integer'},
+                    'd': {'title': 'D', 'type': 'string'},
+                },
+                'required': ['b', 'c'],
+            }
+        },
+    }
+
+
+def test_typeddict_annotated_nonoptional():
+    class DataTD(TypedDict):
+        a: Optional[int]
+        b: Annotated[Optional[int], Field(...)]
+        c: Annotated[Optional[int], Field(..., description='Test')]
+        d: Annotated[Optional[int], Field()]
+
+    class Model(BaseModel):
+        data_td: DataTD
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'data_td': {'$ref': '#/definitions/DataTD'}},
+        'required': ['data_td'],
+        'definitions': {
+            'DataTD': {
+                'type': 'object',
+                'title': 'DataTD',
+                'properties': {
+                    'a': {'title': 'A', 'type': 'integer'},
+                    'b': {'title': 'B', 'type': 'integer'},
+                    'c': {'title': 'C', 'type': 'integer', 'description': 'Test'},
+                    'd': {'title': 'D', 'type': 'integer'},
+                },
+                'required': ['a', 'b', 'c'],
+            },
+        },
+    }
+
+    for bad_obj in ({}, {'data_td': []}, {'data_td': {'a': 1, 'b': 2, 'd': 4}}):
+        with pytest.raises(ValidationError):
+            Model.parse_obj(bad_obj)
+
+    valid_data = {'a': 1, 'b': 2, 'c': 3}
+    parsed_model = Model.parse_obj({'data_td': valid_data})
+    assert parsed_model and parsed_model == Model(data_td=valid_data)
+
+
+@pytest.mark.skipif(not LegacyRequiredTypedDict, reason='python 3.11+ used')
+def test_legacy_typeddict_required_not_required():
+    class TDRequired(LegacyRequiredTypedDict):
+        a: Required[int]
+
+    class TDNotRequired(LegacyRequiredTypedDict):
+        a: Required[int]
+
+    for cls in (TDRequired, TDNotRequired):
+        with pytest.raises(
+            TypeError,
+            match='^You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.11.',
+        ):
+
+            class Model(BaseModel):
+                t: cls
+
+
+@pytest.mark.skipif(not LegacyRequiredTypedDict, reason='python 3.11+ used')
+def test_legacy_typeddict_no_required_not_required():
+    class TD(LegacyRequiredTypedDict):
+        a: int
+
+    class Model(BaseModel):
+        t: TD

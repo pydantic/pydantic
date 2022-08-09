@@ -24,7 +24,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Final
 
 from . import errors as errors_
 from .class_validators import Validator, make_generic_validator, prep_validators
@@ -39,10 +39,12 @@ from .typing import (
     display_as_type,
     get_args,
     get_origin,
+    is_finalvar,
     is_literal_type,
     is_new_type,
     is_none_type,
     is_typeddict,
+    is_typeddict_special,
     is_union,
     new_type_supertype,
 )
@@ -148,7 +150,7 @@ class FieldInfo(Representation):
         self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
-        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias else None)
+        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
         self.title = kwargs.pop('title', None)
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
@@ -199,7 +201,8 @@ class FieldInfo(Representation):
                 current_value = getattr(self, attr_name)
             except AttributeError:
                 # attr_name is not an attribute of FieldInfo, it should therefore be added to extra
-                self.extra[attr_name] = value
+                # (except if extra already has this value!)
+                self.extra.setdefault(attr_name, value)
             else:
                 if current_value is self.__field_constraints__.get(attr_name, None):
                     setattr(self, attr_name, value)
@@ -356,6 +359,7 @@ class ModelField(Representation):
     __slots__ = (
         'type_',
         'outer_type_',
+        'annotation',
         'sub_fields',
         'sub_fields_mapping',
         'key_field',
@@ -365,6 +369,7 @@ class ModelField(Representation):
         'default',
         'default_factory',
         'required',
+        'final',
         'model_config',
         'name',
         'alias',
@@ -389,19 +394,22 @@ class ModelField(Representation):
         default: Any = None,
         default_factory: Optional[NoArgAnyCallable] = None,
         required: 'BoolUndefined' = Undefined,
+        final: bool = False,
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
 
         self.name: str = name
-        self.has_alias: bool = bool(alias)
-        self.alias: str = alias or name
+        self.has_alias: bool = alias is not None
+        self.alias: str = alias if alias is not None else name
+        self.annotation = type_
         self.type_: Any = convert_generics(type_)
         self.outer_type_: Any = type_
         self.class_validators = class_validators or {}
         self.default: Any = default
         self.default_factory: Optional[NoArgAnyCallable] = default_factory
         self.required: 'BoolUndefined' = required
+        self.final: bool = final
         self.model_config = model_config
         self.field_info: FieldInfo = field_info or FieldInfo(default)
         self.discriminator_key: Optional[str] = self.field_info.discriminator
@@ -450,7 +458,7 @@ class ModelField(Representation):
             if field_info is not None:
                 field_info = copy.copy(field_info)
                 field_info.update_from_config(field_info_from_config)
-                if field_info.default is not Undefined:
+                if field_info.default not in (Undefined, Required):
                     raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
                 if value is not Undefined and value is not Required:
                     # check also `Required` because of `validate_arguments` that sets `...` as default value
@@ -557,6 +565,7 @@ class ModelField(Representation):
         if default_value is not None and self.type_ is Undefined:
             self.type_ = default_value.__class__
             self.outer_type_ = self.type_
+            self.annotation = self.type_
 
         if self.type_ is Undefined:
             raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
@@ -595,9 +604,20 @@ class ModelField(Representation):
         elif is_typeddict(self.type_):
             return
 
+        if is_finalvar(self.type_):
+            self.final = True
+
+            if self.type_ is Final:
+                self.type_ = Any
+            else:
+                self.type_ = get_args(self.type_)[0]
+
+            self._type_analysis()
+            return
+
         origin = get_origin(self.type_)
 
-        if origin is Annotated:
+        if origin is Annotated or is_typeddict_special(origin):
             self.type_ = get_args(self.type_)[0]
             self._type_analysis()
             return
@@ -1086,7 +1106,7 @@ class ModelField(Representation):
         except TypeError:
             try:
                 # BaseModel or dataclass
-                discriminator_value = getattr(v, self.discriminator_alias)
+                discriminator_value = getattr(v, self.discriminator_key)
             except (AttributeError, TypeError):
                 return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
 
@@ -1131,8 +1151,8 @@ class ModelField(Representation):
 
         return (
             self.shape != SHAPE_SINGLETON
+            or hasattr(self.type_, '__pydantic_model__')
             or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
-            or hasattr(self.type_, '__pydantic_model__')  # pydantic dataclass
         )
 
     def _type_display(self) -> PyObjectStr:
@@ -1214,3 +1234,7 @@ class DeferredType:
     """
     Used to postpone field preparation, while creating recursive generic models.
     """
+
+
+def is_finalvar_with_default_val(type_: Type[Any], val: Any) -> bool:
+    return is_finalvar(type_) and val is not Undefined and not isinstance(val, FieldInfo)

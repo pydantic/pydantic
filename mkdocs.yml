@@ -26,7 +26,7 @@ theme:
   favicon: 'favicon.png'
 
 repo_name: samuelcolvin/pydantic
-repo_url: https://github.com/samuelcolvin/pydantic
+repo_url: https://github.com/pydantic/pydantic
 extra:
   analytics:
     provider: google
@@ -55,6 +55,7 @@ nav:
   - usage/postponed_annotations.md
   - 'Usage with mypy': usage/mypy.md
   - 'Usage with devtools': usage/devtools.md
+  - 'Usage with rich': usage/rich.md
 - Contributing to pydantic: contributing.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md

@@ -46,6 +46,7 @@ class MyEnum(Enum):
         (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
         (datetime.time(12, 34, 56), '"12:34:56"'),
         (datetime.timedelta(days=12, seconds=34, microseconds=56), '1036834.000056'),
+        (datetime.timedelta(seconds=-1), '-1.0'),
         ({1, 2, 3}, '[1, 2, 3]'),
         (frozenset([1, 2, 3]), '[1, 2, 3]'),
         ((v for v in range(4)), '[0, 1, 2, 3]'),
@@ -142,6 +143,8 @@ def test_invalid_model():
     [
         (datetime.timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
         (datetime.timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654_321), 'P1001DT1H2M3.654321S'),
+        (datetime.timedelta(seconds=-1), '-P1DT23H59M59.000000S'),
+        (datetime.timedelta(), 'P0DT0H0M0.000000S'),
     ],
 )
 def test_iso_timedelta(input, output):
@@ -369,3 +372,81 @@ def test_recursive():
         nested: Optional[BaseModel]
 
     assert Model(value=None, nested=Model(value=None)).json(exclude_none=True) == '{"nested": {}}'
+
+
+class WithCustomEncoders(BaseModel):
+    dt: datetime.datetime
+    diff: datetime.timedelta
+
+    class Config:
+        json_encoders = {
+            datetime.datetime: lambda v: v.timestamp(),
+            datetime.timedelta: timedelta_isoformat,
+        }
+
+
+ides_of_march = datetime.datetime(44, 3, 15, tzinfo=datetime.timezone.utc)
+
+child = WithCustomEncoders(
+    dt=datetime.datetime(2032, 6, 1, tzinfo=datetime.timezone.utc),
+    diff=datetime.timedelta(hours=100),
+)
+
+
+def test_inner_custom_encoding():
+    assert child.json() == r'{"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}'
+
+
+def test_encoding_in_parent_with_variable_encoders():
+    class ParentWithVariableEncoders(BaseModel):
+        dt: datetime.datetime
+        child: WithCustomEncoders
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.year,
+                datetime.timedelta: lambda v: v.total_seconds(),
+            }
+
+    parent = ParentWithVariableEncoders(child=child, dt=ides_of_march)
+
+    default = r'{"dt": 44, "child": {"dt": 2032, "diff": 360000.0}}'
+    assert parent.json() == default
+    # turning off models_as_dict defaults to top-level
+    assert parent.json(models_as_dict=False, use_nested_encoders=False) == default
+    assert parent.json(models_as_dict=False, use_nested_encoders=True) == default
+
+    custom = (
+        r'{"dt": 44, '  # parent.dt still uses the year to encode
+        # child uses child.json_encoders to encode
+        r'"child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
+    )
+    assert parent.json(use_nested_encoders=True) == custom
+
+
+def test_encoding_in_parent_with_class_encoders():
+    class ParentWithClassEncoders(BaseModel):
+        dt: datetime.datetime
+        child: WithCustomEncoders
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.timestamp(),
+                WithCustomEncoders: lambda v: {'dt': v.dt.year},
+            }
+
+    parent = ParentWithClassEncoders(child=child, dt=ides_of_march)
+
+    # when models_as_dict=True, the `WithCustomEncoders` encoder is ignored
+    default = r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": 360000.0}}'
+    assert parent.json() == default
+
+    custom_child = r'{"dt": -60772291200.0, "child": {"dt": 1969660800.0, "diff": "P4DT4H0M0.000000S"}}'
+    assert parent.json(use_nested_encoders=True) == custom_child
+
+    # when models_as_dict=False, the parent `WithCustomEncoders` is used
+    # regardless of whatever json_encoders are in WithCustomEncoders.Config
+
+    custom_parent = r'{"dt": -60772291200.0, "child": {"dt": 2032}}'
+    assert parent.json(models_as_dict=False, use_nested_encoders=False) == custom_parent
+    assert parent.json(models_as_dict=False, use_nested_encoders=True) == custom_parent

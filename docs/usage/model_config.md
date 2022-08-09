@@ -25,6 +25,9 @@ _(This script is complete, it should run "as is")_
 **`anystr_strip_whitespace`**
 : whether to strip leading and trailing whitespace for str & byte types (default: `False`)
 
+**`anystr_upper`**
+: whether to make all characters uppercase for str & byte types (default: `False`)
+
 **`anystr_lower`**
 : whether to make all characters lowercase for str & byte types (default: `False`)
 
@@ -60,7 +63,12 @@ _(This script is complete, it should run "as is")_
 
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to
-  using [the `Field` class](schema.md) (default: `None`)
+  using [the `Field` class](schema.md), except when a field is already
+  defined trough annotation or the Field class, in which case only
+  `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
+  `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
+  and allow_mutation can be set (for example you cannot set default of default_factory)
+   (default: `None`)
 
 **`validate_assignment`**
 : whether to perform validation on *assignment* to attributes (default: `False`)
@@ -118,6 +126,10 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`smart_union`**
 : whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion; see [the dedicated section](#smart-union)
 
+**`post_init_call`**
+: whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
+  or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
@@ -139,14 +151,14 @@ _(This script is complete, it should run "as is")_
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
 e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
-it should be trivial to modify the `to_camel` function above.
+instead use the `to_lower_camel` function.
 
 ## Alias Precedence
 
 !!! warning
     Alias priority logic changed in **v1.4** to resolve buggy and unexpected behaviour in previous versions.
     In some circumstances this may represent a **breaking change**,
-    see [#1178](https://github.com/samuelcolvin/pydantic/issues/1178) and the precedence order below for details.
+    see [#1178](https://github.com/pydantic/pydantic/issues/1178) and the precedence order below for details.
 
 In the case where a field's alias may be defined in multiple places,
 the selected value is determined as follows (in descending order of priority):

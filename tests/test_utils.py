@@ -37,6 +37,7 @@ from pydantic.utils import (
     lenient_issubclass,
     path_type,
     smart_deepcopy,
+    to_lower_camel,
     truncate,
     unique_list,
 )
@@ -526,6 +527,18 @@ def test_all_identical():
 def test_undefined_pickle():
     undefined2 = pickle.loads(pickle.dumps(Undefined))
     assert undefined2 is Undefined
+
+
+def test_on_lower_camel_zero_length():
+    assert to_lower_camel('') == ''
+
+
+def test_on_lower_camel_one_length():
+    assert to_lower_camel('a') == 'a'
+
+
+def test_on_lower_camel_many_length():
+    assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
 
 
 def test_limited_dict():

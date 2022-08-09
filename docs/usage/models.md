@@ -33,12 +33,16 @@ default value, and so a type annotation is not required (however note [this](#fi
 order when some fields do not have type annotations).
 ```py
 user = User(id='123')
+user_x = User(id='123.45')
 ```
 `user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
 if no `ValidationError` is raised, you know the resulting model instance is valid.
 ```py
 assert user.id == 123
+assert user_x.id == 123
+assert isinstance(user_x.id, int)  # Note that 123.45 was casted to an int and its value is 123
 ```
+More details on the casting in the case of `user_x` can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type
 ```py
@@ -163,7 +167,7 @@ _(This script is complete, it should run "as is")_
 ### Data binding
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
-[utils.py](https://github.com/samuelcolvin/pydantic/blob/master/pydantic/utils.py)), which attempts to
+[utils.py](https://github.com/pydantic/pydantic/blob/master/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
@@ -207,7 +211,7 @@ Each error object contains:
 
 `loc`
 : the error's location as a list. The first item in the list will be the field where the error occurred,
-  and if the field is a [sub-model](models.md#recursive_models), subsequent items will be present to indicate
+  and if the field is a [sub-model](models.md#recursive-models), subsequent items will be present to indicate
   the nested location of the error.
 
 `type`
@@ -379,7 +383,7 @@ Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 !!! warning
     See the note in [Required Optional Fields](#required-optional-fields) for the distinction between an ellipsis as a
     field default and annotation-only fields. 
-    See [samuelcolvin/pydantic#1047](https://github.com/samuelcolvin/pydantic/issues/1047) for more details.
+    See [samuelcolvin/pydantic#1047](https://github.com/pydantic/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
@@ -538,7 +542,7 @@ To do this, you may want to use a `default_factory`.
     The `default_factory` argument is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its signature or behaviour will not
     be concrete until **v2**. Feedback from the community while it's still provisional would be extremely useful;
-    either comment on [#866](https://github.com/samuelcolvin/pydantic/issues/866) or create a new issue.
+    either comment on [#866](https://github.com/pydantic/pydantic/issues/866) or create a new issue.
 
 Example of usage:
 
@@ -609,7 +613,7 @@ For example:
 _(This script is complete, it should run "as is")_
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
-[here](https://github.com/samuelcolvin/pydantic/issues/578) for a longer discussion on the subject.
+[here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
 
@@ -638,4 +642,4 @@ In addition, the `**data` argument will always be present in the signature if `C
 !!! note
     Types in the model signature are the same as declared in model annotations, 
     not necessarily all the types that can actually be provided to that field.
-    This may be fixed one day once [#1055](https://github.com/samuelcolvin/pydantic/issues/1055) is solved.
+    This may be fixed one day once [#1055](https://github.com/pydantic/pydantic/issues/1055) is solved.

@@ -1,0 +1,4 @@
+17: error: Missing named argument "undefined_default_no_args" for "Model"  [call-arg]
+17: error: Missing named argument "undefined_default" for "Model"  [call-arg]
+17: error: Missing named argument "positional_ellipsis_default" for "Model"  [call-arg]
+17: error: Missing named argument "named_ellipsis_default" for "Model"  [call-arg]

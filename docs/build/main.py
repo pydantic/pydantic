@@ -10,7 +10,7 @@ PROJECT_ROOT = THIS_DIR / '..' / '..'
 
 def main():
     history = (PROJECT_ROOT / 'HISTORY.md').read_text()
-    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/samuelcolvin/pydantic/issues/\1)', history)
+    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/pydantic/pydantic/issues/\1)', history)
     history = re.sub(r'(\s)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub('@@', '@', history)
 

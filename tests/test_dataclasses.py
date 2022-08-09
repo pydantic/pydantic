@@ -1,15 +1,17 @@
 import dataclasses
 import pickle
+import re
+import sys
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Union
+from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, Extra, ValidationError, validator
 
 
 def test_simple():
@@ -79,10 +81,7 @@ def test_validate_assignment():
 
 
 def test_validate_assignment_error():
-    class Config:
-        validate_assignment = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
     class MyDataclass:
         a: int
 
@@ -157,6 +156,22 @@ def test_post_init():
     d = MyDataclass('1')
     assert d.a == 1
     assert post_init_called
+
+
+def test_post_init_validation():
+    @dataclasses.dataclass
+    class DC:
+        a: int
+
+        def __post_init__(self):
+            self.a *= 2
+
+        def __post_init_post_parse__(self):
+            self.a += 1
+
+    PydanticDC = pydantic.dataclasses.dataclass(DC)
+    assert DC(a='2').a == '22'
+    assert PydanticDC(a='2').a == 23
 
 
 def test_post_init_inheritance_chain():
@@ -659,13 +674,22 @@ def test_override_builtin_dataclass():
         size: int
         content: Optional[bytes] = None
 
-    FileChecked = pydantic.dataclasses.dataclass(File)
-    f = FileChecked(hash='xxx', name=b'whatever.txt', size='456')
-    assert f.name == 'whatever.txt'
-    assert f.size == 456
+    ValidFile = pydantic.dataclasses.dataclass(File)
+
+    file = File(hash='xxx', name=b'whatever.txt', size='456')
+    valid_file = ValidFile(hash='xxx', name=b'whatever.txt', size='456')
+
+    assert file.name == b'whatever.txt'
+    assert file.size == '456'
+
+    assert valid_file.name == 'whatever.txt'
+    assert valid_file.size == 456
+
+    assert isinstance(valid_file, File)
+    assert isinstance(valid_file, ValidFile)
 
     with pytest.raises(ValidationError) as e:
-        FileChecked(hash=[1], name='name', size=3)
+        ValidFile(hash=[1], name='name', size=3)
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
@@ -675,10 +699,14 @@ def test_override_builtin_dataclass_2():
         modified_date: Optional[datetime]
         seen_count: int
 
+    Meta(modified_date='not-validated', seen_count=0)
+
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
     class File(Meta):
         filename: str
+
+    Meta(modified_date='still-not-validated', seen_count=0)
 
     f = File(filename=b'thefilename', modified_date='2020-01-01T00:00', seen_count='7')
     assert f.filename == 'thefilename'
@@ -923,6 +951,245 @@ def test_config_field_info_create_model():
     }
 
 
+def gen_2162_dataclasses():
+    @dataclasses.dataclass(frozen=True)
+    class StdLibFoo:
+        a: str
+        b: int
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticFoo:
+        a: str
+        b: int
+
+    @dataclasses.dataclass(frozen=True)
+    class StdLibBar:
+        c: StdLibFoo
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticBar:
+        c: PydanticFoo
+
+    @dataclasses.dataclass(frozen=True)
+    class StdLibBaz:
+        c: PydanticFoo
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class PydanticBaz:
+        c: StdLibFoo
+
+    foo = StdLibFoo(a='Foo', b=1)
+    yield foo, StdLibBar(c=foo)
+
+    foo = PydanticFoo(a='Foo', b=1)
+    yield foo, PydanticBar(c=foo)
+
+    foo = PydanticFoo(a='Foo', b=1)
+    yield foo, StdLibBaz(c=foo)
+
+    foo = StdLibFoo(a='Foo', b=1)
+    yield foo, PydanticBaz(c=foo)
+
+
+@pytest.mark.parametrize('foo,bar', gen_2162_dataclasses())
+def test_issue_2162(foo, bar):
+    assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
+    assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
+    assert foo == bar.c
+
+
+def test_issue_2383():
+    @dataclasses.dataclass
+    class A:
+        s: str
+
+        def __hash__(self):
+            return 123
+
+    class B(pydantic.BaseModel):
+        a: A
+
+    a = A('')
+    b = B(a=a)
+
+    assert hash(a) == 123
+    assert hash(b.a) == 123
+
+
+def test_issue_2398():
+    @dataclasses.dataclass(order=True)
+    class DC:
+        num: int = 42
+
+    class Model(pydantic.BaseModel):
+        dc: DC
+
+    real_dc = DC()
+    model = Model(dc=real_dc)
+
+    # This works as expected.
+    assert real_dc <= real_dc
+    assert model.dc <= model.dc
+    assert real_dc <= model.dc
+
+
+def test_issue_2424():
+    @dataclasses.dataclass
+    class Base:
+        x: str
+
+    @dataclasses.dataclass
+    class Thing(Base):
+        y: str = dataclasses.field(default_factory=str)
+
+    assert Thing(x='hi').y == ''
+
+    @pydantic.dataclasses.dataclass
+    class ValidatedThing(Base):
+        y: str = dataclasses.field(default_factory=str)
+
+    assert Thing(x='hi').y == ''
+    assert ValidatedThing(x='hi').y == ''
+
+
+def test_issue_2541():
+    @dataclasses.dataclass(frozen=True)
+    class Infos:
+        id: int
+
+    @dataclasses.dataclass(frozen=True)
+    class Item:
+        name: str
+        infos: Infos
+
+    class Example(BaseModel):
+        item: Item
+
+    e = Example.parse_obj({'item': {'name': 123, 'infos': {'id': '1'}}})
+    assert e.item.name == '123'
+    assert e.item.infos.id == 1
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        e.item.infos.id = 2
+
+
+def test_issue_2555():
+    @dataclasses.dataclass
+    class Span:
+        first: int
+        last: int
+
+    @dataclasses.dataclass
+    class LabeledSpan(Span):
+        label: str
+
+    @dataclasses.dataclass
+    class BinaryRelation:
+        subject: LabeledSpan
+        object: LabeledSpan
+        label: str
+
+    @dataclasses.dataclass
+    class Sentence:
+        relations: BinaryRelation
+
+    class M(pydantic.BaseModel):
+        s: Sentence
+
+    assert M.schema()
+
+
+def test_issue_2594():
+    @dataclasses.dataclass
+    class Empty:
+        pass
+
+    @pydantic.dataclasses.dataclass
+    class M:
+        e: Empty
+
+    assert isinstance(M(e={}).e, Empty)
+
+
+def test_schema_description_unset():
+    @pydantic.dataclasses.dataclass
+    class A:
+        x: int
+
+    assert 'description' not in A.__pydantic_model__.schema()
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class B:
+        x: int
+
+    assert 'description' not in B.__pydantic_model__.schema()
+
+
+def test_schema_description_set():
+    @pydantic.dataclasses.dataclass
+    class A:
+        """my description"""
+
+        x: int
+
+    assert A.__pydantic_model__.schema()['description'] == 'my description'
+
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class B:
+        """my description"""
+
+        x: int
+
+    assert A.__pydantic_model__.schema()['description'] == 'my description'
+
+
+def test_issue_3011():
+    @dataclasses.dataclass
+    class A:
+        thing_a: str
+
+    class B(A):
+        thing_b: str
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @pydantic.dataclasses.dataclass(config=Config)
+    class C:
+        thing: A
+
+    b = B('Thing A')
+    c = C(thing=b)
+    assert c.thing.thing_a == 'Thing A'
+
+
+def test_issue_3162():
+    @dataclasses.dataclass
+    class User:
+        id: int
+        name: str
+
+    class Users(BaseModel):
+        user: User
+        other_user: User
+
+    assert Users.schema() == {
+        'title': 'Users',
+        'type': 'object',
+        'properties': {'user': {'$ref': '#/definitions/User'}, 'other_user': {'$ref': '#/definitions/User'}},
+        'required': ['user', 'other_user'],
+        'definitions': {
+            'User': {
+                'title': 'User',
+                'type': 'object',
+                'properties': {'id': {'title': 'Id', 'type': 'integer'}, 'name': {'title': 'Name', 'type': 'string'}},
+                'required': ['id', 'name'],
+            }
+        },
+    }
+
+
 def test_discrimated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
     class A:
@@ -966,6 +1233,24 @@ def test_discrimated_union_basemodel_instance_value():
     }
 
 
+def test_post_init_after_validation():
+    @dataclasses.dataclass
+    class SetWrapper:
+        set: Set[int]
+
+        def __post_init__(self):
+            assert isinstance(
+                self.set, set
+            ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
+
+    class Model(pydantic.BaseModel, post_init_call='after_validation'):
+        set_wrapper: SetWrapper
+
+    model = Model(set_wrapper=SetWrapper({1, 2, 3}))
+    json_text = model.json()
+    assert Model.parse_raw(json_text) == model
+
+
 def test_keeps_custom_properties():
     class StandardClass:
         """Class which modifies instance creation."""
@@ -991,9 +1276,87 @@ def test_keeps_custom_properties():
         assert instance.a == test_string
 
 
+def test_ignore_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    class Foo:
+        x: int
+
+    foo = Foo(**{'x': '1', 'y': '2'})
+    assert foo.__dict__ == {'x': 1, '__pydantic_initialised__': True}
+
+
+def test_ignore_extra_subclass():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    class Foo:
+        x: int
+
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    class Bar(Foo):
+        y: int
+
+    bar = Bar(**{'x': '1', 'y': '2', 'z': '3'})
+    assert bar.__dict__ == {'x': 1, 'y': 2, '__pydantic_initialised__': True}
+
+
+def test_allow_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foo:
+        x: int
+
+    foo = Foo(**{'x': '1', 'y': '2'})
+    assert foo.__dict__ == {'x': 1, 'y': '2', '__pydantic_initialised__': True}
+
+
+def test_allow_extra_subclass():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foo:
+        x: int
+
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Bar(Foo):
+        y: int
+
+    bar = Bar(**{'x': '1', 'y': '2', 'z': '3'})
+    assert bar.__dict__ == {'x': 1, 'y': 2, 'z': '3', '__pydantic_initialised__': True}
+
+
+def test_forbid_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    class Foo:
+        x: int
+
+    with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'y'")):
+        Foo(**{'x': '1', 'y': '2'})
+
+
+def test_post_init_allow_extra():
+    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
+    class Foobar:
+        a: int
+        b: str
+
+        def __post_init__(self):
+            self.a *= 2
+
+    assert Foobar(a=1, b='a', c=4).__dict__ == {'a': 2, 'b': 'a', 'c': 4, '__pydantic_initialised__': True}
+
+
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
         self_reference: 'MyDataclass'
 
     assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
+def test_kw_only():
+    @pydantic.dataclasses.dataclass(kw_only=True)
+    class A:
+        a: int | None = None
+        b: str
+
+    with pytest.raises(TypeError, match='takes 1 positional argument but 3 were given'):
+        A(1, '')
+
+    assert A(b='hi').b == 'hi'

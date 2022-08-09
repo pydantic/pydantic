@@ -1,3 +1,4 @@
+import keyword
 import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
@@ -17,6 +18,7 @@ from typing import (
     List,
     Mapping,
     MutableMapping,
+    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -50,6 +52,8 @@ if TYPE_CHECKING:
     from .main import BaseModel
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
+    RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
+
 __all__ = (
     'import_string',
     'sequence_like',
@@ -57,6 +61,7 @@ __all__ = (
     'lenient_isinstance',
     'lenient_issubclass',
     'in_ipython',
+    'is_valid_identifier',
     'deep_update',
     'update_not_none',
     'almost_equal_floats',
@@ -74,6 +79,7 @@ __all__ = (
     'ROOT_KEY',
     'get_unique_discriminator_alias',
     'get_discriminator_alias_and_values',
+    'DUNDER_ATTRIBUTES',
     'LimitedDict',
 )
 
@@ -194,6 +200,15 @@ def in_ipython() -> bool:
         return True
 
 
+def is_valid_identifier(identifier: str) -> bool:
+    """
+    Checks that a string is a valid identifier and not a Python keyword.
+    :param identifier: The identifier to test.
+    :return: True if the identifier is valid.
+    """
+    return identifier.isidentifier() and not keyword.iskeyword(identifier)
+
+
 KeyType = TypeVar('KeyType')
 
 
@@ -246,8 +261,8 @@ def generate_model_signature(
             param_name = field.alias
             if field_name in merged_params or param_name in merged_params:
                 continue
-            elif not param_name.isidentifier():
-                if allow_names and field_name.isidentifier():
+            elif not is_valid_identifier(param_name):
+                if allow_names and is_valid_identifier(field_name):
                     param_name = field_name
                 else:
                     use_var_kw = True
@@ -256,7 +271,7 @@ def generate_model_signature(
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {'default': field.default} if not field.required else {}
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.outer_type_, **kwargs
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.annotation, **kwargs
             )
 
     if config.extra is Extra.allow:
@@ -299,6 +314,13 @@ def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseMod
 
 def to_camel(string: str) -> str:
     return ''.join(word.capitalize() for word in string.split('_'))
+
+
+def to_lower_camel(string: str) -> str:
+    if len(string) >= 1:
+        pascal_string = to_camel(string)
+        return pascal_string[0].lower() + pascal_string[1:]
+    return string.lower()
 
 
 T = TypeVar('T')
@@ -387,6 +409,14 @@ class Representation:
 
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
+
+    def __rich_repr__(self) -> 'RichReprResult':
+        """Get fields for Rich library"""
+        for name, field_repr in self.__repr_args__():
+            if name is None:
+                yield field_repr
+            else:
+                yield name, field_repr
 
 
 class GetterDict(Representation):
@@ -577,7 +607,10 @@ class ValueItems(Representation):
             items = dict.fromkeys(items, ...)
         else:
             class_name = getattr(items, '__class__', '???')
-            raise TypeError(f'Unexpected type of exclude value {class_name}')
+            assert_never(
+                items,
+                f'Unexpected type of exclude value {class_name}',
+            )
         return items
 
     @classmethod
@@ -663,15 +696,19 @@ def is_valid_field(name: str) -> bool:
     return ROOT_KEY == name
 
 
+DUNDER_ATTRIBUTES = {
+    '__annotations__',
+    '__classcell__',
+    '__doc__',
+    '__module__',
+    '__orig_bases__',
+    '__orig_class__',
+    '__qualname__',
+}
+
+
 def is_valid_private_name(name: str) -> bool:
-    return not is_valid_field(name) and name not in {
-        '__annotations__',
-        '__classcell__',
-        '__doc__',
-        '__module__',
-        '__orig_bases__',
-        '__qualname__',
-    }
+    return not is_valid_field(name) and name not in DUNDER_ATTRIBUTES
 
 
 _EMPTY = object()
@@ -691,6 +728,16 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
         if left_item is not right_item:
             return False
     return True
+
+
+def assert_never(obj: NoReturn, msg: str) -> NoReturn:
+    """
+    Helper to make sure that we have covered all possible types.
+
+    This is mostly useful for ``mypy``, docs:
+    https://mypy.readthedocs.io/en/latest/literal_types.html#exhaustive-checks
+    """
+    raise TypeError(msg)
 
 
 def get_unique_discriminator_alias(all_aliases: Collection[str], discriminator_key: str) -> str:
