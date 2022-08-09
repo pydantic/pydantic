@@ -675,21 +675,28 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def validate(cls: Type['Model'], value: Any) -> 'Model':
         if isinstance(value, cls):
-            if isinstance(cls.__config__.copy_on_model_validation, bool):
+            copy_on_model_validation = cls.__config__.copy_on_model_validation
+            # whether to deep or shallow copy the model on validation, None means do not copy
+            deep_copy: Optional[bool] = None
+            if copy_on_model_validation not in {'deep', 'shallow', 'none'}:
                 # Warn about deprecated behavior
                 warnings.warn(
-                    "`copy_on_model_validation` should be a string of value ('deep', 'shallow', 'none')", RuntimeWarning
+                    "`copy_on_model_validation` should be a string: 'deep', 'shallow' or 'none'", RuntimeWarning
                 )
+                if copy_on_model_validation:
+                    deep_copy = False
 
-            if cls.__config__.copy_on_model_validation == 'shallow':
+            if copy_on_model_validation == 'shallow':
                 # shallow copy
-                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=False)
-            elif cls.__config__.copy_on_model_validation == 'deep':
+                deep_copy = False
+            elif copy_on_model_validation == 'deep':
                 # deep copy
-                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=True)
-            else:
-                # ref
+                deep_copy = True
+
+            if deep_copy is None:
                 return value
+            else:
+                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=deep_copy)
 
         value = cls._enforce_dict_if_root(value)
 
