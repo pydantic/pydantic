@@ -7,7 +7,7 @@ import json
 import os
 from datetime import date, datetime, timedelta
 from pathlib import Path, PurePath
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, TypeVar
 from uuid import UUID
 
 from typing_extensions import TypedDict
@@ -47,7 +47,6 @@ from pydantic import (
 )
 from pydantic.fields import Field, PrivateAttr
 from pydantic.generics import GenericModel
-from pydantic.typing import ForwardRef
 
 
 class Flags(BaseModel):

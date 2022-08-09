@@ -1,5 +1,5 @@
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, ForwardRef, List, Optional, Tuple
 
 import pytest
 
@@ -65,8 +65,6 @@ class Bar(BaseModel):
     b: 'Foo'
 """
     )
-
-    from pydantic.typing import ForwardRef
 
     assert module.Foo.__fields__['a'].type_ == ForwardRef('Bar')
     assert module.Bar.__fields__['b'].type_ is module.Foo
