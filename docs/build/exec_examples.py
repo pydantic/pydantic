@@ -138,6 +138,7 @@ def gen_ansi_output() -> None:
 
 dont_execute_re = re.compile(r'^# dont-execute\n', flags=re.M | re.I)
 dont_upgrade_re = re.compile(r'^# dont-upgrade\n', flags=re.M | re.I)
+requires_re = re.compile(r'^# requires: *(.+)\n', flags=re.M | re.I)
 required_py_re = re.compile(r'^# *requires *python *(\d+).(\d+)', flags=re.M)
 
 
@@ -164,6 +165,13 @@ def should_upgrade(file_text: str) -> tuple[str, bool]:
     if dont_upgrade_re.search(file_text):
         return dont_upgrade_re.sub('', file_text), False
     return file_text, True
+
+
+def get_requirements(file_text: str) -> tuple[str, str | None]:
+    m = requires_re.search(file_text)
+    if m:
+        return requires_re.sub('', file_text), m.groups()[0]
+    return file_text, None
 
 
 def exec_file(file: Path, file_text: str, error: Error) -> tuple[list[str], str | None]:
@@ -205,13 +213,13 @@ def exec_file(file: Path, file_text: str, error: Error) -> tuple[list[str], str 
 
 
 def filter_lines(lines: list[str], error: Any) -> tuple[list[str], bool]:
-    changed = False
+    ignored_above = False
     try:
         ignore_above = lines.index('# ignore-above')
     except ValueError:
         pass
     else:
-        changed = True
+        ignored_above = True
         lines = lines[ignore_above + 1 :]
 
     try:
@@ -219,13 +227,12 @@ def filter_lines(lines: list[str], error: Any) -> tuple[list[str], bool]:
     except ValueError:
         pass
     else:
-        changed = True
         lines = lines[:ignore_below]
 
     lines = '\n'.join(lines).split('\n')
     if any(len(l) > MAX_LINE_LENGTH for l in lines):
         error(f'lines longer than {MAX_LINE_LENGTH} characters')
-    return lines, changed
+    return lines, ignored_above
 
 
 def upgrade_code(content: str, min_version: Version = HIGHEST_VERSION) -> str:
@@ -316,10 +323,10 @@ def exec_examples() -> int:
 
         def error(*desc: str) -> None:
             errors.append((file, desc))
-            previous_frame = sys._getframe(-3)
+            previous_frame = sys._getframe(1)
             filename = Path(previous_frame.f_globals["__file__"]).relative_to(Path.cwd())
             location = f'{filename}:{previous_frame.f_lineno}'
-            sys.stderr.write(f'{location}: error in {file.name}: {" ".join(desc)}\n')
+            sys.stderr.write(f'{location}: error in {file.relative_to(Path.cwd())}:\n{" ".join(desc)}\n')
 
         if not file.is_file():
             # __pycache__, maybe others
@@ -336,6 +343,7 @@ def exec_examples() -> int:
 
         file_text, execute, lowest_version = should_execute(file.name, file_text)
         file_text, upgrade = should_upgrade(file_text)
+        file_text, requirements = get_requirements(file_text)
 
         if upgrade and upgrade_code(file_text, min_version=lowest_version) != file_text:
             error("pyupgrade would upgrade file. If it's not desired, add '# dont-upgrade' line at the top of the file")
@@ -345,7 +353,7 @@ def exec_examples() -> int:
             versions.extend(populate_upgraded_versions(file, file_text, lowest_version))
 
         json_outputs: set[str | None] = set()
-        should_run_as_is = True
+        should_run_as_is = not requirements
         final_content: list[str] = []
         for file, file_text, lowest_version in versions:
             if execute and sys.version_info >= lowest_version:
@@ -354,8 +362,8 @@ def exec_examples() -> int:
             else:
                 lines = file_text.split('\n')
 
-            lines, changed = filter_lines(lines, error)
-            should_run_as_is = not changed
+            lines, ignored_lines_before_script = filter_lines(lines, error)
+            should_run_as_is = should_run_as_is and not ignored_lines_before_script
 
             final_content.append(
                 PYTHON_CODE_MD_TMPL.format(
@@ -366,7 +374,13 @@ def exec_examples() -> int:
 
         if should_run_as_is:
             final_content.append('_(This script is complete, it should run "as is")_')
-
+        elif requirements:
+            final_content.append(f'_(This script requires {requirements})_')
+        else:
+            error(
+                "script may not run as is, but requirements were not specified.",
+                "specify `# requires: ` in the end of the script",
+            )
         if len(json_outputs) > 1:
             error('json output should not differ between versions')
 

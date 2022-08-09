@@ -285,4 +285,3 @@ need to add your own custom sources, `customise_sources` makes this very easy:
 You might also want to disable a source:
 
 {!.tmp_examples/settings_disable_source.md!}
-_(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_

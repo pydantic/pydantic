@@ -211,8 +211,6 @@ Each error object contains:
 As a demonstration:
 
 {!.tmp_examples/models_errors1.md!}
-_(This script is complete, it should run "as is". `json()` has `indent=2` set by default, but I've tweaked the
-JSON here and below to make it slightly more concise.)_
 
 ### Custom Errors
 
