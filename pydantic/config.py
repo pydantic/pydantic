@@ -2,20 +2,20 @@ import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Type, Union
 
+from typing_extensions import Literal, Protocol
+
 from .typing import AnyCallable
 from .utils import GetterDict
 
 if TYPE_CHECKING:
     from typing import overload
 
-    import typing_extensions
-
     from .fields import ModelField
     from .main import BaseModel
 
     ConfigType = Type['BaseConfig']
 
-    class SchemaExtraCallable(typing_extensions.Protocol):
+    class SchemaExtraCallable(Protocol):
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass
@@ -63,8 +63,10 @@ class BaseConfig:
     json_encoders: Dict[Union[Type[Any], str], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
-    # whether inherited models as fields should be reconstructed as base model
-    copy_on_model_validation: bool = True
+    # whether inherited models as fields should be reconstructed as base model,
+    # and whether such a copy should be shallow or deep
+    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
+
     # whether `Union` should check all allowed types before even trying to coerce
     smart_union: bool = False
 

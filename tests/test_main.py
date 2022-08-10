@@ -1561,10 +1561,55 @@ def test_model_exclude_copy_on_model_validation():
 
     assert t.user is not my_user
     assert t.user.hobbies == ['scuba diving']
-    assert t.user.hobbies is not my_user.hobbies  # `Config.copy_on_model_validation` does a deep copy
+    assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` does a shallow copy
     assert t.user._priv == 13
     assert t.user.password.get_secret_value() == 'hashedpassword'
     assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
+
+
+def test_model_exclude_copy_on_model_validation_shallow():
+    """When `Config.copy_on_model_validation` is set and `Config.copy_on_model_validation_shallow` is set,
+    do the same as the previous test but perform a shallow copy"""
+
+    class User(BaseModel):
+        class Config:
+            copy_on_model_validation = 'shallow'
+
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User = Field(...)
+
+    t = Transaction(user=my_user)
+
+    assert t.user is not my_user
+    assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
+
+
+@pytest.mark.parametrize('comv_value', [True, False])
+def test_copy_on_model_validation_warning(comv_value):
+    class User(BaseModel):
+        class Config:
+            # True interpreted as 'shallow', False interpreted as 'none'
+            copy_on_model_validation = comv_value
+
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User
+
+    with pytest.warns(DeprecationWarning, match="`copy_on_model_validation` should be a string: 'deep', 'shallow' or"):
+        t = Transaction(user=my_user)
+
+    if comv_value:
+        assert t.user is not my_user
+    else:
+        assert t.user is my_user
+    assert t.user.hobbies is my_user.hobbies
 
 
 def test_validation_deep_copy():
@@ -1572,6 +1617,9 @@ def test_validation_deep_copy():
 
     class A(BaseModel):
         name: str
+
+        class Config:
+            copy_on_model_validation = 'deep'
 
     class B(BaseModel):
         list_a: List[A]
@@ -1987,7 +2035,7 @@ def test_inherited_model_field_untouched():
             return id(self)
 
         class Config:
-            copy_on_model_validation = False
+            copy_on_model_validation = 'none'
 
     class Item(BaseModel):
         images: List[Image]

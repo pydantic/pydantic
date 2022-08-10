@@ -8,6 +8,7 @@ on:
       - pydantic-v2-blog
     tags:
       - '**'
+  pull_request: {}
 
 jobs:
   lint:
