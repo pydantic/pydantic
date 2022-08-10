@@ -23,6 +23,7 @@ os.chdir(Path(__file__).parent.parent.parent)
 cases = [
     ('mypy-plugin.ini', 'plugin_success.py', None),
     ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
+    ('mypy-plugin.ini', 'custom_constructor.py', 'custom_constructor.txt'),
     ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
     ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
     ('mypy-plugin-strict.ini', 'fail_defaults.py', 'fail_defaults.txt'),
