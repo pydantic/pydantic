@@ -65,7 +65,7 @@ class BaseConfig:
 
     # whether inherited models as fields should be reconstructed as base model,
     # and whether such a copy should be shallow or deep
-    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'deep'
+    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
 
     # whether `Union` should check all allowed types before even trying to coerce
     smart_union: bool = False

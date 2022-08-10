@@ -1561,7 +1561,7 @@ def test_model_exclude_copy_on_model_validation():
 
     assert t.user is not my_user
     assert t.user.hobbies == ['scuba diving']
-    assert t.user.hobbies is not my_user.hobbies  # `Config.copy_on_model_validation` does a deep copy
+    assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` does a shallow copy
     assert t.user._priv == 13
     assert t.user.password.get_secret_value() == 'hashedpassword'
     assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
@@ -1617,6 +1617,9 @@ def test_validation_deep_copy():
 
     class A(BaseModel):
         name: str
+
+        class Config:
+            copy_on_model_validation = 'deep'
 
     class B(BaseModel):
         list_a: List[A]
