@@ -4,7 +4,7 @@ from copy import deepcopy
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from types import FunctionType
+from types import FunctionType, prepare_class, resolve_bases
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -996,8 +996,12 @@ def create_model(
     namespace.update(fields)
     if __config__:
         namespace['Config'] = inherit_config(__config__, BaseConfig)
-
-    return type(__model_name, __base__, namespace, **__cls_kwargs__)
+    resolved_bases = resolve_bases(__base__)
+    meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
+    if resolved_bases is not __base__:
+        ns['__orig_bases__'] = __base__
+    namespace.update(ns)
+    return meta(__model_name, resolved_bases, namespace, **kwds)
 
 
 _missing = object()
