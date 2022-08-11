@@ -10,11 +10,11 @@ use crate::validators::{CombinedValidator, Extra, Validator};
 use super::parse_json::{JsonArray, JsonInput, JsonObject};
 use super::Input;
 
-/// Container for all the "list-like" types which can be converted to each other in lax mode.
-/// This cannot be called `GenericSequence` (as it previously was) or `GenericIterable` since it's
-/// members don't match python's definition of `Sequence` or `Iterable`.
+/// Container for all the collections (sized iterable containers) types, which
+/// can mostly be converted to each other in lax mode.
+/// This mostly matches python's definition of `Collection`.
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum GenericListLike<'a> {
+pub enum GenericCollection<'a> {
     List(&'a PyList),
     Tuple(&'a PyTuple),
     Set(&'a PySet),
@@ -31,12 +31,12 @@ macro_rules! derive_from {
         }
     };
 }
-derive_from!(GenericListLike, List, PyList);
-derive_from!(GenericListLike, Tuple, PyTuple);
-derive_from!(GenericListLike, Set, PySet);
-derive_from!(GenericListLike, FrozenSet, PyFrozenSet);
-derive_from!(GenericListLike, JsonArray, JsonArray);
-derive_from!(GenericListLike, JsonArray, [JsonInput]);
+derive_from!(GenericCollection, List, PyList);
+derive_from!(GenericCollection, Tuple, PyTuple);
+derive_from!(GenericCollection, Set, PySet);
+derive_from!(GenericCollection, FrozenSet, PyFrozenSet);
+derive_from!(GenericCollection, JsonArray, JsonArray);
+derive_from!(GenericCollection, JsonArray, [JsonInput]);
 
 fn validate_iter_to_vec<'a, 's>(
     py: Python<'a>,
@@ -66,7 +66,7 @@ fn validate_iter_to_vec<'a, 's>(
     }
 }
 
-impl<'a> GenericListLike<'a> {
+impl<'a> GenericCollection<'a> {
     pub fn generic_len(&self) -> usize {
         match self {
             Self::List(v) => v.len(),
@@ -123,31 +123,31 @@ impl<'a> GenericListLike<'a> {
     ) -> ValResult<'a, Vec<PyObject>> {
         let length = length.unwrap_or_else(|| self.generic_len());
         match self {
-            Self::List(list_like) => {
-                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
+            Self::List(collection) => {
+                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
             }
-            Self::Tuple(list_like) => {
-                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
+            Self::Tuple(collection) => {
+                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
             }
-            Self::Set(list_like) => {
-                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
+            Self::Set(collection) => {
+                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
             }
-            Self::FrozenSet(list_like) => {
-                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
+            Self::FrozenSet(collection) => {
+                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
             }
-            Self::JsonArray(list_like) => {
-                validate_iter_to_vec(py, list_like.iter(), length, validator, extra, slots, recursion_guard)
+            Self::JsonArray(collection) => {
+                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
             }
         }
     }
 
     pub fn to_vec(&self, py: Python) -> Vec<PyObject> {
         match self {
-            Self::List(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
-            Self::Tuple(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
-            Self::Set(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
-            Self::FrozenSet(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
-            Self::JsonArray(list_like) => list_like.iter().map(|i| i.to_object(py)).collect(),
+            Self::List(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
+            Self::Tuple(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
+            Self::Set(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
+            Self::FrozenSet(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
+            Self::JsonArray(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
         }
     }
 }

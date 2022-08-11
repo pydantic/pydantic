@@ -1,6 +1,10 @@
+import re
+
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
+
+from .conftest import Err
 
 
 @pytest.mark.parametrize(
@@ -37,13 +41,54 @@ def test_str():
         s.validate_json('123')
 
 
+def test_bytes():
+    s = SchemaValidator({'type': 'bytes'})
+    assert s.validate_json('"foobar"') == b'foobar'
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[kind=bytes_type,'):
+        s.validate_json('false')
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[kind=bytes_type,'):
+        s.validate_json('123')
+
+
 @pytest.mark.parametrize(
-    'input_value,output_value',
-    [('123.4', 123.4), ('123.0', 123.0), ('123', 123.0), ('"123.4"', 123.4), ('"123.0"', 123.0), ('"123"', 123.0)],
+    'input_value,expected',
+    [
+        ('123', 123),
+        ('"123"', 123),
+        ('123.0', 123),
+        ('"123.0"', 123),
+        ('123.4', Err('Input should be a valid integer, got a number with a fractional part [kind=int_from_float,')),
+        ('"string"', Err('Input should be a valid integer, unable to parse string as an integer [kind=int_parsing,')),
+    ],
 )
-def test_float(input_value, output_value):
+def test_int(input_value, expected):
+    v = SchemaValidator({'type': 'int'})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_json(input_value)
+    else:
+        assert v.validate_json(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('123.4', 123.4),
+        ('123.0', 123.0),
+        ('123', 123.0),
+        ('"123.4"', 123.4),
+        ('"123.0"', 123.0),
+        ('"123"', 123.0),
+        ('"string"', Err('Input should be a valid number, unable to parse string as an number [kind=float_parsing,')),
+    ],
+)
+def test_float(input_value, expected):
     v = SchemaValidator({'type': 'float'})
-    assert v.validate_json(input_value) == output_value
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_json(input_value)
+    else:
+        assert v.validate_json(input_value) == expected
 
 
 def test_model():

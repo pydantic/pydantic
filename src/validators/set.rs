@@ -3,10 +3,10 @@ use pyo3::types::{PyDict, PySet};
 
 use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
-use crate::input::{GenericListLike, Input};
+use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::list::generic_list_like_build;
+use super::list::generic_collection_build;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -19,7 +19,7 @@ pub struct SetValidator {
 
 impl BuildValidator for SetValidator {
     const EXPECTED_TYPE: &'static str = "set";
-    generic_list_like_build!();
+    generic_collection_build!();
 }
 
 impl Validator for SetValidator {
@@ -38,7 +38,7 @@ impl Validator for SetValidator {
         let output = match self.item_validator {
             Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
             None => match seq {
-                GenericListLike::Set(set) => return Ok(set.into_py(py)),
+                GenericCollection::Set(set) => return Ok(set.into_py(py)),
                 _ => seq.to_vec(py),
             },
         };
