@@ -32,6 +32,7 @@ struct TypedDictField {
     default: Option<PyObject>,
     default_factory: Option<PyObject>,
     validator: CombinedValidator,
+    frozen: bool,
 }
 
 impl TypedDictField {
@@ -182,8 +183,10 @@ impl BuildValidator for TypedDictValidator {
                 default,
                 default_factory,
                 on_error,
+                frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
         }
+
         Ok(Self {
             fields,
             check_extra,
@@ -433,7 +436,11 @@ impl TypedDictValidator {
         };
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field) {
-            prepare_result(field.validator.validate(py, input, extra, slots, recursion_guard))
+            if field.frozen {
+                Err(ValError::new_with_loc(ErrorKind::Frozen, input, field.name.to_string()))
+            } else {
+                prepare_result(field.validator.validate(py, input, extra, slots, recursion_guard))
+            }
         } else if self.check_extra && !self.forbid_extra {
             // this is the "allow" case of extra_behavior
             match self.extra_validator {

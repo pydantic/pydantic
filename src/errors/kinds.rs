@@ -30,6 +30,8 @@ pub enum ErrorKind {
     DictAttributesType,
     #[strum(message = "Field required")]
     Missing,
+    #[strum(message = "Field is frozen")]
+    Frozen,
     #[strum(message = "Extra inputs are not permitted")]
     ExtraForbidden,
     #[strum(message = "Keys should be strings")]

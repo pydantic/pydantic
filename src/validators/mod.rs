@@ -175,12 +175,20 @@ impl SchemaValidator {
         }
     }
 
-    pub fn validate_assignment(&self, py: Python, field: String, input: &PyAny, data: &PyDict) -> PyResult<PyObject> {
+    pub fn validate_assignment(
+        &self,
+        py: Python,
+        field: String,
+        input: &PyAny,
+        data: &PyDict,
+        strict: Option<bool>,
+        context: Option<&PyAny>,
+    ) -> PyResult<PyObject> {
         let extra = Extra {
             data: Some(data),
             field: Some(field.as_str()),
-            strict: None,
-            context: None,
+            strict,
+            context,
         };
         let r = self
             .validator
