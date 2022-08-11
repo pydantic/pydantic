@@ -134,6 +134,33 @@ def test_nested_env_delimiter(env):
     }
 
 
+def test_nested_env_delimiter_with_prefix(env):
+    class Subsettings(BaseSettings):
+        banana: str
+
+    class Settings(BaseSettings):
+        subsettings: Subsettings
+
+        class Config:
+            env_nested_delimiter = '_'
+            env_prefix = 'myprefix_'
+
+    env.set('myprefix_subsettings_banana', 'banana')
+    s = Settings()
+    assert s.subsettings.banana == 'banana'
+
+    class Settings(BaseSettings):
+        subsettings: Subsettings
+
+        class Config:
+            env_nested_delimiter = '_'
+            env_prefix = 'myprefix__'
+
+    env.set('myprefix__subsettings_banana', 'banana')
+    s = Settings()
+    assert s.subsettings.banana == 'banana'
+
+
 def test_nested_env_delimiter_complex_required(env):
     class Cfg(BaseSettings):
         v: str = 'default'

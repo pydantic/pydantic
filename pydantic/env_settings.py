@@ -63,6 +63,7 @@ class BaseSettings(BaseModel):
             env_nested_delimiter=(
                 _env_nested_delimiter if _env_nested_delimiter is not None else self.__config__.env_nested_delimiter
             ),
+            env_prefix_len=len(self.__config__.env_prefix),
         )
         file_secret_settings = SecretsSettingsSource(secrets_dir=_secrets_dir or self.__config__.secrets_dir)
         # Provide a hook to set built-in sources priority and add / remove sources
@@ -142,14 +143,19 @@ class InitSettingsSource:
 
 
 class EnvSettingsSource:
-    __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter')
+    __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter', 'env_prefix_len')
 
     def __init__(
-        self, env_file: Optional[StrPath], env_file_encoding: Optional[str], env_nested_delimiter: Optional[str] = None
+        self,
+        env_file: Optional[StrPath],
+        env_file_encoding: Optional[str],
+        env_nested_delimiter: Optional[str] = None,
+        env_prefix_len: int = 0,
     ):
         self.env_file: Optional[StrPath] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
+        self.env_prefix_len: int = env_prefix_len
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa C901
         """
@@ -228,7 +234,9 @@ class EnvSettingsSource:
         for env_name, env_val in env_vars.items():
             if not any(env_name.startswith(prefix) for prefix in prefixes):
                 continue
-            _, *keys, last_key = env_name.split(self.env_nested_delimiter)
+            # we remove the prefix before splitting in case the prefix has characters in common with the delimiter
+            env_name_without_prefix = env_name[self.env_prefix_len :]
+            _, *keys, last_key = env_name_without_prefix.split(self.env_nested_delimiter)
             env_var = result
             for key in keys:
                 env_var = env_var.setdefault(key, {})
