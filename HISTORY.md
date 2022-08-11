@@ -1,3 +1,13 @@
+## v1.9.2 (2022-08-11)
+
+**Revert Breaking Change**: _v1.9.1_ introduced a breaking change where model fields were
+deep copied by default, this release reverts the default behaviour to match _v1.9.0_ and before, 
+while also allow deep-copy behaviour via `copy_on_model_validation = 'deep'`. See #4092 for more information.
+
+* Allow for shallow copies of model fields, `Config.copy_on_model_validation` is now a str which must be
+  `'none'`, `'deep'`, or `'shallow'` corresponding to not copying, deep copy & shallow copy; default `'shallow'`, 
+  #4093 by @timkpaine
+
 ## v1.9.1 (2022-05-19)
 
 Thank you to pydantic's sponsors:
