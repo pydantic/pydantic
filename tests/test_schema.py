@@ -50,6 +50,7 @@ from pydantic.types import (
     UUID4,
     UUID5,
     ConstrainedBytes,
+    ConstrainedDate,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
@@ -75,6 +76,7 @@ from pydantic.types import (
     StrictBool,
     StrictStr,
     conbytes,
+    condate,
     condecimal,
     confloat,
     conint,
@@ -460,7 +462,6 @@ def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'
         b = Decimal('12.34')
-        c = date(2022, 8, 11)
 
     assert json.loads(Model.schema_json(indent=2)) == {
         'title': 'Model',
@@ -468,7 +469,6 @@ def test_json_schema():
         'properties': {
             'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
             'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
-            'c': {'title': 'C', 'default': '2022-08-11', 'type': 'string', 'format': 'date'},
         },
     }
 
@@ -727,6 +727,30 @@ def test_date_types(field_type, expected_schema):
         a: field_type
 
     attribute_schema = {'title': 'A'}
+    attribute_schema.update(expected_schema)
+
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedDate, {}),
+        (condate(), {}),
+        (
+            condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
+            {'exclusiveMinimum': date(2010, 1, 1), 'exclusiveMaximum': date(2021, 2, 2)},
+        ),
+        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': date(2010, 1, 1), 'maximum': date(2021, 2, 2)}),
+    ],
+)
+def test_date_constrained_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    attribute_schema = {'title': 'A', 'type': 'string', 'format': 'date'}
     attribute_schema.update(expected_schema)
 
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
