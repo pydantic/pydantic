@@ -113,13 +113,6 @@ BUILTIN_COLLECTIONS: Set[Type[Any]] = {
     deque,
 }
 
-# There are error classes caught in smart_deepcopy
-CAUGHT_SMART_DEEPCOPY_ERRORS: Set[Type[Exception]] = {
-    TypeError,
-    ValueError,
-    RuntimeError,
-}
-
 
 def import_string(dotted_path: str) -> Any:
     """
@@ -662,7 +655,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
         if not obj and obj_type in BUILTIN_COLLECTIONS:
             # faster way for empty collections, no need to copy its members
             return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
-    except tuple(CAUGHT_SMART_DEEPCOPY_ERRORS):
+    except (TypeError, ValueError, RuntimeError):
         # do we really dare to catch ALL errors? Seems a bit risky
         pass
 

@@ -27,7 +27,6 @@ from pydantic.typing import (
 )
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
-    CAUGHT_SMART_DEEPCOPY_ERRORS,
     ClassAttribute,
     LimitedDict,
     ValueItems,
@@ -462,16 +461,15 @@ def test_smart_deepcopy_collection(collection, mocker):
     assert smart_deepcopy(collection) is expected_value
 
 
-@pytest.mark.parametrize('error', CAUGHT_SMART_DEEPCOPY_ERRORS)
+@pytest.mark.parametrize('error', [TypeError, ValueError, RuntimeError])
 def test_smart_deepcopy_error(error, mocker):
     class RaiseOnBooleanOperation(str):
         def __bool__(self):
             raise error('raised error')
 
     obj = RaiseOnBooleanOperation()
-    expected_value = object()
-    mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
-    assert smart_deepcopy(obj) is expected_value
+    expected_value = deepcopy(obj)
+    assert smart_deepcopy(obj) == expected_value
 
 
 T = TypeVar('T')
