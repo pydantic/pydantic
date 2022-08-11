@@ -588,7 +588,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m = cls.__new__(cls)
         fields_values: Dict[str, Any] = {}
         for name, field in cls.__fields__.items():
-            if name in values:
+            if field.alt_alias and field.alias in values:
+                fields_values[name] = values[field.alias]
+            elif name in values:
                 fields_values[name] = values[name]
             elif not field.required:
                 fields_values[name] = field.get_default()
