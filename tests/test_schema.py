@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import sys
@@ -461,31 +462,15 @@ def test_json_schema():
         b = Decimal('12.34')
         c = date(2022, 8, 11)
 
-    assert Model.schema_json(indent=2) == (
-        '{\n'
-        '  "title": "Model",\n'
-        '  "type": "object",\n'
-        '  "properties": {\n'
-        '    "a": {\n'
-        '      "title": "A",\n'
-        '      "default": "foobar",\n'
-        '      "type": "string",\n'
-        '      "format": "binary"\n'
-        '    },\n'
-        '    "b": {\n'
-        '      "title": "B",\n'
-        '      "default": 12.34,\n'
-        '      "type": "number"\n'
-        '    },\n'
-        '    "c": {\n'
-        '      "title": "C",\n'
-        '      "default": "2022-08-11",\n'
-        '      "type": "string",\n'
-        '      "format": "date"\n'
-        '    }\n'
-        '  }\n'
-        '}'
-    )
+    assert json.loads(Model.schema_json(indent=2)) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
+            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+            'c': {'title': 'C', 'default': '2022-08-11', 'type': 'string', 'format': 'date'},
+        },
+    }
 
 
 def test_list_sub_model():
