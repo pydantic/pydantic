@@ -1,0 +1,1 @@
+Add ability to use `Final` in a field type annotation.

@@ -76,7 +76,7 @@ def strict_str_validator(v: Any) -> Union[str]:
     raise errors.StrError()
 
 
-def bytes_validator(v: Any) -> bytes:
+def bytes_validator(v: Any) -> Union[bytes]:
     if isinstance(v, bytes):
         return v
     elif isinstance(v, bytearray):
@@ -125,7 +125,7 @@ def int_validator(v: Any) -> int:
 
     try:
         return int(v)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raise errors.IntegerError()
 
 
@@ -204,6 +204,10 @@ def anystr_length_validator(v: 'StrBytes', config: 'BaseConfig') -> 'StrBytes':
 
 def anystr_strip_whitespace(v: 'StrBytes') -> 'StrBytes':
     return v.strip()
+
+
+def anystr_upper(v: 'StrBytes') -> 'StrBytes':
+    return v.upper()
 
 
 def anystr_lower(v: 'StrBytes') -> 'StrBytes':
@@ -488,6 +492,14 @@ def constr_strip_whitespace(v: 'StrBytes', field: 'ModelField', config: 'BaseCon
     return v
 
 
+def constr_upper(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
+    upper = field.type_.to_upper or config.anystr_upper
+    if upper:
+        v = v.upper()
+
+    return v
+
+
 def constr_lower(v: 'StrBytes', field: 'ModelField', config: 'BaseConfig') -> 'StrBytes':
     lower = field.type_.to_lower or config.anystr_lower
     if lower:
@@ -555,11 +567,14 @@ def pattern_validator(v: Any) -> Pattern[str]:
 NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
 
 
-def make_namedtuple_validator(namedtuple_cls: Type[NamedTupleT]) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
+def make_namedtuple_validator(
+    namedtuple_cls: Type[NamedTupleT], config: Type['BaseConfig']
+) -> Callable[[Tuple[Any, ...]], NamedTupleT]:
     from .annotated_types import create_model_from_namedtuple
 
     NamedTupleModel = create_model_from_namedtuple(
         namedtuple_cls,
+        __config__=config,
         __module__=namedtuple_cls.__module__,
     )
     namedtuple_cls.__pydantic_model__ = NamedTupleModel  # type: ignore[attr-defined]
@@ -614,6 +629,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             str_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_upper, 'anystr_upper'),
             IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
@@ -623,6 +639,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
         [
             bytes_validator,
             IfConfig(anystr_strip_whitespace, 'anystr_strip_whitespace'),
+            IfConfig(anystr_upper, 'anystr_upper'),
             IfConfig(anystr_lower, 'anystr_lower'),
             IfConfig(anystr_length_validator, 'min_anystr_length', 'max_anystr_length'),
         ],
@@ -690,7 +707,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
         return
     if is_namedtuple(type_):
         yield tuple_validator
-        yield make_namedtuple_validator(type_)
+        yield make_namedtuple_validator(type_, config)
         return
     if is_typeddict(type_):
         yield make_typeddict_validator(type_, config)
@@ -698,7 +715,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
 
     class_ = get_class(type_)
     if class_ is not None:
-        if isinstance(class_, type):
+        if class_ is not Any and isinstance(class_, type):
             yield make_class_validator(class_)
         else:
             yield any_class_validator

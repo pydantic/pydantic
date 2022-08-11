@@ -1,11 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-- name: Question
-  url: 'https://github.com/samuelcolvin/pydantic/discussions/new?category=question'
-  about: Ask a question about how to use pydantic using github discussions
-
-- name: Feature Request
-  url: 'https://github.com/samuelcolvin/pydantic/discussions/new?category=feature-request'
-  about: >
-    If you think we should add a new feature to pydantic, please start a discussion, once it attracts
-    wider support, it can be migrated to an issue
+  - name: 🤔 Ask a Question
+    url: 'https://github.com/pydantic/pydantic/discussions/new?category=question'
+    about: Ask a question about how to use pydantic using github discussions

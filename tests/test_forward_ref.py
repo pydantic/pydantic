@@ -1,4 +1,5 @@
-from typing import Optional, Tuple
+import sys
+from typing import Dict, List, Optional, Tuple
 
 import pytest
 
@@ -130,15 +131,12 @@ def test_self_forward_ref_collection(create_module):
         from typing import Dict, List
 
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
-
-        Foo = ForwardRef('Foo')
 
         class Foo(BaseModel):
             a: int = 123
-            b: Foo = None
-            c: List[Foo] = []
-            d: Dict[str, Foo] = {}
+            b: 'Foo' = None
+            c: 'List[Foo]' = []
+            d: 'Dict[str, Foo]' = {}
 
         Foo.update_forward_refs()
 
@@ -155,6 +153,14 @@ def test_self_forward_ref_collection(create_module):
     assert exc_info.value.errors() == [
         {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
     ]
+
+    assert module.Foo.__fields__['a'].type_ is int
+    assert module.Foo.__fields__['b'].type_ is module.Foo
+    assert module.Foo.__fields__['b'].outer_type_ is module.Foo
+    assert module.Foo.__fields__['c'].type_ is module.Foo
+    assert module.Foo.__fields__['c'].outer_type_ == List[module.Foo]
+    assert module.Foo.__fields__['d'].type_ is module.Foo
+    assert module.Foo.__fields__['d'].outer_type_ == Dict[str, module.Foo]
 
 
 def test_self_forward_ref_local(create_module):
@@ -582,7 +588,7 @@ def test_discriminated_union_forward_ref(create_module):
     assert module.Pet.schema() == {
         'title': 'Pet',
         'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
-        'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+        'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
         'definitions': {
             'Cat': {
                 'title': 'Cat',
@@ -669,3 +675,61 @@ class User(BaseModel):
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
     assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+
+
+skip_pep585 = pytest.mark.skipif(
+    sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
+)
+
+
+@skip_pep585
+def test_pep585_self_referencing_generics():
+    class SelfReferencing(BaseModel):
+        names: list['SelfReferencing']  # noqa: F821
+
+    SelfReferencing.update_forward_refs()  # will raise an exception if the forward ref isn't resolvable
+    # test the class
+    assert SelfReferencing.__fields__['names'].type_ is SelfReferencing
+    # NOTE: outer_type_ is not converted
+    assert SelfReferencing.__fields__['names'].outer_type_ == list['SelfReferencing']
+    # test that object creation works
+    obj = SelfReferencing(names=[SelfReferencing(names=[])])
+    assert obj.names == [SelfReferencing(names=[])]
+
+
+@skip_pep585
+def test_pep585_recursive_generics(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        class Team(BaseModel):
+            name: str
+            heroes: list['Hero']  # noqa: F821
+
+        class Hero(BaseModel):
+            name: str
+            teams: list[Team]
+
+        Team.update_forward_refs()
+
+    assert module.Team.__fields__['heroes'].type_ is module.Hero
+    assert module.Hero.__fields__['teams'].type_ is module.Team
+
+    module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
+def test_class_var_forward_ref(create_module):
+    # see #3679
+    create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import ClassVar
+from pydantic import BaseModel
+
+class WithClassVar(BaseModel):
+    Instances: ClassVar[dict[str, WithClassVar]] = {}
+"""
+    )

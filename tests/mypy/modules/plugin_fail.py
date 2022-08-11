@@ -1,6 +1,6 @@
-from typing import Any, Generic, Optional, Set, TypeVar, Union
+from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, BaseSettings, Extra, Field
+from pydantic import BaseModel, BaseSettings, Extra, Field, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
@@ -226,3 +226,39 @@ class InheritingModel2(FrozenModel):
 
 inheriting2 = InheritingModel2(x=1, y='c')
 inheriting2.y = 'd'
+
+
+def _default_factory() -> str:
+    ...
+
+
+test: List[str] = []
+
+
+class FieldDefaultTestingModel(BaseModel):
+    # Default
+    e: int = Field(None)
+    f: int = None
+
+    # Default factory
+    g: str = Field(default_factory=set)
+    h: int = Field(default_factory=_default_factory)
+    i: List[int] = Field(default_factory=list)
+    l: str = Field(default_factory=3)
+
+    # Default and default factory
+    m: int = Field(default=1, default_factory=list)
+
+
+class ModelWithAnnotatedValidator(BaseModel):
+    name: str
+
+    @validator('name')
+    def noop_validator_with_annotations(self, name: str) -> str:
+        # This is a mistake: the first argument to a validator is the class itself,
+        # like a classmethod.
+        self.instance_method()
+        return name
+
+    def instance_method(self) -> None:
+        ...
