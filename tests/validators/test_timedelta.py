@@ -24,6 +24,13 @@ from ..conftest import Err, PyAndJson
         ('P0Y0M3D2WT1H2M3.5S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
         (b'P0Y0M3D2WT1H2M3.5S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
         ((-1,), Err('Input should be a valid timedelta [kind=time_delta_type')),
+        (
+            b'-1',
+            Err(
+                'Input should be a valid timedelta, "day" identifier in duration '
+                'not correctly formatted [kind=time_delta_parsing'
+            ),
+        ),
         (3601, timedelta(hours=1, seconds=1)),
         (Decimal('3601.123456'), timedelta(hours=1, seconds=1, microseconds=123456)),
         (Decimal('3601.1234562'), timedelta(hours=1, seconds=1, microseconds=123456)),

@@ -20,7 +20,7 @@ use super::datetime::{
 };
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::{
-    py_string_str, repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericListLike,
+    py_string_str, repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection,
     GenericMapping, Input, PyArgs,
 };
 
@@ -274,7 +274,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else {
@@ -283,7 +283,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(not(PyPy))]
-    fn lax_list(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_list(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
@@ -296,7 +296,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(PyPy)]
-    fn lax_list(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_list(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
@@ -311,7 +311,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else {
@@ -320,7 +320,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(not(PyPy))]
-    fn lax_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -333,7 +333,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(PyPy)]
-    fn lax_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -348,7 +348,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else {
@@ -357,7 +357,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(not(PyPy))]
-    fn lax_set(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_set(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -374,7 +374,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(PyPy)]
-    fn lax_set(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_set(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
@@ -393,7 +393,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(set) = self.cast_as::<PyFrozenSet>() {
             Ok(set.into())
         } else {
@@ -402,7 +402,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(not(PyPy))]
-    fn lax_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else if let Ok(set) = self.cast_as::<PySet>() {
@@ -419,7 +419,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     #[cfg(PyPy)]
-    fn lax_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(frozen_set) = self.cast_as::<PyFrozenSet>() {
             Ok(frozen_set.into())
         } else if let Ok(set) = self.cast_as::<PySet>() {
