@@ -1090,8 +1090,10 @@ class ByteSize(int):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    PastDate = datetime.date
-    FutureDate = datetime.date
+    from datetime import date
+
+    PastDate = date
+    FutureDate = date
 else:
 
     class PastDate(datetime.date):
@@ -1122,7 +1124,6 @@ else:
 
 
 class ConstrainedDate(datetime.date, metaclass=ConstrainedNumberMeta):
-    strict_formats: Optional[List[str]] = None
     gt: OptionalDate = None
     ge: OptionalDate = None
     lt: OptionalDate = None
@@ -1133,35 +1134,18 @@ class ConstrainedDate(datetime.date, metaclass=ConstrainedNumberMeta):
         update_not_none(field_schema, exclusiveMinimum=cls.gt, exclusiveMaximum=cls.lt, minimum=cls.ge, maximum=cls.le)
 
     @classmethod
-    def strict_date_validator(cls, value: Any) -> datetime.date:
-        if isinstance(value, datetime.datetime):
-            return value.date()  # convert datetimes to date
-        if isinstance(value, datetime.date):
-            return value
-        elif isinstance(value, str):
-            if cls.strict_formats is not None:
-                for fmt in cls.strict_formats:
-                    try:
-                        return datetime.datetime.strptime(value, fmt).date()
-                    except ValueError:
-                        continue
-
-        raise errors.DateError()
-
-    @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.strict_date_validator if cls.strict_formats else parse_date
+        yield parse_date
         yield number_size_validator
 
 
 def condate(
     *,
-    strict_formats: Optional[List[str]] = None,
     gt: datetime.date = None,
     ge: datetime.date = None,
     lt: datetime.date = None,
     le: datetime.date = None,
 ) -> Type[datetime.date]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strict_formats=strict_formats, gt=gt, ge=ge, lt=lt, le=le)
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
     return type('ConstrainedDateValue', (ConstrainedDate,), namespace)

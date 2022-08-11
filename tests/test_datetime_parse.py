@@ -10,7 +10,7 @@ from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, errors
+from pydantic import BaseModel, ValidationError, condate, errors
 from pydantic.datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 
 
@@ -289,3 +289,58 @@ def test_nan():
             'type': 'value_error',
         },
     ]
+
+
+base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
+
+
+def test_date_gt():
+    threshold = date(2020, 1, 1)
+
+    class Model(BaseModel):
+        a: condate(gt=threshold)
+
+    assert Model(a=date(2020, 1, 2)).dict() == {'a': date(2020, 1, 2)}
+
+    message = base_message.format(msg=f'greater than {threshold}', ty='gt', value=threshold)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=date(2019, 1, 1))
+
+
+def test_date_ge():
+    threshold = date(2020, 1, 1)
+
+    class Model(BaseModel):
+        a: condate(ge=threshold)
+
+    assert Model(a=date(2020, 1, 1)).dict() == {'a': date(2020, 1, 1)}
+
+    message = base_message.format(msg=f'greater than or equal to {threshold}', ty='ge', value=threshold)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=date(2019, 1, 1))
+
+
+def test_date_lt():
+    threshold = date(2020, 1, 1)
+
+    class Model(BaseModel):
+        a: condate(lt=threshold)
+
+    assert Model(a=date(2019, 1, 2)).dict() == {'a': date(2019, 1, 2)}
+
+    message = base_message.format(msg=f'less than {threshold}', ty='lt', value=threshold)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=date(2021, 1, 1))
+
+
+def test_date_le():
+    threshold = date(2020, 1, 1)
+
+    class Model(BaseModel):
+        a: condate(le=threshold)
+
+    assert Model(a=date(2019, 1, 1)).dict() == {'a': date(2019, 1, 1)}
+
+    message = base_message.format(msg=f'less than or equal to {threshold}', ty='le', value=threshold)
+    with pytest.raises(ValidationError, match=message):
+        Model(a=date(2021, 1, 1))

@@ -911,7 +911,6 @@ The following arguments are available when using the `conbytes` type function
 ### Arguments to `condate`
 The following arguments are available when using the `condate` type function
 
-- `strict_formats: List[str] = None`: list of datetime.datetime.strpformat style date formats that will be accepted
 - `gt: float = None`: enforces date to be greater than the set value
 - `ge: float = None`: enforces date to be greater than or equal to the set value
 - `lt: float = None`: enforces date to be less than the set value
