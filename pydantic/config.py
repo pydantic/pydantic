@@ -40,7 +40,7 @@ class Extra(str, Enum):
 # https://github.com/cython/cython/issues/4003
 # Will be fixed with Cython 3 but still in alpha right now
 if not compiled:
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import TypedDict
 
     class ConfigDict(TypedDict, total=False):
         title: Optional[str]
