@@ -1,0 +1,1 @@
+fix "extra fields not permitted" error when dataclass with `Extra.forbid` is validated multiple times

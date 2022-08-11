@@ -386,6 +386,10 @@ def create_pydantic_model_from_dataclass(
 
 
 def _dataclass_validate_values(self: 'Dataclass') -> None:
+    # validation errors can occur if this function is called twice on an already initialised dataclass.
+    # for example if Extra.forbid is enabled, it would consider __pydantic_initialised__ an invalid extra property
+    if getattr(self, '__pydantic_initialised__'):
+        return
     if getattr(self, '__pydantic_has_field_info_default__', False):
         # We need to remove `FieldInfo` values since they are not valid as input
         # It's ok to do that because they are obviously the default values!
