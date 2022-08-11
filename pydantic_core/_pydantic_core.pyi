@@ -21,7 +21,9 @@ class SchemaValidator:
     def isinstance_json(
         self, input: 'str | bytes | bytearray', strict: 'bool | None' = None, context: Any = None
     ) -> bool: ...
-    def validate_assignment(self, field: str, input: Any, data: 'dict[str, Any]') -> 'dict[str, Any]': ...
+    def validate_assignment(
+        self, field: str, input: Any, data: 'dict[str, Any]', strict: 'bool | None' = None, context: Any = None
+    ) -> 'dict[str, Any]': ...
 
 class SchemaError(Exception):
     pass

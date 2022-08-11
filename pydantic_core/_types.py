@@ -125,6 +125,7 @@ class TypedDictField(TypedDict, total=False):
     default_factory: Callable[[], Any]
     on_error: Literal['raise', 'omit', 'fallback_on_default']  # default: 'raise'
     alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
+    frozen: bool
 
 
 class TypedDictSchema(TypedDict, total=False):
