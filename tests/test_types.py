@@ -2540,9 +2540,10 @@ def test_json_no_default():
     assert JsonRequired().dict() == {'json_obj': None}
 
 
-def test_pattern():
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+def test_pattern(pattern_type):
     class Foobar(BaseModel):
-        pattern: Pattern
+        pattern: pattern_type
 
     f = Foobar(pattern=r'^whatev.r\d$')
     assert f.pattern.__class__.__name__ == 'Pattern'
@@ -2563,9 +2564,10 @@ def test_pattern():
     }
 
 
-def test_pattern_error():
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+def test_pattern_error(pattern_type):
     class Foobar(BaseModel):
-        pattern: Pattern
+        pattern: pattern_type
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(pattern='[xx')
