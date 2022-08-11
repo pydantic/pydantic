@@ -1,8 +1,8 @@
 import abc
-import datetime
 import math
 import re
 import warnings
+from datetime import date
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -115,7 +115,7 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
-OptionalDate = Optional[datetime.date]
+OptionalDate = Optional[date]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
@@ -1116,40 +1116,38 @@ class ByteSize(int):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    from datetime import date
-
     PastDate = date
     FutureDate = date
 else:
 
-    class PastDate(datetime.date):
+    class PastDate(date):
         @classmethod
         def __get_validators__(cls) -> 'CallableGenerator':
             yield parse_date
             yield cls.validate
 
         @classmethod
-        def validate(cls, value: datetime.date) -> datetime.date:
-            if value >= datetime.date.today():
+        def validate(cls, value: date) -> date:
+            if value >= date.today():
                 raise errors.DateNotInThePastError()
 
             return value
 
-    class FutureDate(datetime.date):
+    class FutureDate(date):
         @classmethod
         def __get_validators__(cls) -> 'CallableGenerator':
             yield parse_date
             yield cls.validate
 
         @classmethod
-        def validate(cls, value: datetime.date) -> datetime.date:
-            if value <= datetime.date.today():
+        def validate(cls, value: date) -> date:
+            if value <= date.today():
                 raise errors.DateNotInTheFutureError()
 
             return value
 
 
-class ConstrainedDate(datetime.date, metaclass=ConstrainedNumberMeta):
+class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
     gt: OptionalDate = None
     ge: OptionalDate = None
     lt: OptionalDate = None
@@ -1167,11 +1165,11 @@ class ConstrainedDate(datetime.date, metaclass=ConstrainedNumberMeta):
 
 def condate(
     *,
-    gt: datetime.date = None,
-    ge: datetime.date = None,
-    lt: datetime.date = None,
-    le: datetime.date = None,
-) -> Type[datetime.date]:
+    gt: date = None,
+    ge: date = None,
+    lt: date = None,
+    le: date = None,
+) -> Type[date]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
     return type('ConstrainedDateValue', (ConstrainedDate,), namespace)

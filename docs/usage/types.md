@@ -935,10 +935,10 @@ The following arguments are available when using the `conbytes` type function
 ### Arguments to `condate`
 The following arguments are available when using the `condate` type function
 
-- `gt: float = None`: enforces date to be greater than the set value
-- `ge: float = None`: enforces date to be greater than or equal to the set value
-- `lt: float = None`: enforces date to be less than the set value
-- `le: float = None`: enforces date to be less than or equal to the set value
+- `gt: date = None`: enforces date to be greater than the set value
+- `ge: date = None`: enforces date to be greater than or equal to the set value
+- `lt: date = None`: enforces date to be less than the set value
+- `le: date = None`: enforces date to be less than or equal to the set value
 
 
 ## Strict Types

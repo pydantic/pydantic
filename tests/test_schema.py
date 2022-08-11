@@ -459,6 +459,7 @@ def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'
         b = Decimal('12.34')
+        c = date(2022, 8, 11)
 
     assert Model.schema_json(indent=2) == (
         '{\n'
@@ -475,6 +476,12 @@ def test_json_schema():
         '      "title": "B",\n'
         '      "default": 12.34,\n'
         '      "type": "number"\n'
+        '    },\n'
+        '    "c": {\n'
+        '      "title": "C",\n'
+        '      "default": "2022-08-11",\n'
+        '      "type": "string",\n'
+        '      "format": "date"\n'
         '    }\n'
         '  }\n'
         '}'
