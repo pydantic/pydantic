@@ -241,6 +241,24 @@ def test_validate_assignment():
     assert v.validate_assignment('field_a', b'abc', {'field_a': 'test'}) == ({'field_a': 'abc'}, {'field_a'})
 
 
+def test_validate_assignment_strict_field():
+    v = SchemaValidator(
+        {
+            'type': 'typed-dict',
+            'return_fields_set': True,
+            'fields': {'field_a': {'schema': {'type': 'str', 'strict': True}}},
+        }
+    )
+
+    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment('field_a', b'abc', {'field_a': 'test'})
+    assert exc_info.value.errors() == [
+        {'input_value': b'abc', 'kind': 'str_type', 'loc': ['field_a'], 'message': 'Input should be a valid string'}
+    ]
+
+
 def test_validate_assignment_functions():
     calls = []
 
@@ -333,6 +351,24 @@ def test_validate_assignment_allow_extra_validate():
             'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'xyz',
         }
+    ]
+
+
+def test_validate_assignment_with_strict():
+    v = SchemaValidator(
+        {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'int'}}}}
+    )
+
+    r = v.validate_python({'x': 'a', 'y': '123'})
+    assert r == {'x': 'a', 'y': 123}
+
+    assert v.validate_assignment('y', '124', r) == {'x': 'a', 'y': 124}
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment('y', '124', r, True)
+
+    assert exc_info.value.errors() == [
+        {'kind': 'int_type', 'loc': ['y'], 'message': 'Input should be a valid integer', 'input_value': '124'}
     ]
 
 
@@ -1211,3 +1247,25 @@ class TestOnError:
         assert v.validate_test({'x': ['foo']}) == {'x': '1'}
         assert v.validate_test({'x': ['foo', 'bar']}) == {'x': '2'}
         assert v.validate_test({'x': {'a': 'b'}}) == {'x': "{'a': 'b'}"}
+
+
+def test_frozen_field():
+    v = SchemaValidator(
+        {
+            'type': 'typed-dict',
+            'fields': {
+                'name': {'schema': {'type': 'str'}},
+                'age': {'schema': {'type': 'int'}},
+                'is_developer': {'schema': {'type': 'bool'}, 'default': True, 'frozen': True},
+            },
+        }
+    )
+    r1 = v.validate_python({'name': 'Samuel', 'age': '36'})
+    assert r1 == {'name': 'Samuel', 'age': 36, 'is_developer': True}
+    r2 = v.validate_assignment('age', '35', r1)
+    assert r2 == {'name': 'Samuel', 'age': 35, 'is_developer': True}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment('is_developer', False, r2)
+    assert exc_info.value.errors() == [
+        {'kind': 'frozen', 'loc': ['is_developer'], 'message': 'Field is frozen', 'input_value': False}
+    ]
