@@ -5,7 +5,7 @@ import re
 import string
 import sys
 from copy import copy, deepcopy
-from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
+from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 from pkg_resources import safe_version
@@ -16,7 +16,6 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import (
-    ForwardRef,
     all_literal_values,
     display_as_type,
     get_args,

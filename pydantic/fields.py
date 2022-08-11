@@ -1,6 +1,6 @@
 import copy
 from collections import Counter as CollectionCounter, defaultdict, deque
-from collections.abc import Hashable as CollectionsHashable, Iterable as CollectionsIterable
+from collections.abc import Callable, Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -8,6 +8,7 @@ from typing import (
     DefaultDict,
     Deque,
     Dict,
+    ForwardRef,
     FrozenSet,
     Generator,
     Iterable,
@@ -32,8 +33,6 @@ from .error_wrappers import ErrorWrapper
 from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
 from .types import Json, JsonWrapper
 from .typing import (
-    Callable,
-    ForwardRef,
     NoArgAnyCallable,
     convert_generics,
     display_as_type,

@@ -268,8 +268,6 @@ if TYPE_CHECKING:
     AnyClassMethod = classmethod[Any]
 
 __all__ = (
-    'ForwardRef',
-    'Callable',
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
@@ -308,6 +306,7 @@ __all__ = (
     'get_all_type_hints',
     'is_union',
     'StrPath',
+    'MappingIntStrAny',
 )
 
 

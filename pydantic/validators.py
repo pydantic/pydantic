@@ -12,6 +12,7 @@ from typing import (
     Callable,
     Deque,
     Dict,
+    ForwardRef,
     FrozenSet,
     Generator,
     Hashable,
@@ -30,7 +31,6 @@ from . import errors
 from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .typing import (
     AnyCallable,
-    ForwardRef,
     all_literal_values,
     display_as_type,
     get_class,

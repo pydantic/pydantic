@@ -11,6 +11,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    ForwardRef,
     FrozenSet,
     Generic,
     Iterable,
@@ -66,7 +67,6 @@ from .types import (
     constr,
 )
 from .typing import (
-    ForwardRef,
     all_literal_values,
     get_args,
     get_origin,
