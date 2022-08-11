@@ -21,6 +21,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -3028,4 +3029,23 @@ def test_extra_inheritance():
             'default': 'asa',
             'level': 3,
         }
+    }
+
+
+def test_model_with_type_attributes():
+    class Foo:
+        a: float
+
+    class Bar(BaseModel):
+        b: int
+
+    class Baz(BaseModel):
+        a: Type[Foo]
+        b: Type[Bar]
+
+    assert Baz.schema() == {
+        'title': 'Baz',
+        'type': 'object',
+        'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
+        'required': ['a', 'b'],
     }
