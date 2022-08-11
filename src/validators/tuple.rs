@@ -4,10 +4,10 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
-use crate::input::{GenericListLike, Input};
+use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::list::generic_list_like_build;
+use super::list::generic_collection_build;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug)]
@@ -37,7 +37,7 @@ pub struct TupleVariableValidator {
 }
 
 impl TupleVariableValidator {
-    generic_list_like_build!("{}[{}, ...]", "tuple");
+    generic_collection_build!("{}[{}, ...]", "tuple");
 }
 
 impl Validator for TupleVariableValidator {
@@ -56,7 +56,7 @@ impl Validator for TupleVariableValidator {
         let output = match self.item_validator {
             Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
             None => match seq {
-                GenericListLike::Tuple(tuple) => return Ok(tuple.into_py(py)),
+                GenericCollection::Tuple(tuple) => return Ok(tuple.into_py(py)),
                 _ => seq.to_vec(py),
             },
         };
@@ -119,13 +119,13 @@ impl Validator for TuplePositionalValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let list_like = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
+        let collection = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
         let expected_length = self.items_validators.len();
 
-        let ll_length = list_like.generic_len();
-        if ll_length < expected_length {
+        let col_length = collection.generic_len();
+        if col_length < expected_length {
             return Err(ValError::LineErrors(
-                (ll_length..expected_length)
+                (col_length..expected_length)
                     .map(|index| ValLineError::new_with_loc(ErrorKind::Missing, input, index))
                     .collect(),
             ));
@@ -133,8 +133,8 @@ impl Validator for TuplePositionalValidator {
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
         let mut errors: Vec<ValLineError> = Vec::new();
         macro_rules! iter {
-            ($list_like:expr) => {
-                for (index, item) in $list_like.iter().enumerate() {
+            ($collection:expr) => {
+                for (index, item) in $collection.iter().enumerate() {
                     let validator = match self.items_validators.get(index) {
                         Some(ref v) => v,
                         None => match self.extra_validator {
@@ -143,7 +143,7 @@ impl Validator for TuplePositionalValidator {
                                 return Err(ValError::new(
                                     ErrorKind::TooLong {
                                         max_length: expected_length,
-                                        input_length: ll_length,
+                                        input_length: col_length,
                                     },
                                     input,
                                 ));
@@ -165,12 +165,11 @@ impl Validator for TuplePositionalValidator {
                 }
             };
         }
-        match list_like {
-            GenericListLike::List(list_like) => iter!(list_like),
-            GenericListLike::Tuple(list_like) => iter!(list_like),
-            GenericListLike::Set(list_like) => iter!(list_like),
-            GenericListLike::FrozenSet(list_like) => iter!(list_like),
-            GenericListLike::JsonArray(list_like) => iter!(list_like),
+        match collection {
+            GenericCollection::List(collection) => iter!(collection),
+            GenericCollection::Tuple(collection) => iter!(collection),
+            GenericCollection::JsonArray(collection) => iter!(collection),
+            _ => unreachable!(),
         }
         if errors.is_empty() {
             Ok(PyTuple::new(py, &output).into_py(py))

@@ -6,7 +6,7 @@ use super::datetime::{
 };
 use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
 use super::{
-    EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericListLike, GenericMapping, Input, JsonArgs,
+    EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericMapping, Input, JsonArgs,
     JsonInput,
 };
 
@@ -149,18 +149,18 @@ impl<'a> Input<'a> for JsonInput {
         self.validate_dict(false)
     }
 
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         match self {
             JsonInput::Array(a) => Ok(a.into()),
             _ => Err(ValError::new(ErrorKind::ListType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_list(false)
     }
 
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         // just as in set's case, List has to be allowed
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -168,11 +168,11 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_tuple(false)
     }
 
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -180,11 +180,11 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_set(false)
     }
 
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
@@ -192,7 +192,7 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_frozenset(false)
     }
 
@@ -328,38 +328,38 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         Err(ValError::new(ErrorKind::ListType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_list(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         Err(ValError::new(ErrorKind::TupleType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_tuple(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         Err(ValError::new(ErrorKind::SetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_set(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericListLike<'a>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
         Err(ValError::new(ErrorKind::FrozenSetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset(&'a self) -> ValResult<GenericListLike<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         self.validate_frozenset(false)
     }
 
