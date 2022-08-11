@@ -1201,7 +1201,7 @@ def test_issue_3162():
     }
 
 
-def test_discrimated_union_basemodel_instance_value():
+def test_discriminated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
     class A:
         l: Literal['a']
@@ -1223,7 +1223,7 @@ def test_discrimated_union_basemodel_instance_value():
             'sub': {
                 'title': 'Sub',
                 'discriminator': {'propertyName': 'l', 'mapping': {'a': '#/definitions/A', 'b': '#/definitions/B'}},
-                'anyOf': [{'$ref': '#/definitions/A'}, {'$ref': '#/definitions/B'}],
+                'oneOf': [{'$ref': '#/definitions/A'}, {'$ref': '#/definitions/B'}],
             }
         },
         'required': ['sub'],

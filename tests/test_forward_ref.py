@@ -588,7 +588,7 @@ def test_discriminated_union_forward_ref(create_module):
     assert module.Pet.schema() == {
         'title': 'Pet',
         'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
-        'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+        'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
         'definitions': {
             'Cat': {
                 'title': 'Cat',
