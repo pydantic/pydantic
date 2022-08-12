@@ -161,7 +161,7 @@ while `.env` would be ignored.
 
 If you need to load multiple dotenv files, you can pass the file paths as a `list` or `tuple`.
 
-Later items in the list/tuple will take priority over earlier items.
+Later files in the list/tuple will take priority over earlier files.
 
 ```py
 from pydantic import BaseSettings
