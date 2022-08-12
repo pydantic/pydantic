@@ -833,6 +833,79 @@ def test_env_file_custom_encoding(tmp_path):
     assert s.dict() == {'pika': 'p!±@'}
 
 
+test_default_env_file = """\
+debug_mode=true
+host=localhost
+Port=8000
+"""
+
+test_prod_env_file = """\
+debug_mode=false
+host=https://example.com/services
+"""
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_multiple_env_file(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text(test_default_env_file)
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text(test_prod_env_file)
+
+    class Settings(BaseSettings):
+        debug_mode: bool
+        host: str
+        port: int
+
+        class Config:
+            env_file = [base_env, prod_env]
+
+    s = Settings()
+    assert s.debug_mode is False
+    assert s.host == 'https://example.com/services'
+    assert s.port == 8000
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_multiple_env_file_encoding(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text('pika=p!±@', encoding='latin-1')
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text('pika=chu!±@', encoding='latin-1')
+
+    class Settings(BaseSettings):
+        pika: str
+
+    s = Settings(_env_file=[base_env, prod_env], _env_file_encoding='latin-1')
+    assert s.pika == 'chu!±@'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_dotenv_vars(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text(test_default_env_file)
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text(test_prod_env_file)
+
+    source = EnvSettingsSource(env_file=[base_env, prod_env], env_file_encoding='utf8')
+    assert source._read_env_files(case_sensitive=False) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'port': '8000',
+    }
+
+    assert source._read_env_files(case_sensitive=True) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'Port': '8000',
+    }
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_dotenv_vars_when_env_file_is_none():
+    assert EnvSettingsSource(env_file=None, env_file_encoding=None)._read_env_files(case_sensitive=False) == {}
+
+
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
 def test_dotenv_not_installed(tmp_path):
     p = tmp_path / '.env'

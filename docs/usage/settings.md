@@ -159,6 +159,21 @@ Passing a file path via the `_env_file` keyword argument on instantiation (metho
 the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded
 while `.env` would be ignored.
 
+If you need to load multiple dotenv files, you can pass the file paths as a `list` or `tuple`.
+
+Later files in the list/tuple will take priority over earlier files.
+
+```py
+from pydantic import BaseSettings
+
+class Settings(BaseSettings):
+    ...
+
+    class Config:
+        # `.env.prod` takes priority over `.env`
+        env_file = '.env', '.env.prod'
+```
+
 You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
 the `Config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`.
 

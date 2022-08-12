@@ -12,6 +12,7 @@ from .utils import deep_update, path_type, sequence_like
 env_file_sentinel = str(object())
 
 SettingsSourceCallable = Callable[['BaseSettings'], Dict[str, Any]]
+DotenvType = Union[StrPath, List[StrPath], Tuple[StrPath, ...]]
 
 
 class SettingsError(ValueError):
@@ -28,7 +29,7 @@ class BaseSettings(BaseModel):
 
     def __init__(
         __pydantic_self__,
-        _env_file: Optional[StrPath] = env_file_sentinel,
+        _env_file: Optional[DotenvType] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
         _env_nested_delimiter: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
@@ -48,7 +49,7 @@ class BaseSettings(BaseModel):
     def _build_values(
         self,
         init_kwargs: Dict[str, Any],
-        _env_file: Optional[StrPath] = None,
+        _env_file: Optional[DotenvType] = None,
         _env_file_encoding: Optional[str] = None,
         _env_nested_delimiter: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
@@ -147,12 +148,12 @@ class EnvSettingsSource:
 
     def __init__(
         self,
-        env_file: Optional[StrPath],
+        env_file: Optional[DotenvType],
         env_file_encoding: Optional[str],
         env_nested_delimiter: Optional[str] = None,
         env_prefix_len: int = 0,
     ):
-        self.env_file: Optional[StrPath] = env_file
+        self.env_file: Optional[DotenvType] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
         self.env_prefix_len: int = env_prefix_len
@@ -168,15 +169,9 @@ class EnvSettingsSource:
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
-        if self.env_file is not None:
-            env_path = Path(self.env_file).expanduser()
-            if env_path.is_file():
-                env_vars = {
-                    **read_env_file(
-                        env_path, encoding=self.env_file_encoding, case_sensitive=settings.__config__.case_sensitive
-                    ),
-                    **env_vars,
-                }
+        dotenv_vars = self._read_env_files(settings.__config__.case_sensitive)
+        if dotenv_vars:
+            env_vars = {**dotenv_vars, **env_vars}
 
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
@@ -209,6 +204,24 @@ class EnvSettingsSource:
                 d[field.alias] = env_val
 
         return d
+
+    def _read_env_files(self, case_sensitive: bool) -> Dict[str, Optional[str]]:
+        env_files = self.env_file
+        if env_files is None:
+            return {}
+
+        if isinstance(env_files, (str, os.PathLike)):
+            env_files = [env_files]
+
+        dotenv_vars = {}
+        for env_file in env_files:
+            env_path = Path(env_file).expanduser()
+            if env_path.is_file():
+                dotenv_vars.update(
+                    read_env_file(env_path, encoding=self.env_file_encoding, case_sensitive=case_sensitive)
+                )
+
+        return dotenv_vars
 
     def field_is_complex(self, field: ModelField) -> Tuple[bool, bool]:
         """
