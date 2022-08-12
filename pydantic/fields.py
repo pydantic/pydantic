@@ -1,4 +1,5 @@
 import copy
+import re
 from collections import Counter as CollectionCounter, defaultdict, deque
 from collections.abc import Callable, Hashable as CollectionsHashable, Iterable as CollectionsIterable
 from typing import (
@@ -595,7 +596,7 @@ class ModelField(Representation):
                 self.required = False
             self.allow_none = True
             return
-        elif self.type_ is Pattern:
+        elif self.type_ is Pattern or self.type_ is re.Pattern:
             # python 3.7 only, Pattern is a typing object but without sub fields
             return
         elif is_literal_type(self.type_):

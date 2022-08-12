@@ -684,7 +684,7 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if is_none_type(type_):
         yield none_validator
         return
-    if type_ is Pattern:
+    if type_ is Pattern or type_ is re.Pattern:
         yield pattern_validator
         return
     if type_ is Hashable or type_ is CollectionsHashable:
