@@ -684,9 +684,14 @@ def smart_deepcopy(obj: Obj) -> Obj:
     obj_type = obj.__class__
     if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
         return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
-    elif not obj and obj_type in BUILTIN_COLLECTIONS:
-        # faster way for empty collections, no need to copy its members
-        return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
+    try:
+        if not obj and obj_type in BUILTIN_COLLECTIONS:
+            # faster way for empty collections, no need to copy its members
+            return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
+    except (TypeError, ValueError, RuntimeError):
+        # do we really dare to catch ALL errors? Seems a bit risky
+        pass
+
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
 
 
