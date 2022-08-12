@@ -75,7 +75,7 @@ async function get(url, mode) {
 self.onmessage = async ({data}) => {
   const {version} = data;
   self.postMessage(`Downloading repo v${version} archive to get tests...\n`);
-  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/archive/refs/tags/v${version}.zip`;
+  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/archive/refs/tags/v${version}.zip`;
   try {
     const [python_code, tests_zip] = await Promise.all([
       get(`./run_tests.py?v=${Date.now()}`, 'text'),

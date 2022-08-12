@@ -510,7 +510,7 @@ impl<'a> Iterator for AttributesIterator<'a> {
                         if !is_bound && !PyFunction::is_type_of(attr) {
                             // MASSIVE HACK! PyFunction::is_type_of(attr) doesn't detect staticmethod on PyPy,
                             // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
-                            // https://github.com/samuelcolvin/pydantic-core/pull/161#discussion_r917257635
+                            // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
                             #[cfg(PyPy)]
                             if attr.get_type().to_string() != "<class 'function'>" {
                                 return Some((name, attr));

@@ -86,7 +86,7 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
             ),
         ),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid frozenset [kind=frozen_set_type,')),
-        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        # https://github.com/pydantic/pydantic-core/issues/211
         ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid frozenset [kind=frozen_set_type,')),
         ((x for x in [1, 2, '3']), frozenset({1, 2, 3})),
         ({'abc'}, Err('0\n  Input should be a valid integer')),

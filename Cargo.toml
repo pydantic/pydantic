@@ -3,8 +3,8 @@ name = "pydantic-core"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-homepage = "https://github.com/samuelcolvin/pydantic-core"
-repository = "https://github.com/samuelcolvin/pydantic-core.git"
+homepage = "https://github.com/pydantic/pydantic-core"
+repository = "https://github.com/pydantic/pydantic-core.git"
 readme = "README.md"
 
 [dependencies]
