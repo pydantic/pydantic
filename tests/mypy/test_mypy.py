@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from pydantic.mypy import parse_mypy_version
+
 try:
     from mypy import api as mypy_api
     from mypy.version import __version__ as mypy_version
@@ -79,7 +81,7 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
 
     # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
-    if actual_out and float(mypy_version) < 0.930:
+    if actual_out and parse_mypy_version(mypy_version) < (0, 930):
         actual_out = actual_out.lower()
         expected_out = expected_out.lower()
         actual_out = actual_out.replace('variant:', 'variants:')
@@ -123,3 +125,15 @@ def test_explicit_reexports() -> None:
     for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
         for export in export_all:
             assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
+
+
+@pytest.mark.parametrize(
+    'v_str,v_tuple',
+    [
+        ('0', (0,)),
+        ('0.930', (0, 930)),
+        ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
+    ],
+)
+def test_parse_mypy_version(v_str, v_tuple):
+    assert parse_mypy_version(v_str) == v_tuple
