@@ -2,6 +2,8 @@ import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
 
+from typing_extensions import Literal, Protocol
+
 from .typing import AnyCallable
 from .utils import GetterDict
 from .version import compiled
@@ -9,14 +11,12 @@ from .version import compiled
 if TYPE_CHECKING:
     from typing import overload
 
-    import typing_extensions
-
     from .fields import ModelField
     from .main import BaseModel
 
     ConfigType = Type['BaseConfig']
 
-    class SchemaExtraCallable(typing_extensions.Protocol):
+    class SchemaExtraCallable(Protocol):
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass
@@ -40,7 +40,7 @@ class Extra(str, Enum):
 # https://github.com/cython/cython/issues/4003
 # Will be fixed with Cython 3 but still in alpha right now
 if not compiled:
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import TypedDict
 
     class ConfigDict(TypedDict, total=False):
         title: Optional[str]
@@ -104,8 +104,10 @@ class BaseConfig:
     json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable] = {}
     underscore_attrs_are_private: bool = False
 
-    # whether inherited models as fields should be reconstructed as base model
-    copy_on_model_validation: bool = True
+    # whether inherited models as fields should be reconstructed as base model,
+    # and whether such a copy should be shallow or deep
+    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
+
     # whether `Union` should check all allowed types before even trying to coerce
     smart_union: bool = False
     # whether dataclass `__post_init__` should be run before or after validation
