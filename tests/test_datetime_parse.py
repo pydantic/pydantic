@@ -6,11 +6,12 @@ Changed to:
 * use standard pytest layout
 * parametrize tests
 """
+import re
 from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, errors
+from pydantic import BaseModel, ValidationError, condate, errors
 from pydantic.datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 
 
@@ -290,3 +291,29 @@ def test_nan():
             'type': 'value_error',
         },
     ]
+
+
+@pytest.mark.parametrize(
+    'constraint,msg,ok_value,error_value',
+    [
+        ('gt', 'greater than', date(2020, 1, 2), date(2019, 12, 31)),
+        ('gt', 'greater than', date(2020, 1, 2), date(2020, 1, 1)),
+        ('ge', 'greater than or equal to', date(2020, 1, 2), date(2019, 12, 31)),
+        ('ge', 'greater than or equal to', date(2020, 1, 1), date(2019, 12, 31)),
+        ('lt', 'less than', date(2019, 12, 31), date(2020, 1, 2)),
+        ('lt', 'less than', date(2019, 12, 31), date(2020, 1, 1)),
+        ('le', 'less than or equal to', date(2019, 12, 31), date(2020, 1, 2)),
+        ('le', 'less than or equal to', date(2020, 1, 1), date(2020, 1, 2)),
+    ],
+)
+def test_date_constraints(constraint, msg, ok_value, error_value):
+    class Model(BaseModel):
+        a: condate(**{constraint: date(2020, 1, 1)})
+
+    assert Model(a=ok_value).dict() == {'a': ok_value}
+
+    match = re.escape(
+        f'ensure this value is {msg} 2020-01-01 ' f'(type=value_error.number.not_{constraint}; limit_value=2020-01-01)'
+    )
+    with pytest.raises(ValidationError, match=match):
+        Model(a=error_value)

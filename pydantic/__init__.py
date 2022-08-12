@@ -102,6 +102,8 @@ __all__ = [
     'NonPositiveFloat',
     'ConstrainedDecimal',
     'condecimal',
+    'ConstrainedDate',
+    'condate',
     'UUID1',
     'UUID3',
     'UUID4',

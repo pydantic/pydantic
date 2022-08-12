@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import sys
@@ -50,6 +51,7 @@ from pydantic.types import (
     UUID4,
     UUID5,
     ConstrainedBytes,
+    ConstrainedDate,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
@@ -75,6 +77,7 @@ from pydantic.types import (
     StrictBool,
     StrictStr,
     conbytes,
+    condate,
     condecimal,
     confloat,
     conint,
@@ -461,25 +464,14 @@ def test_json_schema():
         a = b'foobar'
         b = Decimal('12.34')
 
-    assert Model.schema_json(indent=2) == (
-        '{\n'
-        '  "title": "Model",\n'
-        '  "type": "object",\n'
-        '  "properties": {\n'
-        '    "a": {\n'
-        '      "title": "A",\n'
-        '      "default": "foobar",\n'
-        '      "type": "string",\n'
-        '      "format": "binary"\n'
-        '    },\n'
-        '    "b": {\n'
-        '      "title": "B",\n'
-        '      "default": 12.34,\n'
-        '      "type": "number"\n'
-        '    }\n'
-        '  }\n'
-        '}'
-    )
+    assert json.loads(Model.schema_json(indent=2)) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
+            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+        },
+    }
 
 
 def test_list_sub_model():
@@ -741,6 +733,30 @@ def test_date_types(field_type, expected_schema):
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
 
     assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedDate, {}),
+        (condate(), {}),
+        (
+            condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
+            {'exclusiveMinimum': '2010-01-01', 'exclusiveMaximum': '2021-02-02'},
+        ),
+        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': '2010-01-01', 'maximum': '2021-02-02'}),
+    ],
+)
+def test_date_constrained_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    assert json.loads(Model.schema_json()) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
+        'required': ['a'],
+    }
 
 
 @pytest.mark.parametrize(

@@ -620,6 +620,10 @@ _(This script is complete, it should run "as is")_
 : type method for constraining ints;
   see [Constrained Types](#constrained-types)
 
+`condate`
+: type method for constraining dates;
+  see [Constrained Types](#constrained-types)
+
 `conlist`
 : type method for constraining lists;
   see [Constrained Types](#constrained-types)
@@ -927,6 +931,14 @@ The following arguments are available when using the `conbytes` type function
 - `min_length: int = None`: minimum length of the byte string
 - `max_length: int = None`: maximum length of the byte string
 - `strict: bool = False`: controls type coercion
+
+### Arguments to `condate`
+The following arguments are available when using the `condate` type function
+
+- `gt: date = None`: enforces date to be greater than the set value
+- `ge: date = None`: enforces date to be greater than or equal to the set value
+- `lt: date = None`: enforces date to be less than the set value
+- `le: date = None`: enforces date to be less than or equal to the set value
 
 
 ## Strict Types

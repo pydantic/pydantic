@@ -104,6 +104,8 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'ConstrainedDate',
+    'condate',
 ]
 
 NoneStr = Optional[str]
@@ -113,6 +115,7 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
+OptionalDate = Optional[date]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
@@ -1142,3 +1145,31 @@ else:
                 raise errors.DateNotInTheFutureError()
 
             return value
+
+
+class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
+    gt: OptionalDate = None
+    ge: OptionalDate = None
+    lt: OptionalDate = None
+    le: OptionalDate = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, exclusiveMinimum=cls.gt, exclusiveMaximum=cls.lt, minimum=cls.ge, maximum=cls.le)
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield parse_date
+        yield number_size_validator
+
+
+def condate(
+    *,
+    gt: date = None,
+    ge: date = None,
+    lt: date = None,
+    le: date = None,
+) -> Type[date]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
+    return type('ConstrainedDateValue', (ConstrainedDate,), namespace)

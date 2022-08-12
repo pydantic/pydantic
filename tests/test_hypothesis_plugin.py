@@ -1,4 +1,5 @@
 import typing
+from datetime import date
 
 import pytest
 
@@ -82,6 +83,10 @@ def gen_models():
         condecimaltplc: pydantic.condecimal(gt=10, lt=100, decimal_places=5)
         condecimaleplc: pydantic.condecimal(ge=10, le=100, decimal_places=2)
 
+    class ConstrainedDateModel(pydantic.BaseModel):
+        condatet: pydantic.condate(gt=date(1980, 1, 1), lt=date(2180, 12, 31))
+        condatee: pydantic.condate(ge=date(1980, 1, 1), le=date(2180, 12, 31))
+
     yield from (
         MiscModel,
         StringsModel,
@@ -93,6 +98,7 @@ def gen_models():
         NumbersModel,
         JsonModel,
         ConstrainedNumbersModel,
+        ConstrainedDateModel,
     )
 
     try:
