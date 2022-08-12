@@ -12,8 +12,7 @@ from .utils import deep_update, path_type, sequence_like
 env_file_sentinel = str(object())
 
 SettingsSourceCallable = Callable[['BaseSettings'], Dict[str, Any]]
-MultiDotenvType = Union[List[StrPath], Tuple[StrPath, ...]]
-DotenvType = Union[StrPath, MultiDotenvType]
+DotenvType = Union[StrPath, List[StrPath], Tuple[StrPath, ...]]
 
 
 class SettingsError(ValueError):
@@ -170,7 +169,9 @@ class EnvSettingsSource:
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
-        env_vars = {**self._read_env_files(settings.__config__.case_sensitive), **env_vars}
+        dotenv_vars = self._read_env_files(settings.__config__.case_sensitive)
+        if dotenv_vars:
+            env_vars = {**dotenv_vars, **env_vars}
 
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
