@@ -121,7 +121,7 @@ def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
             ),
         ),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid tuple [kind=tuple_type,')),
-        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        # https://github.com/pydantic/pydantic-core/issues/211
         ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid tuple [kind=tuple_type,')),
         ({1, 2, '3'}, Err('Input should be a valid tuple [kind=tuple_type,')),
         (frozenset([1, 2, '3']), Err('Input should be a valid tuple [kind=tuple_type,')),

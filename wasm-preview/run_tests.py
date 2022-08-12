@@ -18,7 +18,7 @@ async def main(tests_zip: str, version: str):
     print(f'Extracting test files (size: {len(tests_zip):,})...')
     # File saved on the GH release
     pydantic_core_wheel = (
-        'https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/pydantic-core/releases/'
+        'https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/releases/'
         f'download/v{version}/pydantic_core-{version}-cp310-cp310-emscripten_3_1_14_wasm32.whl'
     )
     zip_file = ZipFile(BytesIO(base64.b64decode(tests_zip)))

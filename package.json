@@ -4,7 +4,7 @@
   "description": "for running wasm tests.",
   "author": "Samuel Colvin",
   "license": "MIT",
-  "homepage": "https://github.com/samuelcolvin/pydantic-core#readme",
+  "homepage": "https://github.com/pydantic/pydantic-core#readme",
   "main": "tests/emscripten_runner.js",
   "dependencies": {
     "prettier": "^2.7.1",
