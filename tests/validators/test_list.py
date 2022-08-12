@@ -60,7 +60,7 @@ def test_list_strict():
             ),
         ),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid list/array [kind=list_type,')),
-        # https://github.com/samuelcolvin/pydantic-core/issues/211
+        # https://github.com/pydantic/pydantic-core/issues/211
         ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid list/array [kind=list_type,')),
         ((x for x in [1, 2, '3']), [1, 2, 3]),
     ],

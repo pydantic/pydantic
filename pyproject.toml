@@ -39,9 +39,9 @@ dynamic = [
 ]
 
 [project.urls]
-Homepage = 'https://github.com/samuelcolvin/pydantic-core'
+Homepage = 'https://github.com/pydantic/pydantic-core'
 Funding = "https://github.com/sponsors/samuelcolvin"
-Source = "https://github.com/samuelcolvin/pydantic-core"
+Source = "https://github.com/pydantic/pydantic-core"
 
 [tool.maturin]
 bindings = "pyo3"
