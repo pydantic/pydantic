@@ -118,20 +118,6 @@ In case of forward references, you can use a string with the class name instead 
 ```
 _(This script is complete, it should run "as is")_
 
-### Nested serialisation of other models
-
-By default, models that contain other models are serialised using the `json_encoders` functions of the
-parent or container class.
-However, you may want to nest classes in a modular fashion, including their `json_encoders`.
-In this case, call `json(use_nested_encoders=True)`.
-`use_nested_encoders` has no effect when `models_as_dict=False`, as the classes of the models
-are expected to be defined in the top-level `json_encoders`.
-
-```py
-{!.tmp_examples/exporting_models_json_nested_encoders.py!}
-```
-_(This script is complete, it should run "as is")_
-
 ### Serialising subclasses
 
 !!! note
