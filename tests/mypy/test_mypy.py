@@ -5,19 +5,21 @@ from pathlib import Path
 
 import pytest
 
-from pydantic.mypy import parse_mypy_version
-
 try:
     from mypy import api as mypy_api
     from mypy.version import __version__ as mypy_version
+
+    from pydantic.mypy import parse_mypy_version
 except ImportError:
-    mypy_api = None  # type: ignore
-    mypy_version = '0'
+    mypy_api = None
+    mypy_version = None
+    parse_mypy_version = lambda _: (0,)  # noqa: E731
+
 
 try:
     import dotenv
 except ImportError:
-    dotenv = None  # type: ignore
+    dotenv = None
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
@@ -127,6 +129,7 @@ def test_explicit_reexports() -> None:
             assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
 
 
+@pytest.mark.skipif(mypy_version is None, reason='mypy is not installed')
 @pytest.mark.parametrize(
     'v_str,v_tuple',
     [
