@@ -1,10 +1,22 @@
+import sys
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Type
 
 from .fields import Required
 from .main import BaseModel, create_model
+from .typing import is_typeddict, is_typeddict_special
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
+
+if sys.version_info < (3, 11):
+
+    def is_legacy_typeddict(typeddict_cls: Type['TypedDict']) -> bool:  # type: ignore[valid-type]
+        return is_typeddict(typeddict_cls) and type(typeddict_cls).__module__ == 'typing'
+
+else:
+
+    def is_legacy_typeddict(_: Any) -> Any:
+        return False
 
 
 def create_model_from_typeddict(
@@ -24,6 +36,14 @@ def create_model_from_typeddict(
         raise TypeError(
             'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.9.2. '
             'Without it, there is no way to differentiate required and optional fields when subclassed.'
+        )
+
+    if is_legacy_typeddict(typeddict_cls) and any(
+        is_typeddict_special(t) for t in typeddict_cls.__annotations__.values()
+    ):
+        raise TypeError(
+            'You should use `typing_extensions.TypedDict` instead of `typing.TypedDict` with Python < 3.11. '
+            'Without it, there is no way to reflect Required/NotRequired keys.'
         )
 
     required_keys: FrozenSet[str] = typeddict_cls.__required_keys__  # type: ignore[attr-defined]

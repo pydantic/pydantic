@@ -5,10 +5,9 @@ Do a little skipping about with types to demonstrate its usage.
 """
 import json
 import os
-import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path, PurePath
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, TypeVar
 from uuid import UUID
 
 from typing_extensions import TypedDict
@@ -48,7 +47,6 @@ from pydantic import (
 )
 from pydantic.fields import Field, PrivateAttr
 from pydantic.generics import GenericModel
-from pydantic.typing import ForwardRef
 
 
 class Flags(BaseModel):
@@ -134,23 +132,24 @@ assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
 
 
-if sys.version_info >= (3, 7):
-    T = TypeVar('T')
+T = TypeVar('T')
 
-    class WrapperModel(GenericModel, Generic[T]):
-        payload: T
 
-    int_instance = WrapperModel[int](payload=1)
-    int_instance.payload += 1
-    assert int_instance.payload == 2
+class WrapperModel(GenericModel, Generic[T]):
+    payload: T
 
-    str_instance = WrapperModel[str](payload='a')
-    str_instance.payload += 'a'
-    assert str_instance.payload == 'aa'
 
-    model_instance = WrapperModel[Model](payload=m)
-    model_instance.payload.list_of_ints.append(4)
-    assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
+int_instance = WrapperModel[int](payload=1)
+int_instance.payload += 1
+assert int_instance.payload == 2
+
+str_instance = WrapperModel[str](payload='a')
+str_instance.payload += 'a'
+assert str_instance.payload == 'aa'
+
+model_instance = WrapperModel[Model](payload=m)
+model_instance.payload.list_of_ints.append(4)
+assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
 
 
 class WithField(BaseModel):
@@ -230,7 +229,8 @@ class PydanticTypes(BaseModel):
     my_dir_path: DirectoryPath = Path('.')
     my_dir_path_str: DirectoryPath = '.'  # type: ignore
     # Json
-    my_json: Json = '{"hello": "world"}'
+    my_json: Json[Dict[str, str]] = '{"hello": "world"}'  # type: ignore
+    my_json_list: Json[List[str]] = '["hello", "world"]'  # type: ignore
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)
@@ -248,6 +248,8 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
+validated.my_json['hello'].capitalize()
+validated.my_json_list[0].capitalize()
 
 stricturl(allowed_schemes={'http'})
 stricturl(allowed_schemes=frozenset({'http'}))

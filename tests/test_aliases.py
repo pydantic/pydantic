@@ -1,5 +1,6 @@
 import re
-from typing import Any, List, Optional
+from contextlib import nullcontext as does_not_raise
+from typing import Any, ContextManager, List, Optional
 
 import pytest
 
@@ -335,3 +336,49 @@ def test_alias_priority():
         'd_config_parent',
         'e_generator_child',
     ]
+
+
+def test_empty_string_alias():
+    class Model(BaseModel):
+        empty_string_key: int = Field(alias='')
+
+    data = {'': 123}
+    m = Model(**data)
+    assert m.empty_string_key == 123
+    assert m.dict(by_alias=True) == data
+
+
+@pytest.mark.parametrize(
+    'use_construct, allow_population_by_field_name_config, arg_name, expectation',
+    [
+        [False, True, 'bar', does_not_raise()],
+        [False, True, 'bar_', does_not_raise()],
+        [False, False, 'bar', does_not_raise()],
+        [False, False, 'bar_', pytest.raises(ValueError)],
+        [True, True, 'bar', does_not_raise()],
+        [True, True, 'bar_', does_not_raise()],
+        [True, False, 'bar', does_not_raise()],
+        [True, False, 'bar_', does_not_raise()],
+    ],
+)
+def test_allow_population_by_field_name_config(
+    use_construct: bool,
+    allow_population_by_field_name_config: bool,
+    arg_name: str,
+    expectation: ContextManager,
+):
+    expected_value: int = 7
+
+    class Foo(BaseModel):
+        bar_: int = Field(..., alias='bar')
+
+        class Config(BaseConfig):
+            allow_population_by_field_name = allow_population_by_field_name_config
+
+    with expectation:
+        if use_construct:
+            f = Foo.construct(**{arg_name: expected_value})
+        else:
+            f = Foo(**{arg_name: expected_value})
+
+        assert f.bar_ == expected_value

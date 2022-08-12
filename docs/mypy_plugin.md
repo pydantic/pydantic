@@ -55,8 +55,12 @@ There are other benefits too! See below for more details.
   cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
 
 #### Generate a signature for `dataclasses`
-* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
+* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard Python dataclasses
 * The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
+
+#### Respect the type of the `Field`'s `default` and `default_factory`
+* Field with both a `default` and a `default_factory` will result in an error during static checking.
+* The type of the `default` and `default_factory` value must be compatible with the one of the field.
 
 ### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
@@ -85,6 +89,8 @@ To get started, all you need to do is create a `mypy.ini` file with following co
 [mypy]
 plugins = pydantic.mypy
 ```
+
+The plugin is compatible with mypy versions 0.910, 0.920, 0.921 and 0.930.
 
 See the [mypy usage](usage/mypy.md) and [plugin configuration](#configuring-the-plugin) docs for more details.
 

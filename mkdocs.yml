@@ -1,5 +1,5 @@
 site_name: pydantic
-site_description: Data validation and settings management using python 3.6 type hinting
+site_description: Data validation and settings management using Python type hints
 strict: true
 site_url: https://pydantic-docs.helpmanual.io/
 
@@ -26,7 +26,7 @@ theme:
   favicon: 'favicon.png'
 
 repo_name: samuelcolvin/pydantic
-repo_url: https://github.com/samuelcolvin/pydantic
+repo_url: https://github.com/pydantic/pydantic
 extra:
   analytics:
     provider: google
@@ -55,8 +55,10 @@ nav:
   - usage/postponed_annotations.md
   - 'Usage with mypy': usage/mypy.md
   - 'Usage with devtools': usage/devtools.md
+  - 'Usage with rich': usage/rich.md
+- Blog:
+  - blog/pydantic-v2.md
 - Contributing to pydantic: contributing.md
-- benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
 - 'Visual Studio Code': visual_studio_code.md
@@ -65,14 +67,18 @@ nav:
 - changelog.md
 
 markdown_extensions:
+- tables
 - markdown_include.include:
     base_path: docs
 - toc:
-    permalink: 🔗
+    permalink: true
 - admonition
 - pymdownx.highlight
 - pymdownx.extra
 - mdx_truly_sane_lists
+- pymdownx.emoji:
+    emoji_index: !!python/name:materialx.emoji.twemoji
+    emoji_generator: !!python/name:materialx.emoji.to_svg
 
 plugins:
 - search

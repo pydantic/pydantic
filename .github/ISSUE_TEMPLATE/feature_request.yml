@@ -1,0 +1,56 @@
+name: 🚀 Feature request
+description: Suggest a new feature or change to pydantic
+labels: [feature request]
+
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for contributing to pydantic! ✊
+
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Initial Checks
+      description: |
+        Just a few checks to make sure you need to create a feature request.
+        
+        _Sorry to sound so draconian 👿; but every second spent replying to issues is time not spent improving pydantic 🙇._
+      options:
+        - label: I have searched Google & GitHub for similar requests and couldn't find anything
+          required: true
+        - label: I have read and followed [the docs](https://pydantic-docs.helpmanual.io) and still think this feature is missing
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please give as much detail as possible about the feature you would like to suggest. 🙏
+        
+        You might like to add:
+        * A demo of how code might look when using the feature
+        * Your use case(s) for the feature
+        * Why the feature should be added to pydantic (as opposed to another library or just implemented in your code)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: affected-components
+    attributes:
+      label: Affected Components
+      description: Which of the following parts of pydantic does this feature affect?
+      # keep this lis in sync with bug.yml
+      options:
+        - label: '[Compatibility between releases](https://pydantic-docs.helpmanual.io/changelog/)'
+        - label: '[Data validation/parsing](https://pydantic-docs.helpmanual.io/usage/models/#basic-model-usage)'
+        - label: '[Data serialization](https://pydantic-docs.helpmanual.io/usage/exporting_models/) - `.dict()` and `.json()`'
+        - label: '[JSON Schema](https://pydantic-docs.helpmanual.io/usage/schema/)'
+        - label: '[Dataclasses](https://pydantic-docs.helpmanual.io/usage/dataclasses/)'
+        - label: '[Model Config](https://pydantic-docs.helpmanual.io/usage/model_config/)'
+        - label: '[Field Types](https://pydantic-docs.helpmanual.io/usage/types/) - adding or changing a particular data type'
+        - label: '[Function validation decorator](https://pydantic-docs.helpmanual.io/usage/validation_decorator/)'
+        - label: '[Generic Models](https://pydantic-docs.helpmanual.io/usage/models/#generic-models)'
+        - label: '[Other Model behaviour](https://pydantic-docs.helpmanual.io/usage/models/) - `construct()`, pickling, private attributes, ORM mode'
+        - label: '[Settings Management](https://pydantic-docs.helpmanual.io/usage/settings/)'
+        - label: '[Plugins](https://pydantic-docs.helpmanual.io/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'

@@ -2,7 +2,7 @@
 from . import dataclasses
 from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .class_validators import root_validator, validator
-from .config import BaseConfig, Extra
+from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .env_settings import BaseSettings
 from .error_wrappers import ValidationError
@@ -13,7 +13,7 @@ from .networks import *
 from .parse import Protocol
 from .tools import *
 from .types import *
-from .version import VERSION
+from .version import VERSION, compiled
 
 __version__ = VERSION
 
@@ -30,6 +30,7 @@ __all__ = [
     'validator',
     # config
     'BaseConfig',
+    'ConfigDict',
     'Extra',
     # decorator
     'validate_arguments',
@@ -42,7 +43,6 @@ __all__ = [
     'Required',
     # main
     'BaseModel',
-    'compiled',
     'create_model',
     'validate_model',
     # network
@@ -57,8 +57,10 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'CockroachDsn',
     'AmqpDsn',
     'RedisDsn',
+    'MongoDsn',
     'KafkaDsn',
     'validate_email',
     # parse
@@ -108,6 +110,7 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
+    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -120,5 +123,6 @@ __all__ = [
     'PastDate',
     'FutureDate',
     # version
+    'compiled',
     'VERSION',
 ]

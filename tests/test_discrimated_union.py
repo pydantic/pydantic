@@ -1,5 +1,4 @@
 import re
-import sys
 from enum import Enum
 from typing import Generic, TypeVar, Union
 
@@ -12,10 +11,21 @@ from pydantic.generics import GenericModel
 
 
 def test_discriminated_union_only_union():
-    with pytest.raises(TypeError, match='`discriminator` can only be used with `Union` type'):
+    with pytest.raises(
+        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+    ):
 
         class Model(BaseModel):
             x: str = Field(..., discriminator='qwe')
+
+
+def test_discriminated_union_single_variant():
+    with pytest.raises(
+        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+    ):
+
+        class Model(BaseModel):
+            x: Union[str] = Field(..., discriminator='qwe')
 
 
 def test_discriminated_union_invalid_type():
@@ -257,6 +267,24 @@ def test_discriminated_union_basemodel_instance_value():
     assert isinstance(t, Top)
 
 
+def test_discriminated_union_basemodel_instance_value_with_alias():
+    class A(BaseModel):
+        literal: Literal['a'] = Field(alias='lit')
+
+    class B(BaseModel):
+        literal: Literal['b'] = Field(alias='lit')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    class Top(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='literal')
+
+    assert Top(sub=A(lit='a')).sub.literal == 'a'
+    assert Top(sub=B(lit='b')).sub.literal == 'b'
+    assert Top(sub=B(literal='b')).sub.literal == 'b'
+
+
 def test_discriminated_union_int():
     class A(BaseModel):
         l: Literal[1]
@@ -365,7 +393,6 @@ def test_nested():
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason='generics only supported for python 3.7 and above')
 def test_generic():
     T = TypeVar('T')
 

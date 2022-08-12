@@ -87,9 +87,7 @@ def test_wrap():
     assert foo_bar.model.__fields__.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
     assert foo_bar.model.schema()['title'] == 'FooBar'
-    # signature is slightly different on 3.6
-    if sys.version_info >= (3, 7):
-        assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
+    assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
 def test_kwargs():
@@ -400,6 +398,42 @@ def test_validate(mocker):
         func.validate(['qwe'], 2)
 
     stub.assert_not_called()
+
+
+def test_annotated_use_of_alias():
+    @validate_arguments
+    def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field()], d: Annotated[int, Field(alias='')]):
+        return a + c + d
+
+    assert foo(**{'b': 10, 'c': 12, '': 1}) == 23
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert foo(a=10, c=12, d=1) == 10
+
+    assert exc_info.value.errors() == [
+        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ('a',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {'loc': ('d',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+    ]
+
+
+def test_use_of_alias():
+    @validate_arguments
+    def foo(c: int = Field(default_factory=lambda: 20), a: int = Field(default_factory=lambda: 10, alias='b')):
+        return a + c
+
+    assert foo(b=10) == 30
+
+
+def test_allow_population_by_field_name():
+    @validate_arguments(config=dict(allow_population_by_field_name=True))
+    def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
+        return a + c
+
+    assert foo(a=10, d=1) == 11
+    assert foo(b=10, c=1) == 11
+    assert foo(a=10, c=1) == 11
 
 
 def test_validate_all():

@@ -67,6 +67,7 @@ def gen_models():
         json_str: pydantic.Json[str]
         json_int_or_str: pydantic.Json[typing.Union[int, str]]
         json_list_of_float: pydantic.Json[typing.List[float]]
+        json_pydantic_model: pydantic.Json[pydantic.BaseModel]
 
     class ConstrainedNumbersModel(pydantic.BaseModel):
         conintt: pydantic.conint(gt=10, lt=100)
@@ -108,7 +109,7 @@ def gen_models():
 
 
 @pytest.mark.parametrize('model', gen_models())
-@settings(suppress_health_check={HealthCheck.too_slow})
+@settings(suppress_health_check={HealthCheck.too_slow}, deadline=None)
 @given(data=st.data())
 def test_can_construct_models_with_all_fields(data, model):
     # The value of this test is to confirm that Hypothesis knows how to provide

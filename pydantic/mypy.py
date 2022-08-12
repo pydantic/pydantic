@@ -1,20 +1,6 @@
 from configparser import ConfigParser
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
 
-from pydantic.utils import is_valid_field
-
-try:
-    import toml
-except ImportError:  # pragma: no cover
-    # future-proofing for upcoming `mypy` releases which will switch dependencies
-    try:
-        import tomli as toml  # type: ignore
-    except ImportError:
-        import warnings
-
-        warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
-        toml = None  # type: ignore
-
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
     ARG_NAMED,
@@ -48,7 +34,14 @@ from mypy.nodes import (
     Var,
 )
 from mypy.options import Options
-from mypy.plugin import CheckerPluginInterface, ClassDefContext, MethodContext, Plugin, SemanticAnalyzerPluginInterface
+from mypy.plugin import (
+    CheckerPluginInterface,
+    ClassDefContext,
+    FunctionContext,
+    MethodContext,
+    Plugin,
+    SemanticAnalyzerPluginInterface,
+)
 from mypy.plugins import dataclasses
 from mypy.semanal import set_callable_name  # type: ignore
 from mypy.server.trigger import make_wildcard_trigger
@@ -57,16 +50,25 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
+    Overloaded,
     Type,
     TypeOfAny,
     TypeType,
-    TypeVarLikeType,
     TypeVarType,
     UnionType,
     get_proper_type,
 )
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
+from mypy.version import __version__ as mypy_version
+
+from pydantic.utils import is_valid_field
+
+try:
+    from mypy.types import TypeVarDef  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    from mypy.types import TypeVarType as TypeVarDef
 
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
@@ -74,6 +76,7 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
+BUILTINS_NAME = 'builtins' if float(mypy_version) >= 0.930 else '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -99,6 +102,12 @@ class PydanticPlugin(Plugin):
                 return self._pydantic_model_class_maker_callback
         return None
 
+    def get_function_hook(self, fullname: str) -> 'Optional[Callable[[FunctionContext], Type]]':
+        sym = self.lookup_fully_qualified(fullname)
+        if sym and sym.fullname == FIELD_FULLNAME:
+            return self._pydantic_field_callback
+        return None
+
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         if fullname.endswith('.from_orm'):
             return from_orm_callback
@@ -106,12 +115,57 @@ class PydanticPlugin(Plugin):
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
         if fullname == DATACLASS_FULLNAME:
-            return dataclasses.dataclass_class_maker_callback
+            return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
         return None
 
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
         transformer = PydanticModelTransformer(ctx, self.plugin_config)
         transformer.transform()
+
+    def _pydantic_field_callback(self, ctx: FunctionContext) -> 'Type':
+        """
+        Extract the type of the `default` argument from the Field function, and use it as the return type.
+
+        In particular:
+        * Check whether the default and default_factory argument is specified.
+        * Output an error if both are specified.
+        * Retrieve the type of the argument which is specified, and use it as return type for the function.
+        """
+        default_any_type = ctx.default_return_type
+
+        assert ctx.callee_arg_names[0] == 'default', '"default" is no longer first argument in Field()'
+        assert ctx.callee_arg_names[1] == 'default_factory', '"default_factory" is no longer second argument in Field()'
+        default_args = ctx.args[0]
+        default_factory_args = ctx.args[1]
+
+        if default_args and default_factory_args:
+            error_default_and_default_factory_specified(ctx.api, ctx.context)
+            return default_any_type
+
+        if default_args:
+            default_type = ctx.arg_types[0][0]
+            default_arg = default_args[0]
+
+            # Fallback to default Any type if the field is required
+            if not isinstance(default_arg, EllipsisExpr):
+                return default_type
+
+        elif default_factory_args:
+            default_factory_type = ctx.arg_types[1][0]
+
+            # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
+            # Pydantic calls the default factory without any argument, so we retrieve the first item
+            if isinstance(default_factory_type, Overloaded):
+                if float(mypy_version) > 0.910:
+                    default_factory_type = default_factory_type.items[0]
+                else:
+                    # Mypy0.910 exposes the items of overloaded types in a function
+                    default_factory_type = default_factory_type.items()[0]  # type: ignore[operator]
+
+            if isinstance(default_factory_type, CallableType):
+                return default_factory_type.ret_type
+
+        return default_any_type
 
 
 class PydanticPluginConfig:
@@ -125,9 +179,9 @@ class PydanticPluginConfig:
         if options.config_file is None:  # pragma: no cover
             return
 
-        if toml and options.config_file.endswith('.toml'):
-            with open(options.config_file, 'r') as rf:
-                config = toml.load(rf).get('tool', {}).get('pydantic-mypy', {})
+        toml_config = parse_toml(options.config_file)
+        if toml_config is not None:
+            config = toml_config.get('tool', {}).get('pydantic-mypy', {})
             for key in self.__slots__:
                 setting = config.get(key, False)
                 if not isinstance(setting, bool):
@@ -190,6 +244,7 @@ class PydanticModelTransformer:
         ctx = self._ctx
         info = self._ctx.cls.info
 
+        self.adjust_validator_signatures()
         config = self.collect_config()
         fields = self.collect_fields(config)
         for field in fields:
@@ -204,6 +259,24 @@ class PydanticModelTransformer:
             'fields': {field.name: field.serialize() for field in fields},
             'config': config.set_values_dict(),
         }
+
+    def adjust_validator_signatures(self) -> None:
+        """When we decorate a function `f` with `pydantic.validator(...), mypy sees
+        `f` as a regular method taking a `self` instance, even though pydantic
+        internally wraps `f` with `classmethod` if necessary.
+
+        Teach mypy this by marking any function whose outermost decorator is a
+        `validator()` call as a classmethod.
+        """
+        for name, sym in self._ctx.cls.info.names.items():
+            if isinstance(sym.node, Decorator):
+                first_dec = sym.node.original_decorators[0]
+                if (
+                    isinstance(first_dec, CallExpr)
+                    and isinstance(first_dec.callee, NameExpr)
+                    and first_dec.callee.fullname == 'pydantic.class_validators.validator'
+                ):
+                    sym.node.func.is_class = True
 
     def collect_config(self) -> 'ModelConfigData':
         """
@@ -314,7 +387,7 @@ class PydanticModelTransformer:
                     known_fields.add(name)
                     superclass_fields.append(field)
                 else:
-                    (field,) = [a for a in all_fields if a.name == name]
+                    (field,) = (a for a in all_fields if a.name == name)
                     all_fields.remove(field)
                     superclass_fields.append(field)
             all_fields = superclass_fields + all_fields
@@ -338,7 +411,9 @@ class PydanticModelTransformer:
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             init_arguments.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
-        add_method(ctx, '__init__', init_arguments, NoneType())
+
+        if '__init__' not in ctx.cls.info.names:
+            add_method(ctx, '__init__', init_arguments, NoneType())
 
     def add_construct_method(self, fields: List['PydanticModelField']) -> None:
         """
@@ -348,18 +423,24 @@ class PydanticModelTransformer:
         and does not treat settings fields as optional.
         """
         ctx = self._ctx
-        set_str = ctx.api.named_type('__builtins__.set', [ctx.api.named_type('__builtins__.str')])
+        set_str = ctx.api.named_type(f'{BUILTINS_NAME}.set', [ctx.api.named_type(f'{BUILTINS_NAME}.str')])
         optional_set_str = UnionType([set_str, NoneType()])
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         construct_arguments = self.get_field_arguments(fields, typed=True, force_all_optional=False, use_alias=False)
         construct_arguments = [fields_set_argument] + construct_arguments
 
-        obj_type = ctx.api.named_type('__builtins__.object')
+        obj_type = ctx.api.named_type(f'{BUILTINS_NAME}.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
-        self_type = TypeVarType(self_tvar_name, tvar_fullname, -1, [], obj_type)
+        tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
+
+        # Backward-compatible with TypeVarDef from Mypy 0.910.
+        if isinstance(tvd, TypeVarType):
+            self_type = tvd
+        else:
+            self_type = TypeVarType(tvd)  # type: ignore[call-arg]
 
         add_method(
             ctx,
@@ -367,7 +448,7 @@ class PydanticModelTransformer:
             construct_arguments,
             return_type=self_type,
             self_type=self_type,
-            tvar_like_type=self_type,
+            tvar_def=tvd,
             is_classmethod=True,
         )
 
@@ -434,8 +515,15 @@ class PydanticModelTransformer:
             return True
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             # The "default value" is a call to `Field`; at this point, the field is
-            # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`)
-            return len(expr.args) > 0 and expr.args[0].__class__ is EllipsisExpr
+            # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`) or if default_factory
+            # is specified.
+            for arg, name in zip(expr.args, expr.arg_names):
+                # If name is None, then this arg is the default because it is the only positonal argument.
+                if name is None or name == 'default':
+                    return arg.__class__ is EllipsisExpr
+                if name == 'default_factory':
+                    return False
+            return True
         # Only required if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return isinstance(expr, EllipsisExpr)
 
@@ -587,6 +675,7 @@ ERROR_CONFIG = ErrorCode('pydantic-config', 'Invalid config value', 'Pydantic')
 ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic')
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
 ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydantic')
+ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
 
 
 def error_from_orm(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
@@ -603,7 +692,7 @@ def error_required_dynamic_aliases(api: SemanticAnalyzerPluginInterface, context
 
 def error_unexpected_behavior(detail: str, api: CheckerPluginInterface, context: Context) -> None:  # pragma: no cover
     # Can't think of a good way to test this, but I confirmed it renders as desired by adding to a non-error path
-    link = 'https://github.com/samuelcolvin/pydantic/issues/new/choose'
+    link = 'https://github.com/pydantic/pydantic/issues/new/choose'
     full_message = f'The pydantic mypy plugin ran into unexpected behavior: {detail}\n'
     full_message += f'Please consider reporting this bug at {link} so we can try to fix it!'
     api.fail(full_message, context, code=ERROR_UNEXPECTED)
@@ -613,13 +702,17 @@ def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context)
     api.fail('Untyped fields disallowed', context, code=ERROR_UNTYPED)
 
 
+def error_default_and_default_factory_specified(api: CheckerPluginInterface, context: Context) -> None:
+    api.fail('Field default and default_factory cannot be specified together', context, code=ERROR_FIELD_DEFAULTS)
+
+
 def add_method(
     ctx: ClassDefContext,
     name: str,
     args: List[Argument],
     return_type: Type,
     self_type: Optional[Type] = None,
-    tvar_like_type: Optional[TypeVarLikeType] = None,
+    tvar_def: Optional[TypeVarDef] = None,
     is_classmethod: bool = False,
     is_new: bool = False,
     # is_staticmethod: bool = False,
@@ -636,7 +729,7 @@ def add_method(
     if name in info.names:
         sym = info.names[name]
         if sym.plugin_generated and isinstance(sym.node, FuncDef):
-            ctx.cls.defs.body.remove(sym.node)
+            ctx.cls.defs.body.remove(sym.node)  # pragma: no cover
 
     self_type = self_type or fill_typevars(info)
     if is_classmethod or is_new:
@@ -654,10 +747,10 @@ def add_method(
         arg_names.append(get_name(arg.variable))
         arg_kinds.append(arg.kind)
 
-    function_type = ctx.api.named_type('__builtins__.function')
+    function_type = ctx.api.named_type(f'{BUILTINS_NAME}.function')
     signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
-    if tvar_like_type:
-        signature.variables = [tvar_like_type]
+    if tvar_def:
+        signature.variables = [tvar_def]
 
     func = FuncDef(name, args, Block([PassStmt()]))
     func.info = info
@@ -714,3 +807,25 @@ def get_name(x: Union[FuncBase, SymbolNode]) -> str:
     if callable(fn):  # pragma: no cover
         return fn()
     return fn
+
+
+def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
+    if not config_file.endswith('.toml'):
+        return None
+
+    read_mode = 'rb'
+    try:
+        import tomli as toml_
+    except ImportError:
+        # older versions of mypy have toml as a dependency, not tomli
+        read_mode = 'r'
+        try:
+            import toml as toml_  # type: ignore[no-redef]
+        except ImportError:  # pragma: no cover
+            import warnings
+
+            warnings.warn('No TOML parser installed, cannot read configuration from `pyproject.toml`.')
+            return None
+
+    with open(config_file, read_mode) as rf:
+        return toml_.load(rf)  # type: ignore[arg-type]

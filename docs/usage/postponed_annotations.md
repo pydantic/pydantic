@@ -1,5 +1,5 @@
 !!! note
-    Both postponed annotations via the future import and `ForwardRef` require python 3.7+.
+    Both postponed annotations via the future import and `ForwardRef` require Python 3.7+.
 
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
@@ -55,7 +55,7 @@ Within the model, you can refer to the not-yet-constructed model using a string:
 ```
 _(This script is complete, it should run "as is")_
 
-Since `python 3.7`, you can also refer it by its type, provided you import `annotations` (see
+Since Python 3.7, you can also refer it by its type, provided you import `annotations` (see
 [above](postponed_annotations.md) for support depending on Python
 and *pydantic* versions).
 

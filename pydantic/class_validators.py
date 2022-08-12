@@ -9,6 +9,9 @@ from .errors import ConfigError
 from .typing import AnyCallable
 from .utils import ROOT_KEY, in_ipython
 
+if TYPE_CHECKING:
+    from .typing import AnyClassMethod
+
 
 class Validator:
     __slots__ = 'func', 'pre', 'each_item', 'always', 'check_fields', 'skip_on_failure'
@@ -54,7 +57,7 @@ def validator(
     check_fields: bool = True,
     whole: bool = None,
     allow_reuse: bool = False,
-) -> Callable[[AnyCallable], classmethod]:
+) -> Callable[[AnyCallable], 'AnyClassMethod']:
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
@@ -72,6 +75,11 @@ def validator(
             "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
+    elif not all(isinstance(field, str) for field in fields):
+        raise ConfigError(
+            "validator fields should be passed as separate string args. "  # noqa: Q000
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
 
     if whole is not None:
         warnings.warn(
@@ -81,7 +89,7 @@ def validator(
         assert each_item is False, '"each_item" and "whole" conflict, remove "whole"'
         each_item = not whole
 
-    def dec(f: AnyCallable) -> classmethod:
+    def dec(f: AnyCallable) -> 'AnyClassMethod':
         f_cls = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls,
@@ -97,20 +105,20 @@ def validator(
 
 
 @overload
-def root_validator(_func: AnyCallable) -> classmethod:
+def root_validator(_func: AnyCallable) -> 'AnyClassMethod':
     ...
 
 
 @overload
 def root_validator(
     *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
-) -> Callable[[AnyCallable], classmethod]:
+) -> Callable[[AnyCallable], 'AnyClassMethod']:
     ...
 
 
 def root_validator(
     _func: Optional[AnyCallable] = None, *, pre: bool = False, allow_reuse: bool = False, skip_on_failure: bool = False
-) -> Union[classmethod, Callable[[AnyCallable], classmethod]]:
+) -> Union['AnyClassMethod', Callable[[AnyCallable], 'AnyClassMethod']]:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
@@ -122,7 +130,7 @@ def root_validator(
         )
         return f_cls
 
-    def dec(f: AnyCallable) -> classmethod:
+    def dec(f: AnyCallable) -> 'AnyClassMethod':
         f_cls = _prepare_validator(f, allow_reuse)
         setattr(
             f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
@@ -132,7 +140,7 @@ def root_validator(
     return dec
 
 
-def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> classmethod:
+def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMethod':
     """
     Avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
@@ -325,8 +333,8 @@ def _generic_validator_basic(validator: AnyCallable, sig: 'Signature', args: Set
         return lambda cls, v, values, field, config: validator(v, values=values, field=field, config=config)
 
 
-def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, classmethod]:
-    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])
+def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, 'AnyClassMethod']:
+    all_attributes = ChainMap(*[cls.__dict__ for cls in type_.__mro__])  # type: ignore[arg-type,var-annotated]
     return {
         k: v
         for k, v in all_attributes.items()
