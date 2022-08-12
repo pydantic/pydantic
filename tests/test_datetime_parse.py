@@ -6,6 +6,7 @@ Changed to:
 * use standard pytest layout
 * parametrize tests
 """
+import re
 from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
@@ -292,56 +293,27 @@ def test_nan():
     ]
 
 
-base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
-
-
-def test_date_gt():
-    threshold = date(2020, 1, 1)
-
+@pytest.mark.parametrize(
+    'constraint,msg,ok_value,error_value',
+    [
+        ('gt', 'greater than', date(2020, 1, 2), date(2019, 12, 31)),
+        ('gt', 'greater than', date(2020, 1, 2), date(2020, 1, 1)),
+        ('ge', 'greater than or equal to', date(2020, 1, 2), date(2019, 12, 31)),
+        ('ge', 'greater than or equal to', date(2020, 1, 1), date(2019, 12, 31)),
+        ('lt', 'less than', date(2019, 12, 31), date(2020, 1, 2)),
+        ('lt', 'less than', date(2019, 12, 31), date(2020, 1, 1)),
+        ('le', 'less than or equal to', date(2019, 12, 31), date(2020, 1, 2)),
+        ('le', 'less than or equal to', date(2020, 1, 1), date(2020, 1, 2)),
+    ],
+)
+def test_date_constraints(constraint, msg, ok_value, error_value):
     class Model(BaseModel):
-        a: condate(gt=threshold)
+        a: condate(**{constraint: date(2020, 1, 1)})
 
-    assert Model(a=date(2020, 1, 2)).dict() == {'a': date(2020, 1, 2)}
+    assert Model(a=ok_value).dict() == {'a': ok_value}
 
-    message = base_message.format(msg=f'greater than {threshold}', ty='gt', value=threshold)
-    with pytest.raises(ValidationError, match=message):
-        Model(a=date(2019, 1, 1))
-
-
-def test_date_ge():
-    threshold = date(2020, 1, 1)
-
-    class Model(BaseModel):
-        a: condate(ge=threshold)
-
-    assert Model(a=date(2020, 1, 1)).dict() == {'a': date(2020, 1, 1)}
-
-    message = base_message.format(msg=f'greater than or equal to {threshold}', ty='ge', value=threshold)
-    with pytest.raises(ValidationError, match=message):
-        Model(a=date(2019, 1, 1))
-
-
-def test_date_lt():
-    threshold = date(2020, 1, 1)
-
-    class Model(BaseModel):
-        a: condate(lt=threshold)
-
-    assert Model(a=date(2019, 1, 2)).dict() == {'a': date(2019, 1, 2)}
-
-    message = base_message.format(msg=f'less than {threshold}', ty='lt', value=threshold)
-    with pytest.raises(ValidationError, match=message):
-        Model(a=date(2021, 1, 1))
-
-
-def test_date_le():
-    threshold = date(2020, 1, 1)
-
-    class Model(BaseModel):
-        a: condate(le=threshold)
-
-    assert Model(a=date(2019, 1, 1)).dict() == {'a': date(2019, 1, 1)}
-
-    message = base_message.format(msg=f'less than or equal to {threshold}', ty='le', value=threshold)
-    with pytest.raises(ValidationError, match=message):
-        Model(a=date(2021, 1, 1))
+    match = re.escape(
+        f'ensure this value is {msg} 2020-01-01 ' f'(type=value_error.number.not_{constraint}; limit_value=2020-01-01)'
+    )
+    with pytest.raises(ValidationError, match=match):
+        Model(a=error_value)

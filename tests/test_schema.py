@@ -741,21 +741,21 @@ def test_date_types(field_type, expected_schema):
         (condate(), {}),
         (
             condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
-            {'exclusiveMinimum': date(2010, 1, 1), 'exclusiveMaximum': date(2021, 2, 2)},
+            {'exclusiveMinimum': '2010-01-01', 'exclusiveMaximum': '2021-02-02'},
         ),
-        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': date(2010, 1, 1), 'maximum': date(2021, 2, 2)}),
+        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': '2010-01-01', 'maximum': '2021-02-02'}),
     ],
 )
 def test_date_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    attribute_schema = {'title': 'A', 'type': 'string', 'format': 'date'}
-    attribute_schema.update(expected_schema)
-
-    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
-
-    assert Model.schema() == base_schema
+    assert json.loads(Model.schema_json()) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
+        'required': ['a'],
+    }
 
 
 @pytest.mark.parametrize(
