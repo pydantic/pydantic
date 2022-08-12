@@ -49,8 +49,7 @@ Example:
 
 ## `model.json(...)`
 
-The `.json()` method will serialise a model to JSON. Typically, `.json()` in turn calls `.dict()` and
-serialises its result. (For models with a [custom root type](models.md#custom-root-types), after calling `.dict()`,
+The `.json()` method will serialise a model to JSON. (For models with a [custom root type](models.md#custom-root-types),
 only the value for the `__root__` key is serialised)
 
 Arguments:
