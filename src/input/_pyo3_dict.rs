@@ -26,3 +26,14 @@ pyobject_native_type_core!(
     ffi::PyDictValues_Type,
     #checkfunction=ffi::PyDictValues_Check
 );
+
+/// Represents a Python `dict_items`.
+#[cfg(not(PyPy))]
+pub struct PyDictItems(PyAny, PyAny);
+
+#[cfg(not(PyPy))]
+pyobject_native_type_core!(
+    PyDictItems,
+    ffi::PyDictItems_Type,
+    #checkfunction=ffi::PyDictItems_Check
+);
