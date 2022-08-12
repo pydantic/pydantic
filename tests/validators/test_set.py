@@ -78,8 +78,6 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
             ),
         ),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid set [kind=set_type,')),
-        # https://github.com/pydantic/pydantic-core/issues/211
-        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid set [kind=set_type,')),
         ((x for x in [1, 2, '3']), {1, 2, 3}),
         ({'abc'}, Err('0\n  Input should be a valid integer')),
         ({1: 2}, Err('1 validation error for set[int]\n  Input should be a valid set')),
@@ -221,3 +219,29 @@ def test_generator_error():
 
     with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
         v.validate_python(gen(True))
+
+
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy')
+@pytest.mark.parametrize(
+    'input_value,items_schema,expected',
+    [
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.items(),
+            {'type': 'tuple', 'items_schema': {'type': 'any'}},
+            {(1, 10), (2, 20), ('3', '30')},
+            id='Tuple[Any, Any]',
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.items(),
+            {'type': 'tuple', 'items_schema': {'type': 'int'}},
+            {(1, 10), (2, 20), (3, 30)},
+            id='Tuple[int, int]',
+        ),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', {(1, 10), (2, 20), ('3', '30')}, id='Any'),
+    ],
+)
+def test_set_from_dict_items(input_value, items_schema, expected):
+    v = SchemaValidator({'type': 'set', 'items_schema': items_schema})
+    output = v.validate_python(input_value)
+    assert isinstance(output, set)
+    assert output == expected

@@ -12,7 +12,7 @@ use pyo3::{intern, AsPyPointer};
 use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
 
 #[cfg(not(PyPy))]
-use super::_pyo3_dict::{PyDictKeys, PyDictValues};
+use super::_pyo3_dict::{PyDictItems, PyDictKeys, PyDictValues};
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
@@ -36,6 +36,9 @@ macro_rules! extract_gen_dict {
             Some(<$type>::new($obj.py(), vec))
         } else if let Ok(dict_values) = $obj.cast_as::<PyDictValues>() {
             let vec = dict_values.iter()?.collect::<PyResult<Vec<_>>>().map_err(map_err)?;
+            Some(<$type>::new($obj.py(), vec))
+        } else if let Ok(dict_items) = $obj.cast_as::<PyDictItems>() {
+            let vec = dict_items.iter()?.collect::<PyResult<Vec<_>>>().map_err(map_err)?;
             Some(<$type>::new($obj.py(), vec))
         } else {
             None
