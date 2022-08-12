@@ -831,7 +831,7 @@ def test_multiple_env_file(tmp_path):
         port: int
 
         class Config:
-            env_file = [prod_env, base_env]
+            env_file = [base_env, prod_env]
 
     s = Settings()
     assert s.debug_mode is False
@@ -849,7 +849,7 @@ def test_multiple_env_file_encoding(tmp_path):
     class Settings(BaseSettings):
         pika: str
 
-    s = Settings(_env_file=[prod_env, base_env], _env_file_encoding='latin-1')
+    s = Settings(_env_file=[base_env, prod_env], _env_file_encoding='latin-1')
     assert s.pika == 'chu!±@'
 
 
@@ -860,7 +860,7 @@ def test_read_dotenv_vars(tmp_path):
     prod_env = tmp_path / '.env.prod'
     prod_env.write_text(test_prod_env_file)
 
-    source = EnvSettingsSource(env_file=[prod_env, base_env], env_file_encoding='utf8')
+    source = EnvSettingsSource(env_file=[base_env, prod_env], env_file_encoding='utf8')
     assert source._read_env_files(case_sensitive=False) == {
         'debug_mode': 'false',
         'host': 'https://example.com/services',

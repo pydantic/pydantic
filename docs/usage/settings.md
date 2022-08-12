@@ -151,8 +151,10 @@ Passing a file path via the `_env_file` keyword argument on instantiation (metho
 the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded
 while `.env` would be ignored.
 
-If you need to load multiple dotenv files, you can pass the file paths as `list` or `tuple`.
-First item is the highest priority.
+If you need to load multiple dotenv files, you can pass the file paths as a `list` or `tuple`.
+
+The last item is the highest priority.
+
 ```py
 class Settings(BaseSettings):
     ...
