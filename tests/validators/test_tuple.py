@@ -121,8 +121,6 @@ def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
             ),
         ),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid tuple [kind=tuple_type,')),
-        # https://github.com/pydantic/pydantic-core/issues/211
-        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid tuple [kind=tuple_type,')),
         ({1, 2, '3'}, Err('Input should be a valid tuple [kind=tuple_type,')),
         (frozenset([1, 2, '3']), Err('Input should be a valid tuple [kind=tuple_type,')),
     ],
@@ -404,3 +402,29 @@ def test_generator_error():
 
     with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
         v.validate_python(gen(True))
+
+
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy')
+@pytest.mark.parametrize(
+    'input_value,items_schema,expected',
+    [
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.items(),
+            {'type': 'tuple', 'items_schema': {'type': 'any'}},
+            ((1, 10), (2, 20), ('3', '30')),
+            id='Tuple[Any, Any]',
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.items(),
+            {'type': 'tuple', 'items_schema': {'type': 'int'}},
+            ((1, 10), (2, 20), (3, 30)),
+            id='Tuple[int, int]',
+        ),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', ((1, 10), (2, 20), ('3', '30')), id='Any'),
+    ],
+)
+def test_frozenset_from_dict_items(input_value, items_schema, expected):
+    v = SchemaValidator({'type': 'tuple', 'items_schema': items_schema})
+    output = v.validate_python(input_value)
+    assert isinstance(output, tuple)
+    assert output == expected

@@ -60,8 +60,6 @@ def test_list_strict():
             ),
         ),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid list/array [kind=list_type,')),
-        # https://github.com/pydantic/pydantic-core/issues/211
-        ({1: 10, 2: 20, '3': '30'}.items(), Err('Input should be a valid list/array [kind=list_type,')),
         ((x for x in [1, 2, '3']), [1, 2, 3]),
     ],
 )
@@ -226,3 +224,29 @@ def test_generator_error():
             'input_value': HasRepr(IsStr(regex='<generator object test_generator_error.<locals>.gen at 0x[0-9a-f]+>')),
         }
     ]
+
+
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy')
+@pytest.mark.parametrize(
+    'input_value,items_schema,expected',
+    [
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.items(),
+            {'type': 'tuple', 'items_schema': {'type': 'any'}},
+            [(1, 10), (2, 20), ('3', '30')],
+            id='Tuple[Any, Any]',
+        ),
+        pytest.param(
+            {1: 10, 2: 20, '3': '30'}.items(),
+            {'type': 'tuple', 'items_schema': {'type': 'int'}},
+            [(1, 10), (2, 20), (3, 30)],
+            id='Tuple[int, int]',
+        ),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', [(1, 10), (2, 20), ('3', '30')], id='Any'),
+    ],
+)
+def test_list_from_dict_items(input_value, items_schema, expected):
+    v = SchemaValidator({'type': 'list', 'items_schema': items_schema})
+    output = v.validate_python(input_value)
+    assert isinstance(output, list)
+    assert output == expected
