@@ -1,1 +1,1 @@
-Add support multiple dotenv files
+Add support for multiple dotenv files
