@@ -1,14 +1,23 @@
 from __future__ import annotations
 from pydantic import BaseModel
+from pydantic.errors import ConfigError
 
 
 def this_is_broken():
-    # Annotations are defined inside the function so is not in the module's
-    # global scope!
-    from typing import Any, List
+    from pydantic import HttpUrl  # HttpUrl is defined in functuon local scope
 
     class Model(BaseModel):
-        a: List[int]
-        b: Any
+        a: HttpUrl
 
-    print(Model(a=(1, 2), b=3))
+    try:
+        Model(a='https://example.com')
+    except ConfigError as e:
+        print(e)
+
+    try:
+        Model.update_forward_refs()
+    except NameError as e:
+        print(e)
+
+
+this_is_broken()
