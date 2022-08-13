@@ -36,7 +36,6 @@ from pydantic.utils import (
     import_string,
     lenient_issubclass,
     path_type,
-    percent_encode,
     smart_deepcopy,
     truncate,
     unique_list,
@@ -567,15 +566,3 @@ def test_limited_dict():
     assert len(d) == 10
     d[13] = '13'
     assert len(d) == 9
-
-
-@pytest.mark.parametrize(
-    'input_value,output,plus',
-    [
-        ('Pa##w0rd?', 'Pa%23%23w0rd%3F', False),
-        ('A query', 'A%20query', False),
-        ('A query', 'A+query', True),
-    ],
-)
-def test_percent_encode(input_value, output, plus):
-    assert percent_encode(input_value, plus=plus) == output

@@ -787,29 +787,3 @@ else:
         def __class_getitem__(cls, *args: Any) -> Any:
             # to avoid errors with 3.7
             pass
-
-
-URI_RESERVED_CHARACTERS = frozenset(":/?#[]@!$&'()*+,;=% ")
-
-
-def percent_encode(string: str, *, plus: bool = False) -> str:
-    """
-    Percent encode the URI reserved characters in a string
-    """
-    if not string:
-        return string
-
-    string = string.replace('%', f'%{ord("%"):02X}')
-
-    if plus:
-        string = string.replace('+', f'%{ord("+"):02X}')
-        string = string.replace(' ', '+')
-        characters = URI_RESERVED_CHARACTERS.symmetric_difference('+% ')
-    else:
-        characters = URI_RESERVED_CHARACTERS.symmetric_difference('%')
-
-    for c in characters:
-        if c in string:
-            string = string.replace(c, f'%{ord(c):02X}')
-
-    return string

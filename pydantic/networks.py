@@ -1,5 +1,4 @@
 import re
-from functools import partial
 from ipaddress import (
     IPv4Address,
     IPv4Interface,
@@ -25,9 +24,10 @@ from typing import (
     cast,
     no_type_check,
 )
+from urllib.parse import quote, quote_plus
 
 from . import errors
-from .utils import Representation, percent_encode, update_not_none
+from .utils import Representation, update_not_none
 from .validators import constr_length_validator, str_validator
 
 if TYPE_CHECKING:
@@ -195,23 +195,23 @@ class AnyUrl(str):
             **_kwargs,  # type: ignore[misc]
         )
 
-        percent_encode_plus = partial(percent_encode, plus=plus)
+        do_quote = quote_plus if plus else quote
 
         url = scheme + '://'
         if user:
-            url += percent_encode_plus(user)
+            url += do_quote(user)
         if password:
-            url += ':' + percent_encode_plus(password)
+            url += ':' + do_quote(password)
         if user or password:
             url += '@'
         url += host
         if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
-            url += '/'.join(map(percent_encode_plus, path.split('/')))
+            url += '/'.join(map(do_quote, path.split('/')))
         if query:
             queries = query.split('&')
-            url += '?' + '&'.join(map(lambda s: '='.join(map(percent_encode_plus, s.split('='))), queries))
+            url += '?' + '&'.join(map(lambda s: '='.join(map(do_quote, s.split('='))), queries))
         if fragment:
             url += '#' + fragment
         return url
