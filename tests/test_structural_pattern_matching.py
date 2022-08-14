@@ -2,10 +2,10 @@ import sys
 
 import pytest
 
-if sys.version_info < (3, 10):
-    pytest.skip(reason='testing >= 3.10 behaviour only', allow_module_level=True)
+pytestmark = pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python 3.10 or higher')
 
 
+@pytestmark
 def test_match_args(create_module):
     create_module(
         # language=Python
@@ -26,6 +26,7 @@ match m:
     )
 
 
+@pytestmark
 def test_match_kwargs(create_module):
     create_module(
         # language=Python
@@ -53,6 +54,7 @@ match m:
     )
 
 
+@pytestmark
 def test_match_args_private_attr(create_module):
     create_module(
         # language=Python
