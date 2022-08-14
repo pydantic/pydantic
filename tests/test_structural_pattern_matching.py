@@ -2,33 +2,10 @@ import sys
 
 import pytest
 
-pytestmark = pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python 3.10 or higher')
 
-
-@pytestmark
-def test_match_args(create_module):
-    create_module(
-        # language=Python
-        """
-from pydantic import BaseModel
-
-class Model(BaseModel):
-    a: str
-    b: str
-
-m = Model(a='a', b='b')
-match m:
-    case Model('a', b):
-        assert b == 'b'
-    case _:
-        assert False
-"""
-    )
-
-
-@pytestmark
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python 3.10 or higher')
 def test_match_kwargs(create_module):
-    create_module(
+    module = create_module(
         # language=Python
         """
 from pydantic import BaseModel
@@ -37,40 +14,16 @@ class Model(BaseModel):
     a: str
     b: str
 
-m = Model(a='a', b='b')
-
-match m:
-    case Model(a='a', b=b):
-        assert b == 'b'
-    case _:
-        assert False
-
-match m:
-    case Model(b=b, a='a'):
-        assert b == 'b'
-    case _:
-        assert False
+def main(model):
+    match model:
+        case Model(a='a', b=b):
+            return b
+        case Model(a='a2'):
+            return 'b2'
+        case _:
+            return None
 """
     )
-
-
-@pytestmark
-def test_match_args_private_attr(create_module):
-    create_module(
-        # language=Python
-        """
-from pydantic import BaseModel, PrivateAttr
-
-class Model(BaseModel):
-    a: str
-    _b: str = PrivateAttr(default='b')
-    c: str
-
-m = Model(a='a', c='c')
-match m:
-    case Model('a', 'c'):
-        pass
-    case _:
-        assert False
-"""
-    )
+    assert module.main(module.Model(a='a', b='b')) == 'b'
+    assert module.main(module.Model(a='a2', b='b')) == 'b2'
+    assert module.main(module.Model(a='x', b='b')) is None
