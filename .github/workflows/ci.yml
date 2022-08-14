@@ -308,12 +308,12 @@ jobs:
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
     needs: [lint, test-linux-compiled, test-not-compiled, test-old-mypy, test-fastapi]
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
+#    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/master')"
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10']
+        python-version: ['7', '8', '9', '10', '11']
         include:
         - os: ubuntu
           platform: linux
