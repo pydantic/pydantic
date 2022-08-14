@@ -313,7 +313,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10']
+        python-version: ['7', '8', '9', '10', '11']
         include:
         - os: ubuntu
           platform: linux
