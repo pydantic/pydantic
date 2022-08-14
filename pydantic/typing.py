@@ -568,6 +568,9 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     Tries to get the class of a Type[T] annotation. Returns True if Type is used
     without brackets. Otherwise returns None.
     """
+    if type_ is type:
+        return True
+
     if get_origin(type_) is None:
         return None
 
