@@ -1,1 +1,1 @@
-BaseModel: Support PEP 634-636 (structural pattern matching)
+Support structural pattern matching ([PEP 636](https://peps.python.org/pep-0636/)) on `BaseModel`
