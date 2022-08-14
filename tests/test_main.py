@@ -981,18 +981,20 @@ def test_type_type_validation_fails_for_basic_type():
     ]
 
 
-def test_bare_type_type_validation_success():
+@pytest.mark.parametrize('bare_type', [type, Type])
+def test_bare_type_type_validation_success(bare_type):
     class ArbitraryClassAllowedModel(BaseModel):
-        t: Type
+        t: bare_type
 
     arbitrary_type_class = ArbitraryType
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
 
-def test_bare_type_type_validation_fails():
+@pytest.mark.parametrize('bare_type', [type, Type])
+def test_bare_type_type_validation_fails(bare_type):
     class ArbitraryClassAllowedModel(BaseModel):
-        t: Type
+        t: bare_type
 
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
