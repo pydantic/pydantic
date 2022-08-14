@@ -415,7 +415,6 @@ Field order is important in models for the following reasons:
 * field order is preserved in the model [schema](schema.md)
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved by [`.dict()` and `.json()` etc.](exporting_models.md#modeldict)
-* [structural pattern matching](#structural-pattern-matching) is performed in the order fields are defined
 
 As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.
@@ -551,8 +550,11 @@ In addition, the `**data` argument will always be present in the signature if `C
 
 ## Structural pattern matching
 
-*pydantic* supports structural pattern matching for models, as introduced by [PEP 634](https://peps.python.org/pep-0622/) in Python 3.10.
+*pydantic* supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
 ```py
 {!.tmp_examples/models_structural_pattern_matching.py!}
 ```
+!!! note
+    A match-case statement may seem as if it creates a new model, but don't be fooled;  
+    it is just syntactic sugar for getting an attribute and either comparing it or declaring and initializing it.

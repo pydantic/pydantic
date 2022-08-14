@@ -9,18 +9,9 @@ class Pet(BaseModel):
 a = Pet(name='Bones', species='dog')
 
 match a:
-    # match with kwargs
+    # match `species` to 'dog', declare and initialize `dog_name`
     case Pet(species='dog', name=dog_name):
         print(f'{dog_name} is a dog')
+    # default case
     case _:
         print('No dog matched')
-
-
-b = Pet(name='Orion', species='cat')
-
-match b:
-    # match with args (according to field ordering)
-    case Pet(cat_name, 'cat'):
-        print(f'{cat_name} is a cat')
-    case _:
-        print('No cat matched')
