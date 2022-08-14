@@ -20,10 +20,7 @@ Arguments:
 
 Example:
 
-```py
-{!.tmp_examples/exporting_models_dict.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_dict.md!}
 
 ## `dict(model)` and iteration
 
@@ -33,10 +30,7 @@ returned, so sub-models will not be converted to dictionaries.
 
 Example:
 
-```py
-{!.tmp_examples/exporting_models_iterate.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_iterate.md!}
 
 ## `model.copy(...)`
 
@@ -51,10 +45,7 @@ Arguments:
 
 Example:
 
-```py
-{!.tmp_examples/exporting_models_copy.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_copy.md!}
 
 ## `model.json(...)`
 
@@ -81,20 +72,14 @@ Arguments:
 *pydantic* can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
 fail with a simple `json.dumps(foobar)`.
 
-```py
-{!.tmp_examples/exporting_models_json.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_json.md!}
 
 ### `json_encoders`
 
 Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types (or names of types for forward references), and
 the values should be functions which serialise that type (see the example below):
 
-```py
-{!.tmp_examples/exporting_models_json_encoders.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_json_encoders.md!}
 
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
 as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time diff encoding.
@@ -102,10 +87,7 @@ as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/
 The `json_encoders` are also merged during the models inheritance with the child
 encoders taking precedence over the parent one.
 
-```py
-{!.tmp_examples/exporting_models_json_encoders_merge.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_json_encoders_merge.md!}
 
 ### Serialising self-reference or other models
 
@@ -113,10 +95,7 @@ By default, models are serialised as dictionaries.
 If you want to serialise them differently, you can add `models_as_dict=False` when calling `json()` method
 and add the classes of the model in `json_encoders`.
 In case of forward references, you can use a string with the class name instead of the class itself
-```py
-{!.tmp_examples/exporting_models_json_forward_ref.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_json_forward_ref.md!}
 
 ### Serialising subclasses
 
@@ -127,10 +106,7 @@ _(This script is complete, it should run "as is")_
 
 Subclasses of common types are automatically encoded like their super-classes:
 
-```py
-{!.tmp_examples/exporting_models_json_subclass.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_json_subclass.md!}
 
 ### Custom JSON (de)serialisation
 
@@ -138,19 +114,13 @@ To improve the performance of encoding and decoding JSON, alternative JSON imple
 (e.g. [ujson](https://pypi.python.org/pypi/ujson)) can be used via the
 `json_loads` and `json_dumps` properties of `Config`.
 
-```py
-{!.tmp_examples/exporting_models_ujson.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_ujson.md!}
 
 `ujson` generally cannot be used to dump JSON since it doesn't support encoding of objects like datetimes and does
 not accept a `default` fallback function argument. To do this, you may use another library like
 [orjson](https://github.com/ijl/orjson).
 
-```py
-{!.tmp_examples/exporting_models_orjson.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_orjson.md!}
 
 Note that `orjson` takes care of `datetime` encoding natively, making it faster than `json.dumps` but
 meaning you cannot always customise the encoding using `Config.json_encoders`.
@@ -159,19 +129,14 @@ meaning you cannot always customise the encoding using `Config.json_encoders`.
 
 Using the same plumbing as `copy()`, *pydantic* models support efficient pickling and unpickling.
 
-```py
-{!.tmp_examples/exporting_models_pickle.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/exporting_models_pickle.md!}
 
 ## Advanced include and exclude
 
 The `dict`, `json`, and `copy` methods support `include` and `exclude` arguments which can either be
 sets or dictionaries. This allows nested selection of which fields to export:
 
-```py
-{!.tmp_examples/exporting_models_exclude1.py!}
-```
+{!.tmp_examples/exporting_models_exclude1.md!}
 
 The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level.
@@ -180,9 +145,7 @@ Special care must be taken when including or excluding fields from a list or tup
 `dict` and related methods expect integer keys for element-wise inclusion or exclusion. To exclude a field from **every**
 member of a list or tuple, the dictionary key `'__all__'` can be used as follows:
 
-```py
-{!.tmp_examples/exporting_models_exclude2.py!}
-```
+{!.tmp_examples/exporting_models_exclude2.md!}
 
 The same holds for the `json` and `copy` methods.
 
@@ -190,9 +153,7 @@ The same holds for the `json` and `copy` methods.
 
 In addition to the explicit arguments `exclude` and `include` passed to `dict`, `json` and `copy` methods, we can also pass the `include`/`exclude` arguments directly to the `Field` constructor or the equivalent `field` entry in the models `Config` class:
 
-```py
-{!.tmp_examples/exporting_models_exclude3.py!}
-```
+{!.tmp_examples/exporting_models_exclude3.md!}
 
 In the case where multiple strategies are used, `exclude`/`include` fields are merged according to the following rules:
 
@@ -203,12 +164,8 @@ Note that while merging settings, `exclude` entries are merged by computing the 
 
 The resulting merged exclude settings:
 
-```py
-{!.tmp_examples/exporting_models_exclude4.py!}
-```
+{!.tmp_examples/exporting_models_exclude4.md!}
 
 are the same as using merged include settings as follows:
 
-```py
-{!.tmp_examples/exporting_models_exclude5.py!}
-```
+{!.tmp_examples/exporting_models_exclude5.md!}

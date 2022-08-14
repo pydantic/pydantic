@@ -115,10 +115,7 @@ Models possess the following methods and attributes:
 
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
-```py
-{!.tmp_examples/models_recursive.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_recursive.md!}
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
 
@@ -133,20 +130,14 @@ To do this:
 
 The example here uses SQLAlchemy, but the same approach should work for any ORM.
 
-```py
-{!.tmp_examples/models_orm_mode.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_orm_mode.md!}
 
 ### Reserved names
 
 You may want to name a Column after a reserved SQLAlchemy field. In that case, Field aliases will be
 convenient:
 
-```py
-{!.tmp_examples/models_orm_mode_reserved_name.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_orm_mode_reserved_name.md!}
 
 !!! note
     The example above works because aliases have priority over field names for
@@ -158,10 +149,7 @@ ORM instances will be parsed with `from_orm` recursively as well as at the top l
 
 Here a vanilla class is used to demonstrate the principle, but any ORM class could be used instead.
 
-```py
-{!.tmp_examples/models_orm_mode_recursive.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_orm_mode_recursive.md!}
 
 
 ### Data binding
@@ -178,10 +166,7 @@ The `GetterDict` instance will be called for each field with a sentinel as a fal
 value is set). Returning this sentinel means that the field is missing. Any other value will
 be interpreted as the value of the field.
 
-```py
-{!.tmp_examples/models_orm_mode_data_binding.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_orm_mode_data_binding.md!}
 
 
 ## Error Handling
@@ -225,11 +210,7 @@ Each error object contains:
 
 As a demonstration:
 
-```py
-{!.tmp_examples/models_errors1.py!}
-```
-_(This script is complete, it should run "as is". `json()` has `indent=2` set by default, but I've tweaked the
-JSON here and below to make it slightly more concise.)_
+{!.tmp_examples/models_errors1.md!}
 
 ### Custom Errors
 
@@ -237,17 +218,11 @@ In your custom data types or validators you should use `ValueError`, `TypeError`
 
 See [validators](validators.md) for more details on use of the `@validator` decorator.
 
-```py
-{!.tmp_examples/models_errors2.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_errors2.md!}
 
 You can also define your own error classes, which can specify a custom error code, message template, and context:
 
-```py
-{!.tmp_examples/models_errors3.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_errors3.md!}
 
 ## Helper Functions
 
@@ -260,10 +235,7 @@ _(This script is complete, it should run "as is")_
 * **`parse_file`**: this takes in a file path, reads the file and passes the contents to `parse_raw`. If `content_type` is omitted,
   it is inferred from the file's extension.
 
-```py
-{!.tmp_examples/models_parse.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_parse.md!}
 
 !!! warning
     To quote the [official `pickle` docs](https://docs.python.org/3/library/pickle.html),
@@ -284,10 +256,7 @@ as efficiently as possible (`construct()` is generally around 30x faster than cr
     `construct()` does not do any validation, meaning it can create models which are invalid. **You should only
     ever use the `construct()` method with data which has already been validated, or you trust.**
 
-```py
-{!.tmp_examples/models_construct.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_construct.md!}
 
 The `_fields_set` keyword argument to `construct()` is optional, but allows you to be more precise about 
 which fields were originally set and which weren't. If it's omitted `__fields_set__` will just be the keys
@@ -310,10 +279,7 @@ In order to declare a generic model, you perform the following steps:
 
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
-```py
-{!.tmp_examples/models_generics.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_generics.md!}
 
 If you set `Config` or make use of `validator` in your generic model definition, it is applied
 to concrete subclasses in the same way as when inheriting from `BaseModel`. Any methods defined on
@@ -329,32 +295,20 @@ you would expect mypy to provide if you were to declare the type without using `
 To inherit from a GenericModel without replacing the `TypeVar` instance, a class must also inherit from 
 `typing.Generic`:
 
-```py
-{!.tmp_examples/models_generics_inheritance.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_generics_inheritance.md!}
 
 You can also create a generic subclass of a `GenericModel` that partially or fully replaces the type 
 parameters in the superclass.
 
-```py
-{!.tmp_examples/models_generics_inheritance_extend.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_generics_inheritance_extend.md!}
 
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
-```py
-{!.tmp_examples/models_generics_naming.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_generics_naming.md!}
 
 Using the same TypeVar in nested models allows you to enforce typing relationships at different points in your model:
 
-```py
-{!.tmp_examples/models_generics_nested.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_generics_nested.md!}
 
 Pydantic also treats `GenericModel` similarly to how it treats built-in generic types like `List` and `Dict` when it
 comes to leaving them unparameterized, or using bounded `TypeVar` instances:    
@@ -364,19 +318,14 @@ comes to leaving them unparameterized, or using bounded `TypeVar` instances:
 
 Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
 
-```py
-{!.tmp_examples/models_generics_typevars.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_generics_typevars.md!}
 
 ## Dynamic model creation
 
 There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
 the `create_model` method to allow models to be created on the fly.
 
-```py
-{!.tmp_examples/models_dynamic_creation.py!}
-```
+{!.tmp_examples/models_dynamic_creation.md!}
 
 Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
@@ -389,15 +338,11 @@ Fields are defined by either a tuple of the form `(<type>, <default value>)` or 
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes
 extending a base model with extra fields.
 
-```py
-{!.tmp_examples/models_dynamic_inheritance.py!}
-```
+{!.tmp_examples/models_dynamic_inheritance.md!}
 
 You can also add validators by passing a dict to the `__validators__` argument.
 
-```py
-{!.tmp_examples/models_dynamic_validators.py!}
-```
+{!.tmp_examples/models_dynamic_validators.md!}
 
 ## Model creation from `NamedTuple` or `TypedDict`
 
@@ -407,9 +352,7 @@ For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_fr
 Those methods have the exact same keyword arguments as `create_model`.
 
 
-```py
-{!.tmp_examples/models_from_typeddict.py!}
-```
+{!.tmp_examples/models_from_typeddict.md!}
 
 ## Custom Root Types
 
@@ -419,9 +362,7 @@ The root type can be any type supported by pydantic, and is specified by the typ
 The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
 the first and only argument to `parse_obj`.
 
-```py
-{!.tmp_examples/models_custom_root_field.py!}
-```
+{!.tmp_examples/models_custom_root_field.md!}
 
 If you call the `parse_obj` method for a model with a custom root type with a *dict* as the first argument,
 the following logic is used:
@@ -434,9 +375,7 @@ the following logic is used:
 
 This is demonstrated in the following example:
 
-```py
-{!.tmp_examples/models_custom_root_field_parse_obj.py!}
-```
+{!.tmp_examples/models_custom_root_field_parse_obj.md!}
 
 !!! warning
     Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
@@ -444,9 +383,7 @@ This is demonstrated in the following example:
     
 If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
 
-```py
-{!.tmp_examples/models_custom_root_access.py!}
-```
+{!.tmp_examples/models_custom_root_access.md!}
 
 ## Faux Immutability
 
@@ -457,9 +394,7 @@ values of instance attributes will raise errors. See [model config](model_config
     Immutability in Python is never strict. If developers are determined/stupid they can always
     modify a so-called "immutable" object.
 
-```py
-{!.tmp_examples/models_mutation.py!}
-```
+{!.tmp_examples/models_mutation.md!}
 
 Trying to change `a` caused an error, and `a` remains unchanged. However, the dict `b` is mutable, and the
 immutability of `foobar` doesn't stop `b` from being changed.
@@ -469,10 +404,7 @@ immutability of `foobar` doesn't stop `b` from being changed.
 Pydantic models can be used alongside Python's
 [Abstract Base Classes](https://docs.python.org/3/library/abc.html) (ABCs).
 
-```py
-{!.tmp_examples/models_abc.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_abc.md!}
 
 ## Field Ordering
 
@@ -487,10 +419,7 @@ Field order is important in models for the following reasons:
 As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.
 
-```py
-{!.tmp_examples/models_field_order.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_field_order.md!}
 
 !!! warning
     As demonstrated by the example above, combining the use of annotated and non-annotated fields
@@ -504,10 +433,7 @@ _(This script is complete, it should run "as is")_
 To declare a field as required, you may declare it using just an annotation, or you may use an ellipsis (`...`) 
 as the value:
 
-```py
-{!.tmp_examples/models_required_fields.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_required_fields.md!}
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
@@ -525,10 +451,7 @@ with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
 If you want to specify a field that can take a `None` value while still being required,
 you can use `Optional` with `...`:
 
-```py
-{!.tmp_examples/models_required_field_optional.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_required_field_optional.md!}
 
 In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
 `b` and `c` require a value, even if the value is `None`.
@@ -546,10 +469,7 @@ To do this, you may want to use a `default_factory`.
 
 Example of usage:
 
-```py
-{!.tmp_examples/models_default_factory.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_default_factory.md!}
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
@@ -566,19 +486,13 @@ automatically excluded from the model.
 If you need to vary or manipulate internal attributes on instances of the model, you can declare them
 using `PrivateAttr`:
 
-```py
-{!.tmp_examples/private_attributes.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/private_attributes.md!}
 
 Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__` 
 are supported.
 
 If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
-```py
-{!.tmp_examples/private_attributes_underscore_attrs_are_private.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/private_attributes_underscore_attrs_are_private.md!}
 
 Upon class creation pydantic constructs `__slots__` filled with private attributes.
 
@@ -591,10 +505,7 @@ logic used to populate pydantic models in a more ad-hoc way. This function behav
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
 For example: 
 
-```py
-{!.tmp_examples/parse_obj_as.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/parse_obj_as.md!}
 
 This function is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
@@ -607,10 +518,7 @@ which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 and in some cases this may result in a loss of information.
 For example:
 
-```py
-{!.tmp_examples/models_data_conversion.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/models_data_conversion.md!}
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
@@ -621,17 +529,13 @@ Nevertheless, [strict type checking](types.md#strict-types) is partially support
 
 All *pydantic* models will have their signature generated based on their fields:
 
-```py
-{!.tmp_examples/models_signature.py!}
-```
+{!.tmp_examples/models_signature.md!}
 
 An accurate signature is useful for introspection purposes and libraries like `FastAPI` or `hypothesis`.
 
 The generated signature will also respect custom `__init__` functions:
 
-```py
-{!.tmp_examples/models_signature_custom_init.py!}
-```
+{!.tmp_examples/models_signature_custom_init.md!}
 
 To be included in the signature, a field's alias or name must be a valid Python identifier. 
 *pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier. 

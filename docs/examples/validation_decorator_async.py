@@ -29,3 +29,4 @@ async def main():
 
 
 asyncio.run(main())
+# requires: `conn.execute()` that will return `'testing@example.com'`

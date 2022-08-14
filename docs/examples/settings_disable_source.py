@@ -20,3 +20,4 @@ class Settings(BaseSettings):
 
 
 print(Settings(my_api_key='this is ignored'))
+# requires: `MY_API_KEY` env variable to be set, e.g. `export MY_API_KEY=xxx`

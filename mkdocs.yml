@@ -21,7 +21,8 @@ theme:
     toggle:
       icon: material/lightbulb
       name: "Switch to light mode"
-
+  features:
+    - content.tabs.link
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
@@ -79,6 +80,8 @@ markdown_extensions:
 - pymdownx.emoji:
     emoji_index: !!python/name:materialx.emoji.twemoji
     emoji_generator: !!python/name:materialx.emoji.to_svg
+- pymdownx.tabbed:
+    alternate_style: true 
 
 plugins:
 - search

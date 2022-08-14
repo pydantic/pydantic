@@ -4,9 +4,8 @@ However, Pydantic also ships with a mypy plugin that adds a number of important 
 features to mypy that improve its ability to type-check your code.
 
 For example, consider the following script:
-```py
-{!.tmp_examples/mypy_main.py!}
-```
+{!.tmp_examples/mypy_main.md!}
+
 
 Without any special configuration, mypy catches one of the errors (see [here](usage/mypy.md) for usage instructions):
 ```
@@ -64,6 +63,7 @@ There are other benefits too! See below for more details.
 
 ### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
+
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy
   error any time you use a dynamically-determined alias or alias generator on a model with
   `Config.allow_population_by_field_name=False`.

@@ -1,21 +1,12 @@
 Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
-```py
-{!.tmp_examples/model_config_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_main.md!}
 
 Also, you can specify config options as model class kwargs:
-```py
-{!.tmp_examples/model_config_class_kwargs.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_class_kwargs.md!}
 
 Similarly, if using the `@dataclass` decorator:
-```py
-{!.tmp_examples/model_config_dataclass.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_dataclass.md!}
 
 ## Options
 
@@ -134,20 +125,14 @@ not be included in the model schemas. **Note**: this means that attributes on th
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
 with custom `Config` since the config is inherited
-```py
-{!.tmp_examples/model_config_change_globally_custom.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_change_globally_custom.md!}
 
 ## Alias Generator
 
 If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using `alias_generator`:
 
-```py
-{!.tmp_examples/model_config_alias_generator.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_alias_generator.md!}
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
 e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
@@ -175,34 +160,22 @@ the selected value is determined as follows (in descending order of priority):
 
 For example:
 
-```py
-{!.tmp_examples/model_config_alias_precedence.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_alias_precedence.md!}
 
 ## Smart Union
 
 By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
 So sometimes you may have unexpected coerced data.
 
-```py
-{!.tmp_examples/model_config_smart_union_off.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_smart_union_off.md!}
 
 To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
 Know that this is of course slower, especially if your `Union` is quite big.
 
-```py
-{!.tmp_examples/model_config_smart_union_on.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_smart_union_on.md!}
 
 !!! warning
     Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
     This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
 
-```py
-{!.tmp_examples/model_config_smart_union_on_edge_case.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_smart_union_on_edge_case.md!}

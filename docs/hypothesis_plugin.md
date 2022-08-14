@@ -19,10 +19,7 @@ strategies support them without any user configuration.
 
 ### Example tests
 
-```py
-{!.tmp_examples/hypothesis_property_based_test.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/hypothesis_property_based_test.md!}
 
 
 ### Use with JSON Schemas
