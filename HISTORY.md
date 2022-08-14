@@ -126,7 +126,7 @@ for their kind support.
 * Add episode 313 of the *Talk Python To Me* podcast, where Michael Kennedy and Samuel Colvin discuss *pydantic*, to the docs, #2712 by @RatulMaharaj
 * fix JSON schema generation when a field is of type `NamedTuple` and has a default value, #2707 by @PrettyWood
 * `Enum` fields now properly support extra kwargs in schema generation, #2697 by @sammchardy
-* Make serialization of referenced pydantic models possible, #2650 by @PrettyWood
+* **Breaking Change, see #3780**: Make serialization of referenced pydantic models possible, #2650 by @PrettyWood
 * Add `uniqueItems` option to `ConstrainedList`, #2618 by @nuno-andre
 * Try to evaluate forward refs automatically at model creation, #2588 by @uriyyo
 * Switch docs preview and coverage display to use [smokeshow](https://smokeshow.helpmanual.io/), #2580 by @samuelcolvin
