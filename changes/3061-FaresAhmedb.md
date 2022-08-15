@@ -1,1 +1,1 @@
-Fix `AnyUrl.build` doesn't do percent encoding
+Add percent encoding in `AnyUrl` and descendent types
