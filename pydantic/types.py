@@ -224,7 +224,13 @@ class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
 
 
 def conint(
-    *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+    *,
+    strict: bool = False,
+    gt: Optional[int] = None,
+    ge: Optional[int] = None,
+    lt: Optional[int] = None,
+    le: Optional[int] = None,
+    multiple_of: Optional[int] = None,
 ) -> Type[int]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
@@ -296,11 +302,11 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 def confloat(
     *,
     strict: bool = False,
-    gt: float = None,
-    ge: float = None,
-    lt: float = None,
-    le: float = None,
-    multiple_of: float = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
@@ -360,8 +366,8 @@ def conbytes(
     strip_whitespace: bool = False,
     to_upper: bool = False,
     to_lower: bool = False,
-    min_length: int = None,
-    max_length: int = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
     strict: bool = False,
 ) -> Type[bytes]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -433,10 +439,10 @@ def constr(
     to_upper: bool = False,
     to_lower: bool = False,
     strict: bool = False,
-    min_length: int = None,
-    max_length: int = None,
-    curtail_length: int = None,
-    regex: str = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    curtail_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -497,7 +503,7 @@ class ConstrainedSet(set):  # type: ignore
         return v
 
 
-def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[Set[T]]:
+def conset(item_type: Type[T], *, min_items: Optional[int] = None, max_items: Optional[int] = None) -> Type[Set[T]]:
     # __args__ is needed to conform to typing generics api
     namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
     # We use new_class to be able to deal with Generic types
@@ -539,7 +545,9 @@ class ConstrainedFrozenSet(frozenset):  # type: ignore
         return v
 
 
-def confrozenset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[FrozenSet[T]]:
+def confrozenset(
+    item_type: Type[T], *, min_items: Optional[int] = None, max_items: Optional[int] = None
+) -> Type[FrozenSet[T]]:
     # __args__ is needed to conform to typing generics api
     namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
     # We use new_class to be able to deal with Generic types
@@ -595,7 +603,11 @@ class ConstrainedList(list):  # type: ignore
 
 
 def conlist(
-    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = None
+    item_type: Type[T],
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
 ) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
     namespace = dict(
@@ -704,13 +716,13 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
 def condecimal(
     *,
-    gt: Decimal = None,
-    ge: Decimal = None,
-    lt: Decimal = None,
-    le: Decimal = None,
-    max_digits: int = None,
-    decimal_places: int = None,
-    multiple_of: Decimal = None,
+    gt: Optional[Decimal] = None,
+    ge: Optional[Decimal] = None,
+    lt: Optional[Decimal] = None,
+    le: Optional[Decimal] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    multiple_of: Optional[Decimal] = None,
 ) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -1165,10 +1177,10 @@ class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
 
 def condate(
     *,
-    gt: date = None,
-    ge: date = None,
-    lt: date = None,
-    le: date = None,
+    gt: Optional[date] = None,
+    ge: Optional[date] = None,
+    lt: Optional[date] = None,
+    le: Optional[date] = None,
 ) -> Type[date]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
