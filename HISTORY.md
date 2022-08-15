@@ -30,7 +30,7 @@ for their kind support.
 * Prevent subclasses of bytes being converted to bytes, #3706 by @samuelcolvin
 * Fixed "error checking inheritance of" when using PEP585 and PEP604 type hints, #3681 by @aleksul
 * Allow self referencing `ClassVar`s in models, #3679 by @samuelcolvin
-* Fix issue with self-referencing dataclass, #3675 by @uriyyo
+* **Breaking Change, see #4106**: Fix issue with self-referencing dataclass, #3675 by @uriyyo
 * Include non-standard port numbers in rendered URLs, #3652 by @dolfinus
 * `Config.copy_on_model_validation` does a deep copy and not a shallow one, #3641 by @PrettyWood
 * fix: clarify that discriminated unions do not support singletons, #3636 by @tommilligan
