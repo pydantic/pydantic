@@ -133,6 +133,7 @@ class AnyUrl(str):
     user_required: bool = False
     host_required: bool = True
     hidden_parts: Set[str] = set()
+    quote_plus: bool = False
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -154,7 +155,6 @@ class AnyUrl(str):
         path: Optional[str] = None,
         query: Optional[str] = None,
         fragment: Optional[str] = None,
-        plus: bool = False,
     ) -> None:
         str.__init__(url)
         self.scheme = scheme
@@ -180,7 +180,6 @@ class AnyUrl(str):
         path: Optional[str] = None,
         query: Optional[str] = None,
         fragment: Optional[str] = None,
-        plus: bool = False,
         **_kwargs: str,
     ) -> str:
         parts = Parts(
@@ -195,23 +194,21 @@ class AnyUrl(str):
             **_kwargs,  # type: ignore[misc]
         )
 
-        do_quote = quote_plus if plus else quote
-
         url = scheme + '://'
         if user:
-            url += do_quote(user)
+            url += cls.quote(user)
         if password:
-            url += ':' + do_quote(password)
+            url += ':' + cls.quote(password)
         if user or password:
             url += '@'
         url += host
         if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
-            url += '/'.join(map(do_quote, path.split('/')))
+            url += '/'.join(map(cls.quote, path.split('/')))
         if query:
             queries = query.split('&')
-            url += '?' + '&'.join(map(lambda s: '='.join(map(do_quote, s.split('='))), queries))
+            url += '?' + '&'.join(map(lambda s: '='.join(map(cls.quote, s.split('='))), queries))
         if fragment:
             url += '#' + fragment
         return url
@@ -336,6 +333,10 @@ class AnyUrl(str):
                 parts[key] = value  # type: ignore[literal-required]
         return parts
 
+    @classmethod
+    def quote(cls, string: str, safe: str = '') -> str:
+        return quote_plus(string, safe) if cls.quote_plus else quote(string, safe)
+
     def __repr__(self) -> str:
         extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
         return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
@@ -412,6 +413,7 @@ def stricturl(
     tld_required: bool = True,
     host_required: bool = True,
     allowed_schemes: Optional[Collection[str]] = None,
+    quote_plus: bool = False,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -421,6 +423,7 @@ def stricturl(
         tld_required=tld_required,
         host_required=host_required,
         allowed_schemes=allowed_schemes,
+        quote_plus=quote_plus,
     )
     return type('UrlValue', (AnyUrl,), namespace)
 
