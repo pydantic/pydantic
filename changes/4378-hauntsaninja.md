@@ -1,1 +1,1 @@
-Use ``--no-implicit-optional`` for type checking.
+Use `--no-implicit-optional` for type checking.
