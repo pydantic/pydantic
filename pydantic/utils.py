@@ -421,11 +421,8 @@ class GetterDict(Representation):
 
     def __getitem__(self, key: str) -> Any:
         try:
-            if self._kwargs:
-                try:
-                    return self._kwargs[key]
-                except KeyError:
-                    pass
+            if self._kwargs and key in self._kwargs:
+                return self._kwargs[key]
             return getattr(self._obj, key)
         except AttributeError as e:
             raise KeyError(key) from e

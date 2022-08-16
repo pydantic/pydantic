@@ -26,7 +26,7 @@ def test_getdict():
                 raise AttributeError()
 
     t = TestCls()
-    gd = GetterDict(t)
+    gd = GetterDict(t, {'extra': 42})
     assert gd.keys() == ['a', 'c', 'd']
     assert gd.get('a') == 1
     assert gd['a'] == 1
@@ -46,6 +46,7 @@ def test_getdict():
     assert len(gd) == 3
     assert str(gd) == "{'a': 1, 'c': 3, 'd': 4}"
     assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
+    assert gd['extra'] == 42
 
 
 def test_orm_mode_root():
@@ -360,27 +361,25 @@ def test_nested_orm():
 
 
 def test_orm_mode_with_kwargs():
-    class User(BaseModel):
-        username: str
-        name: str
+    class MyModel(BaseModel):
+        foo: str
+        bar: int
+        spam: bytes
 
         class Config:
             orm_mode = True
 
-    class UserCls:
-        username: str
-        full_name: str
+    class SQLModel(BaseModel):
+        id: int
+        foo: str
+        bar: int
 
-        def __init__(self, username: str, full_name: str) -> None:
-            self.username = username
-            self.full_name = full_name
+    sql_model = SQLModel(id=1, foo='hello world', bar=123)
+    pydantic_model = MyModel.from_orm(sql_model, bar=456, spam=b'placeholder')
 
-    user = UserCls('admin', 'john smith')
-
-    converted = User.from_orm(user, name=user.full_name)
-
-    assert user.username == converted.username
-    assert user.full_name == converted.name
+    assert pydantic_model.foo == 'hello world'
+    assert pydantic_model.bar == 456
+    assert pydantic_model.spam == b'placeholder'
 
 
 def test_orm_mode_with_kwargs_property_wont_be_acessed():
@@ -390,14 +389,17 @@ def test_orm_mode_with_kwargs_property_wont_be_acessed():
         class Config:
             orm_mode = True
 
+    property_was_accessed = False
+
     class Test:
         a = 1
 
         @property
         def test(self):
-            self.was_called = True
+            nonlocal property_was_accessed
+            property_was_accessed = True
 
     test = Test()
     Model.from_orm(test, extra=42)
 
-    assert not hasattr(test, 'was_called')
+    assert property_was_accessed is False
