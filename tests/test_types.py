@@ -1634,6 +1634,14 @@ def test_strict_bytes():
         Model(v=0.42)
 
 
+def test_strict_bytes_max_length():
+    class Model(BaseModel):
+        u: StrictBytes = Field(..., max_length=5)
+
+    with pytest.raises(ValidationError, match='byte type expected'):
+        Model(u=123)
+
+
 def test_strict_bytes_subclass():
     class MyStrictBytes(StrictBytes):
         pass

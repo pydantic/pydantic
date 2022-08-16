@@ -57,6 +57,7 @@ from .types import (
     ConstrainedStr,
     SecretBytes,
     SecretStr,
+    StrictBytes,
     conbytes,
     condecimal,
     confloat,
@@ -1087,7 +1088,13 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 constraint_func = constr
             elif issubclass(type_, bytes):
                 attrs = ('max_length', 'min_length', 'regex')
-                constraint_func = conbytes
+                if issubclass(type_, StrictBytes):
+
+                    def constraint_func(**kw: Any) -> Type[Any]:
+                        return type(type_.__name__, (type_,), kw)
+
+                else:
+                    constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(
                 type_,
                 (
