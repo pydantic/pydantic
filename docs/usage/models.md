@@ -547,3 +547,13 @@ In addition, the `**data` argument will always be present in the signature if `C
     Types in the model signature are the same as declared in model annotations, 
     not necessarily all the types that can actually be provided to that field.
     This may be fixed one day once [#1055](https://github.com/pydantic/pydantic/issues/1055) is solved.
+
+## Structural pattern matching
+
+*pydantic* supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
+
+{!.tmp_examples/models_structural_pattern_matching.md!}
+
+!!! note
+    A match-case statement may seem as if it creates a new model, but don't be fooled;  
+    it is just syntactic sugar for getting an attribute and either comparing it or declaring and initializing it.
