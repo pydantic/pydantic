@@ -1,3 +1,4 @@
+# requires python3.10
 from pydantic import BaseModel
 
 
