@@ -731,7 +731,7 @@ You can build URLs from seperate [URL Properties](#url-properties) using the `bu
 By default *pydantic* percent encodes the following URL properties: `user`, `password`, `path`, `query` as per [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) without replacing spaces with `+` but this can be changed using the `stricturl` method:
 
 !!! note
-    Percent encoding was added in V2.0
+    Percent encoding was added in V1.10
 
 ```py
 {!.tmp_examples/types_url_building.py!}
