@@ -733,10 +733,7 @@ By default *pydantic* percent encodes the following URL properties: `user`, `pas
 !!! note
     Percent encoding was added in V1.10
 
-```py
 {!.tmp_examples/types_url_building.py!}
-```
-_(This script is complete, it should run "as is")_
 
 ### Color Type
 
