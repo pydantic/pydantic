@@ -1690,6 +1690,19 @@ def test_strict_str_subclass():
     assert m.v == 'foobar'
 
 
+def test_strict_str_max_length():
+    class Model(BaseModel):
+        u: StrictStr = Field(..., max_length=5)
+
+    assert Model(u='foo').u == 'foo'
+
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(u=123)
+
+    with pytest.raises(ValidationError, match='ensure this value has at most 5 characters'):
+        Model(u='1234567')
+
+
 def test_strict_bool():
     class Model(BaseModel):
         v: StrictBool
