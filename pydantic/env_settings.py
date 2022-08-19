@@ -126,6 +126,10 @@ class BaseSettings(BaseModel):
         ) -> Tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, file_secret_settings
 
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
+            return cls.json_loads(raw_val)
+
     # populated by the metaclass using the Config class defined above, annotated here to help IDEs only
     __config__: ClassVar[Type[Config]]
 
@@ -190,7 +194,7 @@ class EnvSettingsSource:
                 else:
                     # field is complex and there's a value, decode that as JSON, then add explode_env_vars
                     try:
-                        env_val = settings.__config__.json_loads(env_val)
+                        env_val = settings.__config__.parse_env_var(field.name, env_val)
                     except ValueError as e:
                         if not allow_json_failure:
                             raise SettingsError(f'error parsing envvar "{env_name}"') from e
@@ -299,7 +303,7 @@ class SecretsSettingsSource:
                     secret_value = path.read_text().strip()
                     if field.is_complex():
                         try:
-                            secret_value = settings.__config__.json_loads(secret_value)
+                            secret_value = settings.__config__.parse_env_var(field.name, secret_value)
                         except ValueError as e:
                             raise SettingsError(f'error parsing envvar "{env_name}"') from e
 
