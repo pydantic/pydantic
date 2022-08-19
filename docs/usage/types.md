@@ -616,6 +616,7 @@ For URI/URL validation the following types are available:
     - `tld_required: bool = True`
     - `host_required: bool = True`
     - `allowed_schemes: Optional[Set[str]] = None`
+    - `quote_plus: bool = False`
 
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
 provided:
@@ -677,6 +678,20 @@ If further validation is required, these properties can be used by validators to
 
     Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
     (or at least big) company.
+
+#### Building URLs
+
+You can build URLs from separate [URL Properties](#url-properties) using the `build` method in 
+[Pydantic URL types](#urls) or any type that inherits from them.
+
+By default, *pydantic* percent encodes the following URL properties: `user`, `password`, `path`, `query` 
+as per [RFC 3986](https://www.ietf.org/rfc/rfc3986.txt) without replacing spaces with `+` but this can 
+be changed using the `stricturl` method:
+
+!!! note
+    Percent encoding was added in V1.10
+
+{!.tmp_examples/types_url_building.md!}
 
 ### Color Type
 
