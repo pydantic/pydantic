@@ -1,0 +1,1 @@
+Make `SecretStr` hashable
