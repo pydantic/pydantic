@@ -834,6 +834,9 @@ class SecretField(abc.ABC):
     def __str__(self) -> str:
         return '**********' if self.get_secret_value() else ''
 
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
     @abc.abstractmethod
     def get_secret_value(self) -> Any:  # pragma: no cover
         ...
@@ -874,9 +877,6 @@ class SecretStr(SecretField):
 
     def __len__(self) -> int:
         return len(self._secret_value)
-
-    def __hash__(self) -> int:
-        return hash(self.get_secret_value())
 
     def display(self) -> str:
         warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)

@@ -1,1 +1,1 @@
-Make `SecretStr` hashable
+Make `SecretStr` and `SecretBytes` hashable

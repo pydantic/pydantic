@@ -2746,6 +2746,10 @@ def test_secretbytes_idempotent():
     _ = Foobar(password=SecretBytes(b'1234'))
 
 
+def test_secretbytes_is_hashable():
+    assert type(hash(SecretBytes(b'secret'))) is int
+
+
 def test_secretbytes_error():
     class Foobar(BaseModel):
         password: SecretBytes
