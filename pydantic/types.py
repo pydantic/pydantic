@@ -834,6 +834,9 @@ class SecretField(abc.ABC):
     def __str__(self) -> str:
         return '**********' if self.get_secret_value() else ''
 
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
+
     @abc.abstractmethod
     def get_secret_value(self) -> Any:  # pragma: no cover
         ...

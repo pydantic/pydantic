@@ -2663,6 +2663,10 @@ def test_secretstr_idempotent():
     assert m.password.get_secret_value() == '1234'
 
 
+def test_secretstr_is_hashable():
+    assert type(hash(SecretStr('secret'))) is int
+
+
 def test_secretstr_error():
     class Foobar(BaseModel):
         password: SecretStr
@@ -2753,6 +2757,10 @@ def test_secretbytes_idempotent():
 
     # Should not raise an exception.
     _ = Foobar(password=SecretBytes(b'1234'))
+
+
+def test_secretbytes_is_hashable():
+    assert type(hash(SecretBytes(b'secret'))) is int
 
 
 def test_secretbytes_error():
