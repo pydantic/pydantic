@@ -19,6 +19,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
+from typing_extensions import Annotated
 
 from pydantic import (
     BaseConfig,
@@ -36,7 +37,7 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.typing import Literal
+from pydantic.typing import Final, Literal
 
 
 def test_success():
@@ -585,12 +586,14 @@ def test_const_list():
         'properties': {
             'a': {
                 'const': [SubModel(b=1), SubModel(b=2), SubModel(b=3)],
+                'default': [{'b': 1}, {'b': 2}, {'b': 3}],
                 'items': {'$ref': '#/definitions/SubModel'},
                 'title': 'A',
                 'type': 'array',
             },
             'b': {
                 'const': [{'b': 4}, {'b': 5}, {'b': 6}],
+                'default': [{'b': 4}, {'b': 5}, {'b': 6}],
                 'items': {'$ref': '#/definitions/SubModel'},
                 'title': 'B',
                 'type': 'array',
@@ -978,18 +981,20 @@ def test_type_type_validation_fails_for_basic_type():
     ]
 
 
-def test_bare_type_type_validation_success():
+@pytest.mark.parametrize('bare_type', [type, Type])
+def test_bare_type_type_validation_success(bare_type):
     class ArbitraryClassAllowedModel(BaseModel):
-        t: Type
+        t: bare_type
 
     arbitrary_type_class = ArbitraryType
     m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
 
-def test_bare_type_type_validation_fails():
+@pytest.mark.parametrize('bare_type', [type, Type])
+def test_bare_type_type_validation_fails(bare_type):
     class ArbitraryClassAllowedModel(BaseModel):
-        t: Type
+        t: bare_type
 
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
@@ -1561,10 +1566,55 @@ def test_model_exclude_copy_on_model_validation():
 
     assert t.user is not my_user
     assert t.user.hobbies == ['scuba diving']
-    assert t.user.hobbies is not my_user.hobbies  # `Config.copy_on_model_validation` does a deep copy
+    assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` does a shallow copy
     assert t.user._priv == 13
     assert t.user.password.get_secret_value() == 'hashedpassword'
     assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
+
+
+def test_model_exclude_copy_on_model_validation_shallow():
+    """When `Config.copy_on_model_validation` is set and `Config.copy_on_model_validation_shallow` is set,
+    do the same as the previous test but perform a shallow copy"""
+
+    class User(BaseModel):
+        class Config:
+            copy_on_model_validation = 'shallow'
+
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User = Field(...)
+
+    t = Transaction(user=my_user)
+
+    assert t.user is not my_user
+    assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
+
+
+@pytest.mark.parametrize('comv_value', [True, False])
+def test_copy_on_model_validation_warning(comv_value):
+    class User(BaseModel):
+        class Config:
+            # True interpreted as 'shallow', False interpreted as 'none'
+            copy_on_model_validation = comv_value
+
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User
+
+    with pytest.warns(DeprecationWarning, match="`copy_on_model_validation` should be a string: 'deep', 'shallow' or"):
+        t = Transaction(user=my_user)
+
+    if comv_value:
+        assert t.user is not my_user
+    else:
+        assert t.user is my_user
+    assert t.user.hobbies is my_user.hobbies
 
 
 def test_validation_deep_copy():
@@ -1572,6 +1622,9 @@ def test_validation_deep_copy():
 
     class A(BaseModel):
         name: str
+
+        class Config:
+            copy_on_model_validation = 'deep'
 
     class B(BaseModel):
         list_a: List[A]
@@ -1986,7 +2039,7 @@ def test_inherited_model_field_untouched():
             return id(self)
 
         class Config:
-            copy_on_model_validation = False
+            copy_on_model_validation = 'none'
 
     class Item(BaseModel):
         images: List[Image]
@@ -2172,3 +2225,76 @@ def test_new_union_origin():
         'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['x'],
     }
+
+
+def test_annotated_class():
+    class PydanticModel(BaseModel):
+        foo: str = '123'
+
+    PydanticAlias = Annotated[PydanticModel, 'bar baz']
+
+    pa = PydanticAlias()
+    assert isinstance(pa, PydanticModel)
+    pa.__doc__ = 'qwe'
+    assert repr(pa) == "PydanticModel(foo='123')"
+    assert pa.__doc__ == 'qwe'
+
+
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
+)
+@pytest.mark.parametrize(
+    'value',
+    [None, Field(...)],
+    ids=['none', 'field'],
+)
+def test_final_field_decl_withou_default_val(ann, value):
+    class Model(BaseModel):
+        a: ann
+
+        if value is not None:
+            a = value
+
+    Model.update_forward_refs(ann=ann)
+
+    assert 'a' not in Model.__class_vars__
+    assert 'a' in Model.__fields__
+
+    assert Model.__fields__['a'].final
+
+
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
+)
+def test_final_field_decl_with_default_val(ann):
+    class Model(BaseModel):
+        a: ann = 10
+
+    Model.update_forward_refs(ann=ann)
+
+    assert 'a' in Model.__class_vars__
+    assert 'a' not in Model.__fields__
+
+
+def test_final_field_reassignment():
+    class Model(BaseModel):
+        a: Final[int]
+
+    obj = Model(a=10)
+
+    with pytest.raises(
+        TypeError,
+        match=r'^"Model" object "a" field is final and does not support reassignment$',
+    ):
+        obj.a = 20
+
+
+def test_field_by_default_is_not_final():
+    class Model(BaseModel):
+        a: int
+
+    assert not Model.__fields__['a'].final

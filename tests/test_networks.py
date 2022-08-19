@@ -5,10 +5,12 @@ from pydantic import (
     AnyHttpUrl,
     AnyUrl,
     BaseModel,
+    CockroachDsn,
     EmailStr,
     FileUrl,
     HttpUrl,
     KafkaDsn,
+    MongoDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
@@ -418,15 +420,106 @@ def test_http_urls_default_port(url, port):
     assert m.v == url
 
 
-def test_postgres_dsns():
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'postgres://user:pass@localhost:5432/app',
+        'postgresql://user:pass@localhost:5432/app',
+        'postgresql+asyncpg://user:pass@localhost:5432/app',
+        'postgres://user:pass@host1.db.net,host2.db.net:6432/app',
+    ],
+)
+def test_postgres_dsns(dsn):
     class Model(BaseModel):
         a: PostgresDsn
 
-    assert Model(a='postgres://user:pass@localhost:5432/app').a == 'postgres://user:pass@localhost:5432/app'
-    assert Model(a='postgresql://user:pass@localhost:5432/app').a == 'postgresql://user:pass@localhost:5432/app'
+    assert Model(a=dsn).a == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn,error_message',
+    (
+        (
+            'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'postgres://user:pass@host1.db.net,/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'postgres://localhost:5432/app',
+            {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'},
+        ),
+        (
+            'postgres://user@/foo/bar:5432/app',
+            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+        ),
+        (
+            'http://example.org',
+            {
+                'loc': ('a',),
+                'msg': 'URL scheme not permitted',
+                'type': 'value_error.url.scheme',
+                'ctx': {'allowed_schemes': PostgresDsn.allowed_schemes},
+            },
+        ),
+    ),
+)
+def test_postgres_dsns_validation_error(dsn, error_message):
+    class Model(BaseModel):
+        a: PostgresDsn
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=dsn)
+    error = exc_info.value.errors()[0]
+    assert error == error_message
+
+
+def test_multihost_postgres_dsns():
+    class Model(BaseModel):
+        a: PostgresDsn
+
+    any_multihost_url = Model(a='postgres://user:pass@host1.db.net:4321,host2.db.net:6432/app').a
+    assert any_multihost_url == 'postgres://user:pass@host1.db.net:4321,host2.db.net:6432/app'
+    assert any_multihost_url.scheme == 'postgres'
+    assert any_multihost_url.host is None
+    assert any_multihost_url.host_type is None
+    assert any_multihost_url.tld is None
+    assert any_multihost_url.port is None
+    assert any_multihost_url.path == '/app'
+    assert any_multihost_url.hosts == [
+        {'host': 'host1.db.net', 'port': '4321', 'tld': 'net', 'host_type': 'domain', 'rebuild': False},
+        {'host': 'host2.db.net', 'port': '6432', 'tld': 'net', 'host_type': 'domain', 'rebuild': False},
+    ]
+
+    any_multihost_url = Model(a='postgres://user:pass@host.db.net:4321/app').a
+    assert any_multihost_url.scheme == 'postgres'
+    assert any_multihost_url == 'postgres://user:pass@host.db.net:4321/app'
+    assert any_multihost_url.host == 'host.db.net'
+    assert any_multihost_url.host_type == 'domain'
+    assert any_multihost_url.tld == 'net'
+    assert any_multihost_url.port == '4321'
+    assert any_multihost_url.path == '/app'
+    assert any_multihost_url.hosts is None
+
+
+def test_cockroach_dsns():
+    class Model(BaseModel):
+        a: CockroachDsn
+
+    assert Model(a='cockroachdb://user:pass@localhost:5432/app').a == 'cockroachdb://user:pass@localhost:5432/app'
     assert (
-        Model(a='postgresql+asyncpg://user:pass@localhost:5432/app').a
-        == 'postgresql+asyncpg://user:pass@localhost:5432/app'
+        Model(a='cockroachdb+psycopg2://user:pass@localhost:5432/app').a
+        == 'cockroachdb+psycopg2://user:pass@localhost:5432/app'
+    )
+    assert (
+        Model(a='cockroachdb+asyncpg://user:pass@localhost:5432/app').a
+        == 'cockroachdb+asyncpg://user:pass@localhost:5432/app'
     )
 
     with pytest.raises(ValidationError) as exc_info:
@@ -435,12 +528,12 @@ def test_postgres_dsns():
     assert exc_info.value.json().startswith('[')
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='postgres://localhost:5432/app')
+        Model(a='cockroachdb://localhost:5432/app')
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a='postgres://user@/foo/bar:5432/app')
+        Model(a='cockroachdb://user@/foo/bar:5432/app')
     error = exc_info.value.errors()[0]
     assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
 
@@ -508,6 +601,33 @@ def test_redis_dsns():
     assert m.a.host == 'localhost'
     assert m.a.port == '6379'
     assert m.a.path == '/0'
+
+
+def test_mongodb_dsns():
+    class Model(BaseModel):
+        a: MongoDsn
+
+    # TODO: Need to unit tests about "Replica Set", "Sharded cluster" and other deployment modes of MongoDB
+    m = Model(a='mongodb://user:pass@localhost:1234/app')
+    assert m.a == 'mongodb://user:pass@localhost:1234/app'
+    assert m.a.user == 'user'
+    assert m.a.password == 'pass'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a='http://example.org')
+    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+
+    # Password is not required for MongoDB protocol
+    m = Model(a='mongodb://localhost:1234/app')
+    assert m.a == 'mongodb://localhost:1234/app'
+    assert m.a.user is None
+    assert m.a.password is None
+
+    # Only schema and host is required for MongoDB protocol
+    m = Model(a='mongodb://localhost')
+    assert m.a.scheme == 'mongodb'
+    assert m.a.host == 'localhost'
+    assert m.a.port == '27017'
 
 
 def test_kafka_dsns():

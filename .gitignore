@@ -1,6 +1,7 @@
 .idea/
 env/
 venv/
+.venv/
 env3*/
 Pipfile
 *.lock
@@ -20,6 +21,8 @@ test.py
 /docs/.version.md
 /docs/.tmp_schema_mappings.html
 /docs/.tmp_examples/
+/docs/.tmp-projections/
+/docs/usage/.tmp-projections/
 /site/
 /site.zip
 .pytest_cache/
@@ -32,3 +35,4 @@ pydantic/*.so
 /.ghtopdep_cache/
 /fastapi/
 /codecov.sh
+/worktrees/

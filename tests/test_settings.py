@@ -134,6 +134,33 @@ def test_nested_env_delimiter(env):
     }
 
 
+def test_nested_env_delimiter_with_prefix(env):
+    class Subsettings(BaseSettings):
+        banana: str
+
+    class Settings(BaseSettings):
+        subsettings: Subsettings
+
+        class Config:
+            env_nested_delimiter = '_'
+            env_prefix = 'myprefix_'
+
+    env.set('myprefix_subsettings_banana', 'banana')
+    s = Settings()
+    assert s.subsettings.banana == 'banana'
+
+    class Settings(BaseSettings):
+        subsettings: Subsettings
+
+        class Config:
+            env_nested_delimiter = '_'
+            env_prefix = 'myprefix__'
+
+    env.set('myprefix__subsettings_banana', 'banana')
+    s = Settings()
+    assert s.subsettings.banana == 'banana'
+
+
 def test_nested_env_delimiter_complex_required(env):
     class Cfg(BaseSettings):
         v: str = 'default'
@@ -509,7 +536,7 @@ def test_env_takes_precedence(env):
 
 def test_config_file_settings_nornir(env):
     """
-    See https://github.com/samuelcolvin/pydantic/pull/341#issuecomment-450378771
+    See https://github.com/pydantic/pydantic/pull/341#issuecomment-450378771
     """
 
     def nornir_settings_source(settings: BaseSettings) -> Dict[str, Any]:
@@ -806,6 +833,79 @@ def test_env_file_custom_encoding(tmp_path):
     assert s.dict() == {'pika': 'p!±@'}
 
 
+test_default_env_file = """\
+debug_mode=true
+host=localhost
+Port=8000
+"""
+
+test_prod_env_file = """\
+debug_mode=false
+host=https://example.com/services
+"""
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_multiple_env_file(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text(test_default_env_file)
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text(test_prod_env_file)
+
+    class Settings(BaseSettings):
+        debug_mode: bool
+        host: str
+        port: int
+
+        class Config:
+            env_file = [base_env, prod_env]
+
+    s = Settings()
+    assert s.debug_mode is False
+    assert s.host == 'https://example.com/services'
+    assert s.port == 8000
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_multiple_env_file_encoding(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text('pika=p!±@', encoding='latin-1')
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text('pika=chu!±@', encoding='latin-1')
+
+    class Settings(BaseSettings):
+        pika: str
+
+    s = Settings(_env_file=[base_env, prod_env], _env_file_encoding='latin-1')
+    assert s.pika == 'chu!±@'
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_dotenv_vars(tmp_path):
+    base_env = tmp_path / '.env'
+    base_env.write_text(test_default_env_file)
+    prod_env = tmp_path / '.env.prod'
+    prod_env.write_text(test_prod_env_file)
+
+    source = EnvSettingsSource(env_file=[base_env, prod_env], env_file_encoding='utf8')
+    assert source._read_env_files(case_sensitive=False) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'port': '8000',
+    }
+
+    assert source._read_env_files(case_sensitive=True) == {
+        'debug_mode': 'false',
+        'host': 'https://example.com/services',
+        'Port': '8000',
+    }
+
+
+@pytest.mark.skipif(not dotenv, reason='python-dotenv not installed')
+def test_read_dotenv_vars_when_env_file_is_none():
+    assert EnvSettingsSource(env_file=None, env_file_encoding=None)._read_env_files(case_sensitive=False) == {}
+
+
 @pytest.mark.skipif(dotenv, reason='python-dotenv is installed')
 def test_dotenv_not_installed(tmp_path):
     p = tmp_path / '.env'
@@ -890,6 +990,33 @@ def test_secrets_path(tmp_path):
     assert Settings().dict() == {'foo': 'foo_secret_value_str'}
 
 
+def test_secrets_case_sensitive(tmp_path):
+    (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
+
+    class Settings(BaseSettings):
+        secret_var: Optional[str]
+
+        class Config:
+            secrets_dir = tmp_path
+            case_sensitive = True
+
+    assert Settings().dict() == {'secret_var': None}
+
+
+def test_secrets_case_insensitive(tmp_path):
+    (tmp_path / 'SECRET_VAR').write_text('foo_env_value_str')
+
+    class Settings(BaseSettings):
+        secret_var: Optional[str]
+
+        class Config:
+            secrets_dir = tmp_path
+            case_sensitive = False
+
+    settings = Settings().dict()
+    assert settings == {'secret_var': 'foo_env_value_str'}
+
+
 def test_secrets_path_url(tmp_path):
     (tmp_path / 'foo').write_text('http://www.example.com')
     (tmp_path / 'bar').write_text('snap')
@@ -940,6 +1067,7 @@ def test_secrets_missing(tmp_path):
 
     with pytest.raises(ValidationError) as exc_info:
         Settings()
+
     assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 

@@ -187,10 +187,7 @@ with custom properties and validation.
 
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
-```py
-{!.tmp_examples/types_iterables.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_iterables.md!}
 
 ### Infinite Generators
 
@@ -201,10 +198,7 @@ validated with the sub-type of `Sequence` (e.g. `int` in `Sequence[int]`).
 But if you have a generator that you don't want to be consumed, e.g. an infinite
 generator or a remote data loader, you can define its type with `Iterable`:
 
-```py
-{!.tmp_examples/types_infinite_generator.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_infinite_generator.md!}
 
 !!! warning
     `Iterable` fields only perform a simple check that the argument is iterable and
@@ -225,10 +219,7 @@ _(This script is complete, it should run "as is")_
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
-```py
-{!.tmp_examples/types_infinite_generator_validate_first.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_infinite_generator_validate_first.md!}
 
 ### Unions
 
@@ -238,10 +229,7 @@ The `Union` type allows a model attribute to accept different types, e.g.:
     You may get unexpected coercion with `Union`; see below.<br />
     Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
 
-```py
-{!.tmp_examples/types_union_incorrect.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_union_incorrect.md!}
 
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
 the first one that matches. In the above example the `id` of `user_03` was defined as a `uuid.UUID` class (which
@@ -254,7 +242,7 @@ chose to match against the `int` type and disregarded the other types.
     when combined with matching based on the `Union` type order inside other type definitions, such as `List` and `Dict`
     types (because Python treats these definitions as singletons).
     For example, `Dict[str, Union[int, float]] == Dict[str, Union[float, int]]` with the order based on the first time it was defined.
-    Please note that this can also be [affected by third party libraries](https://github.com/samuelcolvin/pydantic/issues/2835)
+    Please note that this can also be [affected by third party libraries](https://github.com/pydantic/pydantic/issues/2835)
     and their internal type definitions and the import orders.
 
 As such, it is recommended that, when defining `Union` annotations, the most specific type is included first and
@@ -262,10 +250,7 @@ followed by less specific types.
 
 In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
-```py
-{!.tmp_examples/types_union_correct.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_union_correct.md!}
 
 !!! tip
     The type `Optional[x]` is a shorthand for `Union[x, None]`.
@@ -288,10 +273,7 @@ Setting a discriminated union has many benefits:
 - only one explicit error is raised in case of failure
 - the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
 
-```py
-{!.tmp_examples/types_union_discriminated.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_union_discriminated.md!}
 
 !!! note
     Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
@@ -308,19 +290,13 @@ _(This script is complete, it should run "as is")_
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 In this case you can always create "intermediate" models with `__root__` and add your discriminator.
 
-```py
-{!.tmp_examples/types_union_discriminated_nested.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_union_discriminated_nested.md!}
 
 ### Enums and Choices
 
 *pydantic* uses Python's standard `enum` classes to define choices.
 
-```py
-{!.tmp_examples/types_choices.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_choices.md!}
 
 
 ### Datetime Types
@@ -360,11 +336,9 @@ types:
   * `str`, following formats work:
 
     * `[-][DD ][HH:MM]SS[.ffffff]`
-    * `[±]P[DD]DT[HH]H[MM]M[SS]S` (ISO 8601 format for timedelta)
+    * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
-```py
-{!.tmp_examples/types_dt.py!}
-```
+{!.tmp_examples/types_dt.md!}
 
 ### Booleans
 
@@ -388,19 +362,13 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
 
 Here is a script demonstrating some of these behaviors:
 
-```py
-{!.tmp_examples/types_boolean.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_boolean.md!}
 
 ### Callable
 
 Fields can also be of type `Callable`:
 
-```py
-{!.tmp_examples/types_callable.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_callable.md!}
 
 !!! warning
     Callable fields only perform a simple check that the argument is
@@ -412,26 +380,17 @@ _(This script is complete, it should run "as is")_
 *pydantic* supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
-```py
-{!.tmp_examples/types_type.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_type.md!}
 
 You may also use `Type` to specify that any class is allowed.
 
-```py
-{!.tmp_examples/types_bare_type.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_bare_type.md!}
 
 ### TypeVar
 
 `TypeVar` is supported either unconstrained, constrained or with a bound.
 
-```py
-{!.tmp_examples/types_typevar.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_typevar.md!}
 
 ## Literal Type
 
@@ -442,34 +401,22 @@ _(This script is complete, it should run "as is")_
 *pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
 as a lightweight way to specify that a field may accept only specific literal values:
 
-```py
-{!.tmp_examples/types_literal1.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_literal1.md!}
 
 One benefit of this field type is that it can be used to check for equality with one or more specific values
 without needing to declare custom validators:
 
-```py
-{!.tmp_examples/types_literal2.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_literal2.md!}
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
-```py
-{!.tmp_examples/types_literal3.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_literal3.md!}
 
 ## Annotated Types
 
 ### NamedTuple
 
-```py
-{!.tmp_examples/annotated_types_named_tuple.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/annotated_types_named_tuple.md!}
 
 ### TypedDict
 
@@ -480,10 +427,7 @@ _(This script is complete, it should run "as is")_
     We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with Python 3.8 as well.
 
 
-```py
-{!.tmp_examples/annotated_types_typed_dict.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/annotated_types_typed_dict.md!}
 
 ## Pydantic Types
 
@@ -543,11 +487,20 @@ _(This script is complete, it should run "as is")_
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
 
+`CockroachDsn`
+: a cockroachdb DSN style URL; see [URLs](#urls)
+
 `RabbitMqDsn`
 : an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
 
 `RedisDsn`
 : a redis DSN style URL; see [URLs](#urls)
+
+`MongoDsn`
+: a MongoDB DSN style URL; see [URLs](#urls)
+
+`KafkaDsn`
+: a kafka DSN style URL; see [URLs](#urls)
 
 `stricturl`
 : a type method for arbitrary URL constraints; see [URLs](#urls)
@@ -611,6 +564,10 @@ _(This script is complete, it should run "as is")_
 : type method for constraining ints;
   see [Constrained Types](#constrained-types)
 
+`condate`
+: type method for constraining dates;
+  see [Constrained Types](#constrained-types)
+
 `conlist`
 : type method for constraining lists;
   see [Constrained Types](#constrained-types)
@@ -635,15 +592,22 @@ For URI/URL validation the following types are available:
 - `AnyHttpUrl`: scheme `http` or `https`, TLD not required, host required
 - `HttpUrl`: scheme `http` or `https`, TLD required, host required, max length 2083
 - `FileUrl`: scheme `file`, host not required
-- `PostgresDsn`: scheme `postgres`, `postgresql`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+- `PostgresDsn`: user info required, TLD not required, host required,
+  as of V.10 `PostgresDsn` supports multiple hosts. The following schemes are supported:
+  - `postgres`
+  - `postgresql`
   - `postgresql+asyncpg`
   - `postgresql+pg8000`
   - `postgresql+psycopg2`
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
+- `CockroachDsn`: scheme `cockroachdb`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `cockroachdb+asyncpg`
+  - `cockroachdb+psycopg2`
 - `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+- `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
 - `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
@@ -657,10 +621,7 @@ For URI/URL validation the following types are available:
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
 provided:
 
-```py
-{!.tmp_examples/types_urls.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_urls.md!}
 
 If you require a custom URI/URL type, it can be created in a similar way to the types defined above.
 
@@ -690,10 +651,7 @@ the above types export the following properties:
 
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
-```py
-{!.tmp_examples/types_url_properties.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_url_properties.md!}
 
 #### International Domains
 
@@ -701,10 +659,7 @@ _(This script is complete, it should run "as is")_
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
-```py
-{!.tmp_examples/types_url_punycode.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_url_punycode.md!}
 
 
 !!! warning
@@ -749,10 +704,7 @@ You can use the `Color` data type for storing colors as per
 - [HSL strings](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors)
   (e.g. `"hsl(270, 60%, 70%)"`, `"hsl(270, 60%, 70%, .5)"`)
 
-```py
-{!.tmp_examples/types_color.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_color.md!}
 
 `Color` has the following methods:
 
@@ -798,10 +750,7 @@ that you do not want to be visible in logging or tracebacks.
 `SecretStr` and `SecretBytes` can be initialized idempotently or by using `str` or `bytes` literals respectively.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
-```py
-{!.tmp_examples/types_secret_types.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_secret_types.md!}
 
 ### Json Type
 
@@ -809,20 +758,14 @@ You can use `Json` data type to make *pydantic* first load a raw JSON string.
 It can also optionally be used to parse the loaded object into another type base on
 the type `Json` is parameterised with:
 
-```py
-{!.tmp_examples/types_json_type.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_json_type.md!}
 
 ### Payment Card Numbers
 
 The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/wiki/Payment_card)
 (such as a debit or credit card).
 
-```py
-{!.tmp_examples/types_payment_card_number.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_payment_card_number.md!}
 
 `PaymentCardBrand` can be one of the following based on the BIN:
 
@@ -842,10 +785,7 @@ The actual validation verifies the card number is:
 
 The value of numerous common types can be restricted using `con*` type functions:
 
-```py
-{!.tmp_examples/types_constrained.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_constrained.md!}
 
 Where `Field` refers to the [field function](schema.md#field-customisation).
 
@@ -906,6 +846,7 @@ The following arguments are available when using the `condecimal` type function
 The following arguments are available when using the `constr` type function
 
 - `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_upper: bool = False`: turns all characters to uppercase
 - `to_lower: bool = False`: turns all characters to lowercase
 - `strict: bool = False`: controls type coercion
 - `min_length: int = None`: minimum length of the string
@@ -917,10 +858,19 @@ The following arguments are available when using the `constr` type function
 The following arguments are available when using the `conbytes` type function
 
 - `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_upper: bool = False`: turns all characters to uppercase
 - `to_lower: bool = False`: turns all characters to lowercase
 - `min_length: int = None`: minimum length of the byte string
 - `max_length: int = None`: maximum length of the byte string
 - `strict: bool = False`: controls type coercion
+
+### Arguments to `condate`
+The following arguments are available when using the `condate` type function
+
+- `gt: date = None`: enforces date to be greater than the set value
+- `ge: date = None`: enforces date to be greater than or equal to the set value
+- `lt: date = None`: enforces date to be less than the set value
+- `le: date = None`: enforces date to be less than or equal to the set value
 
 
 ## Strict Types
@@ -939,10 +889,7 @@ The following caveats apply:
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
 
-```py
-{!.tmp_examples/types_strict.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_strict.md!}
 
 ## ByteSize
 
@@ -952,10 +899,7 @@ raw bytes and print out human readable versions of the bytes as well.
 !!! info
     Note that `1b` will be parsed as "1 byte" and not "1 bit".
 
-```py
-{!.tmp_examples/types_bytesize.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_bytesize.md!}
 
 ## Custom Data Types
 
@@ -970,10 +914,7 @@ to get validators to parse and validate the input data.
     These validators have the same semantics as in [Validators](validators.md), you can
     declare a parameter `config`, `field`, etc.
 
-```py
-{!.tmp_examples/types_custom_type.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_custom_type.md!}
 
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
@@ -985,10 +926,7 @@ See [schema](schema.md) for more details on how the model's schema is generated.
 You can allow arbitrary types using the `arbitrary_types_allowed` config in the
 [Model Config](model_config.md).
 
-```py
-{!.tmp_examples/types_arbitrary_allowed.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_arbitrary_allowed.md!}
 
 ### Generic Classes as Types
 
@@ -1007,7 +945,4 @@ If the Generic class that you are using as a sub-type has a classmethod
 Because you can declare validators that receive the current `field`, you can extract
 the `sub_fields` (from the generic class type parameters) and validate data with them.
 
-```py
-{!.tmp_examples/types_generics.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/types_generics.md!}

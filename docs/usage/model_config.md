@@ -1,21 +1,12 @@
 Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
-```py
-{!.tmp_examples/model_config_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_main.md!}
 
 Also, you can specify config options as model class kwargs:
-```py
-{!.tmp_examples/model_config_class_kwargs.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_class_kwargs.md!}
 
 Similarly, if using the `@dataclass` decorator:
-```py
-{!.tmp_examples/model_config_dataclass.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_dataclass.md!}
 
 ## Options
 
@@ -24,6 +15,9 @@ _(This script is complete, it should run "as is")_
 
 **`anystr_strip_whitespace`**
 : whether to strip leading and trailing whitespace for str & byte types (default: `False`)
+
+**`anystr_upper`**
+: whether to make all characters uppercase for str & byte types (default: `False`)
 
 **`anystr_lower`**
 : whether to make all characters lowercase for str & byte types (default: `False`)
@@ -60,7 +54,12 @@ _(This script is complete, it should run "as is")_
 
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to
-  using [the `Field` class](schema.md) (default: `None`)
+  using [the `Field` class](schema.md), except when a field is already
+  defined trough annotation or the Field class, in which case only
+  `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
+  `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
+  and allow_mutation can be set (for example you cannot set default of default_factory)
+   (default: `None`)
 
 **`validate_assignment`**
 : whether to perform validation on *assignment* to attributes (default: `False`)
@@ -118,35 +117,33 @@ not be included in the model schemas. **Note**: this means that attributes on th
 **`smart_union`**
 : whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion; see [the dedicated section](#smart-union)
 
+**`post_init_call`**
+: whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
+  or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
 with custom `Config` since the config is inherited
-```py
-{!.tmp_examples/model_config_change_globally_custom.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_change_globally_custom.md!}
 
 ## Alias Generator
 
 If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using `alias_generator`:
 
-```py
-{!.tmp_examples/model_config_alias_generator.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_alias_generator.md!}
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
 e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
-it should be trivial to modify the `to_camel` function above.
+instead use the `to_lower_camel` function.
 
 ## Alias Precedence
 
 !!! warning
     Alias priority logic changed in **v1.4** to resolve buggy and unexpected behaviour in previous versions.
     In some circumstances this may represent a **breaking change**,
-    see [#1178](https://github.com/samuelcolvin/pydantic/issues/1178) and the precedence order below for details.
+    see [#1178](https://github.com/pydantic/pydantic/issues/1178) and the precedence order below for details.
 
 In the case where a field's alias may be defined in multiple places,
 the selected value is determined as follows (in descending order of priority):
@@ -163,34 +160,22 @@ the selected value is determined as follows (in descending order of priority):
 
 For example:
 
-```py
-{!.tmp_examples/model_config_alias_precedence.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_alias_precedence.md!}
 
 ## Smart Union
 
 By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
 So sometimes you may have unexpected coerced data.
 
-```py
-{!.tmp_examples/model_config_smart_union_off.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_smart_union_off.md!}
 
 To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
 Know that this is of course slower, especially if your `Union` is quite big.
 
-```py
-{!.tmp_examples/model_config_smart_union_on.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_smart_union_on.md!}
 
 !!! warning
     Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
     This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
 
-```py
-{!.tmp_examples/model_config_smart_union_on_edge_case.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/model_config_smart_union_on_edge_case.md!}

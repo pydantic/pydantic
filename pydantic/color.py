@@ -198,6 +198,9 @@ class Color(Representation):
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self.as_named(fallback=True))] + [('rgb', self.as_rgb_tuple())]  # type: ignore
 
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Color) and self.as_rgb_tuple() == other.as_rgb_tuple()
+
 
 def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
     """

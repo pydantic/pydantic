@@ -12,6 +12,7 @@ from .utils import deep_update, path_type, sequence_like
 env_file_sentinel = str(object())
 
 SettingsSourceCallable = Callable[['BaseSettings'], Dict[str, Any]]
+DotenvType = Union[StrPath, List[StrPath], Tuple[StrPath, ...]]
 
 
 class SettingsError(ValueError):
@@ -28,7 +29,7 @@ class BaseSettings(BaseModel):
 
     def __init__(
         __pydantic_self__,
-        _env_file: Optional[StrPath] = env_file_sentinel,
+        _env_file: Optional[DotenvType] = env_file_sentinel,
         _env_file_encoding: Optional[str] = None,
         _env_nested_delimiter: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
@@ -48,7 +49,7 @@ class BaseSettings(BaseModel):
     def _build_values(
         self,
         init_kwargs: Dict[str, Any],
-        _env_file: Optional[StrPath] = None,
+        _env_file: Optional[DotenvType] = None,
         _env_file_encoding: Optional[str] = None,
         _env_nested_delimiter: Optional[str] = None,
         _secrets_dir: Optional[StrPath] = None,
@@ -63,6 +64,7 @@ class BaseSettings(BaseModel):
             env_nested_delimiter=(
                 _env_nested_delimiter if _env_nested_delimiter is not None else self.__config__.env_nested_delimiter
             ),
+            env_prefix_len=len(self.__config__.env_prefix),
         )
         file_secret_settings = SecretsSettingsSource(secrets_dir=_secrets_dir or self.__config__.secrets_dir)
         # Provide a hook to set built-in sources priority and add / remove sources
@@ -142,14 +144,19 @@ class InitSettingsSource:
 
 
 class EnvSettingsSource:
-    __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter')
+    __slots__ = ('env_file', 'env_file_encoding', 'env_nested_delimiter', 'env_prefix_len')
 
     def __init__(
-        self, env_file: Optional[StrPath], env_file_encoding: Optional[str], env_nested_delimiter: Optional[str] = None
+        self,
+        env_file: Optional[DotenvType],
+        env_file_encoding: Optional[str],
+        env_nested_delimiter: Optional[str] = None,
+        env_prefix_len: int = 0,
     ):
-        self.env_file: Optional[StrPath] = env_file
+        self.env_file: Optional[DotenvType] = env_file
         self.env_file_encoding: Optional[str] = env_file_encoding
         self.env_nested_delimiter: Optional[str] = env_nested_delimiter
+        self.env_prefix_len: int = env_prefix_len
 
     def __call__(self, settings: BaseSettings) -> Dict[str, Any]:  # noqa C901
         """
@@ -162,15 +169,9 @@ class EnvSettingsSource:
         else:
             env_vars = {k.lower(): v for k, v in os.environ.items()}
 
-        if self.env_file is not None:
-            env_path = Path(self.env_file).expanduser()
-            if env_path.is_file():
-                env_vars = {
-                    **read_env_file(
-                        env_path, encoding=self.env_file_encoding, case_sensitive=settings.__config__.case_sensitive
-                    ),
-                    **env_vars,
-                }
+        dotenv_vars = self._read_env_files(settings.__config__.case_sensitive)
+        if dotenv_vars:
+            env_vars = {**dotenv_vars, **env_vars}
 
         for field in settings.__fields__.values():
             env_val: Optional[str] = None
@@ -204,6 +205,24 @@ class EnvSettingsSource:
 
         return d
 
+    def _read_env_files(self, case_sensitive: bool) -> Dict[str, Optional[str]]:
+        env_files = self.env_file
+        if env_files is None:
+            return {}
+
+        if isinstance(env_files, (str, os.PathLike)):
+            env_files = [env_files]
+
+        dotenv_vars = {}
+        for env_file in env_files:
+            env_path = Path(env_file).expanduser()
+            if env_path.is_file():
+                dotenv_vars.update(
+                    read_env_file(env_path, encoding=self.env_file_encoding, case_sensitive=case_sensitive)
+                )
+
+        return dotenv_vars
+
     def field_is_complex(self, field: ModelField) -> Tuple[bool, bool]:
         """
         Find out if a field is complex, and if so whether JSON errors should be ignored
@@ -228,7 +247,9 @@ class EnvSettingsSource:
         for env_name, env_val in env_vars.items():
             if not any(env_name.startswith(prefix) for prefix in prefixes):
                 continue
-            _, *keys, last_key = env_name.split(self.env_nested_delimiter)
+            # we remove the prefix before splitting in case the prefix has characters in common with the delimiter
+            env_name_without_prefix = env_name[self.env_prefix_len :]
+            _, *keys, last_key = env_name_without_prefix.split(self.env_nested_delimiter)
             env_var = result
             for key in keys:
                 env_var = env_var.setdefault(key, {})
@@ -269,7 +290,11 @@ class SecretsSettingsSource:
 
         for field in settings.__fields__.values():
             for env_name in field.field_info.extra['env_names']:
-                path = secrets_path / env_name
+                path = find_case_path(secrets_path, env_name, settings.__config__.case_sensitive)
+                if not path:
+                    # path does not exist, we curently don't return a warning for this
+                    continue
+
                 if path.is_file():
                     secret_value = path.read_text().strip()
                     if field.is_complex():
@@ -279,12 +304,11 @@ class SecretsSettingsSource:
                             raise SettingsError(f'error parsing JSON for "{env_name}"') from e
 
                     secrets[field.alias] = secret_value
-                elif path.exists():
+                else:
                     warnings.warn(
                         f'attempted to load secret file "{path}" but found a {path_type(path)} instead.',
                         stacklevel=4,
                     )
-
         return secrets
 
     def __repr__(self) -> str:
@@ -304,3 +328,15 @@ def read_env_file(
         return {k.lower(): v for k, v in file_vars.items()}
     else:
         return file_vars
+
+
+def find_case_path(dir_path: Path, file_name: str, case_sensitive: bool) -> Optional[Path]:
+    """
+    Find a file within path's directory matching filename, optionally ignoring case.
+    """
+    for f in dir_path.iterdir():
+        if f.name == file_name:
+            return f
+        elif not case_sensitive and f.name.lower() == file_name.lower():
+            return f
+    return None

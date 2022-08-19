@@ -11,9 +11,7 @@ is on and what value was printed.
 In particular `debug()` is useful when inspecting models:
 
 
-```py
-{!.tmp_examples/devtools_main.py!}
-```
+{!.tmp_examples/devtools_main.md!}
 
 Will output in your terminal:
 

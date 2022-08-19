@@ -70,7 +70,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.9
+        python-version: '3.10'
 
     - uses: actions/cache@v3
       id: cache
@@ -103,7 +103,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
@@ -223,7 +223,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mypy-version: ['0.910', '0.921', '0.931', '0.942', '0.950']
+        mypy-version: ['0.910', '0.921', '0.931', '0.942', '0.950', '0.960']
 
     steps:
     - uses: actions/checkout@v3
@@ -313,7 +313,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu , macos , windows]
-        python-version: ['7', '8', '9', '10']
+        python-version: ['7', '8', '9', '10', '11']
         include:
         - os: ubuntu
           platform: linux

@@ -4,7 +4,7 @@ Installation is as simple as:
 pip install pydantic
 ```
 
-*pydantic* has no required dependencies except Python 3.7, 3.8, 3.9 or 3.10 and
+*pydantic* has no required dependencies except Python 3.7, 3.8, 3.9, 3.10 or 3.11 and
 [`typing-extensions`](https://pypi.org/project/typing-extensions/).
 If you've got Python 3.7+ and `pip` installed, you're good to go.
 
@@ -74,7 +74,7 @@ Of course, you can also install these requirements manually with `pip install em
 
 And if you prefer to install *pydantic* directly from the repository:
 ```bash
-pip install git+git://github.com/samuelcolvin/pydantic@master#egg=pydantic
+pip install git+git://github.com/pydantic/pydantic@master#egg=pydantic
 # or with extras
-pip install git+git://github.com/samuelcolvin/pydantic@master#egg=pydantic[email,dotenv]
+pip install git+git://github.com/pydantic/pydantic@master#egg=pydantic[email,dotenv]
 ```

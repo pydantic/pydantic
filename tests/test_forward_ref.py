@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Tuple
+from typing import Dict, ForwardRef, List, Optional, Tuple
 
 import pytest
 
@@ -66,8 +66,6 @@ class Bar(BaseModel):
 """
     )
 
-    from pydantic.typing import ForwardRef
-
     assert module.Foo.__fields__['a'].type_ == ForwardRef('Bar')
     assert module.Bar.__fields__['b'].type_ is module.Foo
 
@@ -81,8 +79,6 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             foo: 'Foo'
             bar: 'Bar'  # noqa: F821
 
-    from pydantic.typing import ForwardRef
-
     assert module.Foo.__fields__['bar'].type_ == ForwardRef('Bar')
     assert module.Foo.__fields__['foo'].type_ is module.Foo
 
@@ -90,10 +86,9 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
 def test_basic_forward_ref(create_module):
     @create_module
     def module():
-        from typing import Optional
+        from typing import ForwardRef, Optional
 
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
 
         class Foo(BaseModel):
             a: int
@@ -110,8 +105,9 @@ def test_basic_forward_ref(create_module):
 def test_self_forward_ref_module(create_module):
     @create_module
     def module():
+        from typing import ForwardRef
+
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
 
         Foo = ForwardRef('Foo')
 
@@ -131,15 +127,12 @@ def test_self_forward_ref_collection(create_module):
         from typing import Dict, List
 
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
-
-        Foo = ForwardRef('Foo')
 
         class Foo(BaseModel):
             a: int = 123
-            b: Foo = None
-            c: List[Foo] = []
-            d: Dict[str, Foo] = {}
+            b: 'Foo' = None
+            c: 'List[Foo]' = []
+            d: 'Dict[str, Foo]' = {}
 
         Foo.update_forward_refs()
 
@@ -157,12 +150,21 @@ def test_self_forward_ref_collection(create_module):
         {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
     ]
 
+    assert module.Foo.__fields__['a'].type_ is int
+    assert module.Foo.__fields__['b'].type_ is module.Foo
+    assert module.Foo.__fields__['b'].outer_type_ is module.Foo
+    assert module.Foo.__fields__['c'].type_ is module.Foo
+    assert module.Foo.__fields__['c'].outer_type_ == List[module.Foo]
+    assert module.Foo.__fields__['d'].type_ is module.Foo
+    assert module.Foo.__fields__['d'].outer_type_ == Dict[str, module.Foo]
+
 
 def test_self_forward_ref_local(create_module):
     @create_module
     def module():
+        from typing import ForwardRef
+
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
 
         def main():
             Foo = ForwardRef('Foo')
@@ -182,8 +184,9 @@ def test_self_forward_ref_local(create_module):
 def test_missing_update_forward_refs(create_module):
     @create_module
     def module():
+        from typing import ForwardRef
+
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
 
         Foo = ForwardRef('Foo')
 
@@ -230,10 +233,9 @@ class Dataclass:
 def test_forward_ref_sub_types(create_module):
     @create_module
     def module():
-        from typing import Union
+        from typing import ForwardRef, Union
 
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
 
         class Leaf(BaseModel):
             a: str
@@ -259,10 +261,9 @@ def test_forward_ref_sub_types(create_module):
 def test_forward_ref_nested_sub_types(create_module):
     @create_module
     def module():
-        from typing import Tuple, Union
+        from typing import ForwardRef, Tuple, Union
 
         from pydantic import BaseModel
-        from pydantic.typing import ForwardRef
 
         class Leaf(BaseModel):
             a: str
@@ -460,12 +461,11 @@ Owner.update_forward_refs()
 def test_forward_ref_with_field(create_module):
     @create_module
     def module():
-        from typing import List
+        from typing import ForwardRef, List
 
         import pytest
 
         from pydantic import BaseModel, Field
-        from pydantic.typing import ForwardRef
 
         Foo = ForwardRef('Foo')
 
@@ -583,7 +583,7 @@ def test_discriminated_union_forward_ref(create_module):
     assert module.Pet.schema() == {
         'title': 'Pet',
         'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
-        'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+        'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
         'definitions': {
             'Cat': {
                 'title': 'Cat',

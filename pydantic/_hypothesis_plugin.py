@@ -23,6 +23,7 @@ to generate instances of the builtin `int` type which match the constraints.
 """
 
 import contextlib
+import datetime
 import ipaddress
 import json
 import math
@@ -34,6 +35,7 @@ import hypothesis.strategies as st
 import pydantic
 import pydantic.color
 import pydantic.types
+from pydantic.utils import lenient_issubclass
 
 # FilePath and DirectoryPath are explicitly unsupported, as we'd have to create
 # them on-disk, and that's unsafe in general without being told *where* to do so.
@@ -222,8 +224,9 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
             base=st.one_of(st.none(), st.booleans(), st.integers(), finite, st.text()),
             extend=lambda x: st.lists(x) | st.dictionaries(st.text(), x),  # type: ignore
         )
+    inner_type = getattr(cls, 'inner_type', None)
     return st.builds(
-        json.dumps,
+        cls.inner_type.json if lenient_issubclass(inner_type, pydantic.BaseModel) else json.dumps,
         inner,
         ensure_ascii=st.booleans(),
         indent=st.none() | st.integers(0, 16),
@@ -323,6 +326,25 @@ def resolve_conint(cls):  # type: ignore[no-untyped-def]
     if max_value is not None:
         max_value = math.floor(Fraction(max_value) / Fraction(cls.multiple_of))
     return st.integers(min_value, max_value).map(lambda x: x * cls.multiple_of)
+
+
+@resolves(pydantic.ConstrainedDate)
+def resolve_condate(cls):  # type: ignore[no-untyped-def]
+    if cls.ge is not None:
+        assert cls.gt is None, 'Set `gt` or `ge`, but not both'
+        min_value = cls.ge
+    elif cls.gt is not None:
+        min_value = cls.gt + datetime.timedelta(days=1)
+    else:
+        min_value = datetime.date.min
+    if cls.le is not None:
+        assert cls.lt is None, 'Set `lt` or `le`, but not both'
+        max_value = cls.le
+    elif cls.lt is not None:
+        max_value = cls.lt - datetime.timedelta(days=1)
+    else:
+        max_value = datetime.date.max
+    return st.dates(min_value, max_value)
 
 
 @resolves(pydantic.ConstrainedStr)

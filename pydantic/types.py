@@ -1,3 +1,4 @@
+import abc
 import math
 import re
 import warnings
@@ -35,6 +36,7 @@ from .validators import (
     constr_length_validator,
     constr_lower,
     constr_strip_whitespace,
+    constr_upper,
     decimal_validator,
     float_validator,
     frozenset_validator,
@@ -91,6 +93,7 @@ __all__ = [
     'DirectoryPath',
     'Json',
     'JsonWrapper',
+    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -101,6 +104,8 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'ConstrainedDate',
+    'condate',
 ]
 
 NoneStr = Optional[str]
@@ -110,14 +115,17 @@ NoneStrBytes = Optional[StrBytes]
 OptionalInt = Optional[int]
 OptionalIntFloat = Union[OptionalInt, float]
 OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
+OptionalDate = Optional[date]
 StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
+    from typing_extensions import Annotated
+
     from .dataclasses import Dataclass
     from .main import BaseModel
     from .typing import CallableGenerator
 
-    ModelOrDc = Type[Union['BaseModel', 'Dataclass']]
+    ModelOrDc = Type[Union[BaseModel, Dataclass]]
 
 T = TypeVar('T')
 _DEFINED_TYPES: 'WeakSet[type]' = WeakSet()
@@ -328,6 +336,7 @@ else:
 
 class ConstrainedBytes(bytes):
     strip_whitespace = False
+    to_upper = False
     to_lower = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
@@ -341,6 +350,7 @@ class ConstrainedBytes(bytes):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_bytes_validator if cls.strict else bytes_validator
         yield constr_strip_whitespace
+        yield constr_upper
         yield constr_lower
         yield constr_length_validator
 
@@ -348,6 +358,7 @@ class ConstrainedBytes(bytes):
 def conbytes(
     *,
     strip_whitespace: bool = False,
+    to_upper: bool = False,
     to_lower: bool = False,
     min_length: int = None,
     max_length: int = None,
@@ -356,6 +367,7 @@ def conbytes(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        to_upper=to_upper,
         to_lower=to_lower,
         min_length=min_length,
         max_length=max_length,
@@ -377,6 +389,7 @@ else:
 
 class ConstrainedStr(str):
     strip_whitespace = False
+    to_upper = False
     to_lower = False
     min_length: OptionalInt = None
     max_length: OptionalInt = None
@@ -397,6 +410,7 @@ class ConstrainedStr(str):
     def __get_validators__(cls) -> 'CallableGenerator':
         yield strict_str_validator if cls.strict else str_validator
         yield constr_strip_whitespace
+        yield constr_upper
         yield constr_lower
         yield constr_length_validator
         yield cls.validate
@@ -416,6 +430,7 @@ class ConstrainedStr(str):
 def constr(
     *,
     strip_whitespace: bool = False,
+    to_upper: bool = False,
     to_lower: bool = False,
     strict: bool = False,
     min_length: int = None,
@@ -426,6 +441,7 @@ def constr(
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
         strip_whitespace=strip_whitespace,
+        to_upper=to_upper,
         to_lower=to_lower,
         strict=strict,
         min_length=min_length,
@@ -782,11 +798,14 @@ class JsonWrapper:
 
 class JsonMeta(type):
     def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
+        if t is Any:
+            return Json  # allow Json[Any] to replecate plain Json
         return _registered(type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t}))
 
 
 if TYPE_CHECKING:
-    Json = str
+    Json = Annotated[T, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+
 else:
 
     class Json(metaclass=JsonMeta):
@@ -798,7 +817,29 @@ else:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class SecretStr:
+class SecretField(abc.ABC):
+    """
+    Note: this should be implemented as a generic like `SecretField(ABC, Generic[T])`,
+          the `__init__()` should be part of the abstract class and the
+          `get_secret_value()` method should use the generic `T` type.
+
+          However Cython doesn't support very well generics at the moment and
+          the generated code fails to be imported (see
+          https://github.com/cython/cython/issues/2753).
+    """
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
+
+    def __str__(self) -> str:
+        return '**********' if self.get_secret_value() else ''
+
+    @abc.abstractmethod
+    def get_secret_value(self) -> Any:  # pragma: no cover
+        ...
+
+
+class SecretStr(SecretField):
     min_length: OptionalInt = None
     max_length: OptionalInt = None
 
@@ -831,12 +872,6 @@ class SecretStr:
     def __repr__(self) -> str:
         return f"SecretStr('{self}')"
 
-    def __str__(self) -> str:
-        return '**********' if self._secret_value else ''
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, SecretStr) and self.get_secret_value() == other.get_secret_value()
-
     def __len__(self) -> int:
         return len(self._secret_value)
 
@@ -848,7 +883,7 @@ class SecretStr:
         return self._secret_value
 
 
-class SecretBytes:
+class SecretBytes(SecretField):
     min_length: OptionalInt = None
     max_length: OptionalInt = None
 
@@ -880,12 +915,6 @@ class SecretBytes:
 
     def __repr__(self) -> str:
         return f"SecretBytes(b'{self}')"
-
-    def __str__(self) -> str:
-        return '**********' if self._secret_value else ''
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, SecretBytes) and self.get_secret_value() == other.get_secret_value()
 
     def __len__(self) -> int:
         return len(self._secret_value)
@@ -1116,3 +1145,31 @@ else:
                 raise errors.DateNotInTheFutureError()
 
             return value
+
+
+class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
+    gt: OptionalDate = None
+    ge: OptionalDate = None
+    lt: OptionalDate = None
+    le: OptionalDate = None
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+        update_not_none(field_schema, exclusiveMinimum=cls.gt, exclusiveMaximum=cls.lt, minimum=cls.ge, maximum=cls.le)
+
+    @classmethod
+    def __get_validators__(cls) -> 'CallableGenerator':
+        yield parse_date
+        yield number_size_validator
+
+
+def condate(
+    *,
+    gt: date = None,
+    ge: date = None,
+    lt: date = None,
+    le: date = None,
+) -> Type[date]:
+    # use kwargs then define conf in a dict to aid with IDE type hinting
+    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
+    return type('ConstrainedDateValue', (ConstrainedDate,), namespace)

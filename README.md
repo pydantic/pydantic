@@ -1,12 +1,12 @@
 # pydantic
 
-[![CI](https://github.com/samuelcolvin/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/samuelcolvin/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
+[![CI](https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/samuelcolvin/pydantic.svg?v=1)](https://coverage-badge.samuelcolvin.workers.dev/redirect/samuelcolvin/pydantic)
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
 [![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)
-[![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/samuelcolvin/pydantic)
-[![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/samuelcolvin/pydantic/blob/master/LICENSE)
+[![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/pydantic/pydantic)
+[![license](https://img.shields.io/github/license/samuelcolvin/pydantic.svg)](https://github.com/pydantic/pydantic/blob/master/LICENSE)
 
 Data validation and settings management using Python type hints.
 
@@ -52,4 +52,4 @@ contribution to *pydantic*, see
 
 ## Reporting a Security Vulnerability
 
-See our [security policy](https://github.com/samuelcolvin/pydantic/security/policy).
+See our [security policy](https://github.com/pydantic/pydantic/security/policy).

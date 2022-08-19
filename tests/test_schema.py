@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import sys
@@ -21,6 +22,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -49,6 +51,7 @@ from pydantic.types import (
     UUID4,
     UUID5,
     ConstrainedBytes,
+    ConstrainedDate,
     ConstrainedDecimal,
     ConstrainedFloat,
     ConstrainedInt,
@@ -74,6 +77,7 @@ from pydantic.types import (
     StrictBool,
     StrictStr,
     conbytes,
+    condate,
     condecimal,
     confloat,
     conint,
@@ -460,25 +464,14 @@ def test_json_schema():
         a = b'foobar'
         b = Decimal('12.34')
 
-    assert Model.schema_json(indent=2) == (
-        '{\n'
-        '  "title": "Model",\n'
-        '  "type": "object",\n'
-        '  "properties": {\n'
-        '    "a": {\n'
-        '      "title": "A",\n'
-        '      "default": "foobar",\n'
-        '      "type": "string",\n'
-        '      "format": "binary"\n'
-        '    },\n'
-        '    "b": {\n'
-        '      "title": "B",\n'
-        '      "default": 12.34,\n'
-        '      "type": "number"\n'
-        '    }\n'
-        '  }\n'
-        '}'
-    )
+    assert json.loads(Model.schema_json(indent=2)) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
+            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+        },
+    }
 
 
 def test_list_sub_model():
@@ -530,6 +523,7 @@ def test_set():
     class Model(BaseModel):
         a: Set[int]
         b: set
+        c: set = {1}
 
     assert Model.schema() == {
         'title': 'Model',
@@ -537,6 +531,7 @@ def test_set():
         'properties': {
             'a': {'title': 'A', 'type': 'array', 'uniqueItems': True, 'items': {'type': 'integer'}},
             'b': {'title': 'B', 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'type': 'array', 'items': {}, 'default': [1], 'uniqueItems': True},
         },
         'required': ['a', 'b'],
     }
@@ -549,7 +544,7 @@ def test_const_str():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string'}},
+        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string', 'default': 'some string'}},
     }
 
 
@@ -738,6 +733,30 @@ def test_date_types(field_type, expected_schema):
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
 
     assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (ConstrainedDate, {}),
+        (condate(), {}),
+        (
+            condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
+            {'exclusiveMinimum': '2010-01-01', 'exclusiveMaximum': '2021-02-02'},
+        ),
+        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': '2010-01-01', 'maximum': '2021-02-02'}),
+    ],
+)
+def test_date_constrained_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    assert json.loads(Model.schema_json()) == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
+        'required': ['a'],
+    }
 
 
 @pytest.mark.parametrize(
@@ -949,6 +968,7 @@ def test_json_type():
     class Model(BaseModel):
         a: Json
         b: Json[int]
+        c: Json[Any]
 
     assert Model.schema() == {
         'title': 'Model',
@@ -956,6 +976,7 @@ def test_json_type():
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
             'b': {'title': 'B', 'type': 'integer'},
+            'c': {'title': 'C', 'type': 'string', 'format': 'json-string'},
         },
         'required': ['b'],
     }
@@ -2187,13 +2208,13 @@ def test_frozen_set():
         'properties': {
             'a': {
                 'title': 'A',
-                'default': frozenset({1, 2, 3}),
+                'default': [1, 2, 3],
                 'type': 'array',
                 'items': {'type': 'integer'},
                 'uniqueItems': True,
             },
-            'b': {'title': 'B', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
-            'c': {'title': 'C', 'default': frozenset({1, 2, 3}), 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'b': {'title': 'B', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
+            'c': {'title': 'C', 'default': [1, 2, 3], 'type': 'array', 'items': {}, 'uniqueItems': True},
             'd': {'title': 'D', 'type': 'array', 'items': {}, 'uniqueItems': True},
         },
         'required': ['d'],
@@ -2671,7 +2692,7 @@ def test_discriminated_union():
                         'lizard': '#/definitions/Lizard',
                     },
                 },
-                'anyOf': [
+                'oneOf': [
                     {'$ref': '#/definitions/Cat'},
                     {'$ref': '#/definitions/Dog'},
                     {'$ref': '#/definitions/Lizard'},
@@ -2704,7 +2725,7 @@ def test_discriminated_union():
                     'propertyName': 'color',
                     'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
                 },
-                'anyOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
+                'oneOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
             },
             'Dog': {
                 'title': 'Dog',
@@ -2771,11 +2792,11 @@ def test_discriminated_annotated_union():
                         'dog': '#/definitions/Dog',
                     },
                 },
-                'anyOf': [
+                'oneOf': [
                     {
-                        'anyOf': [
+                        'oneOf': [
                             {
-                                'anyOf': [
+                                'oneOf': [
                                     {'$ref': '#/definitions/BlackCatWithHeight'},
                                     {'$ref': '#/definitions/BlackCatWithWeight'},
                                 ]
@@ -2854,7 +2875,7 @@ def test_alias_same():
         'properties': {
             'number': {'title': 'Number', 'type': 'integer'},
             'pet': {
-                'anyOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
                 'discriminator': {
                     'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
                     'propertyName': 'typeOfPet',
@@ -2956,9 +2977,9 @@ def test_discriminated_union_in_list():
                         'dog': '#/definitions/Dog',
                     },
                 },
-                'anyOf': [
+                'oneOf': [
                     {
-                        'anyOf': [
+                        'oneOf': [
                             {'$ref': '#/definitions/BlackCat'},
                             {'$ref': '#/definitions/WhiteCat'},
                         ],
@@ -3000,4 +3021,47 @@ def test_discriminated_union_in_list():
                 'required': ['pet_type', 'name'],
             },
         },
+    }
+
+
+def test_extra_inheritance():
+    class A(BaseModel):
+        root: Optional[str]
+
+        class Config:
+            fields = {
+                'root': {'description': 'root path of data', 'level': 1},
+            }
+
+    class Model(A):
+        root: str = Field('asa', description='image height', level=3)
+
+    m = Model()
+    assert m.schema()['properties'] == {
+        'root': {
+            'title': 'Root',
+            'type': 'string',
+            'description': 'image height',
+            'default': 'asa',
+            'level': 3,
+        }
+    }
+
+
+def test_model_with_type_attributes():
+    class Foo:
+        a: float
+
+    class Bar(BaseModel):
+        b: int
+
+    class Baz(BaseModel):
+        a: Type[Foo]
+        b: Type[Bar]
+
+    assert Baz.schema() == {
+        'title': 'Baz',
+        'type': 'object',
+        'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
+        'required': ['a', 'b'],
     }

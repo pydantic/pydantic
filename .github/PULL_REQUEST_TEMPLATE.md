@@ -1,6 +1,7 @@
 <!-- Thank you for your contribution! -->
 <!-- Unless your change is trivial, please create an issue to discuss the change before creating a PR -->
 <!-- See https://pydantic-docs.helpmanual.io/contributing/ for help on Contributing -->
+<!-- PLEASE DO **NOT** put issue ids in the PR title! Instead, add a descriptive title and put ids in the body -->
 
 ## Change Summary
 
@@ -17,5 +18,5 @@
 * [ ] Tests pass on CI and coverage remains at 100%
 * [ ] Documentation reflects the changes where applicable
 * [ ] `changes/<pull request or issue id>-<github username>.md` file added describing change
-  (see [changes/README.md](https://github.com/samuelcolvin/pydantic/blob/master/changes/README.md) for details)
+  (see [changes/README.md](https://github.com/pydantic/pydantic/blob/master/changes/README.md) for details)
 * [ ] My PR is ready to review, **please add a comment including the phrase "please review" to assign reviewers**

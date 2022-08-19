@@ -11,6 +11,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    ForwardRef,
     FrozenSet,
     Generic,
     Iterable,
@@ -53,9 +54,10 @@ from .types import (
     ConstrainedInt,
     ConstrainedList,
     ConstrainedSet,
-    ConstrainedStr,
     SecretBytes,
     SecretStr,
+    StrictBytes,
+    StrictStr,
     conbytes,
     condecimal,
     confloat,
@@ -66,7 +68,6 @@ from .types import (
     constr,
 )
 from .typing import (
-    ForwardRef,
     all_literal_values,
     get_args,
     get_origin,
@@ -77,7 +78,7 @@ from .typing import (
     is_none_type,
     is_union,
 )
-from .utils import ROOT_KEY, get_model, lenient_issubclass, sequence_like
+from .utils import ROOT_KEY, get_model, lenient_issubclass
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -210,12 +211,7 @@ def get_field_info_schema(field: ModelField, schema_overrides: bool = False) -> 
         schema_['description'] = field.field_info.description
         schema_overrides = True
 
-    if (
-        not field.required
-        and not field.field_info.const
-        and field.default is not None
-        and not is_callable_type(field.outer_type_)
-    ):
+    if not field.required and field.default is not None and not is_callable_type(field.outer_type_):
         schema_['default'] = encode_default(field.default)
         schema_overrides = True
 
@@ -381,21 +377,15 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
     :param known_models: used to solve circular references
     :return: a set with the model used in the declaration for this field, if any, and all its sub-models
     """
-    from .dataclasses import dataclass, is_builtin_dataclass
     from .main import BaseModel
 
     flat_models: TypeModelSet = set()
 
-    # Handle dataclass-based models
-    if is_builtin_dataclass(field.type_):
-        field.type_ = dataclass(field.type_)
-        was_dataclass = True
-    else:
-        was_dataclass = False
     field_type = field.type_
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
-    if field.sub_fields and (not lenient_issubclass(field_type, BaseModel) or was_dataclass):
+
+    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
         flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
     elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
         flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
@@ -667,13 +657,11 @@ def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None)
 
     This is similar to the `model_process_schema` function, but applies to ``Enum`` objects.
     """
-    from inspect import getdoc
-
     schema_: Dict[str, Any] = {
         'title': enum.__name__,
         # Python assigns all enums a default docstring value of 'An enumeration', so
         # all enums will have a description field even if not explicitly provided.
-        'description': getdoc(enum),
+        'description': enum.__doc__ or 'An enumeration.',
         # Add enum values and the enum field type to the schema.
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }
@@ -719,7 +707,8 @@ def field_singleton_sub_fields_schema(
     else:
         s: Dict[str, Any] = {}
         # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
-        if field.discriminator_key is not None:
+        field_has_discriminator: bool = field.discriminator_key is not None
+        if field_has_discriminator:
             assert field.sub_fields_mapping is not None
 
             discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
@@ -762,16 +751,16 @@ def field_singleton_sub_fields_schema(
             definitions.update(sub_definitions)
             if schema_overrides and 'allOf' in sub_schema:
                 # if the sub_field is a referenced schema we only need the referenced
-                # object. Otherwise we will end up with several allOf inside anyOf.
-                # See https://github.com/samuelcolvin/pydantic/issues/1209
+                # object. Otherwise we will end up with several allOf inside anyOf/oneOf.
+                # See https://github.com/pydantic/pydantic/issues/1209
                 sub_schema = sub_schema['allOf'][0]
 
-            if sub_schema.keys() == {'discriminator', 'anyOf'}:
-                # we don't want discriminator information inside anyOf choices, this is dealt with elsewhere
+            if sub_schema.keys() == {'discriminator', 'oneOf'}:
+                # we don't want discriminator information inside oneOf choices, this is dealt with elsewhere
                 sub_schema.pop('discriminator')
             sub_field_schemas.append(sub_schema)
             nested_models.update(sub_nested_models)
-        s['anyOf'] = sub_field_schemas
+        s['oneOf' if field_has_discriminator else 'anyOf'] = sub_field_schemas
         return s, definitions, nested_models
 
 
@@ -815,7 +804,7 @@ def add_field_type_to_schema(field_type: Any, schema_: Dict[str, Any]) -> None:
     and then modifies the given `schema` with the information from that type.
     """
     for type_, t_schema in field_class_to_schema:
-        # Fallback for `typing.Pattern` as it is not a valid class
+        # Fallback for `typing.Pattern` and `re.Pattern` as they are not a valid class
         if lenient_issubclass(field_type, type_) or field_type is type_ is Pattern:
             schema_.update(t_schema)
             break
@@ -864,7 +853,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
             ref_template=ref_template,
             known_models=known_models,
         )
-    if field_type is Any or field_type is object or field_type.__class__ == TypeVar:
+    if field_type is Any or field_type is object or field_type.__class__ == TypeVar or get_origin(field_type) is type:
         return {}, definitions, nested_models  # no restrictions
     if is_none_type(field_type):
         return {'type': 'null'}, definitions, nested_models
@@ -984,7 +973,7 @@ def encode_default(dft: Any) -> Any:
         return dft.value
     elif isinstance(dft, (int, float, str)):
         return dft
-    elif sequence_like(dft):
+    elif isinstance(dft, (list, tuple)):
         t = dft.__class__
         seq_args = (encode_default(v) for v in dft)
         return t(*seq_args) if is_namedtuple(t) else t(seq_args)
@@ -1094,12 +1083,24 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 def constraint_func(**kw: Any) -> Type[Any]:
                     return type(type_.__name__, (type_,), kw)
 
-            elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl, ConstrainedStr)):
+            elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl)):
                 attrs = ('max_length', 'min_length', 'regex')
-                constraint_func = constr
+                if issubclass(type_, StrictStr):
+
+                    def constraint_func(**kw: Any) -> Type[Any]:
+                        return type(type_.__name__, (type_,), kw)
+
+                else:
+                    constraint_func = constr
             elif issubclass(type_, bytes):
                 attrs = ('max_length', 'min_length', 'regex')
-                constraint_func = conbytes
+                if issubclass(type_, StrictBytes):
+
+                    def constraint_func(**kw: Any) -> Type[Any]:
+                        return type(type_.__name__, (type_,), kw)
+
+                else:
+                    constraint_func = conbytes
             elif issubclass(type_, numeric_types) and not issubclass(
                 type_,
                 (

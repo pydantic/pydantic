@@ -25,7 +25,13 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from typing_extensions import Annotated, Literal
+from typing_extensions import (
+    Annotated,
+    Final,
+    Literal,
+    NotRequired as TypedDictNotRequired,
+    Required as TypedDictRequired,
+)
 
 try:
     from typing import _TypingBase as typing_base  # type: ignore
@@ -95,7 +101,7 @@ else:
         We can't directly use `typing.get_origin` since we need a fallback to support
         custom generic classes like `ConstrainedList`
         It should be useless once https://github.com/cython/cython/issues/3537 is
-        solved and https://github.com/samuelcolvin/pydantic/pull/1753 is merged.
+        solved and https://github.com/pydantic/pydantic/pull/1753 is merged.
         """
         if type(tp).__name__ in AnnotatedTypeNames:
             return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
@@ -132,6 +138,15 @@ else:
         """
         if hasattr(tp, '_nparams'):
             return (Any,) * tp._nparams
+        # Special case for `tuple[()]`, which used to return ((),) with `typing.Tuple`
+        # in python 3.10- but now returns () for `tuple` and `Tuple`.
+        # This will probably be clarified in pydantic v2
+        try:
+            if tp == Tuple[()] or sys.version_info >= (3, 9) and tp == tuple[()]:  # type: ignore[misc]
+                return ((),)
+        # there is a TypeError when compiled with cython
+        except TypeError:  # pragma: no cover
+            pass
         return ()
 
     def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
@@ -253,8 +268,6 @@ if TYPE_CHECKING:
     AnyClassMethod = classmethod[Any]
 
 __all__ = (
-    'ForwardRef',
-    'Callable',
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',
@@ -266,9 +279,11 @@ __all__ = (
     'all_literal_values',
     'is_namedtuple',
     'is_typeddict',
+    'is_typeddict_special',
     'is_new_type',
     'new_type_supertype',
     'is_classvar',
+    'is_finalvar',
     'update_field_forward_refs',
     'update_model_forward_refs',
     'TupleGenerator',
@@ -291,6 +306,7 @@ __all__ = (
     'get_all_type_hints',
     'is_union',
     'StrPath',
+    'MappingIntStrAny',
 )
 
 
@@ -360,7 +376,7 @@ def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Opti
         try:
             module = sys.modules[module_name]
         except KeyError:
-            # happens occasionally, see https://github.com/samuelcolvin/pydantic/issues/2363
+            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
         else:
             base_globals = module.__dict__
@@ -426,6 +442,17 @@ def is_typeddict(type_: Type[Any]) -> bool:
     return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
 
 
+def _check_typeddict_special(type_: Any) -> bool:
+    return type_ is TypedDictRequired or type_ is TypedDictNotRequired
+
+
+def is_typeddict_special(type_: Any) -> bool:
+    """
+    Check if type is a TypedDict special form (Required or NotRequired).
+    """
+    return _check_typeddict_special(type_) or _check_typeddict_special(get_origin(type_))
+
+
 test_type = NewType('test_type', str)
 
 
@@ -449,6 +476,16 @@ def _check_classvar(v: Optional[Type[Any]]) -> bool:
     return v.__class__ == ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
 
 
+def _check_finalvar(v: Optional[Type[Any]]) -> bool:
+    """
+    Check if a given type is a `typing.Final` type.
+    """
+    if v is None:
+        return False
+
+    return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, '_name', None) == 'Final')
+
+
 def is_classvar(ann_type: Type[Any]) -> bool:
     if _check_classvar(ann_type) or _check_classvar(get_origin(ann_type)):
         return True
@@ -461,12 +498,22 @@ def is_classvar(ann_type: Type[Any]) -> bool:
     return False
 
 
+def is_finalvar(ann_type: Type[Any]) -> bool:
+    return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
+
+
 def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:
     """
     Try to update ForwardRefs on fields based on this ModelField, globalns and localns.
     """
+    prepare = False
     if field.type_.__class__ == ForwardRef:
+        prepare = True
         field.type_ = evaluate_forwardref(field.type_, globalns, localns or None)
+    if field.outer_type_.__class__ == ForwardRef:
+        prepare = True
+        field.outer_type_ = evaluate_forwardref(field.outer_type_, globalns, localns or None)
+    if prepare:
         field.prepare()
 
     if field.sub_fields:
@@ -521,6 +568,9 @@ def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
     Tries to get the class of a Type[T] annotation. Returns True if Type is used
     without brackets. Otherwise returns None.
     """
+    if type_ is type:
+        return True
+
     if get_origin(type_) is None:
         return None
 

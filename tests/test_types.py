@@ -9,6 +9,7 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
+    Any,
     Deque,
     Dict,
     FrozenSet,
@@ -74,6 +75,7 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic.types import SecretField
 from pydantic.typing import NoneType
 
 try:
@@ -113,20 +115,34 @@ def test_constrained_bytes_too_long():
     ]
 
 
-def test_constrained_bytes_lower_enabled():
+@pytest.mark.parametrize(
+    'to_upper, value, result',
+    [
+        (True, b'abcd', b'ABCD'),
+        (False, b'aBcD', b'aBcD'),
+    ],
+)
+def test_constrained_bytes_upper(to_upper, value, result):
     class Model(BaseModel):
-        v: conbytes(to_lower=True)
+        v: conbytes(to_upper=to_upper)
 
-    m = Model(v=b'ABCD')
-    assert m.v == b'abcd'
+    m = Model(v=value)
+    assert m.v == result
 
 
-def test_constrained_bytes_lower_disabled():
+@pytest.mark.parametrize(
+    'to_lower, value, result',
+    [
+        (True, b'ABCD', b'abcd'),
+        (False, b'ABCD', b'ABCD'),
+    ],
+)
+def test_constrained_bytes_lower(to_lower, value, result):
     class Model(BaseModel):
-        v: conbytes(to_lower=False)
+        v: conbytes(to_lower=to_lower)
 
-    m = Model(v=b'ABCD')
-    assert m.v == b'ABCD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_bytes_strict_true():
@@ -699,20 +715,34 @@ def test_constrained_str_too_long():
     ]
 
 
-def test_constrained_str_lower_enabled():
+@pytest.mark.parametrize(
+    'to_upper, value, result',
+    [
+        (True, 'abcd', 'ABCD'),
+        (False, 'aBcD', 'aBcD'),
+    ],
+)
+def test_constrained_str_upper(to_upper, value, result):
     class Model(BaseModel):
-        v: constr(to_lower=True)
+        v: constr(to_upper=to_upper)
 
-    m = Model(v='ABCD')
-    assert m.v == 'abcd'
+    m = Model(v=value)
+    assert m.v == result
 
 
-def test_constrained_str_lower_disabled():
+@pytest.mark.parametrize(
+    'to_lower, value, result',
+    [
+        (True, 'ABCD', 'abcd'),
+        (False, 'ABCD', 'ABCD'),
+    ],
+)
+def test_constrained_str_lower(to_lower, value, result):
     class Model(BaseModel):
-        v: constr(to_lower=False)
+        v: constr(to_lower=to_lower)
 
-    m = Model(v='ABCD')
-    assert m.v == 'ABCD'
+    m = Model(v=value)
+    assert m.v == result
 
 
 def test_constrained_str_max_length_0():
@@ -1604,6 +1634,18 @@ def test_strict_bytes():
         Model(v=0.42)
 
 
+def test_strict_bytes_max_length():
+    class Model(BaseModel):
+        u: StrictBytes = Field(..., max_length=5)
+
+    assert Model(u=b'foo').u == b'foo'
+
+    with pytest.raises(ValidationError, match='byte type expected'):
+        Model(u=123)
+    with pytest.raises(ValidationError, match='ensure this value has at most 5 characters'):
+        Model(u=b'1234567')
+
+
 def test_strict_bytes_subclass():
     class MyStrictBytes(StrictBytes):
         pass
@@ -1646,6 +1688,19 @@ def test_strict_str_subclass():
     m = Model(v=MyStrictStr('foobar'))
     assert isinstance(m.v, MyStrictStr)
     assert m.v == 'foobar'
+
+
+def test_strict_str_max_length():
+    class Model(BaseModel):
+        u: StrictStr = Field(..., max_length=5)
+
+    assert Model(u='foo').u == 'foo'
+
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(u=123)
+
+    with pytest.raises(ValidationError, match='ensure this value has at most 5 characters'):
+        Model(u='1234567')
 
 
 def test_strict_bool():
@@ -1784,58 +1839,60 @@ def test_uuid_validation():
     ]
 
 
-def test_anystr_strip_whitespace_enabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [
+        (True, '  123  ', b'  456  ', '123', b'456'),
+        (False, '  123  ', b'  456  ', '  123  ', b'  456  '),
+    ],
+)
+def test_anystr_strip_whitespace(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_strip_whitespace = True
+            anystr_strip_whitespace = enabled
 
-    m = Model(str_check='  123  ', bytes_check=b'  456  ')
-    assert m.str_check == '123'
-    assert m.bytes_check == b'456'
+    m = Model(str_check=str_check, bytes_check=bytes_check)
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
-def test_anystr_strip_whitespace_disabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [(True, 'ABCDefG', b'abCD1Fg', 'ABCDEFG', b'ABCD1FG'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+)
+def test_anystr_upper(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_strip_whitespace = False
+            anystr_upper = enabled
 
-    m = Model(str_check='  123  ', bytes_check=b'  456  ')
-    assert m.str_check == '  123  '
-    assert m.bytes_check == b'  456  '
+    m = Model(str_check=str_check, bytes_check=bytes_check)
+
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
-def test_anystr_lower_enabled():
+@pytest.mark.parametrize(
+    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    [(True, 'ABCDefG', b'abCD1Fg', 'abcdefg', b'abcd1fg'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+)
+def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
     class Model(BaseModel):
         str_check: str
         bytes_check: bytes
 
         class Config:
-            anystr_lower = True
+            anystr_lower = enabled
 
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
+    m = Model(str_check=str_check, bytes_check=bytes_check)
 
-    assert m.str_check == 'abcdefg'
-    assert m.bytes_check == b'abcd1fg'
-
-
-def test_anystr_lower_disabled():
-    class Model(BaseModel):
-        str_check: str
-        bytes_check: bytes
-
-        class Config:
-            anystr_lower = False
-
-    m = Model(str_check='ABCDefG', bytes_check=b'abCD1Fg')
-
-    assert m.str_check == 'ABCDefG'
-    assert m.bytes_check == b'abCD1Fg'
+    assert m.str_check == result_str_check
+    assert m.bytes_check == result_bytes_check
 
 
 @pytest.mark.parametrize(
@@ -2312,6 +2369,11 @@ def test_new_type_fails():
     ]
 
 
+def test_json_any_is_json():
+    """Mypy doesn't allow plain Json, so Json[Any] must behave just as Json did."""
+    assert Json[Any] is Json
+
+
 def test_valid_simple_json():
     class JsonModel(BaseModel):
         json_obj: Json
@@ -2320,9 +2382,27 @@ def test_valid_simple_json():
     assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
+def test_valid_simple_json_any():
+    class JsonModel(BaseModel):
+        json_obj: Json[Any]
+
+    obj = '{"a": 1, "b": [2, 3]}'
+    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+
+
 def test_invalid_simple_json():
     class JsonModel(BaseModel):
         json_obj: Json
+
+    obj = '{a: 1, b: [2, 3]}'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonModel(json_obj=obj)
+    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
+
+
+def test_invalid_simple_json_any():
+    class JsonModel(BaseModel):
+        json_obj: Json[Any]
 
     obj = '{a: 1, b: [2, 3]}'
     with pytest.raises(ValidationError) as exc_info:
@@ -2362,6 +2442,38 @@ def test_valid_detailed_json_bytes():
 
     obj = b'[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+
+
+def test_valid_model_json():
+    class Model(BaseModel):
+        a: int
+        b: List[int]
+
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[Model]
+
+    obj = '{"a": 1, "b": [2, 3]}'
+    m = JsonDetailedModel(json_obj=obj)
+    assert isinstance(m.json_obj, Model)
+    assert m.json_obj.a == 1
+    assert m.dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+
+
+def test_invalid_model_json():
+    class Model(BaseModel):
+        a: int
+        b: List[int]
+
+    class JsonDetailedModel(BaseModel):
+        json_obj: Json[Model]
+
+    obj = '{"a": 1, "c": [2, 3]}'
+    with pytest.raises(ValidationError) as exc_info:
+        JsonDetailedModel(json_obj=obj)
+
+    assert exc_info.value.errors() == [
+        {'loc': ('json_obj', 'b'), 'msg': 'field required', 'type': 'value_error.missing'}
+    ]
 
 
 def test_invalid_detailed_json_type_error():
@@ -2453,9 +2565,10 @@ def test_json_no_default():
     assert JsonRequired().dict() == {'json_obj': None}
 
 
-def test_pattern():
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+def test_pattern(pattern_type):
     class Foobar(BaseModel):
-        pattern: Pattern
+        pattern: pattern_type
 
     f = Foobar(pattern=r'^whatev.r\d$')
     assert f.pattern.__class__.__name__ == 'Pattern'
@@ -2476,15 +2589,26 @@ def test_pattern():
     }
 
 
-def test_pattern_error():
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+def test_pattern_error(pattern_type):
     class Foobar(BaseModel):
-        pattern: Pattern
+        pattern: pattern_type
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(pattern='[xx')
     assert exc_info.value.errors() == [
         {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
     ]
+
+
+def test_secretfield():
+    class Foobar(SecretField):
+        ...
+
+    message = "Can't instantiate abstract class Foobar with abstract methods? get_secret_value"
+
+    with pytest.raises(TypeError, match=message):
+        Foobar()
 
 
 def test_secretstr():
@@ -2517,6 +2641,10 @@ def test_secretstr():
     # Assert that SecretStr is equal to SecretStr if the secret is the same.
     assert f == f.copy()
     assert f != f.copy(update=dict(password='4321'))
+
+
+def test_secretstr_is_secret_field():
+    assert issubclass(SecretStr, SecretField)
 
 
 def test_secretstr_equality():
@@ -2606,6 +2734,10 @@ def test_secretbytes():
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
     assert f == f.copy()
     assert f != f.copy(update=dict(password=b'4321'))
+
+
+def test_secretbytes_is_secret_field():
+    assert issubclass(SecretBytes, SecretField)
 
 
 def test_secretbytes_equality():
