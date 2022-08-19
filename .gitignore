@@ -22,6 +22,7 @@ docs/_build/
 /.editorconfig
 /*.lcov
 /*.profraw
+/*.profdata
 /flame/
 /.benchmarks/
 .hypothesis/

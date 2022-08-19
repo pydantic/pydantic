@@ -41,7 +41,7 @@ jobs:
       if: matrix.rust-toolchain == 'nightly'
       uses: actions-rs/toolchain@v1
       with:
-        # use the default version from rust-toolchain in case rust in pinned there
+        # use the default version from the "rust-toolchain" file in case rust is pinned there
         profile: minimal
 
     - name: install rust stable
@@ -55,8 +55,10 @@ jobs:
     - id: cache-rust
       name: cache rust
       uses: Swatinem/rust-cache@v1
+      with:
+        key: v3
 
-    - run: cargo install rustfilt cargo-binutils
+    - run: cargo install rustfilt coverage-prepare
       if: steps.cache-rust.outputs.cache-hit != 'true'
 
     - run: rustup component add llvm-tools-preview
@@ -92,9 +94,10 @@ jobs:
       env:
         BENCHMARK_VS_PYDANTIC: 1
 
+    - run: ls -lha
     - run: coverage xml
 
-    - run: ./tests/rust_coverage_export.sh
+    - run: coverage-prepare lcov pydantic_core/*.so
 
     - uses: codecov/codecov-action@v2
       if: matrix.rust-toolchain == 'nightly'
