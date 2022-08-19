@@ -99,12 +99,12 @@ Nested environment variables take precedence over the top-level environment vari
 You may also populate a complex type by providing your own parsing function to
 `env_parse` in the field extras.
 
-{!.tmp_examples/settings_with_custom_parsing.py!}
+{!.tmp_examples/settings_with_custom_parsing.md!}
 
 You might choose to pass the environment string value through to pydantic and
 transform in a validator instead.
 
-{!.tmp_examples/settings_with_custom_parsing_validator.py!}
+{!.tmp_examples/settings_with_custom_parsing_validator.md!}
 
 
 ## Dotenv (.env) support
