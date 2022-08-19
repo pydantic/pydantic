@@ -13,7 +13,7 @@
 
 ---
 
-Updated late 10 Jul 2022, see [pydantic#4226](https://github.com/samuelcolvin/pydantic/pull/4226).
+Updated late 10 Jul 2022, see [pydantic#4226](https://github.com/pydantic/pydantic/pull/4226).
 
 ---
 
@@ -102,7 +102,7 @@ The release of version 2 is an opportunity to rebuild pydantic and correct many 
 **to make pydantic amazing :rocket:**.
 
 The core validation logic of pydantic V2 will be performed by a separate package
-[pydantic-core](https://github.com/samuelcolvin/pydantic-core) which I've been building over the last few months.
+[pydantic-core](https://github.com/pydantic/pydantic-core) which I've been building over the last few months.
 *pydantic-core* is written in Rust using the excellent [pyo3](https://pyo3.rs) library which provides rust bindings
 for python.
 
@@ -123,10 +123,10 @@ The motivation for building pydantic-core in Rust is as follows:
 pydantic-core is usable now, albeit with an unintuitive API, if you're interested, please give it a try.
 
 pydantic-core provides validators for common data types,
-[see a list here](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291).
+[see a list here](https://github.com/pydantic/pydantic-core/blob/main/pydantic_core/_types.py#L291).
 Other, less commonly used data types will be supported via validator functions implemented in pydantic, in Python.
 
-See [pydantic-core#153](https://github.com/samuelcolvin/pydantic-core/issues/153)
+See [pydantic-core#153](https://github.com/pydantic/pydantic-core/issues/153)
 for a summary of what needs to be completed before its first release.
 
 ## Headlines
@@ -139,7 +139,7 @@ As a result of the move to Rust for the validation logic
 (and significant improvements in how validation objects are structured) pydantic V2 will be significantly faster
 than pydantic V1.
 
-Looking at the pydantic-core [benchmarks](https://github.com/samuelcolvin/pydantic-core/tree/main/tests/benchmarks)
+Looking at the pydantic-core [benchmarks](https://github.com/pydantic/pydantic-core/tree/main/tests/benchmarks)
 today, pydantic V2 is between 4x and 50x faster than pydantic V1.9.1.
 
 In general, pydantic V2 is about 17x faster than V1 when validating a model containing a range of common fields.
@@ -254,7 +254,7 @@ class Foo(BaseModel):
 ### Validator Function Improvements :thumbsup: :thumbsup: :thumbsup:
 
 This is one of the changes in pydantic V2 that I'm most excited about, I've been talking about something
-like this for a long time, see [pydantic#1984](https://github.com/samuelcolvin/pydantic/issues/1984), but couldn't
+like this for a long time, see [pydantic#1984](https://github.com/pydantic/pydantic/issues/1984), but couldn't
 find a way to do this until now.
 
 Fields which use a function for validation can be any of the following types:
@@ -356,7 +356,7 @@ to allow for customising field keys.
 
 Pydantic V2 will add a new optional `context` argument to `model_validate` and `model_validate_json`
 which will allow you to pass information not available when creating a model to validators.
-See [pydantic#1549](https://github.com/samuelcolvin/pydantic/issues/1549) for motivation.
+See [pydantic#1549](https://github.com/pydantic/pydantic/issues/1549) for motivation.
 
 Here's an example of `context` might be used:
 
@@ -392,7 +392,7 @@ async def add_user(post_data: bytes):
 ### Model Namespace Cleanup :thumbsup:
 
 For years I've wanted to clean up the model namespace,
-see [pydantic#1001](https://github.com/samuelcolvin/pydantic/issues/1001). This would avoid confusing gotchas when field
+see [pydantic#1001](https://github.com/pydantic/pydantic/issues/1001). This would avoid confusing gotchas when field
 names clash with methods on a model, it would also make it safer to add more methods to a model without risking
 new clashes.
 
@@ -526,7 +526,7 @@ The way line errors (the individual errors within a `ValidationError`) are built
 in pydantic-core.
 
 There's a well-defined
-[set of error codes and messages](https://github.com/samuelcolvin/pydantic-core/blob/main/src/errors/kinds.rs).
+[set of error codes and messages](https://github.com/pydantic/pydantic-core/blob/main/src/errors/kinds.rs).
 
 More will be added when other types are validated via pure python validators in pydantic.
 
@@ -572,12 +572,12 @@ pydantic-core will provide binaries in PyPI for (at least):
 * **MacOS**: `x86_64` & `arm64` (except python 3.7)
 * **Windows**: `amd64` & `win32`
 * **Web Assembly**: `wasm32`
-  (pydantic-core is [already](https://github.com/samuelcolvin/pydantic-core/runs/7214195252?check_suite_focus=true)
+  (pydantic-core is [already](https://github.com/pydantic/pydantic-core/runs/7214195252?check_suite_focus=true)
   compiled for wasm32 using emscripten and unit tests pass, except where cpython itself has
   [problems](https://github.com/pyodide/pyodide/issues/2841))
 
 Binaries for pypy are a work in progress and will be added if possible,
-see [pydantic-core#154](https://github.com/samuelcolvin/pydantic-core/issues/154).
+see [pydantic-core#154](https://github.com/pydantic/pydantic-core/issues/154).
 
 Other binaries can be added provided they can be (cross-)compiled on github actions.
 If no binary is available from PyPI, pydantic-core can be compiled from source if Rust stable is available.
@@ -676,7 +676,7 @@ What's going on here: `__pydantic_validation_schema__` defines a schema which ef
 > as the final result of validation.
 
 `ValidationSchema` is just an alias to
-[`pydantic_core.Schema`](https://github.com/samuelcolvin/pydantic-core/blob/main/pydantic_core/_types.py#L291)
+[`pydantic_core.Schema`](https://github.com/pydantic/pydantic-core/blob/main/pydantic_core/_types.py#L291)
 which is a type defining the schema for validation schemas.
 
 !!! note
@@ -700,10 +700,10 @@ Some other things which will also change, IMHO for the better:
    (either via model config or field config)
 5. `input_value` has been added to each line error in a `ValidationError`, making errors easier to understand,
    and more comprehensive details of errors to be provided to end users,
-   [pydantic#784](https://github.com/samuelcolvin/pydantic/issues/784)
+   [pydantic#784](https://github.com/pydantic/pydantic/issues/784)
 6. `on_error` logic in a schema which allows either a default value to be used in the event of an error,
    or that value to be omitted (in the case of a `total=False` `TypedDict`),
-   [pydantic-core#151](https://github.com/samuelcolvin/pydantic-core/issues/151)
+   [pydantic-core#151](https://github.com/pydantic/pydantic-core/issues/151)
 7. `datetime`, `date`, `time` & `timedelta` validation is improved, see the
    [speedate] Rust library I built specifically for this purpose for more details
 8. Powerful "priority" system for optionally merging or overriding config in sub-models for nested schemas
@@ -722,7 +722,7 @@ Some other things which will also change, IMHO for the better:
 12. Improve the performance of `__eq__` on models
 13. Computed fields, these having been an idea for a long time in pydantic - we should get them right
 14. Model validation that avoids instances of subclasses leaking data (particularly important for FastAPI),
-    see [pydantic-core#155](https://github.com/samuelcolvin/pydantic-core/issues/155)
+    see [pydantic-core#155](https://github.com/pydantic/pydantic-core/issues/155)
 15. We'll now follow [semvar](https://semver.org/) properly and avoid breaking changes between minor versions,
     as a result, major versions will become more common
 16. Improve generics to use `M(Basemodel, Generic[T])` instead of `M(GenericModel, Generic[T])` - e.g. `GenericModel`
@@ -777,7 +777,7 @@ I hope the explanation above is useful. I'm sure people will have questions and 
 I've skipped over some features with limited detail (this post is already fairly long :sleeping:).
 
 To allow feedback without being overwhelmed, I've created a "Pydantic V2" category for
-[discussions on github](https://github.com/samuelcolvin/pydantic/discussions/categories/pydantic-v2) - please
+[discussions on github](https://github.com/pydantic/pydantic/discussions/categories/pydantic-v2) - please
 feel free to create a discussion if you have any questions or suggestions.
 We will endeavour to read and respond to everyone.
 
@@ -848,7 +848,7 @@ An updated and complete version of this table will be included in the docs for V
 !!!note
     Some type conversion shown here is a significant departure from existing behavior, we may have to provide a config
     flag for backwards compatibility for a few of them, however pydantic V2 cannot be entirely backward compatible,
-    see [pydantic-core#152](https://github.com/samuelcolvin/pydantic-core/issues/152).
+    see [pydantic-core#152](https://github.com/pydantic/pydantic-core/issues/152).
 
 | Field Type    | Input       | Mode   | Input Source | Conditions                                                                  |
 |---------------|-------------|--------|--------------|-----------------------------------------------------------------------------|
