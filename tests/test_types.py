@@ -2650,6 +2650,10 @@ def test_secretstr_idempotent():
     assert m.password.get_secret_value() == '1234'
 
 
+def test_secretstr_is_hashable():
+    assert hash(SecretStr('secret'))
+
+
 def test_secretstr_error():
     class Foobar(BaseModel):
         password: SecretStr
