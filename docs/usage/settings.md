@@ -97,19 +97,11 @@ Nested environment variables take precedence over the top-level environment vari
 (e.g. in the example above, `SUB_MODEL__V2` trumps `SUB_MODEL`).
 
 You may also populate a complex type by providing your own parsing function to
-`env_parse` in the field extras.
+the `parse_env_var` classmethod in the Config object.
 
 ```py
 {!.tmp_examples/settings_with_custom_parsing.py!}
 ```
-
-You might choose to pass the environment string value through to pydantic and
-transform in a validator instead.
-
-```py
-{!.tmp_examples/settings_with_custom_parsing_validator.py!}
-```
-
 
 ## Dotenv (.env) support
 
