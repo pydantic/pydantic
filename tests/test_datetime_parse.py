@@ -1,5 +1,5 @@
 """
-Stolen from https://github.com/django/django/blob/master/tests/utils_tests/test_dateparse.py at
+Stolen from https://github.com/django/django/blob/main/tests/utils_tests/test_dateparse.py at
 9718fa2e8abe430c3526a9278dd976443d4ae3c6
 
 Changed to:

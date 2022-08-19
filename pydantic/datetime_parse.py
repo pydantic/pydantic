@@ -6,7 +6,7 @@ We're using regular expressions rather than time.strptime because:
 - They're more flexible for datetimes.
 - The date/datetime/time constructors produce friendlier error messages.
 
-Stolen from https://raw.githubusercontent.com/django/django/master/django/utils/dateparse.py at
+Stolen from https://raw.githubusercontent.com/django/django/main/django/utils/dateparse.py at
 9718fa2e8abe430c3526a9278dd976443d4ae3c6
 
 Changed to:

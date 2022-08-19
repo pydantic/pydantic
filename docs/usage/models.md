@@ -155,7 +155,7 @@ Here a vanilla class is used to demonstrate the principle, but any ORM class cou
 ### Data binding
 
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
-[utils.py](https://github.com/pydantic/pydantic/blob/master/pydantic/utils.py)), which attempts to
+[utils.py](https://github.com/pydantic/pydantic/blob/main/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
