@@ -2651,7 +2651,7 @@ def test_secretstr_idempotent():
 
 
 def test_secretstr_is_hashable():
-    assert hash(SecretStr('secret'))
+    assert type(hash(SecretStr('secret'))) is int
 
 
 def test_secretstr_error():
