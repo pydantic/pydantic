@@ -1,4 +1,5 @@
 # output-json
+import os
 from typing import Any, List
 
 from pydantic import BaseSettings
@@ -14,7 +15,7 @@ class Settings(BaseSettings):
     class Config:
         @classmethod
         def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
-            if field_name == "numbers":
+            if field_name == 'numbers':
                 return parse_list(raw_val)
             return cls.json_loads(raw_val)
 
