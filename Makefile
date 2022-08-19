@@ -12,7 +12,7 @@ install:
 
 .PHONY: install-rust-coverage
 install-rust-coverage:
-	cargo install rustfilt cargo-binutils
+	cargo install rustfilt coverage-prepare
 	rustup component add llvm-tools-preview
 
 .PHONY: build-dev
@@ -33,15 +33,6 @@ build-prod:
 
 .PHONY: build-coverage
 build-coverage:
-	pip uninstall -y pydantic_core
-	rm -f pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage -A incomplete_features -C link-arg=-undefined -C link-arg=dynamic_lookup' cargo build
-	@rm -f target/debug/lib_pydantic_core.d
-	@rm -f target/debug/lib_pydantic_core.rlib
-	mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
-
-.PHONY: build-cov-windows
-build-cov-windows:
 	pip uninstall -y pydantic_core
 	rm -f pydantic_core/*.so
 	RUSTFLAGS='-C instrument-coverage -A incomplete_features' cargo build
@@ -100,14 +91,7 @@ testcov: build-coverage test
 	@rm -rf htmlcov
 	@mkdir -p htmlcov
 	coverage html -d htmlcov/python
-	./tests/rust_coverage_html.sh
-
-.PHONY: testcov-windows
-testcov-windows: build-cov-windows test
-	@rm -rf htmlcov
-	@mkdir -p htmlcov
-	coverage html -d htmlcov/python
-	./tests/rust_coverage_html.sh
+	coverage-prepare html pydantic_core/*.so
 
 .PHONY: all
 all: format build-dev lint test
