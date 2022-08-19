@@ -188,14 +188,9 @@ class EnvSettingsSource:
                     if env_val_built:
                         d[field.alias] = env_val_built
                 else:
-                    # field is complex and there's a value, decode using the
-                    # parsing function passed via env_parse or json_loads, then
-                    # add explode_env_vars
-                    parse_func: Callable[[str], Any] = field.field_info.extra.get(
-                        'env_parse', settings.__config__.json_loads
-                    )
+                    # field is complex and there's a value, decode that as JSON, then add explode_env_vars
                     try:
-                        env_val = parse_func(env_val)
+                        env_val = settings.__config__.json_loads(env_val)
                     except ValueError as e:
                         if not allow_json_failure:
                             raise SettingsError(f'error parsing envvar "{env_name}"') from e
@@ -303,11 +298,8 @@ class SecretsSettingsSource:
                 if path.is_file():
                     secret_value = path.read_text().strip()
                     if field.is_complex():
-                        parse_func: Callable[[str], Any] = field.field_info.extra.get(
-                            'env_parse', settings.__config__.json_loads
-                        )
                         try:
-                            secret_value = parse_func(secret_value)
+                            secret_value = settings.__config__.json_loads(secret_value)
                         except ValueError as e:
                             raise SettingsError(f'error parsing envvar "{env_name}"') from e
 
