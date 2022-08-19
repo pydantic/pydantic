@@ -99,9 +99,7 @@ Nested environment variables take precedence over the top-level environment vari
 You may also populate a complex type by providing your own parsing function to
 the `parse_env_var` classmethod in the Config object.
 
-```py
 {!.tmp_examples/settings_with_custom_parsing.py!}
-```
 
 ## Dotenv (.env) support
 
