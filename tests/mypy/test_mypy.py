@@ -37,6 +37,7 @@ cases = [
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
     ('mypy-default.ini', 'fail4.py', 'fail4.txt'),
     ('mypy-default.ini', 'plugin_success.py', 'plugin_success.txt'),
+    ('mypy-plugin-strict-no-any.ini', 'no_any.py', None),
     ('pyproject-default.toml', 'success.py', None),
     ('pyproject-default.toml', 'fail1.py', 'fail1.txt'),
     ('pyproject-default.toml', 'fail2.py', 'fail2.txt'),

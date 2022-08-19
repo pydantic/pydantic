@@ -19,6 +19,7 @@ from typing import (  # type: ignore
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
     _eval_type,
     cast,
@@ -76,8 +77,13 @@ else:
         return get_type_hints(obj, globalns, localns, include_extras=True)
 
 
+_T = TypeVar('_T')
+
 AnyCallable = TypingCallable[..., Any]
 NoArgAnyCallable = TypingCallable[[], Any]
+
+# workaround for https://github.com/python/mypy/issues/9496
+AnyArgTCallable = TypingCallable[..., _T]
 
 
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
