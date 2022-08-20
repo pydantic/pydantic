@@ -244,4 +244,4 @@ def test_set_name():
         def _some_func(self):
             return self
 
-    mock.assert_called_once_with(A, "_some_func")
+    mock.assert_called_once_with(A, '_some_func')
