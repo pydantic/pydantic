@@ -227,6 +227,7 @@ def test_generics_model():
 def test_set_name():
 
     from unittest.mock import Mock
+
     from pydantic.fields import ModelPrivateAttr
 
     mock = Mock()
