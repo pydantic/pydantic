@@ -286,6 +286,11 @@ class ModelMetaclass(ABCMeta):
         if resolve_forward_refs:
             cls.__try_update_forward_refs__()
 
+        for name, obj in namespace.items():
+            set_name = getattr(obj, '__set_name__', None)
+            if callable(set_name):
+                set_name(cls, name)
+
         return cls
 
     def __instancecheck__(self, instance: Any) -> bool:
