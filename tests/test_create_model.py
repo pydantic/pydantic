@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 import pytest
 
 from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic.fields import ModelPrivateAttr
 from pydantic.generics import GenericModel
 
 
@@ -225,12 +226,7 @@ def test_generics_model():
 
 
 def test_set_name():
-
-    from unittest.mock import Mock
-
-    from pydantic.fields import ModelPrivateAttr
-
-    mock = Mock()
+    calls = []
 
     class class_deco(ModelPrivateAttr):
         def __init__(self, fn):
@@ -238,11 +234,11 @@ def test_set_name():
             self.fn = fn
 
         def __set_name__(self, owner, name):
-            mock(owner, name)
+            calls.append((owner, name))
 
     class A(BaseModel):
         @class_deco
         def _some_func(self):
             return self
 
-    mock.assert_called_once_with(A, '_some_func')
+    assert calls == [(A, '_some_func')]
