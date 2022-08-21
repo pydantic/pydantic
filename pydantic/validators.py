@@ -152,17 +152,9 @@ def strict_float_validator(v: Any) -> float:
     raise errors.FloatError()
 
 
-def float_nan_validator(v: 'Number', field: 'ModelField') -> 'Number':
-    field_type: ConstrainedFloat = field.type_
-    if field_type.allow_nan is False and math.isnan(v):
-        raise errors.NumberIsNanError()
-    return v
-
-
-def float_inf_validator(v: 'Number', field: 'ModelField') -> 'Number':
-    field_type: ConstrainedFloat = field.type_
-    if field_type.allow_inf is False and math.isinf(v):
-        raise errors.NumberIsInfError()
+def float_finite_validator(v: 'Number') -> 'Number':
+    if math.isnan(v) or math.isinf(v):
+        raise errors.NumberNotFiniteError()
     return v
 
 

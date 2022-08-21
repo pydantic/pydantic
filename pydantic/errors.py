@@ -417,14 +417,9 @@ class NumberNotLeError(_NumberBoundError):
     msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
-class NumberIsNanError(PydanticValueError):
-    code = 'number.is_nan'
-    msg_template = 'ensure this value is a number and not NaN'
-
-
-class NumberIsInfError(PydanticValueError):
-    code = 'number.is_inf'
-    msg_template = 'ensure this value is a number and not infinity (+inf or -inf)'
+class NumberNotFiniteError(PydanticValueError):
+    code = 'number.not_finite_number'
+    msg_template = 'ensure this value is a finite number'
 
 
 class NumberNotMultipleError(PydanticValueError):
