@@ -8,14 +8,18 @@ import pytest
 try:
     from mypy import api as mypy_api
     from mypy.version import __version__ as mypy_version
+
+    from pydantic.mypy import parse_mypy_version
 except ImportError:
-    mypy_api = None  # type: ignore
-    mypy_version = '0'
+    mypy_api = None
+    mypy_version = None
+    parse_mypy_version = lambda _: (0,)  # noqa: E731
+
 
 try:
     import dotenv
 except ImportError:
-    dotenv = None  # type: ignore
+    dotenv = None
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
@@ -23,14 +27,17 @@ os.chdir(Path(__file__).parent.parent.parent)
 cases = [
     ('mypy-plugin.ini', 'plugin_success.py', None),
     ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
+    ('mypy-plugin.ini', 'custom_constructor.py', 'custom_constructor.txt'),
     ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
     ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
+    ('mypy-plugin-strict.ini', 'fail_defaults.py', 'fail_defaults.txt'),
     ('mypy-default.ini', 'success.py', None),
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
     ('mypy-default.ini', 'fail4.py', 'fail4.txt'),
     ('mypy-default.ini', 'plugin_success.py', 'plugin_success.txt'),
+    ('mypy-plugin-strict-no-any.ini', 'no_any.py', None),
     ('pyproject-default.toml', 'success.py', None),
     ('pyproject-default.toml', 'fail1.py', 'fail1.txt'),
     ('pyproject-default.toml', 'fail2.py', 'fail2.txt'),
@@ -40,6 +47,7 @@ cases = [
     ('pyproject-plugin.toml', 'plugin_fail.py', 'plugin-fail.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_success.py', 'plugin-success-strict.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt'),
+    ('pyproject-plugin-strict.toml', 'fail_defaults.py', 'fail_defaults.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
@@ -76,7 +84,7 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
 
     # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
-    if actual_out and float(mypy_version) < 0.930:
+    if actual_out and parse_mypy_version(mypy_version) < (0, 930):
         actual_out = actual_out.lower()
         expected_out = expected_out.lower()
         actual_out = actual_out.replace('variant:', 'variants:')
@@ -127,3 +135,16 @@ def test_explicit_reexports_exist():
 
     for name in pydantic.__all__:
         assert hasattr(pydantic, name), f'{name} is in pydantic.__all__ but missing from pydantic'
+
+
+@pytest.mark.skipif(mypy_version is None, reason='mypy is not installed')
+@pytest.mark.parametrize(
+    'v_str,v_tuple',
+    [
+        ('0', (0,)),
+        ('0.930', (0, 930)),
+        ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
+    ],
+)
+def test_parse_mypy_version(v_str, v_tuple):
+    assert parse_mypy_version(v_str) == v_tuple

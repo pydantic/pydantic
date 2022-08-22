@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := all
-isort = isort pydantic tests
-black = black -S -l 120 --target-version py38 pydantic tests
+sources = pydantic tests docs/build
+isort = isort $(sources)
+black = black -S -l 120 --target-version py38 $(sources)
 
 .PHONY: install-linting
 install-linting:
@@ -35,12 +36,13 @@ build:
 
 .PHONY: format
 format:
+	pyupgrade --py37-plus  --exit-zero-even-if-changed `find $(sources) -name "*.py" -type f`
 	$(isort)
 	$(black)
 
 .PHONY: lint
 lint:
-	flake8 pydantic/ tests/
+	flake8 $(sources)
 	$(isort) --check-only --df
 	$(black) --check --diff
 
@@ -52,7 +54,15 @@ check-dist:
 
 .PHONY: mypy
 mypy:
-	mypy pydantic
+	mypy pydantic docs/build
+
+.PHONY: pyupgrade
+pyupgrade:
+	pyupgrade --py37-plus `find pydantic tests -name "*.py" -type f`
+
+.PHONY: pyright
+pyright:
+	cd tests/pyright && pyright
 
 .PHONY: test
 test:

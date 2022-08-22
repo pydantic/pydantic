@@ -12,10 +12,7 @@ This makes it easy to:
 
 For example:
 
-```py
-{!.tmp_examples/settings_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/settings_main.md!}
 
 ## Environment variable names
 
@@ -46,9 +43,7 @@ The following rules are used to determine which environment variable(s) are read
 
 Case-sensitivity can be turned on through the `Config`:
 
-```py
-{!.tmp_examples/settings_case_sensitive.py!}
-```
+{!.tmp_examples/settings_case_sensitive.md!}
 
 When `case_sensitive` is `True`, the environment variable names must match field names (optionally with a prefix),
 so in this example
@@ -56,8 +51,12 @@ so in this example
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through `Field(..., env=...)`.
 
+In Pydantic **v1** `case_sensitive` is `False` by default and all variable names are converted to lower-case internally.
+If you want to define upper-case variable names on nested models like `SubModel` you have to
+set `case_sensitive=True` to disable this behaviour.
+
 !!! note
-    On Windows, python's `os` module always treats environment variables as case-insensitive, so the
+    On Windows, Python's `os` module always treats environment variables as case-insensitive, so the
     `case_sensitive` config setting will have no effect - settings will always be updated ignoring case.
 
 ## Parsing environment variable values
@@ -86,9 +85,7 @@ export SUB_MODEL__DEEP__V4=v4
 ```
 
 You could load a settings module thus:
-```py
-{!.tmp_examples/settings_nested_env.py!}
-```
+{!.tmp_examples/settings_nested_env.md!}
 
 `env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
 `_env_nested_delimiter` keyword argument on instantiation.
@@ -144,12 +141,31 @@ In either case, the value of the passed argument can be any valid path or filena
 current working directory. From there, *pydantic* will handle everything for you by loading in your variables and
 validating them.
 
+!!! note
+    If a filename is specified for `env_file`, Pydantic will only check the current working directory and
+    won't check any parent directories for the `.env` file.
+
 Even when using a dotenv file, *pydantic* will still read environment variables as well as the dotenv file,
 **environment variables will always take priority over values loaded from a dotenv file**.
 
 Passing a file path via the `_env_file` keyword argument on instantiation (method 2) will override
 the value (if any) set on the `Config` class. If the above snippets were used in conjunction, `prod.env` would be loaded
 while `.env` would be ignored.
+
+If you need to load multiple dotenv files, you can pass the file paths as a `list` or `tuple`.
+
+Later files in the list/tuple will take priority over earlier files.
+
+```py
+from pydantic import BaseSettings
+
+class Settings(BaseSettings):
+    ...
+
+    class Config:
+        # `.env.prod` takes priority over `.env`
+        env_file = '.env', '.env.prod'
+```
 
 You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
 the `Config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`.
@@ -253,10 +269,7 @@ Each callable should take an instance of the settings class as its sole argument
 
 The order of the returned callables decides the priority of inputs; first item is the highest priority.
 
-```py
-{!.tmp_examples/settings_env_priority.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/settings_env_priority.md!}
 
 By flipping `env_settings` and `init_settings`, environment variables now have precedence over `__init__` kwargs.
 
@@ -265,16 +278,10 @@ By flipping `env_settings` and `init_settings`, environment variables now have p
 As explained earlier, *pydantic* ships with multiples built-in settings sources. However, you may occasionally
 need to add your own custom sources, `customise_sources` makes this very easy:
 
-```py
-{!.tmp_examples/settings_add_custom_source.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/settings_add_custom_source.md!}
 
 ### Removing sources
 
 You might also want to disable a source:
 
-```py
-{!.tmp_examples/settings_disable_source.py!}
-```
-_(This script is complete, it should run "as is", here you might need to set the `my_api_key` environment variable)_
+{!.tmp_examples/settings_disable_source.md!}

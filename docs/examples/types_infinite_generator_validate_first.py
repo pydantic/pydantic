@@ -37,8 +37,7 @@ print(m)
 
 def infinite_strs():
     while True:
-        for letter in 'allthesingleladies':
-            yield letter
+        yield from 'allthesingleladies'
 
 
 try:

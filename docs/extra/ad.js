@@ -21,4 +21,5 @@ function main () {
   document.head.appendChild(script)
 }
 
-main()
+// ads disabled for now
+// main()

@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, Optional, TypeVar, Union
+from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
@@ -193,3 +193,34 @@ class Response(GenericModel, Generic[T]):
 
 
 response = Response[Model](data=model, error=None)
+
+
+class ModelWithAnnotatedValidator(BaseModel):
+    name: str
+
+    @validator('name')
+    def noop_validator_with_annotations(cls, name: str) -> str:
+        return name
+
+
+def _default_factory_str() -> str:
+    ...
+
+
+def _default_factory_list() -> List[int]:
+    ...
+
+
+class FieldDefaultTestingModel(BaseModel):
+    # Required
+    a: int
+    b: int = Field()
+    c: int = Field(...)
+
+    # Default
+    d: int = Field(1)
+
+    # Default factory
+    g: List[int] = Field(default_factory=_default_factory_list)
+    h: str = Field(default_factory=_default_factory_str)
+    i: str = Field(default_factory=lambda: 'test')

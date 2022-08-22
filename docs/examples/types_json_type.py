@@ -1,29 +1,29 @@
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, Json, ValidationError
 
 
-class SimpleJsonModel(BaseModel):
-    json_obj: Json
+class AnyJsonModel(BaseModel):
+    json_obj: Json[Any]
 
 
-class ComplexJsonModel(BaseModel):
+class ConstrainedJsonModel(BaseModel):
     json_obj: Json[List[int]]
 
 
-print(SimpleJsonModel(json_obj='{"b": 1}'))
-print(ComplexJsonModel(json_obj='[1, 2, 3]'))
+print(AnyJsonModel(json_obj='{"b": 1}'))
+print(ConstrainedJsonModel(json_obj='[1, 2, 3]'))
 try:
-    ComplexJsonModel(json_obj=12)
+    ConstrainedJsonModel(json_obj=12)
 except ValidationError as e:
     print(e)
 
 try:
-    ComplexJsonModel(json_obj='[a, b]')
+    ConstrainedJsonModel(json_obj='[a, b]')
 except ValidationError as e:
     print(e)
 
 try:
-    ComplexJsonModel(json_obj='["a", "b"]')
+    ConstrainedJsonModel(json_obj='["a", "b"]')
 except ValidationError as e:
     print(e)

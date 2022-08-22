@@ -4,9 +4,8 @@ However, Pydantic also ships with a mypy plugin that adds a number of important 
 features to mypy that improve its ability to type-check your code.
 
 For example, consider the following script:
-```py
-{!.tmp_examples/mypy_main.py!}
-```
+{!.tmp_examples/mypy_main.md!}
+
 
 Without any special configuration, mypy catches one of the errors (see [here](usage/mypy.md) for usage instructions):
 ```
@@ -55,11 +54,16 @@ There are other benefits too! See below for more details.
   cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
 
 #### Generate a signature for `dataclasses`
-* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard python dataclasses
+* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard Python dataclasses
 * The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
+
+#### Respect the type of the `Field`'s `default` and `default_factory`
+* Field with both a `default` and a `default_factory` will result in an error during static checking.
+* The type of the `default` and `default_factory` value must be compatible with the one of the field.
 
 ### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
+
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy
   error any time you use a dynamically-determined alias or alias generator on a model with
   `Config.allow_population_by_field_name=False`.

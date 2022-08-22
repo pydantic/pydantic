@@ -1,4 +1,5 @@
 import typing
+from datetime import date
 
 import pytest
 
@@ -67,6 +68,7 @@ def gen_models():
         json_str: pydantic.Json[str]
         json_int_or_str: pydantic.Json[typing.Union[int, str]]
         json_list_of_float: pydantic.Json[typing.List[float]]
+        json_pydantic_model: pydantic.Json[pydantic.BaseModel]
 
     class ConstrainedNumbersModel(pydantic.BaseModel):
         conintt: pydantic.conint(gt=10, lt=100)
@@ -81,6 +83,10 @@ def gen_models():
         condecimaltplc: pydantic.condecimal(gt=10, lt=100, decimal_places=5)
         condecimaleplc: pydantic.condecimal(ge=10, le=100, decimal_places=2)
 
+    class ConstrainedDateModel(pydantic.BaseModel):
+        condatet: pydantic.condate(gt=date(1980, 1, 1), lt=date(2180, 12, 31))
+        condatee: pydantic.condate(ge=date(1980, 1, 1), le=date(2180, 12, 31))
+
     yield from (
         MiscModel,
         StringsModel,
@@ -92,6 +98,7 @@ def gen_models():
         NumbersModel,
         JsonModel,
         ConstrainedNumbersModel,
+        ConstrainedDateModel,
     )
 
     try:
@@ -108,7 +115,7 @@ def gen_models():
 
 
 @pytest.mark.parametrize('model', gen_models())
-@settings(suppress_health_check={HealthCheck.too_slow})
+@settings(suppress_health_check={HealthCheck.too_slow}, deadline=None)
 @given(data=st.data())
 def test_can_construct_models_with_all_fields(data, model):
     # The value of this test is to confirm that Hypothesis knows how to provide

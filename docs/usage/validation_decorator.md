@@ -7,14 +7,11 @@ boilerplate.
     The `validate_arguments` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
-    on [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) or create a new issue.
+    on [#1205](https://github.com/pydantic/pydantic/issues/1205) or create a new issue.
 
 Example of usage:
 
-```py
-{!.tmp_examples/validation_decorator_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_main.md!}
 
 ## Argument Types
 
@@ -23,10 +20,7 @@ as `Any`. Since `validate_arguments` internally uses a standard `BaseModel`, all
 [types](types.md) can be validated, including *pydantic* models and [custom types](types.md#custom-data-types).
 As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
-```py
-{!.tmp_examples/validation_decorator_types.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_types.md!}
 
 A few notes:
 
@@ -46,14 +40,11 @@ combinations of these:
 * variable positional arguments defined via `*` (often `*args`)
 * variable keyword arguments defined via `**` (often `**kwargs`)
 * keyword only arguments - arguments after `*,`
-* positional only arguments - arguments before `, /` (new in python 3.8)
+* positional only arguments - arguments before `, /` (new in Python 3.8)
 
 To demonstrate all the above parameter types:
 
-```py
-{!.tmp_examples/validation_decorator_parameter_types.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_parameter_types.md!}
 
 ## Using Field to describe function arguments
 
@@ -62,10 +53,12 @@ the field and validations. In general it should be used in a type hint with
 [Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:
 
-```py
-{!.tmp_examples/validation_decorator_field.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_field.md!}
+
+The [alias](model_config#alias-precedence) can be used with the decorator as normal.
+
+{!.tmp_examples/validation_decorator_field_alias.md!}
+
 
 ## Usage with mypy
 
@@ -80,28 +73,20 @@ By default, arguments validation is done by directly calling the decorated funct
 But what if you wanted to validate them without *actually* calling the function?
 To do that you can call the `validate` method bound to the decorated function.
 
-```py
-{!.tmp_examples/validation_decorator_validate.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_validate.md!}
 
 ## Raw function
 
 The raw function which was decorated is accessible, this is useful if in some scenarios you trust your input
 arguments and want to call the function in the most performant way (see [notes on performance](#performance) below):
 
-```py
-{!.tmp_examples/validation_decorator_raw_function.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_raw_function.md!}
 
 ## Async Functions
 
 `validate_arguments` can also be used on async functions:
 
-```py
-{!.tmp_examples/validation_decorator_async.py!}
-```
+{!.tmp_examples/validation_decorator_async.md!}
 
 ## Custom Config
 
@@ -115,15 +100,12 @@ setting the `Config` sub-class in normal models.
 Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.
 
-```py
-{!.tmp_examples/validation_decorator_config.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/validation_decorator_config.md!}
 
 ## Limitations
 
 `validate_arguments` has been released on a provisional basis without all the bells and whistles, which may
-be added later, see [#1205](https://github.com/samuelcolvin/pydantic/issues/1205) for some more discussion of this.
+be added later, see [#1205](https://github.com/pydantic/pydantic/issues/1205) for some more discussion of this.
 
 In particular:
 
@@ -134,7 +116,7 @@ see [model error handling](models.md#error-handling).
 
 This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
 `.errors()` and `.json()` can be useful when exposing the errors to end users, however `ValidationError` inherits
-from `ValueError` **not** `TypeError` which may be unexpected since python would raise a `TypeError` upon invalid
+from `ValueError` **not** `TypeError` which may be unexpected since Python would raise a `TypeError` upon invalid
 or missing arguments. This may be addressed in future by either allow a custom error or raising a different
 exception by default, or both.
 
@@ -143,7 +125,7 @@ exception by default, or both.
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
 see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
 
-See [#1098](https://github.com/samuelcolvin/pydantic/issues/1098) and other issues with the "strictness" label
+See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
 for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_arguments` will have an option
 to use this, it may even become the default for the decorator.
 

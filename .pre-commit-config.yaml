@@ -3,6 +3,7 @@ repos:
   rev: v4.0.1
   hooks:
   - id: check-yaml
+    args: ['--unsafe']
   - id: end-of-file-fixer
 
 - repo: local
@@ -15,5 +16,10 @@ repos:
   - id: mypy
     name: Mypy
     entry: make mypy
+    types: [python]
+    language: system
+  - id: pyupgrade
+    name: Pyupgrade
+    entry: make pyupgrade
     types: [python]
     language: system

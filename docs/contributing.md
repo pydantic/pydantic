@@ -2,15 +2,15 @@ We'd love you to contribute to *pydantic*!
 
 ## Issues
 
-Questions, feature requests and bug reports are all welcome as [discussions or issues](https://github.com/samuelcolvin/pydantic/issues/new/choose). **However, to report a security
-vulnerability, please see our [security policy](https://github.com/samuelcolvin/pydantic/security/policy).**
+Questions, feature requests and bug reports are all welcome as [discussions or issues](https://github.com/pydantic/pydantic/issues/new/choose). **However, to report a security
+vulnerability, please see our [security policy](https://github.com/pydantic/pydantic/security/policy).**
 
 To make it as simple as possible for us to help you, please include the output of the following call in your issue:
 
 ```bash
 python -c "import pydantic.utils; print(pydantic.utils.version_info())"
 ```
-If you're using *pydantic* prior to **v1.3** (when `version_info()` was added), please manually include OS, python
+If you're using *pydantic* prior to **v1.3** (when `version_info()` was added), please manually include OS, Python
 version and pydantic version.
 
 Please try to always include the above unless you're unable to install *pydantic* or **know** it's not relevant
@@ -26,14 +26,14 @@ It should be extremely simple to get started and create a Pull Request.
     creating a pull request.
 
 If you're looking for something to get your teeth into, check out the
-["help wanted"](https://github.com/samuelcolvin/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
+["help wanted"](https://github.com/pydantic/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
 label on github.
 
 To make contributing as easy and fast as possible, you'll want to run tests and linting locally. Luckily,
 *pydantic* has few dependencies, doesn't require compiling and tests don't need access to databases, etc.
 Because of this, setting up and running the tests should be very simple.
 
-You'll need to have a version between **python 3.7 and 3.10**, **virtualenv**, **git**, and **make** installed.
+You'll need to have a version between **Python 3.7 and 3.11**, **virtualenv**, **git**, and **make** installed.
 
 ```bash
 # 1. clone your fork and cd into the repo directory

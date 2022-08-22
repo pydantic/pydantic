@@ -5,7 +5,7 @@ import re
 import string
 import sys
 from copy import copy, deepcopy
-from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
+from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 from pkg_resources import safe_version
@@ -16,7 +16,6 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 from pydantic.typing import (
-    ForwardRef,
     all_literal_values,
     display_as_type,
     get_args,
@@ -28,6 +27,7 @@ from pydantic.typing import (
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
+    LimitedDict,
     ValueItems,
     all_identical,
     deep_update,
@@ -36,6 +36,7 @@ from pydantic.utils import (
     lenient_issubclass,
     path_type,
     smart_deepcopy,
+    to_lower_camel,
     truncate,
     unique_list,
 )
@@ -460,6 +461,17 @@ def test_smart_deepcopy_collection(collection, mocker):
     assert smart_deepcopy(collection) is expected_value
 
 
+@pytest.mark.parametrize('error', [TypeError, ValueError, RuntimeError])
+def test_smart_deepcopy_error(error, mocker):
+    class RaiseOnBooleanOperation(str):
+        def __bool__(self):
+            raise error('raised error')
+
+    obj = RaiseOnBooleanOperation()
+    expected_value = deepcopy(obj)
+    assert smart_deepcopy(obj) == expected_value
+
+
 T = TypeVar('T')
 
 
@@ -525,3 +537,55 @@ def test_all_identical():
 def test_undefined_pickle():
     undefined2 = pickle.loads(pickle.dumps(Undefined))
     assert undefined2 is Undefined
+
+
+def test_on_lower_camel_zero_length():
+    assert to_lower_camel('') == ''
+
+
+def test_on_lower_camel_one_length():
+    assert to_lower_camel('a') == 'a'
+
+
+def test_on_lower_camel_many_length():
+    assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
+
+
+def test_limited_dict():
+    d = LimitedDict(10)
+    d[1] = '1'
+    d[2] = '2'
+    assert list(d.items()) == [(1, '1'), (2, '2')]
+    for no in '34567890':
+        d[int(no)] = no
+    assert list(d.items()) == [
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+    ]
+    d[11] = '11'
+
+    # reduce size to 9 after setting 11
+    assert len(d) == 9
+    assert list(d.items()) == [
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+        (11, '11'),
+    ]
+    d[12] = '12'
+    assert len(d) == 10
+    d[13] = '13'
+    assert len(d) == 9

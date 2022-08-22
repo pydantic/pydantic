@@ -1,6 +1,10 @@
+from typing import Generic, TypeVar
+
 import pytest
 
 from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic.fields import ModelPrivateAttr
+from pydantic.generics import GenericModel
 
 
 def test_create_model():
@@ -205,3 +209,36 @@ def test_config_field_info_create_model():
 
     m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
     assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_generics_model():
+    T = TypeVar('T')
+
+    class TestGenericModel(GenericModel):
+        pass
+
+    AAModel = create_model(
+        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'orm_mode': True}, aa=(int, Field(0))
+    )
+    result = AAModel[int](aa=1)
+    assert result.aa == 1
+    assert result.__config__.orm_mode is True
+
+
+def test_set_name():
+    calls = []
+
+    class class_deco(ModelPrivateAttr):
+        def __init__(self, fn):
+            super().__init__()
+            self.fn = fn
+
+        def __set_name__(self, owner, name):
+            calls.append((owner, name))
+
+    class A(BaseModel):
+        @class_deco
+        def _some_func(self):
+            return self
+
+    assert calls == [(A, '_some_func')]

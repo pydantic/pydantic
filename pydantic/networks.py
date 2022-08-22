@@ -15,6 +15,8 @@ from typing import (
     Collection,
     Dict,
     Generator,
+    List,
+    Match,
     Optional,
     Pattern,
     Set,
@@ -24,6 +26,7 @@ from typing import (
     cast,
     no_type_check,
 )
+from urllib.parse import quote, quote_plus
 
 from . import errors
 from .utils import Representation, update_not_none
@@ -51,8 +54,19 @@ if TYPE_CHECKING:
         query: Optional[str]
         fragment: Optional[str]
 
+    class HostParts(TypedDict, total=False):
+        host: str
+        tld: Optional[str]
+        host_type: Optional[str]
+        port: Optional[str]
+        rebuild: bool
+
 else:
     email_validator = None
+
+    class Parts(dict):
+        pass
+
 
 NetworkType = Union[str, bytes, int, Tuple[Union[str, bytes, int], Union[str, int]]]
 
@@ -68,35 +82,61 @@ __all__ = [
     'IPvAnyInterface',
     'IPvAnyNetwork',
     'PostgresDsn',
+    'CockroachDsn',
     'AmqpDsn',
     'RedisDsn',
+    'MongoDsn',
     'KafkaDsn',
     'validate_email',
 ]
 
 _url_regex_cache = None
+_multi_host_url_regex_cache = None
 _ascii_domain_regex_cache = None
 _int_domain_regex_cache = None
+_host_regex_cache = None
+
+_host_regex = (
+    r'(?:'
+    r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})(?=$|[/:#?])|'  # ipv4
+    r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])(?=$|[/:#?])|'  # ipv6
+    r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
+    r')?'
+    r'(?::(?P<port>\d+))?'  # port
+)
+_scheme_regex = r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
+_user_info_regex = r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'
+_path_regex = r'(?P<path>/[^\s?#]*)?'
+_query_regex = r'(?:\?(?P<query>[^\s#]*))?'
+_fragment_regex = r'(?:#(?P<fragment>[^\s#]*))?'
 
 
 def url_regex() -> Pattern[str]:
     global _url_regex_cache
     if _url_regex_cache is None:
         _url_regex_cache = re.compile(
-            r'(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?'  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
-            r'(?:(?P<user>[^\s:/]*)(?::(?P<password>[^\s/]*))?@)?'  # user info
-            r'(?:'
-            r'(?P<ipv4>(?:\d{1,3}\.){3}\d{1,3})(?=$|[/:#?])|'  # ipv4
-            r'(?P<ipv6>\[[A-F0-9]*:[A-F0-9:]+\])(?=$|[/:#?])|'  # ipv6
-            r'(?P<domain>[^\s/:?#]+)'  # domain, validation occurs later
-            r')?'
-            r'(?::(?P<port>\d+))?'  # port
-            r'(?P<path>/[^\s?#]*)?'  # path
-            r'(?:\?(?P<query>[^\s#]*))?'  # query
-            r'(?:#(?P<fragment>[^\s#]*))?',  # fragment
+            rf'{_scheme_regex}{_user_info_regex}{_host_regex}{_path_regex}{_query_regex}{_fragment_regex}',
             re.IGNORECASE,
         )
     return _url_regex_cache
+
+
+def multi_host_url_regex() -> Pattern[str]:
+    """
+    Compiled multi host url regex.
+
+    Additionally to `url_regex` it allows to match multiple hosts.
+    E.g. host1.db.net,host2.db.net
+    """
+    global _multi_host_url_regex_cache
+    if _multi_host_url_regex_cache is None:
+        _multi_host_url_regex_cache = re.compile(
+            rf'{_scheme_regex}{_user_info_regex}'
+            r'(?P<hosts>([^/]*))'  # validation occurs later
+            rf'{_path_regex}{_query_regex}{_fragment_regex}',
+            re.IGNORECASE,
+        )
+    return _multi_host_url_regex_cache
 
 
 def ascii_domain_regex() -> Pattern[str]:
@@ -119,6 +159,16 @@ def int_domain_regex() -> Pattern[str]:
     return _int_domain_regex_cache
 
 
+def host_regex() -> Pattern[str]:
+    global _host_regex_cache
+    if _host_regex_cache is None:
+        _host_regex_cache = re.compile(
+            _host_regex,
+            re.IGNORECASE,
+        )
+    return _host_regex_cache
+
+
 class AnyUrl(str):
     strip_whitespace = True
     min_length = 1
@@ -128,6 +178,7 @@ class AnyUrl(str):
     user_required: bool = False
     host_required: bool = True
     hidden_parts: Set[str] = set()
+    quote_plus: bool = False
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -176,20 +227,33 @@ class AnyUrl(str):
         fragment: Optional[str] = None,
         **_kwargs: str,
     ) -> str:
+        parts = Parts(
+            scheme=scheme,
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+            path=path,
+            query=query,
+            fragment=fragment,
+            **_kwargs,  # type: ignore[misc]
+        )
+
         url = scheme + '://'
         if user:
-            url += user
+            url += cls.quote(user)
         if password:
-            url += ':' + password
+            url += ':' + cls.quote(password)
         if user or password:
             url += '@'
         url += host
-        if port and 'port' not in cls.hidden_parts:
+        if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
-            url += path
+            url += '/'.join(map(cls.quote, path.split('/')))
         if query:
-            url += '?' + query
+            queries = query.split('&')
+            url += '?' + '&'.join(map(lambda s: '='.join(map(cls.quote, s.split('='))), queries))
         if fragment:
             url += '#' + fragment
         return url
@@ -211,7 +275,7 @@ class AnyUrl(str):
             value = value.strip()
         url: str = cast(str, constr_length_validator(value, field, config))
 
-        m = url_regex().match(url)
+        m = cls._match_url(url)
         # the regex should always match, if it doesn't please report with details of the URL tried
         assert m, 'URL regex failed unexpectedly'
 
@@ -219,10 +283,18 @@ class AnyUrl(str):
         parts = cls.apply_default_parts(original_parts)
         parts = cls.validate_parts(parts)
 
-        host, tld, host_type, rebuild = cls.validate_host(parts)
-
         if m.end() != len(url):
             raise errors.UrlExtraError(extra=url[m.end() :])
+
+        return cls._build_url(m, url, parts)
+
+    @classmethod
+    def _build_url(cls, m: Match[str], url: str, parts: 'Parts') -> 'AnyUrl':
+        """
+        Validate hosts and build the AnyUrl object. Split from `validate` so this method
+        can be altered in `MultiHostDsn`.
+        """
+        host, tld, host_type, rebuild = cls.validate_host(parts)
 
         return cls(
             None if rebuild else url,
@@ -238,10 +310,19 @@ class AnyUrl(str):
             fragment=parts['fragment'],
         )
 
+    @staticmethod
+    def _match_url(url: str) -> Optional[Match[str]]:
+        return url_regex().match(url)
+
+    @staticmethod
+    def _validate_port(port: Optional[str]) -> None:
+        if port is not None and int(port) > 65_535:
+            raise errors.UrlPortError()
+
     @classmethod
-    def validate_parts(cls, parts: 'Parts') -> 'Parts':
+    def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
         """
-        A method used to validate parts of an URL.
+        A method used to validate parts of a URL.
         Could be overridden to set default values for parts if missing
         """
         scheme = parts['scheme']
@@ -251,9 +332,8 @@ class AnyUrl(str):
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
             raise errors.UrlSchemePermittedError(set(cls.allowed_schemes))
 
-        port = parts['port']
-        if port is not None and int(port) > 65_535:
-            raise errors.UrlPortError()
+        if validate_port:
+            cls._validate_port(parts['port'])
 
         user = parts['user']
         if cls.user_required and user is None:
@@ -263,7 +343,7 @@ class AnyUrl(str):
 
     @classmethod
     def validate_host(cls, parts: 'Parts') -> Tuple[str, Optional[str], str, bool]:
-        host, tld, host_type, rebuild = None, None, None, False
+        tld, host_type, rebuild = None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
             host = parts[f]  # type: ignore[literal-required]
             if host:
@@ -314,6 +394,10 @@ class AnyUrl(str):
                 parts[key] = value  # type: ignore[literal-required]
         return parts
 
+    @classmethod
+    def quote(cls, string: str, safe: str = '') -> str:
+        return quote_plus(string, safe) if cls.quote_plus else quote(string, safe)
+
     def __repr__(self) -> str:
         extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
         return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
@@ -321,6 +405,8 @@ class AnyUrl(str):
 
 class AnyHttpUrl(AnyUrl):
     allowed_schemes = {'http', 'https'}
+
+    __slots__ = ()
 
 
 class HttpUrl(AnyHttpUrl):
@@ -338,8 +424,74 @@ class FileUrl(AnyUrl):
     allowed_schemes = {'file'}
     host_required = False
 
+    __slots__ = ()
 
-class PostgresDsn(AnyUrl):
+
+class MultiHostDsn(AnyUrl):
+    __slots__ = AnyUrl.__slots__ + ('hosts',)
+
+    def __init__(self, *args: Any, hosts: Optional[List['HostParts']] = None, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.hosts = hosts
+
+    @staticmethod
+    def _match_url(url: str) -> Optional[Match[str]]:
+        return multi_host_url_regex().match(url)
+
+    @classmethod
+    def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
+        return super().validate_parts(parts, validate_port=False)
+
+    @classmethod
+    def _build_url(cls, m: Match[str], url: str, parts: 'Parts') -> 'MultiHostDsn':
+        hosts_parts: List['HostParts'] = []
+        host_re = host_regex()
+        for host in m.groupdict()['hosts'].split(','):
+            d: Parts = host_re.match(host).groupdict()  # type: ignore
+            host, tld, host_type, rebuild = cls.validate_host(d)
+            port = d.get('port')
+            cls._validate_port(port)
+            hosts_parts.append(
+                {
+                    'host': host,
+                    'host_type': host_type,
+                    'tld': tld,
+                    'rebuild': rebuild,
+                    'port': port,
+                }
+            )
+
+        if len(hosts_parts) > 1:
+            return cls(
+                None if any([hp['rebuild'] for hp in hosts_parts]) else url,
+                scheme=parts['scheme'],
+                user=parts['user'],
+                password=parts['password'],
+                path=parts['path'],
+                query=parts['query'],
+                fragment=parts['fragment'],
+                host_type=None,
+                hosts=hosts_parts,
+            )
+        else:
+            # backwards compatibility with single host
+            host_part = hosts_parts[0]
+            return cls(
+                None if host_part['rebuild'] else url,
+                scheme=parts['scheme'],
+                user=parts['user'],
+                password=parts['password'],
+                host=host_part['host'],
+                tld=host_part['tld'],
+                host_type=host_part['host_type'],
+                port=host_part.get('port'),
+                path=parts['path'],
+                query=parts['query'],
+                fragment=parts['fragment'],
+            )
+
+
+class PostgresDsn(MultiHostDsn):
     allowed_schemes = {
         'postgres',
         'postgresql',
@@ -352,6 +504,17 @@ class PostgresDsn(AnyUrl):
     }
     user_required = True
 
+    __slots__ = ()
+
+
+class CockroachDsn(AnyUrl):
+    allowed_schemes = {
+        'cockroachdb',
+        'cockroachdb+psycopg2',
+        'cockroachdb+asyncpg',
+    }
+    user_required = True
+
 
 class AmqpDsn(AnyUrl):
     allowed_schemes = {'amqp', 'amqps'}
@@ -359,6 +522,7 @@ class AmqpDsn(AnyUrl):
 
 
 class RedisDsn(AnyUrl):
+    __slots__ = ()
     allowed_schemes = {'redis', 'rediss'}
     host_required = False
 
@@ -368,6 +532,17 @@ class RedisDsn(AnyUrl):
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '6379',
             'path': '/0',
+        }
+
+
+class MongoDsn(AnyUrl):
+    allowed_schemes = {'mongodb'}
+
+    # TODO: Needed to generic "Parts" for "Replica Set", "Sharded Cluster", and other mongodb deployment modes
+    @staticmethod
+    def get_default_parts(parts: 'Parts') -> 'Parts':
+        return {
+            'port': '27017',
         }
 
 
@@ -390,6 +565,7 @@ def stricturl(
     tld_required: bool = True,
     host_required: bool = True,
     allowed_schemes: Optional[Collection[str]] = None,
+    quote_plus: bool = False,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -399,6 +575,7 @@ def stricturl(
         tld_required=tld_required,
         host_required=host_required,
         allowed_schemes=allowed_schemes,
+        quote_plus=quote_plus,
     )
     return type('UrlValue', (AnyUrl,), namespace)
 
@@ -461,6 +638,8 @@ class NameEmail(Representation):
 
 
 class IPvAnyAddress(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyaddress')
@@ -483,6 +662,8 @@ class IPvAnyAddress(_BaseAddress):
 
 
 class IPvAnyInterface(_BaseAddress):
+    __slots__ = ()
+
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyinterface')

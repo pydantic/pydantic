@@ -1,5 +1,7 @@
-from inspect import signature
-from typing import Any, Iterable, Union
+from inspect import Parameter, Signature, signature
+from typing import Any, Iterable, Optional, Union
+
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Extra, Field, create_model
 
@@ -84,6 +86,16 @@ def test_use_field_name():
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
 
+def test_does_not_use_reserved_word():
+    class Foo(BaseModel):
+        from_: str = Field(..., alias='from')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
+
+
 def test_extra_allow_no_conflict():
     class Model(BaseModel):
         spam: str
@@ -138,3 +150,31 @@ def test_signature_is_class_only():
     assert _equals(str(signature(Model)), '(*, foo: int = 123) -> None')
     assert _equals(str(signature(Model())), '(a: int) -> bool')
     assert not hasattr(Model(), '__signature__')
+
+
+def test_optional_field():
+    class Model(BaseModel):
+        foo: Optional[int] = None
+
+    assert signature(Model) == Signature(
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Optional[int])], return_annotation=None
+    )
+
+
+def test_annotated_field():
+    class Model(BaseModel):
+        foo: Annotated[int, 'foo'] = 1
+
+    assert signature(Model) == Signature(
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=1, annotation=Annotated[int, 'foo'])], return_annotation=None
+    )
+
+
+def test_annotated_optional_field():
+    class Model(BaseModel):
+        foo: Annotated[Optional[int], 'foo'] = None
+
+    assert signature(Model) == Signature(
+        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Annotated[Optional[int], 'foo'])],
+        return_annotation=None,
+    )

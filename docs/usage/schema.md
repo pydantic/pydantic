@@ -1,15 +1,7 @@
 *Pydantic* allows auto creation of JSON Schemas from models:
 
-```py
-{!.tmp_examples/schema_main.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_main.md!}
 
-Outputs:
-
-```json
-{!.tmp_examples/schema_main.json!}
-```
 
 The generated schemas are compliant with the specifications:
 [JSON Schema Core](https://json-schema.org/latest/json-schema-core.html),
@@ -44,10 +36,7 @@ apply the schema generation logic used for _pydantic_ models in a more ad-hoc wa
 These functions behave similarly to `BaseModel.schema` and `BaseModel.schema_json`,
 but work with arbitrary pydantic-compatible types.
 
-```py
-{!.tmp_examples/schema_ad_hoc.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_ad_hoc.md!}
 
 
 ## Field customization
@@ -110,7 +99,7 @@ It has the following arguments:
       or explicitly allow an arbitrary prefix with `.*?`
       (e.g. `.*?foo` to match any string containing the substring `foo`).
 
-      See [#1631](https://github.com/samuelcolvin/pydantic/issues/1631)
+      See [#1631](https://github.com/pydantic/pydantic/issues/1631)
       for a discussion of possible changes to *pydantic* behavior in **v2**.
 
 * `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.
@@ -125,19 +114,13 @@ If *pydantic* finds constraints which are not being enforced, an error will be r
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to `Field()` with the raw schema attribute name:
 
-```py
-{!.tmp_examples/schema_unenforced_constraints.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_unenforced_constraints.md!}
 
 ### typing.Annotated Fields
 
 Rather than assigning a `Field` value, it can be specified in the type hint with `typing.Annotated`:
 
-```py
-{!.tmp_examples/schema_annotated.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_annotated.md!}
 
 `Field` can only be supplied once per field - an error will be raised if used in `Annotated` and as the assigned value.
 Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated` - the
@@ -154,16 +137,8 @@ see [Custom Data Types](types.md#custom-data-types) for more details.
 *pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
 included.
 
-```py
-{!.tmp_examples/schema_with_field.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_with_field.md!}
 
-Outputs:
-
-```json
-{!.tmp_examples/schema_with_field.json!}
-```
 
 ## JSON Schema Types
 
@@ -184,16 +159,8 @@ The field schema mapping from Python / *pydantic* to JSON Schema is done as foll
 You can also generate a top-level JSON Schema that only includes a list of models and related
 sub-models in its `definitions`:
 
-```py
-{!.tmp_examples/schema_top_level.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_top_level.md!}
 
-Outputs:
-
-```json
-{!.tmp_examples/schema_top_level.json!}
-```
 
 ## Schema customization
 
@@ -202,16 +169,8 @@ You can customize the generated `$ref` JSON location: the definitions are always
 
 This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
-```py
-{!.tmp_examples/schema_custom.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_custom.md!}
 
-Outputs:
-
-```json
-{!.tmp_examples/schema_custom.json!}
-```
 
 It's also possible to extend/override the generated JSON schema in a model.
 
@@ -219,16 +178,8 @@ To do it, use the `Config` sub-class attribute `schema_extra`.
 
 For example, you could add `examples` to the JSON Schema:
 
-```py
-{!.tmp_examples/schema_with_example.py!}
-```
-_(This script is complete, it should run "as is")_
+{!.tmp_examples/schema_with_example.md!}
 
-Outputs:
-
-```json
-{!.tmp_examples/schema_with_example.json!}
-```
 
 For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
 The callable can have one or two positional arguments.
@@ -238,14 +189,8 @@ The callable is expected to mutate the schema dictionary *in-place*; the return 
 
 For example, the `title` key can be removed from the model's `properties`:
 
-```py
-{!.tmp_examples/schema_extra_callable.py!}
-```
+{!.tmp_examples/schema_extra_callable.md!}
 
-_(This script is complete, it should run "as is")_
 
-Outputs:
 
-```json
-{!.tmp_examples/schema_extra_callable.json!}
 ```
