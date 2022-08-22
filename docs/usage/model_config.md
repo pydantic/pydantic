@@ -112,7 +112,7 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether to treat any underscore non-class var attrs as private, or leave them as is; see [Private model attributes](models.md#private-model-attributes)
 
 **`copy_on_model_validation`**
-: string literal with the following means (see [#4092](https://github.com/pydantic/pydantic/issues/4092) for more information on changes to this field):
+: string literal to control how models instances are processed during validation, with the following means (see [#4092](https://github.com/pydantic/pydantic/issues/4092) for more information on changes to this field):
 * `'none'` - models are not copied on validation
 * `'shallow'` - models are shallow copied this is the default
 * `'deep'` - models are deep copied 
