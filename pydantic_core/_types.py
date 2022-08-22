@@ -45,6 +45,8 @@ class Config(TypedDict, total=False):
     str_strip_whitespace: bool
     str_to_lower: bool
     str_to_upper: bool
+    # fields related to float fields only
+    allow_inf_nan: bool  # default: True
 
 
 class DictSchema(TypedDict, total=False):
@@ -59,6 +61,7 @@ class DictSchema(TypedDict, total=False):
 
 class FloatSchema(TypedDict, total=False):
     type: Required[Literal['float']]
+    allow_inf_nan: bool  # whether 'NaN', '+inf', '-inf' should be forbidden. default: True
     multiple_of: float
     le: float
     ge: float

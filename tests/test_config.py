@@ -1,9 +1,12 @@
+import math
+import re
+
 import pytest
-from dirty_equals import HasAttributes, IsInstance
+from dirty_equals import FunctionCheck, HasAttributes, IsInstance
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import Config, SchemaValidator, ValidationError
 
-from .conftest import plain_repr
+from .conftest import Err, plain_repr
 
 
 def test_on_field():
@@ -190,3 +193,52 @@ def test_sub_model_merge():
             'context': {'min_length': 1},
         },
     ]
+
+
+@pytest.mark.parametrize(
+    'config,float_field_schema,input_value,expected',
+    [
+        ({}, {'type': 'float'}, {'x': 'nan'}, IsInstance(MyModel) & HasAttributes(x=FunctionCheck(math.isnan))),
+        (
+            {'allow_inf_nan': True},
+            {'type': 'float'},
+            {'x': 'nan'},
+            IsInstance(MyModel) & HasAttributes(x=FunctionCheck(math.isnan)),
+        ),
+        (
+            {'allow_inf_nan': False},
+            {'type': 'float'},
+            {'x': 'nan'},
+            Err('Input should be a finite number [kind=float_finite_number,'),
+        ),
+        # field `allow_inf_nan` (if set) should have priority over global config
+        (
+            {'allow_inf_nan': True},
+            {'type': 'float', 'allow_inf_nan': False},
+            {'x': 'nan'},
+            Err('Input should be a finite number [kind=float_finite_number,'),
+        ),
+        (
+            {'allow_inf_nan': False},
+            {'type': 'float', 'allow_inf_nan': True},
+            {'x': 'nan'},
+            IsInstance(MyModel) & HasAttributes(x=FunctionCheck(math.isnan)),
+        ),
+    ],
+    ids=repr,
+)
+def test_allow_inf_nan(config: Config, float_field_schema, input_value, expected):
+    v = SchemaValidator(
+        {
+            'type': 'new-class',
+            'class_type': MyModel,
+            'schema': {'type': 'typed-dict', 'fields': {'x': {'schema': float_field_schema}}},
+            'config': config,
+        }
+    )
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        output_dict = v.validate_python(input_value)
+        assert output_dict == expected
