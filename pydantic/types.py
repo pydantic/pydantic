@@ -294,8 +294,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
         yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
-        if cls.allow_inf_nan is False:
-            yield float_finite_validator
+        yield float_finite_validator
 
 
 def confloat(
@@ -306,7 +305,7 @@ def confloat(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
-    allow_inf_nan: bool = True,
+    allow_inf_nan: Optional[bool] = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of, allow_inf_nan=allow_inf_nan)
@@ -338,7 +337,7 @@ else:
         strict = True
 
     class FiniteFloat(ConstrainedFloat):
-        allow_info_nan = False
+        allow_inf_nan = False
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

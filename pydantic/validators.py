@@ -152,8 +152,12 @@ def strict_float_validator(v: Any) -> float:
     raise errors.FloatError()
 
 
-def float_finite_validator(v: 'Number') -> 'Number':
-    if math.isnan(v) or math.isinf(v):
+def float_finite_validator(v: 'Number', field: 'ModelField', config: 'BaseConfig') -> 'Number':
+    allow_inf_nan = getattr(field.type_, 'allow_inf_nan', None)
+    if allow_inf_nan is None:
+        allow_inf_nan = config.allow_inf_nan
+
+    if allow_inf_nan is False and (math.isnan(v) or math.isinf(v)):
         raise errors.NumberNotFiniteError()
     return v
 
@@ -618,12 +622,13 @@ def make_typeddict_validator(
 
 
 class IfConfig:
-    def __init__(self, validator: AnyCallable, *config_attr_names: str) -> None:
+    def __init__(self, validator: AnyCallable, *config_attr_names: str, ignored_value: Any = False) -> None:
         self.validator = validator
         self.config_attr_names = config_attr_names
+        self.ignored_value = ignored_value
 
     def check(self, config: Type['BaseConfig']) -> bool:
-        return any(getattr(config, name) not in {None, False} for name in self.config_attr_names)
+        return any(getattr(config, name) not in {None, self.ignored_value} for name in self.config_attr_names)
 
 
 # order is important here, for example: bool is a subclass of int so has to come first, datetime before date same,
@@ -653,7 +658,7 @@ _VALIDATORS: List[Tuple[Type[Any], List[Any]]] = [
     ),
     (bool, [bool_validator]),
     (int, [int_validator]),
-    (float, [float_validator]),
+    (float, [float_validator, IfConfig(float_finite_validator, 'allow_inf_nan', ignored_value=True)]),
     (Path, [path_validator]),
     (datetime, [parse_datetime]),
     (date, [parse_date]),

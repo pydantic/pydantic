@@ -43,6 +43,7 @@ from pydantic import (
     EmailStr,
     Field,
     FilePath,
+    FiniteFloat,
     FutureDate,
     Json,
     NameEmail,
@@ -1571,6 +1572,9 @@ def test_float_validation():
     m = Model(a=5.1, b=-5.2, c=0, d=0, e=5.3, f=9.9, g=2.5, h=42)
     assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5, 'h': 42}
 
+    assert Model(a=float('inf')).a == float('inf')
+    assert Model(b=float('-inf')).b == float('-inf')
+
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5.1, b=5.2, c=-5.1, d=5.1, e=-5.3, f=9.91, g=4.2, h=float('nan'))
     assert exc_info.value.errors() == [
@@ -1636,10 +1640,30 @@ def test_finite_float_validation():
 @pytest.mark.parametrize('value', [float('inf'), float('-inf'), float('nan')])
 def test_finite_float_validation_error(value):
     class Model(BaseModel):
-        a: confloat(allow_inf_nan=False)
+        a: FiniteFloat
 
+    assert Model(a=42).a == 42
     with pytest.raises(ValidationError) as exc_info:
         Model(a=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'ensure this value is a finite number',
+            'type': 'value_error.number.not_finite_number',
+        },
+    ]
+
+
+def test_finite_float_config():
+    class Model(BaseModel):
+        a: float
+
+        class Config:
+            allow_inf_nan = False
+
+    assert Model(a=42).a == 42
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=float('nan'))
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
