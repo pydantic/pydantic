@@ -118,7 +118,7 @@ def test_success_cases_run(module: str) -> None:
     importlib.import_module(f'tests.mypy.modules.{module}')
 
 
-def test_explicit_reexports() -> None:
+def test_explicit_reexports():
     from pydantic import __all__ as root_all
     from pydantic.main import __all__ as main
     from pydantic.networks import __all__ as networks
@@ -128,6 +128,13 @@ def test_explicit_reexports() -> None:
     for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
         for export in export_all:
             assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
+
+
+def test_explicit_reexports_exist():
+    import pydantic
+
+    for name in pydantic.__all__:
+        assert hasattr(pydantic, name), f'{name} is in pydantic.__all__ but missing from pydantic'
 
 
 @pytest.mark.skipif(mypy_version is None, reason='mypy is not installed')

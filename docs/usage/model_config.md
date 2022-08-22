@@ -121,6 +121,11 @@ not be included in the model schemas. **Note**: this means that attributes on th
 : whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
   or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
 
+**`allow_inf_nan`**
+: whether to allows infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
+  set to `False` for compatibility with `JSON`,
+  see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`

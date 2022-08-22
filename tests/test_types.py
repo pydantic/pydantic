@@ -1,4 +1,5 @@
 import itertools
+import math
 import os
 import re
 import sys
@@ -42,6 +43,7 @@ from pydantic import (
     EmailStr,
     Field,
     FilePath,
+    FiniteFloat,
     FutureDate,
     Json,
     NameEmail,
@@ -1565,12 +1567,16 @@ def test_float_validation():
         e: confloat(gt=4, lt=12.2) = None
         f: confloat(ge=0, le=9.9) = None
         g: confloat(multiple_of=0.5) = None
+        h: confloat(allow_inf_nan=False) = None
 
-    m = Model(a=5.1, b=-5.2, c=0, d=0, e=5.3, f=9.9, g=2.5)
-    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5}
+    m = Model(a=5.1, b=-5.2, c=0, d=0, e=5.3, f=9.9, g=2.5, h=42)
+    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5, 'h': 42}
+
+    assert Model(a=float('inf')).a == float('inf')
+    assert Model(b=float('-inf')).b == float('-inf')
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a=-5.1, b=5.2, c=-5.1, d=5.1, e=-5.3, f=9.91, g=4.2)
+        Model(a=-5.1, b=5.2, c=-5.1, d=5.1, e=-5.3, f=9.91, g=4.2, h=float('nan'))
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -1613,6 +1619,56 @@ def test_float_validation():
             'msg': 'ensure this value is a multiple of 0.5',
             'type': 'value_error.number.not_multiple',
             'ctx': {'multiple_of': 0.5},
+        },
+        {
+            'loc': ('h',),
+            'msg': 'ensure this value is a finite number',
+            'type': 'value_error.number.not_finite_number',
+        },
+    ]
+
+
+def test_finite_float_validation():
+    class Model(BaseModel):
+        a: float = None
+
+    assert Model(a=float('inf')).a == float('inf')
+    assert Model(a=float('-inf')).a == float('-inf')
+    assert math.isnan(Model(a=float('nan')).a)
+
+
+@pytest.mark.parametrize('value', [float('inf'), float('-inf'), float('nan')])
+def test_finite_float_validation_error(value):
+    class Model(BaseModel):
+        a: FiniteFloat
+
+    assert Model(a=42).a == 42
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=value)
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'ensure this value is a finite number',
+            'type': 'value_error.number.not_finite_number',
+        },
+    ]
+
+
+def test_finite_float_config():
+    class Model(BaseModel):
+        a: float
+
+        class Config:
+            allow_inf_nan = False
+
+    assert Model(a=42).a == 42
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=float('nan'))
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': 'ensure this value is a finite number',
+            'type': 'value_error.number.not_finite_number',
         },
     ]
 

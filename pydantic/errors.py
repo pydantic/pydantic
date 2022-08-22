@@ -417,6 +417,11 @@ class NumberNotLeError(_NumberBoundError):
     msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
+class NumberNotFiniteError(PydanticValueError):
+    code = 'number.not_finite_number'
+    msg_template = 'ensure this value is a finite number'
+
+
 class NumberNotMultipleError(PydanticValueError):
     code = 'number.not_multiple'
     msg_template = 'ensure this value is a multiple of {multiple_of}'

@@ -114,6 +114,7 @@ class FieldInfo(Representation):
         'lt',
         'le',
         'multiple_of',
+        'allow_inf_nan',
         'max_digits',
         'decimal_places',
         'min_items',
@@ -138,6 +139,7 @@ class FieldInfo(Representation):
         'ge': None,
         'le': None,
         'multiple_of': None,
+        'allow_inf_nan': None,
         'max_digits': None,
         'decimal_places': None,
         'min_items': None,
@@ -161,6 +163,7 @@ class FieldInfo(Representation):
         self.lt = kwargs.pop('lt', None)
         self.le = kwargs.pop('le', None)
         self.multiple_of = kwargs.pop('multiple_of', None)
+        self.allow_inf_nan = kwargs.pop('allow_inf_nan', None)
         self.max_digits = kwargs.pop('max_digits', None)
         self.decimal_places = kwargs.pop('decimal_places', None)
         self.min_items = kwargs.pop('min_items', None)
@@ -231,6 +234,7 @@ def Field(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
+    allow_inf_nan: bool = None,
     max_digits: int = None,
     decimal_places: int = None,
     min_items: int = None,
@@ -270,6 +274,8 @@ def Field(
       schema will have a ``maximum`` validation keyword
     :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
       schema will have a ``multipleOf`` validation keyword
+    :param allow_inf_nan: only applies to numbers, allows the field to be NaN or infinity (+inf or -inf),
+        which is a valid Python float. Default True, set to False for compatibility with JSON.
     :param max_digits: only applies to Decimals, requires the field to have a maximum number
       of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
     :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
@@ -307,6 +313,7 @@ def Field(
         lt=lt,
         le=le,
         multiple_of=multiple_of,
+        allow_inf_nan=allow_inf_nan,
         max_digits=max_digits,
         decimal_places=decimal_places,
         min_items=min_items,

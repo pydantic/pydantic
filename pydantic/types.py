@@ -38,6 +38,7 @@ from .validators import (
     constr_strip_whitespace,
     constr_upper,
     decimal_validator,
+    float_finite_validator,
     float_validator,
     frozenset_validator,
     int_validator,
@@ -83,6 +84,7 @@ __all__ = [
     'NegativeFloat',
     'NonNegativeFloat',
     'NonPositiveFloat',
+    'FiniteFloat',
     'ConstrainedDecimal',
     'condecimal',
     'UUID1',
@@ -265,6 +267,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     lt: OptionalIntFloat = None
     le: OptionalIntFloat = None
     multiple_of: OptionalIntFloat = None
+    allow_inf_nan: Optional[bool] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -291,6 +294,7 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
         yield strict_float_validator if cls.strict else float_validator
         yield number_size_validator
         yield number_multiple_validator
+        yield float_finite_validator
 
 
 def confloat(
@@ -301,9 +305,10 @@ def confloat(
     lt: float = None,
     le: float = None,
     multiple_of: float = None,
+    allow_inf_nan: Optional[bool] = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
+    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of, allow_inf_nan=allow_inf_nan)
     return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
 
 
@@ -313,6 +318,7 @@ if TYPE_CHECKING:
     NonPositiveFloat = float
     NonNegativeFloat = float
     StrictFloat = float
+    FiniteFloat = float
 else:
 
     class PositiveFloat(ConstrainedFloat):
@@ -329,6 +335,9 @@ else:
 
     class StrictFloat(ConstrainedFloat):
         strict = True
+
+    class FiniteFloat(ConstrainedFloat):
+        allow_inf_nan = False
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -100,6 +100,7 @@ __all__ = [
     'NegativeFloat',
     'NonNegativeFloat',
     'NonPositiveFloat',
+    'FiniteFloat',
     'ConstrainedDecimal',
     'condecimal',
     'ConstrainedDate',
