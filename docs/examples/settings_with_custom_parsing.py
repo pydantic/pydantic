@@ -1,12 +1,7 @@
-# output-json
 import os
 from typing import Any, List
 
 from pydantic import BaseSettings
-
-
-def parse_list(s: str) -> List[int]:
-    return [int(x.strip()) for x in s.split(',')]
 
 
 class Settings(BaseSettings):
@@ -16,7 +11,7 @@ class Settings(BaseSettings):
         @classmethod
         def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
             if field_name == 'numbers':
-                return parse_list(raw_val)
+                return [int(x) for x in raw_val.split(',')]
             return cls.json_loads(raw_val)
 
 

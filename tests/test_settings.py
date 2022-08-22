@@ -221,7 +221,7 @@ def test_set_dict_model(env):
 
 def test_invalid_json(env):
     env.set('apples', '["russet", "granny smith",]')
-    with pytest.raises(SettingsError, match='error parsing envvar "apples"'):
+    with pytest.raises(SettingsError, match='error parsing env var "apples"'):
         ComplexSettings()
 
 
@@ -1054,7 +1054,7 @@ def test_secrets_path_invalid_json(tmp_path):
         class Config:
             secrets_dir = tmp_path
 
-    with pytest.raises(SettingsError, match='error parsing envvar "foo"'):
+    with pytest.raises(SettingsError, match='error parsing env var "foo"'):
         Settings()
 
 
@@ -1256,7 +1256,7 @@ def test_env_settings_source_custom_env_parse_is_bad(env):
                 return cls.json_loads(raw_val)
 
     env.set('top', '1=apple,2=banana')
-    with pytest.raises(SettingsError, match='error parsing envvar "top"'):
+    with pytest.raises(SettingsError, match='error parsing env var "top"'):
         Settings()
 
 
