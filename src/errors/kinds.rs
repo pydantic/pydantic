@@ -186,6 +186,8 @@ pub enum ErrorKind {
     FloatType,
     #[strum(message = "Input should be a valid number, unable to parse string as an number")]
     FloatParsing,
+    #[strum(message = "Input should be a finite number")]
+    FloatFiniteNumber,
     #[strum(serialize = "multiple_of", message = "Input should be a multiple of {multiple_of}")]
     FloatMultipleOf {
         multiple_of: f64,

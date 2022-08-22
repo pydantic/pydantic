@@ -225,7 +225,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(float) = self.extract::<f64>() {
             Ok(float)
         } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::FloatParsing)? {
-            match cow_str.as_ref().parse() {
+            match cow_str.as_ref().parse::<f64>() {
                 Ok(i) => Ok(i),
                 Err(_) => Err(ValError::new(ErrorKind::FloatParsing, self)),
             }
