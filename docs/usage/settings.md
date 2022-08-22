@@ -87,7 +87,7 @@ export SUB_MODEL__DEEP__V4=v4
 You could load a settings module thus:
 {!.tmp_examples/settings_nested_env.md!}
 
-`env_nested_delimiter` can be configured via the `Config` class as shown above, or via the 
+`env_nested_delimiter` can be configured via the `Config` class as shown above, or via the
 `_env_nested_delimiter` keyword argument on instantiation.
 
 JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
@@ -95,6 +95,11 @@ validators on those models.
 
 Nested environment variables take precedence over the top-level environment variable JSON
 (e.g. in the example above, `SUB_MODEL__V2` trumps `SUB_MODEL`).
+
+You may also populate a complex type by providing your own parsing function to
+the `parse_env_var` classmethod in the Config object.
+
+{!.tmp_examples/settings_with_custom_parsing.md!}
 
 ## Dotenv (.env) support
 
@@ -178,7 +183,7 @@ see [python-dotenv's documentation](https://saurabh-kumar.com/python-dotenv/#usa
 
 Placing secret values in files is a common pattern to provide sensitive configuration to an application.
 
-A secret file follows the same principal as a dotenv file except it only contains a single value and the file name 
+A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
 is used as the key. A secret file will look like the following:
 
 `/var/run/database_password`:
@@ -231,7 +236,7 @@ class Settings(BaseSettings):
         secrets_dir = '/run/secrets'
 ```
 !!! note
-    By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location, change 
+    By default Docker uses `/run/secrets` as the target mount point. If you want to use a different location, change
     `Config.secrets_dir` accordingly.
 
 Then, create your secret via the Docker CLI

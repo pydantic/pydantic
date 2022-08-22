@@ -126,6 +126,10 @@ class BaseSettings(BaseModel):
         ) -> Tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, file_secret_settings
 
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
+            return cls.json_loads(raw_val)
+
     # populated by the metaclass using the Config class defined above, annotated here to help IDEs only
     __config__: ClassVar[Type[Config]]
 
@@ -180,7 +184,7 @@ class EnvSettingsSource:
                 if env_val is not None:
                     break
 
-            is_complex, allow_json_failure = self.field_is_complex(field)
+            is_complex, allow_parse_failure = self.field_is_complex(field)
             if is_complex:
                 if env_val is None:
                     # field is complex but no value found so far, try explode_env_vars
@@ -190,10 +194,10 @@ class EnvSettingsSource:
                 else:
                     # field is complex and there's a value, decode that as JSON, then add explode_env_vars
                     try:
-                        env_val = settings.__config__.json_loads(env_val)
+                        env_val = settings.__config__.parse_env_var(field.name, env_val)
                     except ValueError as e:
-                        if not allow_json_failure:
-                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+                        if not allow_parse_failure:
+                            raise SettingsError(f'error parsing env var "{env_name}"') from e
 
                     if isinstance(env_val, dict):
                         d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars))
@@ -228,13 +232,13 @@ class EnvSettingsSource:
         Find out if a field is complex, and if so whether JSON errors should be ignored
         """
         if field.is_complex():
-            allow_json_failure = False
+            allow_parse_failure = False
         elif is_union(get_origin(field.type_)) and field.sub_fields and any(f.is_complex() for f in field.sub_fields):
-            allow_json_failure = True
+            allow_parse_failure = True
         else:
             return False, False
 
-        return True, allow_json_failure
+        return True, allow_parse_failure
 
     def explode_env_vars(self, field: ModelField, env_vars: Mapping[str, Optional[str]]) -> Dict[str, Any]:
         """
@@ -299,9 +303,9 @@ class SecretsSettingsSource:
                     secret_value = path.read_text().strip()
                     if field.is_complex():
                         try:
-                            secret_value = settings.__config__.json_loads(secret_value)
+                            secret_value = settings.__config__.parse_env_var(field.name, secret_value)
                         except ValueError as e:
-                            raise SettingsError(f'error parsing JSON for "{env_name}"') from e
+                            raise SettingsError(f'error parsing env var "{env_name}"') from e
 
                     secrets[field.alias] = secret_value
                 else:
