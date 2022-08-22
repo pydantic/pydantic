@@ -1265,7 +1265,7 @@ def test_secret_settings_source_custom_env_parse(tmp_path):
     p.write_text('1=apple,2=banana')
 
     class Settings(BaseSettings):
-        top: Dict[int, str] = Field(env_parse=_parse_custom_dict)
+        top: Dict[int, str]
 
         class Config:
             secrets_dir = tmp_path
