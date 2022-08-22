@@ -1,3 +1,4 @@
+import math
 import re
 import sys
 from dataclasses import dataclass
@@ -5,7 +6,7 @@ from datetime import datetime
 from typing import Mapping
 
 import pytest
-from dirty_equals import HasRepr, IsStr
+from dirty_equals import FunctionCheck, HasRepr, IsStr
 
 from pydantic_core import Config, SchemaError, SchemaValidator, ValidationError
 
@@ -116,12 +117,19 @@ field_b
             Err('Keys should be strings [kind=invalid_key,'),
         ),
         ({'strict': True}, Map(a=123), Err('Input should be a valid dictionary [kind=dict_type,')),
+        ({}, {'a': '123', 'b': '4.7'}, {'a': 123, 'b': 4.7}),
+        ({}, {'a': '123', 'b': 'nan'}, {'a': 123, 'b': FunctionCheck(math.isnan)}),
+        (
+            {'allow_inf_nan': False},
+            {'a': '123', 'b': 'nan'},
+            Err('Input should be a finite number [kind=float_finite_number,'),
+        ),
     ],
     ids=repr,
 )
 def test_config(config: Config, input_value, expected):
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'a': {'schema': 'int'}, 'b': {'schema': 'int', 'required': False}}}, config
+        {'type': 'typed-dict', 'fields': {'a': {'schema': 'int'}, 'b': {'schema': 'float', 'required': False}}}, config
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):

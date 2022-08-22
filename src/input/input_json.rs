@@ -130,7 +130,7 @@ impl<'a> Input<'a> for JsonInput {
             },
             JsonInput::Float(f) => Ok(*f),
             JsonInput::Int(i) => Ok(*i as f64),
-            JsonInput::String(str) => match str.parse() {
+            JsonInput::String(str) => match str.parse::<f64>() {
                 Ok(i) => Ok(i),
                 Err(_) => Err(ValError::new(ErrorKind::FloatParsing, self)),
             },
