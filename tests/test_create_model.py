@@ -225,10 +225,11 @@ def test_generics_model():
     assert result.__config__.orm_mode is True
 
 
-def test_set_name():
+@pytest.mark.parametrize('base', [ModelPrivateAttr, object])
+def test_set_name(base):
     calls = []
 
-    class class_deco(ModelPrivateAttr):
+    class class_deco(base):
         def __init__(self, fn):
             super().__init__()
             self.fn = fn
@@ -236,9 +237,22 @@ def test_set_name():
         def __set_name__(self, owner, name):
             calls.append((owner, name))
 
+        def __get__(self, obj, type=None):
+            return self.fn(obj) if obj else self
+
     class A(BaseModel):
+        x: int
+
         @class_deco
         def _some_func(self):
-            return self
+            return self.x
 
     assert calls == [(A, '_some_func')]
+    a = A(x=2)
+
+    # we don't test whether calling the method on a PrivateAttr works:
+    # attribute access on privateAttributes is more complicated, it doesn't
+    # get added to the class namespace (and will also get set on the instance
+    # with _init_private_attributes), so the descriptor protocol won't work.
+    if base is object:
+        assert a._some_func == 2

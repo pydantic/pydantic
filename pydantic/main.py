@@ -287,10 +287,12 @@ class ModelMetaclass(ABCMeta):
             cls.__try_update_forward_refs__()
 
         # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+        # for attributes not in `new_namespace` (e.g. private attributes)
         for name, obj in namespace.items():
-            set_name = getattr(obj, '__set_name__', None)
-            if callable(set_name):
-                set_name(cls, name)
+            if name not in new_namespace:
+                set_name = getattr(obj, '__set_name__', None)
+                if callable(set_name):
+                    set_name(cls, name)
 
         return cls
 
