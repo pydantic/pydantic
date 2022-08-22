@@ -1,1 +1,0 @@
-Update `SecretsSettingsSource` to respect `config.case_sensitive`

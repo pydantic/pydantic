@@ -1,1 +1,0 @@
-Teach the mypy plugin that methods decorated by `@validator` are classmethods.

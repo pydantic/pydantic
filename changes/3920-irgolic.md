@@ -1,1 +1,0 @@
-Document and test structural pattern matching ([PEP 636](https://peps.python.org/pep-0636/)) on `BaseModel`
