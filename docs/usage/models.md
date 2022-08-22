@@ -332,7 +332,7 @@ Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 !!! warning
     See the note in [Required Optional Fields](#required-optional-fields) for the distinction between an ellipsis as a
     field default and annotation-only fields. 
-    See [samuelcolvin/pydantic#1047](https://github.com/pydantic/pydantic/issues/1047) for more details.
+    See [pydantic/pydantic#1047](https://github.com/pydantic/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
 special key word arguments `__config__` and `__base__` can be used to customise the new model. This includes

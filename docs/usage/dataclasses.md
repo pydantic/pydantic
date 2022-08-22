@@ -9,7 +9,7 @@ If you don't want to use _pydantic_'s `BaseModel` you can instead get the same d
     `pydantic.BaseModel` is the better choice.
 
     For more information and discussion see
-    [samuelcolvin/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
+    [pydantic/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
 You can use all the standard _pydantic_ field types, and the resulting dataclass will be identical to the one
 created by the standard library `dataclass` decorator.
