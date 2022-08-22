@@ -878,6 +878,9 @@ The following arguments are available when using the `confloat` type function
 - `lt: float = None`: enforces float to be less than the set value
 - `le: float = None`: enforces float to be less than or equal to the set value
 - `multiple_of: float = None`: enforces float to be a multiple of the set value
+- `allow_inf_nan: bool = True`: whether to allows infinity (`+inf` an `-inf`) and NaN values, defaults to `True`,
+  set to `False` for compatibility with `JSON`,
+  see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
 
 ### Arguments to `condecimal`
 The following arguments are available when using the `condecimal` type function
