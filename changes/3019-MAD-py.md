@@ -1,1 +1,0 @@
-`validate_arguments` decorator now supports `alias`

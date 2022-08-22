@@ -1,3 +1,81 @@
+## v1.10.0a1 (2022-08-22)
+
+* Refactor the whole _pydantic_ `dataclass` decorator to really act like its standard lib equivalent.
+  It hence keeps `__eq__`, `__hash__`, ... and makes comparison with its non-validated version possible.
+  It also fixes usage of `frozen` dataclasses in fields and usage of `default_factory` in nested dataclasses.
+  The support of `Config.extra` has been added.
+  Finally, config customization directly via a `dict` is now possible, #2557 by @PrettyWood
+  <br/><br/>
+  **BREAKING CHANGES:**
+  - The `compiled` boolean (whether _pydantic_ is compiled with cython) has been moved from `main.py` to `version.py`
+  - Now that `Config.extra` is supported, `dataclass` ignores by default extra arguments (like `BaseModel`)
+* Fix PEP487 `__set_name__` protocol in `BaseModel` for PrivateAttrs, #4407 by @tlambert03
+* Rename `master` to `main`, #4405 by @hramezani
+* Fix `StrictStr` does not raise `ValidationError` when `max_length` is present in `Field`, #4388 by @hramezani
+* Make `SecretStr` and `SecretBytes` hashable, #4387 by @chbndrhnns
+* Fix `StrictBytes` does not raise `ValidationError` when `max_length` is present in `Field`, #4380 by @JeanArhancet
+* Add support for bare `type`, #4375 by @hramezani
+* Support Python 3.11, including binaries for 3.11 in PyPI, #4374 by @samuelcolvin
+* Add support for `re.Pattern`, #4366 by @hramezani
+* Fix `__post_init_post_parse__` is incorrectly passed keyword arguments when no `__post_init__` is defined, #4361 by @hramezani
+* Fix implicitly importing `ForwardRef` and `Callable` from `pydantic.typing` instead of `typing` and also expose `MappingIntStrAny`, #4358 by @aminalaee
+* remove `Any` types from the `dataclass` decorator so it can be used with the `disallow_any_expr` mypy option, #4356 by @DetachHead
+* moved repo to `pydantic/pydantic`, #4348 by @yezz123
+* fix "extra fields not permitted" error when dataclass with `Extra.forbid` is validated multiple times, #4343 by @detachhead
+* Add Python 3.9 and 3.10 examples to docs, #4339 by @Bobronium
+* Discriminated union models now use `oneOf` instead of `anyOf` when generating OpenAPI schema definitions, #4335 by @MaxwellPayne
+* Allow type checkers to infer inner type of `Json` type. `Json[list[str]]` will be now inferred as `list[str]`, 
+  `Json[Any]` should be used instead of plain `Json`.
+  Runtime behaviour is not changed, #4332 by @Bobronium
+* Allow empty string aliases by using a `alias is not None` check, rather than `bool(alias)`, #4253 by @sergeytsaplin
+* Update `ForwardRef`s in `Field.outer_type_`, #4249 by @JacobHayes
+* The use of `__dataclass_transform__` has been replaced by `typing_extensions.dataclass_transform`, which is the preferred way to mark pydantic models as a dataclass under [PEP 681](https://peps.python.org/pep-0681/), #4241 by @multimeric
+* Use parent model's `Config` when validating nested `NamedTuple` fields, #4219 by @synek
+* Update `BaseModel.construct` to work with aliased Fields, #4192 by @kylebamos
+* Catch certain raised errors in `smart_deepcopy` and revert to `deepcopy` if so, #4184 by @coneybeare
+* Add `Config.anystr_upper` and `to_upper` kwarg to constr and conbytes, #4165 by @satheler
+* Fix JSON schema for `set` and `frozenset` when they include default values, #4155 by @aminalaee
+* Teach the mypy plugin that methods decorated by `@validator` are classmethods, #4102 by @DMRobertson
+* Improve mypy plugin's ability to detect required fields, #4086 by @richardxia
+* Support fields of type `Type[]` in schema, #4051 by @aminalaee
+* Add `default` value in JSON Schema when `const=True`, #4031 by @aminalaee
+* Adds reserved word check to signature generation logic, #4011 by @strue36
+* Fix Json strategy failure for the complex nested field, #4005 by @sergiosim
+* Add JSON-compatible float constraint `allow_inf_nan`, #3994 by @tiangolo
+* Remove undefined behaviour when `env_prefix` had characters in common with `env_nested_delimiter`, #3975 by @arsenron
+* Support generics model with `create_model`, #3945 by @hot123s
+* allow submodels to overwrite extra field info, #3934 by @PrettyWood
+* Document and test structural pattern matching ([PEP 636](https://peps.python.org/pep-0636/)) on `BaseModel`, #3920 by @irgolic
+* Fix incorrect deserialization of python timedelta object to ISO 8601 for negative time deltas.
+  Minus was serialized in incorrect place ("P-1DT23H59M59.888735S" instead of correct "-P1DT23H59M59.888735S"), #3899 by @07pepa
+* Fix validation of discriminated union fields with an alias when passing a model instance, #3846 by @chornsby
+* Add a CockroachDsn type to validate CockroachDB connection strings. The type
+  supports the following schemes: `cockroachdb`, `cockroachdb+psycopg2` and `cockroachdb+asyncpg`, #3839 by @blubber
+* Fix MyPy plugin to not override pre-existing `__init__` method in models, #3824 by @patrick91
+* Fix mypy version checking, #3783 by @KotlinIsland
+* support overwriting dunder attributes of `BaseModel` instances, #3777 by @PrettyWood
+* Added `ConstrainedDate` and `condate`, #3740 by @hottwaj
+* Support `kw_only` in dataclasses, #3670 by @detachhead
+* Add comparison method for `Color` class, #3646 by @aminalaee
+* Drop support for python3.6, associated cleanup, #3605 by @samuelcolvin
+* created new function `to_lower_camel()` for "non pascal case" camel case, #3463 by @schlerp
+* Add checks to `default` and `default_factory` arguments in Mypy plugin, #3430 by @klaa97
+* fix mangling of `inspect.signature` for `BaseModel`, #3413 by @fix-inspect-signature
+* Adds the `SecretField` abstract class so that all the current and future secret fields like `SecretStr` and `SecretBytes` will derive from it, #3409 by @expobrain
+* Support multi hosts validation in `PostgresDsn`, #3337 by @rglsk
+* Fix parsing of very small numeric timedelta values, #3315 by @samuelcolvin
+* Update `SecretsSettingsSource` to respect `config.case_sensitive`, #3273 by @JeanArhancet
+* Add MongoDB network data source name (DSN) schema, #3229 by @snosratiershad
+* Add support for multiple dotenv files, #3222 by @rekyungmin
+* Raise an explicit `ConfigError` when multiple fields are incorrectly set for a single validator, #3215 by @SunsetOrange
+* Allow ellipsis on `Field`s inside `Annotated` for `TypedDicts` required, #3133 by @ezegomez
+* Catch overflow errors in `int_validator`, #3112 by @ojii
+* Adds a `__rich_repr__` method to `Representation` class which enables pretty printing with [Rich](https://github.com/willmcgugan/rich), #3099 by @willmcgugan
+* Add percent encoding in `AnyUrl` and descendent types, #3061 by @FaresAhmedb
+* `validate_arguments` decorator now supports `alias`, #3019 by @MAD-py
+* Avoid `__dict__` and `__weakref__` attributes in `AnyUrl` and IP address fields, #2890 by @nuno-andre
+* Add ability to use `Final` in a field type annotation, #2766 by @uriyyo
+
 ## v1.9.2 (2022-08-11)
 
 **Revert Breaking Change**: _v1.9.1_ introduced a breaking change where model fields were
