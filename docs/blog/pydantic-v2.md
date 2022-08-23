@@ -764,7 +764,7 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
 
 ## Features Remaining :neutral_face:
 
-The following features will remain (mostly) changed:
+The following features will remain (mostly) unchanged:
 
 * JSONSchema, internally this will need to change a lot, but hopefully the external interface will remain unchanged
 * `dataclass` support, again internals might change, but not the external interface
