@@ -16,17 +16,30 @@
 
 .sponsors {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  flex-wrap: wrap;
   align-items: center;
   margin: 1rem 0;
 }
 
-.sponsors div {
+.sponsors > div {
   text-align: center;
+  width: 25%;
+  padding-bottom: 20px;
+}
+
+.sponsors span {
+  display: block;
+}
+
+@media screen and (max-width: 599px) {
+  .sponsors span {
+    display: none;
+  }
 }
 
 .sponsors img {
-  width: 75%;
+  width: 65%;
   border-radius: 5px;
 }
 

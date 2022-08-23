@@ -21,37 +21,49 @@ Development of *pydantic* is made possible by the following sponsors:
   <div>
     <a rel="sponsored" target="_blank" href="https://www.salesforce.com">
       <img src="./sponsor_logos/salesforce.png" alt="Salesforce" />
-      Salesforce
+      <span>Salesforce</span>
     </a>
   </div>
   <div>
     <a rel="sponsored" target="_blank" href="https://fastapi.tiangolo.com">
       <img src="./sponsor_logos/fastapi.png" alt="FastAPI" />
-      FastAPI
+      <span>FastAPI</span>
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://aws.amazon.com">
+      <img src="./sponsor_logos/aws.png" alt="AWS" />
+      <span>AWS</span>
+    </a>
+  </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://explosion.ai">
+      <img src="./sponsor_logos/explosion_ai.png" alt="Explosion" />
+      <span>Explosion</span>
     </a>
   </div>
   <div>
     <a rel="sponsored" target="_blank" href="https://tutorcruncher.com/?utm_source=pydantic&utm_campaign=open_source">
       <img src="./sponsor_logos/tutorcruncher.png" alt="TutorCruncher" />
-      TutorCruncher
+      <span>TutorCruncher</span>
     </a>
   </div>
   <div>
     <a rel="sponsored" target="_blank" href="https://www.exoflare.com/open-source/?utm_source=pydantic&utm_campaign=open_source">
       <img src="./sponsor_logos/exoflare.png" alt="ExoFlare" />
-      ExoFlare
+      <span>ExoFlare</span>
     </a>
   </div>
   <div>
     <a rel="sponsored" target="_blank" href="https://home.robusta.dev">
       <img src="./sponsor_logos/robusta.png" alt="Robusta" />
-      Robusta
+      <span>Robusta</span>
     </a>
   </div>
   <div>
     <a rel="sponsored" target="_blank" href="https://www.sendcloud.com">
       <img src="./sponsor_logos/sendcloud.png" alt="SendCloud" />
-      SendCloud
+      <span>SendCloud</span>
     </a>
   </div>
 </div>
