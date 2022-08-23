@@ -38,8 +38,8 @@ Development of *pydantic* is made possible by the following sponsors:
   </div>
   <div>
     <a rel="sponsored" target="_blank" href="https://explosion.ai">
-      <img src="./sponsor_logos/explosion_ai.png" alt="Explosion AI" />
-      <span>Explosion AI</span>
+      <img src="./sponsor_logos/explosion_ai.png" alt="Explosion" />
+      <span>Explosion</span>
     </a>
   </div>
   <div>
