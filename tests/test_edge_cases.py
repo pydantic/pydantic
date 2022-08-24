@@ -885,20 +885,37 @@ def test_inheritance_subclass_default():
     # Confirm hint supports a subclass default
     class Simple(BaseModel):
         x: str = MyStr('test')
+        y: Union[int, str] = MyStr('test')
+
+    assert Simple.__fields__['x'].type_ == str
+    assert Simple.__fields__['x'].outer_type_ == str
+    assert Simple.__fields__['y'].type_ == Union[int, str]
+    assert Simple.__fields__['y'].outer_type_ == Union[int, str]
 
     # Confirm hint on a base can be overridden with a subclass default on a subclass
     class Base(BaseModel):
         x: str
         y: str
+        z: Union[int, str]
+
+    assert Base.__fields__['x'].type_ == str
+    assert Base.__fields__['x'].outer_type_ == str
+    assert Base.__fields__['y'].type_ == str
+    assert Base.__fields__['y'].outer_type_ == str
+    assert Base.__fields__['z'].type_ == Union[int, str]
+    assert Base.__fields__['z'].outer_type_ == Union[int, str]
 
     class Sub(Base):
         x = MyStr('test')
-        y: MyStr = MyStr('test')  # force subtype
+        y: MyStr = MyStr('test')  # override subtype
+        z = MyStr('test')  # confirm a subclass of one of the Union members is allowed
 
     assert Sub.__fields__['x'].type_ == str
     assert Sub.__fields__['x'].outer_type_ == str
     assert Sub.__fields__['y'].type_ == MyStr
     assert Sub.__fields__['y'].outer_type_ == MyStr
+    assert Sub.__fields__['z'].type_ == Union[int, str]
+    assert Sub.__fields__['z'].outer_type_ == Union[int, str]
 
 
 def test_invalid_type():

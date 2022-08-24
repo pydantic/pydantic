@@ -180,6 +180,12 @@ def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any],
 
 
 def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
+    if class_or_tuple is not None:
+        if isinstance(class_or_tuple, tuple):
+            return any(lenient_issubclass(cls, subtype) for subtype in class_or_tuple)
+        # NOTE: py <3.10 doesn't support issubclass with Unions (eg: `issubclass(str, str | int)`), so recurse by hand.
+        if get_origin(class_or_tuple) is Union:
+            return any(lenient_issubclass(cls, subtype) for subtype in get_args(class_or_tuple))
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
