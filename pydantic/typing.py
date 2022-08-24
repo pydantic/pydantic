@@ -333,15 +333,16 @@ if sys.version_info < (3, 8):
         return type_ in NONE_TYPES
 
 elif sys.version_info[:2] == (3, 8):
-    # We can use the fast implementation for 3.8 but there is a very weird bug
-    # where it can fail for `Literal[None]`.
-    # We just need to redefine a useless `Literal[None]` inside the function body to fix this
 
     def is_none_type(type_: Any) -> bool:
-        Literal[None]  # fix edge case
         for none_type in NONE_TYPES:
             if type_ is none_type:
                 return True
+        # With python 3.8, specifically 3.8.10, Literal "is" check sare very flakey
+        # can change on very subtle changes like use of types in other modules,
+        # hopefully this check avoids that issue.
+        if is_literal_type(type_):
+            return all_literal_values(type_) == (None,)
         return False
 
 else:
