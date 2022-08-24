@@ -1,3 +1,7 @@
+## v1.10.0b1 (2022-08-24)
+
+* Runtime warning if `__slots__` is passed to `create_model`, `__slots__` is then ignored, #4432 by @samuelcolvin
+
 ## v1.10.0a2 (2022-08-24)
 
 * Update requirement to `typing_extensions>=4.1.0` to guarantee `dataclass_transform` is available, #4424 by @commonism
