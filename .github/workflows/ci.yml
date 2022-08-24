@@ -378,7 +378,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
+          python-version: '3.10'
 
       - name: get dist artifacts
         uses: actions/download-artifact@v3
@@ -393,9 +393,7 @@ jobs:
           path: site
 
       - name: install
-        run: |
-          make install-docs
-          pip install -U twine
+        run: pip install -U twine packaging
 
       - name: twine check
         run: |
@@ -403,6 +401,7 @@ jobs:
           ls -lh dist
 
       - name: check tag
+        id: check-tag
         run: ./tests/check_tag.py
 
       - name: upload to pypi
@@ -412,6 +411,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
 
       - name: publish docs
+        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
         run: make publish-docs
         env:
           NETLIFY: ${{ secrets.netlify_token }}
