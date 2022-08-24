@@ -957,6 +957,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: Dict[str, 'AnyClassMethod'] = None,
     __cls_kwargs__: Dict[str, Any] = None,
+    __slots__: Optional[Tuple[str, ...]] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     """
@@ -967,6 +968,7 @@ def create_model(
     :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
     :param __cls_kwargs__: a dict for class creation
+    :param __slots__: Deprecated, `__slots__` should not be passed to `create_model`
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
         in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
         `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
@@ -974,6 +976,9 @@ def create_model(
         `foo=Field(datetime, default_factory=datetime.utcnow, alias='bar')` or
         `foo=(str, FieldInfo(title='Foo'))`
     """
+    if __slots__ is not None:
+        # __slots__ will be ignored from here on
+        warnings.warn('__slots__ should not be passed to create_model', RuntimeWarning)
 
     if __base__ is not None:
         if __config__ is not None:

@@ -260,5 +260,7 @@ def test_set_name(base):
 
 def test_create_model_with_slots():
     field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
-    with pytest.warns(RuntimeWarning):
-        create_model('PartialPet', **field_definitions)
+    with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
+        model = create_model('PartialPet', **field_definitions)
+
+    assert model.__fields__.keys() == {'foobar'}
