@@ -18,5 +18,6 @@
 * [ ] Tests pass on CI and coverage remains at 100%
 * [ ] Documentation reflects the changes where applicable
 * [ ] `changes/<pull request or issue id>-<github username>.md` file added describing change
-  (see [changes/README.md](https://github.com/pydantic/pydantic/blob/main/changes/README.md) for details)
+  (see [changes/README.md](https://github.com/pydantic/pydantic/blob/main/changes/README.md) for details.
+  You can [skip this check](https://github.com/pydantic/hooky#change-file-checks) if the change does not need a change file.)
 * [ ] My PR is ready to review, **please add a comment including the phrase "please review" to assign reviewers**
