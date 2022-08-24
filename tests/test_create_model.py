@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
 
@@ -256,3 +256,8 @@ def test_set_name(base):
     # with _init_private_attributes), so the descriptor protocol won't work.
     if base is object:
         assert a._some_func == 2
+
+
+def test_create_model_with_slots():
+    field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
+    create_model('PartialPet', **field_definitions)
