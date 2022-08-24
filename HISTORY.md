@@ -1,3 +1,9 @@
+## v1.10.0a2 (2022-08-24)
+
+* Update requirement to `typing_extensions>=4.1.0` to guarantee `dataclass_transform` is available, #4424 by @commonism
+* Add Explosion and AWS to main sponsors, #4413 by @samuelcolvin
+* Update documentation for `copy_on_model_validation` to reflect recent changes, #4369 by @samuelcolvin
+
 ## v1.10.0a1 (2022-08-22)
 
 * Refactor the whole _pydantic_ `dataclass` decorator to really act like its standard lib equivalent.
@@ -10,6 +16,7 @@
   - The `compiled` boolean (whether _pydantic_ is compiled with cython) has been moved from `main.py` to `version.py`
   - Now that `Config.extra` is supported, `dataclass` ignores by default extra arguments (like `BaseModel`)
 * Fix PEP487 `__set_name__` protocol in `BaseModel` for PrivateAttrs, #4407 by @tlambert03
+* Allow for custom parsing of environment variables via `parse_env_var` in `Config`, #4406 by @acmiyaguchi
 * Rename `master` to `main`, #4405 by @hramezani
 * Fix `StrictStr` does not raise `ValidationError` when `max_length` is present in `Field`, #4388 by @hramezani
 * Make `SecretStr` and `SecretBytes` hashable, #4387 by @chbndrhnns
