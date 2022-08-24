@@ -341,7 +341,7 @@ elif sys.version_info[:2] == (3, 8):
         # With python 3.8, specifically 3.8.10, Literal "is" check sare very flakey
         # can change on very subtle changes like use of types in other modules,
         # hopefully this check avoids that issue.
-        if is_literal_type(type_):
+        if is_literal_type(type_):  # pragma: no cover
             return all_literal_values(type_) == (None,)
         return False
 
