@@ -260,4 +260,5 @@ def test_set_name(base):
 
 def test_create_model_with_slots():
     field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
-    create_model('PartialPet', **field_definitions)
+    with pytest.warns(RuntimeWarning):
+        create_model('PartialPet', **field_definitions)
