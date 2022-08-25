@@ -124,7 +124,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
-class _ModelNamespaceDict(Dict[str, object]):
+class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
     def __setitem__(self, k: str, v: object) -> None:
         if is_validator(v):
             existing = self.get(k)
