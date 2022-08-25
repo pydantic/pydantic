@@ -60,7 +60,6 @@ __all__ = (
     'validate_field_name',
     'lenient_isinstance',
     'lenient_issubclass',
-    'in_ipython',
     'is_valid_identifier',
     'deep_update',
     'update_not_none',
@@ -186,18 +185,6 @@ def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any
         if isinstance(cls, WithArgsTypes):
             return False
         raise  # pragma: no cover
-
-
-def in_ipython() -> bool:
-    """
-    Check whether we're in an ipython environment, including jupyter notebooks.
-    """
-    try:
-        eval('__IPYTHON__')
-    except NameError:
-        return False
-    else:  # pragma: no cover
-        return True
 
 
 def is_valid_identifier(identifier: str) -> bool:

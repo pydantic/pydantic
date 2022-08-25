@@ -287,11 +287,7 @@ def test_duplicates():
             def duplicate_name(cls, v):  # noqa
                 return v
 
-    assert str(exc_info.value) == (
-        'duplicate validator function '
-        '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"; '
-        'if this is intended, set `allow_reuse=True`'
-    )
+    assert str(exc_info.value) == 'duplicate validator function "duplicate_name"'
 
 
 def test_use_bare():
@@ -1039,49 +1035,8 @@ def test_reuse_global_validators():
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
 
 
-def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
-    class Model(BaseModel):
-        a: str
-        b: str
-
-        @validator('a', allow_reuse=allow_1)
-        def duplicate_name(cls, v):
-            return v
-
-        @validator('b', allow_reuse=allow_2)  # noqa F811
-        def duplicate_name(cls, v):  # noqa F811
-            return v
-
-        if include_root:
-
-            @root_validator(allow_reuse=allow_3)  # noqa F811
-            def duplicate_name(cls, values):  # noqa F811
-                return values
-
-
-@pytest.fixture
-def reset_tracked_validators():
-    from pydantic.class_validators import _FUNCS
-
-    original_tracked_validators = set(_FUNCS)
-    yield
-    _FUNCS.clear()
-    _FUNCS.update(original_tracked_validators)
-
-
-@pytest.mark.parametrize('include_root,allow_1,allow_2,allow_3', product(*[[True, False]] * 4))
-def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_validators):
-    duplication_count = int(not allow_1) + int(not allow_2) + int(include_root and not allow_3)
-    if duplication_count > 1:
-        with pytest.raises(ConfigError) as exc_info:
-            declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
-        assert str(exc_info.value).startswith('duplicate validator function')
-    else:
-        declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
-
-
 @pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', product(*[[True, False]] * 2))
-def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod, reset_tracked_validators):
+def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod):
     root_val_values = []
 
     class Model(BaseModel):

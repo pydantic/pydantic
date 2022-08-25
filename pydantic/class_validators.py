@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional,
 
 from .errors import ConfigError
 from .typing import AnyCallable
-from .utils import ROOT_KEY, in_ipython
+from .utils import ROOT_KEY
 
 if TYPE_CHECKING:
     from .typing import AnyClassMethod
@@ -44,7 +44,6 @@ if TYPE_CHECKING:
     ValidatorsList = List[ValidatorCallable]
     ValidatorListDict = Dict[str, List[Validator]]
 
-_FUNCS: Set[str] = set()
 VALIDATOR_CONFIG_KEY = '__validator_config__'
 ROOT_VALIDATOR_CONFIG_KEY = '__root_validator_config__'
 
@@ -90,7 +89,7 @@ def validator(
         each_item = not whole
 
     def dec(f: AnyCallable) -> 'AnyClassMethod':
-        f_cls = _prepare_validator(f, allow_reuse)
+        f_cls = _prepare_validator(f)
         setattr(
             f_cls,
             VALIDATOR_CONFIG_KEY,
@@ -124,14 +123,14 @@ def root_validator(
     before or after standard model parsing/validation is performed.
     """
     if _func:
-        f_cls = _prepare_validator(_func, allow_reuse)
+        f_cls = _prepare_validator(_func)
         setattr(
             f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
         )
         return f_cls
 
     def dec(f: AnyCallable) -> 'AnyClassMethod':
-        f_cls = _prepare_validator(f, allow_reuse)
+        f_cls = _prepare_validator(f)
         setattr(
             f_cls, ROOT_VALIDATOR_CONFIG_KEY, Validator(func=f_cls.__func__, pre=pre, skip_on_failure=skip_on_failure)
         )
@@ -140,17 +139,12 @@ def root_validator(
     return dec
 
 
-def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMethod':
+def _prepare_validator(function: AnyCallable) -> 'AnyClassMethod':
     """
     Avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
     """
     f_cls = function if isinstance(function, classmethod) else classmethod(function)
-    if not in_ipython() and not allow_reuse:
-        ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
-        if ref in _FUNCS:
-            raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
-        _FUNCS.add(ref)
     return f_cls
 
 
@@ -340,3 +334,7 @@ def gather_all_validators(type_: 'ModelOrDc') -> Dict[str, 'AnyClassMethod']:
         for k, v in all_attributes.items()
         if hasattr(v, VALIDATOR_CONFIG_KEY) or hasattr(v, ROOT_VALIDATOR_CONFIG_KEY)
     }
+
+
+def is_validator(obj: object) -> bool:
+    return hasattr(obj, VALIDATOR_CONFIG_KEY) or hasattr(obj, ROOT_VALIDATOR_CONFIG_KEY)

@@ -26,7 +26,13 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
+from .class_validators import (
+    ValidatorGroup,
+    extract_root_validators,
+    extract_validators,
+    inherit_validators,
+    is_validator,
+)
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
@@ -118,8 +124,22 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
+class _ModelNamespaceDict(Dict[str, object]):
+    def __setitem__(self, k: str, v: object) -> None:
+        if is_validator(v):
+            existing = self.get(k)
+            if existing and v is not existing and is_validator(existing):
+                raise ConfigError(f'duplicate validator function "{k}"')
+
+        return super().__setitem__(k, v)
+
+
 @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
+    @classmethod
+    def __prepare__(metacls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+        return _ModelNamespaceDict()
+
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
