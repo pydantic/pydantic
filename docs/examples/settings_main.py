@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     pg_dsn: PostgresDsn = 'postgres://user:pass@localhost:5432/foobar'
     amqp_dsn: AmqpDsn = 'amqp://user:pass@localhost:5672/'
 
-    special_function: PyObject = 'math.cos'
+    special_function: PyObject = Field('math.cos')
 
     # to override domains:
     # export my_prefix_domains='["foo.com", "bar.com"]'
