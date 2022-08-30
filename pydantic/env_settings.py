@@ -79,15 +79,15 @@ class BaseSettings(BaseModel):
             return {}
 
     class Config(BaseConfig):
-        env_prefix = ''
-        env_file = None
-        env_file_encoding = None
-        env_nested_delimiter = None
-        secrets_dir = None
-        validate_all = True
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-        case_sensitive = False
+        env_prefix: str = ''
+        env_file: Optional[DotenvType] = None
+        env_file_encoding: Optional[str] = None
+        env_nested_delimiter: Optional[str] = None
+        secrets_dir: Optional[StrPath] = None
+        validate_all: bool = True
+        extra: Extra = Extra.forbid
+        arbitrary_types_allowed: bool = True
+        case_sensitive: bool = False
 
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:

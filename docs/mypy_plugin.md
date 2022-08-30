@@ -90,7 +90,7 @@ To get started, all you need to do is create a `mypy.ini` file with following co
 plugins = pydantic.mypy
 ```
 
-The plugin is compatible with mypy versions 0.910, 0.920, 0.921 and 0.930.
+The plugin is compatible with mypy versions `>=0.910`.
 
 See the [mypy usage](usage/mypy.md) and [plugin configuration](#configuring-the-plugin) docs for more details.
 
