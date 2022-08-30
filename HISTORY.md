@@ -1,14 +1,4 @@
-## v1.10.0b1 (2022-08-24)
-
-* Runtime warning if `__slots__` is passed to `create_model`, `__slots__` is then ignored, #4432 by @samuelcolvin
-
-## v1.10.0a2 (2022-08-24)
-
-* Update requirement to `typing_extensions>=4.1.0` to guarantee `dataclass_transform` is available, #4424 by @commonism
-* Add Explosion and AWS to main sponsors, #4413 by @samuelcolvin
-* Update documentation for `copy_on_model_validation` to reflect recent changes, #4369 by @samuelcolvin
-
-## v1.10.0a1 (2022-08-22)
+## v1.10.0 (2022-08-30)
 
 * Refactor the whole _pydantic_ `dataclass` decorator to really act like its standard lib equivalent.
   It hence keeps `__eq__`, `__hash__`, ... and makes comparison with its non-validated version possible.
@@ -86,6 +76,23 @@
 * `validate_arguments` decorator now supports `alias`, #3019 by @MAD-py
 * Avoid `__dict__` and `__weakref__` attributes in `AnyUrl` and IP address fields, #2890 by @nuno-andre
 * Add ability to use `Final` in a field type annotation, #2766 by @uriyyo
+* Update requirement to `typing_extensions>=4.1.0` to guarantee `dataclass_transform` is available, #4424 by @commonism
+* Add Explosion and AWS to main sponsors, #4413 by @samuelcolvin
+* Update documentation for `copy_on_model_validation` to reflect recent changes, #4369 by @samuelcolvin
+* Runtime warning if `__slots__` is passed to `create_model`, `__slots__` is then ignored, #4432 by @samuelcolvin
+* Add type hints to `BaseSettings.Config` to avoid mypy errors, also correct mypy version compatibility notice in docs, #4450 by @samuelcolvin
+
+## v1.10.0b1 (2022-08-24)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v1.10.0b1) for details.
+
+## v1.10.0a2 (2022-08-24)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v1.10.0a2) for details.
+
+## v1.10.0a1 (2022-08-22)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v1.10.0a1) for details.
 
 ## v1.9.2 (2022-08-11)
 
