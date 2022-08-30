@@ -126,13 +126,13 @@ impl LookupKey {
 
     pub fn py_get_attr<'data, 's>(&'s self, obj: &'data PyAny) -> PyResult<Option<(&'s str, &'data PyAny)>> {
         match self {
-            LookupKey::Simple(key, py_key) => match py_get_attrs(obj, &py_key)? {
+            LookupKey::Simple(key, py_key) => match py_get_attrs(obj, py_key)? {
                 Some(value) => Ok(Some((key, value))),
                 None => Ok(None),
             },
-            LookupKey::Choice(key1, key2, py_key1, py_key2) => match py_get_attrs(obj, &py_key1)? {
+            LookupKey::Choice(key1, key2, py_key1, py_key2) => match py_get_attrs(obj, py_key1)? {
                 Some(value) => Ok(Some((key1, value))),
-                None => match py_get_attrs(obj, &py_key2)? {
+                None => match py_get_attrs(obj, py_key2)? {
                     Some(value) => Ok(Some((key2, value))),
                     None => Ok(None),
                 },
@@ -302,11 +302,8 @@ impl PathItem {
 
 /// wrapper around `getattr` that returns `Ok(None)` for attribute errors, but returns other errors
 /// We dont check `try_from_attributes` because that check was performed on the top level object before we got here
-fn py_get_attrs<N>(obj: &PyAny, attr_name: N) -> PyResult<Option<&PyAny>>
-where
-    N: ToPyObject,
-{
-    match obj.getattr(attr_name) {
+fn py_get_attrs<'a, 'b>(obj: &'a PyAny, attr_name: &'b Py<PyString>) -> PyResult<Option<&'a PyAny>> {
+    match obj.getattr(attr_name.extract::<&PyString>(obj.py())?) {
         Ok(attr) => Ok(Some(attr)),
         Err(err) => {
             if err.get_type(obj.py()).is_subclass_of::<PyAttributeError>()? {

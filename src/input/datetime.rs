@@ -219,15 +219,22 @@ impl<'a> EitherDateTime<'a> {
 
     pub fn try_into_py(self, py: Python<'a>) -> PyResult<PyObject> {
         let dt = match self {
-            Self::Raw(datetime) => {
-                let tz: Option<PyObject> = match datetime.offset {
-                    Some(offset) => {
-                        let tz_info = TzInfo::new(offset);
-                        Some(Py::new(py, tz_info)?.to_object(py))
-                    }
-                    None => None,
-                };
-                PyDateTime::new(
+            Self::Raw(datetime) => match datetime.offset {
+                Some(offset) => {
+                    let tz_info = TzInfo::new(offset);
+                    PyDateTime::new(
+                        py,
+                        datetime.date.year as i32,
+                        datetime.date.month,
+                        datetime.date.day,
+                        datetime.time.hour,
+                        datetime.time.minute,
+                        datetime.time.second,
+                        datetime.time.microsecond,
+                        Some(Py::new(py, tz_info)?.to_object(py).extract(py)?),
+                    )?
+                }
+                None => PyDateTime::new(
                     py,
                     datetime.date.year as i32,
                     datetime.date.month,
@@ -236,9 +243,9 @@ impl<'a> EitherDateTime<'a> {
                     datetime.time.minute,
                     datetime.time.second,
                     datetime.time.microsecond,
-                    tz.as_ref(),
-                )?
-            }
+                    None,
+                )?,
+            },
             Self::Py(dt) => dt,
         };
         Ok(dt.into_py(py))

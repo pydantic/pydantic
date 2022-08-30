@@ -366,7 +366,7 @@ macro_rules! py_dict {
     ($py:ident, $($value:expr),* $(,)?) => {{
         let dict = PyDict::new($py);
         $(
-            dict.set_item(stringify!($value), $value.into_py($py))?;
+            dict.set_item::<&str, Py<PyAny>>(stringify!($value), $value.into_py($py))?;
         )*
         Ok(Some(dict.into_py($py)))
     }};
