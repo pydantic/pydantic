@@ -7,12 +7,12 @@ use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping,
     PySequence, PySet, PyString, PyTime, PyTuple, PyType,
 };
+#[cfg(not(PyPy))]
+use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{intern, AsPyPointer};
 
 use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
 
-#[cfg(not(PyPy))]
-use super::_pyo3_dict::{PyDictItems, PyDictKeys, PyDictValues};
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,

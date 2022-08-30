@@ -183,10 +183,10 @@ def test_mapping_error_yield_1():
             'loc': [],
             'message': (
                 'Unable to convert mapping to a dictionary, error: '
-                'ValueError: Expected tuple of length 2, but got tuple of length 1.'
+                'ValueError: expected tuple of length 2, but got tuple of length 1'
             ),
             'input_value': HasRepr(IsStr(regex='.+BadMapping object at.+')),
-            'context': {'error': 'ValueError: Expected tuple of length 2, but got tuple of length 1.'},
+            'context': {'error': 'ValueError: expected tuple of length 2, but got tuple of length 1'},
         }
     ]
 
