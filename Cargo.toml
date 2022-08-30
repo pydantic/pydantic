@@ -8,7 +8,7 @@ repository = "https://github.com/pydantic/pydantic-core.git"
 readme = "README.md"
 
 [dependencies]
-pyo3 = "0.16.5"
+pyo3 = "0.17.1"
 regex = "1.5.5"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
@@ -43,4 +43,4 @@ panic = "abort"
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distrobution specific, e.g. pypy
-pyo3-build-config = "0.16.5"
+pyo3-build-config = "0.17.1"

@@ -1,8 +1,12 @@
 use std::borrow::Cow;
 
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyFunction, PyList, PySet, PyString};
-use pyo3::{intern, PyTypeInfo};
+#[cfg(not(PyPy))]
+use pyo3::types::PyFunction;
+use pyo3::types::{PyDict, PyList, PySet, PyString};
+#[cfg(not(PyPy))]
+use pyo3::PyTypeInfo;
 
 use ahash::AHashSet;
 
@@ -500,23 +504,22 @@ impl<'a> Iterator for AttributesIterator<'a> {
                     .to_string_lossy();
                 if !name_cow.as_ref().starts_with('_') {
                     // getattr is most likely to fail due to an exception in a @property, skip
-                    if let Ok(attr) = self.object.getattr(name) {
+                    if let Ok(attr) = self.object.getattr(name_cow.as_ref()) {
                         // we don't want bound methods to be included, is there a better way to check?
                         // ref https://stackoverflow.com/a/18955425/949890
                         let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
                         // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
                         // I think that's better than including static methods in the yielded attributes,
                         // if someone really wants fields, they can use an explicit field, or a function to modify input
+                        #[cfg(not(PyPy))]
                         if !is_bound && !PyFunction::is_type_of(attr) {
-                            // MASSIVE HACK! PyFunction::is_type_of(attr) doesn't detect staticmethod on PyPy,
-                            // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
-                            // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
-                            #[cfg(PyPy)]
-                            if attr.get_type().to_string() != "<class 'function'>" {
-                                return Some((name, attr));
-                            }
-
-                            #[cfg(not(PyPy))]
+                            return Some((name, attr));
+                        }
+                        // MASSIVE HACK! PyFunction doesn't exist for PyPy,
+                        // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
+                        // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
+                        #[cfg(PyPy)]
+                        if !is_bound && attr.get_type().to_string() != "<class 'function'>" {
                             return Some((name, attr));
                         }
                     }
