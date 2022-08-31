@@ -1,3 +1,7 @@
+## v1.10.1 (2022-08-31)
+
+* Add `__hash__` method to `pydancic.color.Color` class, #4454 by @czaki
+
 ## v1.10.0 (2022-08-30)
 
 * Refactor the whole _pydantic_ `dataclass` decorator to really act like its standard lib equivalent.
