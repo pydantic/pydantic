@@ -200,7 +200,7 @@ class Color(Representation):
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Color) and self.as_rgb_tuple() == other.as_rgb_tuple()
-    
+
     def __hash__(self):
         return hash(self.as_rgb_tuple())
 

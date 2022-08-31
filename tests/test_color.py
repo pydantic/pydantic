@@ -196,6 +196,6 @@ def test_eq():
 
 
 def test_color_hashable():
-    assert hash(Color("red")) != hash(Color("blue"))
-    assert hash(Color("red")) == hash(Color((255, 0, 0)))
-    assert hash(Color("red")) != hash(Color((255, 0, 0, 0.5)))
+    assert hash(Color('red')) != hash(Color('blue'))
+    assert hash(Color('red')) == hash(Color((255, 0, 0)))
+    assert hash(Color('red')) != hash(Color((255, 0, 0, 0.5)))
