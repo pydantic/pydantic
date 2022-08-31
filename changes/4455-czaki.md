@@ -1,1 +1,1 @@
-bugfix: Add `__hash__` operator to `pydancic.color.Color` class.
+bugfix: Add `__hash__` method to `pydancic.color.Color` class.
