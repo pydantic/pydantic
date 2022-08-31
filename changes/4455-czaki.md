@@ -1,0 +1,1 @@
+bugfix: Add `__hash__` operator to `pydancic.color.Color` class.
