@@ -1,1 +1,1 @@
-Fix re-quote when build url. I added relevant cases to test.
+Fix AnyUrl escaping problem by preventing re-quoting an already escaped URL.
