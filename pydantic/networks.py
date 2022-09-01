@@ -396,6 +396,10 @@ class AnyUrl(str):
 
     @classmethod
     def quote(cls, string: str, safe: str = '') -> str:
+        pattern = r'^([\w]+|(%\d{2}))+$'
+        if re.match(pattern, string) is not None:
+            return string
+
         return quote_plus(string, safe) if cls.quote_plus else quote(string, safe)
 
     def __repr__(self) -> str:

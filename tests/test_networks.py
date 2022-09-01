@@ -683,6 +683,8 @@ def test_custom_schemes():
         (dict(scheme='http', user='foo', password='a b', host='example.net'), 'http://foo:a%20b@example.net'),
         (dict(scheme='http', host='example.net', query='q=foo bar'), 'http://example.net?q=foo%20bar'),
         (dict(scheme='http', host='example.net', path="/m&m's"), 'http://example.net/m%26m%27s'),
+        (dict(scheme='http', host='localhost', path='/foo bar'), 'http://localhost/foo%20bar'),
+        (dict(scheme='http', host='localhost', path='/foo%20bar'), 'http://localhost/foo%20bar'),
     ],
 )
 def test_build_url(kwargs, expected):
