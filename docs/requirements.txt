@@ -1,4 +1,4 @@
-autoflake==1.4
+autoflake==1.5.3
 ansi2html==1.8.0
 flake8==5.0.4
 flake8-quotes==3.3.1
