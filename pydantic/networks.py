@@ -1,4 +1,5 @@
 import re
+from functools import partial
 from ipaddress import (
     IPv4Address,
     IPv4Interface,
@@ -250,7 +251,7 @@ class AnyUrl(str):
         if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
-            url += '/'.join(map(cls.quote, path.split('/')))
+            url += cls.quote(path)
         if query:
             queries = query.split('&')
             url += '?' + '&'.join(map(lambda s: '='.join(map(cls.quote, s.split('='))), queries))
@@ -395,8 +396,20 @@ class AnyUrl(str):
         return parts
 
     @classmethod
-    def quote(cls, string: str, safe: str = '') -> str:
-        return quote_plus(string, safe) if cls.quote_plus else quote(string, safe)
+    def quote(cls, string: str) -> str:
+        if cls.quote_plus:
+            quote_func = partial(quote_plus, safe='+/')
+        else:
+            quote_func = partial(quote, safe='/')
+
+        last_end = 0
+        quoted = ''
+        for match in re.finditer(r'(.*?)(%[\dA-F]{2})', string, flags=re.S | re.I):
+            raw, percent = match.groups()
+            quoted += quote_func(raw) + percent.upper()
+            last_end = match.end()
+
+        return quoted + quote_func(string[last_end:])
 
     def __repr__(self) -> str:
         extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)

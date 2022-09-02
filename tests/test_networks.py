@@ -682,7 +682,12 @@ def test_custom_schemes():
         (dict(scheme='http', user='foo@bar', host='example.net'), 'http://foo%40bar@example.net'),
         (dict(scheme='http', user='foo', password='a b', host='example.net'), 'http://foo:a%20b@example.net'),
         (dict(scheme='http', host='example.net', query='q=foo bar'), 'http://example.net?q=foo%20bar'),
+        (dict(scheme='http', host='example.net', query='q=foo/bar'), 'http://example.net?q=foo/bar'),
         (dict(scheme='http', host='example.net', path="/m&m's"), 'http://example.net/m%26m%27s'),
+        (dict(scheme='http', host='example.net', path='/m%26m%27s'), 'http://example.net/m%26m%27s'),
+        (dict(scheme='http', host='example.net', path='/m%m'), 'http://example.net/m%25m'),
+        (dict(scheme='http', host='example.net', path='/m%25m'), 'http://example.net/m%25m'),
+        (dict(scheme='http', host='example.net', path='/m+m'), 'http://example.net/m%2Bm'),
     ],
 )
 def test_build_url(kwargs, expected):
@@ -698,10 +703,54 @@ def test_build_url(kwargs, expected):
             'https://my+name:a+password@example.com',
         ),
         (dict(scheme='https', host='example.com', path='/this is a path'), 'https://example.com/this+is+a+path'),
+        (dict(scheme='https', host='example.com', path='/this+is+a+path'), 'https://example.com/this+is+a+path'),
+        (dict(scheme='https', host='example.com', path='/this+is/a+path'), 'https://example.com/this+is/a+path'),
     ],
 )
 def test_build_url_quote_plus(kwargs, expected):
     assert stricturl(quote_plus=True).build(**kwargs) == expected
+
+
+@pytest.mark.parametrize(
+    'quote_plus,before,after',
+    [
+        (False, ' ', '%20'),
+        (True, ' ', '+'),
+        (False, '+', '%2B'),
+        (True, '+', '+'),
+        (True, 'foo bar', 'foo+bar'),
+        (False, 'foo bar', 'foo%20bar'),
+        (True, 'foo+bar', 'foo+bar'),
+        (False, 'foo+bar', 'foo%2Bbar'),
+        (True, 'foo%20bar', 'foo%20bar'),
+        (False, 'foo%20bar', 'foo%20bar'),
+        (True, 'f\noo%20bar', 'f%0Aoo%20bar'),
+        (False, 'f\noo%20bar', 'f%0Aoo%20bar'),
+        (True, 'f\noo', 'f%0Aoo'),
+        (False, 'f\noo', 'f%0Aoo'),
+        (False, '#', '%23'),
+        (False, 'xx#', 'xx%23'),
+        (False, '#xx', '%23xx'),
+        (False, '%23', '%23'),
+        (False, 'xx%23', 'xx%23'),
+        (False, '%23xx', '%23xx'),
+        (False, 'ñ', '%C3%B1'),
+        (True, 'ñ', '%C3%B1'),
+        (False, '%C3%B1', '%C3%B1'),
+        (True, '%C3%B1', '%C3%B1'),
+        (True, '\x00', '%00'),
+        (False, '\x00', '%00'),
+        (True, '%00', '%00'),
+        (False, '%00', '%00'),
+        (True, '%B1', '%B1'),
+        (False, '%B1', '%B1'),
+        (True, '%b1', '%B1'),
+        (False, '%b1', '%B1'),
+    ],
+)
+def test_url_quoting(quote_plus: bool, before: str, after: str):
+    u = stricturl(quote_plus=quote_plus)
+    assert u.quote(before) == after
 
 
 @pytest.mark.parametrize(
