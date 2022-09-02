@@ -108,10 +108,8 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install pip-tools
-
     - name: install min deps
-      run: pip-sync requirements/pyproject-min.txt requirements/testing.txt
+      run: pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
 
     - name: install pydantic
       run: pip install .
@@ -126,8 +124,8 @@ jobs:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
-    - name: install min deps
-      run: pip install -r requirements/pyproject-all.txt
+    - name: install extra deps
+      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
 
     - name: test with deps
       run: make test
