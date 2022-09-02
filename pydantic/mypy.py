@@ -54,7 +54,6 @@ from mypy.types import (
     Type,
     TypeOfAny,
     TypeType,
-    TypeVarType,
     UnionType,
     get_proper_type,
 )
@@ -162,11 +161,7 @@ class PydanticPlugin(Plugin):
             # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
             # Pydantic calls the default factory without any argument, so we retrieve the first item
             if isinstance(default_factory_type, Overloaded):
-                if float(mypy_version) > 0.910:
-                    default_factory_type = default_factory_type.items[0]
-                else:
-                    # Mypy0.910 exposes the items of overloaded types in a function
-                    default_factory_type = default_factory_type.items()[0]  # type: ignore[operator]
+                default_factory_type = default_factory_type.items[0]
 
             if isinstance(default_factory_type, CallableType):
                 return default_factory_type.ret_type
@@ -438,15 +433,10 @@ class PydanticModelTransformer:
         obj_type = ctx.api.named_type(f'{BUILTINS_NAME}.object')
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
-        tvd = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
+        # requires mypy>0.910
+        self_type = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
         self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
-
-        # Backward-compatible with TypeVarDef from Mypy 0.910.
-        if isinstance(tvd, TypeVarType):
-            self_type = tvd
-        else:
-            self_type = TypeVarType(tvd)  # type: ignore[call-arg]
 
         add_method(
             ctx,
@@ -454,7 +444,7 @@ class PydanticModelTransformer:
             construct_arguments,
             return_type=self_type,
             self_type=self_type,
-            tvar_def=tvd,
+            tvar_def=self_type,
             is_classmethod=True,
         )
 
