@@ -1,28 +1,11 @@
 .DEFAULT_GOAL := all
 sources = pydantic tests docs/build
 
-.PHONY: install-linting
-install-linting:
-	pip install -r tests/requirements-linting.txt
-	pre-commit install
-
-.PHONY: install-pydantic
-install-pydantic:
-	python -m pip install -U wheel pip
-	pip install -r requirements.txt
-	pip install -e .
-
-.PHONY: install-testing
-install-testing: install-pydantic
-	pip install -r tests/requirements-testing.txt
-
-.PHONY: install-docs
-install-docs: install-pydantic
-	pip install -U -r docs/requirements.txt
-
 .PHONY: install
-install: install-testing install-linting install-docs
-	@echo 'installed development requirements'
+install:
+	python -m pip install -U pip
+	pip install -r requirements/all.txt
+	pip install -e .
 
 .PHONY: format
 format:

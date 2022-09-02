@@ -1,0 +1,7 @@
+coverage[toml]
+devtools
+hypothesis
+mypy
+pytest
+pytest-mock
+pytest-sugar
