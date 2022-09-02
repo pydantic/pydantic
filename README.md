@@ -21,6 +21,7 @@ If you're a user of pydantic, you probably want either
 [`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.9.X-fixes).
 
 ---
+
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
 
