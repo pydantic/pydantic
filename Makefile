@@ -50,7 +50,7 @@ pyright:
 
 .PHONY: test
 test:
-	pytest --cov=pydantic
+	coverage run -m pytest
 
 .PHONY: testcov
 testcov: test

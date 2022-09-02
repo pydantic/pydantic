@@ -136,7 +136,7 @@ jobs:
     - run: mkdir coverage
 
     - name: test with deps
-      run: make test
+      run: coverage run -m pytest --durations=10
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
@@ -145,7 +145,7 @@ jobs:
       run: pip uninstall -y email-validator devtools python-dotenv
 
     - name: test without deps
-      run: make test
+      run: coverage run -m pytest --durations=10
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
@@ -162,7 +162,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mypy-version: ['0.910', '0.921', '0.931', '0.942', '0.950', '0.960']
+        mypy-version: ['0.931', '0.942', '0.950', '0.961']
 
     steps:
     - uses: actions/checkout@v3
@@ -186,7 +186,7 @@ jobs:
     - run: mkdir coverage
 
     - name: run tests
-      run: pytest --cov=pydantic tests/mypy
+      run: coverage run -m pytest tests/mypy
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
         CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
@@ -247,7 +247,7 @@ jobs:
   deploy:
     name: Deploy
     needs: [lint, test, test-old-mypy, test-fastapi]
-#    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -267,9 +267,9 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-#      - name: check tag
-#        id: check-tag
-#        run: ./tests/check_tag.py
+      - name: check tag
+        id: check-tag
+        run: ./tests/check_tag.py
 
       - name: build
         run: python -m build
@@ -277,14 +277,14 @@ jobs:
       - run: ls -lh dist
       - run: twine check dist/*
 
-#      - name: upload to pypi
-#        run: twine upload dist/*
-#        env:
-#          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
-#
-#      - name: publish docs
-#        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
-#        run: make publish-docs
-#        env:
-#          NETLIFY: ${{ secrets.netlify_token }}
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+      - name: publish docs
+        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
+        run: make publish-docs
+        env:
+          NETLIFY: ${{ secrets.netlify_token }}

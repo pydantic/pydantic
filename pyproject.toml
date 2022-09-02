@@ -53,7 +53,6 @@ Changelog = 'https://pydantic-docs.helpmanual.io/changelog'
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
-addopts = '-p no:hypothesispytest'
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:certifi',
