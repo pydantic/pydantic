@@ -375,7 +375,7 @@ def test_get_model():
 def test_version_info():
     s = version_info()
     assert re.match(' *pydantic version: ', s)
-    assert s.count('\n') == 5
+    assert s.count('\n') == 4
 
 
 def test_standard_version():
