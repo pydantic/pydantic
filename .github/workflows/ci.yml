@@ -97,75 +97,17 @@ jobs:
         name: docs
         path: site
 
-  test-linux-compiled:
-    name: test py${{ matrix.python-version }} on linux compiled
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
-    env:
-      PYTHON: ${{ matrix.python-version }}
-      OS: ubuntu
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - uses: actions/cache@v3
-      id: cache
-      with:
-        path: ${{ env.pythonLocation }}
-        key: >
-          test-linux-compiled
-          ${{ runner.os }}
-          ${{ env.pythonLocation }}
-          ${{ hashFiles('setup.py') }}
-          ${{ hashFiles('requirements.txt') }}
-          ${{ hashFiles('tests/requirements-testing.txt') }}
-
-    - name: install
-      run: make install-testing
-
-    - name: compile
-      run: |
-        make build-trace
-        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
-        ls -alh
-        ls -alh pydantic/
-
-    - run: mkdir coverage
-
-    - name: test
-      run: make test
-      env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-compiled
-        CONTEXT: linux-py${{ matrix.python-version }}-compiled
-
-    - name: store coverage files
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage
-        path: coverage
-
-  test-not-compiled:
+  test:
     name: test py${{ matrix.python-version }} on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        include:
-        - os: ubuntu
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
 
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
-      COMPILED: no
       DEPS: yes
 
     runs-on: ${{ matrix.os }}-latest
@@ -182,7 +124,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          test-not-compiled
+          test
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -203,7 +145,7 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
 
     - name: uninstall deps
-      run: pip uninstall -y cython email-validator devtools python-dotenv
+      run: pip uninstall -y email-validator devtools python-dotenv
 
     - name: test without deps
       run: make test
@@ -259,7 +201,7 @@ jobs:
         path: coverage
 
   coverage-combine:
-    needs: [test-linux-compiled, test-not-compiled, test-old-mypy]
+    needs: [test, test-old-mypy]
     runs-on: ubuntu-latest
 
     steps:
@@ -335,8 +277,6 @@ jobs:
     - name: build sdist
       if: matrix.os == 'ubuntu' && matrix.python-version == '9'
       run: python setup.py sdist bdist_wheel
-      env:
-        SKIP_CYTHON: 1
 
     - name: build ${{ matrix.platform || matrix.os }} binaries
       run: cibuildwheel --output-dir dist
@@ -345,7 +285,6 @@ jobs:
         CIBW_BUILD: 'cp3${{ matrix.python-version }}-*'
         CIBW_SKIP: '*-win32'
         CIBW_PLATFORM: '${{ matrix.platform || matrix.os }}'
-        CIBW_BEFORE_BUILD: 'pip install -U cython'
         CIBW_TEST_REQUIRES: 'pytest==6.2.5 pytest-mock==3.6.1'
         CIBW_TEST_COMMAND: 'pytest {project}/tests'
         CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'

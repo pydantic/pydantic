@@ -12,7 +12,7 @@ install-linting:
 install-pydantic:
 	python -m pip install -U wheel pip
 	pip install -r requirements.txt
-	SKIP_CYTHON=1 pip install -e .
+	pip install -e .
 
 .PHONY: install-testing
 install-testing: install-pydantic
@@ -49,7 +49,7 @@ lint:
 .PHONY: check-dist
 check-dist:
 	python setup.py check -ms
-	SKIP_CYTHON=1 python setup.py sdist
+	python setup.py sdist
 	twine check dist/*
 
 .PHONY: mypy
