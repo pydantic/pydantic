@@ -5,3 +5,4 @@ mypy
 pytest
 pytest-mock
 pytest-sugar
+typed-ast;python_version<'3.8'
