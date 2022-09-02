@@ -1,4 +1,4 @@
-While pydantic will work well with any IDE out of the box, a 
+While pydantic will work well with any IDE out of the box, a
 [PyCharm plugin](https://plugins.jetbrains.com/plugin/12861-pydantic)
 offering improved pydantic integration is available on the JetBrains Plugins Repository for PyCharm.
 You can install the plugin for free from the plugin marketplace

@@ -24,7 +24,7 @@ repos:
     pass_filenames: false
   - id: pyupgrade
     name: Pyupgrade
-    entry: make pyupgrade
+    entry: pyupgrade --py37-plus
     types: [python]
     language: system
-    pass_filenames: false
+    exclude: ^docs/.*$

@@ -102,9 +102,9 @@ If validation fails pydantic will raise an error with a breakdown of what was wr
 So *pydantic* uses some cool new language features, but why should I actually go and use it?
 
 **plays nicely with your IDE/linter/brain**
-: There's no new schema definition micro-language to learn. If you know how to use Python type hints, 
-  you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations, 
-  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)), 
+: There's no new schema definition micro-language to learn. If you know how to use Python type hints,
+  you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations,
+  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)),
   and your intuition should all work properly with your validated data.
 
 **dual use**
@@ -117,15 +117,15 @@ So *pydantic* uses some cool new language features, but why should I actually go
   it's generally as fast or faster than most similar libraries.
 
 **validate complex structures**
-: use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s 
-  [standard types](usage/types.md#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and 
+: use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s
+  [standard types](usage/types.md#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and
   [validators](usage/validators.md) allow
   complex data schemas to be clearly and easily defined, validated, and parsed.
 
 **extensible**
-: *pydantic* allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation 
+: *pydantic* allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation
   with methods on a model decorated with the [`validator`](usage/validators.md) decorator.
-  
+
 **dataclasses integration**
 : As well as `BaseModel`, *pydantic* provides
   a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla Python dataclasses with input
@@ -140,14 +140,14 @@ Hundreds of organisations and packages are using *pydantic*, including:
   fast to code and ready for production, based on *pydantic* and Starlette.
 
 [Project Jupyter](https://jupyter.org/)
-: developers of the Jupyter notebook are using *pydantic* 
+: developers of the Jupyter notebook are using *pydantic*
   [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server
   [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
   configuration management.
 
 **Microsoft**
-: are using *pydantic* (via FastAPI) for 
-  [numerous services](https://github.com/tiangolo/fastapi/pull/26#issuecomment-463768795), some of which are 
+: are using *pydantic* (via FastAPI) for
+  [numerous services](https://github.com/tiangolo/fastapi/pull/26#issuecomment-463768795), some of which are
   "getting integrated into the core Windows product and some Office products."
 
 **Amazon Web Services**
@@ -179,7 +179,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
   [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
   *pydantic* models.
 
-For a more comprehensive list of open-source projects using *pydantic* see the 
+For a more comprehensive list of open-source projects using *pydantic* see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents).
 
 ## Discussion of Pydantic
@@ -190,14 +190,14 @@ Podcasts and videos discussing pydantic.
 : Michael Kennedy and Samuel Colvin, the creator of *pydantic*, dive into the history of pydantic and its many uses and benefits.
 
 [Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
-: Discussion about where *pydantic* came from and ideas for where it might go next with 
+: Discussion about where *pydantic* came from and ideas for where it might go next with
   Samuel Colvin the creator of pydantic.
 
 [Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
-: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management 
-  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works 
+: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management
+  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works
   automatically with all the IDE's you already have.*" --Michael Kennedy
 
 [Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
-: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking 
+: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking
   through the core features of pydantic.

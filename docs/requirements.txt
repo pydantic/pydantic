@@ -12,4 +12,3 @@ pyupgrade==2.37.3
 sqlalchemy
 orjson
 ujson
-

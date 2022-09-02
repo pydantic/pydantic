@@ -1,4 +1,4 @@
-The primary means of defining objects in *pydantic* is via models 
+The primary means of defining objects in *pydantic* is via models
 (models are simply classes which inherit from `BaseModel`).
 
 You can think of models as similar to types in strictly typed languages, or as the requirements of a single endpoint
@@ -27,9 +27,9 @@ class User(BaseModel):
     id: int
     name = 'Jane Doe'
 ```
-`User` here is a model with two fields `id` which is an integer and is required, 
+`User` here is a model with two fields `id` which is an integer and is required,
 and `name` which is a string and is not required (it has a default value). The type of `name` is inferred from the
-default value, and so a type annotation is not required (however note [this](#field-ordering) warning about field 
+default value, and so a type annotation is not required (however note [this](#field-ordering) warning about field
 order when some fields do not have type annotations).
 ```py
 user = User(id='123')
@@ -65,15 +65,15 @@ This model is mutable so field values can be changed.
 
 ### Model properties
 
-The example above only shows the tip of the iceberg of what models can do. 
+The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
 `dict()`
-: returns a dictionary of the model's fields and values; 
+: returns a dictionary of the model's fields and values;
   cf. [exporting models](exporting_models.md#modeldict)
 
 `json()`
-: returns a JSON string representation `dict()`; 
+: returns a JSON string representation `dict()`;
   cf. [exporting models](exporting_models.md#modeljson)
 
 `copy()`
@@ -99,7 +99,7 @@ Models possess the following methods and attributes:
 : returns a JSON string representation of `schema()`; cf. [schema](schema.md)
 
 `construct()`
-: a class method for creating models without running validation; 
+: a class method for creating models without running validation;
   cf. [Creating models without validation](#creating-models-without-validation)
 
 `__fields_set__`
@@ -159,7 +159,7 @@ Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
 sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
 
-You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`. 
+You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`.
 In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
 
 The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
@@ -240,12 +240,12 @@ You can also define your own error classes, which can specify a custom error cod
 !!! warning
     To quote the [official `pickle` docs](https://docs.python.org/3/library/pickle.html),
     "The pickle module is not secure against erroneous or maliciously constructed data.
-    Never unpickle data received from an untrusted or unauthenticated source." 
-    
+    Never unpickle data received from an untrusted or unauthenticated source."
+
 !!! info
     Because it can result in arbitrary code execution, as a security measure, you need
     to explicitly pass `allow_pickle` to the parsing function in order to load `pickle` data.
-    
+
 ### Creating models without validation
 
 *pydantic* also provides the `construct()` method which allows models to be created **without validation** this
@@ -258,11 +258,11 @@ as efficiently as possible (`construct()` is generally around 30x faster than cr
 
 {!.tmp_examples/models_construct.md!}
 
-The `_fields_set` keyword argument to `construct()` is optional, but allows you to be more precise about 
+The `_fields_set` keyword argument to `construct()` is optional, but allows you to be more precise about
 which fields were originally set and which weren't. If it's omitted `__fields_set__` will just be the keys
-of the data provided. 
+of the data provided.
 
-For example, in the example above, if `_fields_set` was not provided, 
+For example, in the example above, if `_fields_set` was not provided,
 `new_user.__fields_set__` would be `{'id', 'age', 'name'}`.
 
 ## Generic Models
@@ -292,12 +292,12 @@ you would expect mypy to provide if you were to declare the type without using `
     Internally, pydantic uses `create_model` to generate a (cached) concrete `BaseModel` at runtime,
     so there is essentially zero overhead introduced by making use of `GenericModel`.
 
-To inherit from a GenericModel without replacing the `TypeVar` instance, a class must also inherit from 
+To inherit from a GenericModel without replacing the `TypeVar` instance, a class must also inherit from
 `typing.Generic`:
 
 {!.tmp_examples/models_generics_inheritance.md!}
 
-You can also create a generic subclass of a `GenericModel` that partially or fully replaces the type 
+You can also create a generic subclass of a `GenericModel` that partially or fully replaces the type
 parameters in the superclass.
 
 {!.tmp_examples/models_generics_inheritance_extend.md!}
@@ -311,7 +311,7 @@ Using the same TypeVar in nested models allows you to enforce typing relationshi
 {!.tmp_examples/models_generics_nested.md!}
 
 Pydantic also treats `GenericModel` similarly to how it treats built-in generic types like `List` and `Dict` when it
-comes to leaving them unparameterized, or using bounded `TypeVar` instances:    
+comes to leaving them unparameterized, or using bounded `TypeVar` instances:
 
 * If you don't specify parameters before instantiating the generic model, they will be treated as `Any`
 * You can parametrize models with one or more *bounded* parameters to add subclass checks
@@ -331,7 +331,7 @@ Here `StaticFoobarModel` and `DynamicFoobarModel` are identical.
 
 !!! warning
     See the note in [Required Optional Fields](#required-optional-fields) for the distinction between an ellipsis as a
-    field default and annotation-only fields. 
+    field default and annotation-only fields.
     See [pydantic/pydantic#1047](https://github.com/pydantic/pydantic/issues/1047) for more details.
 
 Fields are defined by either a tuple of the form `(<type>, <default value>)` or just a default value. The
@@ -356,7 +356,7 @@ Those methods have the exact same keyword arguments as `create_model`.
 
 ## Custom Root Types
 
-Pydantic models can be defined with a custom root type by declaring the `__root__` field. 
+Pydantic models can be defined with a custom root type by declaring the `__root__` field.
 
 The root type can be any type supported by pydantic, and is specified by the type hint on the `__root__` field.
 The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
@@ -371,7 +371,7 @@ the following logic is used:
   the argument itself is always validated against the custom root type.
 * For other custom root types, if the dict has precisely one key with the value `__root__`,
   the corresponding value will be validated against the custom root type.
-* Otherwise, the dict itself is validated against the custom root type.    
+* Otherwise, the dict itself is validated against the custom root type.
 
 This is demonstrated in the following example:
 
@@ -380,7 +380,7 @@ This is demonstrated in the following example:
 !!! warning
     Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
     is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
-    
+
 If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
 
 {!.tmp_examples/models_custom_root_access.md!}
@@ -410,7 +410,7 @@ Pydantic models can be used alongside Python's
 
 Field order is important in models for the following reasons:
 
-* validation is performed in the order fields are defined; [fields validators](validators.md) 
+* validation is performed in the order fields are defined; [fields validators](validators.md)
   can access the values of earlier fields, but not later ones
 * field order is preserved in the model [schema](schema.md)
 * field order is preserved in [validation errors](#error-handling)
@@ -430,7 +430,7 @@ all fields without an annotation. Within their respective groups, fields remain 
 
 ## Required fields
 
-To declare a field as required, you may declare it using just an annotation, or you may use an ellipsis (`...`) 
+To declare a field as required, you may declare it using just an annotation, or you may use an ellipsis (`...`)
 as the value:
 
 {!.tmp_examples/models_required_fields.md!}
@@ -488,7 +488,7 @@ using `PrivateAttr`:
 
 {!.tmp_examples/private_attributes.md!}
 
-Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__` 
+Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__`
 are supported.
 
 If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
@@ -503,7 +503,7 @@ logic used to populate pydantic models in a more ad-hoc way. This function behav
 `BaseModel.parse_obj`, but works with arbitrary pydantic-compatible types.
 
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
-For example: 
+For example:
 
 {!.tmp_examples/parse_obj_as.md!}
 
@@ -520,7 +520,7 @@ For example:
 
 {!.tmp_examples/models_data_conversion.md!}
 
-This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See 
+This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
@@ -537,14 +537,14 @@ The generated signature will also respect custom `__init__` functions:
 
 {!.tmp_examples/models_signature_custom_init.md!}
 
-To be included in the signature, a field's alias or name must be a valid Python identifier. 
-*pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier. 
+To be included in the signature, a field's alias or name must be a valid Python identifier.
+*pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier.
 
 If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
 In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
 
 !!! note
-    Types in the model signature are the same as declared in model annotations, 
+    Types in the model signature are the same as declared in model annotations,
     not necessarily all the types that can actually be provided to that field.
     This may be fixed one day once [#1055](https://github.com/pydantic/pydantic/issues/1055) is solved.
 
@@ -555,5 +555,5 @@ In addition, the `**data` argument will always be present in the signature if `C
 {!.tmp_examples/models_structural_pattern_matching.md!}
 
 !!! note
-    A match-case statement may seem as if it creates a new model, but don't be fooled;  
+    A match-case statement may seem as if it creates a new model, but don't be fooled;
     it is just syntactic sugar for getting an attribute and either comparing it or declaring and initializing it.

@@ -32,9 +32,9 @@ Here goes...
 ---
 
 Enormous thanks to
-[Eric Jolibois](https://github.com/PrettyWood), [Laurence Watson](https://github.com/Rabscuttler), 
-[Sebastián Ramírez](https://github.com/tiangolo), [Adrian Garcia Badaracco](https://github.com/adriangb), 
-[Tom Hamilton Stubber](https://github.com/tomhamiltonstubber), [Zac Hatfield-Dodds](https://github.com/Zac-HD), 
+[Eric Jolibois](https://github.com/PrettyWood), [Laurence Watson](https://github.com/Rabscuttler),
+[Sebastián Ramírez](https://github.com/tiangolo), [Adrian Garcia Badaracco](https://github.com/adriangb),
+[Tom Hamilton Stubber](https://github.com/tomhamiltonstubber), [Zac Hatfield-Dodds](https://github.com/Zac-HD),
 [Tom](https://github.com/czotomo) & [Hasan Ramezani](https://github.com/hramezani)
 for reviewing this blog post, putting up with (and correcting) my horrible typos and making great suggestions
 that have made this post and Pydantic V2 materially better.
@@ -207,7 +207,7 @@ In future direct validation of JSON will also allow:
 !!! note
     Pydantic has always had special support for JSON, that is not going to change.
 
-    While in theory other formats could be specifically supported, the overheads and development time are 
+    While in theory other formats could be specifically supported, the overheads and development time are
     significant and I don't think there's another format that's
     used widely enough to be worth specific logic. Other formats can be parsed to python then validated, similarly
     when serialising, data can be exported to a python object, then serialised,
@@ -215,7 +215,7 @@ In future direct validation of JSON will also allow:
 
 ### Validation without a Model :thumbsup:
 
-In pydantic V1 the core of all validation was a pydantic model, this led to a significant performance penalty 
+In pydantic V1 the core of all validation was a pydantic model, this led to a significant performance penalty
 and extra complexity when the output data type was not a model.
 
 pydantic-core operates on a tree of validators with no "model" type required at the base of that tree.
@@ -278,13 +278,13 @@ class MyModel(BaseModel):
     @validator('timestamp', mode='wrap')
     def validate_timestamp(cls, v, handler):
         if v == 'now':
-            # we don't want to bother with further validation, 
+            # we don't want to bother with further validation,
             # just return the new value
             return datetime.now()
         try:
             return handler(v)
         except ValidationError:
-            # validation failed, in this case we want to 
+            # validation failed, in this case we want to
             # return a default value
             return datetime(2000, 1, 1)
 ```
@@ -366,7 +366,7 @@ from pydantic import BaseModel, EmailStr, validator
 class User(BaseModel):
     email: EmailStr
     home_country: str
-    
+
     @validator('home_country')
     def check_home_country(cls, v, context):
         if v not in context['countries']:
@@ -735,7 +735,7 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
 
 1. `__root__` custom root models are no longer necessary since validation on any supported data type is allowed
    without a model
-2. `.parse_file()` and `.parse_raw()`, partially replaced with `.model_validate_json()`, 
+2. `.parse_file()` and `.parse_raw()`, partially replaced with `.model_validate_json()`,
    see [model methods](#model-namespace-cleanup)
 3. `.schema_json()` & `.copy()`, see [model methods](#model-namespace-cleanup)
 4. `TypeError` are no longer considered as validation errors, but rather as internal errors, this is to better
@@ -759,7 +759,7 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
    * `json_encoders` - see the export "mode" discussion [above](#improvements-to-dumpingserializationexport)
    * `underscore_attrs_are_private` we should just choose a sensible default
    * `smart_union` - all unions are now "smart"
-9. `dict(model)` functionality should be removed, there's a much clearer distinction now that in 2017 when I 
+9. `dict(model)` functionality should be removed, there's a much clearer distinction now that in 2017 when I
    implemented this between a model and a dict
 
 ## Features Remaining :neutral_face:

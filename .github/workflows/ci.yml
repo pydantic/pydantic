@@ -38,14 +38,9 @@ jobs:
           make install-linting
           pip freeze
 
-      - name: lint
-        run: make lint
-
-      - name: pyupgrade
-        run: make pyupgrade
-
-      - name: mypy
-        run: make mypy
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files
 
       - name: make history
         run: python3 ./changes/make_history.py
@@ -183,7 +178,7 @@ jobs:
         pip freeze
 
     - name: uninstall deps
-      run: pip uninstall -y mypy tomli toml
+      run: pip uninstall -y mypy
 
     - name: install specific mypy version
       run: pip install mypy==${{ matrix.mypy-version }}

@@ -13,7 +13,7 @@ and [`st.from_type()`](https://hypothesis.readthedocs.io/en/latest/data.html#hyp
 strategies support them without any user configuration.
 
 !!! warning
-    Please note, while the plugin supports these types, hypothesis will(currently) generate values outside 
+    Please note, while the plugin supports these types, hypothesis will(currently) generate values outside
     of given args for the constrained function types.
 
 
