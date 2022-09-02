@@ -372,7 +372,7 @@ def test_parses_tld(input, output):
 
 @pytest.mark.parametrize(
     'value',
-    ['file:///foo/bar', 'file://localhost/foo/bar', 'file:////localhost/foo/bar'],
+    ['file:///foo/bar', 'file://localhost/foo/bar' 'file:////localhost/foo/bar'],
 )
 def test_file_url_success(value):
     class Model(BaseModel):
@@ -679,29 +679,10 @@ def test_custom_schemes():
         (dict(scheme='ws', user='foo', password='x', host='example.net'), 'ws://foo:x@example.net'),
         (dict(scheme='ws', host='example.net', query='a=b', fragment='c=d'), 'ws://example.net?a=b#c=d'),
         (dict(scheme='http', host='example.net', port='1234'), 'http://example.net:1234'),
-        (dict(scheme='http', user='foo@bar', host='example.net'), 'http://foo%40bar@example.net'),
-        (dict(scheme='http', user='foo', password='a b', host='example.net'), 'http://foo:a%20b@example.net'),
-        (dict(scheme='http', host='example.net', query='q=foo bar'), 'http://example.net?q=foo%20bar'),
-        (dict(scheme='http', host='example.net', path="/m&m's"), 'http://example.net/m%26m%27s'),
     ],
 )
 def test_build_url(kwargs, expected):
     assert AnyUrl(None, **kwargs) == expected
-
-
-@pytest.mark.parametrize(
-    'kwargs,expected',
-    [
-        (dict(scheme='https', host='example.com', query='query=my query'), 'https://example.com?query=my+query'),
-        (
-            dict(scheme='https', host='example.com', user='my name', password='a password'),
-            'https://my+name:a+password@example.com',
-        ),
-        (dict(scheme='https', host='example.com', path='/this is a path'), 'https://example.com/this+is+a+path'),
-    ],
-)
-def test_build_url_quote_plus(kwargs, expected):
-    assert stricturl(quote_plus=True).build(**kwargs) == expected
 
 
 @pytest.mark.parametrize(
