@@ -96,7 +96,7 @@ jobs:
       matrix:
         os: [ubuntu, macos, windows]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
-        exclude:  # these are slow, we should remove once 3.11 is released
+        exclude:  # these are currently slow, but we should un-exclude once 3.11 is released
           - os: 'macos'
             python-version: '3.11.0-rc.1'
           - os: 'windows'
@@ -267,13 +267,14 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-      - name: check tag
-        id: check-tag
-        run: ./tests/check_tag.py
+#      - name: check tag
+#        id: check-tag
+#        run: ./tests/check_tag.py
 
       - name: build
         run: python -m build
 
+      - run: ls -lh dist
       - run: twine check dist/*
 
 #      - name: upload to pypi
