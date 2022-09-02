@@ -17,12 +17,6 @@ except ImportError:
     parse_mypy_version = lambda _: (0,)  # noqa: E731
 
 
-try:
-    import dotenv
-except ImportError:
-    dotenv = None
-
-
 pytestmark = pytest.mark.skipif(sys.platform != 'linux' and 'CI' in os.environ, reason='only run on linux when on CI')
 
 # This ensures mypy can find the test files, no matter where tests are run from:
@@ -57,7 +51,7 @@ cases = [
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
 
-@pytest.mark.skipif(not (dotenv and mypy_api), reason='dotenv or mypy are not installed')
+@pytest.mark.skipif(not mypy_api, reason='mypy is not installed')
 @pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
 def test_mypy_results(config_filename: str, python_filename: str, output_filename: str) -> None:
     full_config_filename = f'tests/mypy/configs/{config_filename}'
@@ -99,7 +93,7 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     assert actual_out == expected_out, actual_out
 
 
-@pytest.mark.skipif(not (dotenv and mypy_api), reason='dotenv or mypy are not installed')
+@pytest.mark.skipif(not mypy_api, reason='mypy is not installed')
 def test_bad_toml_config() -> None:
     full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
     full_filename = 'tests/mypy/modules/success.py'
