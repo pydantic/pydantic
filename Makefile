@@ -50,7 +50,7 @@ pyright:
 
 .PHONY: test
 test:
-	coverage run -m pytest
+	coverage run -m pytest --durations=10
 
 .PHONY: testcov
 testcov: test

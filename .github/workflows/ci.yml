@@ -96,11 +96,6 @@ jobs:
       matrix:
         os: [ubuntu, macos, windows]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
-        exclude:  # these are currently slow, but we should un-exclude once 3.11 is released
-          - os: 'macos'
-            python-version: '3.11.0-rc.1'
-          - os: 'windows'
-            python-version: '3.11.0-rc.1'
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -136,7 +131,7 @@ jobs:
     - run: mkdir coverage
 
     - name: test with deps
-      run: coverage run -m pytest --durations=10
+      run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
@@ -145,7 +140,7 @@ jobs:
       run: pip uninstall -y email-validator devtools python-dotenv
 
     - name: test without deps
-      run: coverage run -m pytest --durations=10
+      run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps

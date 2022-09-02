@@ -56,7 +56,6 @@ testpaths = 'tests'
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:certifi',
-    "ignore:module 'sre_constants' is deprecated:DeprecationWarning:pkg_resources",
 ]
 
 [tool.flake8]
