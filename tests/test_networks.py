@@ -74,22 +74,40 @@ except ImportError:
         'http://twitter.com/@handle/',
         'http://11.11.11.11.example.com/action',
         'http://abc.11.11.11.11.example.com/action',
-        'http://example#',
-        'http://example/#',
         'http://example/#fragment',
-        'http://example/?#',
         'http://example.org/path#',
         'http://example.org/path#fragment',
         'http://example.org/path?query#',
         'http://example.org/path?query#fragment',
         'file://localhost/foo/bar',
+        'http://localhost/path?a=b/c',
+        'http://localhost/path?a=b+c',
+        'http://localhost/path?a=b%22c',
     ],
 )
-def test_any_url_success(value):
+def test_any_url_success_unchanged(value):
     class Model(BaseModel):
         v: AnyUrl
 
-    assert Model(v=value).v, value
+    assert str(Model(v=value).v) == value
+
+
+@pytest.mark.parametrize(
+    'before,after',
+    [
+        ('http://example#', 'http://example'),
+        ('http://example/#', 'http://example/'),
+        ('http://example/?#', 'http://example/'),
+        ('http://localhost/path?a=b"c', 'http://localhost/path?a=b%22c'),
+        ('http://localhost/path?a=b%c', 'http://localhost/path?a=b%25c'),
+        # ('http://example.com/path?a=b"c', 'http://localhost/path?a=b%22c'),
+    ],
+)
+def test_any_url_success_changed(before, after):
+    class Model(BaseModel):
+        v: AnyUrl
+
+    assert Model(v=before).v == after
 
 
 @pytest.mark.parametrize(
@@ -687,7 +705,7 @@ def test_custom_schemes():
         (dict(scheme='http', host='example.net', path='/m%26m%27s'), 'http://example.net/m%26m%27s'),
         (dict(scheme='http', host='example.net', path='/m%m'), 'http://example.net/m%25m'),
         (dict(scheme='http', host='example.net', path='/m%25m'), 'http://example.net/m%25m'),
-        (dict(scheme='http', host='example.net', path='/m+m'), 'http://example.net/m%2Bm'),
+        (dict(scheme='http', host='example.net', path='/m+m'), 'http://example.net/m+m'),
     ],
 )
 def test_build_url(kwargs, expected):
@@ -716,12 +734,12 @@ def test_build_url_quote_plus(kwargs, expected):
     [
         (False, ' ', '%20'),
         (True, ' ', '+'),
-        (False, '+', '%2B'),
+        (False, '+', '+'),
         (True, '+', '+'),
         (True, 'foo bar', 'foo+bar'),
         (False, 'foo bar', 'foo%20bar'),
         (True, 'foo+bar', 'foo+bar'),
-        (False, 'foo+bar', 'foo%2Bbar'),
+        (False, 'foo+bar', 'foo+bar'),
         (True, 'foo%20bar', 'foo%20bar'),
         (False, 'foo%20bar', 'foo%20bar'),
         (True, 'f\noo%20bar', 'f%0Aoo%20bar'),
@@ -742,6 +760,8 @@ def test_build_url_quote_plus(kwargs, expected):
         (False, '\x00', '%00'),
         (True, '%00', '%00'),
         (False, '%00', '%00'),
+        (False, '%0', '%250'),
+        (False, '%', '%25'),
         (True, '%B1', '%B1'),
         (False, '%B1', '%B1'),
         (True, '%b1', '%B1'),

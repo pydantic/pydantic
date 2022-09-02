@@ -1,5 +1,4 @@
 import re
-from functools import partial
 from ipaddress import (
     IPv4Address,
     IPv4Interface,
@@ -397,19 +396,17 @@ class AnyUrl(str):
 
     @classmethod
     def quote(cls, string: str) -> str:
-        if cls.quote_plus:
-            quote_func = partial(quote_plus, safe='+/')
-        else:
-            quote_func = partial(quote, safe='/')
+        quote_func = quote_plus if cls.quote_plus else quote
+        safe = '+/'
 
         last_end = 0
         quoted = ''
         for match in re.finditer(r'(.*?)(%[\dA-F]{2})', string, flags=re.S | re.I):
             raw, percent = match.groups()
-            quoted += quote_func(raw) + percent.upper()
+            quoted += quote_func(raw, safe) + percent.upper()
             last_end = match.end()
 
-        return quoted + quote_func(string[last_end:])
+        return quoted + quote_func(string[last_end:], safe)
 
     def __repr__(self) -> str:
         extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
