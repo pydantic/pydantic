@@ -66,7 +66,7 @@ from pydantic.utils import is_valid_field
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover
-    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    # Backward-compatible with TypeVarDef from Mypy 0.930.
     from mypy.types import TypeVarType as TypeVarDef
 
 CONFIGFILE_KEY = 'pydantic-mypy'
