@@ -1,7 +1,5 @@
 .DEFAULT_GOAL := all
 sources = pydantic tests docs/build
-isort = isort $(sources)
-black = black -S -l 120 --target-version py38 $(sources)
 
 .PHONY: install-linting
 install-linting:
@@ -26,31 +24,17 @@ install-docs: install-pydantic
 install: install-testing install-linting install-docs
 	@echo 'installed development requirements'
 
-.PHONY: build-trace
-build-trace:
-	python setup.py build_ext --force --inplace --define CYTHON_TRACE
-
-.PHONY: build
-build:
-	python setup.py build_ext --inplace
-
 .PHONY: format
 format:
-	pyupgrade --py37-plus  --exit-zero-even-if-changed `find $(sources) -name "*.py" -type f`
-	$(isort)
-	$(black)
+	pyupgrade --py37-plus --exit-zero-even-if-changed `find $(sources) -name "*.py" -type f`
+	isort $(sources)
+	black $(sources)
 
 .PHONY: lint
 lint:
-	flake8 $(sources)
-	$(isort) --check-only --df
-	$(black) --check --diff
-
-.PHONY: check-dist
-check-dist:
-	python setup.py check -ms
-	python setup.py sdist
-	twine check dist/*
+	flake8 --max-complexity 10 --max-line-length 120 --ignore E203,W503 --max-complexity 14 --inline-quotes single --multiline-quotes double $(sources)
+	isort $(sources) --check-only --df
+	black $(sources) --check --diff
 
 .PHONY: mypy
 mypy:
@@ -107,7 +91,6 @@ clean:
 	rm -rf build
 	rm -rf dist
 	rm -f pydantic/*.c pydantic/*.so
-	python setup.py clean
 	rm -rf site
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
@@ -116,7 +99,7 @@ clean:
 
 .PHONY: docs
 docs:
-	flake8 --max-line-length=80 docs/examples/
+	#flake8 --max-line-length=80 docs/examples/
 	python docs/build/main.py
 	mkdocs build
 

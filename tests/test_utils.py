@@ -1,17 +1,14 @@
 import collections.abc
 import os
 import pickle
-import re
-import string
 import sys
 from copy import copy, deepcopy
 from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
 
 import pytest
-from pkg_resources import safe_version
 from typing_extensions import Annotated, Literal
 
-from pydantic import VERSION, BaseModel, ConstrainedList, conlist
+from pydantic import BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -37,10 +34,8 @@ from pydantic.utils import (
     path_type,
     smart_deepcopy,
     to_lower_camel,
-    truncate,
     unique_list,
 )
-from pydantic.version import version_info
 
 try:
     import devtools
@@ -93,19 +88,6 @@ def test_lenient_issubclass_with_generic_aliases():
 
 def test_lenient_issubclass_is_lenient():
     assert lenient_issubclass('a', 'a') is False
-
-
-@pytest.mark.parametrize(
-    'input_value,output',
-    [
-        (object, "<class 'object'>"),
-        (string.ascii_lowercase, "'abcdefghijklmnopq…'"),
-        (list(range(20)), '[0, 1, 2, 3, 4, 5, …'),
-    ],
-)
-def test_truncate(input_value, output):
-    with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and is deprecated'):
-        assert truncate(input_value, max_len=20) == output
 
 
 @pytest.mark.parametrize(
@@ -370,16 +352,6 @@ def test_get_model():
 
     with pytest.raises(TypeError):
         get_model(C)
-
-
-def test_version_info():
-    s = version_info()
-    assert re.match(' *pydantic version: ', s)
-    assert s.count('\n') == 4
-
-
-def test_standard_version():
-    assert safe_version(VERSION) == VERSION
 
 
 def test_class_attribute():
