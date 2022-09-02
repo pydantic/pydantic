@@ -372,7 +372,7 @@ def test_parses_tld(input, output):
 
 @pytest.mark.parametrize(
     'value',
-    ['file:///foo/bar', 'file://localhost/foo/bar' 'file:////localhost/foo/bar'],
+    ['file:///foo/bar', 'file://localhost/foo/bar', 'file:////localhost/foo/bar'],
 )
 def test_file_url_success(value):
     class Model(BaseModel):

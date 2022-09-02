@@ -617,6 +617,11 @@ For URI/URL validation the following types are available:
     - `host_required: bool = True`
     - `allowed_schemes: Optional[Set[str]] = None`
 
+!!! warning
+    In V1.10.0 and v1.10.1 `stricturl` also took an optional `quote_plus` argument and URL components were percent
+    encoded in some cases. This feature was removed in v1.10.2, see 
+    [#4470](https://github.com/pydantic/pydantic/pull/4470) for explanation and more details.
+
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
 provided:
 
