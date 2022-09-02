@@ -17,3 +17,5 @@ class Model(BaseModel):
     l3: List[str] = Field(default_factory=lambda: list())
     l4: Dict[str, str] = Field(default_factory=dict)
     l5: int = Field(default_factory=lambda: 123)
+    l6_error: List[str] = Field(default_factory=new_list)
+    l7_error: int = Field(default_factory=list)
