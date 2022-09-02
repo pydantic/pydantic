@@ -2,11 +2,10 @@ import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
 
-from typing_extensions import Literal, Protocol
+from typing_extensions import Literal, Protocol, TypedDict
 
 from .typing import AnyArgTCallable, AnyCallable
 from .utils import GetterDict
-from .version import compiled
 
 if TYPE_CHECKING:
     from typing import overload
@@ -37,45 +36,37 @@ class Extra(str, Enum):
     forbid = 'forbid'
 
 
-# https://github.com/cython/cython/issues/4003
-# Will be fixed with Cython 3 but still in alpha right now
-if not compiled:
-    from typing_extensions import TypedDict
+class ConfigDict(TypedDict, total=False):
+    title: Optional[str]
+    anystr_lower: bool
+    anystr_strip_whitespace: bool
+    min_anystr_length: int
+    max_anystr_length: Optional[int]
+    validate_all: bool
+    extra: Extra
+    allow_mutation: bool
+    frozen: bool
+    allow_population_by_field_name: bool
+    use_enum_values: bool
+    fields: Dict[str, Union[str, Dict[str, str]]]
+    validate_assignment: bool
+    error_msg_templates: Dict[str, str]
+    arbitrary_types_allowed: bool
+    orm_mode: bool
+    getter_dict: Type[GetterDict]
+    alias_generator: Optional[Callable[[str], str]]
+    keep_untouched: Tuple[type, ...]
+    schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
+    json_loads: Callable[[str], object]
+    json_dumps: AnyArgTCallable[str]
+    json_encoders: Dict[Type[object], AnyCallable]
+    underscore_attrs_are_private: bool
+    allow_inf_nan: bool
 
-    class ConfigDict(TypedDict, total=False):
-        title: Optional[str]
-        anystr_lower: bool
-        anystr_strip_whitespace: bool
-        min_anystr_length: int
-        max_anystr_length: Optional[int]
-        validate_all: bool
-        extra: Extra
-        allow_mutation: bool
-        frozen: bool
-        allow_population_by_field_name: bool
-        use_enum_values: bool
-        fields: Dict[str, Union[str, Dict[str, str]]]
-        validate_assignment: bool
-        error_msg_templates: Dict[str, str]
-        arbitrary_types_allowed: bool
-        orm_mode: bool
-        getter_dict: Type[GetterDict]
-        alias_generator: Optional[Callable[[str], str]]
-        keep_untouched: Tuple[type, ...]
-        schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
-        json_loads: Callable[[str], object]
-        json_dumps: AnyArgTCallable[str]
-        json_encoders: Dict[Type[object], AnyCallable]
-        underscore_attrs_are_private: bool
-        allow_inf_nan: bool
-
-        # whether or not inherited models as fields should be reconstructed as base model
-        copy_on_model_validation: bool
-        # whether dataclass `__post_init__` should be run after validation
-        post_init_call: Literal['before_validation', 'after_validation']
-
-else:
-    ConfigDict = dict  # type: ignore
+    # whether or not inherited models as fields should be reconstructed as base model
+    copy_on_model_validation: bool
+    # whether dataclass `__post_init__` should be run after validation
+    post_init_call: Literal['before_validation', 'after_validation']
 
 
 class BaseConfig:

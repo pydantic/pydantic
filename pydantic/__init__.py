@@ -13,7 +13,7 @@ from .networks import *
 from .parse import Protocol
 from .tools import *
 from .types import *
-from .version import VERSION, compiled
+from .version import VERSION
 
 __version__ = VERSION
 
@@ -126,6 +126,5 @@ __all__ = [
     'PastDate',
     'FutureDate',
     # version
-    'compiled',
     'VERSION',
 ]
