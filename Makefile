@@ -32,7 +32,7 @@ format:
 
 .PHONY: lint
 lint:
-	flake8 --max-complexity 10 --max-line-length 120 --ignore E203,W503 --max-complexity 14 --inline-quotes single --multiline-quotes double $(sources)
+	flake8 $(sources)
 	isort $(sources) --check-only --df
 	black $(sources) --check --diff
 
@@ -99,7 +99,7 @@ clean:
 
 .PHONY: docs
 docs:
-	#flake8 --max-line-length=80 docs/examples/
+	flake8 --max-line-length=80 docs/examples/
 	python docs/build/main.py
 	mkdocs build
 

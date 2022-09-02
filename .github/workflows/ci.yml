@@ -214,7 +214,7 @@ jobs:
           name: coverage
           path: coverage
 
-      - run: pip install coverage
+      - run: pip install coverage[toml]
 
       - run: ls -la coverage
       - run: coverage combine coverage
@@ -280,7 +280,6 @@ jobs:
 #        run: twine upload dist/*
 #        env:
 #          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
 #          TWINE_PASSWORD: ${{ secrets.pypi_token }}
 #
 #      - name: publish docs

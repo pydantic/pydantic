@@ -60,6 +60,18 @@ filterwarnings = [
     "ignore:module 'sre_constants' is deprecated:DeprecationWarning:pkg_resources",
 ]
 
+[tool.flake8]
+max-line-length = 120
+max-complexity = 14
+inline-quotes = 'single'
+multiline-quotes = 'double'
+ignore = ['E203', 'W503']
+per-file-ignores = [
+    'docs/examples/schema_unenforced_constraints.py:F811',
+    'docs/examples/validation_decorator_async.py:E402',
+    'docs/examples/types_constrained.py:F722',
+]
+
 [tool.coverage.run]
 source = ['pydantic']
 branch = true

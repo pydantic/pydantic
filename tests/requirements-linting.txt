@@ -1,6 +1,7 @@
 black==22.8.0
 flake8==5.0.4
 flake8-quotes==3.3.1
+flake8-pyproject==1.1.0
 hypothesis==6.54.4
 isort==5.10.1
 pyupgrade==2.37.3

@@ -1,6 +1,7 @@
 import importlib
 import os
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -20,6 +21,9 @@ try:
     import dotenv
 except ImportError:
     dotenv = None
+
+
+pytestmark = pytest.mark.skipif(sys.platform != 'linux' and os.getenv('CI'), reason='on CI, only run on linux')
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
