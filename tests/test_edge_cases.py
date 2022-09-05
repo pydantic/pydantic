@@ -2048,11 +2048,11 @@ def test_long_int():
     class Model(BaseModel):
         x: int
 
-    assert Model(x='1' * 10_000).x == int('1' * 10_000)
-    assert Model(x=b'1' * 10_000).x == int('1' * 10_000)
-    assert Model(x=bytearray(b'1' * 10_000)).x == int('1' * 10_000)
+    assert Model(x='1' * 4_300).x == int('1' * 4_300)
+    assert Model(x=b'1' * 4_300).x == int('1' * 4_300)
+    assert Model(x=bytearray(b'1' * 4_300)).x == int('1' * 4_300)
 
-    too_long = '1' * 10_001
+    too_long = '1' * 4_301
     with pytest.raises(ValidationError) as exc_info:
         Model(x=too_long)
 
