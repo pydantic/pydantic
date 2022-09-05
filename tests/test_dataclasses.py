@@ -1395,3 +1395,80 @@ def test_extra_forbid_list_error():
         @pydantic.dataclasses.dataclass
         class Foo:
             a: List[Bar(a=1)]
+
+
+def test_parent_post_init():
+    @dataclasses.dataclass
+    class A:
+        a: float = 1
+
+        def __post_init__(self):
+            self.a *= 2
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        @validator('a')
+        def validate_a(cls, value):
+            value += 3
+            return value
+
+    assert B().a == 5  # 1 * 2 + 3
+
+
+def test_subclass_post_init_post_parse():
+    @dataclasses.dataclass
+    class A:
+        a: float = 1
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        def __post_init_post_parse__(self):
+            self.a *= 2
+
+        @validator('a')
+        def validate_a(cls, value):
+            value += 3
+            return value
+
+    assert B().a == 8  # (1 + 3) * 2
+
+
+def test_subclass_post_init():
+    @dataclasses.dataclass
+    class A:
+        a: int = 1
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        def __post_init__(self):
+            self.a *= 2
+
+        @validator('a')
+        def validate_a(cls, value):
+            value += 3
+            return value
+
+    assert B().a == 5  # 1 * 2 + 3
+
+
+def test_subclass_post_init_inheritance():
+    @dataclasses.dataclass
+    class A:
+        a: int = 1
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        def __post_init__(self):
+            self.a *= 2
+
+        @validator('a')
+        def validate_a(cls, value):
+            value += 3
+            return value
+
+    @pydantic.dataclasses.dataclass
+    class C(B):
+        def __post_init__(self):
+            self.a *= 3
+
+    assert C().a == 6  # 1 * 3 + 3
