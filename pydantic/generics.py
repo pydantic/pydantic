@@ -62,7 +62,11 @@ class GenericModel(BaseModel):
             returned as is.
 
         """
-        cached = _generic_types_cache.get((cls, params))
+
+        def _cache_key(_params: Any) -> Tuple[Type[GenericModelT], Any, Tuple[Any, ...]]:
+            return cls, _params, get_args(_params)
+
+        cached = _generic_types_cache.get(_cache_key(params))
         if cached is not None:
             return cached
         if cls.__concrete__ and Generic not in cls.__bases__:
@@ -128,9 +132,9 @@ class GenericModel(BaseModel):
 
         # Save created model in cache so we don't end up creating duplicate
         # models that should be identical.
-        _generic_types_cache[(cls, params)] = created_model
+        _generic_types_cache[_cache_key(params)] = created_model
         if len(params) == 1:
-            _generic_types_cache[(cls, params[0])] = created_model
+            _generic_types_cache[_cache_key(params[0])] = created_model
 
         # Recursively walk class type hints and replace generic typevars
         # with concrete types that were passed.
