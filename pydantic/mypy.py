@@ -83,7 +83,8 @@ def parse_mypy_version(version: str) -> Tuple[int, ...]:
     return tuple(int(part) for part in version.split('+', 1)[0].split('.'))
 
 
-BUILTINS_NAME = 'builtins' if parse_mypy_version(mypy_version) >= (0, 930) else '__builtins__'
+MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
+BUILTINS_NAME = 'builtins' if MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -163,14 +164,22 @@ class PydanticPlugin(Plugin):
             # Functions which use `ParamSpec` can be overloaded, exposing the callable's types as a parameter
             # Pydantic calls the default factory without any argument, so we retrieve the first item
             if isinstance(default_factory_type, Overloaded):
-                if float(mypy_version) > 0.910:
+                if MYPY_VERSION_TUPLE > (0, 910):
                     default_factory_type = default_factory_type.items[0]
                 else:
                     # Mypy0.910 exposes the items of overloaded types in a function
                     default_factory_type = default_factory_type.items()[0]  # type: ignore[operator]
 
             if isinstance(default_factory_type, CallableType):
-                return default_factory_type.ret_type
+                ret_type = default_factory_type.ret_type
+                # mypy doesn't think `ret_type` has `args`, you'd think mypy should know,
+                # add this check in case it varies by version
+                args = getattr(ret_type, 'args', None)
+                if args:
+                    if all(isinstance(arg, TypeVarType) for arg in args):
+                        # Looks like the default factory is a type like `list` or `dict`, replace all args with `Any`
+                        ret_type.args = tuple(default_any_type for _ in args)  # type: ignore[attr-defined]
+                return ret_type
 
         return default_any_type
 

@@ -1,0 +1,2 @@
+20: error: Incompatible types in assignment (expression has type "List[int]", variable has type "List[str]")  [assignment]
+21: error: Incompatible types in assignment (expression has type "List[Any]", variable has type "int")  [assignment]
