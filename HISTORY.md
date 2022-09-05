@@ -1,3 +1,14 @@
+## v1.10.2 (2022-09-05)
+
+* **Revert Change:** Revert percent encoding of URL parts which was originally added in #4224, #4470 by @samuelcolvin
+* Prevent long (length > `4_300`) strings/bytes as input to int fields, see 
+  [python/cpython#95778](https://github.com/python/cpython/issues/95778) and 
+  [CVE-2020-10735](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735), #1477 by @samuelcolvin
+* fix: dataclass wrapper was not always called, #4477 by @PrettyWood
+* Use `tomllib` on Python 3.11 when parsing `mypy` configuration, #4476 by @hauntsaninja
+* Basic fix of `GenericModel` cache to detect order of arguments in `Union` models, #4474 by @sveinugu
+* Fix mypy plugin when using bare types like `list` and `dict` as `default_factory`, #4457 by @samuelcolvin
+
 ## v1.10.1 (2022-08-31)
 
 * Add `__hash__` method to `pydancic.color.Color` class, #4454 by @czaki
