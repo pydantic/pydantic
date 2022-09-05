@@ -2038,3 +2038,38 @@ def test_model_issubclass():
         __fields__ = True
 
     assert not issubclass(Custom, BaseModel)
+
+
+def test_long_int():
+    """
+    see https://github.com/pydantic/pydantic/issues/1477 and in turn, https://github.com/python/cpython/issues/95778
+    """
+
+    class Model(BaseModel):
+        x: int
+
+    assert Model(x='1' * 10_000).x == int('1' * 10_000)
+    assert Model(x=b'1' * 10_000).x == int('1' * 10_000)
+    assert Model(x=bytearray(b'1' * 10_000)).x == int('1' * 10_000)
+
+    too_long = '1' * 10_001
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=too_long)
+
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('x',),
+            'msg': 'value is not a valid integer',
+            'type': 'type_error.integer',
+        },
+    ]
+
+    too_long_b = too_long.encode('utf-8')
+    with pytest.raises(ValidationError):
+        Model(x=too_long_b)
+    with pytest.raises(ValidationError):
+        Model(x=bytearray(too_long_b))
+
+    # this used to hang indefinitely
+    with pytest.raises(ValidationError):
+        Model(x='1' * (10**7))
