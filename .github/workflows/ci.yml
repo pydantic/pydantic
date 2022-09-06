@@ -219,7 +219,7 @@ jobs:
           name: coverage-html
           path: htmlcov
 
-# FastAPI is has a version constraint pydantic<2.0.0, so we can't run tests, we expect them to break for now anyway
+# FastAPI has a version constraint of pydantic<2.0.0, so we can't run tests, we expect them to break for now anyway
 #  test-fastapi:
 #    name: test fastAPI
 #    runs-on: ubuntu-latest
