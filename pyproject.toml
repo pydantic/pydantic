@@ -39,7 +39,7 @@ classifiers = [
 ]
 requires-python = '>=3.7'
 dependencies = [ 'typing-extensions>=4.1.0' ]
-optional-dependencies = { email = ['email-validator>=1.0.3'], dotenv = ['python-dotenv>=0.10.4'] }
+optional-dependencies = { email = ['email-validator>=1.0.3'] }
 dynamic = ['version']
 
 entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
@@ -135,7 +135,6 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = [
     'email_validator.*',
-    'dotenv.*',
     'toml.*',
     'ansi2html.*',
     'devtools.*',

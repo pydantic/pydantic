@@ -31,8 +31,6 @@ There are other benefits too! See below for more details.
   keyword arguments.
 * If `Config.allow_population_by_field_name=True`, the generated signature will use the field names,
   rather than aliases.
-* For subclasses of [`BaseSettings`](usage/settings.md), all fields are treated as optional since they may be
-  read from the environment.
 * If `Config.extra="forbid"` and you don't make use of dynamically-determined aliases, the generated signature
   will not allow unexpected inputs.
 * **Optional:** If the [`init_forbid_extra` **plugin setting**](#plugin-settings) is set to `True`, unexpected inputs to
@@ -93,31 +91,6 @@ plugins = pydantic.mypy
 The plugin is compatible with mypy versions `>=0.930`.
 
 See the [mypy usage](usage/mypy.md) and [plugin configuration](#configuring-the-plugin) docs for more details.
-
-### Plugin Settings
-
-The plugin offers a few optional strictness flags if you want even stronger checks:
-
-* `init_forbid_extra`
-
-    If enabled, disallow extra arguments to the `__init__` call even when `Config.extra` is not `"forbid"`.
-
-* `init_typed`
-
-    If enabled, include the field types as type hints in the generated signature for the `__init__` method.
-    This means that you'll get mypy errors if you pass an argument that is not already the right type to
-    `__init__`, even if parsing could safely convert the type.
-
-* `warn_required_dynamic_aliases`
-
-    If enabled, raise a mypy error whenever a model is created for which
-    calls to its `__init__` or `construct` methods require the use of aliases that cannot be statically determined.
-    This is the case, for example, if `allow_population_by_field_name=False` and the model uses an alias generator.
-
-* `warn_untyped_fields`
-
-    If enabled, raise a mypy error whenever a field is declared on a model without explicitly specifying its type.
-
 
 #### Configuring the Plugin
 To change the values of the plugin settings, create a section in your mypy config file called `[pydantic-mypy]`,

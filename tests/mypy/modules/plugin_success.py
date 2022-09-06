@@ -1,6 +1,6 @@
 from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, BaseSettings, Field, create_model, validator
+from pydantic import BaseModel, Field, create_model, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
@@ -163,13 +163,6 @@ NotFrozenModel.from_orm(model)
 
 class ModelWithSelfField(BaseModel):
     self: str
-
-
-class SettingsModel(BaseSettings):
-    pass
-
-
-settings = SettingsModel.construct()
 
 
 def f(name: str) -> str:
