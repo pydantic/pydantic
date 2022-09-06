@@ -18,7 +18,7 @@ Data validation using Python type hints.
 
 If you're a user of pydantic, you probably want either
 [pydantic V1.10 Documentation](https://pydantic-docs.helpmanual.io/) or,
-[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.9.X-fixes).
+[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes).
 
 ---
 
