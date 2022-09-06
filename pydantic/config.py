@@ -62,10 +62,7 @@ class ConfigDict(TypedDict, total=False):
     json_encoders: Dict[Type[object], AnyCallable]
     underscore_attrs_are_private: bool
     allow_inf_nan: bool
-
-    # whether or not inherited models as fields should be reconstructed as base model
-    copy_on_model_validation: bool
-    # whether dataclass `__post_init__` should be run after validation
+    copy_on_model_validation: Literal['none', 'deep', 'shallow']
     post_init_call: Literal['before_validation', 'after_validation']
 
 

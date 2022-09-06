@@ -96,7 +96,7 @@ source = [
 [tool.black]
 color = true
 line-length = 120
-target-version = ['py39']
+target-version = ['py310']
 skip-string-normalization = true
 
 [tool.isort]
