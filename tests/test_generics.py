@@ -688,6 +688,52 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
         assert globals()['MyGeneric[Model]__'] is third_concrete
 
 
+def test_generic_model_caching_detect_order_of_union_args_basic(create_module):
+    # Basic variant of https://github.com/pydantic/pydantic/issues/4474
+    @create_module
+    def module():
+        from typing import Generic, TypeVar, Union
+
+        from pydantic.generics import GenericModel
+
+        t = TypeVar('t')
+
+        class Model(GenericModel, Generic[t]):
+            data: t
+
+        int_or_float_model = Model[Union[int, float]]
+        float_or_int_model = Model[Union[float, int]]
+
+        assert type(int_or_float_model(data='1').data) is int
+        assert type(float_or_int_model(data='1').data) is float
+
+
+@pytest.mark.skip(
+    reason="""
+Depends on similar issue in CPython itself: https://github.com/python/cpython/issues/86483
+Documented and skipped for possible fix later.
+"""
+)
+def test_generic_model_caching_detect_order_of_union_args_nested(create_module):
+    # Nested variant of https://github.com/pydantic/pydantic/issues/4474
+    @create_module
+    def module():
+        from typing import Generic, List, TypeVar, Union
+
+        from pydantic.generics import GenericModel
+
+        t = TypeVar('t')
+
+        class Model(GenericModel, Generic[t]):
+            data: t
+
+        int_or_float_model = Model[List[Union[int, float]]]
+        float_or_int_model = Model[List[Union[float, int]]]
+
+        assert type(int_or_float_model(data=['1']).data[0]) is int
+        assert type(float_or_int_model(data=['1']).data[0]) is float
+
+
 def test_get_caller_frame_info(create_module):
     @create_module
     def module():

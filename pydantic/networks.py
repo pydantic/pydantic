@@ -26,7 +26,6 @@ from typing import (
     cast,
     no_type_check,
 )
-from urllib.parse import quote, quote_plus
 
 from . import errors
 from .utils import Representation, update_not_none
@@ -178,7 +177,6 @@ class AnyUrl(str):
     user_required: bool = False
     host_required: bool = True
     hidden_parts: Set[str] = set()
-    quote_plus: bool = False
 
     __slots__ = ('scheme', 'user', 'password', 'host', 'tld', 'host_type', 'port', 'path', 'query', 'fragment')
 
@@ -241,19 +239,18 @@ class AnyUrl(str):
 
         url = scheme + '://'
         if user:
-            url += cls.quote(user)
+            url += user
         if password:
-            url += ':' + cls.quote(password)
+            url += ':' + password
         if user or password:
             url += '@'
         url += host
         if port and ('port' not in cls.hidden_parts or cls.get_default_parts(parts).get('port') != port):
             url += ':' + port
         if path:
-            url += '/'.join(map(cls.quote, path.split('/')))
+            url += path
         if query:
-            queries = query.split('&')
-            url += '?' + '&'.join(map(lambda s: '='.join(map(cls.quote, s.split('='))), queries))
+            url += '?' + query
         if fragment:
             url += '#' + fragment
         return url
@@ -393,10 +390,6 @@ class AnyUrl(str):
             if not parts[key]:  # type: ignore[literal-required]
                 parts[key] = value  # type: ignore[literal-required]
         return parts
-
-    @classmethod
-    def quote(cls, string: str, safe: str = '') -> str:
-        return quote_plus(string, safe) if cls.quote_plus else quote(string, safe)
 
     def __repr__(self) -> str:
         extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
@@ -565,7 +558,6 @@ def stricturl(
     tld_required: bool = True,
     host_required: bool = True,
     allowed_schemes: Optional[Collection[str]] = None,
-    quote_plus: bool = False,
 ) -> Type[AnyUrl]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -575,7 +567,6 @@ def stricturl(
         tld_required=tld_required,
         host_required=host_required,
         allowed_schemes=allowed_schemes,
-        quote_plus=quote_plus,
     )
     return type('UrlValue', (AnyUrl,), namespace)
 

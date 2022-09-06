@@ -47,6 +47,7 @@ cases = [
     ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt'),
     ('pyproject-plugin-strict.toml', 'fail_defaults.py', 'fail_defaults.txt'),
     ('mypy-plugin-strict.ini', 'settings_config.py', None),
+    ('mypy-plugin-strict.ini', 'plugin_default_factory.py', 'plugin_default_factory.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
