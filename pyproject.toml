@@ -1,0 +1,143 @@
+[build-system]
+requires = ['hatchling']
+build-backend = 'hatchling.build'
+
+[tool.hatch.version]
+path = 'pydantic/version.py'
+
+[project]
+name = 'pydantic'
+description = 'Data validation using Python type hints'
+authors = [
+    {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
+    {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
+    {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
+]
+license = {file = 'LICENSE'}
+readme = 'README.md'
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'Intended Audience :: System Administrators',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: Unix',
+    'Operating System :: POSIX :: Linux',
+    'Environment :: Console',
+    'Environment :: MacOS X',
+    'Framework :: Hypothesis',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Internet',
+]
+requires-python = '>=3.7'
+dependencies = [ 'typing-extensions>=4.1.0' ]
+optional-dependencies = { email = ['email-validator>=1.0.3'], dotenv = ['python-dotenv>=0.10.4'] }
+dynamic = ['version']
+
+entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
+
+[project.urls]
+Homepage = 'https://github.com/pydantic/pydantic'
+Documentation = 'https://pydantic-docs.helpmanual.io'
+Funding = 'https://github.com/sponsors/samuelcolvin'
+Source = 'https://github.com/pydantic/pydantic'
+Changelog = 'https://pydantic-docs.helpmanual.io/changelog'
+
+[tool.pytest.ini_options]
+testpaths = 'tests'
+filterwarnings = [
+    'error',
+    'ignore:path is deprecated.*:DeprecationWarning:certifi',
+]
+
+[tool.flake8]
+max_line_length = 120
+max_complexity = 14
+inline_quotes = 'single'
+multiline_quotes = 'double'
+ignore = ['E203', 'W503']
+per_file_ignores = [
+    'docs/examples/schema_unenforced_constraints.py:F811',
+    'docs/examples/validation_decorator_async.py:E402',
+    'docs/examples/types_constrained.py:F722',
+]
+
+[tool.coverage.run]
+source = ['pydantic']
+branch = true
+context = '${CONTEXT}'
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    'pragma: no cover',
+    'raise NotImplementedError',
+    'raise NotImplemented',
+    'if TYPE_CHECKING:',
+    '@overload',
+]
+
+
+[tool.coverage.paths]
+source = [
+    'pydantic/',
+    '/Users/runner/work/pydantic/pydantic/pydantic/',
+    'D:\a\pydantic\pydantic\pydantic',
+]
+
+[tool.black]
+color = true
+line-length = 120
+target-version = ['py310']
+skip-string-normalization = true
+
+[tool.isort]
+line_length = 120
+known_first_party = 'pydantic'
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+combine_as_imports = true
+
+[tool.mypy]
+python_version = '3.10'
+show_error_codes = true
+follow_imports = 'silent'
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+warn_unused_configs = true
+disallow_subclassing_any = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_untyped_calls = true
+
+# for strict mypy: (this is the tricky one :-))
+disallow_untyped_defs = true
+
+# remaining arguments from `mypy --strict` which cause errors
+# no_implicit_optional = true
+# warn_return_any = true
+
+# ansi2html and devtools are required to avoid the need to install these packages when running linting,
+# they're used in the docs build script
+[[tool.mypy.overrides]]
+module = [
+    'email_validator.*',
+    'dotenv.*',
+    'toml.*',
+    'ansi2html.*',
+    'devtools.*',
+]
+ignore_missing_imports = true

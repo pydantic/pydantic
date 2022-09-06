@@ -8,7 +8,19 @@
 [![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/pydantic/pydantic)
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-Data validation and settings management using Python type hints.
+Data validation using Python type hints.
+
+---
+
+## Notice
+
+**This branch relates to development of pydantic V2 which is not yet ready for release.**
+
+If you're a user of pydantic, you probably want either
+[pydantic V1.10 Documentation](https://pydantic-docs.helpmanual.io/) or,
+[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes).
+
+---
 
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.

@@ -14,18 +14,12 @@ from pydantic import (
     NoneStrBytes,
     StrBytes,
     ValidationError,
-    compiled,
     constr,
     errors,
     validate_model,
     validator,
 )
 from pydantic.fields import Field
-
-try:
-    import cython
-except ImportError:
-    cython = None
 
 
 def test_str_bytes():
@@ -244,9 +238,7 @@ def test_tuple_more():
         (dict, frozenset, list, set, tuple, type),
     ],
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9) or compiled, reason='PEP585 generics only supported for python 3.9 and above'
-)
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above')
 def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_cls, type_cls):
     class Type1:
         pass
@@ -1872,29 +1864,6 @@ def test_default_factory_validator_child():
         pass
 
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
-
-
-@pytest.mark.skipif(cython is None, reason='cython not installed')
-def test_cython_function_untouched():
-    Model = cython.inline(
-        # language=Python
-        """
-from pydantic import BaseModel
-
-class Model(BaseModel):
-    a = 0.0
-    b = 10
-
-    def get_double_a(self) -> float:
-        return self.a + self.b
-
-return Model
-"""
-    )
-    model = Model(a=10.2)
-    assert model.a == 10.2
-    assert model.b == 10
-    return model.get_double_a() == 20.2
 
 
 def test_resolve_annotations_module_missing(tmp_path):

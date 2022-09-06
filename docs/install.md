@@ -17,7 +17,7 @@ conda install pydantic -c conda-forge
 
 ## Compiled with Cython
 
-*pydantic* can optionally be compiled with [cython](https://cython.org/) which should give a 30-50% performance improvement. 
+*pydantic* can optionally be compiled with [cython](https://cython.org/) which should give a 30-50% performance improvement.
 
 By default `pip install` provides optimized binaries via [PyPI](https://pypi.org/project/pydantic/#files) for Linux, MacOS and 64bit Windows.
 

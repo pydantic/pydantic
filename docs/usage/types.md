@@ -619,7 +619,7 @@ For URI/URL validation the following types are available:
 
 !!! warning
     In V1.10.0 and v1.10.1 `stricturl` also took an optional `quote_plus` argument and URL components were percent
-    encoded in some cases. This feature was removed in v1.10.2, see 
+    encoded in some cases. This feature was removed in v1.10.2, see
     [#4470](https://github.com/pydantic/pydantic/pull/4470) for explanation and more details.
 
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
@@ -682,6 +682,7 @@ If further validation is required, these properties can be used by validators to
 
     Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
     (or at least big) company.
+
 
 ### Color Type
 

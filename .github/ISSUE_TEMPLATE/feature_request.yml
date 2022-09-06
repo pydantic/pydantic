@@ -13,7 +13,7 @@ body:
       label: Initial Checks
       description: |
         Just a few checks to make sure you need to create a feature request.
-        
+
         _Sorry to sound so draconian 👿; but every second spent replying to issues is time not spent improving pydantic 🙇._
       options:
         - label: I have searched Google & GitHub for similar requests and couldn't find anything
@@ -27,7 +27,7 @@ body:
       label: Description
       description: |
         Please give as much detail as possible about the feature you would like to suggest. 🙏
-        
+
         You might like to add:
         * A demo of how code might look when using the feature
         * Your use case(s) for the feature

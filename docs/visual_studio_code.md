@@ -251,15 +251,15 @@ The specific configuration **`frozen`** (in beta) has a special meaning.
 
 It prevents other code from changing a model instance once it's created, keeping it **"frozen"**.
 
-When using the second version to declare `frozen=True` (with **keyword arguments** in the class definition), 
-Pylance can use it to help you check in your code and **detect errors** when something is trying to set values 
+When using the second version to declare `frozen=True` (with **keyword arguments** in the class definition),
+Pylance can use it to help you check in your code and **detect errors** when something is trying to set values
 in a model that is "frozen".
 
 ![VS Code strict type errors with model](./img/vs_code_08.png)
 
 ## BaseSettings and ignoring Pylance/pyright errors
 
-Pylance/pyright does not work well with [`BaseSettings`](./usage/settings.md) - fields in settings classes can be 
+Pylance/pyright does not work well with [`BaseSettings`](./usage/settings.md) - fields in settings classes can be
 configured via environment variables and therefore "required" fields do not have to be explicitly set when
 initialising a settings instance. However, pyright considers these fields as "required" and will therefore
 show an error when they're not set.
@@ -284,7 +284,7 @@ class Knight(BaseModel):
     title: str = Field(default='Sir Lancelot')  # this is okay
     age: int = Field(23)  # this works fine at runtime but will case an error for pyright
 
-lance = Knight()  # error: Argument missing for parameter "age" 
+lance = Knight()  # error: Argument missing for parameter "age"
 ```
 
 Like the issue with `BaseSettings`, this is a limitation of dataclass transforms and cannot be fixed in pydantic.

@@ -204,7 +204,7 @@ def dataclass(
         else:
             dc_cls_doc = cls.__doc__ or ''  # needs to be done before generating dataclass
             if sys.version_info >= (3, 10):
-                dc_cls = dataclasses.dataclass(
+                dc_cls = dataclasses.dataclass(  # type: ignore[call-overload]
                     cls,
                     init=init,
                     repr=repr,
@@ -215,7 +215,7 @@ def dataclass(
                     kw_only=kw_only,
                 )
             else:
-                dc_cls = dataclasses.dataclass(  # type: ignore
+                dc_cls = dataclasses.dataclass(
                     cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
                 )
             default_validate_on_init = True

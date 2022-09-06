@@ -1,16 +1,6 @@
-__all__ = 'compiled', 'VERSION', 'version_info'
+__all__ = 'VERSION', 'version_info'
 
-VERSION = '1.10.2'
-
-try:
-    import cython  # type: ignore
-except ImportError:
-    compiled: bool = False
-else:  # pragma: no cover
-    try:
-        compiled = cython.compiled
-    except AttributeError:
-        compiled = False
+VERSION = '2.0.0.dev0'
 
 
 def version_info() -> str:
@@ -29,7 +19,6 @@ def version_info() -> str:
 
     info = {
         'pydantic version': VERSION,
-        'pydantic compiled': compiled,
         'install path': Path(__file__).resolve().parent,
         'python version': sys.version,
         'platform': platform.platform(),

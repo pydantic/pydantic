@@ -1,56 +1,23 @@
 .DEFAULT_GOAL := all
 sources = pydantic tests docs/build
-isort = isort $(sources)
-black = black -S -l 120 --target-version py38 $(sources)
-
-.PHONY: install-linting
-install-linting:
-	pip install -r tests/requirements-linting.txt
-	pre-commit install
-
-.PHONY: install-pydantic
-install-pydantic:
-	python -m pip install -U wheel pip
-	pip install -r requirements.txt
-	SKIP_CYTHON=1 pip install -e .
-
-.PHONY: install-testing
-install-testing: install-pydantic
-	pip install -r tests/requirements-testing.txt
-
-.PHONY: install-docs
-install-docs: install-pydantic
-	pip install -U -r docs/requirements.txt
 
 .PHONY: install
-install: install-testing install-linting install-docs
-	@echo 'installed development requirements'
-
-.PHONY: build-trace
-build-trace:
-	python setup.py build_ext --force --inplace --define CYTHON_TRACE
-
-.PHONY: build
-build:
-	python setup.py build_ext --inplace
+install:
+	python -m pip install -U pip
+	pip install -r requirements/all.txt
+	pip install -e .
 
 .PHONY: format
 format:
-	pyupgrade --py37-plus  --exit-zero-even-if-changed `find $(sources) -name "*.py" -type f`
-	$(isort)
-	$(black)
+	pyupgrade --py37-plus --exit-zero-even-if-changed `find $(sources) -name "*.py" -type f`
+	isort $(sources)
+	black $(sources)
 
 .PHONY: lint
 lint:
 	flake8 $(sources)
-	$(isort) --check-only --df
-	$(black) --check --diff
-
-.PHONY: check-dist
-check-dist:
-	python setup.py check -ms
-	SKIP_CYTHON=1 python setup.py sdist
-	twine check dist/*
+	isort $(sources) --check-only --df
+	black $(sources) --check --diff
 
 .PHONY: mypy
 mypy:
@@ -66,7 +33,7 @@ pyright:
 
 .PHONY: test
 test:
-	pytest --cov=pydantic
+	coverage run -m pytest --durations=10
 
 .PHONY: testcov
 testcov: test
@@ -107,7 +74,6 @@ clean:
 	rm -rf build
 	rm -rf dist
 	rm -f pydantic/*.c pydantic/*.so
-	python setup.py clean
 	rm -rf site
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html

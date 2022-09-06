@@ -1,5 +1,4 @@
 import keyword
-import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
@@ -137,23 +136,6 @@ def import_string(dotted_path: str) -> Any:
         return getattr(module, class_name)
     except AttributeError as e:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
-
-
-def truncate(v: Union[str], *, max_len: int = 80) -> str:
-    """
-    Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
-    """
-    warnings.warn('`truncate` is no-longer used by pydantic and is deprecated', DeprecationWarning)
-    if isinstance(v, str) and len(v) > (max_len - 2):
-        # -3 so quote + string + … + quote has correct length
-        return (v[: (max_len - 3)] + '…').__repr__()
-    try:
-        v = v.__repr__()
-    except TypeError:
-        v = v.__class__.__repr__(v)  # in case v is a type
-    if len(v) > max_len:
-        v = v[: max_len - 1] + '…'
-    return v
 
 
 def sequence_like(v: Any) -> bool:
