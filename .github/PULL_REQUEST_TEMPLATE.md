@@ -10,3 +10,5 @@ To avoid wasting your time, please only create Pull Requests if you've got expli
 Otherwise, your pull requests may be closed without review.
 
 Thank you for your interest in pydantic, and your patience. :pray:
+
+**Note:** if you're making a pull request to fix pydantic v1.10, please make it against the `1.10.X-fixes` branch.

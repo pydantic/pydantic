@@ -46,10 +46,10 @@ except ImportError:
     TypingGenericAlias = ()
 
 try:
-    from types import UnionType as TypesUnionType  # type: ignore
+    from types import UnionType as TypesUnionType
 except ImportError:
     # python < 3.10 does not have UnionType (str | int, byte | bool and so on)
-    TypesUnionType = ()
+    TypesUnionType = ()  # type: ignore[misc,assignment]
 
 
 if sys.version_info < (3, 9):
@@ -243,7 +243,7 @@ else:
     def is_union(tp: Optional[Type[Any]]) -> bool:
         return tp is Union or tp is types.UnionType  # noqa: E721
 
-    WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)
+    WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # type: ignore[attr-defined]
 
 
 if sys.version_info < (3, 9):

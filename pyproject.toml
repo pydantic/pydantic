@@ -59,12 +59,12 @@ filterwarnings = [
 ]
 
 [tool.flake8]
-max-line-length = 120
-max-complexity = 14
-inline-quotes = 'single'
-multiline-quotes = 'double'
+max_line_length = 120
+max_complexity = 14
+inline_quotes = 'single'
+multiline_quotes = 'double'
 ignore = ['E203', 'W503']
-per-file-ignores = [
+per_file_ignores = [
     'docs/examples/schema_unenforced_constraints.py:F811',
     'docs/examples/validation_decorator_async.py:E402',
     'docs/examples/types_constrained.py:F722',
@@ -108,7 +108,7 @@ force_grid_wrap = 0
 combine_as_imports = true
 
 [tool.mypy]
-python_version = '3.9'
+python_version = '3.10'
 show_error_codes = true
 follow_imports = 'silent'
 strict_optional = true
