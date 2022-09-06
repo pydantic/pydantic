@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 1.10.X-fixes
     tags:
       - '**'
   pull_request: {}
