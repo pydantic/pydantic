@@ -10,6 +10,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Collection,
     Dict,
     ForwardRef,
     FrozenSet,
@@ -1043,10 +1044,19 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
+
             if is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
-            if issubclass(origin, List) and (
+            if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items is not None):
+                used_constraints.update({'min_items', 'max_items'})
+                return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+
+            if issubclass(origin, Collection) and (
                 field_info.min_items is not None
                 or field_info.max_items is not None
                 or field_info.unique_items is not None
@@ -1058,14 +1068,6 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                     max_items=field_info.max_items,
                     unique_items=field_info.unique_items,
                 )
-
-            if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
-
-            if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
