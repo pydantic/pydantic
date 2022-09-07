@@ -105,7 +105,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -121,7 +121,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -140,7 +140,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -155,7 +155,7 @@ else:
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -172,7 +172,7 @@ else:
         ...
 
 
-@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[_T]] = None,
     *,
