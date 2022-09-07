@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Collection,
     Deque,
     Dict,
     FrozenSet,
@@ -1569,6 +1570,8 @@ def test_unenforced_constraints_schema(kwargs, type_):
     [
         ({'max_length': 5}, str, 'foo'),
         ({'min_length': 2}, str, 'foo'),
+        ({'min_items': 1}, Collection[int], [0]),
+        ({'max_items': 1}, Collection[int], [0]),
         ({'max_length': 5}, bytes, b'foo'),
         ({'regex': '^foo$'}, str, 'foo'),
         ({'gt': 2}, int, 3),
