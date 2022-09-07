@@ -1,6 +1,10 @@
+from typing import Generic, Optional, Tuple, TypeVar
+
 import pytest
 
-from pydantic import BaseModel, Extra, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic.fields import ModelPrivateAttr
+from pydantic.generics import GenericModel
 
 
 def test_create_model():
@@ -11,6 +15,7 @@ def test_create_model():
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
     assert model.__config__.__name__ == 'Config'
+    assert model.__module__ == 'pydantic.main'
 
 
 def test_create_model_usage():
@@ -22,6 +27,29 @@ def test_create_model_usage():
         model()
     with pytest.raises(ValidationError):
         model(foo='hello', bar='xxx')
+
+
+def test_create_model_pickle(create_module):
+    """
+    Pickle will work for dynamically created model only if it was defined globally with its class name
+    and module where it's defined was specified
+    """
+
+    @create_module
+    def module():
+        import pickle
+
+        from pydantic import create_model
+
+        FooModel = create_model('FooModel', foo=(str, ...), bar=123, __module__=__name__)
+
+        m = FooModel(foo='hello')
+        d = pickle.dumps(m)
+        m2 = pickle.loads(d)
+        assert m2.foo == m.foo == 'hello'
+        assert m2.bar == m.bar == 123
+        assert m2 == m
+        assert m2 is not m
 
 
 def test_invalid_name():
@@ -158,3 +186,81 @@ def test_repeat_base_usage():
     assert model.__fields__.keys() == {'a', 'b'}
     assert model2.__fields__.keys() == {'a', 'c'}
     assert model3.__fields__.keys() == {'a', 'b', 'd'}
+
+
+def test_dynamic_and_static():
+    class A(BaseModel):
+        x: int
+        y: float
+        z: str
+
+    DynamicA = create_model('A', x=(int, ...), y=(float, ...), z=(str, ...))
+
+    for field_name in ('x', 'y', 'z'):
+        assert A.__fields__[field_name].default == DynamicA.__fields__[field_name].default
+
+
+def test_config_field_info_create_model():
+    class Config:
+        fields = {'a': {'description': 'descr'}}
+
+    m1 = create_model('M1', __config__=Config, a=(str, ...))
+    assert m1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+    m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
+    assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+
+
+def test_generics_model():
+    T = TypeVar('T')
+
+    class TestGenericModel(GenericModel):
+        pass
+
+    AAModel = create_model(
+        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'orm_mode': True}, aa=(int, Field(0))
+    )
+    result = AAModel[int](aa=1)
+    assert result.aa == 1
+    assert result.__config__.orm_mode is True
+
+
+@pytest.mark.parametrize('base', [ModelPrivateAttr, object])
+def test_set_name(base):
+    calls = []
+
+    class class_deco(base):
+        def __init__(self, fn):
+            super().__init__()
+            self.fn = fn
+
+        def __set_name__(self, owner, name):
+            calls.append((owner, name))
+
+        def __get__(self, obj, type=None):
+            return self.fn(obj) if obj else self
+
+    class A(BaseModel):
+        x: int
+
+        @class_deco
+        def _some_func(self):
+            return self.x
+
+    assert calls == [(A, '_some_func')]
+    a = A(x=2)
+
+    # we don't test whether calling the method on a PrivateAttr works:
+    # attribute access on privateAttributes is more complicated, it doesn't
+    # get added to the class namespace (and will also get set on the instance
+    # with _init_private_attributes), so the descriptor protocol won't work.
+    if base is object:
+        assert a._some_func == 2
+
+
+def test_create_model_with_slots():
+    field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
+    with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
+        model = create_model('PartialPet', **field_definitions)
+
+    assert model.__fields__.keys() == {'foobar'}

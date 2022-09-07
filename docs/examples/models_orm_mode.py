@@ -6,12 +6,14 @@ from pydantic import BaseModel, constr
 
 Base = declarative_base()
 
+
 class CompanyOrm(Base):
     __tablename__ = 'companies'
     id = Column(Integer, primary_key=True, nullable=False)
     public_key = Column(String(20), index=True, nullable=False, unique=True)
     name = Column(String(63), unique=True)
     domains = Column(ARRAY(String(255)))
+
 
 class CompanyModel(BaseModel):
     id: int
@@ -22,11 +24,12 @@ class CompanyModel(BaseModel):
     class Config:
         orm_mode = True
 
+
 co_orm = CompanyOrm(
     id=123,
     public_key='foobar',
     name='Testing',
-    domains=['example.com', 'foobar.com']
+    domains=['example.com', 'foobar.com'],
 )
 print(co_orm)
 co_model = CompanyModel.from_orm(co_orm)

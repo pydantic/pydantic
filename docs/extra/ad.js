@@ -11,7 +11,7 @@ function main () {
       ad_el.remove()
       return
     }
-    _bsa.init('default', 'CKYDVKJJ', 'placement:helpmanualio', {
+    _bsa.init('default', 'CK7ITKJU', 'placement:pydantic-docshelpmanualio', {
       target: '#bsa-cpc',
       align: 'horizontal',
     })
@@ -21,4 +21,5 @@ function main () {
   document.head.appendChild(script)
 }
 
-main()
+// ads disabled for now
+// main()

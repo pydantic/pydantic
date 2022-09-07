@@ -1,0 +1,4 @@
+coverage[toml]
+pytest
+pytest-mock
+pytest-sugar

@@ -6,334 +6,358 @@ Done like this rather than as a raw rst table to make future edits easier.
 
 Please edit this file directly not .tmp_schema_mappings.html
 """
+from __future__ import annotations
+import json
 import re
 from pathlib import Path
+from typing import Any
 
-table = [
-    [
+table: list[tuple[str, str, str | dict[str, Any], str, str]] = [
+    (
+        'None',
+        'null',
+        '',
+        'JSON Schema Core',
+        'Same for `type(None)` or `Literal[None]`',
+    ),
+    (
         'bool',
         'boolean',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'str',
         'string',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'float',
         'number',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'int',
         'integer',
         '',
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'dict',
         'object',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'list',
         'array',
-        '{"items": {}}',
+        {'items': {}},
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'tuple',
         'array',
-        '{"items": {}}',
+        {'items': {}},
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'set',
         'array',
-        '{"items": {}, {"uniqueItems": true}',
+        {'items': {}, 'uniqueItems': True},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
+        'frozenset',
+        'array',
+        {'items': {}, 'uniqueItems': True},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
         'List[str]',
         'array',
-        '{"items": {"type": "string"}}',
+        {'items': {'type': 'string'}},
         'JSON Schema Validation',
-        'And equivalently for any other sub type, e.g. `List[int]`.'
-    ],
-    [
+        'And equivalently for any other sub type, e.g. `List[int]`.',
+    ),
+    (
+        'Tuple[str, ...]',
+        'array',
+        {'items': {'type': 'string'}},
+        'JSON Schema Validation',
+        'And equivalently for any other sub type, e.g. `Tuple[int, ...]`.',
+    ),
+    (
         'Tuple[str, int]',
         'array',
-        '{"items": [{"type": "string"}, {"type": "integer"}]}',
+        {'items': [{'type': 'string'}, {'type': 'integer'}], 'minItems': 2, 'maxItems': 2},
         'JSON Schema Validation',
         (
             'And equivalently for any other set of subtypes. Note: If using schemas for OpenAPI, '
-            'you shouldn\'t use this declaration, as it would not be valid in OpenAPI (although it is '
+            "you shouldn't use this declaration, as it would not be valid in OpenAPI (although it is "
             'valid in JSON Schema).'
-        )
-    ],
-    [
+        ),
+    ),
+    (
         'Dict[str, int]',
         'object',
-        '{"additionalProperties": {"type": "integer"}}',
+        {'additionalProperties': {'type': 'integer'}},
         'JSON Schema Validation',
         (
             'And equivalently for any other subfields for dicts. Have in mind that although you can use other types as '
             'keys for dicts with Pydantic, only strings are valid keys for JSON, and so, only str is valid as '
             'JSON Schema key types.'
-         )
-    ],
-    [
+        ),
+    ),
+    (
         'Union[str, int]',
         'anyOf',
-        '{"anyOf": [{"type": "string"}, {"type": "integer"}]}',
+        {'anyOf': [{'type': 'string'}, {'type': 'integer'}]},
         'JSON Schema Validation',
-        'And equivalently for any other subfields for unions.'
-    ],
-    [
+        'And equivalently for any other subfields for unions.',
+    ),
+    (
         'Enum',
         'enum',
         '{"enum": [...]}',
         'JSON Schema Validation',
-        'All the literal values in the enum are included in the definition.'
-    ],
-    [
+        'All the literal values in the enum are included in the definition.',
+    ),
+    (
         'SecretStr',
         'string',
-        '{"writeOnly": true}',
+        {'writeOnly': True},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'SecretBytes',
         'string',
-        '{"writeOnly": true}',
+        {'writeOnly': True},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'EmailStr',
         'string',
-        '{"format": "email"}',
+        {'format': 'email'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'NameEmail',
         'string',
-        '{"format": "name-email"}',
+        {'format': 'name-email'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'AnyUrl',
         'string',
-        '{"format": "uri"}',
+        {'format': 'uri'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
-        'DSN',
+        '',
+    ),
+    (
+        'Pattern',
         'string',
-        '{"format": "dsn"}',
-        'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        {'format': 'regex'},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
         'bytes',
         'string',
-        '{"format": "binary"}',
+        {'format': 'binary'},
         'OpenAPI',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'Decimal',
         'number',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'UUID1',
         'string',
-        '{"format": "uuid1"}',
+        {'format': 'uuid1'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'UUID3',
         'string',
-        '{"format": "uuid3"}',
+        {'format': 'uuid3'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'UUID4',
         'string',
-        '{"format": "uuid4"}',
+        {'format': 'uuid4'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'UUID5',
         'string',
-        '{"format": "uuid5"}',
+        {'format': 'uuid5'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'UUID',
         'string',
-        '{"format": "uuid"}',
+        {'format': 'uuid'},
         'Pydantic standard "format" extension',
-        'Suggested in OpenAPI.'
-    ],
-    [
+        'Suggested in OpenAPI.',
+    ),
+    (
         'FilePath',
         'string',
-        '{"format": "file-path"}',
+        {'format': 'file-path'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'DirectoryPath',
         'string',
-        '{"format": "directory-path"}',
+        {'format': 'directory-path'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'Path',
         'string',
-        '{"format": "path"}',
+        {'format': 'path'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'datetime',
         'string',
-        '{"format": "date-time"}',
+        {'format': 'date-time'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'date',
         'string',
-        '{"format": "date"}',
+        {'format': 'date'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'time',
         'string',
-        '{"format": "time"}',
+        {'format': 'time'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'timedelta',
         'number',
-        '{"format": "time-delta"}',
+        {'format': 'time-delta'},
         'Difference in seconds (a `float`), with Pydantic standard "format" extension',
-        'Suggested in JSON Schema repository\'s issues by maintainer.'
-    ],
-    [
+        "Suggested in JSON Schema repository's issues by maintainer.",
+    ),
+    (
         'Json',
         'string',
-        '{"format": "json-string"}',
+        {'format': 'json-string'},
         'Pydantic standard "format" extension',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'IPv4Address',
         'string',
-        '{"format": "ipv4"}',
+        {'format': 'ipv4'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'IPv6Address',
         'string',
-        '{"format": "ipv6"}',
+        {'format': 'ipv6'},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'IPvAnyAddress',
         'string',
-        '{"format": "ipvanyaddress"}',
+        {'format': 'ipvanyaddress'},
         'Pydantic standard "format" extension',
         'IPv4 or IPv6 address as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'IPv4Interface',
         'string',
-        '{"format": "ipv4interface"}',
+        {'format': 'ipv4interface'},
         'Pydantic standard "format" extension',
         'IPv4 interface as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'IPv6Interface',
         'string',
-        '{"format": "ipv6interface"}',
+        {'format': 'ipv6interface'},
         'Pydantic standard "format" extension',
         'IPv6 interface as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'IPvAnyInterface',
         'string',
-        '{"format": "ipvanyinterface"}',
+        {'format': 'ipvanyinterface'},
         'Pydantic standard "format" extension',
         'IPv4 or IPv6 interface as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'IPv4Network',
         'string',
-        '{"format": "ipv4network"}',
+        {'format': 'ipv4network'},
         'Pydantic standard "format" extension',
         'IPv4 network as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'IPv6Network',
         'string',
-        '{"format": "ipv6network"}',
+        {'format': 'ipv6network'},
         'Pydantic standard "format" extension',
         'IPv6 network as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'IPvAnyNetwork',
         'string',
-        '{"format": "ipvanynetwork"}',
+        {'format': 'ipvanynetwork'},
         'Pydantic standard "format" extension',
         'IPv4 or IPv6 network as used in `ipaddress` module',
-    ],
-    [
+    ),
+    (
         'StrictBool',
         'boolean',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'StrictStr',
         'string',
         '',
         'JSON Schema Core',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'ConstrainedStr',
         'string',
         '',
@@ -341,16 +365,16 @@ table = [
         (
             'If the type has values declared for the constraints, they are included as validations. '
             'See the mapping for `constr` below.'
-        )
-    ],
-    [
-        'constr(regex=\'^text$\', min_length=2, max_length=10)',
+        ),
+    ),
+    (
+        "constr(regex='^text$', min_length=2, max_length=10)",
         'string',
-        '{"pattern": "^text$", "minLength": 2, "maxLength": 10}',
+        {'pattern': '^text$', 'minLength': 2, 'maxLength': 10},
         'JSON Schema Validation',
-        'Any argument not passed to the function (not defined) will not be included in the schema.'
-    ],
-    [
+        'Any argument not passed to the function (not defined) will not be included in the schema.',
+    ),
+    (
         'ConstrainedInt',
         'integer',
         '',
@@ -358,30 +382,44 @@ table = [
         (
             'If the type has values declared for the constraints, they are included as validations. '
             'See the mapping for `conint` below.'
-        )
-    ],
-    [
+        ),
+    ),
+    (
         'conint(gt=1, ge=2, lt=6, le=5, multiple_of=2)',
         'integer',
-        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}',
+        {'maximum': 5, 'exclusiveMaximum': 6, 'minimum': 2, 'exclusiveMinimum': 1, 'multipleOf': 2},
         '',
-        'Any argument not passed to the function (not defined) will not be included in the schema.'
-    ],
-    [
+        'Any argument not passed to the function (not defined) will not be included in the schema.',
+    ),
+    (
         'PositiveInt',
         'integer',
-        '{"exclusiveMinimum": 0}',
+        {'exclusiveMinimum': 0},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'NegativeInt',
         'integer',
-        '{"exclusiveMaximum": 0}',
+        {'exclusiveMaximum': 0},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
+        'NonNegativeInt',
+        'integer',
+        {'minimum': 0},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
+        'NonPositiveInt',
+        'integer',
+        {'maximum': 0},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
         'ConstrainedFloat',
         'number',
         '',
@@ -389,30 +427,44 @@ table = [
         (
             'If the type has values declared for the constraints, they are included as validations. '
             'See the mapping for `confloat` below.'
-        )
-    ],
-    [
+        ),
+    ),
+    (
         'confloat(gt=1, ge=2, lt=6, le=5, multiple_of=2)',
         'number',
-        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}',
+        {'maximum': 5, 'exclusiveMaximum': 6, 'minimum': 2, 'exclusiveMinimum': 1, 'multipleOf': 2},
         'JSON Schema Validation',
-        'Any argument not passed to the function (not defined) will not be included in the schema.'
-    ],
-    [
+        'Any argument not passed to the function (not defined) will not be included in the schema.',
+    ),
+    (
         'PositiveFloat',
         'number',
-        '{"exclusiveMinimum": 0}',
+        {'exclusiveMinimum': 0},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
         'NegativeFloat',
         'number',
-        '{"exclusiveMaximum": 0}',
+        {'exclusiveMaximum': 0},
         'JSON Schema Validation',
-        ''
-    ],
-    [
+        '',
+    ),
+    (
+        'NonNegativeFloat',
+        'number',
+        {'minimum': 0},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
+        'NonPositiveFloat',
+        'number',
+        {'maximum': 0},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
         'ConstrainedDecimal',
         'number',
         '',
@@ -420,29 +472,29 @@ table = [
         (
             'If the type has values declared for the constraints, they are included as validations. '
             'See the mapping for `condecimal` below.'
-        )
-    ],
-    [
+        ),
+    ),
+    (
         'condecimal(gt=1, ge=2, lt=6, le=5, multiple_of=2)',
         'number',
-        '{"maximum": 5, "exclusiveMaximum": 6, "minimum": 2, "exclusiveMinimum": 1, "multipleOf": 2}',
+        {'maximum': 5, 'exclusiveMaximum': 6, 'minimum': 2, 'exclusiveMinimum': 1, 'multipleOf': 2},
         'JSON Schema Validation',
-        'Any argument not passed to the function (not defined) will not be included in the schema.'
-    ],
-    [
+        'Any argument not passed to the function (not defined) will not be included in the schema.',
+    ),
+    (
         'BaseModel',
         'object',
         '',
         'JSON Schema Core',
-        'All the properties defined will be defined with standard JSON Schema, including submodels.'
-    ],
-    [
+        'All the properties defined will be defined with standard JSON Schema, including submodels.',
+    ),
+    (
         'Color',
         'string',
-        '{"format": "color"}',
+        {'format': 'color'},
         'Pydantic standard "format" extension',
         '',
-    ],
+    ),
 ]
 
 headings = [
@@ -453,15 +505,16 @@ headings = [
 ]
 
 
-def md2html(s):
+def md2html(s: str) -> str:
     return re.sub(r'`(.+?)`', r'<code>\1</code>', s)
 
 
-def build_schema_mappings():
+def build_schema_mappings() -> None:
     rows = []
 
     for py_type, json_type, additional, defined_in, notes in table:
-
+        if additional and not isinstance(additional, str):
+            additional = json.dumps(additional)
         cols = [
             f'<code>{py_type}</code>',
             f'<code>{json_type}</code>',
@@ -479,7 +532,7 @@ def build_schema_mappings():
     heading = '\n'.join(f'  <th>{h}</th>' for h in headings)
     body = '\n</tr>\n<tr>\n'.join(rows)
     text = f"""\
-<!-- 
+<!--
   Generated from docs/build/schema_mapping.py, DO NOT EDIT THIS FILE DIRECTLY.
   Instead edit docs/build/schema_mapping.py and run `make docs`.
 -->

@@ -1,8 +1,10 @@
 from pydantic import BaseModel, create_model
 
+
 class FooModel(BaseModel):
     foo: str
     bar: int = 123
+
 
 BarModel = create_model(
     'BarModel',

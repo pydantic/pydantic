@@ -1,6 +1,8 @@
-from typing import ClassVar, Optional
+from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model, validator
+from pydantic.dataclasses import dataclass
+from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
@@ -104,3 +106,114 @@ class ClassVarModel(BaseModel):
 
 
 ClassVarModel(x=1)
+
+
+class Config:
+    validate_assignment = True
+
+
+@dataclass(config=Config)
+class AddProject:
+    name: str
+    slug: Optional[str]
+    description: Optional[str]
+
+
+p = AddProject(name='x', slug='y', description='z')
+
+
+class TypeAliasAsAttribute(BaseModel):
+    __type_alias_attribute__ = Union[str, bytes]
+
+
+class NestedModel(BaseModel):
+    class Model(BaseModel):
+        id: str
+
+    model: Model
+
+
+_ = NestedModel.Model
+
+
+DynamicModel = create_model('DynamicModel', __base__=Model)
+
+dynamic_model = DynamicModel(x=1, y='y')
+dynamic_model.x = 2
+
+
+class FrozenModel(BaseModel):
+    x: int
+
+    class Config:
+        frozen = True
+
+
+class NotFrozenModel(FrozenModel):
+    a: int = 1
+
+    class Config:
+        frozen = False
+        orm_mode = True
+
+
+NotFrozenModel(x=1).x = 2
+NotFrozenModel.from_orm(model)
+
+
+class ModelWithSelfField(BaseModel):
+    self: str
+
+
+def f(name: str) -> str:
+    return name
+
+
+class ModelWithAllowReuseValidator(BaseModel):
+    name: str
+    _normalize_name = validator('name', allow_reuse=True)(f)
+
+
+model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
+
+
+T = TypeVar('T')
+
+
+class Response(GenericModel, Generic[T]):
+    data: T
+    error: Optional[str]
+
+
+response = Response[Model](data=model, error=None)
+
+
+class ModelWithAnnotatedValidator(BaseModel):
+    name: str
+
+    @validator('name')
+    def noop_validator_with_annotations(cls, name: str) -> str:
+        return name
+
+
+def _default_factory_str() -> str:
+    ...
+
+
+def _default_factory_list() -> List[int]:
+    ...
+
+
+class FieldDefaultTestingModel(BaseModel):
+    # Required
+    a: int
+    b: int = Field()
+    c: int = Field(...)
+
+    # Default
+    d: int = Field(1)
+
+    # Default factory
+    g: List[int] = Field(default_factory=_default_factory_list)
+    h: str = Field(default_factory=_default_factory_str)
+    i: str = Field(default_factory=lambda: 'test')

@@ -1,14 +1,41 @@
+import collections.abc
 import os
-import string
-from enum import Enum
-from typing import NewType, Union
+import pickle
+import sys
+from copy import copy, deepcopy
+from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
-from pydantic.typing import display_as_type, is_new_type, new_type_supertype
-from pydantic.utils import ValueItems, deep_update, import_string, lenient_issubclass, truncate
+from pydantic.dataclasses import dataclass
+from pydantic.fields import Undefined
+from pydantic.typing import (
+    all_literal_values,
+    display_as_type,
+    get_args,
+    get_origin,
+    is_new_type,
+    new_type_supertype,
+    resolve_annotations,
+)
+from pydantic.utils import (
+    BUILTIN_COLLECTIONS,
+    ClassAttribute,
+    LimitedDict,
+    ValueItems,
+    all_identical,
+    deep_update,
+    get_model,
+    import_string,
+    lenient_issubclass,
+    path_type,
+    smart_deepcopy,
+    to_lower_camel,
+    unique_list,
+)
 
 try:
     import devtools
@@ -32,36 +59,16 @@ def test_import_no_attr():
     assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'
 
 
-@pytest.mark.parametrize('value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]')))
+@pytest.mark.parametrize(
+    'value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]'), (list, 'list'))
+)
 def test_display_as_type(value, expected):
     assert display_as_type(value) == expected
 
 
-def test_display_as_type_enum():
-    class SubField(Enum):
-        a = 1
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'enum'
-
-
-def test_display_as_type_enum_int():
-    class SubField(int, Enum):
-        a = 1
-        b = 2
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'int'
-
-
-def test_display_as_type_enum_str():
-    class SubField(str, Enum):
-        a = 'a'
-        b = 'b'
-
-    displayed = display_as_type(SubField)
-    assert displayed == 'str'
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
+def test_display_as_type_generic_alias():
+    assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
 
 
 def test_lenient_issubclass():
@@ -71,6 +78,14 @@ def test_lenient_issubclass():
     assert lenient_issubclass(A, str) is True
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
+def test_lenient_issubclass_with_generic_aliases():
+    from collections.abc import Mapping
+
+    # should not raise an error here:
+    assert lenient_issubclass(list[str], Mapping) is False
+
+
 def test_lenient_issubclass_is_lenient():
     assert lenient_issubclass('a', 'a') is False
 
@@ -78,14 +93,14 @@ def test_lenient_issubclass_is_lenient():
 @pytest.mark.parametrize(
     'input_value,output',
     [
-        (object, "<class 'object'>"),
-        (string.ascii_lowercase, "'abcdefghijklmnopq…'"),
-        (list(range(20)), '[0, 1, 2, 3, 4, 5, …'),
+        ([], []),
+        ([1, 1, 1, 2, 1, 2, 3, 2, 3, 1, 4, 2, 3, 1], [1, 2, 3, 4]),
+        (['a', 'a', 'b', 'a', 'b', 'c', 'b', 'c', 'a'], ['a', 'b', 'c']),
     ],
 )
-def test_truncate(input_value, output):
-    with pytest.warns(DeprecationWarning, match='`truncate` is no-longer used by pydantic and is deprecated'):
-        assert truncate(input_value, max_len=20) == output
+def test_unique_list(input_value, output):
+    assert unique_list(input_value) == output
+    assert unique_list(unique_list(input_value)) == unique_list(input_value)
 
 
 def test_value_items():
@@ -117,13 +132,62 @@ def test_value_items():
 
     sub_v = included['a']
     sub_vi = ValueItems(sub_v, vi.for_element('a'))
-    assert repr(sub_vi) == 'ValueItems({0, 2})'
+    assert repr(sub_vi) == 'ValueItems({0: Ellipsis, 2: Ellipsis})'
 
     assert sub_vi.is_excluded(2)
     assert [v_ for i, v_ in enumerate(sub_v) if not sub_vi.is_excluded(i)] == ['b']
 
     assert sub_vi.is_included(2)
     assert [v_ for i, v_ in enumerate(sub_v) if sub_vi.is_included(i)] == ['a', 'c']
+
+
+@pytest.mark.parametrize(
+    'base,override,intersect,expected',
+    [
+        # Check in default (union) mode
+        (..., ..., False, ...),
+        (None, None, False, None),
+        ({}, {}, False, {}),
+        (..., None, False, ...),
+        (None, ..., False, ...),
+        (None, {}, False, {}),
+        ({}, None, False, {}),
+        (..., {}, False, {}),
+        ({}, ..., False, ...),
+        ({'a': None}, {'a': None}, False, {}),
+        ({'a'}, ..., False, ...),
+        ({'a'}, {}, False, {'a': ...}),
+        ({'a'}, {'b'}, False, {'a': ..., 'b': ...}),
+        ({'a': ...}, {'b': {'c'}}, False, {'a': ..., 'b': {'c': ...}}),
+        ({'a': ...}, {'a': {'c'}}, False, {'a': {'c': ...}}),
+        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, False, {'a': ..., 'b': {'d': ...}}),
+        # Check in intersection mode
+        (..., ..., True, ...),
+        (None, None, True, None),
+        ({}, {}, True, {}),
+        (..., None, True, ...),
+        (None, ..., True, ...),
+        (None, {}, True, {}),
+        ({}, None, True, {}),
+        (..., {}, True, {}),
+        ({}, ..., True, {}),
+        ({'a': None}, {'a': None}, True, {}),
+        ({'a'}, ..., True, {'a': ...}),
+        ({'a'}, {}, True, {}),
+        ({'a'}, {'b'}, True, {}),
+        ({'a': ...}, {'b': {'c'}}, True, {}),
+        ({'a': ...}, {'a': {'c'}}, True, {'a': {'c': ...}}),
+        ({'a': {'c': ...}, 'b': {'d'}}, {'a': ...}, True, {'a': {'c': ...}}),
+        # Check usage of `True` instead of `...`
+        (..., True, False, True),
+        (True, ..., False, ...),
+        (True, None, False, True),
+        ({'a': {'c': True}, 'b': {'d'}}, {'a': True}, False, {'a': True, 'b': {'d': ...}}),
+    ],
+)
+def test_value_items_merge(base, override, intersect, expected):
+    actual = ValueItems.merge(base, override, intersect=intersect)
+    assert actual == expected
 
 
 def test_value_items_error():
@@ -260,3 +324,240 @@ def test_deep_update_is_not_mutating():
     updated_mapping = deep_update(mapping, {'key': {'inner_key': {'other_deep_key': 1}}})
     assert updated_mapping == {'key': {'inner_key': {'deep_key': 1, 'other_deep_key': 1}}}
     assert mapping == {'key': {'inner_key': {'deep_key': 1}}}
+
+
+def test_undefined_repr():
+    assert repr(Undefined) == 'PydanticUndefined'
+
+
+def test_undefined_copy():
+    assert copy(Undefined) is Undefined
+    assert deepcopy(Undefined) is Undefined
+
+
+def test_get_model():
+    class A(BaseModel):
+        a: str
+
+    assert get_model(A) == A
+
+    @dataclass
+    class B:
+        a: str
+
+    assert get_model(B) == B.__pydantic_model__
+
+    class C:
+        pass
+
+    with pytest.raises(TypeError):
+        get_model(C)
+
+
+def test_class_attribute():
+    class Foo:
+        attr = ClassAttribute('attr', 'foo')
+
+    assert Foo.attr == 'foo'
+
+    with pytest.raises(AttributeError, match="'attr' attribute of 'Foo' is class-only"):
+        Foo().attr
+
+    f = Foo()
+    f.attr = 'not foo'
+    assert f.attr == 'not foo'
+
+
+def test_all_literal_values():
+    L1 = Literal['1']
+    assert all_literal_values(L1) == ('1',)
+
+    L2 = Literal['2']
+    L12 = Literal[L1, L2]
+    assert sorted(all_literal_values(L12)) == sorted(('1', '2'))
+
+    L312 = Literal['3', Literal[L1, L2]]
+    assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
+
+
+def test_path_type(tmp_path):
+    assert path_type(tmp_path) == 'directory'
+    file = tmp_path / 'foobar.txt'
+    file.write_text('hello')
+    assert path_type(file) == 'file'
+
+
+def test_path_type_unknown(tmp_path):
+    p = type(
+        'FakePath',
+        (),
+        {
+            'exists': lambda: True,
+            'is_dir': lambda: False,
+            'is_file': lambda: False,
+            'is_mount': lambda: False,
+            'is_symlink': lambda: False,
+            'is_block_device': lambda: False,
+            'is_char_device': lambda: False,
+            'is_fifo': lambda: False,
+            'is_socket': lambda: False,
+        },
+    )
+    assert path_type(p) == 'unknown'
+
+
+@pytest.mark.parametrize(
+    'obj',
+    (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
+)
+def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
+    # make sure deepcopy is not used
+    # (other option will be to use obj.copy(), but this will produce error as none of given objects have this method)
+    mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)
+    assert smart_deepcopy(obj) is deepcopy(obj) is obj
+
+
+@pytest.mark.parametrize('empty_collection', (collection() for collection in BUILTIN_COLLECTIONS))
+def test_smart_deepcopy_empty_collection(empty_collection, mocker):
+    mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)  # make sure deepcopy is not used
+    if not isinstance(empty_collection, (tuple, frozenset)):  # empty tuple or frozenset are always the same object
+        assert smart_deepcopy(empty_collection) is not empty_collection
+
+
+@pytest.mark.parametrize(
+    'collection', (c.fromkeys((1,)) if issubclass(c, dict) else c((1,)) for c in BUILTIN_COLLECTIONS)
+)
+def test_smart_deepcopy_collection(collection, mocker):
+    expected_value = object()
+    mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
+    assert smart_deepcopy(collection) is expected_value
+
+
+@pytest.mark.parametrize('error', [TypeError, ValueError, RuntimeError])
+def test_smart_deepcopy_error(error, mocker):
+    class RaiseOnBooleanOperation(str):
+        def __bool__(self):
+            raise error('raised error')
+
+    obj = RaiseOnBooleanOperation()
+    expected_value = deepcopy(obj)
+    assert smart_deepcopy(obj) == expected_value
+
+
+T = TypeVar('T')
+
+
+@pytest.mark.parametrize(
+    'input_value,output_value',
+    [
+        (Annotated[int, 10] if Annotated else None, Annotated),
+        (Callable[[], T][int], collections.abc.Callable),
+        (Dict[str, int], dict),
+        (List[str], list),
+        (Union[int, str], Union),
+        (int, None),
+    ],
+)
+def test_get_origin(input_value, output_value):
+    if input_value is None:
+        pytest.skip('Skipping undefined hint for this python version')
+    assert get_origin(input_value) is output_value
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='get_args is only consistent for python >= 3.8')
+@pytest.mark.parametrize(
+    'input_value,output_value',
+    [
+        (conlist(str), (str,)),
+        (ConstrainedList, ()),
+        (List[str], (str,)),
+        (Dict[str, int], (str, int)),
+        (int, ()),
+        (Union[int, Union[T, int], str][int], (int, str)),
+        (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
+        (Callable[[], T][int], ([], int)),
+        (Annotated[int, 10] if Annotated else None, (int, 10)),
+    ],
+)
+def test_get_args(input_value, output_value):
+    if input_value is None:
+        pytest.skip('Skipping undefined hint for this python version')
+    assert get_args(input_value) == output_value
+
+
+def test_resolve_annotations_no_module():
+    # TODO: is there a better test for this, can this case really happen?
+    fr = ForwardRef('Foo')
+    assert resolve_annotations({'Foo': ForwardRef('Foo')}, None) == {'Foo': fr}
+
+
+def test_all_identical():
+    a, b = object(), object()
+    c = [b]
+    assert all_identical([a, b], [a, b]) is True
+    assert all_identical([a, b], [a, b]) is True
+    assert all_identical([a, b, b], [a, b, b]) is True
+    assert all_identical([a, c, b], [a, c, b]) is True
+
+    assert all_identical([], [a]) is False, 'Expected iterables with different lengths to evaluate to `False`'
+    assert all_identical([a], []) is False, 'Expected iterables with different lengths to evaluate to `False`'
+    assert (
+        all_identical([a, [b], b], [a, [b], b]) is False
+    ), 'New list objects are different objects and should therefore not be identical.'
+
+
+def test_undefined_pickle():
+    undefined2 = pickle.loads(pickle.dumps(Undefined))
+    assert undefined2 is Undefined
+
+
+def test_on_lower_camel_zero_length():
+    assert to_lower_camel('') == ''
+
+
+def test_on_lower_camel_one_length():
+    assert to_lower_camel('a') == 'a'
+
+
+def test_on_lower_camel_many_length():
+    assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
+
+
+def test_limited_dict():
+    d = LimitedDict(10)
+    d[1] = '1'
+    d[2] = '2'
+    assert list(d.items()) == [(1, '1'), (2, '2')]
+    for no in '34567890':
+        d[int(no)] = no
+    assert list(d.items()) == [
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+    ]
+    d[11] = '11'
+
+    # reduce size to 9 after setting 11
+    assert len(d) == 9
+    assert list(d.items()) == [
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+        (11, '11'),
+    ]
+    d[12] = '12'
+    assert len(d) == 10
+    d[13] = '13'
+    assert len(d) == 9

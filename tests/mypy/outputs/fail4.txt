@@ -1,0 +1,8 @@
+5: note: "foo" defined here
+12: error: Argument 1 to "foo" has incompatible type "str"; expected "int"  [arg-type]
+13: error: Argument "c" to "foo" has incompatible type "int"; expected "str"  [arg-type]
+14: error: Too many positional arguments for "foo"  [misc]
+14: error: Argument 2 to "foo" has incompatible type "int"; expected "str"  [arg-type]
+15: error: Unexpected keyword argument "d" for "foo"  [call-arg]
+17: error: "Callable[[int, DefaultNamedArg(str, 'c')], str]" has no attribute "raw_function"  [attr-defined]
+26: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]

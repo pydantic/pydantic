@@ -1,9 +1,7 @@
-Pydantic works with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
+*pydantic* models work with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
 required fields:
 
-```py
-{!.tmp_examples/mypy_main.py!}
-```
+{!.tmp_examples/mypy_main.md!}
 
 You can run your code through mypy with:
 
@@ -19,7 +17,6 @@ If you call mypy on the example code above, you should see mypy detect the attri
 ```
 13: error: "Model" has no attribute "middle_name"
 ```
-
 
 ## Strict Optional
 
@@ -39,5 +36,11 @@ If these aren't sufficient you can of course define your own.
 
 Pydantic ships with a mypy plugin that adds a number of important pydantic-specific
 features to mypy that improve its ability to type-check your code.
- 
-See the [pydantic mypy plugin docs](../mypy_plugin.md) for more details. 
+
+See the [pydantic mypy plugin docs](../mypy_plugin.md) for more details.
+
+
+## Other pydantic interfaces
+
+Pydantic [dataclasses](dataclasses.md) and the [`validate_arguments` decorator](validation_decorator.md)
+should also work well with mypy.

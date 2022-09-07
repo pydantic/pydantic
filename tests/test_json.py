@@ -1,21 +1,22 @@
 import datetime
 import json
+import re
 import sys
 from dataclasses import dataclass as vanilla_dataclass
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import pytest
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, NameEmail, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
-from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
+from pydantic.types import ConstrainedDecimal, DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):
@@ -34,6 +35,7 @@ class MyEnum(Enum):
         (SecretStr(''), '""'),
         (SecretBytes(b'xyz'), '"**********"'),
         (SecretBytes(b''), '""'),
+        (NameEmail('foo bar', 'foobaR@example.com'), '"foo bar <foobaR@example.com>"'),
         (IPv6Address('::1:0:1'), '"::1:0:1"'),
         (IPv4Interface('192.168.0.0/24'), '"192.168.0.0/24"'),
         (IPv6Interface('2001:db00::/120'), '"2001:db00::/120"'),
@@ -44,6 +46,7 @@ class MyEnum(Enum):
         (datetime.datetime(2032, 1, 1), '"2032-01-01T00:00:00"'),
         (datetime.time(12, 34, 56), '"12:34:56"'),
         (datetime.timedelta(days=12, seconds=34, microseconds=56), '1036834.000056'),
+        (datetime.timedelta(seconds=-1), '-1.0'),
         ({1, 2, 3}, '[1, 2, 3]'),
         (frozenset([1, 2, 3]), '[1, 2, 3]'),
         ((v for v in range(4)), '[0, 1, 2, 3]'),
@@ -51,6 +54,7 @@ class MyEnum(Enum):
         (Decimal('12.34'), '12.34'),
         (create_model('BarModel', a='b', c='d')(), '{"a": "b", "c": "d"}'),
         (MyEnum.foo, '"bar"'),
+        (re.compile('^regex$'), '"^regex$"'),
     ],
 )
 def test_encoding(input, output):
@@ -70,7 +74,7 @@ def test_path_encoding(tmpdir):
     dir_path = tmpdir / 'baz'
     dir_path.mkdir()
     model = PathModel(path=Path('/path/test/example/'), file_path=file_path, dir_path=dir_path)
-    expected = '{{"path": "/path/test/example", "file_path": "{}", "dir_path": "{}"}}'.format(file_path, dir_path)
+    expected = f'{{"path": "/path/test/example", "file_path": "{file_path}", "dir_path": "{dir_path}"}}'
     assert json.dumps(model, default=pydantic_encoder) == expected
 
 
@@ -91,6 +95,41 @@ def test_model_encoding():
     assert m.json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
 
 
+def test_subclass_encoding():
+    class SubDate(datetime.datetime):
+        pass
+
+    class Model(BaseModel):
+        a: datetime.datetime
+        b: SubDate
+
+    m = Model(a=datetime.datetime(2032, 1, 1, 1, 1), b=SubDate(2020, 2, 29, 12, 30))
+    assert m.dict() == {'a': datetime.datetime(2032, 1, 1, 1, 1), 'b': SubDate(2020, 2, 29, 12, 30)}
+    assert m.json() == '{"a": "2032-01-01T01:01:00", "b": "2020-02-29T12:30:00"}'
+
+
+def test_subclass_custom_encoding():
+    class SubDate(datetime.datetime):
+        pass
+
+    class SubDelta(datetime.timedelta):
+        pass
+
+    class Model(BaseModel):
+        a: SubDate
+        b: SubDelta
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.strftime('%a, %d %b %C %H:%M:%S'),
+                datetime.timedelta: timedelta_isoformat,
+            }
+
+    m = Model(a=SubDate(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
+    assert m.dict() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
+    assert m.json() == '{"a": "Thu, 01 Jan 20 01:01:00", "b": "P4DT4H0M0.000000S"}'
+
+
 def test_invalid_model():
     class Foo:
         pass
@@ -104,6 +143,8 @@ def test_invalid_model():
     [
         (datetime.timedelta(days=12, seconds=34, microseconds=56), 'P12DT0H0M34.000056S'),
         (datetime.timedelta(days=1001, hours=1, minutes=2, seconds=3, microseconds=654_321), 'P1001DT1H2M3.654321S'),
+        (datetime.timedelta(seconds=-1), '-P1DT23H59M59.000000S'),
+        (datetime.timedelta(), 'P0DT0H0M0.000000S'),
     ],
 )
 def test_iso_timedelta(input, output):
@@ -131,6 +172,54 @@ def test_custom_iso_timedelta():
 
     m = Model(x=123)
     assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
+
+
+def test_con_decimal_encode() -> None:
+    """
+    Makes sure a decimal with decimal_places = 0, as well as one with places
+    can handle a encode/decode roundtrip.
+    """
+
+    class Id(ConstrainedDecimal):
+        max_digits = 22
+        decimal_places = 0
+        ge = 0
+
+    class Obj(BaseModel):
+        id: Id
+        price: Decimal = Decimal('0.01')
+
+    assert Obj(id=1).json() == '{"id": 1, "price": 0.01}'
+    assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
+
+
+def test_json_encoder_simple_inheritance():
+    class Parent(BaseModel):
+        dt: datetime.datetime = datetime.datetime.now()
+        timedt: datetime.timedelta = datetime.timedelta(hours=100)
+
+        class Config:
+            json_encoders = {datetime.datetime: lambda _: 'parent_encoder'}
+
+    class Child(Parent):
+        class Config:
+            json_encoders = {datetime.timedelta: lambda _: 'child_encoder'}
+
+    assert Child().json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
+
+
+def test_json_encoder_inheritance_override():
+    class Parent(BaseModel):
+        dt: datetime.datetime = datetime.datetime.now()
+
+        class Config:
+            json_encoders = {datetime.datetime: lambda _: 'parent_encoder'}
+
+    class Child(Parent):
+        class Config:
+            json_encoders = {datetime.datetime: lambda _: 'child_encoder'}
+
+    assert Child().json() == '{"dt": "child_encoder"}'
 
 
 def test_custom_encoder_arg():
@@ -193,3 +282,93 @@ def test_custom_decode_encode():
     m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
     assert m.dict() == {'a': 1, 'b': 'foo'}
     assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
+
+
+def test_json_nested_encode_models():
+    class Phone(BaseModel):
+        manufacturer: str
+        number: int
+
+    class User(BaseModel):
+        name: str
+        SSN: int
+        birthday: datetime.datetime
+        phone: Phone
+        friend: Optional['User'] = None  # noqa: F821  # https://github.com/PyCQA/pyflakes/issues/567
+
+        class Config:
+            json_encoders = {
+                datetime.datetime: lambda v: v.timestamp(),
+                Phone: lambda v: v.number if v else None,
+                'User': lambda v: v.SSN,
+            }
+
+    User.update_forward_refs()
+
+    iphone = Phone(manufacturer='Apple', number=18002752273)
+    galaxy = Phone(manufacturer='Samsung', number=18007267864)
+
+    timon = User(
+        name='Timon', SSN=123, birthday=datetime.datetime(1993, 6, 1, tzinfo=datetime.timezone.utc), phone=iphone
+    )
+    pumbaa = User(
+        name='Pumbaa', SSN=234, birthday=datetime.datetime(1993, 5, 15, tzinfo=datetime.timezone.utc), phone=galaxy
+    )
+
+    timon.friend = pumbaa
+
+    assert iphone.json(models_as_dict=False) == '{"manufacturer": "Apple", "number": 18002752273}'
+    assert (
+        pumbaa.json(models_as_dict=False)
+        == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
+    )
+    assert (
+        timon.json(models_as_dict=False)
+        == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
+    )
+
+
+def test_custom_encode_fallback_basemodel():
+    class MyExoticType:
+        pass
+
+    def custom_encoder(o):
+        if isinstance(o, MyExoticType):
+            return 'exo'
+        raise TypeError('not serialisable')
+
+    class Foo(BaseModel):
+        x: MyExoticType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    class Bar(BaseModel):
+        foo: Foo
+
+    assert Bar(foo=Foo(x=MyExoticType())).json(encoder=custom_encoder) == '{"foo": {"x": "exo"}}'
+
+
+def test_custom_encode_error():
+    class MyExoticType:
+        pass
+
+    def custom_encoder(o):
+        raise TypeError('not serialisable')
+
+    class Foo(BaseModel):
+        x: MyExoticType
+
+        class Config:
+            arbitrary_types_allowed = True
+
+    with pytest.raises(TypeError, match='not serialisable'):
+        Foo(x=MyExoticType()).json(encoder=custom_encoder)
+
+
+def test_recursive():
+    class Model(BaseModel):
+        value: Optional[str]
+        nested: Optional[BaseModel]
+
+    assert Model(value=None, nested=Model(value=None)).json(exclude_none=True) == '{"nested": {}}'

@@ -1,0 +1,30 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.3.0
+  hooks:
+  - id: check-yaml
+    args: ['--unsafe']
+  - id: check-toml
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+
+- repo: local
+  hooks:
+  - id: lint
+    name: Lint
+    entry: make lint
+    types: [python]
+    language: system
+    pass_filenames: false
+  - id: mypy
+    name: Mypy
+    entry: make mypy
+    types: [python]
+    language: system
+    pass_filenames: false
+  - id: pyupgrade
+    name: Pyupgrade
+    entry: pyupgrade --py37-plus
+    types: [python]
+    language: system
+    exclude: ^docs/.*$

@@ -51,6 +51,7 @@ def load_file(
     encoding: str = 'utf8',
     proto: Protocol = None,
     allow_pickle: bool = False,
+    json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
     path = Path(path)
     b = path.read_bytes()
@@ -60,4 +61,6 @@ def load_file(
         elif path.suffix == '.pkl':
             proto = Protocol.pickle
 
-    return load_str_bytes(b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle)
+    return load_str_bytes(
+        b, proto=proto, content_type=content_type, encoding=encoding, allow_pickle=allow_pickle, json_loads=json_loads
+    )

@@ -6,7 +6,7 @@ We're using regular expressions rather than time.strptime because:
 - They're more flexible for datetimes.
 - The date/datetime/time constructors produce friendlier error messages.
 
-Stolen from https://raw.githubusercontent.com/django/django/master/django/utils/dateparse.py at
+Stolen from https://raw.githubusercontent.com/django/django/main/django/utils/dateparse.py at
 9718fa2e8abe430c3526a9278dd976443d4ae3c6
 
 Changed to:
@@ -16,22 +16,20 @@ Changed to:
 """
 import re
 from datetime import date, datetime, time, timedelta, timezone
-from typing import Dict, Union
+from typing import Dict, Optional, Type, Union
 
 from . import errors
 
-date_re = re.compile(r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$')
-
-time_re = re.compile(
-    r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})' r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
-)
-
-datetime_re = re.compile(
-    r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})'
-    r'[T ](?P<hour>\d{1,2}):(?P<minute>\d{1,2})'
+date_expr = r'(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})'
+time_expr = (
+    r'(?P<hour>\d{1,2}):(?P<minute>\d{1,2})'
     r'(?::(?P<second>\d{1,2})(?:\.(?P<microsecond>\d{1,6})\d{0,6})?)?'
     r'(?P<tzinfo>Z|[+-]\d{2}(?::?\d{2})?)?$'
 )
+
+date_re = re.compile(f'{date_expr}$')
+time_re = re.compile(time_expr)
+datetime_re = re.compile(f'{date_expr}[T ]{time_expr}')
 
 standard_duration_re = re.compile(
     r'^'
@@ -60,6 +58,8 @@ EPOCH = datetime(1970, 1, 1)
 # if greater than this, the number is in ms, if less than or equal it's in seconds
 # (in seconds this is 11th October 2603, in ms it's 20th August 1970)
 MS_WATERSHED = int(2e10)
+# slightly more than datetime.max in ns - (datetime.max - EPOCH).total_seconds() * 1e9
+MAX_NUMBER = int(3e20)
 StrBytesIntFloat = Union[str, bytes, int, float]
 
 
@@ -75,10 +75,31 @@ def get_numeric(value: StrBytesIntFloat, native_expected_type: str) -> Union[Non
 
 
 def from_unix_seconds(seconds: Union[int, float]) -> datetime:
-    while seconds > MS_WATERSHED:
+    if seconds > MAX_NUMBER:
+        return datetime.max
+    elif seconds < -MAX_NUMBER:
+        return datetime.min
+
+    while abs(seconds) > MS_WATERSHED:
         seconds /= 1000
     dt = EPOCH + timedelta(seconds=seconds)
     return dt.replace(tzinfo=timezone.utc)
+
+
+def _parse_timezone(value: Optional[str], error: Type[Exception]) -> Union[None, int, timezone]:
+    if value == 'Z':
+        return timezone.utc
+    elif value is not None:
+        offset_mins = int(value[-2:]) if len(value) > 3 else 0
+        offset = 60 * int(value[1:3]) + offset_mins
+        if value[0] == '-':
+            offset = -offset
+        try:
+            return timezone(timedelta(minutes=offset))
+        except ValueError:
+            raise error()
+    else:
+        return None
 
 
 def parse_date(value: Union[date, StrBytesIntFloat]) -> date:
@@ -117,8 +138,6 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     """
     Parse a time/string and return a datetime.time.
 
-    This function doesn't support time zone offsets.
-
     Raise ValueError if the input is well formatted but not a valid time.
     Raise ValueError if the input isn't well formatted, in particular if it contains an offset.
     """
@@ -143,7 +162,9 @@ def parse_time(value: Union[time, StrBytesIntFloat]) -> time:
     if kw['microsecond']:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
-    kw_ = {k: int(v) for k, v in kw.items() if v is not None}
+    tzinfo = _parse_timezone(kw.pop('tzinfo'), errors.TimeError)
+    kw_: Dict[str, Union[None, int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    kw_['tzinfo'] = tzinfo
 
     try:
         return time(**kw_)  # type: ignore
@@ -179,19 +200,8 @@ def parse_datetime(value: Union[datetime, StrBytesIntFloat]) -> datetime:
     if kw['microsecond']:
         kw['microsecond'] = kw['microsecond'].ljust(6, '0')
 
-    tzinfo_str = kw.pop('tzinfo')
-    if tzinfo_str == 'Z':
-        tzinfo = timezone.utc
-    elif tzinfo_str is not None:
-        offset_mins = int(tzinfo_str[-2:]) if len(tzinfo_str) > 3 else 0
-        offset = 60 * int(tzinfo_str[1:3]) + offset_mins
-        if tzinfo_str[0] == '-':
-            offset = -offset
-        tzinfo = timezone(timedelta(minutes=offset))
-    else:
-        tzinfo = None
-
-    kw_: Dict[str, Union[int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
+    tzinfo = _parse_timezone(kw.pop('tzinfo'), errors.DateTimeError)
+    kw_: Dict[str, Union[None, int, timezone]] = {k: int(v) for k, v in kw.items() if v is not None}
     kw_['tzinfo'] = tzinfo
 
     try:
@@ -212,8 +222,8 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
         return value
 
     if isinstance(value, (int, float)):
-        # bellow code requires a string
-        value = str(value)
+        # below code requires a string
+        value = f'{value:f}'
     elif isinstance(value, bytes):
         value = value.decode()
 
@@ -235,4 +245,4 @@ def parse_duration(value: StrBytesIntFloat) -> timedelta:
 
     kw_ = {k: float(v) for k, v in kw.items() if v is not None}
 
-    return sign * timedelta(**kw_)  # type: ignore
+    return sign * timedelta(**kw_)

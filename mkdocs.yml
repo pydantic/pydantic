@@ -1,5 +1,5 @@
 site_name: pydantic
-site_description: Data validation and settings management using python 3.6 type hinting
+site_description: Data validation and settings management using Python type hints
 strict: true
 site_url: https://pydantic-docs.helpmanual.io/
 
@@ -7,20 +7,35 @@ theme:
   name: 'material'
   custom_dir: 'docs/theme'
   palette:
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
     primary: pink
     accent: pink
+    toggle:
+      icon: material/lightbulb-outline
+      name: "Switch to dark mode"
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: pink
+    accent: pink
+    toggle:
+      icon: material/lightbulb
+      name: "Switch to light mode"
+  features:
+    - content.tabs.link
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
-repo_name: samuelcolvin/pydantic
-repo_url: https://github.com/samuelcolvin/pydantic
-google_analytics:
-- 'UA-62733018-4'
-- 'auto'
+repo_name: pydantic/pydantic
+repo_url: https://github.com/pydantic/pydantic
+extra:
+  analytics:
+    provider: google
+    property: UA-62733018-4
 
 extra_css:
 - 'extra/terminal.css'
-- 'extra/ad.css'
+- 'extra/tweaks.css'
 extra_javascript:
 - 'extra/redirects.js'
 - 'extra/ad.js'
@@ -28,7 +43,6 @@ extra_javascript:
 nav:
 - Overview: index.md
 - install.md
-- 'Version 1 release notes': version_1_release_notes.md
 - Usage:
   - usage/models.md
   - 'Field Types': usage/types.md
@@ -37,26 +51,36 @@ nav:
   - usage/schema.md
   - usage/exporting_models.md
   - usage/dataclasses.md
-  - 'Settings management': usage/settings.md
+  - usage/validation_decorator.md
   - usage/postponed_annotations.md
   - 'Usage with mypy': usage/mypy.md
   - 'Usage with devtools': usage/devtools.md
+  - 'Usage with rich': usage/rich.md
+- Blog:
+  - blog/pydantic-v2.md
 - Contributing to pydantic: contributing.md
-- benchmarks.md
 - 'Mypy plugin': mypy_plugin.md
 - 'PyCharm plugin': pycharm_plugin.md
+- 'Visual Studio Code': visual_studio_code.md
+- 'Hypothesis plugin': hypothesis_plugin.md
+- 'Code Generation': datamodel_code_generator.md
 - changelog.md
 
 markdown_extensions:
-- markdown.extensions.codehilite:
-    guess_lang: false
+- tables
 - markdown_include.include:
     base_path: docs
 - toc:
-    permalink: 🔗
+    permalink: true
 - admonition
-- codehilite
-- extra
+- pymdownx.highlight
+- pymdownx.extra
+- mdx_truly_sane_lists
+- pymdownx.emoji:
+    emoji_index: !!python/name:materialx.emoji.twemoji
+    emoji_generator: !!python/name:materialx.emoji.to_svg
+- pymdownx.tabbed:
+    alternate_style: true
 
 plugins:
 - search

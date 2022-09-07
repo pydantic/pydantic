@@ -1,11 +1,12 @@
-from datetime import datetime
 from pydantic.dataclasses import dataclass
+
 
 @dataclass
 class Birth:
     year: int
     month: int
     day: int
+
 
 @dataclass
 class User:
@@ -16,5 +17,6 @@ class User:
 
     def __post_init_post_parse__(self):
         print(self.birth)
+
 
 user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})

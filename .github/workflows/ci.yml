@@ -1,0 +1,285 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '**'
+  pull_request: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: |
+            ${{ env.pythonLocation }}
+            .mypy_cache
+          key: >
+            lint
+            ${{ runner.os }}
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('requirements/linting.txt') }}
+
+      - name: install
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: pip install -r requirements/linting.txt
+
+      - uses: pre-commit/action@v3.0.0
+        with:
+          extra_args: --all-files
+
+      - name: make history
+        run: python3 ./changes/make_history.py
+
+      - name: install node for pyright
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - run: npm install -g pyright
+
+      - run: make pyright
+
+  docs-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          docs-build
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('requirements/pyproject-all.txt') }}
+          ${{ hashFiles('requirements/docs.txt') }}
+
+    - name: install
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: pip install -r requirements/pyproject-all.txt -r requirements/docs.txt .
+
+    - name: build site
+      run: make docs
+
+    - name: Store docs site
+      uses: actions/upload-artifact@v3
+      with:
+        name: docs
+        path: site
+
+  test:
+    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
+
+    env:
+      PYTHON: ${{ matrix.python-version }}
+      OS: ${{ matrix.os }}
+      DEPS: yes
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: install min deps
+      run: pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
+
+    - name: install pydantic
+      run: pip install .
+
+    - run: pip freeze
+
+    - run: mkdir coverage
+
+    - name: test without deps
+      run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+
+    - name: install extra deps
+      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
+
+    - name: test with deps
+      run: make test
+      env:
+        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
+        CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: coverage
+
+  test-old-mypy:
+    name: test mypy v${{ matrix.mypy-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mypy-version: ['0.930', '0.942', '0.950', '0.961']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          test-mypy
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('requirements/pyproject-min.txt') }}
+          ${{ hashFiles('requirements/testing.txt') }}
+          ${{ matrix.mypy-version }}
+
+    - name: install
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
+
+    - name: install mypy
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: pip install mypy==${{ matrix.mypy-version }}
+
+    - run: mkdir coverage
+
+    - name: run tests
+      run: coverage run -m pytest tests/mypy
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
+        CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
+
+    - name: store coverage files
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: coverage
+
+  coverage-combine:
+    needs: [test, test-old-mypy]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: get coverage files
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+          path: coverage
+
+      - run: pip install coverage[toml]
+
+      - run: ls -la coverage
+      - run: coverage combine coverage
+      - run: coverage report
+      - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
+
+      - name: Store coverage html
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-html
+          path: htmlcov
+
+# FastAPI has a version constraint of pydantic<2.0.0, so we can't run tests, we expect them to break for now anyway
+#  test-fastapi:
+#    name: test fastAPI
+#    runs-on: ubuntu-latest
+#    steps:
+#    - uses: actions/checkout@v3
+#
+#    - name: set up python
+#      uses: actions/setup-python@v4
+#      with:
+#        python-version: '3.10'
+#
+#    - name: install
+#      run: |
+#        pip install -r requirements/pyproject-all.txt
+#        pip install .
+#
+#    - name: test
+#      run: make test-fastapi
+
+  deploy:
+    name: Deploy
+    needs: [lint, docs-build, test, test-old-mypy]  # TODO re-add test-fastapi once fixed
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: get docs
+        uses: actions/download-artifact@v3
+        with:
+          name: docs
+          path: site
+
+      - name: install
+        run: pip install -U twine build packaging
+
+      - name: check tag
+        id: check-tag
+        run: ./tests/check_tag.py
+
+      - name: build
+        run: python -m build
+
+      - run: ls -lh dist
+      - run: twine check dist/*
+
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+      - name: publish docs
+        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
+        run: make publish-docs
+        env:
+          NETLIFY: ${{ secrets.netlify_token }}

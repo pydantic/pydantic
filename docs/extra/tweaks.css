@@ -1,0 +1,57 @@
+#bsa-cpc {
+  border-radius: .1rem;;
+  padding: 0.525rem 0.6rem;
+  min-height: 80px;
+}
+
+@media screen and (max-width: 799px) {
+  #bsa-cpc {
+    display: none;
+  }
+}
+
+#bsa-cpc.loaded {
+  background: hsla(0, 0%, 92.5%, 0.5);
+}
+
+.sponsors {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.sponsors > div {
+  text-align: center;
+  width: 25%;
+  padding-bottom: 20px;
+}
+
+.sponsors span {
+  display: block;
+}
+
+@media screen and (max-width: 599px) {
+  .sponsors span {
+    display: none;
+  }
+}
+
+.sponsors img {
+  width: 65%;
+  border-radius: 5px;
+}
+
+/*blog post*/
+aside.blog {
+  display: flex;
+  align-items: center;
+}
+
+aside.blog img {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  margin-right: 20px;
+}

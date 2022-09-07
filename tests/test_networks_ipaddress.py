@@ -114,7 +114,7 @@ def test_ipv6address_success(value):
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
         ),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
         ),
     ],
@@ -141,7 +141,7 @@ def test_ipaddress_fails(value, errors):
         ),
         (-1, [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}]),
         (
-            2 ** 32 + 1,
+            2**32 + 1,
             [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
         ),
         (
@@ -172,7 +172,7 @@ def test_ipv4address_fails(value, errors):
         ),
         (-1, [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}]),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
         ),
         (
@@ -203,7 +203,7 @@ def test_ipv6address_fails(value, errors):
         ('192.168.0.0/24', IPv4Network),
         ('192.168.128.0/30', IPv4Network),
         ('2001:db00::0/120', IPv6Network),
-        (2 ** 32 - 1, IPv4Network),  # no mask equals to mask /32
+        (2**32 - 1, IPv4Network),  # no mask equals to mask /32
         (20_282_409_603_651_670_423_947_251_286_015, IPv6Network),  # /128
         (b'\xff\xff\xff\xff', IPv4Network),  # /32
         (b'\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', IPv6Network),
@@ -224,7 +224,7 @@ def test_ipnetwork_success(value, cls):
     [
         ('192.168.0.0/24', IPv4Network),
         ('192.168.128.0/30', IPv4Network),
-        (2 ** 32 - 1, IPv4Network),  # no mask equals to mask /32
+        (2**32 - 1, IPv4Network),  # no mask equals to mask /32
         (b'\xff\xff\xff\xff', IPv4Network),  # /32
         (('192.168.0.0', 24), IPv4Network),
         (IPv4Network('192.168.0.0/24'), IPv4Network),
@@ -270,7 +270,7 @@ def test_ip_v6_network_success(value, cls):
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 network', 'type': 'value_error.ipvanynetwork'}],
         ),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 network', 'type': 'value_error.ipvanynetwork'}],
         ),
     ],
@@ -297,7 +297,7 @@ def test_ipnetwork_fails(value, errors):
         ),
         (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}]),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}],
         ),
         (
@@ -328,7 +328,7 @@ def test_ip_v4_network_fails(value, errors):
         ),
         (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}]),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}],
         ),
         (
@@ -362,8 +362,8 @@ def test_ip_v6_network_fails(value, errors):
         ('192.168.128.1/30', IPv4Interface),
         ('2001:db00::0/120', IPv6Interface),
         ('2001:db00::1/120', IPv6Interface),
-        (2 ** 32 - 1, IPv4Interface),  # no mask equals to mask /32
-        (2 ** 32 - 1, IPv4Interface),  # so ``strict`` has no effect
+        (2**32 - 1, IPv4Interface),  # no mask equals to mask /32
+        (2**32 - 1, IPv4Interface),  # so ``strict`` has no effect
         (20_282_409_603_651_670_423_947_251_286_015, IPv6Interface),  # /128
         (20_282_409_603_651_670_423_947_251_286_014, IPv6Interface),
         (b'\xff\xff\xff\xff', IPv4Interface),  # /32
@@ -394,8 +394,8 @@ def test_ipinterface_success(value, cls):
         ('192.168.0.1/24', IPv4Interface),
         ('192.168.128.0/30', IPv4Interface),
         ('192.168.128.1/30', IPv4Interface),
-        (2 ** 32 - 1, IPv4Interface),  # no mask equals to mask /32
-        (2 ** 32 - 1, IPv4Interface),  # so ``strict`` has no effect
+        (2**32 - 1, IPv4Interface),  # no mask equals to mask /32
+        (2**32 - 1, IPv4Interface),  # so ``strict`` has no effect
         (b'\xff\xff\xff\xff', IPv4Interface),  # /32
         (b'\xff\xff\xff\xff', IPv4Interface),
         (('192.168.0.0', 24), IPv4Interface),
@@ -467,7 +467,7 @@ def test_ip_v6_interface_success(value, cls):
             ],
         ),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [
                 {
                     'loc': ('ip',),
@@ -500,7 +500,7 @@ def test_ipinterface_fails(value, errors):
         ),
         (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 interface', 'type': 'value_error.ipv4interface'}]),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 interface', 'type': 'value_error.ipv4interface'}],
         ),
     ],
@@ -527,7 +527,7 @@ def test_ip_v4_interface_fails(value, errors):
         ),
         (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 interface', 'type': 'value_error.ipv6interface'}]),
         (
-            2 ** 128 + 1,
+            2**128 + 1,
             [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 interface', 'type': 'value_error.ipv6interface'}],
         ),
     ],

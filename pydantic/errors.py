@@ -1,8 +1,11 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Set, Tuple, Type, Union
 
-from .typing import AnyType, display_as_type
+from .typing import display_as_type
+
+if TYPE_CHECKING:
+    from .typing import DictStrAny
 
 # explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (
@@ -14,6 +17,7 @@ __all__ = (
     'NoneIsNotAllowedError',
     'NoneIsAllowedError',
     'WrongConstantError',
+    'NotNoneError',
     'BoolError',
     'BytesError',
     'DictError',
@@ -24,12 +28,14 @@ __all__ = (
     'UrlUserInfoError',
     'UrlHostError',
     'UrlHostTldError',
+    'UrlPortError',
     'UrlExtraError',
     'EnumError',
+    'IntEnumError',
+    'EnumMemberError',
     'IntegerError',
     'FloatError',
     'PathError',
-    '_PathValueError',
     'PathNotExistsError',
     'PathNotAFileError',
     'PathNotADirectoryError',
@@ -42,11 +48,15 @@ __all__ = (
     'TupleLengthError',
     'ListMinLengthError',
     'ListMaxLengthError',
+    'ListUniqueItemsError',
+    'SetMinLengthError',
+    'SetMaxLengthError',
+    'FrozenSetMinLengthError',
+    'FrozenSetMaxLengthError',
     'AnyStrMinLengthError',
     'AnyStrMaxLengthError',
     'StrError',
     'StrRegexError',
-    '_NumberBoundError',
     'NumberNotGtError',
     'NumberNotGeError',
     'NumberNotLtError',
@@ -59,8 +69,11 @@ __all__ = (
     'DecimalWholeDigitsError',
     'DateTimeError',
     'DateError',
+    'DateNotInThePastError',
+    'DateNotInTheFutureError',
     'TimeError',
     'DurationError',
+    'HashableError',
     'UUIDError',
     'UUIDVersionError',
     'ArbitraryTypeError',
@@ -87,7 +100,20 @@ __all__ = (
     'InvalidLengthForBrand',
     'InvalidByteSize',
     'InvalidByteSizeUnit',
+    'MissingDiscriminator',
+    'InvalidDiscriminator',
 )
+
+
+def cls_kwargs(cls: Type['PydanticErrorMixin'], ctx: 'DictStrAny') -> 'PydanticErrorMixin':
+    """
+    For built-in exceptions like ValueError or TypeError, we need to implement
+    __reduce__ to override the default behaviour (instead of __getstate__/__setstate__)
+    By default pickle protocol 2 calls `cls.__new__(cls, *args)`.
+    Since we only use kwargs, we need a little constructor to change that.
+    Note: the callable can't be a lambda as pickle looks in the namespace to find it
+    """
+    return cls(**ctx)
 
 
 class PydanticErrorMixin:
@@ -99,6 +125,9 @@ class PydanticErrorMixin:
 
     def __str__(self) -> str:
         return self.msg_template.format(**self.__dict__)
+
+    def __reduce__(self) -> Tuple[Callable[..., 'PydanticErrorMixin'], Tuple[Type['PydanticErrorMixin'], 'DictStrAny']]:
+        return cls_kwargs, (self.__class__, self.__dict__)
 
 
 class PydanticTypeError(PydanticErrorMixin, TypeError):
@@ -137,6 +166,11 @@ class WrongConstantError(PydanticValueError):
     def __str__(self) -> str:
         permitted = ', '.join(repr(v) for v in self.permitted)  # type: ignore
         return f'unexpected value; permitted: {permitted}'
+
+
+class NotNoneError(PydanticTypeError):
+    code = 'not_none'
+    msg_template = 'value is not None'
 
 
 class BoolError(PydanticTypeError):
@@ -190,12 +224,19 @@ class UrlHostTldError(UrlError):
     msg_template = 'URL host invalid, top level domain required'
 
 
+class UrlPortError(UrlError):
+    code = 'url.port'
+    msg_template = 'URL port invalid, port cannot exceed 65535'
+
+
 class UrlExtraError(UrlError):
     code = 'url.extra'
     msg_template = 'URL invalid, extra characters found after valid URL: {extra!r}'
 
 
-class EnumError(PydanticTypeError):
+class EnumMemberError(PydanticTypeError):
+    code = 'enum'
+
     def __str__(self) -> str:
         permitted = ', '.join(repr(v.value) for v in self.enum_values)  # type: ignore
         return f'value is not a valid enumeration member; permitted: {permitted}'
@@ -241,6 +282,10 @@ class SequenceError(PydanticTypeError):
     msg_template = 'value is not a valid sequence'
 
 
+class IterableError(PydanticTypeError):
+    msg_template = 'value is not a valid iterable'
+
+
 class ListError(PydanticTypeError):
     msg_template = 'value is not a valid list'
 
@@ -251,6 +296,10 @@ class SetError(PydanticTypeError):
 
 class FrozenSetError(PydanticTypeError):
     msg_template = 'value is not a valid frozenset'
+
+
+class DequeError(PydanticTypeError):
+    msg_template = 'value is not a valid deque'
 
 
 class TupleError(PydanticTypeError):
@@ -275,6 +324,43 @@ class ListMinLengthError(PydanticValueError):
 
 class ListMaxLengthError(PydanticValueError):
     code = 'list.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class ListUniqueItemsError(PydanticValueError):
+    code = 'list.unique_items'
+    msg_template = 'the list has duplicated items'
+
+
+class SetMinLengthError(PydanticValueError):
+    code = 'set.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class SetMaxLengthError(PydanticValueError):
+    code = 'set.max_items'
+    msg_template = 'ensure this value has at most {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMinLengthError(PydanticValueError):
+    code = 'frozenset.min_items'
+    msg_template = 'ensure this value has at least {limit_value} items'
+
+    def __init__(self, *, limit_value: int) -> None:
+        super().__init__(limit_value=limit_value)
+
+
+class FrozenSetMaxLengthError(PydanticValueError):
+    code = 'frozenset.max_items'
     msg_template = 'ensure this value has at most {limit_value} items'
 
     def __init__(self, *, limit_value: int) -> None:
@@ -334,6 +420,11 @@ class NumberNotLeError(_NumberBoundError):
     msg_template = 'ensure this value is less than or equal to {limit_value}'
 
 
+class NumberNotFiniteError(PydanticValueError):
+    code = 'number.not_finite_number'
+    msg_template = 'ensure this value is a finite number'
+
+
 class NumberNotMultipleError(PydanticValueError):
     code = 'number.not_multiple'
     msg_template = 'ensure this value is a multiple of {multiple_of}'
@@ -383,12 +474,26 @@ class DateError(PydanticValueError):
     msg_template = 'invalid date format'
 
 
+class DateNotInThePastError(PydanticValueError):
+    code = 'date.not_in_the_past'
+    msg_template = 'date is not in the past'
+
+
+class DateNotInTheFutureError(PydanticValueError):
+    code = 'date.not_in_the_future'
+    msg_template = 'date is not in the future'
+
+
 class TimeError(PydanticValueError):
     msg_template = 'invalid time format'
 
 
 class DurationError(PydanticValueError):
     msg_template = 'invalid duration format'
+
+
+class HashableError(PydanticTypeError):
+    msg_template = 'value is not a valid hashable'
 
 
 class UUIDError(PydanticTypeError):
@@ -407,7 +512,7 @@ class ArbitraryTypeError(PydanticTypeError):
     code = 'arbitrary_type'
     msg_template = 'instance of {expected_arbitrary_type} expected'
 
-    def __init__(self, *, expected_arbitrary_type: AnyType) -> None:
+    def __init__(self, *, expected_arbitrary_type: Type[Any]) -> None:
         super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
 
 
@@ -420,7 +525,7 @@ class SubclassError(PydanticTypeError):
     code = 'subclass'
     msg_template = 'subclass of {expected_class} expected'
 
-    def __init__(self, *, expected_class: AnyType) -> None:
+    def __init__(self, *, expected_class: Type[Any]) -> None:
         super().__init__(expected_class=display_as_type(expected_class))
 
 
@@ -445,6 +550,16 @@ class DataclassTypeError(PydanticTypeError):
 
 class CallableError(PydanticTypeError):
     msg_template = '{value} is not callable'
+
+
+class EnumError(PydanticTypeError):
+    code = 'enum_instance'
+    msg_template = '{value} is not a valid Enum instance'
+
+
+class IntEnumError(PydanticTypeError):
+    code = 'int_enum_instance'
+    msg_template = '{value} is not a valid IntEnum instance'
 
 
 class IPvAnyAddressError(PydanticValueError):
@@ -512,3 +627,23 @@ class InvalidByteSize(PydanticValueError):
 
 class InvalidByteSizeUnit(PydanticValueError):
     msg_template = 'could not interpret byte unit: {unit}'
+
+
+class MissingDiscriminator(PydanticValueError):
+    code = 'discriminated_union.missing_discriminator'
+    msg_template = 'Discriminator {discriminator_key!r} is missing in value'
+
+
+class InvalidDiscriminator(PydanticValueError):
+    code = 'discriminated_union.invalid_discriminator'
+    msg_template = (
+        'No match for discriminator {discriminator_key!r} and value {discriminator_value!r} '
+        '(allowed values: {allowed_values})'
+    )
+
+    def __init__(self, *, discriminator_key: str, discriminator_value: Any, allowed_values: Sequence[Any]) -> None:
+        super().__init__(
+            discriminator_key=discriminator_key,
+            discriminator_value=discriminator_value,
+            allowed_values=', '.join(map(repr, allowed_values)),
+        )
