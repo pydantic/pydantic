@@ -1,6 +1,5 @@
 import importlib
 import inspect
-import os
 import secrets
 import sys
 import textwrap
@@ -31,28 +30,6 @@ def _create_module_file(code, tmp_path, name):
     path = tmp_path / f'{name}.py'
     path.write_text(code)
     return name, str(path)
-
-
-class SetEnv:
-    def __init__(self):
-        self.envars = set()
-
-    def set(self, name, value):
-        self.envars.add(name)
-        os.environ[name] = value
-
-    def clear(self):
-        for n in self.envars:
-            os.environ.pop(n)
-
-
-@pytest.fixture
-def env():
-    setenv = SetEnv()
-
-    yield setenv
-
-    setenv.clear()
 
 
 @pytest.fixture

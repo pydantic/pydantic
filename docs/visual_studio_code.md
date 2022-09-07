@@ -257,21 +257,6 @@ in a model that is "frozen".
 
 ![VS Code strict type errors with model](./img/vs_code_08.png)
 
-## BaseSettings and ignoring Pylance/pyright errors
-
-Pylance/pyright does not work well with [`BaseSettings`](./usage/settings.md) - fields in settings classes can be
-configured via environment variables and therefore "required" fields do not have to be explicitly set when
-initialising a settings instance. However, pyright considers these fields as "required" and will therefore
-show an error when they're not set.
-
-See [#3753](https://github.com/pydantic/pydantic/issues/3753#issuecomment-1087417884) for an explanation of the
-reasons behind this, and why we can't avoid the problem.
-
-There are two potential workarounds:
-
-* use an ignore comment (`# pyright: ignore`) when initialising `settings`
-* or, use `settings.parse_obj({})` to avoid the warning
-
 ## Adding a default with `Field`
 
 Pylance/pyright requires `default` to be a keyword argument to `Field` in order to infer that the field is optional.
@@ -287,7 +272,7 @@ class Knight(BaseModel):
 lance = Knight()  # error: Argument missing for parameter "age"
 ```
 
-Like the issue with `BaseSettings`, this is a limitation of dataclass transforms and cannot be fixed in pydantic.
+This is a limitation of dataclass transforms and cannot be fixed in pydantic.
 
 ## Technical Details
 

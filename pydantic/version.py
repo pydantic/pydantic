@@ -10,7 +10,7 @@ def version_info() -> str:
     from pathlib import Path
 
     optional_deps = []
-    for p in ('devtools', 'dotenv', 'email-validator', 'typing-extensions'):
+    for p in 'devtools', 'email-validator', 'typing-extensions':
         try:
             import_module(p.replace('-', '_'))
         except ImportError:

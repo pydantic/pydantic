@@ -74,7 +74,6 @@ except ImportError:  # pragma: no cover
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
-BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 
@@ -263,8 +262,7 @@ class PydanticModelTransformer:
             if info[field.name].type is None:
                 if not ctx.api.final_iteration:
                     ctx.api.defer()
-        is_settings = any(get_fullname(base) == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings)
+        self.add_initializer(fields, config)
         self.add_construct_method(fields)
         self.set_frozen(fields, frozen=config.allow_mutation is False or config.frozen is True)
         info.metadata[METADATA_KEY] = {
@@ -405,7 +403,7 @@ class PydanticModelTransformer:
             all_fields = superclass_fields + all_fields
         return all_fields
 
-    def add_initializer(self, fields: List['PydanticModelField'], config: 'ModelConfigData', is_settings: bool) -> None:
+    def add_initializer(self, fields: List['PydanticModelField'], config: 'ModelConfigData') -> None:
         """
         Adds a fields-aware `__init__` method to the class.
 
@@ -414,9 +412,7 @@ class PydanticModelTransformer:
         ctx = self._ctx
         typed = self.plugin_config.init_typed
         use_alias = config.allow_population_by_field_name is not True
-        force_all_optional = is_settings or bool(
-            config.has_alias_generator and not config.allow_population_by_field_name
-        )
+        force_all_optional = bool(config.has_alias_generator and not config.allow_population_by_field_name)
         init_arguments = self.get_field_arguments(
             fields, typed=typed, force_all_optional=force_all_optional, use_alias=use_alias
         )

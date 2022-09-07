@@ -52,23 +52,16 @@ CFLAGS="-Os -g0 -s" pip install \
 
 ## Optional dependencies
 
-*pydantic* has two optional dependencies:
+*pydantic* has one optional dependencies:
 
 * If you require email validation you can add [email-validator](https://github.com/JoshData/python-email-validator)
-* [dotenv file support](usage/settings.md#dotenv-env-support) with `Settings` requires
-  [python-dotenv](https://pypi.org/project/python-dotenv)
 
 To install these along with *pydantic*:
 ```bash
 pip install pydantic[email]
-# or
-pip install pydantic[dotenv]
-# or just
-pip install pydantic[email,dotenv]
 ```
 
-Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install python-dotenv`.
-
+Of course, you can also install these requirements manually with `pip install email-validator`.
 
 ## Install from repository
 
@@ -76,5 +69,5 @@ And if you prefer to install *pydantic* directly from the repository:
 ```bash
 pip install git+git://github.com/pydantic/pydantic@main#egg=pydantic
 # or with extras
-pip install git+git://github.com/pydantic/pydantic@main#egg=pydantic[email,dotenv]
+pip install git+git://github.com/pydantic/pydantic@main#egg=pydantic[email]
 ```

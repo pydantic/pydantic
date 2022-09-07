@@ -7,7 +7,7 @@
 
 {!.version.md!}
 
-Data validation and settings management using Python type annotations.
+Data validation using Python type annotations.
 
 *pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
 
@@ -106,11 +106,6 @@ So *pydantic* uses some cool new language features, but why should I actually go
   you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations,
   so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)),
   and your intuition should all work properly with your validated data.
-
-**dual use**
-: *pydantic's* [BaseSettings](usage/settings.md) class allows *pydantic* to be used in both a "validate this request
-  data" context and in a "load my system settings" context. The main differences are that system settings can
-  be read from environment variables, and more complex objects like DSNs and Python objects are often required.
 
 **fast**
 : *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,

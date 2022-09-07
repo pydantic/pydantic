@@ -1,6 +1,6 @@
 from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, BaseSettings, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
@@ -94,19 +94,12 @@ class UndefinedAnnotationModel(BaseModel):
 UndefinedAnnotationModel()
 
 
-class Settings(BaseSettings):
-    x: int
-
-
 Model.construct(x=1)
 Model.construct(_fields_set={'x'}, x=1, y='2')
 Model.construct(x='1', y='2')
 
-Settings()  # should pass here due to possibly reading from environment
-
 # Strict mode fails
 inheriting = InheritingModel(x='1', y='1')
-Settings(x='1')
 Model(x='1', y='2')
 
 

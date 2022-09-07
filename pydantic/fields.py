@@ -1150,18 +1150,6 @@ class ModelField(Representation):
                 return v, ErrorWrapper(exc, loc)
         return v, None
 
-    def is_complex(self) -> bool:
-        """
-        Whether the field is "complex" eg. env variables should be parsed as JSON.
-        """
-        from .main import BaseModel
-
-        return (
-            self.shape != SHAPE_SINGLETON
-            or hasattr(self.type_, '__pydantic_model__')
-            or lenient_issubclass(self.type_, (BaseModel, list, set, frozenset, dict))
-        )
-
     def _type_display(self) -> PyObjectStr:
         t = display_as_type(self.type_)
 
