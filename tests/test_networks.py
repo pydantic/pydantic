@@ -804,7 +804,7 @@ def test_address_valid(value, name, email):
     ],
 )
 def test_address_invalid(value, reason):
-    with pytest.raises(EmailError, match='value is not a valid email address: ' + (reason or '')):
+    with pytest.raises(EmailError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 
 
