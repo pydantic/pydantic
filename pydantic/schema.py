@@ -666,6 +666,11 @@ def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None)
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }
 
+    if field is not None:
+        if not field.required and field.default is not None and not is_callable_type(field.outer_type_):
+            # Add default value to the schema.
+            schema_['default'] = encode_default(field.default)
+
     add_field_type_to_schema(enum, schema_)
 
     modify_schema = getattr(enum, '__modify_schema__', None)
