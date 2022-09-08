@@ -243,9 +243,9 @@ def test_constrained_list_not_unique_hashable_items():
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
-            'msg': 'the list has a duplicated item at index 1',
+            'msg': 'the list has a duplicated item at index 0',
             'type': 'value_error.list.unique_items',
-            'ctx': {'index': 1},
+            'ctx': {'index': 0},
         }
     ]
 
@@ -262,9 +262,9 @@ def test_constrained_list_not_unique_unhashable_items():
     assert exc_info.value.errors() == [
         {
             'loc': ('v',),
-            'msg': 'the list has a duplicated item at index 1',
+            'msg': 'the list has a duplicated item at index 0',
             'type': 'value_error.list.unique_items',
-            'ctx': {'index': 1},
+            'ctx': {'index': 0},
         }
     ]
 
@@ -360,7 +360,7 @@ def test_conlist():
     with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
         Model(foo=list(range(5)))
 
-    with pytest.raises(ValidationError, match='the list has a duplicated item at index 1'):
+    with pytest.raises(ValidationError, match='the list has a duplicated item at index 0'):
         Model(foo=[1, 1, 2, 2])
 
     assert Model.schema() == {
