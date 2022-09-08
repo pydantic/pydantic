@@ -332,7 +332,10 @@ class ListMaxLengthError(PydanticValueError):
 
 class ListUniqueItemsError(PydanticValueError):
     code = 'list.unique_items'
-    msg_template = 'the list has duplicated items'
+    msg_template = 'the list has a duplicated item at index {index}'
+
+    def __init__(self, *, index: int) -> None:
+        super().__init__(index=index)
 
 
 class SetMinLengthError(PydanticValueError):
