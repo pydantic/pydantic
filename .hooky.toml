@@ -1,0 +1,4 @@
+# configuring https://github.com/pydantic/hooky
+[tool.hooky]
+reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani']
+require_change_file = true
