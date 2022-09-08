@@ -6,6 +6,7 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     CockroachDsn,
+    EmailError,
     EmailStr,
     FileUrl,
     HttpUrl,
@@ -746,6 +747,8 @@ def test_son():
         ('foo.bar@example.com ', 'foo.bar', 'foo.bar@example.com'),
         ('foo BAR <foobar@example.com >', 'foo BAR', 'foobar@example.com'),
         ('FOO bar   <foobar@example.com> ', 'FOO bar', 'foobar@example.com'),
+        (' Whatever <foobar@example.com>', 'Whatever', 'foobar@example.com'),
+        ('Whatever < foobar@example.com>', 'Whatever', 'foobar@example.com'),
         ('<FOOBAR@example.com> ', 'FOOBAR', 'FOOBAR@example.com'),
         ('ñoñó@example.com', 'ñoñó', 'ñoñó@example.com'),
         ('我買@example.com', '我買', '我買@example.com'),
@@ -759,6 +762,11 @@ def test_son():
         ('foo.bar@example.com', 'foo.bar', 'foo.bar@example.com'),
         ('foo.bar@exam-ple.com ', 'foo.bar', 'foo.bar@exam-ple.com'),
         ('ιωάννης@εεττ.gr', 'ιωάννης', 'ιωάννης@εεττ.gr'),
+        ('foobar@аррӏе.com', 'foobar', 'foobar@аррӏе.com'),
+        ('foobar@xn--80ak6aa92e.com', 'foobar', 'foobar@аррӏе.com'),
+        ('аррӏе@example.com', 'аррӏе', 'аррӏе@example.com'),
+        ('xn--80ak6aa92e@example.com', 'xn--80ak6aa92e', 'xn--80ak6aa92e@example.com'),
+        ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
     ],
 )
 def test_address_valid(value, name, email):
@@ -767,31 +775,36 @@ def test_address_valid(value, name, email):
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 @pytest.mark.parametrize(
-    'value',
+    'value,reason',
     [
-        'f oo.bar@example.com ',
-        'foo.bar@exam\nple.com ',
-        'foobar',
-        'foobar <foobar@example.com',
-        '@example.com',
-        'foobar@.example.com',
-        'foobar@.com',
-        'foo bar@example.com',
-        'foo@bar@example.com',
-        '\n@example.com',
-        '\r@example.com',
-        '\f@example.com',
-        ' @example.com',
-        '\u0020@example.com',
-        '\u001f@example.com',
-        '"@example.com',
-        '\"@example.com',
-        ',@example.com',
-        'foobar <foobar<@example.com>',
+        ('@example.com', 'There must be something before the @-sign.'),
+        ('f oo.bar@example.com', 'The email address contains invalid characters before the @-sign'),
+        ('foobar', 'The email address is not valid. It must have exactly one @-sign.'),
+        ('foobar@localhost', 'The domain name localhost is not valid. It should have a period.'),
+        ('foobar@127.0.0.1', 'The domain name 127.0.0.1 is not valid. It is not within a valid top-level domain.'),
+        ('foo.bar@exam\nple.com ', None),
+        ('foobar <foobar@example.com', None),
+        ('foobar@.example.com', None),
+        ('foobar@.com', None),
+        ('foo bar@example.com', None),
+        ('foo@bar@example.com', None),
+        ('\n@example.com', None),
+        ('\r@example.com', None),
+        ('\f@example.com', None),
+        (' @example.com', None),
+        ('\u0020@example.com', None),
+        ('\u001f@example.com', None),
+        ('"@example.com', None),
+        ('\"@example.com', None),
+        (',@example.com', None),
+        ('foobar <foobar<@example.com>', None),
+        ('foobar <foobar@example.com>>', None),
+        ('foobar <<foobar<@example.com>', None),
+        ('foobar <>', None),
     ],
 )
-def test_address_invalid(value):
-    with pytest.raises(ValueError):
+def test_address_invalid(value, reason):
+    with pytest.raises(EmailError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 
 
