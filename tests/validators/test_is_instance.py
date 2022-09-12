@@ -100,3 +100,21 @@ def test_repr():
 
     with pytest.raises(ValidationError, match=r'is-instance\[Foo\]\s+Input should be an instance of Foo'):
         v.validate_python('foo')
+
+
+@pytest.mark.parametrize(
+    'input_val,value',
+    [
+        (Foo, True),
+        (Foo(), False),
+        (str, True),
+        ('foo', False),
+        (int, True),
+        (1, False),
+        (type, True),
+        (type('Foobar', (), {'x': 1}), True),
+    ],
+)
+def test_is_type(input_val, value):
+    v = SchemaValidator({'type': 'is-instance', 'class_': type})
+    assert v.isinstance_python(input_val) == value
