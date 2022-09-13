@@ -55,7 +55,7 @@ as the default value of the field:
 
 {!.tmp_examples/validation_decorator_field.md!}
 
-The [alias](model_config#alias-precedence) can be used with the decorator as normal.
+The [alias](model_config.md#alias-precedence) can be used with the decorator as normal.
 
 {!.tmp_examples/validation_decorator_field_alias.md!}
 
