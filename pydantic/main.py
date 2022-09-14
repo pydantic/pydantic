@@ -1,3 +1,5 @@
+# remove this once issues are resolved
+# flake8: noqa
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
@@ -139,7 +141,7 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 hash_func = base.__hash__
 
-        resolve_forward_refs = kwargs.pop('__resolve_forward_refs__', True)
+        # resolve_forward_refs = kwargs.pop('__resolve_forward_refs__', True)
         allowed_config_kwargs: SetStr = {
             key
             for key in dir(config)
@@ -172,9 +174,7 @@ class ModelMetaclass(ABCMeta):
                 if (
                     isinstance(field_value, untouched_types)
                     and ann_type != PyObject
-                    and not any(
-                        lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types
-                    )
+                    and not any(lenient_issubclass(get_origin(allowed_type), Type) for allowed_type in allowed_types)
                 ):
                     continue
                 fields[ann_name] = generate_field_schema(ann_type, field_value)
@@ -207,6 +207,7 @@ class ModelMetaclass(ABCMeta):
         # pre_rv_new, post_rv_new = extract_root_validators(namespace)
 
         if hash_func is None and config.frozen:
+
             def hash_func(self_: Any) -> int:
                 return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
 

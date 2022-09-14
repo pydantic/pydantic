@@ -6,7 +6,6 @@ from .annotated_types import create_model_from_namedtuple, create_model_from_typ
 from .class_validators import root_validator, validator
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
-# from .error_wrappers import ValidationError
 from .errors import *
 from .fields import Field, PrivateAttr, Required
 from .main import *

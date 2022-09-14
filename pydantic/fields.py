@@ -45,8 +45,8 @@ from .typing import (
     is_none_type,
     is_typeddict,
     is_typeddict_special,
-    origin_is_union,
     new_type_supertype,
+    origin_is_union,
 )
 from .utils import (
     PyObjectStr,

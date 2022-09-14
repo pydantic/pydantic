@@ -163,25 +163,26 @@ def test_nullable_strings_fails():
     ]
 
 
-@pytest.fixture(name='recursive_model', scope='session')
-def fix_recursive_model():
+@pytest.fixture(name='RecursiveModel', scope='session')
+def recursive_model_fixture():
     class RecursiveModel(BaseModel):
         grape: bool
         banana: UltraSimpleModel
+
     return RecursiveModel
 
 
-def test_recursion(recursive_model):
-    m = recursive_model(grape=1, banana={'a': 1})
+def test_recursion(RecursiveModel):
+    m = RecursiveModel(grape=1, banana={'a': 1})
     assert m.grape is True
     assert m.banana.a == 1.0
     assert m.banana.b == 10
     assert repr(m) == 'RecursiveModel(grape=True, banana=UltraSimpleModel(a=1.0, b=10))'
 
 
-def test_recursion_fails(recursive_model):
+def test_recursion_fails(RecursiveModel):
     with pytest.raises(ValidationError):
-        recursive_model(grape=1, banana=123)
+        RecursiveModel(grape=1, banana=123)
 
 
 def test_not_required():
@@ -678,8 +679,8 @@ def test_const_validation_json_serializable():
     exc_info.value.json()
 
 
-@pytest.fixture(name='validate_assignment', scope='session')
-def fix_validate_assignment():
+@pytest.fixture(name='ValidateAssignmentModel', scope='session')
+def validate_assignment_fixture():
     class ValidateAssignmentModel(BaseModel):
         a: int = 2
         b: constr(min_length=1)
@@ -690,8 +691,8 @@ def fix_validate_assignment():
     return ValidateAssignmentModel
 
 
-def test_validating_assignment_pass(validate_assignment):
-    p = validate_assignment(a=5, b='hello')
+def test_validating_assignment_pass(ValidateAssignmentModel):
+    p = ValidateAssignmentModel(a=5, b='hello')
     p.a = 2
     assert p.a == 2
     assert p.dict() == {'a': 2, 'b': 'hello'}
@@ -700,8 +701,8 @@ def test_validating_assignment_pass(validate_assignment):
     assert p.dict() == {'a': 2, 'b': 'hi'}
 
 
-def test_validating_assignment_fail(validate_assignment):
-    p = validate_assignment(a=5, b='hello')
+def test_validating_assignment_fail(ValidateAssignmentModel):
+    p = ValidateAssignmentModel(a=5, b='hello')
 
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'

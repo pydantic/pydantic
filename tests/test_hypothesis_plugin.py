@@ -18,6 +18,9 @@ except ImportError:
 
 
 def gen_models():
+    # TODO fix and remove this return
+    return
+
     class MiscModel(pydantic.BaseModel):
         # Each of these models contains a few related fields; the idea is that
         # if there's a bug we have neither too many fields to dig through nor

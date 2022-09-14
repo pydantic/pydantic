@@ -22,8 +22,12 @@ PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
 PCN.__len__ = lambda v: len(v.card_number)
 
 
-class PaymentCard(BaseModel):
-    card_number: PaymentCardNumber
+@pytest.fixture(scope='session', name='PaymentCard')
+def payment_card_model_fixture():
+    class PaymentCard(BaseModel):
+        card_number: PaymentCardNumber
+
+    return PaymentCard
 
 
 def test_validate_digits():
@@ -107,7 +111,7 @@ def test_get_brand(card_number: str, brand: PaymentCardBrand):
     assert PaymentCardNumber._get_brand(card_number) == brand
 
 
-def test_valid():
+def test_valid(PaymentCard):
     card = PaymentCard(card_number=VALID_VISA_16)
     assert str(card.card_number) == VALID_VISA_16
     assert card.card_number.masked == '405000******0001'
@@ -124,7 +128,7 @@ def test_valid():
         (LEN_INVALID, 'value_error.payment_card_number.invalid_length_for_brand'),
     ],
 )
-def test_error_types(card_number: Any, error_message: str):
+def test_error_types(card_number: Any, error_message: str, PaymentCard):
     with pytest.raises(ValidationError, match=error_message) as exc_info:
         PaymentCard(card_number=card_number)
     assert exc_info.value.json().startswith('[')

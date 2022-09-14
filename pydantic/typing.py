@@ -1,5 +1,6 @@
 # flake8: noqa
 from typing import Any
+
 from ._internal import typing_extra
 
 

@@ -1,12 +1,11 @@
-from typing import Tuple, Type, Dict, Any
+from typing import Any, Dict, Tuple, Type
 
 from pydantic_core import SchemaValidator
 from typing_extensions import dataclass_transform
 
-from ._internal.typing_extra import resolve_annotations
 from ._internal.babelfish import generate_field_schema
+from ._internal.typing_extra import resolve_annotations
 from .fields import Undefined
-
 
 _base_class_defined = False
 

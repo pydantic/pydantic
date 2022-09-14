@@ -149,32 +149,36 @@ def test_validate_pre_error():
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
 
 
-class ValidateAssignmentModel(BaseModel):
-    a: int = 4
-    b: str = ...
-    c: int = 0
+@pytest.fixture(scope='session', name='ValidateAssignmentModel')
+def validate_assignment_model_fixture():
+    class ValidateAssignmentModel(BaseModel):
+        a: int = 4
+        b: str = ...
+        c: int = 0
 
-    @validator('b')
-    def b_length(cls, v, values, **kwargs):
-        if 'a' in values and len(v) < values['a']:
-            raise ValueError('b too short')
-        return v
+        @validator('b')
+        def b_length(cls, v, values, **kwargs):
+            if 'a' in values and len(v) < values['a']:
+                raise ValueError('b too short')
+            return v
 
-    @validator('c')
-    def double_c(cls, v):
-        return v * 2
+        @validator('c')
+        def double_c(cls, v):
+            return v * 2
 
-    class Config:
-        validate_assignment = True
-        extra = Extra.allow
+        class Config:
+            validate_assignment = True
+            extra = Extra.allow
+
+    return ValidateAssignmentModel
 
 
-def test_validating_assignment_ok():
+def test_validating_assignment_ok(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello')
     assert p.b == 'hello'
 
 
-def test_validating_assignment_fail():
+def test_validating_assignment_fail(ValidateAssignmentModel):
     with pytest.raises(ValidationError):
         ValidateAssignmentModel(a=10, b='hello')
 
@@ -183,7 +187,7 @@ def test_validating_assignment_fail():
         p.b = 'x'
 
 
-def test_validating_assignment_value_change():
+def test_validating_assignment_value_change(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', c=2)
     assert p.c == 4
 
@@ -193,7 +197,7 @@ def test_validating_assignment_value_change():
     assert p.c == 6
 
 
-def test_validating_assignment_extra():
+def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
 
@@ -204,7 +208,7 @@ def test_validating_assignment_extra():
     assert p.extra_field == 'bye'
 
 
-def test_validating_assignment_dict():
+def test_validating_assignment_dict(ValidateAssignmentModel):
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.errors() == [

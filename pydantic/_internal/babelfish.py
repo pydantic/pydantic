@@ -5,16 +5,16 @@ import re
 import typing
 from typing import Any
 
-
 from pydantic_core import Schema as PydanticCoreSchema
 from pydantic_core._types import TypedDictField
 from typing_extensions import get_args, is_typeddict
 
-from pydantic.fields import Undefined, FieldInfo
+from pydantic.fields import FieldInfo, Undefined
+
 from .typing_extra import (
+    NoneType,
     NotRequired,
     Required,
-    NoneType,
     all_literal_values,
     evaluate_forwardref,
     get_origin,
@@ -22,7 +22,6 @@ from .typing_extra import (
     is_literal_type,
     origin_is_union,
 )
-
 
 __all__ = 'generate_schema', 'generate_field_schema'
 
@@ -58,7 +57,7 @@ def generate_field_schema(field_annotation: Any, field_value: Any) -> TypedDictF
     return schema
 
 
-def generate_schema(obj: Any) -> PydanticCoreSchema:
+def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore complexity)
     """
     Recursively generate a pydantic-core schema for any supported python type.
     """
@@ -87,7 +86,6 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:
         return obj.__name__
 
     origin = get_origin(obj)
-    debug(origin)
     if origin is None:
         raise PydanticSchemaGenerationError(f'Unknown type: {obj!r}, origin is None')
     elif origin_is_union(origin):

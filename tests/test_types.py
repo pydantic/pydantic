@@ -86,25 +86,29 @@ except ImportError:
     email_validator = None
 
 
-class ConBytesModel(BaseModel):
-    v: conbytes(max_length=10) = b'foobar'
+@pytest.fixture(scope='session', name='ConBytesModel')
+def con_bytes_model_fixture():
+    class ConBytesModel(BaseModel):
+        v: conbytes(max_length=10) = b'foobar'
+
+    return ConBytesModel
 
 
 def foo():
     return 42
 
 
-def test_constrained_bytes_good():
+def test_constrained_bytes_good(ConBytesModel):
     m = ConBytesModel(v=b'short')
     assert m.v == b'short'
 
 
-def test_constrained_bytes_default():
+def test_constrained_bytes_default(ConBytesModel):
     m = ConBytesModel()
     assert m.v == b'foobar'
 
 
-def test_constrained_bytes_too_long():
+def test_constrained_bytes_too_long(ConBytesModel):
     with pytest.raises(ValidationError) as exc_info:
         ConBytesModel(v=b'this is too long')
     assert exc_info.value.errors() == [
@@ -690,21 +694,25 @@ def test_constrained_frozenset_optional():
     assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
 
 
-class ConStringModel(BaseModel):
-    v: constr(max_length=10) = 'foobar'
+@pytest.fixture(scope='session', name='ConStringModel')
+def constring_model_fixture():
+    class ConStringModel(BaseModel):
+        v: constr(max_length=10) = 'foobar'
+
+    return ConStringModel
 
 
-def test_constrained_str_good():
+def test_constrained_str_good(ConStringModel):
     m = ConStringModel(v='short')
     assert m.v == 'short'
 
 
-def test_constrained_str_default():
+def test_constrained_str_default(ConStringModel):
     m = ConStringModel()
     assert m.v == 'foobar'
 
 
-def test_constrained_str_too_long():
+def test_constrained_str_too_long(ConStringModel):
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
     assert exc_info.value.errors() == [
@@ -826,18 +834,22 @@ def test_pyobject_callable():
     assert m.foo() == 42
 
 
-class CheckModel(BaseModel):
-    bool_check = True
-    str_check = 's'
-    bytes_check = b's'
-    int_check = 1
-    float_check = 1.0
-    uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
-    decimal_check: Decimal = Decimal('42.24')
+@pytest.fixture(scope='session', name='CheckModel')
+def check_model_fixture():
+    class CheckModel(BaseModel):
+        bool_check = True
+        str_check = 's'
+        bytes_check = b's'
+        int_check = 1
+        float_check = 1.0
+        uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
+        decimal_check: Decimal = Decimal('42.24')
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 10
+        class Config:
+            anystr_strip_whitespace = True
+            max_anystr_length = 10
+
+    return CheckModel
 
 
 class BoolCastable:
@@ -940,7 +952,7 @@ class BoolCastable:
         ('decimal_check', 'NaN', ValidationError),
     ],
 )
-def test_default_validators(field, value, result):
+def test_default_validators(field, value, result, CheckModel):
     kwargs = {field: value}
     if result == ValidationError:
         with pytest.raises(ValidationError):
@@ -1019,19 +1031,23 @@ class ToolEnum(IntEnum):
     wrench = 2
 
 
-class CookingModel(BaseModel):
-    fruit: FruitEnum = FruitEnum.pear
-    tool: ToolEnum = ToolEnum.spanner
+@pytest.fixture(scope='session', name='CookingModel')
+def cooking_model_fixture():
+    class CookingModel(BaseModel):
+        fruit: FruitEnum = FruitEnum.pear
+        tool: ToolEnum = ToolEnum.spanner
+
+    return CookingModel
 
 
-def test_enum_successful():
+def test_enum_successful(CookingModel):
     m = CookingModel(tool=2)
     assert m.fruit == FruitEnum.pear
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
-def test_enum_fails():
+def test_enum_fails(CookingModel):
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
     assert exc_info.value.errors() == [
@@ -1045,7 +1061,7 @@ def test_enum_fails():
     assert len(exc_info.value.json()) == 217
 
 
-def test_int_enum_successful_for_str_int():
+def test_int_enum_successful_for_str_int(CookingModel):
     m = CookingModel(tool='2')
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
@@ -1865,14 +1881,13 @@ def test_uuid_error():
         Model(v=None)
 
 
-class UUIDModel(BaseModel):
-    a: UUID1
-    b: UUID3
-    c: UUID4
-    d: UUID5
-
-
 def test_uuid_validation():
+    class UUIDModel(BaseModel):
+        a: UUID1
+        b: UUID3
+        c: UUID4
+        d: UUID5
+
     a = uuid.uuid1()
     b = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
     c = uuid.uuid4()
