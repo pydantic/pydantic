@@ -66,4 +66,4 @@ class Model(BaseModel):
 
 
 m = Model(foo='123', bar='abc', ham=[1, 2, 3])
-debug(m.__dict__)
+print(m.__dict__)
