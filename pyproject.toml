@@ -133,8 +133,6 @@ disallow_subclassing_any = true
 disallow_incomplete_defs = true
 disallow_untyped_decorators = true
 disallow_untyped_calls = true
-
-# for strict mypy: (this is the tricky one :-))
 disallow_untyped_defs = true
 
 # remaining arguments from `mypy --strict` which cause errors

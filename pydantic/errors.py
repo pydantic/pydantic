@@ -2,10 +2,10 @@ from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Sequence, Set, Tuple, Type, Union
 
-from .typing import display_as_type
+from ._internal.typing_extra import display_as_type
 
 if TYPE_CHECKING:
-    from .typing import DictStrAny
+    from ._internal.typing_extra import DictStrAny
 
 # explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (

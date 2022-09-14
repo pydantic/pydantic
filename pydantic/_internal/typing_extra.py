@@ -305,7 +305,7 @@ else:
 
 
 if TYPE_CHECKING:
-    from .fields import ModelField
+    from ..fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]

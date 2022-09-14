@@ -7,9 +7,9 @@ from .utils import Representation
 if TYPE_CHECKING:
     from typing_extensions import TypedDict
 
+    from ._internal.typing_extra import ReprArgs
     from .config import BaseConfig
     from .types import ModelOrDc
-    from .typing import ReprArgs
 
     Loc = Tuple[Union[int, str], ...]
 

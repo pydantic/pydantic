@@ -30,6 +30,17 @@ from uuid import UUID
 
 from typing_extensions import Annotated, Literal
 
+from ._internal.typing_extra import (
+    all_literal_values,
+    get_args,
+    get_origin,
+    get_sub_types,
+    is_callable_type,
+    is_literal_type,
+    is_namedtuple,
+    is_none_type,
+    origin_is_union,
+)
 from .fields import (
     MAPPING_LIKE_SHAPES,
     SHAPE_DEQUE,
@@ -66,17 +77,6 @@ from .types import (
     conlist,
     conset,
     constr,
-)
-from .typing import (
-    all_literal_values,
-    get_args,
-    get_origin,
-    get_sub_types,
-    is_callable_type,
-    is_literal_type,
-    is_namedtuple,
-    is_none_type,
-    origin_is_union,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass
 

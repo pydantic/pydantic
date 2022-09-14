@@ -21,8 +21,7 @@ lint:
 
 .PHONY: mypy
 mypy:
-	# TODO: remove `|| true` once mypy is passing
-	mypy pydantic docs/build || true
+	mypy pydantic docs/build
 
 .PHONY: pyupgrade
 pyupgrade:

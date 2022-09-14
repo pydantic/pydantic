@@ -35,9 +35,9 @@ if TYPE_CHECKING:
     import email_validator
     from typing_extensions import TypedDict
 
+    from ._internal.typing_extra import AnyCallable
     from .config import BaseConfig
     from .fields import ModelField
-    from .typing import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
 

@@ -29,8 +29,7 @@ from typing import (
 from uuid import UUID
 
 from . import errors
-from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
-from .typing import (
+from ._internal.typing_extra import (
     AnyCallable,
     all_literal_values,
     display_as_type,
@@ -41,6 +40,7 @@ from .typing import (
     is_none_type,
     is_typeddict,
 )
+from .datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
 
 if TYPE_CHECKING:

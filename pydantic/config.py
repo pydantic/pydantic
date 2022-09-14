@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol, TypedDict
 
-from .typing import AnyArgTCallable, AnyCallable
+from ._internal.typing_extra import AnyArgTCallable, AnyCallable
 from .utils import GetterDict
 
 if TYPE_CHECKING:

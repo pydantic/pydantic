@@ -19,11 +19,11 @@ from typing import (
 
 from typing_extensions import Annotated
 
+from ._internal.typing_extra import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .class_validators import gather_all_validators
 from .fields import DeferredType
 from .main import BaseModel, create_model
 from .types import JsonWrapper
-from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .utils import LimitedDict, all_identical, lenient_issubclass
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')

@@ -16,7 +16,7 @@ from .errors import ColorError
 from .utils import Representation, almost_equal_floats
 
 if TYPE_CHECKING:
-    from .typing import CallableGenerator, ReprArgs
+    from ._internal.typing_extra import CallableGenerator, ReprArgs
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]

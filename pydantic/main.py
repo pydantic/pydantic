@@ -31,6 +31,16 @@ from pydantic_core._types import TypedDictField
 from typing_extensions import dataclass_transform
 
 from ._internal.babelfish import generate_field_schema
+from ._internal.typing_extra import (
+    AnyCallable,
+    get_args,
+    get_origin,
+    is_classvar,
+    is_namedtuple,
+    origin_is_union,
+    resolve_annotations,
+    update_model_forward_refs,
+)
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
 from .config import BaseConfig, Extra, inherit_config, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
@@ -49,16 +59,6 @@ from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
-from .typing import (
-    AnyCallable,
-    get_args,
-    get_origin,
-    is_classvar,
-    is_namedtuple,
-    origin_is_union,
-    resolve_annotations,
-    update_model_forward_refs,
-)
 from .utils import (
     DUNDER_ATTRIBUTES,
     ROOT_KEY,
@@ -79,9 +79,7 @@ from .utils import (
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from .class_validators import ValidatorListDict
-    from .types import ModelOrDc
-    from .typing import (
+    from ._internal.typing_extra import (
         AbstractSetIntStr,
         AnyClassMethod,
         CallableGenerator,
@@ -92,6 +90,8 @@ if TYPE_CHECKING:
         SetStr,
         TupleGenerator,
     )
+    from .class_validators import ValidatorListDict
+    from .types import ModelOrDc
 
     Model = TypeVar('Model', bound='BaseModel')
 

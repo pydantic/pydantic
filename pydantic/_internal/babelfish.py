@@ -6,7 +6,14 @@ import typing
 from typing import Any
 
 from pydantic_core import Schema as PydanticCoreSchema
-from pydantic_core._types import TypedDictField
+from pydantic_core._types import (
+    DictSchema,
+    IsInstanceSchema,
+    TuplePositionalSchema,
+    TupleVariableSchema,
+    TypedDictField,
+    TypedDictSchema,
+)
 from typing_extensions import get_args, is_typeddict
 
 from pydantic.fields import FieldInfo, Undefined
@@ -41,7 +48,7 @@ def generate_field_schema(field_annotation: Any, field_value: Any) -> TypedDictF
     else:
         field_type = field_annotation
 
-    schema = {'schema': generate_schema(field_type)}
+    schema: TypedDictField = {'schema': generate_schema(field_type)}
     if isinstance(field_value, FieldInfo):
         if field_value.default is Undefined:
             schema['required'] = True
@@ -63,7 +70,7 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
     """
     if isinstance(obj, (str, dict)):
         # we assume this is already a valid schema
-        return obj
+        return obj  # type: ignore[return-value]
     elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
         return obj.__name__
     elif obj is Any:
@@ -92,11 +99,11 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
         return union_schema(obj)
     elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
         return generic_collection_schema(obj)
-    elif issubclass(origin, typing.Tuple):
+    elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
         return tuple_schema(obj)
     elif issubclass(origin, typing.Dict):
         return dict_schema(obj)
-    elif issubclass(origin, typing.Type):
+    elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
         return type_schema(obj)
     else:
         # debug(obj)
@@ -120,15 +127,15 @@ def literal_schema(literal_type: Any) -> PydanticCoreSchema:
     """
     expected = all_literal_values(literal_type)
     assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-    return {'type': 'literal', 'expected': expected}
+    return {'type': 'literal', 'expected': list(expected)}
 
 
-def type_dict_schema(typed_dict: Any) -> PydanticCoreSchema:
+def type_dict_schema(typed_dict: Any) -> TypedDictSchema:
     """
     Generate schema for a TypedDict.
     """
-    required_keys = getattr(typed_dict, '__required_keys__', set())
-    fields = {}
+    required_keys: typing.Set[str] = getattr(typed_dict, '__required_keys__', set())
+    fields: typing.Dict[str, TypedDictField] = {}
 
     for field_name, field_type in typed_dict.__annotations__.items():
         required = field_name in required_keys
@@ -143,7 +150,7 @@ def type_dict_schema(typed_dict: Any) -> PydanticCoreSchema:
             if matched:
                 required = True
 
-            field_type = evaluate_forwardref(field_type)
+            field_type = evaluate_forwardref(field_type)  # type: ignore
 
         if schema is None:
             if get_origin(field_type) == Required:
@@ -166,17 +173,21 @@ def generic_collection_schema(obj: Any) -> PydanticCoreSchema:
 
     e.g. `list[int]`.
     """
-    return {'type': obj.__name__.lower(), 'items_schema': generate_schema(get_args(obj)[0])}
+    return {
+        'type': obj.__name__.lower(),
+        'items_schema': generate_schema(get_args(obj)[0]),
+    }  # type: ignore[misc,return-value]
 
 
-def tuple_schema(tuple_type: Any) -> PydanticCoreSchema:
+def tuple_schema(tuple_type: Any) -> typing.Union[TupleVariableSchema, TuplePositionalSchema]:
     """
     Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
     """
     params = get_args(tuple_type)
     if params[-1] is Ellipsis:
         if len(params) == 2:
-            return {'type': 'tuple', 'mode': 'variable', 'items_schemas': get_args(params[0])}
+            sv: TupleVariableSchema = {'type': 'tuple', 'mode': 'variable', 'items_schema': generate_schema(params[0])}
+            return sv
 
         # not sure this case is valid in python, but may as well support it here since pydantic-core does
         *items_schema, extra_schema = params
@@ -187,14 +198,15 @@ def tuple_schema(tuple_type: Any) -> PydanticCoreSchema:
             'extra_schema': generate_schema(extra_schema),
         }
     else:
-        return {
+        sp: TuplePositionalSchema = {
             'type': 'tuple',
             'mode': 'positional',
             'items_schema': [generate_schema(p) for p in params],
         }
+        return sp
 
 
-def dict_schema(dict_type: Any) -> PydanticCoreSchema:
+def dict_schema(dict_type: Any) -> DictSchema:
     """
     Generate schema for a Dict, e.g. `dict[str, int]`.
     """
@@ -206,7 +218,7 @@ def dict_schema(dict_type: Any) -> PydanticCoreSchema:
     }
 
 
-def type_schema(type_: Any) -> PydanticCoreSchema:
+def type_schema(type_: Any) -> IsInstanceSchema:
     """
     Generate schema for a Type, e.g. `Type[int]`.
     """

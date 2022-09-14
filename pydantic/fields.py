@@ -29,11 +29,7 @@ from typing import (
 from typing_extensions import Annotated, Final
 
 from . import errors as errors_
-from .class_validators import Validator, make_generic_validator, prep_validators
-from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
-from .types import Json, JsonWrapper
-from .typing import (
+from ._internal.typing_extra import (
     NoArgAnyCallable,
     convert_generics,
     display_as_type,
@@ -48,6 +44,10 @@ from .typing import (
     new_type_supertype,
     origin_is_union,
 )
+from .class_validators import Validator, make_generic_validator, prep_validators
+from .error_wrappers import ErrorWrapper
+from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
+from .types import Json, JsonWrapper
 from .utils import (
     PyObjectStr,
     Representation,
@@ -83,11 +83,11 @@ class UndefinedType:
 Undefined = UndefinedType()
 
 if TYPE_CHECKING:
+    from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
     from .class_validators import ValidatorsList
     from .config import BaseConfig
     from .error_wrappers import ErrorList
     from .types import ModelOrDc
-    from .typing import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]

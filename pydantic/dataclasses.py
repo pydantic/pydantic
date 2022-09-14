@@ -60,8 +60,8 @@ from .main import create_model, validate_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
+    from ._internal.typing_extra import CallableGenerator, NoArgAnyCallable
     from .main import BaseModel
-    from .typing import CallableGenerator, NoArgAnyCallable
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 

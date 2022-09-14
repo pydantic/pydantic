@@ -28,8 +28,7 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from .errors import ConfigError
-from .typing import (
+from ._internal.typing_extra import (
     NoneType,
     WithArgsTypes,
     all_literal_values,
@@ -39,17 +38,18 @@ from .typing import (
     is_literal_type,
     origin_is_union,
 )
+from .errors import ConfigError
 from .version import version_info
 
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
 
+    from ._internal.typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
     from .config import BaseConfig
     from .dataclasses import Dataclass
     from .fields import ModelField
     from .main import BaseModel
-    from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
 
     RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
 

@@ -123,9 +123,9 @@ StrIntFloat = Union[str, int, float]
 if TYPE_CHECKING:
     from typing_extensions import Annotated
 
+    from ._internal.typing_extra import CallableGenerator
     from .dataclasses import Dataclass
     from .main import BaseModel
-    from .typing import CallableGenerator
 
     ModelOrDc = Type[Union[BaseModel, Dataclass]]
 

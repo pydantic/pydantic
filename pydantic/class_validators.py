@@ -5,12 +5,12 @@ from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
 
+from ._internal.typing_extra import AnyCallable
 from .errors import ConfigError
-from .typing import AnyCallable
 from .utils import ROOT_KEY, in_ipython
 
 if TYPE_CHECKING:
-    from .typing import AnyClassMethod
+    from ._internal.typing_extra import AnyClassMethod
 
 
 class Validator:
