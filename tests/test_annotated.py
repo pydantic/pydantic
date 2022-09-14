@@ -4,8 +4,8 @@ import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
+from pydantic._internal.typing_extra import get_all_type_hints
 from pydantic.fields import Undefined
-from pydantic.typing import get_all_type_hints
 
 
 @pytest.mark.parametrize(

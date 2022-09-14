@@ -1,5 +1,5 @@
 from pydantic import Field, validate_arguments
-from pydantic.typing import Annotated
+from typing_extensions import Annotated
 
 
 @validate_arguments

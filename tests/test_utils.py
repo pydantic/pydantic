@@ -9,10 +9,7 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, ConstrainedList, conlist
-from pydantic.color import Color
-from pydantic.dataclasses import dataclass
-from pydantic.fields import Undefined
-from pydantic.typing import (
+from pydantic._internal.typing_extra import (
     all_literal_values,
     display_as_type,
     get_args,
@@ -21,6 +18,9 @@ from pydantic.typing import (
     new_type_supertype,
     resolve_annotations,
 )
+from pydantic.color import Color
+from pydantic.dataclasses import dataclass
+from pydantic.fields import Undefined
 from pydantic.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,

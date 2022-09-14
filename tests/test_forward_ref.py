@@ -531,7 +531,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from pydantic import BaseModel
-from pydantic.typing import Literal
+from pydantic._internal.typing_extra import Literal
 
 @dataclass
 class Base:

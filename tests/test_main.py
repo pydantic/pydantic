@@ -19,7 +19,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
     BaseConfig,
@@ -37,7 +37,6 @@ from pydantic import (
     root_validator,
     validator,
 )
-from pydantic.typing import Final, Literal
 
 
 def test_success():
@@ -2250,29 +2249,29 @@ def test_annotated_class():
     assert pa.__doc__ == 'qwe'
 
 
-@pytest.mark.parametrize(
-    'ann',
-    [Final, Final[int]],
-    ids=['no-arg', 'with-arg'],
-)
-@pytest.mark.parametrize(
-    'value',
-    [None, Field(...)],
-    ids=['none', 'field'],
-)
-def test_final_field_decl_withou_default_val(ann, value):
-    class Model(BaseModel):
-        a: ann
-
-        if value is not None:
-            a = value
-
-    Model.update_forward_refs(ann=ann)
-
-    assert 'a' not in Model.__class_vars__
-    assert 'a' in Model.__fields__
-
-    assert Model.__fields__['a'].final
+# @pytest.mark.parametrize(
+#     'ann',
+#     [Final, Final[int]],
+#     ids=['no-arg', 'with-arg'],
+# )
+# @pytest.mark.parametrize(
+#     'value',
+#     [None, Field(...)],
+#     ids=['none', 'field'],
+# )
+# def test_final_field_decl_withou_default_val(ann, value):
+#     class Model(BaseModel):
+#         a: ann
+#
+#         if value is not None:
+#             a = value
+#
+#     Model.update_forward_refs(ann=ann)
+#
+#     assert 'a' not in Model.__class_vars__
+#     assert 'a' in Model.__fields__
+#
+#     assert Model.__fields__['a'].final
 
 
 @pytest.mark.parametrize(

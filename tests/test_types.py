@@ -77,8 +77,8 @@ from pydantic import (
     errors,
     validator,
 )
+from pydantic._internal.typing_extra import NoneType
 from pydantic.types import SecretField
-from pydantic.typing import NoneType
 
 try:
     import email_validator

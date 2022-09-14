@@ -29,38 +29,24 @@ from .typing_extra import (
     is_literal_type,
     origin_is_union,
 )
+from .valdation_functions import ValidationFunctions
 
-__all__ = 'generate_schema', 'generate_field_schema'
+__all__ = 'generate_schema', 'model_fields_schema'
 
 
-def generate_field_schema(field_annotation: Any, field_value: Any) -> TypedDictField:
-    """
-    Prepare a TypedDictField.
-    """
-
-    if field_annotation is Undefined:
-        if isinstance(field_value, FieldInfo):
-            field_type = field_value.get_default()
-        elif field_value is Undefined:
-            raise TypeError('Both field annotation and field value are Undefined')
-        else:
-            field_type = type(field_value)
-    else:
-        field_type = field_annotation
-
-    schema: TypedDictField = {'schema': generate_schema(field_type)}
-    if isinstance(field_value, FieldInfo):
-        if field_value.default is Undefined:
-            schema['required'] = True
-        elif field_value.default_factory:
-            schema['default_factory'] = field_value.default_factory
-        else:
-            schema['default'] = field_value.default
-
-        if field_value.alias is not None:
-            schema['alias'] = field_value.alias
-    elif field_value is not Undefined:
-        schema['default'] = field_value
+def model_fields_schema(fields: dict[str, FieldInfo], validator_functions: ValidationFunctions) -> PydanticCoreSchema:
+    schema: PydanticCoreSchema = {
+        'type': 'typed-dict',
+        'return_fields_set': True,
+        'fields': {k: generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
+    }
+    for validator in validator_functions.root_validators:
+        schema = {
+            'type': 'function',
+            'mode': validator.mode,
+            'function': validator.function,
+            'schema': schema,
+        }
     return schema
 
 
@@ -108,6 +94,34 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
     else:
         # debug(obj)
         raise PydanticSchemaGenerationError(f'Unknown type: {obj!r}, origin={origin!r}')
+
+
+def generate_field_schema(name: str, field: FieldInfo, validator_functions: ValidationFunctions) -> TypedDictField:
+    """
+    Prepare a TypedDictField to represent a model or typeddict field.
+    """
+    assert field.annotation is not None, 'field.annotation is None'
+    schema: PydanticCoreSchema = generate_schema(field.annotation)
+    for validator in validator_functions.get_field_validators(name):
+        assert validator.sub_path is None, 'validator.sub_path is not yet supported'
+        schema = {
+            'type': 'function',
+            'mode': validator.mode,
+            'function': validator.function,
+            'schema': schema,
+        }
+
+    field_schema: TypedDictField = {'schema': schema}
+    if field.default is Undefined:
+        field_schema['required'] = True
+    elif field.default_factory:
+        field_schema['default_factory'] = field.default_factory
+    else:
+        field_schema['default'] = field.default
+
+    if field.alias is not None:
+        field_schema['alias'] = field.alias
+    return field_schema
 
 
 class PydanticSchemaGenerationError(TypeError):

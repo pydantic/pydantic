@@ -1,65 +1,7 @@
-import copy
-import re
-from collections import Counter as CollectionCounter, defaultdict, deque
-from collections.abc import Callable, Hashable as CollectionsHashable, Iterable as CollectionsIterable
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Counter,
-    DefaultDict,
-    Deque,
-    Dict,
-    ForwardRef,
-    FrozenSet,
-    Generator,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type, TypeVar, Union
 
-from typing_extensions import Annotated, Final
-
-from . import errors as errors_
-from ._internal.typing_extra import (
-    NoArgAnyCallable,
-    convert_generics,
-    display_as_type,
-    get_args,
-    get_origin,
-    is_finalvar,
-    is_literal_type,
-    is_new_type,
-    is_none_type,
-    is_typeddict,
-    is_typeddict_special,
-    new_type_supertype,
-    origin_is_union,
-)
-from .class_validators import Validator, make_generic_validator, prep_validators
-from .error_wrappers import ErrorWrapper
-from .errors import ConfigError, InvalidDiscriminator, MissingDiscriminator, NoneIsNotAllowedError
-from .types import Json, JsonWrapper
-from .utils import (
-    PyObjectStr,
-    Representation,
-    ValueItems,
-    get_discriminator_alias_and_values,
-    get_unique_discriminator_alias,
-    lenient_isinstance,
-    lenient_issubclass,
-    sequence_like,
-    smart_deepcopy,
-)
-from .validators import constant_validator, dict_validator, find_validators, validate_json
+from ._internal.typing_extra import NoArgAnyCallable, is_finalvar
+from .utils import Representation, ValueItems, smart_deepcopy
 
 Required: Any = Ellipsis
 
@@ -84,10 +26,7 @@ Undefined = UndefinedType()
 
 if TYPE_CHECKING:
     from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
-    from .class_validators import ValidatorsList
-    from .config import BaseConfig
     from .error_wrappers import ErrorList
-    from .types import ModelOrDc
 
     ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
     LocStr = Union[Tuple[Union[int, str], ...], str]
@@ -100,6 +39,7 @@ class FieldInfo(Representation):
     """
 
     __slots__ = (
+        'annotation',
         'default',
         'default_factory',
         'alias',
@@ -148,12 +88,19 @@ class FieldInfo(Representation):
         'allow_mutation': True,
     }
 
-    def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:
+        self.annotation = kwargs.pop('annotation', None)
+        default = kwargs.pop('default', Undefined)
         if default is Required:
             self.default = Undefined
         else:
             self.default = default
+
         self.default_factory = kwargs.pop('default_factory', None)
+
+        if self.default is not Undefined and self.default_factory is not None:
+            raise ValueError('cannot specify both default and default_factory')
+
         self.alias = kwargs.pop('alias', None)
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
         self.title = kwargs.pop('title', None)
@@ -179,6 +126,23 @@ class FieldInfo(Representation):
         self.discriminator = kwargs.pop('discriminator', None)
         self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
+
+    @classmethod
+    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
+        if 'annotation' in kwargs:
+            raise TypeError('"annotation" is not permitted as a Field keyword argument')
+        return cls(default=default, **kwargs)
+
+    @classmethod
+    def from_bare(cls, annotation: Any) -> 'FieldInfo':
+        return cls(annotation=annotation)
+
+    @classmethod
+    def from_default(cls, annotation: Any, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
+        if isinstance(default, FieldInfo):
+            return default
+        else:
+            return cls(annotation=annotation, default=default)
 
     def __repr_args__(self) -> 'ReprArgs':
 
@@ -216,10 +180,6 @@ class FieldInfo(Representation):
                     self.exclude = ValueItems.merge(value, current_value)
                 elif attr_name == 'include':
                     self.include = ValueItems.merge(value, current_value, intersect=True)
-
-    def _validate(self) -> None:
-        if self.default is not Undefined and self.default_factory is not None:
-            raise ValueError('cannot specify both default and default_factory')
 
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
@@ -305,7 +265,7 @@ def Field(
     :param repr: show this field in the representation
     :param **extra: any additional keyword arguments will be added as is to the schema
     """
-    field_info = FieldInfo(
+    return FieldInfo.from_field(
         default,
         default_factory=default_factory,
         alias=alias,
@@ -333,8 +293,6 @@ def Field(
         repr=repr,
         **extra,
     )
-    field_info._validate()
-    return field_info
 
 
 # used to be an enum but changed to int's for small performance improvement as less access overhead
@@ -369,832 +327,28 @@ MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, S
 
 
 class ModelField(Representation):
-    __slots__ = (
-        'type_',
-        'outer_type_',
-        'annotation',
-        'sub_fields',
-        'sub_fields_mapping',
-        'key_field',
-        'validators',
-        'pre_validators',
-        'post_validators',
-        'default',
-        'default_factory',
-        'required',
-        'final',
-        'model_config',
-        'name',
-        'alias',
-        'has_alias',
-        'field_info',
-        'discriminator_key',
-        'discriminator_alias',
-        'validate_always',
-        'allow_none',
-        'shape',
-        'class_validators',
-        'parse_json',
-    )
-
-    def __init__(
-        self,
-        *,
-        name: str,
-        type_: Type[Any],
-        class_validators: Optional[Dict[str, Validator]],
-        model_config: Type['BaseConfig'],
-        default: Any = None,
-        default_factory: Optional[NoArgAnyCallable] = None,
-        required: 'BoolUndefined' = Undefined,
-        final: bool = False,
-        alias: str = None,
-        field_info: Optional[FieldInfo] = None,
-    ) -> None:
-
-        self.name: str = name
-        self.has_alias: bool = alias is not None
-        self.alias: str = alias if alias is not None else name
-        self.annotation = type_
-        self.type_: Any = convert_generics(type_)
-        self.outer_type_: Any = type_
-        self.class_validators = class_validators or {}
-        self.default: Any = default
-        self.default_factory: Optional[NoArgAnyCallable] = default_factory
-        self.required: 'BoolUndefined' = required
-        self.final: bool = final
-        self.model_config = model_config
-        self.field_info: FieldInfo = field_info or FieldInfo(default)
-        self.discriminator_key: Optional[str] = self.field_info.discriminator
-        self.discriminator_alias: Optional[str] = self.discriminator_key
-
-        self.allow_none: bool = False
-        self.validate_always: bool = False
-        self.sub_fields: Optional[List[ModelField]] = None
-        self.sub_fields_mapping: Optional[Dict[str, 'ModelField']] = None  # used for discriminated union
-        self.key_field: Optional[ModelField] = None
-        self.validators: 'ValidatorsList' = []
-        self.pre_validators: Optional['ValidatorsList'] = None
-        self.post_validators: Optional['ValidatorsList'] = None
-        self.parse_json: bool = False
-        self.shape: int = SHAPE_SINGLETON
-        self.model_config.prepare_field(self)
-        self.prepare()
-
-    def get_default(self) -> Any:
-        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
-
-    @staticmethod
-    def _get_field_info(
-        field_name: str, annotation: Any, value: Any, config: Type['BaseConfig']
-    ) -> Tuple[FieldInfo, Any]:
-        """
-        Get a FieldInfo from a root typing.Annotated annotation, value, or config default.
-
-        The FieldInfo may be set in typing.Annotated or the value, but not both. If neither contain
-        a FieldInfo, a new one will be created using the config.
-
-        :param field_name: name of the field for use in error messages
-        :param annotation: a type hint such as `str` or `Annotated[str, Field(..., min_length=5)]`
-        :param value: the field's assigned value
-        :param config: the model's config object
-        :return: the FieldInfo contained in the `annotation`, the value, or a new one from the config.
-        """
-        field_info_from_config = config.get_field_info(field_name)
-
-        field_info = None
-        if get_origin(annotation) is Annotated:
-            field_infos = [arg for arg in get_args(annotation)[1:] if isinstance(arg, FieldInfo)]
-            if len(field_infos) > 1:
-                raise ValueError(f'cannot specify multiple `Annotated` `Field`s for {field_name!r}')
-            field_info = next(iter(field_infos), None)
-            if field_info is not None:
-                field_info = copy.copy(field_info)
-                field_info.update_from_config(field_info_from_config)
-                if field_info.default not in (Undefined, Required):
-                    raise ValueError(f'`Field` default cannot be set in `Annotated` for {field_name!r}')
-                if value is not Undefined and value is not Required:
-                    # check also `Required` because of `validate_arguments` that sets `...` as default value
-                    field_info.default = value
-
-        if isinstance(value, FieldInfo):
-            if field_info is not None:
-                raise ValueError(f'cannot specify `Annotated` and value `Field`s together for {field_name!r}')
-            field_info = value
-            field_info.update_from_config(field_info_from_config)
-        elif field_info is None:
-            field_info = FieldInfo(value, **field_info_from_config)
-        value = None if field_info.default_factory is not None else field_info.default
-        field_info._validate()
-        return field_info, value
-
-    @classmethod
-    def infer(
-        cls,
-        *,
-        name: str,
-        value: Any,
-        annotation: Any,
-        class_validators: Optional[Dict[str, Validator]],
-        config: Type['BaseConfig'],
-    ) -> 'ModelField':
-        from .schema import get_annotation_from_field_info
-
-        field_info, value = cls._get_field_info(name, annotation, value, config)
-        required: 'BoolUndefined' = Undefined
-        if value is Required:
-            required = True
-            value = None
-        elif value is not Undefined:
-            required = False
-        annotation = get_annotation_from_field_info(annotation, field_info, name, config.validate_assignment)
-
-        return cls(
-            name=name,
-            type_=annotation,
-            alias=field_info.alias,
-            class_validators=class_validators,
-            default=value,
-            default_factory=field_info.default_factory,
-            required=required,
-            model_config=config,
-            field_info=field_info,
-        )
-
-    def set_config(self, config: Type['BaseConfig']) -> None:
-        self.model_config = config
-        info_from_config = config.get_field_info(self.name)
-        config.prepare_field(self)
-        new_alias = info_from_config.get('alias')
-        new_alias_priority = info_from_config.get('alias_priority') or 0
-        if new_alias and new_alias_priority >= (self.field_info.alias_priority or 0):
-            self.field_info.alias = new_alias
-            self.field_info.alias_priority = new_alias_priority
-            self.alias = new_alias
-        new_exclude = info_from_config.get('exclude')
-        if new_exclude is not None:
-            self.field_info.exclude = ValueItems.merge(self.field_info.exclude, new_exclude)
-        new_include = info_from_config.get('include')
-        if new_include is not None:
-            self.field_info.include = ValueItems.merge(self.field_info.include, new_include, intersect=True)
-
-    @property
-    def alt_alias(self) -> bool:
-        return self.name != self.alias
-
-    def prepare(self) -> None:
-        """
-        Prepare the field but inspecting self.default, self.type_ etc.
-
-        Note: this method is **not** idempotent (because _type_analysis is not idempotent),
-        e.g. calling it it multiple times may modify the field and configure it incorrectly.
-        """
-        self._set_default_and_type()
-        if self.type_.__class__ is ForwardRef or self.type_.__class__ is DeferredType:
-            # self.type_ is currently a ForwardRef and there's nothing we can do now,
-            # user will need to call model.update_forward_refs()
-            return
-
-        self._type_analysis()
-        if self.required is Undefined:
-            self.required = True
-        if self.default is Undefined and self.default_factory is None:
-            self.default = None
-        self.populate_validators()
-
-    def _set_default_and_type(self) -> None:
-        """
-        Set the default value, infer the type if needed and check if `None` value is valid.
-        """
-        if self.default_factory is not None:
-            if self.type_ is Undefined:
-                raise errors_.ConfigError(
-                    f'you need to set the type of field {self.name!r} when using `default_factory`'
-                )
-            return
-
-        default_value = self.get_default()
-
-        if default_value is not None and self.type_ is Undefined:
-            self.type_ = default_value.__class__
-            self.outer_type_ = self.type_
-            self.annotation = self.type_
-
-        if self.type_ is Undefined:
-            raise errors_.ConfigError(f'unable to infer type for attribute "{self.name}"')
-
-        if self.required is False and default_value is None:
-            self.allow_none = True
-
-    def _type_analysis(self) -> None:  # noqa: C901 (ignore complexity)
-        # typing interface is horrible, we have to do some ugly checks
-        if lenient_issubclass(self.type_, JsonWrapper):
-            self.type_ = self.type_.inner_type
-            self.parse_json = True
-        elif lenient_issubclass(self.type_, Json):
-            self.type_ = Any
-            self.parse_json = True
-        elif isinstance(self.type_, TypeVar):
-            if self.type_.__bound__:
-                self.type_ = self.type_.__bound__
-            elif self.type_.__constraints__:
-                self.type_ = Union[self.type_.__constraints__]
-            else:
-                self.type_ = Any
-        elif is_new_type(self.type_):
-            self.type_ = new_type_supertype(self.type_)
-
-        if self.type_ is Any or self.type_ is object:
-            if self.required is Undefined:
-                self.required = False
-            self.allow_none = True
-            return
-        elif self.type_ is Pattern or self.type_ is re.Pattern:
-            # python 3.7 only, Pattern is a typing object but without sub fields
-            return
-        elif is_literal_type(self.type_):
-            return
-        elif is_typeddict(self.type_):
-            return
-
-        if is_finalvar(self.type_):
-            self.final = True
-
-            if self.type_ is Final:
-                self.type_ = Any
-            else:
-                self.type_ = get_args(self.type_)[0]
-
-            self._type_analysis()
-            return
-
-        origin = get_origin(self.type_)
-
-        if origin is Annotated or is_typeddict_special(origin):
-            self.type_ = get_args(self.type_)[0]
-            self._type_analysis()
-            return
-
-        if self.discriminator_key is not None and not origin_is_union(origin):
-            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
-
-        # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
-        if origin is None or origin is CollectionsHashable:
-            # field is not "typing" object eg. Union, Dict, List etc.
-            # allow None for virtual superclasses of NoneType, e.g. Hashable
-            if isinstance(self.type_, type) and isinstance(None, self.type_):
-                self.allow_none = True
-            return
-        elif origin is Callable:
-            return
-        elif origin_is_union(origin):
-            types_ = []
-            for type_ in get_args(self.type_):
-                if is_none_type(type_) or type_ is Any or type_ is object:
-                    if self.required is Undefined:
-                        self.required = False
-                    self.allow_none = True
-                if is_none_type(type_):
-                    continue
-                types_.append(type_)
-
-            if len(types_) == 1:
-                # Optional[]
-                self.type_ = types_[0]
-                # this is the one case where the "outer type" isn't just the original type
-                self.outer_type_ = self.type_
-                # re-run to correctly interpret the new self.type_
-                self._type_analysis()
-            else:
-                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{display_as_type(t)}') for t in types_]
-
-                if self.discriminator_key is not None:
-                    self.prepare_discriminated_union_sub_fields()
-            return
-        elif issubclass(origin, Tuple):  # type: ignore
-            # origin == Tuple without item type
-            args = get_args(self.type_)
-            if not args:  # plain tuple
-                self.type_ = Any
-                self.shape = SHAPE_TUPLE_ELLIPSIS
-            elif len(args) == 2 and args[1] is Ellipsis:  # e.g. Tuple[int, ...]
-                self.type_ = args[0]
-                self.shape = SHAPE_TUPLE_ELLIPSIS
-                self.sub_fields = [self._create_sub_type(args[0], f'{self.name}_0')]
-            elif args == ((),):  # Tuple[()] means empty tuple
-                self.shape = SHAPE_TUPLE
-                self.type_ = Any
-                self.sub_fields = []
-            else:
-                self.shape = SHAPE_TUPLE
-                self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(args)]
-            return
-        elif issubclass(origin, List):
-            # Create self validators
-            get_validators = getattr(self.type_, '__get_validators__', None)
-            if get_validators:
-                self.class_validators.update(
-                    {f'list_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
-                )
-
-            self.type_ = get_args(self.type_)[0]
-            self.shape = SHAPE_LIST
-        elif issubclass(origin, Set):
-            # Create self validators
-            get_validators = getattr(self.type_, '__get_validators__', None)
-            if get_validators:
-                self.class_validators.update(
-                    {f'set_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
-                )
-
-            self.type_ = get_args(self.type_)[0]
-            self.shape = SHAPE_SET
-        elif issubclass(origin, FrozenSet):
-            # Create self validators
-            get_validators = getattr(self.type_, '__get_validators__', None)
-            if get_validators:
-                self.class_validators.update(
-                    {f'frozenset_{i}': Validator(validator, pre=True) for i, validator in enumerate(get_validators())}
-                )
-
-            self.type_ = get_args(self.type_)[0]
-            self.shape = SHAPE_FROZENSET
-        elif issubclass(origin, Deque):
-            self.type_ = get_args(self.type_)[0]
-            self.shape = SHAPE_DEQUE
-        elif issubclass(origin, Sequence):
-            self.type_ = get_args(self.type_)[0]
-            self.shape = SHAPE_SEQUENCE
-        # priority to most common mapping: dict
-        elif origin is dict or origin is Dict:
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DICT
-        elif issubclass(origin, DefaultDict):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_DEFAULTDICT
-        elif issubclass(origin, Counter):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = int
-            self.shape = SHAPE_COUNTER
-        elif issubclass(origin, Mapping):
-            self.key_field = self._create_sub_type(get_args(self.type_)[0], 'key_' + self.name, for_keys=True)
-            self.type_ = get_args(self.type_)[1]
-            self.shape = SHAPE_MAPPING
-        # Equality check as almost everything inherits form Iterable, including str
-        # check for Iterable and CollectionsIterable, as it could receive one even when declared with the other
-        elif origin in {Iterable, CollectionsIterable}:
-            self.type_ = get_args(self.type_)[0]
-            self.shape = SHAPE_ITERABLE
-            self.sub_fields = [self._create_sub_type(self.type_, f'{self.name}_type')]
-        elif issubclass(origin, Type):  # type: ignore
-            return
-        elif hasattr(origin, '__get_validators__') or self.model_config.arbitrary_types_allowed:
-            # Is a Pydantic-compatible generic that handles itself
-            # or we have arbitrary_types_allowed = True
-            self.shape = SHAPE_GENERIC
-            self.sub_fields = [self._create_sub_type(t, f'{self.name}_{i}') for i, t in enumerate(get_args(self.type_))]
-            self.type_ = origin
-            return
-        else:
-            raise TypeError(f'Fields of type "{origin}" are not supported.')
-
-        # type_ has been refined eg. as the type of a List and sub_fields needs to be populated
-        self.sub_fields = [self._create_sub_type(self.type_, '_' + self.name)]
-
-    def prepare_discriminated_union_sub_fields(self) -> None:
-        """
-        Prepare the mapping <discriminator key> -> <ModelField> and update `sub_fields`
-        Note that this process can be aborted if a `ForwardRef` is encountered
-        """
-        assert self.discriminator_key is not None
-
-        if self.type_.__class__ is DeferredType:
-            return
-
-        assert self.sub_fields is not None
-        sub_fields_mapping: Dict[str, 'ModelField'] = {}
-        all_aliases: Set[str] = set()
-
-        for sub_field in self.sub_fields:
-            t = sub_field.type_
-            if t.__class__ is ForwardRef:
-                # Stopping everything...will need to call `update_forward_refs`
-                return
-
-            alias, discriminator_values = get_discriminator_alias_and_values(t, self.discriminator_key)
-            all_aliases.add(alias)
-            for discriminator_value in discriminator_values:
-                sub_fields_mapping[discriminator_value] = sub_field
-
-        self.sub_fields_mapping = sub_fields_mapping
-        self.discriminator_alias = get_unique_discriminator_alias(all_aliases, self.discriminator_key)
-
-    def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
-        if for_keys:
-            class_validators = None
-        else:
-            # validators for sub items should not have `each_item` as we want to check only the first sublevel
-            class_validators = {
-                k: Validator(
-                    func=v.func,
-                    pre=v.pre,
-                    each_item=False,
-                    always=v.always,
-                    check_fields=v.check_fields,
-                    skip_on_failure=v.skip_on_failure,
-                )
-                for k, v in self.class_validators.items()
-                if v.each_item
-            }
-
-        field_info, _ = self._get_field_info(name, type_, None, self.model_config)
-
-        return self.__class__(
-            type_=type_,
-            name=name,
-            class_validators=class_validators,
-            model_config=self.model_config,
-            field_info=field_info,
-        )
-
-    def populate_validators(self) -> None:
-        """
-        Prepare self.pre_validators, self.validators, and self.post_validators based on self.type_'s  __get_validators__
-        and class validators. This method should be idempotent, e.g. it should be safe to call multiple times
-        without mis-configuring the field.
-        """
-        self.validate_always = getattr(self.type_, 'validate_always', False) or any(
-            v.always for v in self.class_validators.values()
-        )
-
-        class_validators_ = self.class_validators.values()
-        if not self.sub_fields or self.shape == SHAPE_GENERIC:
-            get_validators = getattr(self.type_, '__get_validators__', None)
-            v_funcs = (
-                *[v.func for v in class_validators_ if v.each_item and v.pre],
-                *(get_validators() if get_validators else list(find_validators(self.type_, self.model_config))),
-                *[v.func for v in class_validators_ if v.each_item and not v.pre],
-            )
-            self.validators = prep_validators(v_funcs)
-
-        self.pre_validators = []
-        self.post_validators = []
-
-        if self.field_info and self.field_info.const:
-            self.post_validators.append(make_generic_validator(constant_validator))
-
-        if class_validators_:
-            self.pre_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and v.pre)
-            self.post_validators += prep_validators(v.func for v in class_validators_ if not v.each_item and not v.pre)
-
-        if self.parse_json:
-            self.pre_validators.append(make_generic_validator(validate_json))
-
-        self.pre_validators = self.pre_validators or None
-        self.post_validators = self.post_validators or None
-
-    def validate(
-        self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
-    ) -> 'ValidateReturn':
-
-        assert self.type_.__class__ is not DeferredType
-
-        if self.type_.__class__ is ForwardRef:
-            assert cls is not None
-            raise ConfigError(
-                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {cls.__name__}.update_forward_refs().'
-            )
-
-        errors: Optional['ErrorList']
-        if self.pre_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.pre_validators)
-            if errors:
-                return v, errors
-
-        if v is None:
-            if is_none_type(self.type_):
-                # keep validating
-                pass
-            elif self.allow_none:
-                if self.post_validators:
-                    return self._apply_validators(v, values, loc, cls, self.post_validators)
-                else:
-                    return None, None
-            else:
-                return v, ErrorWrapper(NoneIsNotAllowedError(), loc)
-
-        if self.shape == SHAPE_SINGLETON:
-            v, errors = self._validate_singleton(v, values, loc, cls)
-        elif self.shape in MAPPING_LIKE_SHAPES:
-            v, errors = self._validate_mapping_like(v, values, loc, cls)
-        elif self.shape == SHAPE_TUPLE:
-            v, errors = self._validate_tuple(v, values, loc, cls)
-        elif self.shape == SHAPE_ITERABLE:
-            v, errors = self._validate_iterable(v, values, loc, cls)
-        elif self.shape == SHAPE_GENERIC:
-            v, errors = self._apply_validators(v, values, loc, cls, self.validators)
-        else:
-            #  sequence, list, set, generator, tuple with ellipsis, frozen set
-            v, errors = self._validate_sequence_like(v, values, loc, cls)
-
-        if not errors and self.post_validators:
-            v, errors = self._apply_validators(v, values, loc, cls, self.post_validators)
-        return v, errors
-
-    def _validate_sequence_like(  # noqa: C901 (ignore complexity)
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
-    ) -> 'ValidateReturn':
-        """
-        Validate sequence-like containers: lists, tuples, sets and generators
-        Note that large if-else blocks are necessary to enable Cython
-        optimization, which is why we disable the complexity check above.
-        """
-        if not sequence_like(v):
-            e: errors_.PydanticTypeError
-            if self.shape == SHAPE_LIST:
-                e = errors_.ListError()
-            elif self.shape in (SHAPE_TUPLE, SHAPE_TUPLE_ELLIPSIS):
-                e = errors_.TupleError()
-            elif self.shape == SHAPE_SET:
-                e = errors_.SetError()
-            elif self.shape == SHAPE_FROZENSET:
-                e = errors_.FrozenSetError()
-            else:
-                e = errors_.SequenceError()
-            return v, ErrorWrapper(e, loc)
-
-        loc = loc if isinstance(loc, tuple) else (loc,)
-        result = []
-        errors: List[ErrorList] = []
-        for i, v_ in enumerate(v):
-            v_loc = *loc, i
-            r, ee = self._validate_singleton(v_, values, v_loc, cls)
-            if ee:
-                errors.append(ee)
-            else:
-                result.append(r)
-
-        if errors:
-            return v, errors
-
-        converted: Union[List[Any], Set[Any], FrozenSet[Any], Tuple[Any, ...], Iterator[Any], Deque[Any]] = result
-
-        if self.shape == SHAPE_SET:
-            converted = set(result)
-        elif self.shape == SHAPE_FROZENSET:
-            converted = frozenset(result)
-        elif self.shape == SHAPE_TUPLE_ELLIPSIS:
-            converted = tuple(result)
-        elif self.shape == SHAPE_DEQUE:
-            converted = deque(result)
-        elif self.shape == SHAPE_SEQUENCE:
-            if isinstance(v, tuple):
-                converted = tuple(result)
-            elif isinstance(v, set):
-                converted = set(result)
-            elif isinstance(v, Generator):
-                converted = iter(result)
-            elif isinstance(v, deque):
-                converted = deque(result)
-        return converted, None
-
-    def _validate_iterable(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
-    ) -> 'ValidateReturn':
-        """
-        Validate Iterables.
-
-        This intentionally doesn't validate values to allow infinite generators.
-        """
-
-        try:
-            iterable = iter(v)
-        except TypeError:
-            return v, ErrorWrapper(errors_.IterableError(), loc)
-        return iterable, None
-
-    def _validate_tuple(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
-    ) -> 'ValidateReturn':
-        e: Optional[Exception] = None
-        if not sequence_like(v):
-            e = errors_.TupleError()
-        else:
-            actual_length, expected_length = len(v), len(self.sub_fields)  # type: ignore
-            if actual_length != expected_length:
-                e = errors_.TupleLengthError(actual_length=actual_length, expected_length=expected_length)
-
-        if e:
-            return v, ErrorWrapper(e, loc)
-
-        loc = loc if isinstance(loc, tuple) else (loc,)
-        result = []
-        errors: List[ErrorList] = []
-        for i, (v_, field) in enumerate(zip(v, self.sub_fields)):  # type: ignore
-            v_loc = *loc, i
-            r, ee = field.validate(v_, values, loc=v_loc, cls=cls)
-            if ee:
-                errors.append(ee)
-            else:
-                result.append(r)
-
-        if errors:
-            return v, errors
-        else:
-            return tuple(result), None
-
-    def _validate_mapping_like(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
-    ) -> 'ValidateReturn':
-        try:
-            v_iter = dict_validator(v)
-        except TypeError as exc:
-            return v, ErrorWrapper(exc, loc)
-
-        loc = loc if isinstance(loc, tuple) else (loc,)
-        result, errors = {}, []
-        for k, v_ in v_iter.items():
-            v_loc = *loc, '__key__'
-            key_result, key_errors = self.key_field.validate(k, values, loc=v_loc, cls=cls)  # type: ignore
-            if key_errors:
-                errors.append(key_errors)
-                continue
-
-            v_loc = *loc, k
-            value_result, value_errors = self._validate_singleton(v_, values, v_loc, cls)
-            if value_errors:
-                errors.append(value_errors)
-                continue
-
-            result[key_result] = value_result
-        if errors:
-            return v, errors
-        elif self.shape == SHAPE_DICT:
-            return result, None
-        elif self.shape == SHAPE_DEFAULTDICT:
-            return defaultdict(self.type_, result), None
-        elif self.shape == SHAPE_COUNTER:
-            return CollectionCounter(result), None
-        else:
-            return self._get_mapping_value(v, result), None
-
-    def _get_mapping_value(self, original: T, converted: Dict[Any, Any]) -> Union[T, Dict[Any, Any]]:
-        """
-        When type is `Mapping[KT, KV]` (or another unsupported mapping), we try to avoid
-        coercing to `dict` unwillingly.
-        """
-        original_cls = original.__class__
-
-        if original_cls == dict or original_cls == Dict:
-            return converted
-        elif original_cls in {defaultdict, DefaultDict}:
-            return defaultdict(self.type_, converted)
-        else:
-            try:
-                # Counter, OrderedDict, UserDict, ...
-                return original_cls(converted)  # type: ignore
-            except TypeError:
-                raise RuntimeError(f'Could not convert dictionary to {original_cls.__name__!r}') from None
-
-    def _validate_singleton(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
-    ) -> 'ValidateReturn':
-        if self.sub_fields:
-            if self.discriminator_key is not None:
-                return self._validate_discriminated_union(v, values, loc, cls)
-
-            errors = []
-
-            if self.model_config.smart_union and origin_is_union(get_origin(self.type_)):
-                # 1st pass: check if the value is an exact instance of one of the Union types
-                # (e.g. to avoid coercing a bool into an int)
-                for field in self.sub_fields:
-                    if v.__class__ is field.outer_type_:
-                        return v, None
-
-                # 2nd pass: check if the value is an instance of any subclass of the Union types
-                for field in self.sub_fields:
-                    # This whole logic will be improved later on to support more complex `isinstance` checks
-                    # It will probably be done once a strict mode is added and be something like:
-                    # ```
-                    #     value, error = field.validate(v, values, strict=True)
-                    #     if error is None:
-                    #         return value, None
-                    # ```
-                    try:
-                        if isinstance(v, field.outer_type_):
-                            return v, None
-                    except TypeError:
-                        # compound type
-                        if lenient_isinstance(v, get_origin(field.outer_type_)):
-                            value, error = field.validate(v, values, loc=loc, cls=cls)
-                            if not error:
-                                return value, None
-
-            # 1st pass by default or 3rd pass with `smart_union` enabled:
-            # check if the value can be coerced into one of the Union types
-            for field in self.sub_fields:
-                value, error = field.validate(v, values, loc=loc, cls=cls)
-                if error:
-                    errors.append(error)
-                else:
-                    return value, None
-            return v, errors
-        else:
-            return self._apply_validators(v, values, loc, cls, self.validators)
-
-    def _validate_discriminated_union(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc']
-    ) -> 'ValidateReturn':
-        assert self.discriminator_key is not None
-        assert self.discriminator_alias is not None
-
-        try:
-            discriminator_value = v[self.discriminator_alias]
-        except KeyError:
-            return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
-        except TypeError:
-            try:
-                # BaseModel or dataclass
-                discriminator_value = getattr(v, self.discriminator_key)
-            except (AttributeError, TypeError):
-                return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
-
-        try:
-            sub_field = self.sub_fields_mapping[discriminator_value]  # type: ignore[index]
-        except TypeError:
-            assert cls is not None
-            raise ConfigError(
-                f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
-                f'you might need to call {cls.__name__}.update_forward_refs().'
-            )
-        except KeyError:
-            assert self.sub_fields_mapping is not None
-            return v, ErrorWrapper(
-                InvalidDiscriminator(
-                    discriminator_key=self.discriminator_key,
-                    discriminator_value=discriminator_value,
-                    allowed_values=list(self.sub_fields_mapping),
-                ),
-                loc,
-            )
-        else:
-            if not isinstance(loc, tuple):
-                loc = (loc,)
-            return sub_field.validate(v, values, loc=(*loc, display_as_type(sub_field.type_)), cls=cls)
-
-    def _apply_validators(
-        self, v: Any, values: Dict[str, Any], loc: 'LocStr', cls: Optional['ModelOrDc'], validators: 'ValidatorsList'
-    ) -> 'ValidateReturn':
-        for validator in validators:
-            try:
-                v = validator(cls, v, values, self, self.model_config)
-            except (ValueError, TypeError, AssertionError) as exc:
-                return v, ErrorWrapper(exc, loc)
-        return v, None
-
-    def _type_display(self) -> PyObjectStr:
-        t = display_as_type(self.type_)
-
-        if self.shape in MAPPING_LIKE_SHAPES:
-            t = f'Mapping[{display_as_type(self.key_field.type_)}, {t}]'  # type: ignore
-        elif self.shape == SHAPE_TUPLE:
-            t = 'Tuple[{}]'.format(', '.join(display_as_type(f.type_) for f in self.sub_fields))  # type: ignore
-        elif self.shape == SHAPE_GENERIC:
-            assert self.sub_fields
-            t = '{}[{}]'.format(
-                display_as_type(self.type_), ', '.join(display_as_type(f.type_) for f in self.sub_fields)
-            )
-        elif self.shape != SHAPE_SINGLETON:
-            t = SHAPE_NAME_LOOKUP[self.shape].format(t)
-
-        if self.allow_none and (self.shape != SHAPE_SINGLETON or not self.sub_fields):
-            t = f'Optional[{t}]'
-        return PyObjectStr(t)
-
-    def __repr_args__(self) -> 'ReprArgs':
-        args = [('name', self.name), ('type', self._type_display()), ('required', self.required)]
-
-        if not self.required:
-            if self.default_factory is not None:
-                args.append(('default_factory', f'<function {self.default_factory.__name__}>'))
-            else:
-                args.append(('default', self.default))
-
-        if self.alt_alias:
-            args.append(('alias', self.alias))
-        return args
+    pass
 
 
 class ModelPrivateAttr(Representation):
-    __slots__ = ('default', 'default_factory')
+    __slots__ = 'default', 'default_factory'
 
     def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
         self.default = default
         self.default_factory = default_factory
+
+    def __set_name__(self, cls: Type[Any], name: str) -> None:
+        """
+        preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+        """
+        if self.default is not Undefined:
+            try:
+                set_name = getattr(self.default, '__set_name__')
+            except AttributeError:
+                pass
+            else:
+                if callable(set_name):
+                    set_name(cls, name)
 
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
@@ -1214,7 +368,7 @@ def PrivateAttr(
     """
     Indicates that attribute is only used internally and never mixed with regular fields.
 
-    Types or values of private attrs are not checked by pydantic and it's up to you to keep them relevant.
+    Types or values of private attrs are not checked by pydantic, it's up to you to keep them relevant.
 
     Private attrs are stored in model __slots__.
 

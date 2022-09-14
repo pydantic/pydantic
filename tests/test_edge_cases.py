@@ -7,17 +7,7 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 
 import pytest
 
-from pydantic import (
-    BaseModel,
-    Extra,
-    NoneStrBytes,
-    StrBytes,
-    ValidationError,
-    constr,
-    errors,
-    validate_model,
-    validator,
-)
+from pydantic import BaseModel, Extra, NoneStrBytes, StrBytes, ValidationError, constr, errors, validator
 from pydantic.fields import Field
 
 
@@ -1017,36 +1007,36 @@ def test_string_none():
     ]
 
 
-def test_return_errors_ok():
-    class Model(BaseModel):
-        foo: int
-        bar: List[int]
+# def test_return_errors_ok():
+#     class Model(BaseModel):
+#         foo: int
+#         bar: List[int]
+#
+#     assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == (
+#         {'foo': 123, 'bar': [1, 2, 3]},
+#         {'foo', 'bar'},
+#         None,
+#     )
+#     d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
+#     assert d == {'foo': 123, 'bar': [1, 2, 3]}
+#     assert f == {'foo', 'bar'}
+#     assert e is None
 
-    assert validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}) == (
-        {'foo': 123, 'bar': [1, 2, 3]},
-        {'foo', 'bar'},
-        None,
-    )
-    d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 3)}, False)
-    assert d == {'foo': 123, 'bar': [1, 2, 3]}
-    assert f == {'foo', 'bar'}
-    assert e is None
 
-
-def test_return_errors_error():
-    class Model(BaseModel):
-        foo: int
-        bar: List[int]
-
-    d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
-    assert d == {'foo': 123}
-    assert f == {'foo', 'bar'}
-    assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
-
-    d, f, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
-    assert d == {'bar': [1, 2, 3]}
-    assert f == {'bar'}
-    assert e.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
+# def test_return_errors_error():
+#     class Model(BaseModel):
+#         foo: int
+#         bar: List[int]
+#
+#     d, f, e = validate_model(Model, {'foo': '123', 'bar': (1, 2, 'x')}, False)
+#     assert d == {'foo': 123}
+#     assert f == {'foo', 'bar'}
+#     assert e.errors() == [{'loc': ('bar', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]
+#
+#     d, f, e = validate_model(Model, {'bar': (1, 2, 3)}, False)
+#     assert d == {'bar': [1, 2, 3]}
+#     assert f == {'bar'}
+#     assert e.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 def test_optional_required():

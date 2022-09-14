@@ -6,7 +6,7 @@ import pytest
 from typing_extensions import Annotated  # noqa: F401
 
 from pydantic import Field  # noqa: F401
-from pydantic.typing import Literal, convert_generics, is_namedtuple, is_none_type, is_typeddict
+from pydantic._internal.typing_extra import Literal, convert_generics, is_namedtuple, is_none_type, is_typeddict
 
 try:
     from typing import TypedDict as typing_TypedDict

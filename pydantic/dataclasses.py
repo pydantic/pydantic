@@ -56,7 +56,7 @@ from .config import BaseConfig, ConfigDict, Extra, get_config
 from .error_wrappers import ValidationError
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
+from .main import create_model
 from .utils import ClassAttribute
 
 if TYPE_CHECKING:
@@ -411,11 +411,12 @@ def _dataclass_validate_values(self: 'Dataclass') -> None:
         input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
     else:
         input_data = self.__dict__
-    d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
-    if validation_error:
-        raise validation_error
-    self.__dict__.update(d)
-    object.__setattr__(self, '__pydantic_initialised__', True)
+    raise NotImplementedError(f'TODO {input_data}')
+    # d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
+    # if validation_error:
+    #     raise validation_error
+    # self.__dict__.update(d)
+    # object.__setattr__(self, '__pydantic_initialised__', True)
 
 
 def _dataclass_validate_assignment_setattr(self: 'Dataclass', name: str, value: Any) -> None:
