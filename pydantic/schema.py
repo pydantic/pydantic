@@ -76,7 +76,7 @@ from .typing import (
     is_literal_type,
     is_namedtuple,
     is_none_type,
-    is_union,
+    origin_is_union,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass
 
@@ -715,7 +715,7 @@ def field_singleton_sub_fields_schema(
 
             for discriminator_value, sub_field in field.sub_fields_mapping.items():
                 # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
-                if is_union(get_origin(sub_field.type_)):
+                if origin_is_union(get_origin(sub_field.type_)):
                     sub_models = get_sub_types(sub_field.type_)
                     discriminator_models_refs[discriminator_value] = {
                         model_name_map[sub_model]: get_schema_ref(
@@ -1043,7 +1043,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if is_union(origin):
+            if origin_is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
             if issubclass(origin, List) and (

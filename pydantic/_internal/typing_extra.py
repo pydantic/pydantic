@@ -65,7 +65,7 @@ __all__ = (
     'get_sub_types',
     'typing_base',
     'get_all_type_hints',
-    'is_union',
+    'origin_is_union',
     'StrPath',
     'MappingIntStrAny',
     'NotRequired',
@@ -278,7 +278,7 @@ else:
 
 if sys.version_info < (3, 10):
 
-    def is_union(tp: Optional[Type[Any]]) -> bool:
+    def origin_is_union(tp: Optional[Type[Any]]) -> bool:
         return tp is Union
 
     WithArgsTypes = (TypingGenericAlias,)
@@ -287,7 +287,7 @@ else:
     import types
     import typing
 
-    def is_union(tp: Optional[Type[Any]]) -> bool:
+    def origin_is_union(tp: Optional[Type[Any]]) -> bool:
         return tp is Union or tp is types.UnionType  # noqa: E721
 
     WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # type: ignore[attr-defined]
@@ -363,7 +363,7 @@ def display_as_type(v: Type[Any]) -> str:
     if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
         v = v.__class__
 
-    if is_union(get_origin(v)):
+    if origin_is_union(get_origin(v)):
         return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
 
     if isinstance(v, WithArgsTypes):
@@ -601,7 +601,7 @@ def get_sub_types(tp: Any) -> List[Any]:
     origin = get_origin(tp)
     if origin is Annotated:
         return get_sub_types(get_args(tp)[0])
-    elif is_union(origin):
+    elif origin_is_union(origin):
         return [x for t in get_args(tp) for x in get_sub_types(t)]
     else:
         return [tp]

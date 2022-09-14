@@ -45,7 +45,7 @@ from .typing import (
     is_none_type,
     is_typeddict,
     is_typeddict_special,
-    is_union,
+    origin_is_union,
     new_type_supertype,
 )
 from .utils import (
@@ -149,7 +149,10 @@ class FieldInfo(Representation):
     }
 
     def __init__(self, default: Any = Undefined, **kwargs: Any) -> None:
-        self.default = default
+        if default is Required:
+            self.default = Undefined
+        else:
+            self.default = default
         self.default_factory = kwargs.pop('default_factory', None)
         self.alias = kwargs.pop('alias', None)
         self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
@@ -217,6 +220,9 @@ class FieldInfo(Representation):
     def _validate(self) -> None:
         if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
+
+    def get_default(self) -> Any:
+        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
 
 def Field(
@@ -629,7 +635,7 @@ class ModelField(Representation):
             self._type_analysis()
             return
 
-        if self.discriminator_key is not None and not is_union(origin):
+        if self.discriminator_key is not None and not origin_is_union(origin):
             raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
         # add extra check for `collections.abc.Hashable` for python 3.10+ where origin is not `None`
@@ -641,7 +647,7 @@ class ModelField(Representation):
             return
         elif origin is Callable:
             return
-        elif is_union(origin):
+        elif origin_is_union(origin):
             types_ = []
             for type_ in get_args(self.type_):
                 if is_none_type(type_) or type_ is Any or type_ is object:
@@ -1062,7 +1068,7 @@ class ModelField(Representation):
 
             errors = []
 
-            if self.model_config.smart_union and is_union(get_origin(self.type_)):
+            if self.model_config.smart_union and origin_is_union(get_origin(self.type_)):
                 # 1st pass: check if the value is an exact instance of one of the Union types
                 # (e.g. to avoid coercing a bool into an int)
                 for field in self.sub_fields:

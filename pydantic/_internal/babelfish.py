@@ -3,44 +3,76 @@ Convert python types to pydantic-core schema.
 """
 import re
 import typing
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+
+from pydantic_core import Schema as PydanticCoreSchema
+from pydantic_core._types import TypedDictField
 from typing_extensions import get_args, is_typeddict
 
+from pydantic.fields import Undefined, FieldInfo
 from .typing_extra import (
     NotRequired,
     Required,
+    NoneType,
     all_literal_values,
     evaluate_forwardref,
     get_origin,
     is_callable_type,
     is_literal_type,
-    is_union,
+    origin_is_union,
 )
 
-__all__ = ('generate_core_schema',)
 
-if TYPE_CHECKING:
-    from pydantic_core import Schema as PydanticCoreSchema
+__all__ = 'generate_schema', 'generate_field_schema'
 
 
-def generate_core_schema(obj: Any) -> 'PydanticCoreSchema':
+def generate_field_schema(field_annotation: Any, field_value: Any) -> TypedDictField:
+    """
+    Prepare a TypedDictField.
+    """
+
+    if field_annotation is Undefined:
+        if isinstance(field_value, FieldInfo):
+            field_type = field_value.get_default()
+        elif field_value is Undefined:
+            raise TypeError('Both field annotation and field value are Undefined')
+        else:
+            field_type = type(field_value)
+    else:
+        field_type = field_annotation
+
+    schema = {'schema': generate_schema(field_type)}
+    if isinstance(field_value, FieldInfo):
+        if field_value.default is Undefined:
+            schema['required'] = True
+        elif field_value.default_factory:
+            schema['default_factory'] = field_value.default_factory
+        else:
+            schema['default'] = field_value.default
+
+        if field_value.alias is not None:
+            schema['alias'] = field_value.alias
+    elif field_value is not Undefined:
+        schema['default'] = field_value
+    return schema
+
+
+def generate_schema(obj: Any) -> PydanticCoreSchema:
     """
     Recursively generate a pydantic-core schema for any supported python type.
     """
-    if isinstance(obj, str):
+    if isinstance(obj, (str, dict)):
         # we assume this is already a valid schema
         return obj
     elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
         return obj.__name__
     elif obj is Any:
         return 'any'
-    elif obj is None:
+    elif obj is None or obj is NoneType:
         return 'none'
     elif obj == type:
         return {'type': 'is-instance', 'class_': type}
-    elif is_union(obj):
-        return union_schema(obj)
     elif is_callable_type(obj):
         return 'callable'
     elif is_literal_type(obj):
@@ -55,8 +87,11 @@ def generate_core_schema(obj: Any) -> 'PydanticCoreSchema':
         return obj.__name__
 
     origin = get_origin(obj)
+    debug(origin)
     if origin is None:
         raise PydanticSchemaGenerationError(f'Unknown type: {obj!r}, origin is None')
+    elif origin_is_union(origin):
+        return union_schema(obj)
     elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
         return generic_collection_schema(obj)
     elif issubclass(origin, typing.Tuple):
@@ -74,14 +109,14 @@ class PydanticSchemaGenerationError(TypeError):
     pass
 
 
-def union_schema(union_type: Any) -> 'PydanticCoreSchema':
+def union_schema(union_type: Any) -> PydanticCoreSchema:
     """
     Generate schema for a Union.
     """
-    return {'type': 'union', 'choices': [generate_core_schema(arg) for arg in get_args(union_type)]}
+    return {'type': 'union', 'choices': [generate_schema(arg) for arg in get_args(union_type)]}
 
 
-def literal_schema(literal_type: Any) -> 'PydanticCoreSchema':
+def literal_schema(literal_type: Any) -> PydanticCoreSchema:
     """
     Generate schema for a Literal.
     """
@@ -90,7 +125,7 @@ def literal_schema(literal_type: Any) -> 'PydanticCoreSchema':
     return {'type': 'literal', 'expected': expected}
 
 
-def type_dict_schema(typed_dict: Any) -> 'PydanticCoreSchema':
+def type_dict_schema(typed_dict: Any) -> PydanticCoreSchema:
     """
     Generate schema for a TypedDict.
     """
@@ -120,23 +155,23 @@ def type_dict_schema(typed_dict: Any) -> 'PydanticCoreSchema':
                 required = False
                 field_type = field_type.__args__[0]
 
-            schema = generate_core_schema(field_type)
+            schema = generate_schema(field_type)
 
         fields[field_name] = {'schema': schema, 'required': required}
 
     return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}
 
 
-def generic_collection_schema(obj: Any) -> 'PydanticCoreSchema':
+def generic_collection_schema(obj: Any) -> PydanticCoreSchema:
     """
     Generate schema for List, Set etc. - where the schema includes `items_schema`
 
     e.g. `list[int]`.
     """
-    return {'type': obj.__name__, 'items_schema': generate_core_schema(get_args(obj)[0])}
+    return {'type': obj.__name__.lower(), 'items_schema': generate_schema(get_args(obj)[0])}
 
 
-def tuple_schema(tuple_type: Any) -> 'PydanticCoreSchema':
+def tuple_schema(tuple_type: Any) -> PydanticCoreSchema:
     """
     Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
     """
@@ -150,30 +185,30 @@ def tuple_schema(tuple_type: Any) -> 'PydanticCoreSchema':
         return {
             'type': 'tuple',
             'mode': 'positional',
-            'items_schema': [generate_core_schema(p) for p in items_schema],
-            'extra_schema': generate_core_schema(extra_schema),
+            'items_schema': [generate_schema(p) for p in items_schema],
+            'extra_schema': generate_schema(extra_schema),
         }
     else:
         return {
             'type': 'tuple',
             'mode': 'positional',
-            'items_schema': [generate_core_schema(p) for p in params],
+            'items_schema': [generate_schema(p) for p in params],
         }
 
 
-def dict_schema(dict_type: Any) -> 'PydanticCoreSchema':
+def dict_schema(dict_type: Any) -> PydanticCoreSchema:
     """
     Generate schema for a Dict, e.g. `dict[str, int]`.
     """
     arg0, arg1 = get_args(dict_type)
     return {
         'type': 'dict',
-        'keys_schema': generate_core_schema(arg0),
-        'values_schema': generate_core_schema(arg1),
+        'keys_schema': generate_schema(arg0),
+        'values_schema': generate_schema(arg1),
     }
 
 
-def type_schema(type_: Any) -> 'PydanticCoreSchema':
+def type_schema(type_: Any) -> PydanticCoreSchema:
     """
     Generate schema for a Type, e.g. `Type[int]`.
     """

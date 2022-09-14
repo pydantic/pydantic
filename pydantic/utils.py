@@ -37,7 +37,7 @@ from .typing import (
     get_args,
     get_origin,
     is_literal_type,
-    is_union,
+    origin_is_union,
 )
 from .version import version_info
 
@@ -678,9 +678,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
 
 
 def is_valid_field(name: str) -> bool:
-    if not name.startswith('_'):
-        return True
-    return ROOT_KEY == name
+    return not name.startswith('_')
 
 
 DUNDER_ATTRIBUTES = {
@@ -750,7 +748,7 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
     if hasattr(tp, '__pydantic_model__'):
         tp = tp.__pydantic_model__
 
-    if is_union(get_origin(tp)):
+    if origin_is_union(get_origin(tp)):
         alias, all_values = _get_union_alias_and_all_values(tp, discriminator_key)
         return alias, tuple(v for values in all_values for v in values)
     elif is_root_model:
