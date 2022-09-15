@@ -1,5 +1,5 @@
 [build-system]
-requires = ['hatchling']
+requires = ['hatchling', 'hatch-fancy-pypi-readme>=22.5.0']
 build-backend = 'hatchling.build'
 
 [tool.hatch.version]
@@ -13,8 +13,6 @@ authors = [
     {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
     {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
 ]
-license-files = { paths = ['LICENSE'] }
-readme = 'README.md'
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
@@ -40,7 +38,7 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [ 'typing-extensions>=4.1.0' ]
 optional-dependencies = { email = ['email-validator>=1.0.3'] }
-dynamic = ['version']
+dynamic = ['version', 'readme']
 
 entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
 
@@ -50,6 +48,25 @@ Documentation = 'https://pydantic-docs.helpmanual.io'
 Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic'
 Changelog = 'https://pydantic-docs.helpmanual.io/changelog'
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = 'text/markdown'
+fragments = [
+    { path = 'README.md' },
+    { path = 'HISTORY.md' },
+]
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '#(\d+)'
+replacement = '[#\1](https://github.com/pydantic/pydantic/issues/\1)'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '( +)@([\w\-]+)'
+replacement = '\1[@\2](https://github.com/\2)'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '@@'
+replacement = '@'
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
