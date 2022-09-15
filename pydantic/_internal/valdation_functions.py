@@ -3,43 +3,48 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
-from dataclasses import dataclass
 from itertools import chain
-from typing import Any, Callable, Literal
+from typing import Any, Callable
+
+from typing_extensions import Literal
 
 from ..errors import ConfigError
 
-__all__ = 'FIELD_VALIDATOR_TAG', 'ROOT_VALIDATOR_TAG', 'RootValidator', 'FieldValidator', 'ValidationFunctions'
+__all__ = 'FIELD_VALIDATOR_TAG', 'ROOT_VALIDATOR_TAG', 'Validator', 'ValidationFunctions'
 FIELD_VALIDATOR_TAG = '__field_validator__'
 ROOT_VALIDATOR_TAG = '__root_validator__'
 
 
-@dataclass
-class RootValidator:
-    function: Callable[..., Any]
-    mode: Literal['before', 'after', 'wrap', 'plain']
+class Validator:
+    __slots__ = 'function', 'mode', 'sub_path', 'check_fields'
 
-
-@dataclass
-class FieldValidator(RootValidator):
-    check_fields: bool
-    sub_path: tuple[str | int, ...] | None
+    def __init__(
+        self,
+        function: Callable[..., Any],
+        mode: Literal['before', 'after', 'wrap', 'plain'],
+        sub_path: tuple[str | int, ...] | None = None,
+        check_fields: bool | None = None,
+    ):
+        self.function = function
+        self.mode = mode
+        self.sub_path = sub_path
+        self.check_fields = check_fields
 
 
 class ValidationFunctions:
     __slots__ = '_field_validators', '_all_fields_validators', 'root_validators', '_used_validators'
 
     def __init__(self) -> None:
-        self._field_validators: dict[str, list[FieldValidator]] = {}
-        self._all_fields_validators: list[FieldValidator] = []
-        self.root_validators: list[RootValidator] = []
+        self._field_validators: dict[str, list[Validator]] = {}
+        self._all_fields_validators: list[Validator] = []
+        self.root_validators: list[Validator] = []
         self._used_validators: set[str] = set()
 
     def inherit(self, parent: ValidationFunctions) -> None:
         """
         Inherit validators from another ValidationFunctions instance in a parent class.
 
-        Parent validators are prepended so they will be called first.
+        Parent validators are prepended so that they will be called first.
         """
         for k, v in parent._field_validators.items():
             existing = self._field_validators.get(k)
@@ -50,7 +55,7 @@ class ValidationFunctions:
         self.root_validators = parent.root_validators[:] + self.root_validators
 
     def extract_validator(self, value: Any) -> bool:
-        f_validator: tuple[tuple[str, ...], FieldValidator] | None = getattr(value, FIELD_VALIDATOR_TAG, None)
+        f_validator: tuple[tuple[str, ...], Validator] | None = getattr(value, FIELD_VALIDATOR_TAG, None)
         if f_validator:
             fields, validator = f_validator
             for field_name in fields:
@@ -61,14 +66,14 @@ class ValidationFunctions:
                     self._field_validators[field_name] = [validator]
             return True
 
-        r_validator: RootValidator | None = getattr(value, ROOT_VALIDATOR_TAG, None)
+        r_validator: Validator | None = getattr(value, ROOT_VALIDATOR_TAG, None)
         if f_validator:
             self.root_validators.append(r_validator)
             return True
         else:
             return False
 
-    def get_field_validators(self, name: str) -> list[FieldValidator]:
+    def get_field_validators(self, name: str) -> list[Validator]:
         """
         Get all validators for a given field name.
         """
