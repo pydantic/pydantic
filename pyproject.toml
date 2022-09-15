@@ -51,14 +51,17 @@ Changelog = 'https://pydantic-docs.helpmanual.io/changelog'
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
 content-type = 'text/markdown'
-fragments = [
-    { path = 'README.md' },
-    { path = 'HISTORY.md' },
-]
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "HISTORY.md"
+pattern = "(.+?)<!-- package description limit -->"
 
 [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
-pattern = '#(\d+)'
-replacement = '[#\1](https://github.com/pydantic/pydantic/issues/\1)'
+pattern = '( +)#(\d+)'
+replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'
 
 [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
 pattern = '( +)@([\w\-]+)'
