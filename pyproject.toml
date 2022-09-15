@@ -13,7 +13,7 @@ authors = [
     {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
     {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
 ]
-license = {file = 'LICENSE'}
+license-files = { paths = ['LICENSE'] }
 readme = 'README.md'
 classifiers = [
     'Development Status :: 5 - Production/Stable',
