@@ -13,6 +13,7 @@ authors = [
     {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
     {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
 ]
+license = 'MIT'
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
