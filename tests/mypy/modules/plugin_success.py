@@ -224,3 +224,10 @@ class FieldDefaultTestingModel(BaseModel):
     g: List[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
+
+
+class FieldOptionalNoDefaultModel(BaseModel):
+    x: Optional[str] = Field()
+
+
+FieldOptionalNoDefaultModel()

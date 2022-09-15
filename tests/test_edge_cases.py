@@ -1067,6 +1067,15 @@ def test_optional_required():
     assert Model(bar=None).dict() == {'bar': None}
 
 
+def test_optional_required_field_call():
+    class Model(BaseModel):
+        bar: Optional[int] = Field()
+
+    assert Model(bar=123).dict() == {'bar': 123}
+    assert Model().dict() == {'bar': None}
+    assert Model(bar=None).dict() == {'bar': None}
+
+
 def test_invalid_validator():
     class InvalidValidator:
         @classmethod
