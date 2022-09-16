@@ -123,7 +123,7 @@ The motivation for building pydantic-core in Rust is as follows:
 pydantic-core is usable now, albeit with an unintuitive API, if you're interested, please give it a try.
 
 pydantic-core provides validators for common data types,
-[see a list here](https://github.com/pydantic/pydantic-core/blob/main/pydantic_core/_types.py#L291).
+[see a list here](https://github.com/pydantic/pydantic-core/blob/main/pydantic_core/schema_types.py#L291).
 Other, less commonly used data types will be supported via validator functions implemented in pydantic, in Python.
 
 See [pydantic-core#153](https://github.com/pydantic/pydantic-core/issues/153)
