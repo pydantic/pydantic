@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type, TypeVar, Union
 
-from ._internal.typing_extra import NoArgAnyCallable, is_finalvar
-from .utils import Representation, ValueItems, smart_deepcopy
+from ._internal.typing_extra import NoArgAnyCallable, display_as_type, is_finalvar
+from .utils import PyObjectStr, Representation, ValueItems, smart_deepcopy
 
 Required: Any = Ellipsis
 
@@ -140,19 +140,28 @@ class FieldInfo(Representation):
     @classmethod
     def from_annotated_attribute(cls, annotation: Any, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
         if isinstance(default, FieldInfo):
+            default.annotation = annotation
             return default
         else:
             return cls(annotation=annotation, default=default)
 
     def __repr_args__(self) -> 'ReprArgs':
-
         field_defaults_to_hide: Dict[str, Any] = {
             'repr': True,
             **self.__field_constraints__,
         }
+        yield 'annotation', PyObjectStr(display_as_type(self.annotation))
+        yield 'required', self.is_required()
 
-        attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v != field_defaults_to_hide.get(a, None)]
+        for s in self.__slots__:
+            if s == 'annotation':
+                continue
+            if s == 'default_factory' and self.default_factory is not None:
+                yield 'default_factory', PyObjectStr(display_as_type(self.default_factory))
+            elif s != 'extra' or self.extra:
+                value = getattr(self, s)
+                if value != field_defaults_to_hide.get(s, None) and value is not Undefined:
+                    yield s, value
 
     def get_constraints(self) -> Set[str]:
         """
@@ -388,11 +397,13 @@ def PrivateAttr(
     )
 
 
-class DeferredType:
-    """
-    Used to postpone field preparation, while creating recursive generic models.
-    """
-
-
 def is_finalvar_with_default_val(type_: Type[Any], val: Any) -> bool:
     return is_finalvar(type_) and val is not Undefined and not isinstance(val, FieldInfo)
+
+
+class DeferredType:
+    """
+    TODO remove
+    """
+
+    pass

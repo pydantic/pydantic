@@ -18,6 +18,10 @@ ROOT_VALIDATOR_TAG = '_root_validator'
 
 
 class Validator:
+    """
+    Store information about field and root validators.
+    """
+
     __slots__ = 'function', 'mode', 'sub_path', 'check_fields'
 
     def __init__(

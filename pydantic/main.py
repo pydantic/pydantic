@@ -31,7 +31,7 @@ from typing_extensions import dataclass_transform
 from ._internal.model_construction import complete_model_class, inspect_namespace
 from ._internal.typing_extra import is_namedtuple, update_model_forward_refs
 from ._internal.valdation_functions import ValidationFunctions
-from .config import BaseConfig, build_config, inherit_config
+from .config import BaseConfig, Extra, build_config, inherit_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError
 from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
@@ -158,12 +158,21 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         __pydantic_self__._init_private_attributes()
 
     @no_type_check
-    def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
+    def __setattr__(self, name, value):
         if name.startswith('_'):
-            return object_setattr(self, name, value)
-
-        self.__dict__[name] = value
-        self.__fields_set__.add(name)
+            object_setattr(self, name, value)
+        elif self.__config__.frozen:
+            raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
+        elif self.__config__.validate_assignment:
+            values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
+            object_setattr(self, '__dict__', values)
+            self.__fields_set__ |= fields_set
+        elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
+            # TODO - matching error
+            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
+        else:
+            self.__dict__[name] = value
+            self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)

@@ -1,4 +1,5 @@
 import sys
+import types
 from collections.abc import Callable
 from os import PathLike
 from typing import (  # type: ignore
@@ -284,7 +285,6 @@ if sys.version_info < (3, 10):
     WithArgsTypes = (TypingGenericAlias,)
 
 else:
-    import types
     import typing
 
     def origin_is_union(tp: Optional[Type[Any]]) -> bool:
@@ -360,6 +360,14 @@ else:
 
 
 def display_as_type(v: Type[Any]) -> str:
+    """
+    Pretty representation of a type, should be as close as possible to the original type definition string.
+
+    TODO replace with typing._type_repr like logic.
+    """
+    if isinstance(v, types.FunctionType):
+        return v.__name__
+
     if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
         v = v.__class__
 

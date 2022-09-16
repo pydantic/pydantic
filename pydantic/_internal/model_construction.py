@@ -5,11 +5,11 @@ import warnings
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
 
-from pydantic_core import SchemaValidator
+from pydantic_core import Schema as PydanticCoreSchema, SchemaValidator
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..utils import ClassAttribute, is_valid_identifier
-from .babelfish import model_fields_schema
+from .babelfish import generate_config, model_fields_schema
 from .typing_extra import is_classvar
 from .valdation_functions import ValidationFunctions
 
@@ -127,15 +127,17 @@ def complete_model_class(
             # 2. To avoid false positives in the NameError check above
             delattr(cls, ann_name)
 
+    core_config = generate_config(cls.__config__)
     inner_schema = model_fields_schema(fields, validator_functions)
     validator_functions.check_for_unused()
 
     cls.__fields__ = fields
-    cls.__pydantic_validator__ = SchemaValidator(inner_schema)
-    cls.__pydantic_validation_schema__ = {
+    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    cls.__pydantic_validation_schema__: PydanticCoreSchema = {
         'type': 'new-class',
         'class_type': cls,
         'schema': inner_schema,
+        'config': core_config,
     }
 
     # set __signature__ attr only for model class, but not for its instances

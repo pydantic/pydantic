@@ -1,12 +1,15 @@
 """
 Convert python types to pydantic-core schema.
 """
+from __future__ import annotations as _annotations
+
 import re
 import typing
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import Schema as PydanticCoreSchema
 from pydantic_core._types import (
+    Config as PydanticCoreConfig,
     DictSchema,
     IsInstanceSchema,
     TuplePositionalSchema,
@@ -31,7 +34,10 @@ from .typing_extra import (
 )
 from .valdation_functions import ValidationFunctions, Validator
 
-__all__ = 'generate_schema', 'model_fields_schema'
+if TYPE_CHECKING:
+    from ..config import BaseConfig
+
+__all__ = 'generate_config', 'generate_schema', 'model_fields_schema'
 
 
 def model_fields_schema(fields: dict[str, FieldInfo], validator_functions: ValidationFunctions) -> PydanticCoreSchema:
@@ -44,6 +50,13 @@ def model_fields_schema(fields: dict[str, FieldInfo], validator_functions: Valid
     return schema
 
 
+def generate_config(config: type[BaseConfig]) -> PydanticCoreConfig:
+    return {
+        'typed_dict_extra_behavior': config.extra.value,
+        # 'allow_inf_nan': config.allow_inf_nan,
+    }
+
+
 def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore complexity)
     """
     Recursively generate a pydantic-core schema for any supported python type.
@@ -53,7 +66,7 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
         return obj  # type: ignore[return-value]
     elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
         return obj.__name__
-    elif obj is Any:
+    elif obj is Any or obj is object:
         return 'any'
     elif obj is None or obj is NoneType:
         return 'none'
@@ -71,6 +84,10 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
 
     if obj in (datetime, timedelta, date, time):
         return obj.__name__
+
+    schema_property = getattr(obj, '__pydantic_validation_schema__', None)
+    if schema_property is not None:
+        return schema_property
 
     origin = get_origin(obj)
     if origin is None:
@@ -99,10 +116,10 @@ def generate_field_schema(name: str, field: FieldInfo, validator_functions: Vali
     schema = apply_validators(schema, validator_functions.get_field_validators(name))
 
     field_schema: TypedDictField = {'schema': schema}
-    if field.default is Undefined:
-        field_schema['required'] = True
-    elif field.default_factory:
+    if field.default_factory:
         field_schema['default_factory'] = field.default_factory
+    elif field.default is Undefined:
+        field_schema['required'] = True
     else:
         field_schema['default'] = field.default
 

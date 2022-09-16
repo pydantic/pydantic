@@ -24,11 +24,8 @@ from typing_extensions import Annotated, Final, Literal
 from pydantic import (
     BaseConfig,
     BaseModel,
-    ConfigError,
     Extra,
     Field,
-    NoneBytes,
-    NoneStr,
     PrivateAttr,
     Required,
     SecretStr,
@@ -67,8 +64,18 @@ def test_ultra_simple_failed():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'kind': 'float_parsing',
+            'loc': ['a'],
+            'message': 'Input should be a valid number, unable to parse string as an number',
+            'input_value': 'x',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['b'],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'x',
+        },
     ]
 
 
@@ -76,8 +83,8 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.__fields__['a']) == "ModelField(name='a', type=float, required=True)"
-    assert repr(m.__fields__['b']) == "ModelField(name='b', type=int, required=False, default=10)"
+    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.__fields__['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
     assert m.json() == '{"a": 10.2, "b": 10}'
@@ -93,23 +100,9 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert (
-        repr(m.__fields__['a']) == "ModelField(name='a', type=int, required=False, default_factory='<function myfunc>')"
-    )
+    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
     assert m.json() == '{"a": 1}'
-
-
-def test_default_factory_no_type_field():
-    def myfunc():
-        return 1
-
-    with pytest.raises(ConfigError) as e:
-
-        class Model(BaseModel):
-            a = Field(default_factory=myfunc)
-
-    assert str(e.value) == "you need to set the type of field 'a' when using `default_factory`"
 
 
 def test_comparing():
@@ -118,15 +111,20 @@ def test_comparing():
     assert m == UltraSimpleModel(a=10.2, b=100)
 
 
-def test_nullable_strings_success():
+@pytest.fixture(scope='session', name='NoneCheckModel')
+def none_check_model_fix():
     class NoneCheckModel(BaseModel):
-        existing_str_value = 'foo'
+        existing_str_value: str = 'foo'
         required_str_value: str = ...
-        required_str_none_value: NoneStr = ...
-        existing_bytes_value = b'foo'
+        required_str_none_value: Optional[str] = ...
+        existing_bytes_value: bytes = b'foo'
         required_bytes_value: bytes = ...
-        required_bytes_none_value: NoneBytes = ...
+        required_bytes_none_value: Optional[bytes] = ...
 
+    return NoneCheckModel
+
+
+def test_nullable_strings_success(NoneCheckModel):
     m = NoneCheckModel(
         required_str_value='v1', required_str_none_value=None, required_bytes_value='v2', required_bytes_none_value=None
     )
@@ -136,15 +134,7 @@ def test_nullable_strings_success():
     assert m.required_bytes_none_value is None
 
 
-def test_nullable_strings_fails():
-    class NoneCheckModel(BaseModel):
-        existing_str_value = 'foo'
-        required_str_value: str = ...
-        required_str_none_value: NoneStr = ...
-        existing_bytes_value = b'foo'
-        required_bytes_value: bytes = ...
-        required_bytes_none_value: NoneBytes = ...
-
+def test_nullable_strings_fails(NoneCheckModel):
     with pytest.raises(ValidationError) as exc_info:
         NoneCheckModel(
             required_str_value=None,
@@ -153,11 +143,21 @@ def test_nullable_strings_fails():
             required_bytes_none_value=None,
         )
     assert exc_info.value.errors() == [
-        {'loc': ('required_str_value',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
         {
-            'loc': ('required_bytes_value',),
-            'msg': 'none is not an allowed value',
-            'type': 'type_error.none.not_allowed',
+            'kind': 'str_type',
+            'loc': [
+                'required_str_value',
+            ],
+            'message': 'Input should be a valid string',
+            'input_value': None,
+        },
+        {
+            'kind': 'bytes_type',
+            'loc': [
+                'required_bytes_value',
+            ],
+            'message': 'Input should be a valid bytes',
+            'input_value': None,
         },
     ]
 
@@ -190,18 +190,16 @@ def test_not_required():
 
     assert Model(a=12.2).a == 12.2
     assert Model().a is None
-    assert Model(a=None).a is None
-
-
-def test_infer_type():
-    class Model(BaseModel):
-        a = False
-        b = ''
-        c = 0
-
-    assert Model().a is False
-    assert Model().b == ''
-    assert Model().c == 0
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=None)
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'float_type',
+            'loc': ['a'],
+            'message': 'Input should be a valid number',
+            'input_value': None,
+        },
+    ]
 
 
 def test_allow_extra():
@@ -226,7 +224,7 @@ def test_allow_extra_repr():
 
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
-        foo = 'whatever'
+        foo: str = 'whatever'
 
         class Config:
             extra = Extra.forbid
@@ -234,13 +232,10 @@ def test_forbidden_extra_success():
     m = ForbiddenExtra()
     assert m.foo == 'whatever'
 
-    m = ForbiddenExtra(foo=1)
-    assert m.foo == '1'
-
 
 def test_forbidden_extra_fails():
     class ForbiddenExtra(BaseModel):
-        foo = 'whatever'
+        foo: str = 'whatever'
 
         class Config:
             extra = Extra.forbid
@@ -248,17 +243,42 @@ def test_forbidden_extra_fails():
     with pytest.raises(ValidationError) as exc_info:
         ForbiddenExtra(foo='ok', bar='wrong', spam='xx')
     assert exc_info.value.errors() == [
-        {'loc': ('bar',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
-        {'loc': ('spam',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {
+            'kind': 'extra_forbidden',
+            'loc': ['bar'],
+            'message': 'Extra inputs are not permitted',
+            'input_value': 'wrong',
+        },
+        {
+            'kind': 'extra_forbidden',
+            'loc': ['spam'],
+            'message': 'Extra inputs are not permitted',
+            'input_value': 'xx',
+        },
     ]
 
 
-def test_disallow_mutation():
+def test_assign_extra_no_validate():
     class Model(BaseModel):
         a: float
 
+        class Config:
+            validate_assignment = True
+
     model = Model(a=0.2)
-    with pytest.raises(ValueError, match='"Model" object has no field "b"'):
+    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
+        model.b = 2
+
+
+def test_assign_extra_validate():
+    class Model(BaseModel):
+        a: float
+
+        class Config:
+            validate_assignment = True
+
+    model = Model(a=0.2)
+    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
         model.b = 2
 
 
@@ -327,32 +347,6 @@ def test_any():
     assert m.b == 'barfoo'
 
 
-def test_alias():
-    class SubModel(BaseModel):
-        c = 'barfoo'
-
-        class Config:
-            fields = {'c': {'alias': '_c'}}
-
-    class Model(BaseModel):
-        a = 'foobar'
-        b: SubModel = SubModel()
-
-        class Config:
-            fields = {'a': {'alias': '_a'}}
-
-    assert Model().a == 'foobar'
-    assert Model().b.c == 'barfoo'
-    assert Model().dict() == {'a': 'foobar', 'b': {'c': 'barfoo'}}
-    assert Model(_a='different').a == 'different'
-    assert Model(b={'_c': 'different'}).b.c == 'different'
-    assert Model(_a='different', b={'_c': 'different'}).dict() == {'a': 'different', 'b': {'c': 'different'}}
-    assert Model(_a='different', b={'_c': 'different'}).dict(by_alias=True) == {
-        '_a': 'different',
-        'b': {'_c': 'different'},
-    }
-
-
 def test_population_by_field_name():
     class Model(BaseModel):
         a: str
@@ -387,7 +381,7 @@ def test_required():
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [{'loc': ['a'], 'message': 'field required', 'kind': 'value_error.missing'}]
 
 
 def test_mutability():
@@ -539,9 +533,9 @@ def test_const_with_wrong_value():
 
     assert exc_info.value.errors() == [
         {
-            'loc': ('a',),
-            'msg': 'unexpected value; permitted: 3',
-            'type': 'value_error.const',
+            'loc': ['a'],
+            'message': 'unexpected value; permitted: 3',
+            'kind': 'value_error.const',
             'ctx': {'given': 4, 'permitted': [3]},
         }
     ]
@@ -560,9 +554,9 @@ def test_const_with_validator():
 
     assert exc_info.value.errors() == [
         {
-            'loc': ('a',),
-            'msg': 'unexpected value; permitted: 3',
-            'type': 'value_error.const',
+            'loc': ['a'],
+            'message': 'unexpected value; permitted: 3',
+            'kind': 'value_error.const',
             'ctx': {'given': 4, 'permitted': [3]},
         }
     ]
@@ -582,10 +576,10 @@ def test_const_list():
     assert m.schema() == {
         'definitions': {
             'SubModel': {
-                'properties': {'b': {'title': 'B', 'type': 'integer'}},
+                'properties': {'b': {'title': 'B', 'kind': 'integer'}},
                 'required': ['b'],
                 'title': 'SubModel',
-                'type': 'object',
+                'kind': 'object',
             }
         },
         'properties': {
@@ -594,18 +588,18 @@ def test_const_list():
                 'default': [{'b': 1}, {'b': 2}, {'b': 3}],
                 'items': {'$ref': '#/definitions/SubModel'},
                 'title': 'A',
-                'type': 'array',
+                'kind': 'array',
             },
             'b': {
                 'const': [{'b': 4}, {'b': 5}, {'b': 6}],
                 'default': [{'b': 4}, {'b': 5}, {'b': 6}],
                 'items': {'$ref': '#/definitions/SubModel'},
                 'title': 'B',
-                'type': 'array',
+                'kind': 'array',
             },
         },
         'title': 'Model',
-        'type': 'object',
+        'kind': 'object',
     }
 
 
@@ -626,15 +620,15 @@ def test_const_list_with_wrong_value():
                 'given': [{'b': 3}, {'b': 1}, {'b': 2}],
                 'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
             },
-            'loc': ('a',),
-            'msg': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
-            'type': 'value_error.const',
+            'loc': ['a'],
+            'message': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
+            'kind': 'value_error.const',
         },
         {
             'ctx': {'given': [{'b': 6}, {'b': 5}], 'permitted': [[{'b': 4}, {'b': 5}, {'b': 6}]]},
-            'loc': ('b',),
-            'msg': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
-            'type': 'value_error.const',
+            'loc': ['b'],
+            'message': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
+            'kind': 'value_error.const',
         },
     ]
     assert exc_info.value.json().startswith('[')
@@ -648,15 +642,15 @@ def test_const_list_with_wrong_value():
                 'given': [SubModel(b=3), SubModel(b=1), SubModel(b=2)],
                 'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
             },
-            'loc': ('a',),
-            'msg': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
-            'type': 'value_error.const',
+            'loc': ['a'],
+            'message': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
+            'kind': 'value_error.const',
         },
         {
             'ctx': {'given': [SubModel(b=3), SubModel(b=1)], 'permitted': [[{'b': 4}, {'b': 5}, {'b': 6}]]},
-            'loc': ('b',),
-            'msg': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
-            'type': 'value_error.const',
+            'loc': ['b'],
+            'message': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
+            'kind': 'value_error.const',
         },
     ]
     assert exc_info.value.json().startswith('[')
@@ -706,16 +700,16 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
     with pytest.raises(ValidationError) as exc_info:
         p.a = 'b'
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'loc': ['a'], 'message': 'value is not a valid integer', 'kind': 'type_error.integer'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         p.b = ''
     assert exc_info.value.errors() == [
         {
-            'loc': ('b',),
-            'msg': 'ensure this value has at least 1 characters',
-            'type': 'value_error.any_str.min_length',
+            'loc': ['b'],
+            'message': 'ensure this value has at least 1 characters',
+            'kind': 'value_error.any_str.min_length',
             'ctx': {'limit_value': 1},
         }
     ]
@@ -740,9 +734,9 @@ def test_validating_assignment_pre_root_validator_fail():
         m.current_value = '100'
     assert exc_info.value.errors() == [
         {
-            'loc': ('__root__',),
-            'msg': 'values cannot be a string',
-            'type': 'value_error',
+            'loc': ['__root__'],
+            'message': 'values cannot be a string',
+            'kind': 'value_error',
         }
     ]
 
@@ -782,11 +776,11 @@ def test_validating_assignment_post_root_validator_fail():
     with pytest.raises(ValidationError) as exc_info:
         m.current_value = 1000
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'current_value cannot be greater than max_value', 'type': 'value_error'},
+        {'loc': ['__root__'], 'message': 'current_value cannot be greater than max_value', 'kind': 'value_error'},
         {
-            'loc': ('__root__',),
-            'msg': 'current_value cannot be greater than 500',
-            'type': 'value_error',
+            'loc': ['__root__'],
+            'message': 'current_value cannot be greater than 500',
+            'kind': 'value_error',
         },
     ]
 
@@ -847,9 +841,9 @@ def test_literal_enum_values():
 
     assert exc_info.value.errors() == [
         {
-            'loc': ('baz',),
-            'msg': "unexpected value; permitted: <FooEnum.foo: 'foo_value'>",
-            'type': 'value_error.const',
+            'loc': ['baz'],
+            'message': "unexpected value; permitted: <FooEnum.foo: 'foo_value'>",
+            'kind': 'value_error.const',
             'ctx': {'given': FooEnum.bar, 'permitted': (FooEnum.foo,)},
         },
     ]
@@ -917,9 +911,9 @@ def test_arbitrary_type_allowed_validation_fails():
         ArbitraryTypeAllowedModel(t=C())
     assert exc_info.value.errors() == [
         {
-            'loc': ('t',),
-            'msg': 'instance of ArbitraryType expected',
-            'type': 'type_error.arbitrary_type',
+            'loc': ['t'],
+            'message': 'instance of ArbitraryType expected',
+            'kind': 'type_error.arbitrary_type',
             'ctx': {'expected_arbitrary_type': 'ArbitraryType'},
         }
     ]
@@ -966,9 +960,9 @@ def test_type_type_validation_fails_for_instance():
         ArbitraryClassAllowedModel(t=C)
     assert exc_info.value.errors() == [
         {
-            'loc': ('t',),
-            'msg': 'subclass of ArbitraryType expected',
-            'type': 'type_error.subclass',
+            'loc': ['t'],
+            'message': 'subclass of ArbitraryType expected',
+            'kind': 'type_error.subclass',
             'ctx': {'expected_class': 'ArbitraryType'},
         }
     ]
@@ -982,9 +976,9 @@ def test_type_type_validation_fails_for_basic_type():
         ArbitraryClassAllowedModel(t=1)
     assert exc_info.value.errors() == [
         {
-            'loc': ('t',),
-            'msg': 'subclass of ArbitraryType expected',
-            'type': 'type_error.subclass',
+            'loc': ['t'],
+            'message': 'subclass of ArbitraryType expected',
+            'kind': 'type_error.subclass',
             'ctx': {'expected_class': 'ArbitraryType'},
         }
     ]
@@ -1008,7 +1002,7 @@ def test_bare_type_type_validation_fails(bare_type):
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
         ArbitraryClassAllowedModel(t=arbitrary_type)
-    assert exc_info.value.errors() == [{'loc': ('t',), 'msg': 'a class is expected', 'type': 'type_error.class'}]
+    assert exc_info.value.errors() == [{'loc': ['t'], 'message': 'a class is expected', 'kind': 'type_error.class'}]
 
 
 def test_annotation_field_name_shadows_attribute():
@@ -1229,7 +1223,7 @@ def test_root_undefined_failed():
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel(__root__=['a'])
-        assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+        assert exc_info.value.errors() == [{'loc': ['a'], 'message': 'field required', 'kind': 'value_error.missing'}]
 
 
 def test_parse_root_as_mapping():
@@ -1241,7 +1235,7 @@ def test_parse_root_as_mapping():
     with pytest.raises(ValidationError) as exc_info:
         MyModel.parse_obj({'__root__': {'1': '2'}})
     assert exc_info.value.errors() == [
-        {'loc': ('__root__', '__root__'), 'msg': 'str type expected', 'type': 'type_error.str'}
+        {'loc': ['__root__', '__root__'], 'message': 'str type expected', 'kind': 'type_error.str'}
     ]
 
 
@@ -1254,12 +1248,12 @@ def test_parse_obj_non_mapping_root():
     with pytest.raises(ValidationError) as exc_info:
         MyModel.parse_obj({'__not_root__': ['a']})
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
+        {'loc': ['__root__'], 'message': 'value is not a valid list', 'kind': 'type_error.list'}
     ]
     with pytest.raises(ValidationError):
         MyModel.parse_obj({'__root__': ['a'], 'other': 1})
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}
+        {'loc': ['__root__'], 'message': 'value is not a valid list', 'kind': 'type_error.list'}
     ]
 
 
@@ -1927,7 +1921,7 @@ def test_default_factory_validate_children():
         Parent(children=[{'x': 1}, {'y': 2}])
 
     assert exc_info.value.errors() == [
-        {'loc': ('children', 1, 'x'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'loc': ['children', 1, 'x'], 'message': 'field required', 'kind': 'value_error.missing'},
     ]
 
 
@@ -2164,9 +2158,9 @@ def test_typing_counter_value_validation():
 
     assert exc_info.value.errors() == [
         {
-            'loc': ('x', 'a'),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
+            'loc': ['x', 'a'],
+            'message': 'value is not a valid integer',
+            'kind': 'type_error.integer',
         }
     ]
 
@@ -2230,8 +2224,8 @@ def test_new_union_origin():
     assert Model(x='pika').x == 'pika'
     assert Model.schema() == {
         'title': 'Model',
-        'type': 'object',
-        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'kind': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'kind': 'integer'}, {'kind': 'string'}]}},
         'required': ['x'],
     }
 
