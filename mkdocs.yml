@@ -28,6 +28,7 @@ theme:
 
 repo_name: pydantic/pydantic
 repo_url: https://github.com/pydantic/pydantic
+edit_uri: edit/main/docs/
 extra:
   analytics:
     provider: google
