@@ -1,7 +1,7 @@
 import sys
 from typing import Any, TypedDict
 
-from pydantic_core._types import Config, Schema
+from pydantic_core.schema_types import Config, Schema
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired
