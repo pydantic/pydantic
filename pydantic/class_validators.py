@@ -54,7 +54,7 @@ def validator(
             FIELD_VALIDATOR_TAG,
             (
                 fields,
-                Validator(function=f_cls.__func__, mode=mode, sub_path=sub_path, check_fields=check_fields),
+                Validator(mode=mode, sub_path=sub_path, check_fields=check_fields),
             ),
         )
         return f_cls
@@ -88,12 +88,12 @@ def root_validator(
     """
     if __func:
         f_cls = _prepare_validator(__func, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_TAG, Validator(function=f_cls.__func__, mode=mode))
+        setattr(f_cls, ROOT_VALIDATOR_TAG, Validator(mode=mode))
         return f_cls
 
     def dec(f: AnyCallable) -> AnyClassMethod:
         f_cls = _prepare_validator(f, allow_reuse)
-        setattr(f_cls, ROOT_VALIDATOR_TAG, Validator(function=f_cls.__func__, mode=mode))
+        setattr(f_cls, ROOT_VALIDATOR_TAG, Validator(mode=mode))
         return f_cls
 
     return dec

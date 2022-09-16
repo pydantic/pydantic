@@ -29,7 +29,7 @@ from .typing_extra import (
     is_literal_type,
     origin_is_union,
 )
-from .valdation_functions import ValidationFunctions
+from .valdation_functions import ValidationFunctions, Validator
 
 __all__ = 'generate_schema', 'model_fields_schema'
 
@@ -40,13 +40,7 @@ def model_fields_schema(fields: dict[str, FieldInfo], validator_functions: Valid
         'return_fields_set': True,
         'fields': {k: generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
     }
-    for validator in validator_functions.root_validators:
-        schema = {
-            'type': 'function',
-            'mode': validator.mode,
-            'function': validator.function,
-            'schema': schema,
-        }
+    schema = apply_validators(schema, validator_functions.get_root_validators())
     return schema
 
 
@@ -102,14 +96,7 @@ def generate_field_schema(name: str, field: FieldInfo, validator_functions: Vali
     """
     assert field.annotation is not None, 'field.annotation is None'
     schema: PydanticCoreSchema = generate_schema(field.annotation)
-    for validator in validator_functions.get_field_validators(name):
-        assert validator.sub_path is None, 'validator.sub_path is not yet supported'
-        schema = {
-            'type': 'function',
-            'mode': validator.mode,
-            'function': validator.function,
-            'schema': schema,
-        }
+    schema = apply_validators(schema, validator_functions.get_field_validators(name))
 
     field_schema: TypedDictField = {'schema': schema}
     if field.default is Undefined:
@@ -122,6 +109,21 @@ def generate_field_schema(name: str, field: FieldInfo, validator_functions: Vali
     if field.alias is not None:
         field_schema['alias'] = field.alias
     return field_schema
+
+
+def apply_validators(schema: PydanticCoreSchema, validators: list[Validator]) -> PydanticCoreSchema:
+    """
+    Apply validators to a schema.
+    """
+    for validator in validators:
+        assert validator.sub_path is None, 'validator.sub_path is not yet supported'
+        schema = {
+            'type': 'function',
+            'mode': validator.mode,
+            'function': validator.function,
+            'schema': schema,
+        }
+    return schema
 
 
 class PydanticSchemaGenerationError(TypeError):

@@ -134,11 +134,11 @@ class FieldInfo(Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_bare(cls, annotation: Any) -> 'FieldInfo':
+    def from_annotation(cls, annotation: Any) -> 'FieldInfo':
         return cls(annotation=annotation)
 
     @classmethod
-    def from_default(cls, annotation: Any, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
+    def from_annotated_attribute(cls, annotation: Any, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
         if isinstance(default, FieldInfo):
             return default
         else:
@@ -183,6 +183,9 @@ class FieldInfo(Representation):
 
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+
+    def is_required(self) -> bool:
+        return self.default is Undefined and self.default_factory is None
 
 
 def Field(

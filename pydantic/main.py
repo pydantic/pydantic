@@ -1,10 +1,12 @@
 # remove this once issues are resolved
 # flake8: noqa
+from __future__ import annotations as _annotations
+
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
-from pathlib import Path
+from functools import partial
 from types import FunctionType, prepare_class, resolve_bases
 from typing import (
     TYPE_CHECKING,
@@ -23,19 +25,21 @@ from typing import (
     overload,
 )
 
+from pydantic_core import Schema as PydanticCoreSchema, SchemaValidator
 from typing_extensions import dataclass_transform
 
-from ._internal.new_model import NewModel
-from ._internal.typing_extra import AnyCallable, is_namedtuple, update_model_forward_refs
+from ._internal.model_construction import complete_model_class, inspect_namespace
+from ._internal.typing_extra import is_namedtuple, update_model_forward_refs
 from ._internal.valdation_functions import ValidationFunctions
-from .config import BaseConfig, Extra, inherit_config
+from .config import BaseConfig, build_config, inherit_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError
-from .fields import MAPPING_LIKE_SHAPES, Field, FieldInfo, ModelPrivateAttr, Undefined
+from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
+from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import StrBytes
-from .utils import DUNDER_ATTRIBUTES, ROOT_KEY, GetterDict, Representation, ValueItems, is_valid_field, sequence_like
+from .utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
 
 if TYPE_CHECKING:
     from inspect import Signature
@@ -75,22 +79,39 @@ _base_class_defined = False
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
-    def __new__(  # noqa C901
-        mcs, name: str, bases: Tuple[Type[Any], ...], namespace: Dict[str, Any], **kwargs: Any
-    ) -> type:
+    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any) -> type:
         if _base_class_defined:
-            model_creator = NewModel(mcs, name, bases, namespace, kwargs)
-            model_creator.inherit()
-            model_creator.prepare_config()
-            model_creator.inspect_annotations()
-            model_creator.inspect_namespace()
-            new_namespace, inner_schema = model_creator.new_namespace()
-            cls = super().__new__(mcs, name, bases, new_namespace, **kwargs)
-            model_creator.complete_class(cls, inner_schema)
+            __config__, new_model_config = build_config(cls_name, bases, namespace, kwargs)
+            if new_model_config is not None:
+                namespace['Config'] = new_model_config
+            namespace['__config__'] = __config__
+
+            inspect_namespace(namespace)
+
+            validator_functions = ValidationFunctions(bases)
+
+            for name, value in namespace.items():
+                validator_functions.extract_validator(name, value)
+
+            if __config__.json_encoders:
+                json_encoder = partial(custom_pydantic_encoder, __config__.json_encoders)
+            else:
+                json_encoder = pydantic_encoder
+            namespace['__json_encoder__'] = staticmethod(json_encoder)
+
+            if '__hash__' not in namespace and __config__.frozen:
+
+                def hash_func(self_: Any) -> int:
+                    return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
+
+                namespace['__hash__'] = hash_func
+
+            cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+            complete_model_class(cls, cls_name, validator_functions, bases)
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
-            return super().__new__(mcs, name, bases, namespace, **kwargs)
+            return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     def __instancecheck__(self, instance: Any) -> bool:
         """
@@ -107,16 +128,17 @@ object_setattr = object.__setattr__
 class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
-        __validator_functions__: ValidationFunctions
+        __pydantic_validator__: ClassVar[SchemaValidator]
+        __pydantic_validation_schema__: ClassVar[PydanticCoreSchema]
+        __validator_functions__: ClassVar[ValidationFunctions]
         __fields__: ClassVar[Dict[str, FieldInfo]] = {}
-        __validators__: ClassVar[Dict[str, AnyCallable]] = {}
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
         __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
         __schema_cache__: ClassVar['DictAny'] = {}
-        __signature__: ClassVar['Signature']
+        __signature__: ClassVar[Signature]
         __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]
-        __class_vars__: ClassVar[SetStr]
-        __fields_set__: ClassVar[SetStr] = set()
+        __class_vars__: ClassVar[set[str]]
+        __fields_set__: set[str] = set()
 
     Config = BaseConfig
     __slots__ = '__dict__', '__fields_set__'
@@ -130,65 +152,17 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         Uses something other than `self` the first arg to allow "self" as a field name
         """
-        values, fields_set = __pydantic_self__.__validator__.validate_python(data)
+        values, fields_set = __pydantic_self__.__pydantic_validator__.validate_python(data)
         object_setattr(__pydantic_self__, '__dict__', values)
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         __pydantic_self__._init_private_attributes()
 
     @no_type_check
     def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
-        if name in self.__private_attributes__ or name in DUNDER_ATTRIBUTES:
+        if name.startswith('_'):
             return object_setattr(self, name, value)
 
-        if self.__config__.extra is not Extra.allow and name not in self.__fields__:
-            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
-        elif not self.__config__.allow_mutation or self.__config__.frozen:
-            raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
-        elif name in self.__fields__ and self.__fields__[name].final:
-            raise TypeError(
-                f'"{self.__class__.__name__}" object "{name}" field is final and does not support reassignment'
-            )
-        elif self.__config__.validate_assignment:
-            new_values = {**self.__dict__, name: value}
-
-            # for validator in self.__pre_root_validators__:
-            #     try:
-            #         new_values = validator(self.__class__, new_values)
-            #     except (ValueError, TypeError, AssertionError) as exc:
-            #         raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], self.__class__)
-
-            known_field = self.__fields__.get(name, None)
-            if known_field:
-                # We want to
-                # - make sure validators are called without the current value for this field inside `values`
-                # - keep other values (e.g. submodels) untouched (using `BaseModel.dict()` will change them into dicts)
-                # - keep the order of the fields
-                if not known_field.field_info.allow_mutation:
-                    raise TypeError(f'"{known_field.name}" has allow_mutation set to False and cannot be assigned')
-                dict_without_original_value = {k: v for k, v in self.__dict__.items() if k != name}
-                value, error_ = known_field.validate(value, dict_without_original_value, loc=name, cls=self.__class__)
-                if error_:
-                    raise ValidationError([error_], self.__class__)
-                else:
-                    new_values[name] = value
-
-            errors = []
-            # for skip_on_failure, validator in self.__post_root_validators__:
-            #     if skip_on_failure and errors:
-            #         continue
-            #     try:
-            #         new_values = validator(self.__class__, new_values)
-            #     except (ValueError, TypeError, AssertionError) as exc:
-            #         errors.append(ErrorWrapper(exc, loc=ROOT_KEY))
-            if errors:
-                raise ValidationError(errors, self.__class__)
-
-            # update the whole __dict__ as other values than just `value`
-            # may be changed (e.g. with `root_validator`)
-            object_setattr(self, '__dict__', new_values)
-        else:
-            self.__dict__[name] = value
-
+        self.__dict__[name] = value
         self.__fields_set__.add(name)
 
     def __getstate__(self) -> 'DictAny':
@@ -289,25 +263,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def _enforce_dict_if_root(cls, obj: Any) -> Any:
-        if (
-            not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY})
-            or cls.__fields__[ROOT_KEY].shape in MAPPING_LIKE_SHAPES
-        ):
-            return {ROOT_KEY: obj}
-        else:
-            return obj
-
-    @classmethod
     def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
-        obj = cls._enforce_dict_if_root(obj)
-        if not isinstance(obj, dict):
-            try:
-                obj = dict(obj)
-            except (TypeError, ValueError) as e:
-                exc = TypeError(f'{cls.__name__} expected dict not {obj.__class__.__name__}')
-                raise ValidationError([ErrorWrapper(exc, loc=ROOT_KEY)], cls) from e
-        return cls(**obj)
+        values, fields_set = cls.__pydantic_validator__.validate_python(obj)
+        m = cls.__new__(cls)
+        object_setattr(m, '__dict__', values)
+        object_setattr(m, '__fields_set__', fields_set)
+        m._init_private_attributes()
+        return m
 
     @classmethod
     def parse_raw(
@@ -329,42 +291,13 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 json_loads=cls.__config__.json_loads,
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
+            raise ValidationError([ErrorWrapper(e, loc='__root__')], cls)
         return cls.parse_obj(obj)
 
     @classmethod
-    def parse_file(
-        cls: Type['Model'],
-        path: Union[str, Path],
-        *,
-        content_type: str = None,
-        encoding: str = 'utf8',
-        proto: Protocol = None,
-        allow_pickle: bool = False,
-    ) -> 'Model':
-        obj = load_file(
-            path,
-            proto=proto,
-            content_type=content_type,
-            encoding=encoding,
-            allow_pickle=allow_pickle,
-            json_loads=cls.__config__.json_loads,
-        )
+    def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
+        # TODO remove
         return cls.parse_obj(obj)
-
-    # @classmethod
-    # def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
-    #     if not cls.__config__.orm_mode:
-    #         raise ConfigError('You must have the config attribute orm_mode=True to use from_orm')
-    #     obj = cls._decompose_class(obj)
-    #     m = cls.__new__(cls)
-    #     values, fields_set, validation_error = validate_model(cls, obj)
-    #     if validation_error:
-    #         raise validation_error
-    #     object_setattr(m, '__dict__', values)
-    #     object_setattr(m, '__fields_set__', fields_set)
-    #     m._init_private_attributes()
-    #     return m
 
     @classmethod
     def construct(cls: Type['Model'], _fields_set: Optional['SetStr'] = None, **values: Any) -> 'Model':
@@ -524,7 +457,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                v_dict = v.dict(
+                return v.dict(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
@@ -532,9 +465,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                     exclude=exclude,
                     exclude_none=exclude_none,
                 )
-                if ROOT_KEY in v_dict:
-                    return v_dict[ROOT_KEY]
-                return v_dict
             else:
                 return v.copy(include=include, exclude=exclude)
 

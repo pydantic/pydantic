@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
@@ -27,7 +29,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'inherit_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'build_config', 'inherit_config', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -156,6 +158,7 @@ def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
+    # TODO remove
     if not self_config:
         base_classes: Tuple['ConfigType', ...] = (parent_config,)
     elif self_config == parent_config:
@@ -170,6 +173,41 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **nam
     }
 
     return type('Config', base_classes, namespace)
+
+
+def build_config(
+    cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]
+) -> tuple[type[BaseConfig], type[BaseConfig] | None]:
+    """
+    TODO update once we're sure what this does.
+
+    Note: merging json_encoders is not currently implemented
+    """
+    config_kwargs = {k: v for k, v in kwargs.items() if not k.startswith('_')}
+    config_from_namespace = namespace.get('Config')
+
+    config_bases = []
+    for base in bases:
+        config = getattr(base, 'Config', None)
+        if config:
+            config_bases.append(config)
+
+    if len(config_bases) == 1 and not any([config_kwargs, config_from_namespace]):
+        return BaseConfig, None
+
+    if config_from_namespace:
+        config_bases = [config_from_namespace] + config_bases
+
+    combined_config: type[BaseConfig] = type('CombinedConfig', tuple(config_bases), config_kwargs)
+    prepare_config(combined_config, cls_name)
+
+    if config_from_namespace and config_kwargs:
+        # we want to override `Config` so future inheritance includes config_kwargs
+        new_model_config: type[BaseConfig] = type('ConfigWithKwargs', (config_from_namespace,), config_kwargs)
+        return combined_config, new_model_config
+    else:
+        # we want to use CombinedConfig for `__config__`, but we
+        return combined_config, None
 
 
 def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
