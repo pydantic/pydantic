@@ -2,7 +2,7 @@
 This script generates the schema for the schema - e.g.
 a definition of what inputs can be provided to `SchemaValidator()`.
 
-The schema is generated from `pydantic_core/_types.py`.
+The schema is generated from `pydantic_core/schema_types.py`.
 """
 import importlib.util
 import re
@@ -25,8 +25,8 @@ except ImportError:
 THIS_DIR = Path(__file__).parent
 SAVE_PATH = THIS_DIR / 'src' / 'self_schema.py'
 
-# can't import _types.py directly as pydantic-core might not be installed
-core_types_spec = importlib.util.spec_from_file_location('_typing', str(THIS_DIR / 'pydantic_core' / '_types.py'))
+# can't import schema_types.py directly as pydantic-core might not be installed
+core_types_spec = importlib.util.spec_from_file_location('_typing', str(THIS_DIR / 'pydantic_core' / 'schema_types.py'))
 core_types = importlib.util.module_from_spec(core_types_spec)
 core_types_spec.loader.exec_module(core_types)
 
@@ -140,7 +140,7 @@ def eval_forward_ref(type_):
 
 def main():
     schema_union = core_types.Schema
-    assert get_origin(schema_union) is Union, 'expected pydantic_core._types.Schema to be a union'
+    assert get_origin(schema_union) is Union, 'expected pydantic_core.schema_types.Schema to be a union'
 
     schema = {
         'type': 'tagged-union',

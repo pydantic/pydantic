@@ -3,7 +3,7 @@ use std::process::Command;
 use std::str::from_utf8;
 
 fn generate_self_schema() {
-    println!("cargo:rerun-if-changed=pydantic_core/_types.py");
+    println!("cargo:rerun-if-changed=pydantic_core/schema_types.py");
     println!("cargo:rerun-if-changed=generate_self_schema.py");
     if Path::new("./src/self_schema.py").exists() && option_env!("DEBIAN_FRONTEND") == Some("noninteractive") {
         // self_schema.py already exists and DEBIAN_FRONTEND indicates we're in a maturin build,
