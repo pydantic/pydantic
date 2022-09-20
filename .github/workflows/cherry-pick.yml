@@ -25,4 +25,5 @@ jobs:
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.1
         with:
           branch: 1.10.X-fixes
+          labels: from-cherry-pick
           token: ${{ secrets.GITHUB_TOKEN }}
