@@ -21,7 +21,6 @@ conda install pydantic -c conda-forge
 
 By default `pip install` provides optimized binaries via [PyPI](https://pypi.org/project/pydantic/#files) for Linux, MacOS and 64bit Windows.
 
-
 If you're installing manually, install `cython` before installing *pydantic* and compilation should happen automatically.
 
 To test if *pydantic* is compiled run:
