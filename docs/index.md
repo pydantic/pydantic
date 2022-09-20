@@ -9,7 +9,7 @@
 
 Data validation using Python type annotations.
 
-*pydantic* enforces type hints at runtime, and provides user friendly errors when data is invalid.
+*pydantic* enforces type hints at runtime, and provides user-friendly errors when data is invalid.
 
 Define how data should be in pure, canonical Python; validate it with *pydantic*.
 
