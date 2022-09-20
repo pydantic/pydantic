@@ -1,5 +1,7 @@
+name: Cherry Pick
+
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
     types:
@@ -11,7 +13,7 @@ jobs:
 
     name: Cherry pick into 1.10.X-fixes
 
-    if: contains(github.event.pull_request.labels.*.name, 'cherry-pick-v1')
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'cherry-pick-v1')
 
     steps:
       - name: Checkout
@@ -23,5 +25,4 @@ jobs:
         uses: carloscastrojumo/github-cherry-pick-action@v1.0.1
         with:
           branch: 1.10.X-fixes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
