@@ -2,8 +2,17 @@
 requires = ['hatchling', 'hatch-fancy-pypi-readme>=22.5.0']
 build-backend = 'hatchling.build'
 
-[tool.hatch.version]
-path = 'pydantic/version.py'
+[tool.hatch]
+version = { path = 'pydantic/version.py' }
+build = { exclude = [
+    '/.github/**',
+    '/changes/**',
+    '/docs/**',
+    '/mkdocs.yml',
+    '/.pre-commit-config.yaml',
+    '/.gitignore',
+    '/setup.py',
+] }
 
 [project]
 name = 'pydantic'
