@@ -408,12 +408,11 @@ class ConstrainedStr(str):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        regex = cls._regex()
         update_not_none(
             field_schema,
             minLength=cls.min_length,
             maxLength=cls.max_length,
-            pattern=regex and regex.pattern,
+            pattern=cls.regex and cls._get_pattern(cls.regex),
         )
 
     @classmethod
@@ -430,16 +429,15 @@ class ConstrainedStr(str):
         if cls.curtail_length and len(value) > cls.curtail_length:
             value = value[: cls.curtail_length]
 
-        regex = cls._regex()
-        if regex:
-            if not regex.match(value):
-                raise errors.StrRegexError(pattern=regex.pattern)
+        if cls.regex:
+            if not re.match(cls.regex, value):
+                raise errors.StrRegexError(pattern=cls._get_pattern(cls.regex))
 
         return value
 
-    @classmethod
-    def _regex(cls) -> Optional[Pattern[str]]:
-        return re.compile(cls.regex) if isinstance(cls.regex, str) else cls.regex
+    @staticmethod
+    def _get_pattern(regex: Union[str, Pattern[str]]) -> str:
+        return regex if isinstance(regex, str) else regex.pattern
 
 
 def constr(
