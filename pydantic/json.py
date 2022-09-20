@@ -12,6 +12,7 @@ from uuid import UUID
 from .color import Color
 from .networks import NameEmail
 from .types import SecretBytes, SecretStr
+from .utils import ROOT_KEY
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
@@ -72,11 +73,14 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 def pydantic_encoder(obj: Any) -> Any:
     from dataclasses import asdict, is_dataclass
 
+    from .dataclasses import is_builtin_dataclass
     from .main import BaseModel
 
     if isinstance(obj, BaseModel):
         return obj.dict()
     elif is_dataclass(obj):
+        if not is_builtin_dataclass(obj.__class__) and obj.__pydantic_model__.__custom_root_type__:
+            return getattr(obj, ROOT_KEY)
         return asdict(obj)
 
     # Check the class type and its superclasses for a matching encoder

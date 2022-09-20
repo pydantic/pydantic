@@ -251,6 +251,15 @@ def test_encode_pydantic_dataclass():
     assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
 
 
+def test_encode_pydantic_dataclass_custom_root():
+    @pydantic_dataclass
+    class Foo:
+        __root__: List[int]
+
+    f = Foo(__root__=[1, 2, 3])
+    assert '[1, 2, 3]' == json.dumps(f, default=pydantic_encoder)
+
+
 def test_encode_custom_root():
     class Model(BaseModel):
         __root__: List[str]
