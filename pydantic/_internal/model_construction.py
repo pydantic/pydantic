@@ -5,7 +5,7 @@ import warnings
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
 
-from pydantic_core import Schema as PydanticCoreSchema, SchemaValidator
+from pydantic_core import SchemaValidator
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..utils import ClassAttribute, is_valid_identifier
@@ -23,22 +23,9 @@ __all__ = 'inspect_namespace', 'complete_model_class'
 
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod)
-DUNDER_ATTRIBUTES = {
-    '__annotations__',
-    '__classcell__',
-    '__doc__',
-    '__module__',
-    '__orig_bases__',
-    '__orig_class__',
-    '__qualname__',
-    '__slots__',
-    '__config__',
-}
-# attribute names to ignore off the bat, mostly to save time
-IGNORED_ATTRIBUTES = DUNDER_ATTRIBUTES | {'Config'}
 
 
-def inspect_namespace(namespace) -> None:
+def inspect_namespace(namespace: dict[str, Any]) -> None:
     """
     iterate over the namespace and:
     * gather private attributes
@@ -48,13 +35,13 @@ def inspect_namespace(namespace) -> None:
     raw_annotations = namespace.get('__annotations__', {})
     for var_name, value in namespace.items():
         if isinstance(value, ModelPrivateAttr):
-            if not var_name.startswith('_') or var_name in DUNDER_ATTRIBUTES:
+            if not single_underscore(var_name):
                 raise NameError(
                     f'Private attributes "{var_name}" must not be a valid field name; '
-                    f'Use sunder or dunder names, e. g. "_{var_name}" or "__{var_name}__"'
+                    f'Use sunder or dunder names, e. g. "_{var_name}"'
                 )
             private_attributes[var_name] = value
-        elif var_name in IGNORED_ATTRIBUTES:
+        elif not single_underscore(var_name):
             continue
         elif var_name.startswith('_'):
             private_attributes[var_name] = PrivateAttr(default=value)
@@ -73,6 +60,10 @@ def inspect_namespace(namespace) -> None:
         namespace['__slots__'] = slots | private_attributes.keys()
 
 
+def single_underscore(name: str) -> bool:
+    return name.startswith('_') and not name.startswith('__')
+
+
 class SelfType:
     """
     This is used to identify a reference to the current model class, e.g. in recursive classes
@@ -83,7 +74,7 @@ class SelfType:
 
 def complete_model_class(
     cls: Type[BaseModel], name: str, validator_functions: ValidationFunctions, bases: tuple[type[Any], ...]
-):
+) -> None:
     """
     Collect bound validator functions, build the model validation schema and set the model signature.
 
@@ -133,7 +124,7 @@ def complete_model_class(
 
     cls.__fields__ = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
-    cls.__pydantic_validation_schema__: PydanticCoreSchema = {
+    cls.__pydantic_validation_schema__ = {
         'type': 'new-class',
         'class_type': cls,
         'schema': inner_schema,

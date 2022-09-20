@@ -32,7 +32,6 @@ from pydantic import (
     ValidationError,
     constr,
     root_validator,
-    validator,
 )
 
 
@@ -349,11 +348,10 @@ def test_any():
 
 def test_population_by_field_name():
     class Model(BaseModel):
-        a: str
+        a: str = Field(alias='_a')
 
         class Config:
             allow_population_by_field_name = True
-            fields = {'a': {'alias': '_a'}}
 
     assert Model(a='different').a == 'different'
     assert Model(a='different').dict() == {'a': 'different'}
@@ -381,7 +379,9 @@ def test_required():
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert exc_info.value.errors() == [{'loc': ['a'], 'message': 'field required', 'kind': 'value_error.missing'}]
+    assert exc_info.value.errors() == [
+        {'kind': 'missing', 'loc': ['a'], 'message': 'Field required', 'input_value': {}}
+    ]
 
 
 def test_mutability():
@@ -400,22 +400,20 @@ def test_mutability():
     assert m.a == 11
 
 
-@pytest.mark.parametrize('allow_mutation_, frozen_', [(False, False), (False, True), (True, True)])
-def test_immutability(allow_mutation_, frozen_):
-    class TestModel(BaseModel):
+def test_frozen_model():
+    class FrozenModel(BaseModel):
         a: int = 10
 
         class Config:
-            allow_mutation = allow_mutation_
             extra = Extra.forbid
-            frozen = frozen_
+            frozen = True
 
-    m = TestModel()
+    m = FrozenModel()
 
     assert m.a == 10
     with pytest.raises(TypeError) as exc_info:
         m.a = 11
-    assert '"TestModel" is immutable and does not support item assignment' in exc_info.value.args[0]
+    assert '"FrozenModel" is frozen and does not support item assignment' in exc_info.value.args[0]
 
 
 def test_not_frozen_are_not_hashable():
@@ -497,179 +495,6 @@ def test_hash_function_give_different_result_for_different_object():
 
     m4 = TestModel()
     assert hash(m) != hash(m4)
-
-
-def test_const_validates():
-    class Model(BaseModel):
-        a: int = Field(3, const=True)
-
-    m = Model(a=3)
-    assert m.a == 3
-
-
-def test_const_uses_default():
-    class Model(BaseModel):
-        a: int = Field(3, const=True)
-
-    m = Model()
-    assert m.a == 3
-
-
-def test_const_validates_after_type_validators():
-    # issue #1410
-    class Model(BaseModel):
-        a: int = Field(3, const=True)
-
-    m = Model(a='3')
-    assert m.a == 3
-
-
-def test_const_with_wrong_value():
-    class Model(BaseModel):
-        a: int = Field(3, const=True)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a=4)
-
-    assert exc_info.value.errors() == [
-        {
-            'loc': ['a'],
-            'message': 'unexpected value; permitted: 3',
-            'kind': 'value_error.const',
-            'ctx': {'given': 4, 'permitted': [3]},
-        }
-    ]
-
-
-def test_const_with_validator():
-    class Model(BaseModel):
-        a: int = Field(3, const=True)
-
-        @validator('a')
-        def validate(v):
-            return v
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a=4)
-
-    assert exc_info.value.errors() == [
-        {
-            'loc': ['a'],
-            'message': 'unexpected value; permitted: 3',
-            'kind': 'value_error.const',
-            'ctx': {'given': 4, 'permitted': [3]},
-        }
-    ]
-
-
-def test_const_list():
-    class SubModel(BaseModel):
-        b: int
-
-    class Model(BaseModel):
-        a: List[SubModel] = Field([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
-        b: List[SubModel] = Field([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
-
-    m = Model()
-    assert m.a == [SubModel(b=1), SubModel(b=2), SubModel(b=3)]
-    assert m.b == [SubModel(b=4), SubModel(b=5), SubModel(b=6)]
-    assert m.schema() == {
-        'definitions': {
-            'SubModel': {
-                'properties': {'b': {'title': 'B', 'kind': 'integer'}},
-                'required': ['b'],
-                'title': 'SubModel',
-                'kind': 'object',
-            }
-        },
-        'properties': {
-            'a': {
-                'const': [SubModel(b=1), SubModel(b=2), SubModel(b=3)],
-                'default': [{'b': 1}, {'b': 2}, {'b': 3}],
-                'items': {'$ref': '#/definitions/SubModel'},
-                'title': 'A',
-                'kind': 'array',
-            },
-            'b': {
-                'const': [{'b': 4}, {'b': 5}, {'b': 6}],
-                'default': [{'b': 4}, {'b': 5}, {'b': 6}],
-                'items': {'$ref': '#/definitions/SubModel'},
-                'title': 'B',
-                'kind': 'array',
-            },
-        },
-        'title': 'Model',
-        'kind': 'object',
-    }
-
-
-def test_const_list_with_wrong_value():
-    class SubModel(BaseModel):
-        b: int
-
-    class Model(BaseModel):
-        a: List[SubModel] = Field([SubModel(b=1), SubModel(b=2), SubModel(b=3)], const=True)
-        b: List[SubModel] = Field([{'b': 4}, {'b': 5}, {'b': 6}], const=True)
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a=[{'b': 3}, {'b': 1}, {'b': 2}], b=[{'b': 6}, {'b': 5}])
-
-    assert exc_info.value.errors() == [
-        {
-            'ctx': {
-                'given': [{'b': 3}, {'b': 1}, {'b': 2}],
-                'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
-            },
-            'loc': ['a'],
-            'message': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
-            'kind': 'value_error.const',
-        },
-        {
-            'ctx': {'given': [{'b': 6}, {'b': 5}], 'permitted': [[{'b': 4}, {'b': 5}, {'b': 6}]]},
-            'loc': ['b'],
-            'message': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
-            'kind': 'value_error.const',
-        },
-    ]
-    assert exc_info.value.json().startswith('[')
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a=[SubModel(b=3), SubModel(b=1), SubModel(b=2)], b=[SubModel(b=3), SubModel(b=1)])
-
-    assert exc_info.value.errors() == [
-        {
-            'ctx': {
-                'given': [SubModel(b=3), SubModel(b=1), SubModel(b=2)],
-                'permitted': [[SubModel(b=1), SubModel(b=2), SubModel(b=3)]],
-            },
-            'loc': ['a'],
-            'message': 'unexpected value; permitted: [SubModel(b=1), SubModel(b=2), SubModel(b=3)]',
-            'kind': 'value_error.const',
-        },
-        {
-            'ctx': {'given': [SubModel(b=3), SubModel(b=1)], 'permitted': [[{'b': 4}, {'b': 5}, {'b': 6}]]},
-            'loc': ['b'],
-            'message': "unexpected value; permitted: [{'b': 4}, {'b': 5}, {'b': 6}]",
-            'kind': 'value_error.const',
-        },
-    ]
-    assert exc_info.value.json().startswith('[')
-
-
-def test_const_validation_json_serializable():
-    class SubForm(BaseModel):
-        field: int
-
-    class Form(BaseModel):
-        field1: SubForm = Field({'field': 2}, const=True)
-        field2: List[SubForm] = Field([{'field': 2}], const=True)
-
-    with pytest.raises(ValidationError) as exc_info:
-        # Fails
-        Form(field1={'field': 1}, field2=[{'field': 1}])
-
-    # This should not raise an Json error
-    exc_info.value.json()
 
 
 @pytest.fixture(name='ValidateAssignmentModel', scope='session')

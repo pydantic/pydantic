@@ -70,40 +70,40 @@ class ConfigDict(TypedDict, total=False):
 
 class BaseConfig:
     title: Optional[str] = None
-    anystr_lower: bool = False
-    anystr_upper: bool = False
-    anystr_strip_whitespace: bool = False
-    min_anystr_length: int = 0
-    max_anystr_length: Optional[int] = None
-    validate_all: bool = False
+    anystr_lower: bool = False  # TODO rename to str_to_lower
+    anystr_upper: bool = False  # TODO rename to str_to_upper
+    anystr_strip_whitespace: bool = False  # TODO rename to str_strip_whitespace
+    min_anystr_length: int = 0  # TODO rename to str_min_length
+    max_anystr_length: Optional[int] = None  # TODO rename to str_max_length
+    validate_all: bool = False  # TODO remove
     extra: Extra = Extra.ignore
-    allow_mutation: bool = True
+    allow_mutation: bool = True  # TODO remove - replaced by frozen
     frozen: bool = False
-    allow_population_by_field_name: bool = False
+    allow_population_by_field_name: bool = False  # TODO rename to populate_by_name
     use_enum_values: bool = False
-    fields: Dict[str, Union[str, Dict[str, str]]] = {}
+    fields: Dict[str, Union[str, Dict[str, str]]] = {}  # TODO remove
     validate_assignment: bool = False
-    error_msg_templates: Dict[str, str] = {}
-    arbitrary_types_allowed: bool = False
-    orm_mode: bool = False
-    getter_dict: Type[GetterDict] = GetterDict
+    error_msg_templates: Dict[str, str] = {}  # TODO remove
+    arbitrary_types_allowed: bool = False  # TODO default True, or remove
+    orm_mode: bool = False  # TODO rename to from_attributes
+    getter_dict: Type[GetterDict] = GetterDict  # TODO remove
     alias_generator: Optional[Callable[[str], str]] = None
-    keep_untouched: Tuple[type, ...] = ()
-    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}
-    json_loads: Callable[[str], Any] = json.loads
-    json_dumps: Callable[..., str] = json.dumps
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable] = {}
-    underscore_attrs_are_private: bool = False
+    keep_untouched: Tuple[type, ...] = ()  # TODO remove??
+    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}  # TODO remove, new model method
+    json_loads: Callable[[str], Any] = json.loads  # TODO decide
+    json_dumps: Callable[..., str] = json.dumps  # TODO decide
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable] = {}  # TODO decide
+    underscore_attrs_are_private: bool = False  # TODO remove
     allow_inf_nan: bool = True
 
     # whether inherited models as fields should be reconstructed as base model,
     # and whether such a copy should be shallow or deep
-    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
+    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'  # TODO remove???
 
     # whether `Union` should check all allowed types before even trying to coerce
-    smart_union: bool = False
+    smart_union: bool = False  # TODO remove
     # whether dataclass `__post_init__` should be run before or after validation
-    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
+    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'  # TODO remove
 
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:

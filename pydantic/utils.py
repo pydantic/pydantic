@@ -39,7 +39,6 @@ from ._internal.typing_extra import (
     origin_is_union,
 )
 from .errors import ConfigError
-from .version import version_info
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -69,7 +68,6 @@ __all__ = (
     'Representation',
     'GetterDict',
     'ValueItems',
-    'version_info',  # required here to match behaviour in v1.3
     'ClassAttribute',
     'path_type',
     'ROOT_KEY',
@@ -541,24 +539,28 @@ class ValueItems(Representation):
         return [(None, self._items)]
 
 
-class ClassAttribute:
-    """
-    Hide class attribute from its instances
-    """
+if TYPE_CHECKING:
 
-    __slots__ = (
-        'name',
-        'value',
-    )
+    def ClassAttribute(name: str, value: T) -> T:
+        ...
 
-    def __init__(self, name: str, value: Any) -> None:
-        self.name = name
-        self.value = value
+else:
 
-    def __get__(self, instance: Any, owner: Type[Any]) -> None:
-        if instance is None:
-            return self.value
-        raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
+    class ClassAttribute:
+        """
+        Hide class attribute from its instances
+        """
+
+        __slots__ = 'name', 'value'
+
+        def __init__(self, name: str, value: Any) -> None:
+            self.name = name
+            self.value = value
+
+        def __get__(self, instance: Any, owner: Type[Any]) -> None:
+            if instance is None:
+                return self.value
+            raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
 
 
 path_types = {

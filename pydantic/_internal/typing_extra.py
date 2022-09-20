@@ -16,7 +16,6 @@ from typing import (  # type: ignore
     Mapping,
     NewType,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Type,
@@ -46,8 +45,6 @@ __all__ = (
     'new_type_supertype',
     'is_classvar',
     'is_finalvar',
-    'update_field_forward_refs',
-    'update_model_forward_refs',
     'TupleGenerator',
     'DictStrAny',
     'DictAny',
@@ -305,8 +302,6 @@ else:
 
 
 if TYPE_CHECKING:
-    from ..fields import ModelField
-
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
     DictAny = Dict[Any, Any]
@@ -317,7 +312,7 @@ if TYPE_CHECKING:
     DictIntStrAny = Dict[IntStr, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
-    ReprArgs = Sequence[Tuple[Optional[str], Any]]
+    ReprArgs = Iterable[Tuple[Optional[str], Any]]
     AnyClassMethod = classmethod[Any]
 
 
@@ -520,67 +515,6 @@ def is_classvar(ann_type: Type[Any]) -> bool:
 
 def is_finalvar(ann_type: Type[Any]) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
-
-
-def update_field_forward_refs(field: 'ModelField', globalns: Any, localns: Any) -> None:
-    """
-    Try to update ForwardRefs on fields based on this ModelField, globalns and localns.
-    """
-    prepare = False
-    if field.type_.__class__ == ForwardRef:
-        prepare = True
-        field.type_ = evaluate_forwardref(field.type_, globalns, localns)
-    if field.outer_type_.__class__ == ForwardRef:
-        prepare = True
-        field.outer_type_ = evaluate_forwardref(field.outer_type_, globalns, localns)
-    if prepare:
-        field.prepare()
-
-    if field.sub_fields:
-        for sub_f in field.sub_fields:
-            update_field_forward_refs(sub_f, globalns=globalns, localns=localns)
-
-    if field.discriminator_key is not None:
-        field.prepare_discriminated_union_sub_fields()
-
-
-def update_model_forward_refs(
-    model: Type[Any],
-    fields: Iterable['ModelField'],
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable],
-    localns: 'DictStrAny',
-    exc_to_suppress: Tuple[Type[BaseException], ...] = (),
-) -> None:
-    """
-    Try to update model fields ForwardRefs based on model and localns.
-    """
-    if model.__module__ in sys.modules:
-        globalns = sys.modules[model.__module__].__dict__.copy()
-    else:
-        globalns = {}
-
-    globalns.setdefault(model.__name__, model)
-
-    for f in fields:
-        try:
-            update_field_forward_refs(f, globalns=globalns, localns=localns)
-        except exc_to_suppress:
-            pass
-
-    for key in set(json_encoders.keys()):
-        if isinstance(key, str):
-            fr: ForwardRef = ForwardRef(key)
-        elif isinstance(key, ForwardRef):
-            fr = key
-        else:
-            continue
-
-        try:
-            new_key = evaluate_forwardref(fr, globalns, localns)
-        except exc_to_suppress:  # pragma: no cover
-            continue
-
-        json_encoders[new_key] = json_encoders.pop(key)
 
 
 def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:

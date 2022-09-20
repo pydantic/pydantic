@@ -1,5 +1,3 @@
-# remove this once issues are resolved
-# flake8: noqa
 from __future__ import annotations as _annotations
 
 import warnings
@@ -29,14 +27,14 @@ from pydantic_core import Schema as PydanticCoreSchema, SchemaValidator
 from typing_extensions import dataclass_transform
 
 from ._internal.model_construction import complete_model_class, inspect_namespace
-from ._internal.typing_extra import is_namedtuple, update_model_forward_refs
+from ._internal.typing_extra import is_namedtuple
 from ._internal.valdation_functions import ValidationFunctions
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError
 from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .parse import Protocol, load_file, load_str_bytes
+from .parse import Protocol, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import StrBytes
 from .utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
@@ -96,7 +94,7 @@ class ModelMetaclass(ABCMeta):
             if __config__.json_encoders:
                 json_encoder = partial(custom_pydantic_encoder, __config__.json_encoders)
             else:
-                json_encoder = pydantic_encoder
+                json_encoder = pydantic_encoder  # type: ignore[assignment]
             namespace['__json_encoder__'] = staticmethod(json_encoder)
 
             if '__hash__' not in namespace and __config__.frozen:
@@ -106,7 +104,7 @@ class ModelMetaclass(ABCMeta):
 
                 namespace['__hash__'] = hash_func
 
-            cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+            cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
             complete_model_class(cls, cls_name, validator_functions, bases)
             return cls
         else:
@@ -162,7 +160,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         if name.startswith('_'):
             object_setattr(self, name, value)
         elif self.__config__.frozen:
-            raise TypeError(f'"{self.__class__.__name__}" is immutable and does not support item assignment')
+            raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
         elif self.__config__.validate_assignment:
             values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
             object_setattr(self, '__dict__', values)
@@ -318,11 +316,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         m = cls.__new__(cls)
         fields_values: Dict[str, Any] = {}
         for name, field in cls.__fields__.items():
-            if field.alt_alias and field.alias in values:
+            if field.alias and field.alias in values:
                 fields_values[name] = values[field.alias]
             elif name in values:
                 fields_values[name] = values[name]
-            elif not field.required:
+            elif not field.is_required():
                 fields_values[name] = field.get_default()
         fields_values.update(values)
         object_setattr(m, '__dict__', fields_values)
@@ -431,8 +429,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             else:
                 return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=deep_copy)
 
-        value = cls._enforce_dict_if_root(value)
-
         if isinstance(value, dict):
             return cls(**value)
         elif cls.__config__.orm_mode:
@@ -523,19 +519,11 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
-    def __try_update_forward_refs__(cls, **localns: Any) -> None:
-        """
-        Same as update_forward_refs but will not raise exception
-        when forward references are not defined.
-        """
-        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns, (NameError,))
-
-    @classmethod
     def update_forward_refs(cls, **localns: Any) -> None:
         """
-        Try to update ForwardRefs on fields based on this Model, globalns and localns.
+        Try to update ForwardRefs on fields based on this Model and localns.
         """
-        update_model_forward_refs(cls, cls.__fields__.values(), cls.__config__.json_encoders, localns)
+        raise NotImplementedError('TODO, also rename to model_rebuild')
 
     def __iter__(self) -> 'TupleGenerator':
         """
@@ -578,12 +566,16 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 continue
 
             if exclude_defaults:
-                model_field = self.__fields__.get(field_key)
-                if not getattr(model_field, 'required', True) and getattr(model_field, 'default', _missing) == v:
-                    continue
+                try:
+                    field = self.__fields__[field_key]
+                except KeyError:
+                    pass
+                else:
+                    if not field.is_required() and field.default == v:
+                        continue
 
             if by_alias and field_key in self.__fields__:
-                dict_key = self.__fields__[field_key].alias
+                dict_key = self.__fields__[field_key].alias or field_key
             else:
                 dict_key = field_key
 

@@ -48,7 +48,6 @@ class FieldInfo(Representation):
         'description',
         'exclude',
         'include',
-        'const',
         'gt',
         'ge',
         'lt',
@@ -107,7 +106,6 @@ class FieldInfo(Representation):
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
         self.include = kwargs.pop('include', None)
-        self.const = kwargs.pop('const', None)
         self.gt = kwargs.pop('gt', None)
         self.ge = kwargs.pop('ge', None)
         self.lt = kwargs.pop('lt', None)
@@ -206,7 +204,6 @@ def Field(
     description: str = None,
     exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
     include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
-    const: bool = None,
     gt: float = None,
     ge: float = None,
     lt: float = None,
@@ -241,7 +238,6 @@ def Field(
       Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param include: include this field while dumping.
       Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
-    :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
     :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
@@ -285,7 +281,6 @@ def Field(
         description=description,
         exclude=exclude,
         include=include,
-        const=const,
         gt=gt,
         ge=ge,
         lt=lt,
@@ -338,8 +333,13 @@ SHAPE_NAME_LOOKUP = {
 MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, SHAPE_COUNTER}
 
 
-class ModelField(Representation):
-    pass
+# TODO remove, this is just here to satisfy imports of ModelField
+if TYPE_CHECKING:
+    ModelField = Any
+else:
+
+    class ModelField(Representation):
+        pass
 
 
 class ModelPrivateAttr(Representation):

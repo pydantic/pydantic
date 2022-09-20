@@ -633,11 +633,11 @@ def model_type_schema(
         nested_models.update(f_nested_models)
         if by_alias:
             properties[f.alias] = f_schema
-            if f.required:
+            if f.is_required():
                 required.append(f.alias)
         else:
             properties[k] = f_schema
-            if f.required:
+            if f.is_required():
                 required.append(k)
     if ROOT_KEY in properties:
         out_schema = properties[ROOT_KEY]
@@ -958,7 +958,7 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 
     return ModelField(
         name=field.name,
-        type_=Union[tuple(distinct_literals)],  # type: ignore
+        type_=Union[tuple(distinct_literals)],
         class_validators=field.class_validators,
         model_config=field.model_config,
         default=field.default,

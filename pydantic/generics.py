@@ -91,7 +91,7 @@ class GenericModel(BaseModel):
         type_hints = get_all_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
 
-        fields = {k: (DeferredType(), cls.__fields__[k].field_info) for k in instance_type_hints if k in cls.__fields__}
+        fields = {k: (DeferredType(), cls.__fields__[k]) for k in instance_type_hints if k in cls.__fields__}
 
         model_module, called_globally = get_caller_frame_info()
         created_model = cast(
@@ -350,15 +350,13 @@ def _prepare_model_fields(
 
     for key, field in created_model.__fields__.items():
         if key not in fields:
-            assert field.type_.__class__ is not DeferredType
+            assert field.annotation.__class__ is not DeferredType
             # https://github.com/nedbat/coveragepy/issues/198
             continue  # pragma: no cover
 
-        assert field.type_.__class__ is DeferredType, field.type_.__class__
+        assert field.annotation.__class__ is DeferredType, field.annotation.__class__
 
         field_type_hint = instance_type_hints[key]
         concrete_type = replace_types(field_type_hint, typevars_map)
-        field.type_ = concrete_type
-        field.outer_type_ = concrete_type
-        field.prepare()
+        field.annotation = concrete_type
         created_model.__annotations__[key] = concrete_type

@@ -81,7 +81,7 @@ class ValidationFunctions:
                 self._validators[name] = r_validator
                 self._root_validators.append(name)
 
-    def set_bound_functions(self, cls: type[BaseModel]):
+    def set_bound_functions(self, cls: type[BaseModel]) -> None:
         """
         Set functions in self._validators, now that the class is created and functions are bound.
         """

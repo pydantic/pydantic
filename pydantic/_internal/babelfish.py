@@ -54,6 +54,7 @@ def generate_config(config: type[BaseConfig]) -> PydanticCoreConfig:
     return {
         'typed_dict_extra_behavior': config.extra.value,
         # 'allow_inf_nan': config.allow_inf_nan,
+        'populate_by_name': config.allow_population_by_field_name,
     }
 
 
@@ -134,12 +135,20 @@ def apply_validators(schema: PydanticCoreSchema, validators: list[Validator]) ->
     """
     for validator in validators:
         assert validator.sub_path is None, 'validator.sub_path is not yet supported'
-        schema = {
-            'type': 'function',
-            'mode': validator.mode,
-            'function': validator.function,
-            'schema': schema,
-        }
+        function = typing.cast(typing.Callable[..., Any], validator.function)
+        if validator.mode == 'plain':
+            schema = {  # type: ignore[misc,assignment]
+                'type': 'function',
+                'mode': 'plain',
+                'function': function,
+            }
+        else:
+            schema = {
+                'type': 'function',
+                'mode': validator.mode,
+                'function': function,
+                'schema': schema,
+            }
     return schema
 
 
