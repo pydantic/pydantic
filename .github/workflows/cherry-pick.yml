@@ -1,0 +1,25 @@
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  cherry_pick:
+    runs-on: ubuntu-latest
+
+    name: Cherry pick into 1.10.X-fixes
+
+    if: contains(github.event.pull_request.labels.*.name, 'cherry-pick-v1')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Cherry pick into 1.10.X-fixes
+        uses: carloscastrojumo/github-cherry-pick-action@v1.0.1
+        with:
+          branch: 1.10.X-fixes
