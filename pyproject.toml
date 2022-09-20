@@ -52,25 +52,19 @@ Changelog = 'https://pydantic-docs.helpmanual.io/changelog'
 
 [tool.hatch.metadata.hooks.fancy-pypi-readme]
 content-type = 'text/markdown'
-
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
-path = "README.md"
-
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
-path = "HISTORY.md"
-pattern = "(.+?)<!-- package description limit -->"
-
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
-pattern = '( +)#(\d+)'
-replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'
-
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
-pattern = '( +)@([\w\-]+)'
-replacement = '\1[@\2](https://github.com/\2)'
-
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
-pattern = '@@'
-replacement = '@'
+# construct the PyPI readme from README.md and HISTORY.md
+fragments = [
+    {path = "README.md"},
+    {text = "\n## Changelog\n\n"},
+    {path = "HISTORY.md", pattern = "(.+?)<!-- package description limit -->"},
+    {text = "\n... see [here](https://pydantic-docs.helpmanual.io/changelog/#v0322-2019-08-17) for earlier changes.\n"},
+]
+# convert GitHUB issue/PR numbers and handles to links
+substitutions = [
+    {pattern = '(\s+)#(\d+)', replacement = '\1[#\2](https://github.com/pydantic/pydantic/issues/\2)'},
+    {pattern = '(\s+)@([\w\-]+)', replacement = '\1[@\2](https://github.com/\2)'},
+    {pattern = '@@', replacement = '@'},
+]
 
 [tool.pytest.ini_options]
 testpaths = 'tests'

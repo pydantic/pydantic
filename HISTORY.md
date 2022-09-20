@@ -1,6 +1,3 @@
-
-<!-- package description limit -->
-
 ## v1.10.2 (2022-09-05)
 
 * **Revert Change:** Revert percent encoding of URL parts which was originally added in #4224, #4470 by @samuelcolvin
@@ -743,6 +740,8 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Only check `TypeVar` param on base `GenericModel` class, #842 by @zpencerq
 * rename `Model._schema_cache` -> `Model.__schema_cache__`, `Model._json_encoder` -> `Model.__json_encoder__`,
   `Model._custom_root_type` -> `Model.__custom_root_type__`, #851 by @samuelcolvin
+
+<!-- package description limit -->
 
 ## v0.32.2 (2019-08-17)
 
