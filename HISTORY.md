@@ -741,6 +741,8 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * rename `Model._schema_cache` -> `Model.__schema_cache__`, `Model._json_encoder` -> `Model.__json_encoder__`,
   `Model._custom_root_type` -> `Model.__custom_root_type__`, #851 by @samuelcolvin
 
+<!-- package description limit -->
+
 ## v0.32.2 (2019-08-17)
 
 (Docs are available [here](https://5d584fcca7c9b70007d1c997--pydantic-docs.netlify.com))
