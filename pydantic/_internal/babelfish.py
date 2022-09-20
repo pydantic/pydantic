@@ -92,7 +92,7 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
 
     origin = get_origin(obj)
     if origin is None:
-        raise PydanticSchemaGenerationError(f'Unknown type: {obj!r}, origin is None')
+        raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r}.')
     elif origin_is_union(origin):
         return union_schema(obj)
     elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
@@ -105,7 +105,7 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
         return type_schema(obj)
     else:
         # debug(obj)
-        raise PydanticSchemaGenerationError(f'Unknown type: {obj!r}, origin={origin!r}')
+        raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}).')
 
 
 def generate_field_schema(name: str, field: FieldInfo, validator_functions: ValidationFunctions) -> TypedDictField:

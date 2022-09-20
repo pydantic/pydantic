@@ -69,7 +69,10 @@ class SelfType:
     This is used to identify a reference to the current model class, e.g. in recursive classes
     """
 
-    pass
+    __slots__ = ('name',)
+
+    def __init__(self, module_name: str, cls_name: str):
+        self.name = f'{module_name}.{cls_name}'
 
 
 def complete_model_class(
@@ -95,7 +98,7 @@ def complete_model_class(
             base_globals = module.__dict__
 
     fields: dict[str, FieldInfo] = {}
-    for ann_name, ann_type in get_type_hints(cls, base_globals, {name: SelfType}).items():
+    for ann_name, ann_type in get_type_hints(cls, base_globals, {name: SelfType(module_name, name)}).items():
         # TODO NotField
         if ann_name.startswith('_') or is_classvar(ann_type):
             continue
