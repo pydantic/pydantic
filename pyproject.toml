@@ -7,9 +7,9 @@ path = 'pydantic/version.py'
 
 [tool.hatch.build]
 exclude = [
-    '/.github/**',
-    '/changes/**',
-    '/docs/**',
+    '/.github',
+    '/changes',
+    '/docs',
     '/mkdocs.yml',
     '/.pre-commit-config.yaml',
     '/setup.py',
