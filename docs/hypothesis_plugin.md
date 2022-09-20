@@ -16,11 +16,9 @@ strategies support them without any user configuration.
     Please note, while the plugin supports these types, hypothesis will(currently) generate values outside
     of given args for the constrained function types.
 
-
 ### Example tests
 
 {!.tmp_examples/hypothesis_property_based_test.md!}
-
 
 ### Use with JSON Schemas
 
