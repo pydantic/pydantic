@@ -21,7 +21,7 @@ jobs:
           - '3.8'
           - '3.9'
           - '3.10'
-          - '3.11.0-beta.5'
+          - '3.11-dev'
           - 'pypy3.7'
           - 'pypy3.8'
           - 'pypy3.9'
@@ -54,7 +54,7 @@ jobs:
 
     - id: cache-rust
       name: cache rust
-      uses: Swatinem/rust-cache@v1
+      uses: Swatinem/rust-cache@v2
       with:
         key: v3
 
