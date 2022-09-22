@@ -40,6 +40,7 @@ mod timedelta;
 mod tuple;
 mod typed_dict;
 mod union;
+mod with_default;
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
@@ -369,6 +370,8 @@ pub fn build_validator<'a>(
         callable::CallableValidator,
         // arguments
         arguments::ArgumentsValidator,
+        // default value
+        with_default::WithDefaultValidator,
     )
 }
 
@@ -478,6 +481,8 @@ pub enum CombinedValidator {
     Callable(callable::CallableValidator),
     // arguments
     Arguments(arguments::ArgumentsValidator),
+    // default value
+    WithDefault(with_default::WithDefaultValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

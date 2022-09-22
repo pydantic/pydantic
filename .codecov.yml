@@ -1,3 +1,6 @@
+codecov:
+  require_ci_to_pass: false
+
 coverage:
   precision: 2
   range: [90, 100]

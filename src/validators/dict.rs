@@ -140,6 +140,7 @@ macro_rules! build_validate {
                         }
                         None
                     }
+                    Err(ValError::Omit) => continue,
                     Err(err) => return Err(err),
                 };
                 let output_value = match value_validator.validate(py, value, extra, slots, recursion_guard) {
@@ -150,6 +151,7 @@ macro_rules! build_validate {
                         }
                         None
                     }
+                    Err(ValError::Omit) => continue,
                     Err(err) => return Err(err),
                 };
                 if let (Some(key), Some(value)) = (output_key, output_value) {

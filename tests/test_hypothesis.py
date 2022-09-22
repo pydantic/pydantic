@@ -61,8 +61,11 @@ def recursive_schema():
             'fields': {
                 'name': {'schema': {'type': 'str'}},
                 'sub_branch': {
-                    'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
-                    'default': None,
+                    'schema': {
+                        'type': 'default',
+                        'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
+                        'default': None,
+                    }
                 },
             },
         }

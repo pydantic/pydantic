@@ -64,7 +64,7 @@ def test_schema_typing() -> None:
             'a': {'schema': {'type': 'str'}},
             'b': {'schema': {'type': 'str'}, 'alias': 'foobar'},
             'c': {'schema': {'type': 'str'}, 'alias': [['foobar', 0, 'bar'], ['foo']]},
-            'd': {'schema': {'type': 'str'}, 'default': 'spam'},
+            'd': {'schema': {'type': 'default', 'schema': 'str', 'default': 'spam'}},
         },
     }
     SchemaValidator(schema)
@@ -79,10 +79,13 @@ def test_schema_typing() -> None:
             'name': {'schema': {'type': 'str'}},
             'sub_branch': {
                 'schema': {
-                    'type': 'union',
-                    'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'schema_ref': 'Branch'}],
-                },
-                'default': None,
+                    'type': 'default',
+                    'schema': {
+                        'type': 'union',
+                        'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'schema_ref': 'Branch'}],
+                    },
+                    'default': None,
+                }
             },
         },
     }

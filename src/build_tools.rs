@@ -138,6 +138,7 @@ impl SchemaError {
                 SchemaError::new_err(format!("Invalid Schema:\n{}", details))
             }
             ValError::InternalErr(py_err) => py_err,
+            ValError::Omit => unreachable!(),
         }
     }
 }
