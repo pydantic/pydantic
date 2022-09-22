@@ -241,7 +241,7 @@ def test_model_class():
                     'return_fields_set': True,
                     'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
                 },
-                'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, ()),
+                'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, set()),
                 'on_error': 'default',
             },
         }
@@ -251,7 +251,9 @@ def test_model_class():
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
+    assert m.__fields_set__ == {'field_a', 'field_b'}
     m = v.validate_python({'field_a': 'test', 'field_b': 'wrong'})
     assert isinstance(m, MyModel)
     assert m.field_a == '[default-a]'
     assert m.field_b == '[default-b]'
+    assert m.__fields_set__ == set()
