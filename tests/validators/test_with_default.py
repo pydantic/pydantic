@@ -2,7 +2,7 @@ import pytest
 
 from pydantic_core import SchemaError, SchemaValidator
 
-from ..conftest import PyAndJson
+from ..conftest import PyAndJson, plain_repr
 
 
 def test_typed_dict_default():
@@ -222,3 +222,36 @@ def test_on_error_wrong():
 def test_build_default_and_default_factory():
     with pytest.raises(SchemaError, match="'default' and 'default_factory' cannot be used together"):
         SchemaValidator({'type': 'default', 'schema': 'int', 'default_factory': lambda: 1, 'default': 2})
+
+
+def test_model_class():
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+        field_a: str
+        field_b: int
+
+    v = SchemaValidator(
+        {
+            'type': 'new-class',
+            'class_type': MyModel,
+            'schema': {
+                'type': 'default',
+                'schema': {
+                    'type': 'typed-dict',
+                    'return_fields_set': True,
+                    'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                },
+                'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, ()),
+                'on_error': 'default',
+            },
+        }
+    )
+    assert 'expect_fields_set:true' in plain_repr(v)
+    m = v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert isinstance(m, MyModel)
+    assert m.field_a == 'test'
+    assert m.field_b == 12
+    m = v.validate_python({'field_a': 'test', 'field_b': 'wrong'})
+    assert isinstance(m, MyModel)
+    assert m.field_a == '[default-a]'
+    assert m.field_b == '[default-b]'

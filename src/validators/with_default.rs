@@ -103,6 +103,10 @@ impl Validator for WithDefaultValidator {
         &self.name
     }
 
+    fn ask(&self, question: &str) -> bool {
+        self.validator.ask(question)
+    }
+
     fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
         self.validator.complete(build_context)
     }
