@@ -1,5 +1,3 @@
-use std::borrow::Cow;
-
 use pyo3::intern;
 use pyo3::prelude::*;
 #[cfg(not(PyPy))]
@@ -15,16 +13,9 @@ use crate::errors::{py_err_string, ErrorKind, ValError, ValLineError, ValResult}
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
-use crate::SchemaError;
 
+use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
-
-#[derive(Debug, Clone)]
-enum OnError {
-    Raise,
-    Omit,
-    FallbackOnDefault,
-}
 
 #[derive(Debug, Clone)]
 struct TypedDictField {
@@ -32,23 +23,8 @@ struct TypedDictField {
     lookup_key: LookupKey,
     name_pystring: Py<PyString>,
     required: bool,
-    on_error: OnError,
-    default: Option<PyObject>,
-    default_factory: Option<PyObject>,
     validator: CombinedValidator,
     frozen: bool,
-}
-
-impl TypedDictField {
-    fn default_value(&self, py: Python) -> PyResult<Option<Cow<PyObject>>> {
-        if let Some(ref default) = self.default {
-            Ok(Some(Cow::Borrowed(default)))
-        } else if let Some(ref default_factory) = self.default_factory {
-            Ok(Some(Cow::Owned(default_factory.call0(py)?)))
-        } else {
-            Ok(None)
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -113,19 +89,41 @@ impl BuildValidator for TypedDictValidator {
         for (key, value) in fields_dict.iter() {
             let field_info: &PyDict = value.cast_as()?;
             let field_name: &str = key.extract()?;
-            let schema: &PyAny = field_info
-                .get_as_req(intern!(py, "schema"))
-                .map_err(|err| SchemaError::new_err(format!("Field '{}':\n  {}", field_name, err)))?;
 
-            let (default, default_factory) = match (
-                field_info.get_as(intern!(py, "default"))?,
-                field_info.get_as(intern!(py, "default_factory"))?,
-            ) {
-                (Some(_default), Some(_default_factory)) => {
-                    return py_error!("'default' and 'default_factory' cannot be used together")
-                }
-                (default, default_factory) => (default, default_factory),
+            let schema = field_info.get_as_req(intern!(py, "schema"))?;
+
+            let validator = match build_validator(schema, config, build_context) {
+                Ok(v) => v,
+                Err(err) => return py_error!("Field \"{}\":\n  {}", field_name, err),
             };
+
+            let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
+                Some(required) => {
+                    if required {
+                        if let CombinedValidator::WithDefault(ref val) = validator {
+                            if val.has_default() {
+                                return py_error!(
+                                    "Field '{}': a required field cannot have a default value",
+                                    field_name
+                                );
+                            }
+                        }
+                    }
+                    required
+                }
+                None => total,
+            };
+
+            if required {
+                if let CombinedValidator::WithDefault(ref val) = validator {
+                    if val.omit_on_error() {
+                        return py_error!(
+                            "Field '{}': 'on_error = omit' cannot be set for required fields",
+                            field_name
+                        );
+                    }
+                }
+            }
 
             let lookup_key = match field_info.get_item(intern!(py, "alias")) {
                 Some(alias) => {
@@ -135,58 +133,12 @@ impl BuildValidator for TypedDictValidator {
                 None => LookupKey::from_string(py, field_name),
             };
 
-            let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
-                Some(required) => {
-                    if required && (default.is_some() || default_factory.is_some()) {
-                        return py_error!("Field '{}': a required field cannot have a default value", field_name);
-                    }
-                    required
-                }
-                None => total,
-            };
-
-            let on_error = match field_info.get_as::<&str>(intern!(py, "on_error"))? {
-                Some(on_error) => match on_error {
-                    "raise" => OnError::Raise,
-                    "omit" => {
-                        if required {
-                            return py_error!(
-                                "Field '{}': 'on_error = {}' cannot be set for required fields",
-                                field_name,
-                                on_error
-                            );
-                        }
-
-                        OnError::Omit
-                    }
-                    "fallback_on_default" => {
-                        if default.is_none() && default_factory.is_none() {
-                            return py_error!(
-                                "Field '{}': 'on_error = {}' requires a `default` or `default_factory`",
-                                field_name,
-                                on_error
-                            );
-                        }
-
-                        OnError::FallbackOnDefault
-                    }
-                    _ => unreachable!(),
-                },
-                None => OnError::Raise,
-            };
-
             fields.push(TypedDictField {
                 name: field_name.to_string(),
                 lookup_key,
                 name_pystring: PyString::intern(py, field_name).into(),
-                validator: match build_validator(schema, config, build_context) {
-                    Ok(v) => v,
-                    Err(err) => return py_error!("Field \"{}\":\n  {}", field_name, err),
-                },
+                validator,
                 required,
-                default,
-                default_factory,
-                on_error,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
         }
@@ -273,26 +225,18 @@ impl Validator for TypedDictValidator {
                                     fs.push(field.name_pystring.clone_ref(py));
                                 }
                             }
-                            Err(ValError::LineErrors(line_errors)) => match field.on_error {
-                                OnError::Raise => {
-                                    for err in line_errors {
-                                        errors.push(err.with_outer_location(field.name.clone().into()));
-                                    }
+                            Err(ValError::Omit) => continue,
+                            Err(ValError::LineErrors(line_errors)) => {
+                                for err in line_errors {
+                                    errors.push(err.with_outer_location(field.name.clone().into()));
                                 }
-                                OnError::Omit => continue,
-                                OnError::FallbackOnDefault => {
-                                    if let Some(default_value) = field.default_value(py)? {
-                                        output_dict.set_item(&field.name_pystring, default_value.as_ref())?;
-                                    }
-                                }
-                            },
+                            }
                             Err(err) => return Err(err),
                         }
-                    } else if let Some(default_value) = field.default_value(py)? {
-                        output_dict.set_item(&field.name_pystring, default_value.as_ref())?
-                    } else if !field.required {
                         continue;
-                    } else {
+                    } else if let Some(value) = get_default(py, &field.validator)? {
+                        output_dict.set_item(&field.name_pystring, value.as_ref())?;
+                    } else if field.required {
                         errors.push(ValLineError::new_with_loc(
                             ErrorKind::Missing,
                             input,
