@@ -5,6 +5,18 @@ build-backend = 'hatchling.build'
 [tool.hatch.version]
 path = 'pydantic/version.py'
 
+[tool.hatch.build.targets.sdist]
+# limit which files are included in the sdist (.tar.gz) asset,
+# see https://github.com/pydantic/pydantic/pull/4542
+include = [
+    '/README.md',
+    '/HISTORY.md',
+    '/Makefile',
+    '/pydantic',
+    '/tests',
+    '/requirements',
+]
+
 [project]
 name = 'pydantic'
 description = 'Data validation using Python type hints'
