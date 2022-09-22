@@ -138,7 +138,7 @@ class TestModelClassSimilar:
                             'fields': {
                                 'a': {'schema': {'type': 'int'}},
                                 'b': {'schema': {'type': 'str'}},
-                                'c': {'schema': {'type': 'float'}, 'default': 1.0},
+                                'c': {'schema': {'type': 'default', 'schema': {'type': 'float'}, 'default': 1.0}},
                             },
                         },
                     },

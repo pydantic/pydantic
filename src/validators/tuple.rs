@@ -8,6 +8,7 @@ use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::list::generic_collection_build;
+use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug)]
@@ -122,48 +123,63 @@ impl Validator for TuplePositionalValidator {
         let collection = input.validate_tuple(extra.strict.unwrap_or(self.strict))?;
         let expected_length = self.items_validators.len();
 
-        let col_length = collection.generic_len();
-        if col_length < expected_length {
-            return Err(ValError::LineErrors(
-                (col_length..expected_length)
-                    .map(|index| ValLineError::new_with_loc(ErrorKind::Missing, input, index))
-                    .collect(),
-            ));
-        }
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
         let mut errors: Vec<ValLineError> = Vec::new();
         macro_rules! iter {
-            ($collection:expr) => {
-                for (index, item) in $collection.iter().enumerate() {
-                    let validator = match self.items_validators.get(index) {
-                        Some(ref v) => v,
-                        None => match self.extra_validator {
-                            Some(ref v) => v.as_ref(),
-                            None => {
-                                return Err(ValError::new(
-                                    ErrorKind::TooLong {
-                                        max_length: expected_length,
-                                        input_length: col_length,
-                                    },
-                                    input,
-                                ));
+            ($collection:expr) => {{
+                let mut iter = $collection.iter();
+                for (index, validator) in self.items_validators.iter().enumerate() {
+                    match iter.next() {
+                        Some(item) => match validator.validate(py, item, extra, slots, recursion_guard) {
+                            Ok(item) => output.push(item),
+                            Err(ValError::LineErrors(line_errors)) => {
+                                errors.extend(
+                                    line_errors
+                                        .into_iter()
+                                        .map(|err| err.with_outer_location(index.into())),
+                                );
                             }
+                            Err(err) => return Err(err),
                         },
-                    };
-
-                    match validator.validate(py, item, extra, slots, recursion_guard) {
-                        Ok(item) => output.push(item),
-                        Err(ValError::LineErrors(line_errors)) => {
-                            errors.extend(
-                                line_errors
-                                    .into_iter()
-                                    .map(|err| err.with_outer_location(index.into())),
-                            );
+                        None => {
+                            if let Some(value) = get_default(py, &validator)? {
+                                output.push(value.as_ref().clone_ref(py));
+                            } else {
+                                errors.push(ValLineError::new_with_loc(ErrorKind::Missing, input, index));
+                            }
                         }
-                        Err(err) => return Err(err),
                     }
                 }
-            };
+                for (index, item) in iter.enumerate() {
+                    match self.extra_validator {
+                        Some(ref extra_validator) => {
+                            match extra_validator.validate(py, item, extra, slots, recursion_guard) {
+                                Ok(item) => output.push(item),
+                                Err(ValError::LineErrors(line_errors)) => {
+                                    errors.extend(
+                                        line_errors
+                                            .into_iter()
+                                            .map(|err| err.with_outer_location((index + expected_length).into())),
+                                    );
+                                }
+                                Err(ValError::Omit) => (),
+                                Err(err) => return Err(err),
+                            }
+                        }
+                        None => {
+                            errors.push(ValLineError::new(
+                                ErrorKind::TooLong {
+                                    max_length: expected_length,
+                                    input_length: collection.generic_len(),
+                                },
+                                input,
+                            ));
+                            // no need to continue through further items
+                            break;
+                        }
+                    }
+                }
+            }};
         }
         match collection {
             GenericCollection::List(collection) => iter!(collection),

@@ -90,12 +90,6 @@ def tmp_work_path(tmp_path: Path):
 @pytest.fixture
 def import_execute(request, tmp_work_path: Path):
     def _import_execute(source: str, *, custom_module_name: 'str | None' = None):
-        example_bash_file = tmp_work_path / 'example.sh'
-        example_bash_file.write_text('#!/bin/sh\necho testing')
-        example_bash_file.chmod(0o755)
-        (tmp_work_path / 'first/path').mkdir(parents=True, exist_ok=True)
-        (tmp_work_path / 'second/path').mkdir(parents=True, exist_ok=True)
-
         module_name = custom_module_name or request.node.name
 
         module_path = tmp_work_path / f'{module_name}.py'

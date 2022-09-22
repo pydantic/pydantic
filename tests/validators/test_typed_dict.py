@@ -74,7 +74,10 @@ def test_with_default():
         {
             'type': 'typed-dict',
             'return_fields_set': True,
-            'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}, 'default': 666}},
+            'fields': {
+                'field_a': {'schema': {'type': 'str'}},
+                'field_b': {'schema': {'type': 'default', 'schema': 'int', 'default': 666}},
+            },
         }
     )
 
@@ -436,7 +439,10 @@ def test_fields_required_by_default_with_default():
         {
             'type': 'typed-dict',
             'return_fields_set': True,
-            'fields': {'x': {'schema': {'type': 'str'}}, 'y': {'schema': {'type': 'str'}, 'default': 'bulbi'}},
+            'fields': {
+                'x': {'schema': {'type': 'str'}},
+                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'bulbi'}},
+            },
         }
     )
 
@@ -495,7 +501,12 @@ def test_field_required_and_default():
     """A field cannot be required and have a default value"""
     with pytest.raises(SchemaError, match="Field 'x': a required field cannot have a default value"):
         SchemaValidator(
-            {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'required': True, 'default': 'pika'}}}
+            {
+                'type': 'typed-dict',
+                'fields': {
+                    'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'pika'}, 'required': True}
+                },
+            }
         )
 
 
@@ -1099,24 +1110,16 @@ def test_alias_extra_forbid(py_and_json: PyAndJson):
 
 def test_with_default_factory():
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'default_factory': lambda: 'pikachu'}}}
+        {
+            'type': 'typed-dict',
+            'fields': {
+                'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': lambda: 'pikachu'}}
+            },
+        }
     )
 
     assert v.validate_python({}) == {'x': 'pikachu'}
     assert v.validate_python({'x': 'bulbi'}) == {'x': 'bulbi'}
-
-
-def test_default_and_default_factory():
-    """`default` and `default_factory` should not be set together"""
-    with pytest.raises(SchemaError, match="'default' and 'default_factory' cannot be used together"):
-        SchemaValidator(
-            {
-                'type': 'typed-dict',
-                'fields': {
-                    'x': {'schema': {'type': 'str'}, 'default': 'pikachu', 'default_factory': lambda: 'pikachu'}
-                },
-            }
-        )
 
 
 def test_field_required_and_default_factory():
@@ -1125,7 +1128,12 @@ def test_field_required_and_default_factory():
         SchemaValidator(
             {
                 'type': 'typed-dict',
-                'fields': {'x': {'schema': {'type': 'str'}, 'required': True, 'default_factory': lambda: 'pika'}},
+                'fields': {
+                    'x': {
+                        'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': lambda: 'pika'},
+                        'required': True,
+                    }
+                },
             }
         )
 
@@ -1139,7 +1147,12 @@ def test_field_required_and_default_factory():
 )
 def test_bad_default_factory(default_factory, error_message):
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'default_factory': default_factory}}}
+        {
+            'type': 'typed-dict',
+            'fields': {
+                'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': default_factory}}
+            },
+        }
     )
     with pytest.raises(TypeError, match=re.escape(error_message)):
         v.validate_python({})
@@ -1147,19 +1160,30 @@ def test_bad_default_factory(default_factory, error_message):
 
 class TestOnError:
     def test_on_error_bad_name(self):
-        with pytest.raises(SchemaError, match="Input should be one of: 'raise', 'omit', 'fallback_on_default'"):
-            SchemaValidator({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'rais'}}})
+        with pytest.raises(SchemaError, match="Input should be one of: 'raise', 'omit', 'default'"):
+            SchemaValidator(
+                {
+                    'type': 'typed-dict',
+                    'fields': {'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'rais'}}},
+                }
+            )
 
     def test_on_error_bad_omit(self):
         with pytest.raises(SchemaError, match="Field 'x': 'on_error = omit' cannot be set for required fields"):
-            SchemaValidator({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'omit'}}})
-
-    def test_on_error_bad_fallback_on_default(self):
-        with pytest.raises(
-            SchemaError, match="Field 'x': 'on_error = fallback_on_default' requires a `default` or `default_factory`"
-        ):
             SchemaValidator(
-                {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'fallback_on_default'}}}
+                {
+                    'type': 'typed-dict',
+                    'fields': {'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'omit'}}},
+                }
+            )
+
+    def test_on_error_bad_default(self):
+        with pytest.raises(SchemaError, match="'on_error = default' requires a `default` or `default_factory`"):
+            SchemaValidator(
+                {
+                    'type': 'typed-dict',
+                    'fields': {'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'default'}}},
+                }
             )
 
     def test_on_error_raise_by_default(self, py_and_json: PyAndJson):
@@ -1172,7 +1196,12 @@ class TestOnError:
         ]
 
     def test_on_error_raise_explicit(self, py_and_json: PyAndJson):
-        v = py_and_json({'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'raise'}}})
+        v = py_and_json(
+            {
+                'type': 'typed-dict',
+                'fields': {'x': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'raise'}}},
+            }
+        )
         assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
@@ -1182,7 +1211,15 @@ class TestOnError:
 
     def test_on_error_omit(self, py_and_json: PyAndJson):
         v = py_and_json(
-            {'type': 'typed-dict', 'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'omit', 'required': False}}}
+            {
+                'type': 'typed-dict',
+                'fields': {
+                    'x': {
+                        'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'omit'},
+                        'required': False,
+                    }
+                },
+            }
         )
         assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
         assert v.validate_test({}) == {}
@@ -1192,32 +1229,42 @@ class TestOnError:
         v = py_and_json(
             {
                 'type': 'typed-dict',
-                'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'omit', 'default': 'pika', 'required': False}},
+                'fields': {
+                    'x': {
+                        'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'omit', 'default': 'pika'},
+                        'required': False,
+                    }
+                },
             }
         )
         assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
         assert v.validate_test({}) == {'x': 'pika'}
         assert v.validate_test({'x': ['foo']}) == {}
 
-    def test_on_error_fallback_on_default(self, py_and_json: PyAndJson):
+    def test_on_error_default(self, py_and_json: PyAndJson):
         v = py_and_json(
             {
                 'type': 'typed-dict',
-                'fields': {'x': {'schema': {'type': 'str'}, 'on_error': 'fallback_on_default', 'default': 'pika'}},
+                'fields': {
+                    'x': {'schema': {'type': 'default', 'schema': 'str', 'on_error': 'default', 'default': 'pika'}}
+                },
             }
         )
         assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
         assert v.validate_test({'x': ['foo']}) == {'x': 'pika'}
 
-    def test_on_error_fallback_on_default_factory(self, py_and_json: PyAndJson):
+    def test_on_error_default_factory(self, py_and_json: PyAndJson):
         v = py_and_json(
             {
                 'type': 'typed-dict',
                 'fields': {
                     'x': {
-                        'schema': {'type': 'str'},
-                        'on_error': 'fallback_on_default',
-                        'default_factory': lambda: 'pika',
+                        'schema': {
+                            'type': 'default',
+                            'schema': {'type': 'str'},
+                            'on_error': 'default',
+                            'default_factory': lambda: 'pika',
+                        }
                     }
                 },
             }
@@ -1241,12 +1288,15 @@ class TestOnError:
                 'fields': {
                     'x': {
                         'schema': {
-                            'type': 'function',
-                            'mode': 'wrap',
-                            'function': wrap_function,
-                            'schema': {'type': 'str'},
-                        },
-                        'on_error': 'raise',
+                            'type': 'default',
+                            'on_error': 'raise',
+                            'schema': {
+                                'type': 'function',
+                                'mode': 'wrap',
+                                'function': wrap_function,
+                                'schema': {'type': 'str'},
+                            },
+                        }
                     }
                 },
             }
@@ -1264,7 +1314,7 @@ def test_frozen_field():
             'fields': {
                 'name': {'schema': {'type': 'str'}},
                 'age': {'schema': {'type': 'int'}},
-                'is_developer': {'schema': {'type': 'bool'}, 'default': True, 'frozen': True},
+                'is_developer': {'schema': {'type': 'default', 'schema': 'bool', 'default': True}, 'frozen': True},
             },
         }
     )

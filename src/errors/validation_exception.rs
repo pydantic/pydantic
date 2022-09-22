@@ -28,6 +28,9 @@ impl ValidationError {
                 PyErr::new::<ValidationError, _>((line_errors, title))
             }
             ValError::InternalErr(err) => err,
+            ValError::Omit => {
+                PyValueError::new_err("Uncaught Omit error, please check your usage of `default` validators.")
+            }
         }
     }
 

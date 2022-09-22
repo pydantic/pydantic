@@ -41,9 +41,10 @@ v = SchemaValidator({
         },
         'is_developer': {
             'schema': {
-                'type': 'bool',
-            },
-            'default': True,
+                'type': 'default',
+                'schema': {'type': 'bool'},
+                'default': True,
+            }
         },
     },
 })

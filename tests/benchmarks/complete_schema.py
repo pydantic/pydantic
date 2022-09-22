@@ -131,10 +131,13 @@ def schema(*, strict: bool = False) -> dict:
                             'name': {'schema': 'str'},
                             'sub_branch': {
                                 'schema': {
-                                    'type': 'nullable',
-                                    'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'},
-                                },
-                                'default': None,
+                                    'type': 'default',
+                                    'schema': {
+                                        'type': 'nullable',
+                                        'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'},
+                                    },
+                                    'default': None,
+                                }
                             },
                         },
                     }
