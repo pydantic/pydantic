@@ -5,7 +5,7 @@ from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict, IsStr
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import Err
+from ..conftest import Err, plain_repr
 from .test_typed_dict import Cls
 
 
@@ -19,10 +19,7 @@ def test_branch_nullable():
                 'sub_branch': {
                     'schema': {
                         'type': 'default',
-                        'schema': {
-                            'type': 'union',
-                            'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'schema_ref': 'Branch'}],
-                        },
+                        'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
                         'default': None,
                     }
                 },
@@ -31,6 +28,7 @@ def test_branch_nullable():
     )
 
     assert v.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
+    assert plain_repr(v).startswith('SchemaValidator(name="typed-dict",validator=Recursive(RecursiveContainerValidator')
 
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1'}}) == (
         {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': None}}
@@ -38,6 +36,14 @@ def test_branch_nullable():
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': {'name': 'b2'}}}) == (
         {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': {'name': 'b2', 'sub_branch': None}}}
     )
+
+
+def test_unused_ref():
+    v = SchemaValidator(
+        {'type': 'typed-dict', 'ref': 'Branch', 'fields': {'name': {'schema': 'str'}, 'other': {'schema': 'int'}}}
+    )
+    assert plain_repr(v).startswith('SchemaValidator(name="typed-dict",validator=TypedDict(TypedDictValidator')
+    assert v.validate_python({'name': 'root', 'other': '4'}) == {'name': 'root', 'other': 4}
 
 
 def test_nullable_error():
@@ -680,3 +686,28 @@ def test_many_uses_of_ref():
 
     long_input = {'name': 'Anne', 'other_names': [f'p-{i}' for i in range(300)]}
     assert v.validate_python(long_input) == long_input
+
+
+def test_error_inside_recursive_wrapper():
+    with pytest.raises(SchemaError) as exc_info:
+        SchemaValidator(
+            {
+                'type': 'typed-dict',
+                'ref': 'Branch',
+                'fields': {
+                    'sub_branch': {
+                        'schema': {
+                            'type': 'default',
+                            'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
+                            'default': None,
+                            'default_factory': lambda x: 'foobar',
+                        }
+                    }
+                },
+            }
+        )
+    assert str(exc_info.value) == (
+        'Field "sub_branch":\n'
+        '  SchemaError: Error building "default" validator:\n'
+        "  SchemaError: 'default' and 'default_factory' cannot be used together"
+    )
