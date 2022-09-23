@@ -5,7 +5,7 @@ use std::ptr::null_mut;
 use pyo3::conversion::AsPyPointer;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTuple, PyType};
+use pyo3::types::{PyDict, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
 use crate::build_tools::SchemaDict;
@@ -14,6 +14,7 @@ use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
+use super::function::convert_err;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -22,6 +23,7 @@ pub struct NewClassValidator {
     revalidate: bool,
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
+    call_after_init: Option<Py<PyString>>,
     name: String,
     expect_fields_set: bool,
 }
@@ -51,6 +53,9 @@ impl BuildValidator for NewClassValidator {
             revalidate: config.get_as(intern!(py, "revalidate_models"))?.unwrap_or(false),
             validator: Box::new(validator),
             class: class.into(),
+            call_after_init: schema
+                .get_as::<&str>(intern!(py, "call_after_init"))?
+                .map(|s| PyString::intern(py, s).into_py(py)),
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
@@ -93,12 +98,21 @@ impl Validator for NewClassValidator {
             ))
         } else {
             let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-            if self.expect_fields_set {
+            let instance = if self.expect_fields_set {
                 let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-                Ok(self.create_class(py, model_dict, Some(fields_set))?)
+                self.create_class(py, model_dict, Some(fields_set))?
             } else {
-                Ok(self.create_class(py, output.as_ref(py), None)?)
+                self.create_class(py, output.as_ref(py), None)?
+            };
+
+            if let Some(ref call_after_init) = self.call_after_init {
+                let kwargs = PyDict::new(py);
+                kwargs.set_item("context", extra.context)?;
+                instance
+                    .call_method(py, call_after_init.as_ref(py), (), Some(kwargs))
+                    .map_err(|e| convert_err(py, e, input))?;
             }
+            Ok(instance)
         }
     }
 

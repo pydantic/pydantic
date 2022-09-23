@@ -116,6 +116,7 @@ class NewClassSchema(TypedDict):
     type: Literal['new-class']
     class_type: type
     schema: Schema
+    call_after_init: NotRequired[str]
     strict: NotRequired[bool]
     ref: NotRequired[str]
     config: NotRequired[Config]
