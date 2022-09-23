@@ -11,6 +11,7 @@ use pyo3::{ffi, intern};
 use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
+use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -41,7 +42,7 @@ impl BuildValidator for NewClassValidator {
         let sub_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
         let validator = build_validator(sub_schema, config, build_context)?;
 
-        let expect_fields_set = validator.ask("return_fields_set");
+        let expect_fields_set = validator.ask(&Question::ReturnFieldsSet);
 
         Ok(Self {
             // we don't use is_strict here since we don't want validation to be strict in this case if

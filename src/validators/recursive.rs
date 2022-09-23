@@ -5,51 +5,28 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
+use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct RecursiveContainerValidator {
-    validator_id: usize,
-    inner_name: String,
-}
-
-impl RecursiveContainerValidator {
-    pub fn create(validator_id: usize, inner_name: String) -> CombinedValidator {
-        Self {
-            validator_id,
-            inner_name,
-        }
-        .into()
-    }
-}
-
-impl Validator for RecursiveContainerValidator {
-    fn validate<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        guard_validate(self.validator_id, py, input, extra, slots, recursion_guard)
-    }
-
-    fn get_name(&self) -> &str {
-        // we just return the inner validator to make the recursive-container invisible in output messages
-        &self.inner_name
-    }
-
-    // complete is not implemented here, instead complete_validators in mod.rs calls complete()
-    // on all validators in slots
-}
-
-#[derive(Debug, Clone)]
 pub struct RecursiveRefValidator {
     validator_id: usize,
     inner_name: String,
+    // we have to record the answers to `Question`s as we can't access the validator when `ask()` is called
+    answers: Answers,
+}
+
+impl RecursiveRefValidator {
+    pub fn from_id(validator_id: usize, inner_name: String, answers: Answers) -> CombinedValidator {
+        Self {
+            validator_id,
+            inner_name,
+            answers,
+        }
+        .into()
+    }
 }
 
 impl BuildValidator for RecursiveRefValidator {
@@ -61,10 +38,11 @@ impl BuildValidator for RecursiveRefValidator {
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let name: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
-        let validator_id = build_context.find_slot_id(&name)?;
+        let (validator_id, answers) = build_context.find_slot_id_answer(&name)?;
         Ok(Self {
             validator_id,
             inner_name: "...".to_string(),
+            answers,
         }
         .into())
     }
@@ -79,11 +57,30 @@ impl Validator for RecursiveRefValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        guard_validate(self.validator_id, py, input, extra, slots, recursion_guard)
+        if let Some(id) = input.identity() {
+            if recursion_guard.contains_or_insert(id) {
+                // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
+                Err(ValError::new(ErrorKind::RecursionLoop, input))
+            } else {
+                if recursion_guard.incr_depth() > BACKUP_GUARD_LIMIT {
+                    return Err(ValError::new(ErrorKind::RecursionLoop, input));
+                }
+                let output = validate(self.validator_id, py, input, extra, slots, recursion_guard);
+                recursion_guard.remove(&id);
+                recursion_guard.decr_depth();
+                output
+            }
+        } else {
+            validate(self.validator_id, py, input, extra, slots, recursion_guard)
+        }
     }
 
     fn get_name(&self) -> &str {
         &self.inner_name
+    }
+
+    fn ask(&self, question: &Question) -> bool {
+        self.answers.ask(question)
     }
 
     /// don't need to call complete on the inner validator here, complete_validators takes care of that.
@@ -102,32 +99,6 @@ const BACKUP_GUARD_LIMIT: u16 = if cfg!(PyPy) || cfg!(target_family = "wasm") {
 } else {
     255
 };
-
-fn guard_validate<'s, 'data>(
-    validator_id: usize,
-    py: Python<'data>,
-    input: &'data impl Input<'data>,
-    extra: &Extra,
-    slots: &'data [CombinedValidator],
-    recursion_guard: &'s mut RecursionGuard,
-) -> ValResult<'data, PyObject> {
-    if let Some(id) = input.identity() {
-        if recursion_guard.contains_or_insert(id) {
-            // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-            Err(ValError::new(ErrorKind::RecursionLoop, input))
-        } else {
-            if recursion_guard.incr_depth() > BACKUP_GUARD_LIMIT {
-                return Err(ValError::new(ErrorKind::RecursionLoop, input));
-            }
-            let output = validate(validator_id, py, input, extra, slots, recursion_guard);
-            recursion_guard.remove(&id);
-            recursion_guard.decr_depth();
-            output
-        }
-    } else {
-        validate(validator_id, py, input, extra, slots, recursion_guard)
-    }
-}
 
 fn validate<'s, 'data>(
     validator_id: usize,
