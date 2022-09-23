@@ -12,6 +12,7 @@ use crate::build_tools::{is_strict, py_error, schema_or_config, schema_or_config
 use crate::errors::{py_err_string, ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
+use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::with_default::get_default;
@@ -327,11 +328,9 @@ impl Validator for TypedDictValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn ask(&self, question: &str) -> bool {
-        if question == "return_fields_set" {
-            self.return_fields_set
-        } else {
-            false
+    fn ask(&self, question: &Question) -> bool {
+        match question {
+            Question::ReturnFieldsSet => self.return_fields_set,
         }
     }
 
