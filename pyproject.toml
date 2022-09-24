@@ -1,12 +1,12 @@
 [build-system]
-requires = ["maturin>=0.13,<0.14", "black>=22.3.0,<23", "typing_extensions"]
-build-backend = "maturin"
+requires = ['maturin>=0.13,<0.14', 'black>=22.3.0,<23', 'typing_extensions']
+build-backend = 'maturin'
 
 [project]
-name = "pydantic_core"
-requires-python = ">=3.7"
+name = 'pydantic_core'
+requires-python = '>=3.7'
 authors = [
-    {name = "Samuel Colvin", email = "s@muelcolvin.com"}
+    {name = 'Samuel Colvin', email = 's@muelcolvin.com'}
 ]
 classifiers = [
     'Development Status :: 3 - Alpha',
@@ -18,6 +18,7 @@ classifiers = [
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Intended Audience :: System Administrators',
@@ -32,20 +33,20 @@ dependencies = [
     'typing_extensions; python_version < "3.11.0"'
 ]
 dynamic = [
-    "description",
-    "license",
-    "readme",
-    "version"
+    'description',
+    'license',
+    'readme',
+    'version'
 ]
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic-core'
-Funding = "https://github.com/sponsors/samuelcolvin"
-Source = "https://github.com/pydantic/pydantic-core"
+Funding = 'https://github.com/sponsors/samuelcolvin'
+Source = 'https://github.com/pydantic/pydantic-core'
 
 [tool.maturin]
-bindings = "pyo3"
-sdist-include = ["src/self_schema.py"]
+bindings = 'pyo3'
+sdist-include = ['src/self_schema.py']
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
@@ -91,5 +92,5 @@ combine_as_imports = true
 color_output = true
 
 [tool.pyright]
-include = ["pydantic_core", "tests/test_typing.py"]
+include = ['pydantic_core', 'tests/test_typing.py']
 reportUnnecessaryTypeIgnoreComment = true
