@@ -36,7 +36,6 @@ from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_str_bytes
 from .schema import default_ref_template, model_schema
-from .types import StrBytes
 from .utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
 
 if TYPE_CHECKING:
@@ -281,7 +280,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     @classmethod
     def parse_raw(
         cls: Type['Model'],
-        b: StrBytes,
+        b: Union[str, bytes],
         *,
         content_type: str = None,
         encoding: str = 'utf8',

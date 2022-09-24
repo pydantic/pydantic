@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
 from ._internal.typing_extra import display_as_type
 from .parse import Protocol, load_file, load_str_bytes
-from .types import StrBytes
 
 __all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema_of', 'schema_json_of')
 
@@ -62,7 +61,7 @@ def parse_file_as(
 
 def parse_raw_as(
     type_: Type[T],
-    b: StrBytes,
+    b: Union[str, bytes],
     *,
     content_type: str = None,
     encoding: str = 'utf8',

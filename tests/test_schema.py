@@ -61,9 +61,6 @@ from pydantic.types import (
     Json,
     NegativeFloat,
     NegativeInt,
-    NoneBytes,
-    NoneStr,
-    NoneStrBytes,
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
@@ -73,7 +70,6 @@ from pydantic.types import (
     PyObject,
     SecretBytes,
     SecretStr,
-    StrBytes,
     StrictBool,
     StrictStr,
     conbytes,
@@ -762,10 +758,10 @@ def test_date_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (NoneStr, {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
-        (NoneBytes, {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
+        (Optional[str], {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
+        (Optional[bytes], {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
         (
-            StrBytes,
+            Union[str, bytes],
             {
                 'properties': {
                     'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
@@ -774,7 +770,7 @@ def test_date_constrained_types(field_type, expected_schema):
             },
         ),
         (
-            NoneStrBytes,
+            Union[None, str, bytes],
             {
                 'properties': {
                     'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}

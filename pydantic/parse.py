@@ -4,8 +4,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Union
 
-from .types import StrBytes
-
 
 class Protocol(str, Enum):
     json = 'json'
@@ -13,7 +11,7 @@ class Protocol(str, Enum):
 
 
 def load_str_bytes(
-    b: StrBytes,
+    b: Union[str, bytes],
     *,
     content_type: str = None,
     encoding: str = 'utf8',

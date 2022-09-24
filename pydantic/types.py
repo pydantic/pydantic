@@ -56,10 +56,6 @@ from .validators import (
 )
 
 __all__ = [
-    'NoneStr',
-    'NoneBytes',
-    'StrBytes',
-    'NoneStrBytes',
     'StrictStr',
     'ConstrainedBytes',
     'conbytes',
@@ -109,16 +105,6 @@ __all__ = [
     'ConstrainedDate',
     'condate',
 ]
-
-NoneStr = Optional[str]
-NoneBytes = Optional[bytes]
-StrBytes = Union[str, bytes]
-NoneStrBytes = Optional[StrBytes]
-OptionalInt = Optional[int]
-OptionalIntFloat = Union[OptionalInt, float]
-OptionalIntFloatDecimal = Union[OptionalIntFloat, Decimal]
-OptionalDate = Optional[date]
-StrIntFloat = Union[str, int, float]
 
 if TYPE_CHECKING:
     from typing_extensions import Annotated
@@ -201,11 +187,11 @@ else:
 
 class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
     strict: bool = False
-    gt: OptionalInt = None
-    ge: OptionalInt = None
-    lt: OptionalInt = None
-    le: OptionalInt = None
-    multiple_of: OptionalInt = None
+    gt: Optional[int] = None
+    ge: Optional[int] = None
+    lt: Optional[int] = None
+    le: Optional[int] = None
+    multiple_of: Optional[int] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -262,11 +248,11 @@ else:
 
 class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
     strict: bool = False
-    gt: OptionalIntFloat = None
-    ge: OptionalIntFloat = None
-    lt: OptionalIntFloat = None
-    le: OptionalIntFloat = None
-    multiple_of: OptionalIntFloat = None
+    gt: Union[None, int, float] = None
+    ge: Union[None, int, float] = None
+    lt: Union[None, int, float] = None
+    le: Union[None, int, float] = None
+    multiple_of: Union[None, int, float] = None
     allow_inf_nan: Optional[bool] = None
 
     @classmethod
@@ -347,8 +333,8 @@ class ConstrainedBytes(bytes):
     strip_whitespace = False
     to_upper = False
     to_lower = False
-    min_length: OptionalInt = None
-    max_length: OptionalInt = None
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
     strict: bool = False
 
     @classmethod
@@ -400,9 +386,9 @@ class ConstrainedStr(str):
     strip_whitespace = False
     to_upper = False
     to_lower = False
-    min_length: OptionalInt = None
-    max_length: OptionalInt = None
-    curtail_length: OptionalInt = None
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
+    curtail_length: Optional[int] = None
     regex: Optional[Pattern[str]] = None
     strict = False
 
@@ -648,13 +634,13 @@ else:
 
 
 class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
-    gt: OptionalIntFloatDecimal = None
-    ge: OptionalIntFloatDecimal = None
-    lt: OptionalIntFloatDecimal = None
-    le: OptionalIntFloatDecimal = None
-    max_digits: OptionalInt = None
-    decimal_places: OptionalInt = None
-    multiple_of: OptionalIntFloatDecimal = None
+    gt: Union[None, int, float, Decimal] = None
+    ge: Union[None, int, float, Decimal] = None
+    lt: Union[None, int, float, Decimal] = None
+    le: Union[None, int, float, Decimal] = None
+    max_digits: Optional[int] = None
+    decimal_places: Optional[int] = None
+    multiple_of: Union[None, int, float, Decimal] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -852,8 +838,8 @@ class SecretField(abc.ABC):
 
 
 class SecretStr(SecretField):
-    min_length: OptionalInt = None
-    max_length: OptionalInt = None
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -896,8 +882,8 @@ class SecretStr(SecretField):
 
 
 class SecretBytes(SecretField):
-    min_length: OptionalInt = None
-    max_length: OptionalInt = None
+    min_length: Optional[int] = None
+    max_length: Optional[int] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -1074,7 +1060,7 @@ class ByteSize(int):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: StrIntFloat) -> 'ByteSize':
+    def validate(cls, v: Union[str, int, float]) -> 'ByteSize':
 
         try:
             return cls(int(v))
@@ -1160,10 +1146,10 @@ else:
 
 
 class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
-    gt: OptionalDate = None
-    ge: OptionalDate = None
-    lt: OptionalDate = None
-    le: OptionalDate = None
+    gt: Optional[date] = None
+    ge: Optional[date] = None
+    lt: Optional[date] = None
+    le: Optional[date] = None
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:

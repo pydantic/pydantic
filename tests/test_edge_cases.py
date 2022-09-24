@@ -7,13 +7,13 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 
 import pytest
 
-from pydantic import BaseModel, Extra, NoneStrBytes, StrBytes, ValidationError, constr, errors, validator
+from pydantic import BaseModel, Extra, ValidationError, constr, errors, validator
 from pydantic.fields import Field
 
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: StrBytes = ...
+        v: Union[str, bytes] = ...
 
     m = Model(v='s')
     assert m.v == 's'
@@ -31,7 +31,7 @@ def test_str_bytes():
 
 def test_str_bytes_none():
     class Model(BaseModel):
-        v: NoneStrBytes = ...
+        v: Union[None, str, bytes] = ...
 
     m = Model(v='s')
     assert m.v == 's'

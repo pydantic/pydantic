@@ -42,7 +42,6 @@ __all__ = [
     # main
     'BaseModel',
     'create_model',
-    'validate_model',
     # network
     'AnyUrl',
     'AnyHttpUrl',
@@ -70,10 +69,6 @@ __all__ = [
     'schema_of',
     'schema_json_of',
     # types
-    'NoneStr',
-    'NoneBytes',
-    'StrBytes',
-    'NoneStrBytes',
     'StrictStr',
     'ConstrainedBytes',
     'conbytes',
