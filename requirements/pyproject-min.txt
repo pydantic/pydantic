@@ -4,5 +4,9 @@
 #
 #    pip-compile --output-file=requirements/pyproject-min.txt pyproject.toml
 #
-typing-extensions==4.3.0
+pydantic-core==0.2.1
     # via pydantic (pyproject.toml)
+typing-extensions==4.3.0
+    # via
+    #   pydantic (pyproject.toml)
+    #   pydantic-core

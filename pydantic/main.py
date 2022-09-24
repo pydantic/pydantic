@@ -523,7 +523,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         """
         Try to update ForwardRefs on fields based on this Model and localns.
         """
-        raise NotImplementedError('TODO, also rename to model_rebuild')
+        raise RuntimeError('TODO, also rename to model_rebuild')
 
     def __iter__(self) -> 'TupleGenerator':
         """

@@ -21,22 +21,6 @@ class Model(BaseModel):
     assert m.dict() == {'a': 123}
 
 
-def test_postponed_annotations_optional(create_module):
-    module = create_module(
-        # language=Python
-        """
-from __future__ import annotations
-from typing import Optional
-from pydantic import BaseModel
-
-class Model(BaseModel):
-    a: Optional[int]
-"""
-    )
-    assert module.Model(a='123').dict() == {'a': 123}
-    assert module.Model().dict() == {'a': None}
-
-
 def test_postponed_annotations_auto_update_forward_refs(create_module):
     module = create_module(
         # language=Python
@@ -48,8 +32,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-
-    assert module.Model.__fields__['a'].type_ is module.Model
+    assert module.Model.__fields__['a'].annotation.__class__.__name__ == 'SelfType'
 
 
 def test_forward_ref_auto_update_no_model(create_module):

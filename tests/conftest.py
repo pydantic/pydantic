@@ -8,10 +8,20 @@ from types import FunctionType
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
+passing_files = {
+    'test_abc.py',
+    'test_callable.py',
+    'test_recursion.py',
+    'test_rich_repr.py',
+    'test_structural_pattern_matching.py',
+    'test_version.py',
+}
+
 
 def pytest_collection_modifyitems(items):
     for item in items:
-        item.add_marker('xfail')
+        if item.parent.name not in passing_files:
+            item.add_marker('xfail')
 
 
 def _extract_source_code_from_function(function):

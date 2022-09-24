@@ -161,26 +161,26 @@ def test_nullable_strings_fails(NoneCheckModel):
     ]
 
 
-@pytest.fixture(name='RecursiveModel', scope='session')
-def recursive_model_fixture():
-    class RecursiveModel(BaseModel):
+@pytest.fixture(name='ParentModel', scope='session')
+def parent_sub_model_fixture():
+    class ParentModel(BaseModel):
         grape: bool
         banana: UltraSimpleModel
 
-    return RecursiveModel
+    return ParentModel
 
 
-def test_recursion(RecursiveModel):
-    m = RecursiveModel(grape=1, banana={'a': 1})
+def test_parent_sub_model(ParentModel):
+    m = ParentModel(grape=1, banana={'a': 1})
     assert m.grape is True
     assert m.banana.a == 1.0
     assert m.banana.b == 10
-    assert repr(m) == 'RecursiveModel(grape=True, banana=UltraSimpleModel(a=1.0, b=10))'
+    assert repr(m) == 'ParentModel(grape=True, banana=UltraSimpleModel(a=1.0, b=10))'
 
 
-def test_recursion_fails(RecursiveModel):
+def test_parent_sub_model_fails(ParentModel):
     with pytest.raises(ValidationError):
-        RecursiveModel(grape=1, banana=123)
+        ParentModel(grape=1, banana=123)
 
 
 def test_not_required():

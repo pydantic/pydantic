@@ -7,16 +7,7 @@ import re
 import typing
 from typing import TYPE_CHECKING, Any
 
-from pydantic_core import Schema as PydanticCoreSchema
-from pydantic_core._types import (
-    Config as PydanticCoreConfig,
-    DictSchema,
-    IsInstanceSchema,
-    TuplePositionalSchema,
-    TupleVariableSchema,
-    TypedDictField,
-    TypedDictSchema,
-)
+from pydantic_core import schema_types as core_schema
 from typing_extensions import get_args, is_typeddict
 
 from pydantic.fields import FieldInfo, Undefined
@@ -40,25 +31,28 @@ if TYPE_CHECKING:
 __all__ = 'generate_config', 'generate_schema', 'model_fields_schema'
 
 
-def model_fields_schema(fields: dict[str, FieldInfo], validator_functions: ValidationFunctions) -> PydanticCoreSchema:
-    schema: PydanticCoreSchema = {
-        'type': 'typed-dict',
-        'return_fields_set': True,
-        'fields': {k: generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
-    }
+def model_fields_schema(
+    ref: str, fields: dict[str, FieldInfo], validator_functions: ValidationFunctions
+) -> core_schema.Schema:
+    schema: core_schema.Schema = core_schema.TypedDictSchema(
+        type='typed-dict',
+        ref=ref,
+        return_fields_set=True,
+        fields={k: generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
+    )
     schema = apply_validators(schema, validator_functions.get_root_validators())
     return schema
 
 
-def generate_config(config: type[BaseConfig]) -> PydanticCoreConfig:
-    return {
-        'typed_dict_extra_behavior': config.extra.value,
-        # 'allow_inf_nan': config.allow_inf_nan,
-        'populate_by_name': config.allow_population_by_field_name,
-    }
+def generate_config(config: type[BaseConfig]) -> core_schema.Config:
+    return core_schema.Config(
+        typed_dict_extra_behavior=config.extra.value,
+        # allow_inf_nan=config.allow_inf_nan,
+        populate_by_name=config.allow_population_by_field_name,
+    )
 
 
-def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore complexity)
+def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore complexity)
     """
     Recursively generate a pydantic-core schema for any supported python type.
     """
@@ -72,7 +66,7 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
     elif obj is None or obj is NoneType:
         return 'none'
     elif obj == type:
-        return {'type': 'is-instance', 'class_': type}
+        return core_schema.IsInstanceSchema(type='is-instance', class_=type)
     elif is_callable_type(obj):
         return 'callable'
     elif is_literal_type(obj):
@@ -89,6 +83,10 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
     schema_property = getattr(obj, '__pydantic_validation_schema__', None)
     if schema_property is not None:
         return schema_property
+
+    get_schema = getattr(obj, '__get_pydantic_validation_schema__', None)
+    if get_schema is not None:
+        return get_schema()
 
     origin = get_origin(obj)
     if origin is None:
@@ -108,28 +106,31 @@ def generate_schema(obj: Any) -> PydanticCoreSchema:  # noqa: C901 (ignore compl
         raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}).')
 
 
-def generate_field_schema(name: str, field: FieldInfo, validator_functions: ValidationFunctions) -> TypedDictField:
+def generate_field_schema(
+    name: str, field: FieldInfo, validator_functions: ValidationFunctions
+) -> core_schema.TypedDictField:
     """
     Prepare a TypedDictField to represent a model or typeddict field.
     """
-    assert field.annotation is not None, 'field.annotation is None'
-    schema: PydanticCoreSchema = generate_schema(field.annotation)
+    assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+    schema: core_schema.Schema = generate_schema(field.annotation)
     schema = apply_validators(schema, validator_functions.get_field_validators(name))
 
-    field_schema: TypedDictField = {'schema': schema}
+    required = False
     if field.default_factory:
-        field_schema['default_factory'] = field.default_factory
+        schema = core_schema.WithDefaultSchema(type='default', schema=schema, default_factory=field.default_factory)
     elif field.default is Undefined:
-        field_schema['required'] = True
+        required = True
     else:
-        field_schema['default'] = field.default
+        schema = core_schema.WithDefaultSchema(type='default', schema=schema, default=field.default)
 
+    field_schema = core_schema.TypedDictField(schema=schema, required=required)
     if field.alias is not None:
         field_schema['alias'] = field.alias
     return field_schema
 
 
-def apply_validators(schema: PydanticCoreSchema, validators: list[Validator]) -> PydanticCoreSchema:
+def apply_validators(schema: core_schema.Schema, validators: list[Validator]) -> core_schema.Schema:
     """
     Apply validators to a schema.
     """
@@ -137,18 +138,18 @@ def apply_validators(schema: PydanticCoreSchema, validators: list[Validator]) ->
         assert validator.sub_path is None, 'validator.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], validator.function)
         if validator.mode == 'plain':
-            schema = {  # type: ignore[misc,assignment]
-                'type': 'function',
-                'mode': 'plain',
-                'function': function,
-            }
+            schema = core_schema.FunctionPlainSchema(
+                type='function',
+                mode='plain',
+                function=function,
+            )
         else:
-            schema = {
-                'type': 'function',
-                'mode': validator.mode,
-                'function': function,
-                'schema': schema,
-            }
+            schema = core_schema.FunctionSchema(
+                type='function',
+                mode=validator.mode,
+                function=function,
+                schema=schema,
+            )
     return schema
 
 
@@ -156,14 +157,30 @@ class PydanticSchemaGenerationError(TypeError):
     pass
 
 
-def union_schema(union_type: Any) -> PydanticCoreSchema:
+def union_schema(union_type: Any) -> core_schema.Schema:
     """
     Generate schema for a Union.
     """
-    return {'type': 'union', 'choices': [generate_schema(arg) for arg in get_args(union_type)]}
+    args = get_args(union_type)
+    choices = []
+    nullable = False
+    for arg in args:
+        if arg is None or arg is NoneType:
+            nullable = True
+        else:
+            choices.append(generate_schema(arg))
+
+    if len(choices) == 1:
+        s = choices[0]
+    else:
+        s = core_schema.UnionSchema(type='union', choices=choices)
+
+    if nullable:
+        s = core_schema.NullableSchema(type='nullable', schema=s)
+    return s
 
 
-def literal_schema(literal_type: Any) -> PydanticCoreSchema:
+def literal_schema(literal_type: Any) -> core_schema.Schema:
     """
     Generate schema for a Literal.
     """
@@ -172,12 +189,12 @@ def literal_schema(literal_type: Any) -> PydanticCoreSchema:
     return {'type': 'literal', 'expected': list(expected)}
 
 
-def type_dict_schema(typed_dict: Any) -> TypedDictSchema:
+def type_dict_schema(typed_dict: Any) -> core_schema.TypedDictSchema:
     """
     Generate schema for a TypedDict.
     """
     required_keys: typing.Set[str] = getattr(typed_dict, '__required_keys__', set())
-    fields: typing.Dict[str, TypedDictField] = {}
+    fields: typing.Dict[str, core_schema.TypedDictField] = {}
 
     for field_name, field_type in typed_dict.__annotations__.items():
         required = field_name in required_keys
@@ -206,10 +223,10 @@ def type_dict_schema(typed_dict: Any) -> TypedDictSchema:
 
         fields[field_name] = {'schema': schema, 'required': required}
 
-    return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}
+    return core_schema.TypedDictSchema(type='typed-dict', fields=fields, extra_behavior='forbid')
 
 
-def generic_collection_schema(obj: Any) -> PydanticCoreSchema:
+def generic_collection_schema(obj: Any) -> core_schema.Schema:
     """
     Generate schema for List, Set etc. - where the schema includes `items_schema`
 
@@ -221,14 +238,14 @@ def generic_collection_schema(obj: Any) -> PydanticCoreSchema:
     }  # type: ignore[misc,return-value]
 
 
-def tuple_schema(tuple_type: Any) -> typing.Union[TupleVariableSchema, TuplePositionalSchema]:
+def tuple_schema(tuple_type: Any) -> core_schema.Schema:
     """
     Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
     """
     params = get_args(tuple_type)
     if params[-1] is Ellipsis:
         if len(params) == 2:
-            sv: TupleVariableSchema = {'type': 'tuple', 'mode': 'variable', 'items_schema': generate_schema(params[0])}
+            sv = core_schema.TupleVariableSchema(type='tuple', mode='variable', items_schema=generate_schema(params[0]))
             return sv
 
         # not sure this case is valid in python, but may as well support it here since pydantic-core does
@@ -240,32 +257,32 @@ def tuple_schema(tuple_type: Any) -> typing.Union[TupleVariableSchema, TuplePosi
             'extra_schema': generate_schema(extra_schema),
         }
     else:
-        sp: TuplePositionalSchema = {
-            'type': 'tuple',
-            'mode': 'positional',
-            'items_schema': [generate_schema(p) for p in params],
-        }
+        sp = core_schema.TuplePositionalSchema(
+            type='tuple',
+            mode='positional',
+            items_schema=[generate_schema(p) for p in params],
+        )
         return sp
 
 
-def dict_schema(dict_type: Any) -> DictSchema:
+def dict_schema(dict_type: Any) -> core_schema.DictSchema:
     """
     Generate schema for a Dict, e.g. `dict[str, int]`.
     """
     arg0, arg1 = get_args(dict_type)
-    return {
-        'type': 'dict',
-        'keys_schema': generate_schema(arg0),
-        'values_schema': generate_schema(arg1),
-    }
+    return core_schema.DictSchema(
+        type='dict',
+        keys_schema=generate_schema(arg0),
+        values_schema=generate_schema(arg1),
+    )
 
 
-def type_schema(type_: Any) -> IsInstanceSchema:
+def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
     """
     Generate schema for a Type, e.g. `Type[int]`.
     """
     type_param = get_args(type_)[0]
     if type_param == Any:
-        return {'type': 'is-instance', 'class_': type}
+        return core_schema.IsInstanceSchema(type='is-instance', class_=type)
     else:
-        return {'type': 'is-instance', 'class_': type_param}
+        return core_schema.IsInstanceSchema(type='is-instance', class_=type_param)
