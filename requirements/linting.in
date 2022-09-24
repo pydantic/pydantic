@@ -4,6 +4,8 @@ flake8-quotes
 flake8-pyproject
 hypothesis
 isort
+# pydantic-core is required for mypy
+pydantic-core
 pyupgrade
 mypy
 pre-commit

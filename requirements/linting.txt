@@ -53,6 +53,8 @@ pre-commit==2.20.0
     # via -r requirements/linting.in
 pycodestyle==2.9.1
     # via flake8
+pydantic-core==0.2.1
+    # via -r requirements/linting.in
 pyflakes==2.5.0
     # via flake8
 pyupgrade==2.37.3
@@ -71,7 +73,9 @@ tomli==2.0.1
     #   flake8-pyproject
     #   mypy
 typing-extensions==4.3.0
-    # via mypy
+    # via
+    #   mypy
+    #   pydantic-core
 virtualenv==20.16.4
     # via pre-commit
 

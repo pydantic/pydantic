@@ -232,8 +232,12 @@ def generic_collection_schema(obj: Any) -> core_schema.Schema:
 
     e.g. `list[int]`.
     """
+    try:
+        name = obj.__name__
+    except AttributeError:
+        name = get_origin(obj).__name__  # type: ignore[union-attr]
     return {
-        'type': obj.__name__.lower(),
+        'type': name.lower(),
         'items_schema': generate_schema(get_args(obj)[0]),
     }  # type: ignore[misc,return-value]
 
