@@ -103,7 +103,7 @@ def complete_model_class(
     """
     validator_functions.set_bound_functions(cls)
 
-    module_name = getattr(cls, '__module__')
+    module_name = getattr(cls, '__module__', None)
     base_globals: dict[str, Any] | None = None
     if module_name:
         try:
