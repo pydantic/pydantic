@@ -74,7 +74,7 @@ async function get(url, mode) {
   }
 }
 
-async function main () {
+async function main() {
   const latest_release = await get('https://api.github.com/repos/pydantic/pydantic-core/releases/latest', 'json');
   const {tag_name} = latest_release;
   self.postMessage(`Running tests against latest pydantic-core release (${tag_name}).\n`);
@@ -102,4 +102,4 @@ async function main () {
   }
 }
 
-main()
+main();
