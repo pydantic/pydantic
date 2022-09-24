@@ -3,15 +3,15 @@ from __future__ import annotations as _annotations
 import sys
 import warnings
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Type, Union, get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
 
 from pydantic_core import SchemaValidator
-from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema, Schema as PydanticCoreSchema
+from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..utils import ClassAttribute, is_valid_identifier
 from .babelfish import generate_config, model_fields_schema
-from .typing_extra import is_classvar
+from .typing_extra import SchemaRef, is_classvar
 from .valdation_functions import ValidationFunctions
 
 if TYPE_CHECKING:
@@ -65,33 +65,6 @@ def single_underscore(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
-class SelfType:
-    """
-    This is used to identify a reference to the current model class, e.g. in recursive classes
-    """
-
-    __slots__ = ('__pydantic_validation_schema__',)
-
-    def __init__(self, schema: PydanticCoreSchema):
-        self.__pydantic_validation_schema__ = schema
-
-    def __call__(self) -> None:
-        """
-        This is here just to mollify typing._type_check which expects typing types
-        but will also accept callables
-        """
-        raise TypeError('SelfType cannot be called')
-
-    def __or__(self, right: Any) -> Any:
-        return Union[self, right]
-
-    def __ror__(self, left: Any) -> Any:
-        return Union[left, self]
-
-    def __repr__(self) -> str:
-        return f'SelfType[{self.__pydantic_validation_schema__}]'
-
-
 def complete_model_class(
     cls: Type[BaseModel], name: str, validator_functions: ValidationFunctions, bases: tuple[type[Any], ...]
 ) -> None:
@@ -122,7 +95,7 @@ def complete_model_class(
         class_type=cls,
         schema=RecursiveReferenceSchema(type='recursive-ref', schema_ref=model_ref),
     )
-    for ann_name, ann_type in get_type_hints(cls, base_globals, {name: SelfType(self_schema)}).items():
+    for ann_name, ann_type in get_type_hints(cls, base_globals, {name: SchemaRef('SelfType', self_schema)}).items():
         # TODO NotField
         if ann_name.startswith('_') or is_classvar(ann_type):
             continue

@@ -1,5 +1,8 @@
 """
 Convert python types to pydantic-core schema.
+
+We probably want to rename this to something more descriptive, but I'll leave it like this
+until I'm sure what it does.
 """
 from __future__ import annotations as _annotations
 

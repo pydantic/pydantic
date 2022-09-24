@@ -165,7 +165,7 @@ st.register_type_strategy(
 # so here we only have to register subclasses for other constrained types which
 # don't go via those mechanisms.  Then there are the registration hooks below.
 st.register_type_strategy(pydantic.StrictBool, st.booleans())
-st.register_type_strategy(pydantic.StrictStr, st.text())
+# st.register_type_strategy(pydantic.StrictStr, st.text())
 
 
 # Constrained-type resolver functions
@@ -234,7 +234,7 @@ def resolve_json(cls):  # type: ignore[no-untyped-def]
     )
 
 
-@resolves(pydantic.ConstrainedBytes)
+# @resolves(pydantic.ConstrainedBytes)
 def resolve_conbytes(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
     min_size = cls.min_length or 0
     max_size = cls.max_length
@@ -273,7 +273,7 @@ def resolve_condecimal(cls):  # type: ignore[no-untyped-def]
     return s
 
 
-@resolves(pydantic.ConstrainedFloat)
+# @resolves(pydantic.ConstrainedFloat)
 def resolve_confloat(cls):  # type: ignore[no-untyped-def]
     min_value = cls.ge
     max_value = cls.le
@@ -305,7 +305,7 @@ def resolve_confloat(cls):  # type: ignore[no-untyped-def]
     return st.integers(min_value, max_value).map(lambda x: x * cls.multiple_of)
 
 
-@resolves(pydantic.ConstrainedInt)
+# @resolves(pydantic.ConstrainedInt)
 def resolve_conint(cls):  # type: ignore[no-untyped-def]
     min_value = cls.ge
     max_value = cls.le
@@ -347,7 +347,7 @@ def resolve_condate(cls):  # type: ignore[no-untyped-def]
     return st.dates(min_value, max_value)
 
 
-@resolves(pydantic.ConstrainedStr)
+# @resolves(pydantic.ConstrainedStr)
 def resolve_constr(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
     min_size = cls.min_length or 0
     max_size = cls.max_length

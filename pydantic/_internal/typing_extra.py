@@ -15,6 +15,7 @@ from typing import (  # type: ignore
     List,
     Mapping,
     NewType,
+    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -26,6 +27,7 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
+from pydantic_core.schema_types import Schema as PydanticCoreSchema
 from typing_extensions import Annotated, Final, Literal, Required as TypedDictRequired
 
 __all__ = (
@@ -69,6 +71,9 @@ __all__ = (
     'NotRequired',
     'Required',
     'evaluate_forwardref',
+    'FakeType',
+    'ProtectAnnotated',
+    'SchemaRef',
 )
 
 try:
@@ -547,3 +552,52 @@ def get_sub_types(tp: Any) -> List[Any]:
         return [x for t in get_args(tp) for x in get_sub_types(t)]
     else:
         return [tp]
+
+
+class FakeType:
+    """
+    Just enough like a "typing type" to mollify `typing._type_check`.
+    """
+
+    def __call__(self) -> NoReturn:
+        """
+        This is here just to mollify typing._type_check which expects "typing types"
+        but will also accept callables
+        """
+        raise TypeError(f'{self} cannot be called')
+
+    def __or__(self, right: Any) -> Any:
+        return Union[self, right]
+
+    def __ror__(self, left: Any) -> Any:
+        return Union[left, self]
+
+
+class ProtectAnnotated(FakeType):
+    """
+    This is a hack to allow `Annotated` info to pass through `get_type_hints` without being stripped out
+    in 3.7 and 3.8 which don't support the `include_extras` argument to `get_type_hints`.
+    """
+
+    __slots__ = ('annotated_type',)
+
+    def __init__(self, annotated_type: Any):
+        self.annotated_type = annotated_type
+
+    def __repr__(self) -> str:
+        return f'ProtectAnnotated[{self.annotated_type}]'
+
+
+class SchemaRef(FakeType):
+    """
+    Pretend to be a type for `get_type_hints` while holding schema info.
+    """
+
+    __slots__ = '_name', '__pydantic_validation_schema__'
+
+    def __init__(self, name: str, core_schema: PydanticCoreSchema):
+        self._name = name
+        self.__pydantic_validation_schema__ = core_schema
+
+    def __repr__(self) -> str:
+        return f'SchemaRef({self._name!r}, {self.__pydantic_validation_schema__})'

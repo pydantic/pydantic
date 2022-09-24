@@ -60,9 +60,7 @@ from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
 from .types import (
     ConstrainedDecimal,
-    ConstrainedFloat,
     ConstrainedFrozenSet,
-    ConstrainedInt,
     ConstrainedList,
     ConstrainedSet,
     SecretBytes,
@@ -985,7 +983,7 @@ def encode_default(dft: Any) -> Any:
         return pydantic_encoder(dft)
 
 
-_map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
+_map_types_constraint: Dict[Any, Any] = {int: conint, float: confloat, Decimal: condecimal}
 
 
 def get_annotation_from_field_info(
@@ -1104,8 +1102,8 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             elif issubclass(type_, numeric_types) and not issubclass(
                 type_,
                 (
-                    ConstrainedInt,
-                    ConstrainedFloat,
+                    # ConstrainedInt,
+                    # ConstrainedFloat,
                     ConstrainedDecimal,
                     ConstrainedList,
                     ConstrainedSet,

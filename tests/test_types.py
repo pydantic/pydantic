@@ -94,10 +94,6 @@ def con_bytes_model_fixture():
     return ConBytesModel
 
 
-def foo():
-    return 42
-
-
 def test_constrained_bytes_good(ConBytesModel):
     m = ConBytesModel(v=b'short')
     assert m.v == b'short'
@@ -826,6 +822,9 @@ def test_pyobject_none():
 
 
 def test_pyobject_callable():
+    def foo():
+        return 42
+
     class PyObjectModel(BaseModel):
         foo: PyObject = foo
 

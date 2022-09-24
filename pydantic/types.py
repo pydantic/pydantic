@@ -1,5 +1,4 @@
 import abc
-import math
 import re
 import warnings
 from datetime import date
@@ -16,7 +15,6 @@ from typing import (
     FrozenSet,
     List,
     Optional,
-    Pattern,
     Set,
     Tuple,
     Type,
@@ -28,20 +26,18 @@ from typing import (
 from uuid import UUID
 from weakref import WeakSet
 
+from pydantic_core import schema_types as core_schema
+
 from . import errors
+from ._internal.typing_extra import SchemaRef
 from .datetime_parse import parse_date
-from .utils import import_string, update_not_none
+from .utils import dict_not_none, import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
-    constr_lower,
     constr_strip_whitespace,
-    constr_upper,
     decimal_validator,
-    float_finite_validator,
-    float_validator,
     frozenset_validator,
-    int_validator,
     list_validator,
     number_multiple_validator,
     number_size_validator,
@@ -49,15 +45,10 @@ from .validators import (
     path_validator,
     set_validator,
     str_validator,
-    strict_bytes_validator,
-    strict_float_validator,
-    strict_int_validator,
-    strict_str_validator,
 )
 
 __all__ = [
     'StrictStr',
-    'ConstrainedBytes',
     'conbytes',
     'ConstrainedList',
     'conlist',
@@ -65,16 +56,13 @@ __all__ = [
     'conset',
     'ConstrainedFrozenSet',
     'confrozenset',
-    'ConstrainedStr',
     'constr',
     'PyObject',
-    'ConstrainedInt',
     'conint',
     'PositiveInt',
     'NegativeInt',
     'NonNegativeInt',
     'NonPositiveInt',
-    'ConstrainedFloat',
     'confloat',
     'PositiveFloat',
     'NegativeFloat',
@@ -141,15 +129,9 @@ def _registered(typ: Union[Type[T], 'ConstrainedNumberMeta']) -> Union[Type[T], 
 
 
 class ConstrainedNumberMeta(type):
-    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'ConstrainedInt':  # type: ignore
-        new_cls = cast('ConstrainedInt', type.__new__(cls, name, bases, dct))
-
-        if new_cls.gt is not None and new_cls.ge is not None:
-            raise errors.ConfigError('bounds gt and ge cannot be specified at the same time')
-        if new_cls.lt is not None and new_cls.le is not None:
-            raise errors.ConfigError('bounds lt and le cannot be specified at the same time')
-
-        return _registered(new_cls)  # type: ignore
+    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'Any':
+        new_cls = type.__new__(cls, name, bases, dct)
+        return _registered(new_cls)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -185,38 +167,14 @@ else:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INTEGER TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class ConstrainedInt(int, metaclass=ConstrainedNumberMeta):
-    strict: bool = False
-    gt: Optional[int] = None
-    ge: Optional[int] = None
-    lt: Optional[int] = None
-    le: Optional[int] = None
-    multiple_of: Optional[int] = None
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le,
-            multipleOf=cls.multiple_of,
-        )
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield strict_int_validator if cls.strict else int_validator
-        yield number_size_validator
-        yield number_multiple_validator
-
-
 def conint(
     *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
-) -> Type[int]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of)
-    return type('ConstrainedIntValue', (ConstrainedInt,), namespace)
+) -> SchemaRef:
+    schema = cast(
+        core_schema.IntSchema,
+        dict_not_none(type='int', strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of),
+    )
+    return SchemaRef('ConstrainedInt', schema)
 
 
 if TYPE_CHECKING:
@@ -226,61 +184,14 @@ if TYPE_CHECKING:
     NonNegativeInt = int
     StrictInt = int
 else:
-
-    class PositiveInt(ConstrainedInt):
-        gt = 0
-
-    class NegativeInt(ConstrainedInt):
-        lt = 0
-
-    class NonPositiveInt(ConstrainedInt):
-        le = 0
-
-    class NonNegativeInt(ConstrainedInt):
-        ge = 0
-
-    class StrictInt(ConstrainedInt):
-        strict = True
+    PositiveInt = conint(gt=0)
+    NegativeInt = conint(lt=0)
+    NonPositiveInt = conint(le=0)
+    NonNegativeInt = conint(ge=0)
+    StrictInt = conint(strict=True)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
-    strict: bool = False
-    gt: Union[None, int, float] = None
-    ge: Union[None, int, float] = None
-    lt: Union[None, int, float] = None
-    le: Union[None, int, float] = None
-    multiple_of: Union[None, int, float] = None
-    allow_inf_nan: Optional[bool] = None
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le,
-            multipleOf=cls.multiple_of,
-        )
-        # Modify constraints to account for differences between IEEE floats and JSON
-        if field_schema.get('exclusiveMinimum') == -math.inf:
-            del field_schema['exclusiveMinimum']
-        if field_schema.get('minimum') == -math.inf:
-            del field_schema['minimum']
-        if field_schema.get('exclusiveMaximum') == math.inf:
-            del field_schema['exclusiveMaximum']
-        if field_schema.get('maximum') == math.inf:
-            del field_schema['maximum']
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield strict_float_validator if cls.strict else float_validator
-        yield number_size_validator
-        yield number_multiple_validator
-        yield float_finite_validator
 
 
 def confloat(
@@ -292,10 +203,21 @@ def confloat(
     le: float = None,
     multiple_of: float = None,
     allow_inf_nan: Optional[bool] = None,
-) -> Type[float]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of, allow_inf_nan=allow_inf_nan)
-    return type('ConstrainedFloatValue', (ConstrainedFloat,), namespace)
+) -> SchemaRef:
+    schema = cast(
+        core_schema.FloatSchema,
+        dict_not_none(
+            type='float',
+            strict=strict,
+            gt=gt,
+            ge=ge,
+            lt=lt,
+            le=le,
+            multiple_of=multiple_of,
+            allow_inf_nan=allow_inf_nan,
+        ),
+    )
+    return SchemaRef('ConstrainedFloat', schema)
 
 
 if TYPE_CHECKING:
@@ -306,120 +228,42 @@ if TYPE_CHECKING:
     StrictFloat = float
     FiniteFloat = float
 else:
-
-    class PositiveFloat(ConstrainedFloat):
-        gt = 0
-
-    class NegativeFloat(ConstrainedFloat):
-        lt = 0
-
-    class NonPositiveFloat(ConstrainedFloat):
-        le = 0
-
-    class NonNegativeFloat(ConstrainedFloat):
-        ge = 0
-
-    class StrictFloat(ConstrainedFloat):
-        strict = True
-
-    class FiniteFloat(ConstrainedFloat):
-        allow_inf_nan = False
+    PositiveFloat = confloat(gt=0)
+    NegativeFloat = confloat(lt=0)
+    NonPositiveFloat = confloat(le=0)
+    NonNegativeFloat = confloat(ge=0)
+    StrictFloat = confloat(strict=True)
+    FiniteFloat = confloat(allow_inf_nan=False)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class ConstrainedBytes(bytes):
-    strip_whitespace = False
-    to_upper = False
-    to_lower = False
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    strict: bool = False
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length)
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield strict_bytes_validator if cls.strict else bytes_validator
-        yield constr_strip_whitespace
-        yield constr_upper
-        yield constr_lower
-        yield constr_length_validator
-
-
 def conbytes(
     *,
-    strip_whitespace: bool = False,
-    to_upper: bool = False,
-    to_lower: bool = False,
     min_length: int = None,
     max_length: int = None,
     strict: bool = False,
-) -> Type[bytes]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        strip_whitespace=strip_whitespace,
-        to_upper=to_upper,
-        to_lower=to_lower,
-        min_length=min_length,
-        max_length=max_length,
-        strict=strict,
+) -> SchemaRef:
+    schema = cast(
+        core_schema.BytesSchema,
+        dict_not_none(
+            type='bytes',
+            min_length=min_length,
+            max_length=max_length,
+            strict=strict,
+        ),
     )
-    return _registered(type('ConstrainedBytesValue', (ConstrainedBytes,), namespace))
+    return SchemaRef('ConstrainedBytes', schema)
 
 
 if TYPE_CHECKING:
     StrictBytes = bytes
 else:
-
-    class StrictBytes(ConstrainedBytes):
-        strict = True
+    StrictBytes = conbytes(strict=True)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-class ConstrainedStr(str):
-    strip_whitespace = False
-    to_upper = False
-    to_lower = False
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    curtail_length: Optional[int] = None
-    regex: Optional[Pattern[str]] = None
-    strict = False
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema,
-            minLength=cls.min_length,
-            maxLength=cls.max_length,
-            pattern=cls.regex and cls.regex.pattern,
-        )
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield strict_str_validator if cls.strict else str_validator
-        yield constr_strip_whitespace
-        yield constr_upper
-        yield constr_lower
-        yield constr_length_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Union[str]) -> Union[str]:
-        if cls.curtail_length and len(value) > cls.curtail_length:
-            value = value[: cls.curtail_length]
-
-        if cls.regex:
-            if not cls.regex.match(value):
-                raise errors.StrRegexError(pattern=cls.regex.pattern)
-
-        return value
 
 
 def constr(
@@ -430,29 +274,28 @@ def constr(
     strict: bool = False,
     min_length: int = None,
     max_length: int = None,
-    curtail_length: int = None,
-    regex: str = None,
-) -> Type[str]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        strip_whitespace=strip_whitespace,
-        to_upper=to_upper,
-        to_lower=to_lower,
-        strict=strict,
-        min_length=min_length,
-        max_length=max_length,
-        curtail_length=curtail_length,
-        regex=regex and re.compile(regex),
+    pattern: str = None,
+) -> SchemaRef:
+    schema = cast(
+        core_schema.StringSchema,
+        dict_not_none(
+            type='str',
+            strip_whitespace=strip_whitespace,
+            to_upper=to_upper,
+            to_lower=to_lower,
+            strict=strict,
+            min_length=min_length,
+            max_length=max_length,
+            pattern=pattern,
+        ),
     )
-    return _registered(type('ConstrainedStrValue', (ConstrainedStr,), namespace))
+    return SchemaRef('ConstrainedString', schema)
 
 
 if TYPE_CHECKING:
     StrictStr = str
 else:
-
-    class StrictStr(ConstrainedStr):
-        strict = True
+    StrictStr = constr(strict=True)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

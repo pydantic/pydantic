@@ -50,12 +50,8 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
-    ConstrainedBytes,
     ConstrainedDate,
     ConstrainedDecimal,
-    ConstrainedFloat,
-    ConstrainedInt,
-    ConstrainedStr,
     DirectoryPath,
     FilePath,
     Json,
@@ -792,9 +788,9 @@ def test_str_basic_types(field_type, expected_schema):
     'field_type,expected_schema',
     [
         (StrictStr, {'title': 'A', 'type': 'string'}),
-        (ConstrainedStr, {'title': 'A', 'type': 'string'}),
+        # (ConstrainedStr, {'title': 'A', 'type': 'string'}),
         (
-            constr(min_length=3, max_length=5, regex='^text$'),
+            constr(min_length=3, max_length=5, pattern='^text$'),
             {'title': 'A', 'type': 'string', 'minLength': 3, 'maxLength': 5, 'pattern': '^text$'},
         ),
     ],
@@ -866,7 +862,7 @@ def test_secret_types(field_type, inner_type):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (ConstrainedInt, {}),
+        # (ConstrainedInt, {}),
         (conint(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (conint(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (conint(multiple_of=5), {'multipleOf': 5}),
@@ -894,7 +890,7 @@ def test_special_int_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (ConstrainedFloat, {}),
+        # (ConstrainedFloat, {}),
         (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (confloat(multiple_of=5), {'multipleOf': 5}),
@@ -1658,7 +1654,7 @@ def test_schema_dict_constr():
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (ConstrainedBytes, {'title': 'A', 'type': 'string', 'format': 'binary'}),
+        # (ConstrainedBytes, {'title': 'A', 'type': 'string', 'format': 'binary'}),
         (
             conbytes(min_length=3, max_length=5),
             {'title': 'A', 'type': 'string', 'format': 'binary', 'minLength': 3, 'maxLength': 5},

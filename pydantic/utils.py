@@ -75,6 +75,7 @@ __all__ = (
     'get_discriminator_alias_and_values',
     'DUNDER_ATTRIBUTES',
     'LimitedDict',
+    'dict_not_none',
 )
 
 ROOT_KEY = '__root__'
@@ -198,6 +199,10 @@ def deep_update(mapping: Dict[KeyType, Any], *updating_mappings: Dict[KeyType, A
             else:
                 updated_mapping[k] = v
     return updated_mapping
+
+
+def dict_not_none(**kwargs: Any) -> Dict[str, Any]:
+    return {k: v for k, v in kwargs.items() if v is not None}
 
 
 def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:

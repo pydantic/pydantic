@@ -4,6 +4,8 @@
 #
 #    pip-compile --extra=email --output-file=requirements/pyproject-all.txt pyproject.toml
 #
+annotated-types==0.2.0
+    # via pydantic (pyproject.toml)
 dnspython==2.2.1
     # via email-validator
 email-validator==1.2.1

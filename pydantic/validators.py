@@ -48,9 +48,9 @@ if TYPE_CHECKING:
 
     from .config import BaseConfig
     from .fields import ModelField
-    from .types import ConstrainedDecimal, ConstrainedFloat, ConstrainedInt
+    from .types import ConstrainedDecimal
 
-    ConstrainedNumber = Union[ConstrainedDecimal, ConstrainedFloat, ConstrainedInt]
+    ConstrainedNumber = Union[ConstrainedDecimal]
     AnyOrderedDict = OrderedDict[Any, Any]
     Number = Union[int, float, Decimal]
     StrBytes = Union[str, bytes]
