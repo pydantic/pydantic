@@ -14,12 +14,12 @@ import pytest
 sys.setrecursionlimit(200)
 
 
-async def main(tests_zip: str, version: str):
+async def main(tests_zip: str, tag_name: str):
     print(f'Extracting test files (size: {len(tests_zip):,})...')
     # File saved on the GH release
     pydantic_core_wheel = (
         'https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/releases/'
-        f'download/v{version}/pydantic_core-{version}-cp310-cp310-emscripten_3_1_14_wasm32.whl'
+        f'download/{tag_name}/pydantic_core-{tag_name.lstrip("v")}-cp310-cp310-emscripten_3_1_14_wasm32.whl'
     )
     zip_file = ZipFile(BytesIO(base64.b64decode(tests_zip)))
     count = 0
@@ -45,7 +45,7 @@ async def main(tests_zip: str, version: str):
 
 
 try:
-    await main(tests_zip, version)  # noqa: F704
+    await main(tests_zip, tag_name)  # noqa: F704
 except Exception:
     traceback.print_exc()
     raise

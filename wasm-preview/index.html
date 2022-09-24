@@ -40,9 +40,7 @@
   <body>
     <main>
       <h1>
-        <a href="https://github.com/pydantic/pydantic-core/tree/main/wasm-preview">pydantic-core</a>
-        v<span id="version">0.1.0</span>
-        unit tests
+        <a href="https://github.com/pydantic/pydantic-core/tree/main/wasm-preview">pydantic-core</a> unit tests
       </h1>
       <aside>
         pydantic-core is compiled to webassembly and run in the browser using
@@ -53,14 +51,13 @@
       </section>
     </main>
 
-    <script src="https://smokeshow.helpmanual.io/2d1p666q3x5f0j26223o/ansi-to-html.browser.js"></script>
+    <script src="https://githubproxy.samuelcolvin.workers.dev/samuelcolvin/824b7fe45b0cb36ffdfd7db7a3d4ce87/raw/ansi-to-html.browser.js"></script>
     <script>
       const output_el = document.getElementById('output');
       const decoder = new TextDecoder();
       const Convert = require('ansi-to-html');
       const ansi_converter = new Convert();
       let terminal_output = '';
-      const version = document.getElementById('version').textContent;
 
       output_el.innerText = 'Starting worker...';
       const worker = new Worker(`./worker.js?v=${Date.now()}`);
@@ -78,7 +75,7 @@
         // scrolls to the bottom of the div
         output_el.scrollIntoView(false);
       };
-      worker.postMessage({version});
+      worker.postMessage();
     </script>
   </body>
 </html>
