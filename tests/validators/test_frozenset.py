@@ -232,7 +232,7 @@ def test_repr():
         'name="frozenset[any]",'
         'validator=FrozenSet(FrozenSetValidator{'
         'strict:true,item_validator:None,size_range:Some((Some(42),None)),name:"frozenset[any]"'
-        '}))'
+        '}),slots=[])'
     )
 
 

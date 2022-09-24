@@ -30,6 +30,7 @@ def test_branch_nullable():
 
     assert v.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
     assert plain_repr(v).startswith('SchemaValidator(name="typed-dict",validator=RecursiveRef(RecursiveRefValidator{')
+    assert ',slots=[TypedDict(TypedDictValidator{' in plain_repr(v)
 
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1'}}) == (
         {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': None}}
