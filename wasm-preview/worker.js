@@ -60,6 +60,8 @@ async function get(url, mode) {
   if (r.ok) {
     if (mode === 'text') {
       return await r.text();
+    } else if (mode === 'json') {
+      return await r.json();
     } else {
       const blob = await r.blob();
       let buffer = await blob.arrayBuffer();
@@ -72,10 +74,12 @@ async function get(url, mode) {
   }
 }
 
-self.onmessage = async ({data}) => {
-  const {version} = data;
-  self.postMessage(`Downloading repo v${version} archive to get tests...\n`);
-  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/archive/refs/tags/v${version}.zip`;
+async function main () {
+  const latest_release = await get('https://api.github.com/repos/pydantic/pydantic-core/releases/latest', 'json');
+  const {tag_name} = latest_release;
+  self.postMessage(`Running tests against latest pydantic-core release (${tag_name}).\n`);
+  self.postMessage(`Downloading repo archive to get tests...\n`);
+  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/archive/refs/tags/${tag_name}.zip`;
   try {
     const [python_code, tests_zip] = await Promise.all([
       get(`./run_tests.py?v=${Date.now()}`, 'text'),
@@ -90,10 +94,12 @@ self.onmessage = async ({data}) => {
     FS.mkdir('/test_dir');
     FS.chdir('/test_dir');
     await pyodide.loadPackage(['micropip', 'pytest', 'pytz']);
-    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({version, tests_zip})});
+    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({tag_name, tests_zip})});
     post();
   } catch (err) {
     console.error(err);
     self.postMessage(`Error: ${err}\n`);
   }
-};
+}
+
+main()
