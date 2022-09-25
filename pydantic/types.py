@@ -21,15 +21,16 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    overload,
+    Annotated,
 )
 from uuid import UUID
-from weakref import WeakSet
 
+import annotated_types
 from pydantic_core import schema_types as core_schema
 
 from . import errors
 from ._internal.typing_extra import SchemaRef
+from pydantic.annotated import Strict
 from .datetime_parse import parse_date
 from .utils import dict_not_none, import_string, update_not_none
 from .validators import (
@@ -104,65 +105,11 @@ if TYPE_CHECKING:
     ModelOrDc = Type[Union[BaseModel, Dataclass]]
 
 T = TypeVar('T')
-_DEFINED_TYPES: 'WeakSet[type]' = WeakSet()
-
-
-@overload
-def _registered(typ: Type[T]) -> Type[T]:
-    pass
-
-
-@overload
-def _registered(typ: 'ConstrainedNumberMeta') -> 'ConstrainedNumberMeta':
-    pass
-
-
-def _registered(typ: Union[Type[T], 'ConstrainedNumberMeta']) -> Union[Type[T], 'ConstrainedNumberMeta']:
-    # In order to generate valid examples of constrained types, Hypothesis needs
-    # to inspect the type object - so we keep a weakref to each contype object
-    # until it can be registered.  When (or if) our Hypothesis plugin is loaded,
-    # it monkeypatches this function.
-    # If Hypothesis is never used, the total effect is to keep a weak reference
-    # which has minimal memory usage and doesn't even affect garbage collection.
-    _DEFINED_TYPES.add(typ)
-    return typ
-
-
-class ConstrainedNumberMeta(type):
-    def __new__(cls, name: str, bases: Any, dct: Dict[str, Any]) -> 'Any':
-        new_cls = type.__new__(cls, name, bases, dct)
-        return _registered(new_cls)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-if TYPE_CHECKING:
-    StrictBool = bool
-else:
-
-    class StrictBool(int):
-        """
-        StrictBool to allow for bools which are not type-coerced.
-        """
-
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            field_schema.update(type='boolean')
-
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield cls.validate
-
-        @classmethod
-        def validate(cls, value: Any) -> bool:
-            """
-            Ensure that we only allow bools.
-            """
-            if isinstance(value, bool):
-                return value
-
-            raise errors.StrictBoolError()
-
+StrictBool = Annotated[bool, Strict()]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INTEGER TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -177,19 +124,11 @@ def conint(
     return SchemaRef('ConstrainedInt', schema)
 
 
-if TYPE_CHECKING:
-    PositiveInt = int
-    NegativeInt = int
-    NonPositiveInt = int
-    NonNegativeInt = int
-    StrictInt = int
-else:
-    PositiveInt = conint(gt=0)
-    NegativeInt = conint(lt=0)
-    NonPositiveInt = conint(le=0)
-    NonNegativeInt = conint(ge=0)
-    StrictInt = conint(strict=True)
-
+PositiveInt = Annotated[int, annotated_types.Gt(0)]
+NegativeInt = Annotated[int, annotated_types.Lt(0)]
+NonPositiveInt = Annotated[int, annotated_types.Le(0)]
+NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
+StrictInt = Annotated[int, Strict()]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -476,7 +415,7 @@ else:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECIMAL TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
+class ConstrainedDecimal(Decimal):
     gt: Union[None, int, float, Decimal] = None
     ge: Union[None, int, float, Decimal] = None
     lt: Union[None, int, float, Decimal] = None
@@ -988,7 +927,7 @@ else:
             return value
 
 
-class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
+class ConstrainedDate(date):
     gt: Optional[date] = None
     ge: Optional[date] = None
     lt: Optional[date] = None

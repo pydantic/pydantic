@@ -9,11 +9,13 @@ from __future__ import annotations as _annotations
 import re
 import typing
 from typing import TYPE_CHECKING, Any
+import dataclasses
 
 from pydantic_core import schema_types as core_schema
 from typing_extensions import get_args, is_typeddict
 
 from pydantic.fields import FieldInfo, Undefined
+from annotated_types import BaseMetadata
 
 from .typing_extra import (
     NoneType,
@@ -59,19 +61,21 @@ def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore compl
     """
     Recursively generate a pydantic-core schema for any supported python type.
     """
-    if isinstance(obj, (str, dict)):
+    if isinstance(obj, str):
+        return {'type': str}
+    elif isinstance(obj, dict):
         # we assume this is already a valid schema
         return obj  # type: ignore[return-value]
     elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
-        return obj.__name__
+        return {'type': obj.__name__}
     elif obj is Any or obj is object:
-        return 'any'
+        return {'type': 'any'}
     elif obj is None or obj is NoneType:
-        return 'none'
+        return {'type': 'none'}
     elif obj == type:
         return core_schema.IsInstanceSchema(type='is-instance', class_=type)
     elif is_callable_type(obj):
-        return 'callable'
+        return {'type': 'callable'}
     elif is_literal_type(obj):
         return literal_schema(obj)
     elif is_typeddict(obj):
@@ -96,6 +100,8 @@ def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore compl
         raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r}.')
     elif origin_is_union(origin):
         return union_schema(obj)
+    elif issubclass(origin, typing.Annotated):
+        return annotated_schema(obj)
     elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
         return generic_collection_schema(obj)
     elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
@@ -181,6 +187,20 @@ def union_schema(union_type: Any) -> core_schema.Schema:
     if nullable:
         s = core_schema.NullableSchema(type='nullable', schema=s)
     return s
+
+
+def annotated_schema(annotated_type: Any) -> core_schema.Schema:
+    """
+    Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
+    """
+    args = get_args(annotated_type)
+    schema = generate_schema(args[0])
+    for arg in args[1:]:
+        if dataclasses.is_dataclass(arg):
+            schema.update(dataclasses.asdict(arg))
+        else:
+            raise PydanticSchemaGenerationError(f'Unable to extract constraints from {annotated_type!r}.')
+    return schema
 
 
 def literal_schema(literal_type: Any) -> core_schema.Schema:

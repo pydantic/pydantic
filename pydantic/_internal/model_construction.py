@@ -3,7 +3,9 @@ from __future__ import annotations as _annotations
 import sys
 import warnings
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, Type
+
+from typing import get_type_hints
 
 from pydantic_core import SchemaValidator
 from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema
@@ -95,8 +97,8 @@ def complete_model_class(
         class_type=cls,
         schema=RecursiveReferenceSchema(type='recursive-ref', schema_ref=model_ref),
     )
-    for ann_name, ann_type in get_type_hints(cls, base_globals, {name: SchemaRef('SelfType', self_schema)}).items():
-        # TODO NotField
+    localns = {name: SchemaRef('SelfType', self_schema)}
+    for ann_name, ann_type in get_type_hints(cls, base_globals, localns, include_extras=True).items():
         if ann_name.startswith('_') or is_classvar(ann_type):
             continue
 

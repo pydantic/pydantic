@@ -72,7 +72,6 @@ __all__ = (
     'Required',
     'evaluate_forwardref',
     'FakeType',
-    'ProtectAnnotated',
     'SchemaRef',
 )
 
@@ -554,6 +553,10 @@ def get_sub_types(tp: Any) -> List[Any]:
         return [tp]
 
 
+# def get_type_hints():
+#     typing.get_type_hints(cls, base_globals, {name: SchemaRef('SelfType', self_schema)})
+
+
 class FakeType:
     """
     Just enough like a "typing type" to mollify `typing._type_check`.
@@ -571,21 +574,6 @@ class FakeType:
 
     def __ror__(self, left: Any) -> Any:
         return Union[left, self]
-
-
-class ProtectAnnotated(FakeType):
-    """
-    This is a hack to allow `Annotated` info to pass through `get_type_hints` without being stripped out
-    in 3.7 and 3.8 which don't support the `include_extras` argument to `get_type_hints`.
-    """
-
-    __slots__ = ('annotated_type',)
-
-    def __init__(self, annotated_type: Any):
-        self.annotated_type = annotated_type
-
-    def __repr__(self) -> str:
-        return f'ProtectAnnotated[{self.annotated_type}]'
 
 
 class SchemaRef(FakeType):

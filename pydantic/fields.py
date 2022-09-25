@@ -26,11 +26,6 @@ Undefined = UndefinedType()
 
 if TYPE_CHECKING:
     from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
-    from .error_wrappers import ErrorList
-
-    ValidateReturn = Tuple[Optional[Any], Optional[ErrorList]]
-    LocStr = Union[Tuple[Union[int, str], ...], str]
-    BoolUndefined = Union[bool, UndefinedType]
 
 
 class FieldInfo(Representation):
