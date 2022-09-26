@@ -20,11 +20,10 @@ from typing import (
 from typing_extensions import Annotated
 
 from ._internal.typing_extra import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .class_validators import gather_all_validators
-from .fields import DeferredType
+from .validator_functions import gather_all_validators
 from .main import BaseModel, create_model
 from .types import JsonWrapper
-from .utils import LimitedDict, all_identical, lenient_issubclass
+from pydantic._internal.utils import LimitedDict, all_identical, lenient_issubclass
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -38,6 +37,14 @@ _generic_types_cache: LimitedDict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]],
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
 _assigned_parameters: LimitedDict[Type[Any], Parametrization] = LimitedDict()
+
+
+class DeferredType:
+    """
+    TODO remove
+    """
+
+    pass
 
 
 class GenericModel(BaseModel):

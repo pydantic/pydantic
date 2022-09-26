@@ -28,7 +28,7 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from ._internal.typing_extra import (
+from pydantic._internal.typing_extra import (
     NoneType,
     WithArgsTypes,
     all_literal_values,
@@ -38,14 +38,14 @@ from ._internal.typing_extra import (
     is_literal_type,
     origin_is_union,
 )
-from .errors import ConfigError
+from pydantic.errors import ConfigError
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ._internal.typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
-    from .dataclasses import Dataclass
-    from .main import BaseModel
+    from pydantic._internal.typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
+    from pydantic.dataclasses import Dataclass
+    from pydantic.main import BaseModel
 
     RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
 

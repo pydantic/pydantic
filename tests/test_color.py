@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
 from pydantic.errors import ColorError
-from pydantic.utils import almost_equal_floats
+from pydantic._internal.utils import almost_equal_floats
 
 
 @pytest.mark.parametrize(

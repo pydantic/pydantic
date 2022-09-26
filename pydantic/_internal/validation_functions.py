@@ -3,16 +3,17 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Callable
-
-from typing_extensions import Literal
 
 from ..errors import ConfigError
 
 if TYPE_CHECKING:
+    from typing_extensions import Literal
+
     from ..main import BaseModel
 
-__all__ = 'FIELD_VALIDATOR_TAG', 'ROOT_VALIDATOR_TAG', 'Validator', 'ValidationFunctions'
+__all__ = 'FIELD_VALIDATOR_TAG', 'ROOT_VALIDATOR_TAG', 'Validator', 'ValidationFunctions', 'prepare_validator'
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
 
@@ -48,7 +49,7 @@ class ValidationFunctions:
         '_used_validators',
     )
 
-    def __init__(self, bases: tuple[type[Any], ...]) -> None:
+    def __init__(self, bases: tuple[type[typing.Any], ...]) -> None:
         self._validators: dict[str, Validator] = {}
         self._field_validators: dict[str, list[str]] = {}
         # these are
@@ -58,7 +59,7 @@ class ValidationFunctions:
         self._used_validators: set[str] = set()
         self._inherit(bases)
 
-    def extract_validator(self, name: str, value: Any) -> None:
+    def extract_validator(self, name: str, value: typing.Any) -> None:
         """
         If the value is a field or root validator,  add it to the appropriate group of validators.
 
@@ -110,7 +111,7 @@ class ValidationFunctions:
                 f"(use check_fields=False if you're inheriting from the model and intended this)"
             )
 
-    def _inherit(self, bases: tuple[type[Any], ...]) -> None:
+    def _inherit(self, bases: tuple[type[typing.Any], ...]) -> None:
         """
         Inherit validators from `ValidationFunctions` instances on base classes.
 
@@ -128,3 +129,32 @@ class ValidationFunctions:
                     self._field_validators[k] = v[:]
                 self._all_fields_validators.extend(parent_vf._all_fields_validators)
                 self._root_validators.extend(parent_vf._root_validators)
+
+
+_FUNCS: set[str] = set()
+
+
+def prepare_validator(function: Callable[..., Any], allow_reuse: bool) -> classmethod[Any]:
+    """
+    Warn about validators with duplicated names since without this, validators can be overwritten silently
+    which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
+    """
+    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    if not allow_reuse and not in_ipython():
+        ref = f'{f_cls.__func__.__module__}::{f_cls.__func__.__qualname__}'
+        if ref in _FUNCS:
+            warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
+        _FUNCS.add(ref)
+    return f_cls
+
+
+def in_ipython() -> bool:
+    """
+    Check whether we're in an ipython environment, including jupyter notebooks.
+    """
+    try:
+        eval('__IPYTHON__')
+    except NameError:
+        return False
+    else:  # pragma: no cover
+        return True

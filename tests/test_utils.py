@@ -21,7 +21,7 @@ from pydantic._internal.typing_extra import (
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
-from pydantic.utils import (
+from pydantic._internal.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
     LimitedDict,

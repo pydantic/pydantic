@@ -9,10 +9,10 @@ from pydantic_core import SchemaValidator
 from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from ..utils import ClassAttribute, is_valid_identifier
+from pydantic._internal.utils import ClassAttribute, is_valid_identifier
 from .babelfish import generate_config, model_fields_schema
 from .typing_extra import SchemaRef, is_classvar
-from .valdation_functions import ValidationFunctions
+from .validation_functions import ValidationFunctions
 
 if TYPE_CHECKING:
     from inspect import Signature

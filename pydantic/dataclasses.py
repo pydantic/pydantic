@@ -51,12 +51,11 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from .class_validators import gather_all_validators
 from .config import BaseConfig, ConfigDict, Extra, get_config
 from .errors import DataclassTypeError
 from .fields import Field, FieldInfo, Required, Undefined
 from .main import create_model
-from .utils import ClassAttribute
+from pydantic._internal.utils import ClassAttribute
 
 if TYPE_CHECKING:
     from ._internal.typing_extra import CallableGenerator, NoArgAnyCallable
@@ -385,6 +384,7 @@ def create_pydantic_model_from_dataclass(
 
         field_definitions[field.name] = (field.type, field_info)
 
+    from .validator_functions import gather_all_validators
     validators = gather_all_validators(dc_cls)
     model: Type['BaseModel'] = create_model(
         dc_cls.__name__,

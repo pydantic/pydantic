@@ -8,7 +8,7 @@ import pytest
 from typing_extensions import Literal
 
 from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
-from pydantic.class_validators import root_validator
+from pydantic.validator_functions import root_validator
 
 
 def test_simple():
@@ -987,7 +987,7 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
 
 @pytest.fixture
 def reset_tracked_validators():
-    from pydantic.class_validators import _FUNCS
+    from pydantic.validator_functions import _FUNCS
 
     original_tracked_validators = set(_FUNCS)
     yield

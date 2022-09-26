@@ -20,6 +20,7 @@ passing_files = {
     'test_rich_repr.py',
     'test_structural_pattern_matching.py',
     'test_version.py',
+    # 'test_networks.py',
 }
 
 

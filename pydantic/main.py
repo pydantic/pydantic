@@ -5,7 +5,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
 from functools import partial
-from types import FunctionType, prepare_class, resolve_bases
+from types import prepare_class, resolve_bases
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -28,15 +28,13 @@ from typing_extensions import dataclass_transform
 
 from ._internal.model_construction import complete_model_class, inspect_namespace
 from ._internal.typing_extra import is_namedtuple
-from ._internal.valdation_functions import ValidationFunctions
+from ._internal.validation_functions import ValidationFunctions
 from .config import BaseConfig, Extra, build_config, inherit_config
-from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError
 from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .parse import Protocol, load_str_bytes
 from .schema import default_ref_template, model_schema
-from .utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
+from pydantic._internal.utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
 
 if TYPE_CHECKING:
     from inspect import Signature
@@ -63,10 +61,6 @@ __all__ = (
 _T = TypeVar('_T')
 
 
-# If a field is of type `Callable`, its default value should be a function and cannot to ignored.
-ANNOTATED_FIELD_UNTOUCHED_TYPES: Tuple[Any, ...] = (property, type, classmethod, staticmethod)
-# When creating a `BaseModel` instance, we bypass all the methods, properties... added to the model
-UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_TYPES
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
@@ -276,29 +270,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         object_setattr(m, '__fields_set__', fields_set)
         m._init_private_attributes()
         return m
-
-    @classmethod
-    def parse_raw(
-        cls: Type['Model'],
-        b: Union[str, bytes],
-        *,
-        content_type: str = None,
-        encoding: str = 'utf8',
-        proto: Protocol = None,
-        allow_pickle: bool = False,
-    ) -> 'Model':
-        try:
-            obj = load_str_bytes(
-                b,
-                proto=proto,
-                content_type=content_type,
-                encoding=encoding,
-                allow_pickle=allow_pickle,
-                json_loads=cls.__config__.json_loads,
-            )
-        except (ValueError, TypeError, UnicodeDecodeError) as e:
-            raise ValidationError([ErrorWrapper(e, loc='__root__')], cls)
-        return cls.parse_obj(obj)
 
     @classmethod
     def from_orm(cls: Type['Model'], obj: Any) -> 'Model':

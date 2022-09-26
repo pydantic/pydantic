@@ -63,7 +63,7 @@ from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 from mypy.version import __version__ as mypy_version
 
-from pydantic.utils import is_valid_field
+from pydantic._internal.utils import is_valid_field
 
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]

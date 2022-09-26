@@ -13,7 +13,7 @@ from colorsys import hls_to_rgb, rgb_to_hls
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
 from .errors import ColorError
-from .utils import Representation, almost_equal_floats
+from pydantic._internal.utils import Representation, almost_equal_floats
 
 if TYPE_CHECKING:
     from ._internal.typing_extra import CallableGenerator, ReprArgs

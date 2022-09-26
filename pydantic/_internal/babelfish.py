@@ -28,7 +28,7 @@ from .typing_extra import (
     is_literal_type,
     origin_is_union,
 )
-from .valdation_functions import ValidationFunctions, Validator
+from .validation_functions import ValidationFunctions, Validator
 
 if TYPE_CHECKING:
     from ..config import BaseConfig

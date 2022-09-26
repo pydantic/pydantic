@@ -28,5 +28,5 @@ class PydanticMetadata:
 
 
 class CustomMetadata(PydanticMetadata):
-    def __init__(self, **metadata):
+    def __init__(self, **metadata: Any):
         self.__dict__ = metadata

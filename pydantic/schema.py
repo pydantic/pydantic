@@ -41,21 +41,8 @@ from ._internal.typing_extra import (
     is_none_type,
     origin_is_union,
 )
-from .fields import (
-    MAPPING_LIKE_SHAPES,
-    SHAPE_DEQUE,
-    SHAPE_FROZENSET,
-    SHAPE_GENERIC,
-    SHAPE_ITERABLE,
-    SHAPE_LIST,
-    SHAPE_SEQUENCE,
-    SHAPE_SET,
-    SHAPE_SINGLETON,
-    SHAPE_TUPLE,
-    SHAPE_TUPLE_ELLIPSIS,
-    FieldInfo,
-    ModelField,
-)
+from ._internal.utils import ROOT_KEY, get_model, lenient_issubclass
+from .fields import FieldInfo
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
 from .types import (
@@ -72,7 +59,6 @@ from .types import (
     conset,
     constr,
 )
-from .utils import ROOT_KEY, get_model, lenient_issubclass
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -83,6 +69,7 @@ default_ref_template = '#/definitions/{model}'
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
+ModelField = Any
 
 
 def _apply_modify_schema(

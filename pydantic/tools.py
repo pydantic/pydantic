@@ -1,12 +1,9 @@
-import json
 from functools import lru_cache
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
 from ._internal.typing_extra import display_as_type
-from .parse import Protocol, load_file, load_str_bytes
 
-__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema_of', 'schema_json_of')
+__all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
@@ -35,50 +32,6 @@ T = TypeVar('T')
 def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
     model_type = _get_parsing_type(type_, type_name=type_name)  # type: ignore[arg-type]
     return model_type(__root__=obj).__root__
-
-
-def parse_file_as(
-    type_: Type[T],
-    path: Union[str, Path],
-    *,
-    content_type: str = None,
-    encoding: str = 'utf8',
-    proto: Protocol = None,
-    allow_pickle: bool = False,
-    json_loads: Callable[[str], Any] = json.loads,
-    type_name: Optional[NameFactory] = None,
-) -> T:
-    obj = load_file(
-        path,
-        proto=proto,
-        content_type=content_type,
-        encoding=encoding,
-        allow_pickle=allow_pickle,
-        json_loads=json_loads,
-    )
-    return parse_obj_as(type_, obj, type_name=type_name)
-
-
-def parse_raw_as(
-    type_: Type[T],
-    b: Union[str, bytes],
-    *,
-    content_type: str = None,
-    encoding: str = 'utf8',
-    proto: Protocol = None,
-    allow_pickle: bool = False,
-    json_loads: Callable[[str], Any] = json.loads,
-    type_name: Optional[NameFactory] = None,
-) -> T:
-    obj = load_str_bytes(
-        b,
-        proto=proto,
-        content_type=content_type,
-        encoding=encoding,
-        allow_pickle=allow_pickle,
-        json_loads=json_loads,
-    )
-    return parse_obj_as(type_, obj, type_name=type_name)
 
 
 def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
