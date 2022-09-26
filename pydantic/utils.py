@@ -201,8 +201,8 @@ def deep_update(mapping: Dict[KeyType, Any], *updating_mappings: Dict[KeyType, A
     return updated_mapping
 
 
-def dict_not_none(**kwargs: Any) -> Dict[str, Any]:
-    return {k: v for k, v in kwargs.items() if v is not None}
+def dict_not_none(__pos: Dict[str, Any] = None, **kwargs: Any) -> Dict[str, Any]:
+    return {k: v for k, v in (__pos or kwargs).items() if v is not None}
 
 
 def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:

@@ -59,10 +59,6 @@ from .fields import (
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
 from .types import (
-    ConstrainedDecimal,
-    ConstrainedFrozenSet,
-    ConstrainedList,
-    ConstrainedSet,
     SecretBytes,
     SecretStr,
     StrictBytes,
@@ -1029,7 +1025,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)
-            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
+            # or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
         ):
             return type_
         origin = get_origin(type_)
@@ -1104,10 +1100,10 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 (
                     # ConstrainedInt,
                     # ConstrainedFloat,
-                    ConstrainedDecimal,
-                    ConstrainedList,
-                    ConstrainedSet,
-                    ConstrainedFrozenSet,
+                    # ConstrainedDecimal,
+                    # ConstrainedList,
+                    # ConstrainedSet,
+                    # ConstrainedFrozenSet,
                     bool,
                 ),
             ):

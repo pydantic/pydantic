@@ -3,9 +3,7 @@ from __future__ import annotations as _annotations
 import sys
 import warnings
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Type
-
-from typing import get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
 
 from pydantic_core import SchemaValidator
 from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema

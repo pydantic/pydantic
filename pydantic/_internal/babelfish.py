@@ -6,17 +6,17 @@ until I'm sure what it does.
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import re
 import typing
 from typing import TYPE_CHECKING, Any
-import dataclasses
 
+from annotated_types import BaseMetadata
 from pydantic_core import schema_types as core_schema
 from typing_extensions import get_args, is_typeddict
 
-from pydantic.fields import FieldInfo, Undefined
-from annotated_types import BaseMetadata
-
+from ..fields import FieldInfo, Undefined
+from .fields import CustomMetadata, PydanticMetadata
 from .typing_extra import (
     NoneType,
     NotRequired,
@@ -81,11 +81,9 @@ def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore compl
     elif is_typeddict(obj):
         return type_dict_schema(obj)
 
-    # import here to avoid the extra import time earlier
-    from datetime import date, datetime, time, timedelta
-
-    if obj in (datetime, timedelta, date, time):
-        return obj.__name__
+    std_schema = std_types_schema(obj)
+    if std_schema is not None:
+        return std_schema
 
     schema_property = getattr(obj, '__pydantic_validation_schema__', None)
     if schema_property is not None:
@@ -123,7 +121,7 @@ def generate_field_schema(
     """
     assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
     schema: core_schema.Schema = generate_schema(field.annotation)
-    schema = apply_validators(schema, validator_functions.get_field_validators(name))
+    apply_constraints(schema, field.constraints)
 
     required = False
     if field.default_factory:
@@ -133,6 +131,7 @@ def generate_field_schema(
     else:
         schema = core_schema.WithDefaultSchema(type='default', schema=schema, default=field.default)
 
+    schema = apply_validators(schema, validator_functions.get_field_validators(name))
     field_schema = core_schema.TypedDictField(schema=schema, required=required)
     if field.alias is not None:
         field_schema['alias'] = field.alias
@@ -195,21 +194,46 @@ def annotated_schema(annotated_type: Any) -> core_schema.Schema:
     """
     args = get_args(annotated_type)
     schema = generate_schema(args[0])
-    for arg in args[1:]:
-        if dataclasses.is_dataclass(arg):
-            schema.update(dataclasses.asdict(arg))
-        else:
-            raise PydanticSchemaGenerationError(f'Unable to extract constraints from {annotated_type!r}.')
+    apply_constraints(schema, args[1:])
     return schema
 
 
-def literal_schema(literal_type: Any) -> core_schema.Schema:
+def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> None:
+    for c in constraints:
+        if isinstance(c, CustomMetadata):
+            constraints = c.__dict__
+        elif isinstance(c, (BaseMetadata, PydanticMetadata)):
+            constraints = dataclasses.asdict(c)
+        else:
+            raise PydanticSchemaGenerationError(
+                'Constraints must be subclasses of annotated_types.BaseMetadata or PydanticMetadata'
+            )
+        for k, v in constraints.items():
+            if v is None:
+                continue
+            elif k in {'min_inclusive', 'max_exclusive'}:
+                # TODO remove once https://github.com/pydantic/pydantic-core/issues/249 is fixed
+                if schema['type'] in {'list', 'tuple', 'set', 'frozenset'}:
+                    schema[f'{k[:3]}_items'] = v
+                else:
+                    schema[f'{k[:3]}_length'] = v
+            elif k in {'min_length', 'max_length'}:
+                # TODO remove once https://github.com/pydantic/pydantic-core/issues/249 is fixed
+                if schema['type'] in {'list', 'tuple', 'set', 'frozenset'}:
+                    schema[f'{k[:3]}_items'] = v
+                else:
+                    schema[k] = v
+            else:
+                schema[k] = v
+
+
+def literal_schema(literal_type: Any) -> core_schema.LiteralSchema:
     """
     Generate schema for a Literal.
     """
     expected = all_literal_values(literal_type)
     assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-    return {'type': 'literal', 'expected': list(expected)}
+    return core_schema.LiteralSchema(type='literal', expected=list(expected))
 
 
 def type_dict_schema(typed_dict: Any) -> core_schema.TypedDictSchema:
@@ -313,3 +337,28 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
         return core_schema.IsInstanceSchema(type='is-instance', class_=type)
     else:
         return core_schema.IsInstanceSchema(type='is-instance', class_=type_param)
+
+
+def std_types_schema(obj: Any) -> core_schema.Schema | None:
+    """
+    Generate schema for types in the standard library, could be split if this gets too long.
+
+    Import here to avoid the extra import time earlier
+    """
+    if isinstance(obj, type):
+        from datetime import date, datetime, time, timedelta
+
+        if issubclass(obj, (datetime, timedelta, date, time)):
+            return {'type': obj.__name__}
+
+        from enum import Enum
+
+        if issubclass(obj, Enum):
+            return core_schema.FunctionSchema(
+                type='function',
+                mode='after',
+                function=lambda x, **kwargs: obj(x),
+                schema=core_schema.LiteralSchema(type='literal', expected=[m.value for m in obj.__members__.values()]),
+            )
+
+    return None

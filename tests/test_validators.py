@@ -1255,3 +1255,95 @@ def test_overridden_root_validators(mocker):
 
     B(x='pika')
     assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
+
+
+def test_validating_assignment_pre_root_validator_fail():
+    class Model(BaseModel):
+        current_value: float = Field(..., alias='current')
+        max_value: float
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator(pre=True)
+        def values_are_not_string(cls, values):
+            if any(isinstance(x, str) for x in values.values()):
+                raise ValueError('values cannot be a string')
+            return values
+
+    m = Model(current=100, max_value=200)
+    with pytest.raises(ValidationError) as exc_info:
+        m.current_value = '100'
+    assert exc_info.value.errors() == [
+        {
+            'loc': ['__root__'],
+            'message': 'values cannot be a string',
+            'kind': 'value_error',
+        }
+    ]
+
+
+def test_validating_assignment_post_root_validator_fail():
+    class Model(BaseModel):
+        current_value: float = Field(..., alias='current')
+        max_value: float
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def current_lessequal_max(cls, values):
+            current_value = values.get('current_value')
+            max_value = values.get('max_value')
+            if current_value > max_value:
+                raise ValueError('current_value cannot be greater than max_value')
+            return values
+
+        @root_validator(skip_on_failure=True)
+        def current_lessequal_300(cls, values):
+            current_value = values.get('current_value')
+            if current_value > 300:
+                raise ValueError('current_value cannot be greater than 300')
+            return values
+
+        @root_validator
+        def current_lessequal_500(cls, values):
+            current_value = values.get('current_value')
+            if current_value > 500:
+                raise ValueError('current_value cannot be greater than 500')
+            return values
+
+    m = Model(current=100, max_value=200)
+    m.current_value = '100'
+    with pytest.raises(ValidationError) as exc_info:
+        m.current_value = 1000
+    assert exc_info.value.errors() == [
+        {'loc': ['__root__'], 'message': 'current_value cannot be greater than max_value', 'kind': 'value_error'},
+        {
+            'loc': ['__root__'],
+            'message': 'current_value cannot be greater than 500',
+            'kind': 'value_error',
+        },
+    ]
+
+
+def test_root_validator_many_values_change():
+    """It should run root_validator on assignment and update ALL concerned fields"""
+
+    class Rectangle(BaseModel):
+        width: float
+        height: float
+        area: float = None
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def set_area(cls, values):
+            values['area'] = values['width'] * values['height']
+            return values
+
+    r = Rectangle(width=1, height=1)
+    assert r.area == 1
+    r.height = 5
+    assert r.area == 5

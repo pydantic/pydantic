@@ -1,31 +1,31 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, Type, TypeVar, Union
+from __future__ import annotations as _annotations
 
-from ._internal.typing_extra import NoArgAnyCallable, display_as_type, is_finalvar
-from .utils import PyObjectStr, Representation, ValueItems, smart_deepcopy
+import typing
+from dataclasses import dataclass
+from typing import Any
+
+import annotated_types
+
+from ._internal.fields import CustomMetadata, PydanticMetadata, UndefinedType
+from ._internal.typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin, is_finalvar
+from .utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
+
+if typing.TYPE_CHECKING:
+    from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
 Required: Any = Ellipsis
 
-T = TypeVar('T')
-
-
-class UndefinedType:
-    def __repr__(self) -> str:
-        return 'PydanticUndefined'
-
-    def __copy__(self: T) -> T:
-        return self
-
-    def __reduce__(self) -> str:
-        return 'Undefined'
-
-    def __deepcopy__(self: T, _: Any) -> T:
-        return self
-
-
 Undefined = UndefinedType()
 
-if TYPE_CHECKING:
-    from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
+
+@dataclass
+class Strict(PydanticMetadata):
+    strict: bool | None = True
+
+
+@dataclass
+class AllowInfNan(PydanticMetadata):
+    strict: bool | None = True
 
 
 class FieldInfo(Representation):
@@ -43,47 +43,34 @@ class FieldInfo(Representation):
         'description',
         'exclude',
         'include',
-        'gt',
-        'ge',
-        'lt',
-        'le',
-        'multiple_of',
-        'allow_inf_nan',
+        'constraints',
         'max_digits',
         'decimal_places',
-        'min_items',
-        'max_items',
-        'unique_items',
-        'min_length',
-        'max_length',
-        'allow_mutation',
         'repr',
-        'regex',
         'discriminator',
         'extra',
     )
 
-    # field constraints with the default value, it's also used in update_from_config below
-    __field_constraints__ = {
+    # used to convert kwargs to constraints, None has a special meaning
+    __constraints_lookup__: dict[str, annotated_types.BaseMetadata | PydanticMetadata | None] = {
+        'gt': annotated_types.Gt,
+        'ge': annotated_types.Ge,
+        'lt': annotated_types.Lt,
+        'le': annotated_types.Le,
+        'multiple_of': annotated_types.MultipleOf,
+        'strict': Strict,
         'min_length': None,
         'max_length': None,
-        'regex': None,
-        'gt': None,
-        'lt': None,
-        'ge': None,
-        'le': None,
-        'multiple_of': None,
+        'pattern': None,
         'allow_inf_nan': None,
-        'max_digits': None,
-        'decimal_places': None,
         'min_items': None,
         'max_items': None,
-        'unique_items': None,
-        'allow_mutation': True,
+        'frozen': None,
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        self.annotation = kwargs.pop('annotation', None)
+        self.annotation, annotation_constraints = self._extract_constraints(kwargs.pop('annotation', None))
+
         default = kwargs.pop('default', Undefined)
         if default is Required:
             self.default = Undefined
@@ -101,21 +88,9 @@ class FieldInfo(Representation):
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
         self.include = kwargs.pop('include', None)
-        self.gt = kwargs.pop('gt', None)
-        self.ge = kwargs.pop('ge', None)
-        self.lt = kwargs.pop('lt', None)
-        self.le = kwargs.pop('le', None)
-        self.multiple_of = kwargs.pop('multiple_of', None)
-        self.allow_inf_nan = kwargs.pop('allow_inf_nan', None)
+        self.constraints = self._collect_constraints(kwargs) + annotation_constraints
         self.max_digits = kwargs.pop('max_digits', None)
         self.decimal_places = kwargs.pop('decimal_places', None)
-        self.min_items = kwargs.pop('min_items', None)
-        self.max_items = kwargs.pop('max_items', None)
-        self.unique_items = kwargs.pop('unique_items', None)
-        self.min_length = kwargs.pop('min_length', None)
-        self.max_length = kwargs.pop('max_length', None)
-        self.allow_mutation = kwargs.pop('allow_mutation', True)
-        self.regex = kwargs.pop('regex', None)
         self.discriminator = kwargs.pop('discriminator', None)
         self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
@@ -127,61 +102,55 @@ class FieldInfo(Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: Any) -> 'FieldInfo':
+    def from_annotation(cls, annotation: type[Any]) -> 'FieldInfo':
+        """
+        Create a FieldInfo from a bare annotation - e.g. with no default value.
+        """
         return cls(annotation=annotation)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: Any, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
-        if isinstance(default, FieldInfo):
-            default.annotation = annotation
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> 'FieldInfo':
+        if isinstance(default, cls):
+            default.annotation, annotation_constraints = cls._extract_constraints(annotation)
+            default.constraints += annotation_constraints
             return default
         else:
             return cls(annotation=annotation, default=default)
 
-    def __repr_args__(self) -> 'ReprArgs':
-        field_defaults_to_hide: Dict[str, Any] = {
-            'repr': True,
-            **self.__field_constraints__,
-        }
-        yield 'annotation', PyObjectStr(display_as_type(self.annotation))
-        yield 'required', self.is_required()
+    @classmethod
+    def _extract_constraints(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
+        if annotation is not None:
+            origin = get_origin(annotation)
+            if lenient_issubclass(origin, typing.Annotated):
+                args = get_args(annotation)
+                return args[0], list(args[1:])
 
-        for s in self.__slots__:
-            if s == 'annotation':
-                continue
-            if s == 'default_factory' and self.default_factory is not None:
-                yield 'default_factory', PyObjectStr(display_as_type(self.default_factory))
-            elif s != 'extra' or self.extra:
-                value = getattr(self, s)
-                if value != field_defaults_to_hide.get(s, None) and value is not Undefined:
-                    yield s, value
+        return annotation, []
 
-    def get_constraints(self) -> Set[str]:
+    @classmethod
+    def _collect_constraints(cls, kwargs: dict[str, Any]) -> list[Any]:
         """
-        Gets the constraints set on the field by comparing the constraint value with its default value
+        Collect annotations from kwargs, the return type is actually `annotated_types.BaseMetadata | PydanticMetadata`
+        but it gets combined with `list[Any]` from `Annotated[T, ...]`, hence types.
+        """
 
-        :return: the constraints set on field_info
-        """
-        return {attr for attr, default in self.__field_constraints__.items() if getattr(self, attr) != default}
-
-    def update_from_config(self, from_config: Dict[str, Any]) -> None:
-        """
-        Update this FieldInfo based on a dict from get_field_info, only fields which have not been set are dated.
-        """
-        for attr_name, value in from_config.items():
+        constraints: list[Any] = []
+        generic_constraints = {}
+        for key, value in list(kwargs.items()):
             try:
-                current_value = getattr(self, attr_name)
-            except AttributeError:
-                # attr_name is not an attribute of FieldInfo, it should therefore be added to extra
-                # (except if extra already has this value!)
-                self.extra.setdefault(attr_name, value)
-            else:
-                if current_value is self.__field_constraints__.get(attr_name, None):
-                    setattr(self, attr_name, value)
-                elif attr_name == 'exclude':
-                    self.exclude = ValueItems.merge(value, current_value)
-                elif attr_name == 'include':
-                    self.include = ValueItems.merge(value, current_value, intersect=True)
+                marker = cls.__constraints_lookup__[key]
+            except KeyError:
+                continue
+
+            del kwargs[key]
+            if value is not None:
+                if marker is None:
+                    generic_constraints[key] = value
+                else:
+                    constraints.append(marker(value))
+        if generic_constraints:
+            constraints.append(CustomMetadata(**generic_constraints))
+        return constraints
 
     def get_default(self) -> Any:
         return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
@@ -189,16 +158,34 @@ class FieldInfo(Representation):
     def is_required(self) -> bool:
         return self.default is Undefined and self.default_factory is None
 
+    def __repr_args__(self) -> 'ReprArgs':
+        yield 'annotation', PyObjectStr(display_as_type(self.annotation))
+        yield 'required', self.is_required()
+
+        for s in self.__slots__:
+            if s == 'annotation':
+                continue
+            elif s == 'constraints' and not self.constraints:
+                continue
+            elif s == 'repr' and self.repr is True:
+                continue
+            if s == 'default_factory' and self.default_factory is not None:
+                yield 'default_factory', PyObjectStr(display_as_type(self.default_factory))
+            elif s != 'extra' or self.extra:
+                value = getattr(self, s)
+                if value is not None and value is not Undefined:
+                    yield s, value
+
 
 def Field(
     default: Any = Undefined,
     *,
-    default_factory: Optional[NoArgAnyCallable] = None,
+    default_factory: NoArgAnyCallable | None = None,
     alias: str = None,
     title: str = None,
     description: str = None,
-    exclude: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
-    include: Union['AbstractSetIntStr', 'MappingIntStrAny', Any] = None,
+    exclude: AbstractSetIntStr | MappingIntStrAny | Any = None,
+    include: AbstractSetIntStr | MappingIntStrAny | Any = None,
     gt: float = None,
     ge: float = None,
     lt: float = None,
@@ -209,11 +196,10 @@ def Field(
     decimal_places: int = None,
     min_items: int = None,
     max_items: int = None,
-    unique_items: bool = None,
     min_length: int = None,
     max_length: int = None,
-    allow_mutation: bool = True,
-    regex: str = None,
+    frozen: bool = None,
+    pattern: str = None,
     discriminator: str = None,
     repr: bool = True,
     **extra: Any,
@@ -253,15 +239,13 @@ def Field(
       elements. The schema will have a ``minItems`` validation keyword
     :param max_items: only applies to lists, requires the field to have a maximum number of
       elements. The schema will have a ``maxItems`` validation keyword
-    :param unique_items: only applies to lists, requires the field not to have duplicated
-      elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``maximum`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
       schema will have a ``maxLength`` validation keyword
-    :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
+    :param frozen: a boolean which defaults to True. When False, the field raises a TypeError if the field is
       assigned on an instance.  The BaseModel Config must set validate_assignment to True
-    :param regex: only applies to strings, requires the field match against a regular expression
+    :param pattern: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
     :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
       The `discriminator` is the name of this common field to shorten validation and improve generated schema
@@ -286,65 +270,24 @@ def Field(
         decimal_places=decimal_places,
         min_items=min_items,
         max_items=max_items,
-        unique_items=unique_items,
         min_length=min_length,
         max_length=max_length,
-        allow_mutation=allow_mutation,
-        regex=regex,
+        frozen=frozen,
+        pattern=pattern,
         discriminator=discriminator,
         repr=repr,
         **extra,
     )
 
 
-# used to be an enum but changed to int's for small performance improvement as less access overhead
-SHAPE_SINGLETON = 1
-SHAPE_LIST = 2
-SHAPE_SET = 3
-SHAPE_MAPPING = 4
-SHAPE_TUPLE = 5
-SHAPE_TUPLE_ELLIPSIS = 6
-SHAPE_SEQUENCE = 7
-SHAPE_FROZENSET = 8
-SHAPE_ITERABLE = 9
-SHAPE_GENERIC = 10
-SHAPE_DEQUE = 11
-SHAPE_DICT = 12
-SHAPE_DEFAULTDICT = 13
-SHAPE_COUNTER = 14
-SHAPE_NAME_LOOKUP = {
-    SHAPE_LIST: 'List[{}]',
-    SHAPE_SET: 'Set[{}]',
-    SHAPE_TUPLE_ELLIPSIS: 'Tuple[{}, ...]',
-    SHAPE_SEQUENCE: 'Sequence[{}]',
-    SHAPE_FROZENSET: 'FrozenSet[{}]',
-    SHAPE_ITERABLE: 'Iterable[{}]',
-    SHAPE_DEQUE: 'Deque[{}]',
-    SHAPE_DICT: 'Dict[{}]',
-    SHAPE_DEFAULTDICT: 'DefaultDict[{}]',
-    SHAPE_COUNTER: 'Counter[{}]',
-}
-
-MAPPING_LIKE_SHAPES: Set[int] = {SHAPE_DEFAULTDICT, SHAPE_DICT, SHAPE_MAPPING, SHAPE_COUNTER}
-
-
-# TODO remove, this is just here to satisfy imports of ModelField
-if TYPE_CHECKING:
-    ModelField = Any
-else:
-
-    class ModelField(Representation):
-        pass
-
-
 class ModelPrivateAttr(Representation):
     __slots__ = 'default', 'default_factory'
 
-    def __init__(self, default: Any = Undefined, *, default_factory: Optional[NoArgAnyCallable] = None) -> None:
+    def __init__(self, default: Any = Undefined, *, default_factory: NoArgAnyCallable | None = None) -> None:
         self.default = default
         self.default_factory = default_factory
 
-    def __set_name__(self, cls: Type[Any], name: str) -> None:
+    def __set_name__(self, cls: type[Any], name: str) -> None:
         """
         preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
         """
@@ -370,7 +313,7 @@ class ModelPrivateAttr(Representation):
 def PrivateAttr(
     default: Any = Undefined,
     *,
-    default_factory: Optional[NoArgAnyCallable] = None,
+    default_factory: NoArgAnyCallable | None = None,
 ) -> Any:
     """
     Indicates that attribute is only used internally and never mixed with regular fields.
@@ -392,7 +335,7 @@ def PrivateAttr(
     )
 
 
-def is_finalvar_with_default_val(type_: Type[Any], val: Any) -> bool:
+def is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
     return is_finalvar(type_) and val is not Undefined and not isinstance(val, FieldInfo)
 
 

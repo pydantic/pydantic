@@ -107,44 +107,16 @@ def test_constrained_bytes_default(ConBytesModel):
 def test_constrained_bytes_too_long(ConBytesModel):
     with pytest.raises(ValidationError) as exc_info:
         ConBytesModel(v=b'this is too long')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'Data should have at most 10 bytes',
+            'input_value': b'this is too long',
+            'context': {'max_length': 10},
         }
     ]
-
-
-@pytest.mark.parametrize(
-    'to_upper, value, result',
-    [
-        (True, b'abcd', b'ABCD'),
-        (False, b'aBcD', b'aBcD'),
-    ],
-)
-def test_constrained_bytes_upper(to_upper, value, result):
-    class Model(BaseModel):
-        v: conbytes(to_upper=to_upper)
-
-    m = Model(v=value)
-    assert m.v == result
-
-
-@pytest.mark.parametrize(
-    'to_lower, value, result',
-    [
-        (True, b'ABCD', b'abcd'),
-        (False, b'ABCD', b'ABCD'),
-    ],
-)
-def test_constrained_bytes_lower(to_lower, value, result):
-    class Model(BaseModel):
-        v: conbytes(to_lower=to_lower)
-
-    m = Model(v=value)
-    assert m.v == result
 
 
 def test_constrained_bytes_strict_true():
@@ -152,7 +124,8 @@ def test_constrained_bytes_strict_true():
         v: conbytes(strict=True)
 
     assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    with pytest.raises(ValidationError):
+        Model(v=bytearray('foobar', 'utf-8'))
 
     with pytest.raises(ValidationError):
         Model(v='foostring')
@@ -171,8 +144,12 @@ def test_constrained_bytes_strict_false():
     assert Model(v=b'foobar').v == b'foobar'
     assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
     assert Model(v='foostring').v == b'foostring'
-    assert Model(v=42).v == b'42'
-    assert Model(v=0.42).v == b'0.42'
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
 
 
 def test_constrained_bytes_strict_default():
@@ -182,8 +159,12 @@ def test_constrained_bytes_strict_default():
     assert Model(v=b'foobar').v == b'foobar'
     assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
     assert Model(v='foostring').v == b'foostring'
-    assert Model(v=42).v == b'42'
-    assert Model(v=0.42).v == b'0.42'
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
 
 
 def test_constrained_list_good():
@@ -204,91 +185,65 @@ def test_constrained_list_default():
 
 def test_constrained_list_too_long():
     class ConListModelMax(BaseModel):
-        v: conlist(int, max_items=10) = []
+        v: conlist(int, max_length=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelMax(v=list(str(i) for i in range(11)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 10 items',
-            'type': 'value_error.list.max_items',
-            'ctx': {'limit_value': 10},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'Input should have at most 10 items, got 11 items',
+            'input_value': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            'context': {'max_length': 10, 'input_length': 11},
         }
     ]
 
 
 def test_constrained_list_too_short():
     class ConListModelMin(BaseModel):
-        v: conlist(int, min_items=1)
+        v: conlist(int, min_length=1)
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelMin(v=[])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 1},
-        }
-    ]
-
-
-def test_constrained_list_not_unique_hashable_items():
-    class ConListModelUnique(BaseModel):
-        v: conlist(int, unique_items=True)
-
-    with pytest.raises(ValidationError) as exc_info:
-        ConListModelUnique(v=[1, 1, 2, 2, 2, 3])
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('v',),
-            'msg': 'the list has duplicated items',
-            'type': 'value_error.list.unique_items',
-        }
-    ]
-
-
-def test_constrained_list_not_unique_unhashable_items():
-    class ConListModelUnique(BaseModel):
-        v: conlist(Set[int], unique_items=True)
-
-    m = ConListModelUnique(v=[{1}, {2}, {3}])
-    assert m.v == [{1}, {2}, {3}]
-
-    with pytest.raises(ValidationError) as exc_info:
-        ConListModelUnique(v=[{1}, {1}, {2}, {2}, {2}, {3}])
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('v',),
-            'msg': 'the list has duplicated items',
-            'type': 'value_error.list.unique_items',
+            'kind': 'too_short',
+            'loc': ['v'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': [],
+            'context': {'min_length': 1, 'input_length': 0},
         }
     ]
 
 
 def test_constrained_list_optional():
     class Model(BaseModel):
-        req: Optional[conlist(str, min_items=1)] = ...
-        opt: Optional[conlist(str, min_items=1)]
+        req: Optional[conlist(str, min_length=1)]
+        opt: Optional[conlist(str, min_length=1)] = None
 
     assert Model(req=None).dict() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=[], opt=[])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('req',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['req'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': [],
+            'context': {'min_length': 1, 'input_length': 0},
         },
         {
-            'loc': ('opt',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['opt'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': [],
+            'context': {'min_length': 1, 'input_length': 0},
         },
     ]
 
@@ -297,7 +252,7 @@ def test_constrained_list_optional():
 
 def test_constrained_list_constraints():
     class ConListModelBoth(BaseModel):
-        v: conlist(int, min_items=7, max_items=11)
+        v: conlist(int, min_length=7, max_length=11)
 
     m = ConListModelBoth(v=list(range(7)))
     assert m.v == list(range(7))
@@ -307,29 +262,36 @@ def test_constrained_list_constraints():
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelBoth(v=list(range(6)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at least 7 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 7},
+            'kind': 'too_short',
+            'loc': ['v'],
+            'message': 'Input should have at least 7 items, got 6 items',
+            'input_value': [0, 1, 2, 3, 4, 5],
+            'context': {'min_length': 7, 'input_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelBoth(v=list(range(12)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 11 items',
-            'type': 'value_error.list.max_items',
-            'ctx': {'limit_value': 11},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'Input should have at most 11 items, got 12 items',
+            'input_value': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            'context': {'max_length': 11, 'input_length': 12},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelBoth(v=1)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'list_type', 'loc': ['v'], 'message': 'Input should be a valid list/array', 'input_value': 1}
+    ]
 
 
 def test_constrained_list_item_type_fails():
@@ -338,63 +300,66 @@ def test_constrained_list_item_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModel(v=['a', 'b', 'c'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'kind': 'int_parsing',
+            'loc': ['v', 0],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'a',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['v', 1],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'b',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['v', 2],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'c',
+        },
     ]
 
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4, unique_items=True)
-        bar: conlist(str, min_items=1, max_items=4, unique_items=False) = None
+        foo: List[int] = Field(..., min_length=2, max_length=4)
+        bar: conlist(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+    with pytest.raises(ValidationError, match=r'Input should have at least 2 items, got 1 item \[kind=too_short,'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+    with pytest.raises(ValidationError, match=r'Input should have at most 4 items, got 5 items \[kind=too_long,'):
         Model(foo=list(range(5)))
-
-    with pytest.raises(ValidationError, match='the list has duplicated items'):
-        Model(foo=[1, 1, 2, 2])
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {
-                'title': 'Foo',
-                'type': 'array',
-                'items': {'type': 'integer'},
-                'minItems': 2,
-                'maxItems': 4,
-                'uniqueItems': True,
-            },
-            'bar': {
-                'title': 'Bar',
-                'type': 'array',
-                'items': {'type': 'string'},
-                'minItems': 1,
-                'maxItems': 4,
-                'uniqueItems': False,
-            },
-        },
-        'required': ['foo'],
-    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=[1, 'x', 'y'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('foo', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('foo', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'kind': 'int_parsing',
+            'loc': ['foo', 1],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'x',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['foo', 2],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'y',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'list_type', 'loc': ['foo'], 'message': 'Input should be a valid list/array', 'input_value': 1}
+    ]
 
 
 def test_conlist_wrong_type_default():
@@ -433,58 +398,65 @@ def test_constrained_set_default_invalid():
 
 def test_constrained_set_too_long():
     class ConSetModelMax(BaseModel):
-        v: conset(int, max_items=10) = []
+        v: conset(int, max_length=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelMax(v={str(i) for i in range(11)})
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 10 items',
-            'type': 'value_error.set.max_items',
-            'ctx': {'limit_value': 10},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'Input should have at most 10 items, got 11 items',
+            'input_value': {'9', '6', '4', '10', '5', '0', '1', '2', '7', '8', '3'},
+            'context': {'max_length': 10, 'input_length': 11},
         }
     ]
 
 
 def test_constrained_set_too_short():
     class ConSetModelMin(BaseModel):
-        v: conset(int, min_items=1)
+        v: conset(int, min_length=1)
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelMin(v=[])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['v'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': [],
+            'context': {'min_length': 1, 'input_length': 0},
         }
     ]
 
 
 def test_constrained_set_optional():
     class Model(BaseModel):
-        req: Optional[conset(str, min_items=1)] = ...
-        opt: Optional[conset(str, min_items=1)]
+        req: Optional[conset(str, min_length=1)]
+        opt: Optional[conset(str, min_length=1)] = None
 
     assert Model(req=None).dict() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=set(), opt=set())
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('req',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['req'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': set(),
+            'context': {'min_length': 1, 'input_length': 0},
         },
         {
-            'loc': ('opt',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['opt'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': set(),
+            'context': {'min_length': 1, 'input_length': 0},
         },
     ]
 
@@ -493,7 +465,7 @@ def test_constrained_set_optional():
 
 def test_constrained_set_constraints():
     class ConSetModelBoth(BaseModel):
-        v: conset(int, min_items=7, max_items=11)
+        v: conset(int, min_length=7, max_length=11)
 
     m = ConSetModelBoth(v=set(range(7)))
     assert m.v == set(range(7))
@@ -503,29 +475,36 @@ def test_constrained_set_constraints():
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelBoth(v=set(range(6)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at least 7 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 7},
+            'kind': 'too_short',
+            'loc': ['v'],
+            'message': 'Input should have at least 7 items, got 6 items',
+            'input_value': {1, 4, 5, 0, 2, 3},
+            'context': {'min_length': 7, 'input_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelBoth(v=set(range(12)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 11 items',
-            'type': 'value_error.set.max_items',
-            'ctx': {'limit_value': 11},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'Input should have at most 11 items, got 12 items',
+            'input_value': {3, 8, 2, 10, 0, 9, 5, 1, 4, 11, 6, 7},
+            'context': {'max_length': 11, 'input_length': 12},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelBoth(v=1)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'set_type', 'loc': ['v'], 'message': 'Input should be a valid set', 'input_value': 1}
+    ]
 
 
 def test_constrained_set_item_type_fails():
@@ -534,66 +513,75 @@ def test_constrained_set_item_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModel(v=['a', 'b', 'c'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'kind': 'int_parsing',
+            'loc': ['v', 0],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'a',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['v', 1],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'b',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['v', 2],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'c',
+        },
     ]
 
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(..., min_items=2, max_items=4)
-        bar: conset(str, min_items=1, max_items=4) = None
+        foo: Set[int] = Field(..., min_length=2, max_length=4)
+        bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
-    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    # TODO should not raise https://github.com/pydantic/pydantic-core/issues/250
+    with pytest.raises(ValidationError):
+        assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+    with pytest.raises(ValidationError, match=r'Input should have at least 2 items, got 1 item \[kind=too_short,'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+    with pytest.raises(ValidationError, match=r'Input should have at most 4 items, got 5 items \[kind=too_long,'):
         Model(foo=list(range(5)))
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {
-                'title': 'Foo',
-                'type': 'array',
-                'items': {'type': 'integer'},
-                'uniqueItems': True,
-                'minItems': 2,
-                'maxItems': 4,
-            },
-            'bar': {
-                'title': 'Bar',
-                'type': 'array',
-                'items': {'type': 'string'},
-                'uniqueItems': True,
-                'minItems': 1,
-                'maxItems': 4,
-            },
-        },
-        'required': ['foo'],
-    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=[1, 'x', 'y'])
-    errors = exc_info.value.errors()
-    assert len(errors) == 2
-    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['foo', 1],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'x',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['foo', 2],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'y',
+        },
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'set_type', 'loc': ['foo'], 'message': 'Input should be a valid set', 'input_value': 1}
+    ]
 
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Set[int] = None
+        foo: Optional[Set[int]] = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -601,56 +589,47 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(..., min_items=2, max_items=4)
-        bar: confrozenset(str, min_items=1, max_items=4) = None
+        foo: FrozenSet[int] = Field(..., min_length=2, max_length=4)
+        bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
     assert m.dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
     assert isinstance(m.foo, frozenset)
     assert isinstance(m.bar, frozenset)
 
-    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    # TODO should not raise https://github.com/pydantic/pydantic-core/issues/250
+    with pytest.raises(ValidationError):
+        assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+    with pytest.raises(ValidationError, match=r'Input should have at least 2 items, got 1 item \[kind=too_short,'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+    with pytest.raises(ValidationError, match=r'Input should have at most 4 items, got 5 items \[kind=too_long,'):
         Model(foo=list(range(5)))
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {
-                'title': 'Foo',
-                'type': 'array',
-                'items': {'type': 'integer'},
-                'uniqueItems': True,
-                'minItems': 2,
-                'maxItems': 4,
-            },
-            'bar': {
-                'title': 'Bar',
-                'type': 'array',
-                'items': {'type': 'string'},
-                'uniqueItems': True,
-                'minItems': 1,
-                'maxItems': 4,
-            },
-        },
-        'required': ['foo'],
-    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=[1, 'x', 'y'])
-    errors = exc_info.value.errors()
-    assert len(errors) == 2
-    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': ['foo', 1],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'x',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['foo', 2],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'y',
+        },
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('foo',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+        {'kind': 'frozen_set_type', 'loc': ['foo'], 'message': 'Input should be a valid frozenset', 'input_value': 1}
     ]
 
 
@@ -664,26 +643,29 @@ def test_confrozenset_not_required():
 
 def test_constrained_frozenset_optional():
     class Model(BaseModel):
-        req: Optional[confrozenset(str, min_items=1)] = ...
-        opt: Optional[confrozenset(str, min_items=1)]
+        req: Optional[confrozenset(str, min_length=1)]
+        opt: Optional[confrozenset(str, min_length=1)] = None
 
     assert Model(req=None).dict() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=frozenset(), opt=frozenset())
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('req',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.frozenset.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['req'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': frozenset(),
+            'context': {'min_length': 1, 'input_length': 0},
         },
         {
-            'loc': ('opt',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.frozenset.min_items',
-            'ctx': {'limit_value': 1},
+            'kind': 'too_short',
+            'loc': ['opt'],
+            'message': 'Input should have at least 1 item, got 0 items',
+            'input_value': frozenset(),
+            'context': {'min_length': 1, 'input_length': 0},
         },
     ]
 
@@ -711,12 +693,14 @@ def test_constrained_str_default(ConStringModel):
 def test_constrained_str_too_long(ConStringModel):
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'String should have at most 10 characters',
+            'input_value': 'this is too long',
+            'context': {'max_length': 10},
         }
     ]
 
@@ -759,12 +743,14 @@ def test_constrained_str_max_length_0():
     assert m.v == ''
     with pytest.raises(ValidationError) as exc_info:
         Model(v='qwe')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('v',),
-            'msg': 'ensure this value has at most 0 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 0},
+            'kind': 'too_long',
+            'loc': ['v'],
+            'message': 'String should have at most 0 characters',
+            'input_value': 'qwe',
+            'context': {'max_length': 0},
         }
     ]
 

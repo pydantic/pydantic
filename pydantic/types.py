@@ -5,9 +5,9 @@ from datetime import date
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from types import new_class
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
     Callable,
     ClassVar,
@@ -20,42 +20,33 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
-    Annotated,
 )
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import schema_types as core_schema
 
 from . import errors
-from ._internal.typing_extra import SchemaRef
-from pydantic.annotated import Strict
+from ._internal.fields import CustomMetadata
 from .datetime_parse import parse_date
-from .utils import dict_not_none, import_string, update_not_none
+from .fields import AllowInfNan, Strict
+from .utils import import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
     constr_strip_whitespace,
     decimal_validator,
-    frozenset_validator,
-    list_validator,
     number_multiple_validator,
     number_size_validator,
     path_exists_validator,
     path_validator,
-    set_validator,
     str_validator,
 )
 
 __all__ = [
     'StrictStr',
     'conbytes',
-    'ConstrainedList',
     'conlist',
-    'ConstrainedSet',
     'conset',
-    'ConstrainedFrozenSet',
     'confrozenset',
     'constr',
     'PyObject',
@@ -96,8 +87,6 @@ __all__ = [
 ]
 
 if TYPE_CHECKING:
-    from typing_extensions import Annotated
-
     from ._internal.typing_extra import CallableGenerator
     from .dataclasses import Dataclass
     from .main import BaseModel
@@ -115,13 +104,14 @@ StrictBool = Annotated[bool, Strict()]
 
 
 def conint(
-    *, strict: bool = False, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
-) -> SchemaRef:
-    schema = cast(
-        core_schema.IntSchema,
-        dict_not_none(type='int', strict=strict, gt=gt, ge=ge, lt=lt, le=le, multiple_of=multiple_of),
-    )
-    return SchemaRef('ConstrainedInt', schema)
+    *, strict: bool = None, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+) -> type[int]:
+    return Annotated[
+        int,
+        Strict(strict),
+        annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
+        annotated_types.MultipleOf(multiple_of),
+    ]
 
 
 PositiveInt = Annotated[int, annotated_types.Gt(0)]
@@ -142,37 +132,22 @@ def confloat(
     le: float = None,
     multiple_of: float = None,
     allow_inf_nan: Optional[bool] = None,
-) -> SchemaRef:
-    schema = cast(
-        core_schema.FloatSchema,
-        dict_not_none(
-            type='float',
-            strict=strict,
-            gt=gt,
-            ge=ge,
-            lt=lt,
-            le=le,
-            multiple_of=multiple_of,
-            allow_inf_nan=allow_inf_nan,
-        ),
-    )
-    return SchemaRef('ConstrainedFloat', schema)
+) -> type[float]:
+    return Annotated[
+        float,
+        Strict(strict),
+        annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
+        annotated_types.MultipleOf(multiple_of),
+        AllowInfNan(allow_inf_nan),
+    ]
 
 
-if TYPE_CHECKING:
-    PositiveFloat = float
-    NegativeFloat = float
-    NonPositiveFloat = float
-    NonNegativeFloat = float
-    StrictFloat = float
-    FiniteFloat = float
-else:
-    PositiveFloat = confloat(gt=0)
-    NegativeFloat = confloat(lt=0)
-    NonPositiveFloat = confloat(le=0)
-    NonNegativeFloat = confloat(ge=0)
-    StrictFloat = confloat(strict=True)
-    FiniteFloat = confloat(allow_inf_nan=False)
+PositiveFloat = Annotated[float, annotated_types.Gt(0)]
+NegativeFloat = Annotated[float, annotated_types.Lt(0)]
+NonPositiveFloat = Annotated[float, annotated_types.Le(0)]
+NonNegativeFloat = Annotated[float, annotated_types.Ge(0)]
+StrictFloat = Annotated[float, Strict(True)]
+FiniteFloat = Annotated[float, AllowInfNan(False)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -182,24 +157,12 @@ def conbytes(
     *,
     min_length: int = None,
     max_length: int = None,
-    strict: bool = False,
-) -> SchemaRef:
-    schema = cast(
-        core_schema.BytesSchema,
-        dict_not_none(
-            type='bytes',
-            min_length=min_length,
-            max_length=max_length,
-            strict=strict,
-        ),
-    )
-    return SchemaRef('ConstrainedBytes', schema)
+    strict: bool = None,
+) -> type[bytes]:
+    return Annotated[bytes, Strict(strict), annotated_types.Len(min_length, max_length)]
 
 
-if TYPE_CHECKING:
-    StrictBytes = bytes
-else:
-    StrictBytes = conbytes(strict=True)
+StrictBytes = Annotated[bytes, Strict()]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -214,172 +177,40 @@ def constr(
     min_length: int = None,
     max_length: int = None,
     pattern: str = None,
-) -> SchemaRef:
-    schema = cast(
-        core_schema.StringSchema,
-        dict_not_none(
-            type='str',
+) -> type[str]:
+    return Annotated[
+        str,
+        Strict(strict),
+        annotated_types.Len(min_length, max_length),
+        CustomMetadata(
             strip_whitespace=strip_whitespace,
             to_upper=to_upper,
             to_lower=to_lower,
-            strict=strict,
-            min_length=min_length,
-            max_length=max_length,
             pattern=pattern,
         ),
-    )
-    return SchemaRef('ConstrainedString', schema)
+    ]
 
 
-if TYPE_CHECKING:
-    StrictStr = str
-else:
-    StrictStr = constr(strict=True)
+StrictStr = Annotated[str, Strict()]
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# This types superclass should be Set[T], but cython chokes on that...
-class ConstrainedSet(set):  # type: ignore
-    # Needed for pydantic to detect that this is a set
-    __origin__ = set
-    __args__: Set[Type[T]]  # type: ignore
-
-    min_items: Optional[int] = None
-    max_items: Optional[int] = None
-    item_type: Type[T]  # type: ignore
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.set_length_validator
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
-
-    @classmethod
-    def set_length_validator(cls, v: 'Optional[Set[T]]') -> 'Optional[Set[T]]':
-        if v is None:
-            return None
-
-        v = set_validator(v)
-        v_len = len(v)
-
-        if cls.min_items is not None and v_len < cls.min_items:
-            raise errors.SetMinLengthError(limit_value=cls.min_items)
-
-        if cls.max_items is not None and v_len > cls.max_items:
-            raise errors.SetMaxLengthError(limit_value=cls.max_items)
-
-        return v
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~ COLLECTION TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-def conset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[Set[T]]:
-    # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
-    # We use new_class to be able to deal with Generic types
-    return new_class('ConstrainedSetValue', (ConstrainedSet,), {}, lambda ns: ns.update(namespace))
+def conset(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[Set[T]]:
+    return Annotated[Set[item_type], annotated_types.Len(min_length, max_length)]
 
 
-# This types superclass should be FrozenSet[T], but cython chokes on that...
-class ConstrainedFrozenSet(frozenset):  # type: ignore
-    # Needed for pydantic to detect that this is a set
-    __origin__ = frozenset
-    __args__: FrozenSet[Type[T]]  # type: ignore
-
-    min_items: Optional[int] = None
-    max_items: Optional[int] = None
-    item_type: Type[T]  # type: ignore
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.frozenset_length_validator
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items)
-
-    @classmethod
-    def frozenset_length_validator(cls, v: 'Optional[FrozenSet[T]]') -> 'Optional[FrozenSet[T]]':
-        if v is None:
-            return None
-
-        v = frozenset_validator(v)
-        v_len = len(v)
-
-        if cls.min_items is not None and v_len < cls.min_items:
-            raise errors.FrozenSetMinLengthError(limit_value=cls.min_items)
-
-        if cls.max_items is not None and v_len > cls.max_items:
-            raise errors.FrozenSetMaxLengthError(limit_value=cls.max_items)
-
-        return v
+def confrozenset(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[FrozenSet[T]]:
+    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length, max_length)]
 
 
-def confrozenset(item_type: Type[T], *, min_items: int = None, max_items: int = None) -> Type[FrozenSet[T]]:
-    # __args__ is needed to conform to typing generics api
-    namespace = {'min_items': min_items, 'max_items': max_items, 'item_type': item_type, '__args__': [item_type]}
-    # We use new_class to be able to deal with Generic types
-    return new_class('ConstrainedFrozenSetValue', (ConstrainedFrozenSet,), {}, lambda ns: ns.update(namespace))
+def conlist(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[List[T]]:
+    return Annotated[List[item_type], annotated_types.Len(min_length, max_length)]
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LIST TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# This types superclass should be List[T], but cython chokes on that...
-class ConstrainedList(list):  # type: ignore
-    # Needed for pydantic to detect that this is a list
-    __origin__ = list
-    __args__: Tuple[Type[T], ...]  # type: ignore
-
-    min_items: Optional[int] = None
-    max_items: Optional[int] = None
-    unique_items: Optional[bool] = None
-    item_type: Type[T]  # type: ignore
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.list_length_validator
-        if cls.unique_items:
-            yield cls.unique_items_validator
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, minItems=cls.min_items, maxItems=cls.max_items, uniqueItems=cls.unique_items)
-
-    @classmethod
-    def list_length_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
-        if v is None:
-            return None
-
-        v = list_validator(v)
-        v_len = len(v)
-
-        if cls.min_items is not None and v_len < cls.min_items:
-            raise errors.ListMinLengthError(limit_value=cls.min_items)
-
-        if cls.max_items is not None and v_len > cls.max_items:
-            raise errors.ListMaxLengthError(limit_value=cls.max_items)
-
-        return v
-
-    @classmethod
-    def unique_items_validator(cls, v: 'List[T]') -> 'List[T]':
-        for i, value in enumerate(v, start=1):
-            if value in v[i:]:
-                raise errors.ListUniqueItemsError()
-
-        return v
-
-
-def conlist(
-    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = None
-) -> Type[List[T]]:
-    # __args__ is needed to conform to typing generics api
-    namespace = dict(
-        min_items=min_items, max_items=max_items, unique_items=unique_items, item_type=item_type, __args__=(item_type,)
-    )
-    # We use new_class to be able to deal with Generic types
-    return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
+def contuple(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[Tuple[T]]:
+    return Annotated[Tuple[item_type], annotated_types.Len(min_length, max_length)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PYOBJECT TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -577,7 +408,7 @@ class JsonMeta(type):
     def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
         if t is Any:
             return Json  # allow Json[Any] to replecate plain Json
-        return _registered(type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t}))
+        return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
 
 
 if TYPE_CHECKING:
