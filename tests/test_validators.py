@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, conlist, errors, validator
 from pydantic.class_validators import make_generic_validator, root_validator
 
 
@@ -1329,3 +1329,19 @@ def test_overridden_root_validators(mocker):
 
     B(x='pika')
     assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
+
+
+def test_list_unique_items_with_optional():
+    class Model(BaseModel):
+        foo: Optional[List[str]] = Field(None, unique_items=True)
+        bar: conlist(str, unique_items=True) = Field(None)
+
+    assert Model().dict() == {'foo': None, 'bar': None}
+    assert Model(foo=None, bar=None).dict() == {'foo': None, 'bar': None}
+    assert Model(foo=['k1'], bar=['k1']).dict() == {'foo': ['k1'], 'bar': ['k1']}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=['k1', 'k1'], bar=['k1', 'k1'])
+    assert exc_info.value.errors() == [
+        {'loc': ('foo',), 'msg': 'the list has duplicated items', 'type': 'value_error.list.unique_items'},
+        {'loc': ('bar',), 'msg': 'the list has duplicated items', 'type': 'value_error.list.unique_items'},
+    ]
