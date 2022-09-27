@@ -75,7 +75,7 @@ class FunctionSchema(TypedDict):
     type: Literal['function']
     mode: Literal['before', 'after', 'wrap']
     function: Callable[..., Any]
-    schema: NotRequired[Schema]
+    schema: Schema
     ref: NotRequired[str]
 
 
