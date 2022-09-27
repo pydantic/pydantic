@@ -12,11 +12,14 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
-from .errors import ColorError
+from pydantic_core import schema_types as core_schema
+
 from pydantic._internal.utils import Representation, almost_equal_floats
 
+from .errors import ColorError
+
 if TYPE_CHECKING:
-    from ._internal.typing_extra import CallableGenerator, ReprArgs
+    from ._internal.typing_extra import ReprArgs
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]
@@ -189,8 +192,12 @@ class Color(Representation):
         return 1 if self._rgba.alpha is None else self._rgba.alpha
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+        return core_schema.FunctionPlainSchema(type='function', mode='plain', function=cls._validate)
+
+    @classmethod
+    def _validate(cls, v: Any, **kwargs) -> 'Color':
+        return cls(v)
 
     def __str__(self) -> str:
         return self.as_named(fallback=True)

@@ -3,7 +3,6 @@ from pydantic_core import ValidationError
 
 from . import dataclasses
 from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
-from .validator_functions import root_validator, validator
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .errors import *
@@ -12,6 +11,7 @@ from .main import *
 from .networks import *
 from .tools import *
 from .types import *
+from .validator_functions import root_validator, validator
 from .version import VERSION
 
 __version__ = VERSION

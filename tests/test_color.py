@@ -5,7 +5,6 @@ import pytest
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
 from pydantic.errors import ColorError
-from pydantic._internal.utils import almost_equal_floats
 
 
 @pytest.mark.parametrize(
@@ -105,12 +104,14 @@ def test_model_validation():
     assert Model(color=Color('red')).color.as_hex() == '#f00'
     with pytest.raises(ValidationError) as exc_info:
         Model(color='snot')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('color',),
-            'msg': 'value is not a valid color: string not recognised as a valid color',
-            'type': 'value_error.color',
-            'ctx': {'reason': 'string not recognised as a valid color'},
+            'kind': 'value_error',
+            'loc': ['color'],
+            'message': 'Value error, value is not a valid color: string not recognised as a valid color',
+            'input_value': 'snot',
+            'context': {'error': 'value is not a valid color: string not recognised as a valid color'},
         }
     ]
 
@@ -142,13 +143,13 @@ def test_as_hsl():
 
 def test_as_hsl_tuple():
     c = Color('016997')
-    h, s, l, a = c.as_hsl_tuple(alpha=True)
-    assert almost_equal_floats(h, 0.551, delta=0.01)
-    assert almost_equal_floats(s, 0.986, delta=0.01)
-    assert almost_equal_floats(l, 0.298, delta=0.01)
+    h, s, l_, a = c.as_hsl_tuple(alpha=True)
+    assert h == pytest.approx(0.551, rel=0.01)
+    assert s == pytest.approx(0.986, rel=0.01)
+    assert l_ == pytest.approx(0.298, rel=0.01)
     assert a == 1
 
-    assert c.as_hsl_tuple(alpha=False) == c.as_hsl_tuple(alpha=None) == (h, s, l)
+    assert c.as_hsl_tuple(alpha=False) == c.as_hsl_tuple(alpha=None) == (h, s, l_)
 
     c = Color((3, 40, 50, 0.5))
     hsla = c.as_hsl_tuple(alpha=None)

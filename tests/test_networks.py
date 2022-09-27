@@ -1,4 +1,5 @@
 import pytest
+from pydantic_core import PydanticValueError
 
 from pydantic import (
     AmqpDsn,
@@ -6,7 +7,6 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     CockroachDsn,
-    EmailError,
     EmailStr,
     FileUrl,
     HttpUrl,
@@ -117,9 +117,10 @@ def test_any_url_success(value):
         ('/', 'url.scheme', 'invalid or missing URL scheme', None),
         ('+http://example.com/', 'url.scheme', 'invalid or missing URL scheme', None),
         ('ht*tp://example.com/', 'url.scheme', 'invalid or missing URL scheme', None),
-        (' ', 'any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
-        ('', 'any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
-        (None, 'type_error.none.not_allowed', 'none is not an allowed value', None),
+        # TODO uncomment https://github.com/pydantic/pydantic-core/issues/251
+        # (' ', 'any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
+        ('', 'too_short', 'String should have at least 1 characters', {'min_length': 1}),
+        (None, 'str_type', 'Input should be a valid string', None),
         (
             'http://2001:db8::ff00:42:8329',
             'url.extra',
@@ -297,13 +298,13 @@ def test_http_url_success(value):
 
 
 @pytest.mark.parametrize(
-    'value,err_type,err_msg,err_ctx',
+    'value,err_kind,err_msg,err_ctx',
     [
         (
             'ftp://example.com/',
             'url.scheme',
             'URL scheme not permitted',
-            {'allowed_schemes': {'https', 'http'}},
+            {'allowed_schemes': 'http, https'},
         ),
         ('http://foobar/', 'url.host', 'URL host invalid, top level domain required', None),
         ('http://localhost/', 'url.host', 'URL host invalid, top level domain required', None),
@@ -311,13 +312,13 @@ def test_http_url_success(value):
         ('https://example.ab123', 'url.host', 'URL host invalid, top level domain required', None),
         (
             'x' * 2084,
-            'any_str.max_length',
-            'ensure this value has at most 2083 characters',
-            {'limit_value': 2083},
+            'too_long',
+            'String should have at most 2083 characters',
+            {'max_length': 2083},
         ),
     ],
 )
-def test_http_url_invalid(value, err_type, err_msg, err_ctx):
+def test_http_url_invalid(value, err_kind, err_msg, err_ctx):
     class Model(BaseModel):
         v: HttpUrl
 
@@ -325,9 +326,9 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
         Model(v=value)
     assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
     error = exc_info.value.errors()[0]
-    assert error['type'] == err_type, value
-    assert error['msg'] == err_msg, value
-    assert error.get('ctx') == err_ctx, value
+    assert error['kind'] == err_kind, value
+    assert error['message'] == err_msg, value
+    assert error.get('context') == err_ctx, value
 
 
 @pytest.mark.parametrize(
@@ -442,31 +443,57 @@ def test_postgres_dsns(dsn):
     (
         (
             'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'url.host'},
+            {
+                'kind': 'url.host',
+                'loc': ['a'],
+                'message': 'URL host invalid',
+                'input_value': 'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
+            },
         ),
         (
             'postgres://user:pass@host1.db.net,/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'url.host'},
+            {
+                'kind': 'url.host',
+                'loc': ['a'],
+                'message': 'URL host invalid',
+                'input_value': 'postgres://user:pass@host1.db.net,/app',
+            },
         ),
         (
             'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'url.host'},
+            {
+                'kind': 'url.host',
+                'loc': ['a'],
+                'message': 'URL host invalid',
+                'input_value': 'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
+            },
         ),
         (
             'postgres://localhost:5432/app',
-            {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'url.userinfo'},
+            {
+                'kind': 'url.userinfo',
+                'loc': ['a'],
+                'message': 'userinfo required in URL but missing',
+                'input_value': 'postgres://localhost:5432/app',
+            },
         ),
         (
             'postgres://user@/foo/bar:5432/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'url.host'},
+            {
+                'kind': 'url.host',
+                'loc': ['a'],
+                'message': 'URL host invalid',
+                'input_value': 'postgres://user@/foo/bar:5432/app',
+            },
         ),
         (
             'http://example.org',
             {
-                'loc': ('a',),
-                'msg': 'URL scheme not permitted',
-                'type': 'url.scheme',
-                'ctx': {'allowed_schemes': PostgresDsn.allowed_schemes},
+                'kind': 'url.scheme',
+                'loc': ['a'],
+                'message': 'URL scheme not permitted',
+                'input_value': 'http://example.org',
+                'context': {'allowed_schemes': ', '.join(sorted(PostgresDsn.allowed_schemes))},
             },
         ),
     ),
@@ -525,18 +552,17 @@ def test_cockroach_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
-    assert exc_info.value.json().startswith('[')
+    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='cockroachdb://localhost:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'url.userinfo'}
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='cockroachdb://user@/foo/bar:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'url.host'}
+    # error = exc_info.value.errors()[0]
+    # insert_assert(error)
+    #
+    # with pytest.raises(ValidationError) as exc_info:
+    #     Model(a='cockroachdb://user@/foo/bar:5432/app')
+    # error = exc_info.value.errors()[0]
+    # insert_assert(error)
 
 
 def test_amqp_dsns():
@@ -553,7 +579,7 @@ def test_amqp_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
 
     # Password is not required for AMQP protocol
     m = Model(a='amqp://localhost:1234/app')
@@ -587,7 +613,7 @@ def test_redis_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
 
     # Password is not required for Redis protocol
     m = Model(a='redis://localhost:1234/app')
@@ -616,7 +642,7 @@ def test_mongodb_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
 
     # Password is not required for MongoDB protocol
     m = Model(a='mongodb://localhost:1234/app')
@@ -646,7 +672,7 @@ def test_kafka_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
 
     m = Model(a='kafka://kafka3:9093')
     assert m.a.user is None
@@ -727,12 +753,6 @@ def test_son():
 
     m = Model(v='http://foo@example.net')
     assert m.json() == '{"v": "http://foo@example.net"}'
-    assert m.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'v': {'title': 'V', 'minLength': 1, 'maxLength': 2083, 'type': 'string', 'format': 'uri'}},
-        'required': ['v'],
-    }
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -804,7 +824,7 @@ def test_address_valid(value, name, email):
     ],
 )
 def test_address_invalid(value, reason):
-    with pytest.raises(EmailError, match=f'value is not a valid email address: {reason or ""}'):
+    with pytest.raises(PydanticValueError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 
 

@@ -8,11 +8,6 @@ from types import FunctionType
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
-try:
-    from .insert_assert import *  # noqa: F403, F401
-except ImportError:
-    pass
-
 passing_files = {
     'test_abc.py',
     'test_callable.py',
@@ -20,7 +15,8 @@ passing_files = {
     'test_rich_repr.py',
     'test_structural_pattern_matching.py',
     'test_version.py',
-    # 'test_networks.py',
+    'test_networks.py',
+    'test_color.py',
 }
 
 

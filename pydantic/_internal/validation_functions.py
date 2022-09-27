@@ -49,7 +49,7 @@ class ValidationFunctions:
         '_used_validators',
     )
 
-    def __init__(self, bases: tuple[type[typing.Any], ...]) -> None:
+    def __init__(self, bases: tuple[type[Any], ...]) -> None:
         self._validators: dict[str, Validator] = {}
         self._field_validators: dict[str, list[str]] = {}
         # these are
@@ -59,7 +59,7 @@ class ValidationFunctions:
         self._used_validators: set[str] = set()
         self._inherit(bases)
 
-    def extract_validator(self, name: str, value: typing.Any) -> None:
+    def extract_validator(self, name: str, value: Any) -> None:
         """
         If the value is a field or root validator,  add it to the appropriate group of validators.
 
@@ -111,7 +111,7 @@ class ValidationFunctions:
                 f"(use check_fields=False if you're inheriting from the model and intended this)"
             )
 
-    def _inherit(self, bases: tuple[type[typing.Any], ...]) -> None:
+    def _inherit(self, bases: tuple[type[Any], ...]) -> None:
         """
         Inherit validators from `ValidationFunctions` instances on base classes.
 

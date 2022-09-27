@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
 from types import FunctionType
-from typing import Callable, overload, Any
+from typing import Any, Callable, overload
 
 from typing_extensions import Literal
 

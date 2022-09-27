@@ -13,10 +13,8 @@ from ipaddress import (
 )
 from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, cast, no_type_check
 
-from pydantic_core import schema_types as core_schema
-from pydantic_core import PydanticValueError
+from pydantic_core import PydanticValueError, schema_types as core_schema
 
-from . import errors
 from pydantic._internal.utils import Representation, update_not_none
 
 if TYPE_CHECKING:
@@ -53,7 +51,6 @@ else:
 
     class Parts(dict):
         pass
-
 
 
 __all__ = [
@@ -257,7 +254,7 @@ class AnyUrl(str):
                 min_length=cls.min_length,
                 max_length=cls.max_length,
                 strip_whitespace=cls.strip_whitespace,
-            )
+            ),
         )
 
     @classmethod
@@ -277,7 +274,7 @@ class AnyUrl(str):
             raise PydanticValueError(
                 'url.extra',
                 'URL invalid, extra characters found after valid URL: {extra}',
-                {'extra': repr(url[m.end():])},
+                {'extra': repr(url[m.end() :])},
             )
 
         return cls._build_url(m, url, parts)
@@ -311,7 +308,7 @@ class AnyUrl(str):
     @staticmethod
     def _validate_port(port: str | None) -> None:
         if port is not None and int(port) > 65_535:
-            raise errors.UrlPortError()
+            raise PydanticValueError('url.port', 'URL port invalid, port cannot exceed 65535')
 
     @classmethod
     def validate_parts(cls, parts: 'Parts', validate_port: bool = True) -> 'Parts':
@@ -324,7 +321,11 @@ class AnyUrl(str):
             raise PydanticValueError('url.scheme', 'invalid or missing URL scheme')
 
         if cls.allowed_schemes and scheme.lower() not in cls.allowed_schemes:
-            raise PydanticValueError('url.scheme', 'URL scheme not permitted')
+            raise PydanticValueError(
+                'url.scheme',
+                'URL scheme not permitted',
+                {'allowed_schemes': ', '.join(sorted(set(cls.allowed_schemes)))},
+            )
 
         if validate_port:
             cls._validate_port(parts['port'])
@@ -365,7 +366,7 @@ class AnyUrl(str):
             if tld is not None:
                 tld = tld[1:]
             elif cls.tld_required:
-                raise errors.UrlHostTldError()
+                raise PydanticValueError('url.host', 'URL host invalid, top level domain required')
 
             if is_international:
                 host_type = 'int_domain'
@@ -583,10 +584,7 @@ class EmailStr(str):
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
         return core_schema.FunctionSchema(
-            type='function',
-            mode='after',
-            function=cls.validate,
-            schema=core_schema.StringSchema(type='str')
+            type='function', mode='after', function=cls.validate, schema=core_schema.StringSchema(type='str')
         )
 
     @classmethod
@@ -620,7 +618,7 @@ class NameEmail(Representation):
                     core_schema.IsInstanceSchema(type='is-instance', class_=cls),
                     core_schema.StringSchema(type='str'),
                 ],
-            )
+            ),
         )
 
     @classmethod
@@ -655,7 +653,7 @@ class IPvAnyAddress(_BaseAddress):
         try:
             return IPv6Address(value)
         except ValueError:
-            raise errors.IPvAnyAddressError()
+            raise PydanticValueError('value_error', 'value is not a valid IPv4 or IPv6 address')
 
 
 class IPvAnyInterface(_BaseAddress):
@@ -679,7 +677,7 @@ class IPvAnyInterface(_BaseAddress):
         try:
             return IPv6Interface(value)
         except ValueError:
-            raise errors.IPvAnyInterfaceError()
+            raise PydanticValueError('value_error', 'value is not a valid IPv4 or IPv6 interface')
 
 
 class IPvAnyNetwork(_BaseNetwork):  # type: ignore
@@ -703,7 +701,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
         try:
             return IPv6Network(value)
         except ValueError:
-            raise errors.IPvAnyNetworkError()
+            raise PydanticValueError('value_error', 'value is not a valid IPv4 or IPv6 network')
 
 
 pretty_email_regex = re.compile(r' *([\w ]*?) *<(.+?)> *')
@@ -731,6 +729,8 @@ def validate_email(value: str) -> tuple[str, str]:
     try:
         parts = email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
-        raise errors.EmailError(*e.args) from e
+        raise PydanticValueError(
+            'value_error', 'value is not a valid email address: {reason}', {'reason': str(e.args[0])}
+        ) from e
 
     return name or parts['local'], parts['email']

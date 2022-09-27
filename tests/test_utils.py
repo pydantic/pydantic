@@ -18,9 +18,6 @@ from pydantic._internal.typing_extra import (
     new_type_supertype,
     resolve_annotations,
 )
-from pydantic.color import Color
-from pydantic.dataclasses import dataclass
-from pydantic.fields import Undefined
 from pydantic._internal.utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
@@ -36,6 +33,9 @@ from pydantic._internal.utils import (
     to_lower_camel,
     unique_list,
 )
+from pydantic.color import Color
+from pydantic.dataclasses import dataclass
+from pydantic.fields import Undefined
 
 try:
     import devtools

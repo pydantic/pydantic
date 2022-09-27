@@ -6,9 +6,10 @@ from typing import Any
 
 import annotated_types
 
+from pydantic._internal.utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
+
 from ._internal.fields import CustomMetadata, PydanticMetadata, UndefinedType
 from ._internal.typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin
-from pydantic._internal.utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
 
 if typing.TYPE_CHECKING:
     from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs

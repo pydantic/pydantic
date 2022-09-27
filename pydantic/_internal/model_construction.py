@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
 from pydantic_core import SchemaValidator
 from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema
 
-from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from pydantic._internal.utils import ClassAttribute, is_valid_identifier
+
+from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from .babelfish import generate_config, model_fields_schema
 from .typing_extra import SchemaRef, is_classvar
 from .validation_functions import ValidationFunctions

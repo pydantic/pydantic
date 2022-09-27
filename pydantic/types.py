@@ -25,10 +25,11 @@ from uuid import UUID
 
 import annotated_types
 
+from pydantic._internal.utils import import_string, update_not_none
+
 from . import errors
 from ._internal.fields import CustomMetadata
 from .fields import AllowInfNan, Strict
-from pydantic._internal.utils import import_string, update_not_none
 
 __all__ = [
     'StrictStr',
