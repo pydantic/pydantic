@@ -1,32 +1,22 @@
 from __future__ import annotations as _annotations
 
 import typing
-from dataclasses import dataclass
 from typing import Any
 
 import annotated_types
 
-from pydantic._internal.utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
-
-from ._internal.fields import CustomMetadata, PydanticMetadata, UndefinedType
+from . import annotations
+from ._internal.fields import UndefinedType
 from ._internal.typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin
+from ._internal.utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
 
 if typing.TYPE_CHECKING:
+    from ._internal import _annotations
     from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
 Required: Any = Ellipsis
 
 Undefined = UndefinedType()
-
-
-@dataclass
-class Strict(PydanticMetadata):
-    strict: bool | None = True
-
-
-@dataclass
-class AllowInfNan(PydanticMetadata):
-    strict: bool | None = True
 
 
 class FieldInfo(Representation):
@@ -53,13 +43,13 @@ class FieldInfo(Representation):
     )
 
     # used to convert kwargs to constraints, None has a special meaning
-    __constraints_lookup__: dict[str, annotated_types.BaseMetadata | PydanticMetadata | None] = {
+    __constraints_lookup__: dict[str, annotated_types.BaseMetadata | _annotations.PydanticMetadata | None] = {
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
         'lt': annotated_types.Lt,
         'le': annotated_types.Le,
         'multiple_of': annotated_types.MultipleOf,
-        'strict': Strict,
+        'strict': annotations.Strict,
         'min_length': None,
         'max_length': None,
         'pattern': None,

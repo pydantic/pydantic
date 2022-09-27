@@ -16,7 +16,7 @@ from pydantic_core import schema_types as core_schema
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
-from .fields import CustomMetadata, PydanticMetadata
+from ._annotations import CustomMetadata, PydanticMetadata
 from .typing_extra import (
     NoneType,
     NotRequired,
@@ -121,7 +121,7 @@ def generate_field_schema(
     """
     assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
     schema: core_schema.Schema = generate_schema(field.annotation)
-    apply_constraints(schema, field.constraints)
+    schema = apply_constraints(schema, field.constraints)
 
     required = False
     if field.default_factory:
@@ -194,21 +194,25 @@ def annotated_schema(annotated_type: Any) -> core_schema.Schema:
     """
     args = get_args(annotated_type)
     schema = generate_schema(args[0])
-    apply_constraints(schema, args[1:])
-    return schema
+    return apply_constraints(schema, args[1:])
 
 
-def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> None:
+def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> core_schema.Schema:
     for c in constraints:
-        if isinstance(c, CustomMetadata):
-            constraints = c.__dict__
+        get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
+        if get_schema is not None:
+            return get_schema(schema, constraints)
+        elif isinstance(c, CustomMetadata):
+            constraints_dict = c.__dict__
         elif isinstance(c, (BaseMetadata, PydanticMetadata)):
-            constraints = dataclasses.asdict(c)
+            constraints_dict = dataclasses.asdict(c)
+        elif issubclass(c, PydanticMetadata):
+            constraints_dict = {k: v for k, v in vars(c).items() if not k.startswith('_')}
         else:
             raise PydanticSchemaGenerationError(
                 'Constraints must be subclasses of annotated_types.BaseMetadata or PydanticMetadata'
             )
-        for k, v in constraints.items():
+        for k, v in constraints_dict.items():
             if v is None:
                 continue
             elif k in {'min_inclusive', 'max_exclusive'}:
@@ -225,6 +229,7 @@ def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> Non
                     schema[k] = v
             else:
                 schema[k] = v
+    return schema
 
 
 def literal_schema(literal_type: Any) -> core_schema.LiteralSchema:

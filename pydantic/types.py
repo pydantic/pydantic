@@ -24,12 +24,12 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-
-from pydantic._internal.utils import import_string, update_not_none
+from pydantic_core import schema_types as core_schema
 
 from . import errors
-from ._internal.fields import CustomMetadata
-from .fields import AllowInfNan, Strict
+from ._internal import _annotations, _validators
+from ._internal.utils import update_not_none
+from .annotations import AllowInfNan, Strict
 
 __all__ = [
     'StrictStr',
@@ -38,7 +38,7 @@ __all__ = [
     'conset',
     'confrozenset',
     'constr',
-    'PyObject',
+    'ImportString',
     'conint',
     'PositiveInt',
     'NegativeInt',
@@ -171,7 +171,7 @@ def constr(
         str,
         Strict(strict),
         annotated_types.Len(min_length, max_length),
-        CustomMetadata(
+        _annotations.CustomMetadata(
             strip_whitespace=strip_whitespace,
             to_upper=to_upper,
             to_lower=to_lower,
@@ -202,34 +202,38 @@ def contuple(item_type: Type[T], *, min_length: int = None, max_length: int = No
     return Annotated[Tuple[item_type], annotated_types.Len(min_length, max_length)]
 
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PYOBJECT TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    PyObject = Callable[..., Any]
+    ImportString = Annotated[T, ...]
 else:
 
-    class PyObject:
-        validate_always = True
+    class ImportString(_annotations.PydanticMetadata):
+        @classmethod
+        def __class_getitem__(cls, item: T) -> T:
+            return Annotated[item, cls()]
 
         @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield cls.validate
-
-        @classmethod
-        def validate(cls, value: Any) -> Any:
-            if isinstance(value, Callable):
-                return value
-
-            try:
-                value = str_validator(value)
-            except errors.StrError:
-                raise errors.PyObjectError(error_message='value is neither a valid import path not a valid callable')
-
-            try:
-                return import_string(value)
-            except ImportError as e:
-                raise errors.PyObjectError(error_message=str(e))
+        def __get_pydantic_validation_schema__(
+            cls, schema: core_schema.Schema | None = None, cons: list[Any] | None = None
+        ) -> core_schema.Schema:
+            """
+            Treat direct usage of ImportString as the same as ImportString[Any]
+            """
+            assert cons is None or len(cons) <= 1, f'ImportString cannot be used with other constraints {cons!r}'
+            if schema is None or schema == {'type': 'any'}:
+                return core_schema.FunctionPlainSchema(
+                    type='function',
+                    mode='plain',
+                    function=_validators.import_string,
+                )
+            else:
+                return core_schema.FunctionSchema(
+                    type='function',
+                    mode='before',
+                    function=_validators.import_string,
+                    schema=schema,
+                )
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECIMAL TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -301,19 +305,22 @@ class ConstrainedDecimal(Decimal):
 
 def condecimal(
     *,
+    strict: bool = None,
     gt: Decimal = None,
     ge: Decimal = None,
     lt: Decimal = None,
     le: Decimal = None,
+    multiple_of: Decimal = None,
     max_digits: int = None,
     decimal_places: int = None,
-    multiple_of: Decimal = None,
 ) -> Type[Decimal]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(
-        gt=gt, ge=ge, lt=lt, le=le, max_digits=max_digits, decimal_places=decimal_places, multiple_of=multiple_of
-    )
-    return type('ConstrainedDecimalValue', (ConstrainedDecimal,), namespace)
+    return Annotated[
+        Decimal,
+        Strict(strict),
+        annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
+        annotated_types.MultipleOf(multiple_of),
+        _annotations.CustomMetadata(max_digits=max_digits, decimal_places=decimal_places),
+    ]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

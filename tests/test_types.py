@@ -10,7 +10,9 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
+    Callable,
     Deque,
     Dict,
     FrozenSet,
@@ -56,7 +58,6 @@ from pydantic import (
     PastDate,
     PositiveFloat,
     PositiveInt,
-    PyObject,
     SecretBytes,
     SecretStr,
     StrictBool,
@@ -77,8 +78,8 @@ from pydantic import (
     errors,
     validator,
 )
-from pydantic._internal.typing_extra import NoneType
-from pydantic.types import SecretField
+from pydantic.annotations import Strict
+from pydantic.types import ImportString, SecretField
 
 try:
     import email_validator
@@ -102,6 +103,15 @@ def test_constrained_bytes_good(ConBytesModel):
 def test_constrained_bytes_default(ConBytesModel):
     m = ConBytesModel()
     assert m.v == b'foobar'
+
+
+def test_strict_raw_type():
+    class Model(BaseModel):
+        v: Annotated[str, Strict]
+
+    assert Model(v='foo').v == 'foo'
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=str_type,'):
+        Model(v=b'fo')
 
 
 def test_constrained_bytes_too_long(ConBytesModel):
@@ -755,68 +765,71 @@ def test_constrained_str_max_length_0():
     ]
 
 
-def test_module_import():
+@pytest.mark.parametrize(
+    'annotation',
+    [
+        ImportString[Callable[[Any], Any]],
+        Annotated[Callable[[Any], Any], ImportString],
+    ],
+)
+def test_string_import_callable(annotation):
     class PyObjectModel(BaseModel):
-        module: PyObject = 'os.path'
+        callable: annotation
 
-    m = PyObjectModel()
-    assert m.module == os.path
+    m = PyObjectModel(callable='math.cos')
+    assert m.callable == math.cos
+
+    m = PyObjectModel(callable=math.cos)
+    assert m.callable == math.cos
 
     with pytest.raises(ValidationError) as exc_info:
-        PyObjectModel(module='foobar')
+        PyObjectModel(callable='foobar')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('module',),
-            'msg': 'ensure this value contains valid import path or valid callable: '
-            '"foobar" doesn\'t look like a module path',
-            'type': 'type_error.pyobject',
-            'ctx': {'error_message': '"foobar" doesn\'t look like a module path'},
+            'kind': 'import_error',
+            'loc': ['callable'],
+            'message': 'Invalid python path: "foobar" doesn\'t look like a module path',
+            'input_value': 'foobar',
+            'context': {'error': '"foobar" doesn\'t look like a module path'},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        PyObjectModel(module='os.missing')
+        PyObjectModel(callable='os.missing')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('module',),
-            'msg': 'ensure this value contains valid import path or valid callable: '
-            'Module "os" does not define a "missing" attribute',
-            'type': 'type_error.pyobject',
-            'ctx': {'error_message': 'Module "os" does not define a "missing" attribute'},
+            'kind': 'import_error',
+            'loc': ['callable'],
+            'message': 'Invalid python path: Module "os" does not define a "missing" attribute',
+            'input_value': 'os.missing',
+            'context': {'error': 'Module "os" does not define a "missing" attribute'},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        PyObjectModel(module=[1, 2, 3])
+        PyObjectModel(callable='os.path')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'loc': ('module',),
-            'msg': 'ensure this value contains valid import path or valid callable: '
-            'value is neither a valid import path not a valid callable',
-            'type': 'type_error.pyobject',
-            'ctx': {'error_message': 'value is neither a valid import path not a valid callable'},
-        }
+        {'kind': 'callable_type', 'loc': ['callable'], 'message': 'Input should be callable', 'input_value': os.path}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        PyObjectModel(callable=[1, 2, 3])
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'callable_type', 'loc': ['callable'], 'message': 'Input should be callable', 'input_value': [1, 2, 3]}
     ]
 
 
-def test_pyobject_none():
+def test_string_import_any():
     class PyObjectModel(BaseModel):
-        module: PyObject = None
+        thing: ImportString
 
-    m = PyObjectModel()
-    assert m.module is None
-
-
-def test_pyobject_callable():
-    def foo():
-        return 42
-
-    class PyObjectModel(BaseModel):
-        foo: PyObject = foo
-
-    m = PyObjectModel()
-    assert m.foo is foo
-    assert m.foo() == 42
+    assert PyObjectModel(thing='math.cos').dict() == {'thing': math.cos}
+    assert PyObjectModel(thing='os.path').dict() == {'thing': os.path}
+    assert PyObjectModel(thing=[1, 2, 3]).dict() == {'thing': [1, 2, 3]}
 
 
 @pytest.fixture(scope='session', name='CheckModel')
@@ -3139,7 +3152,7 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
 
 
-none_value_type_cases = None, type(None), NoneType, Literal[None]
+none_value_type_cases = None, type(None), None.__class__, Literal[None]
 
 
 @pytest.mark.parametrize('value_type', none_value_type_cases)

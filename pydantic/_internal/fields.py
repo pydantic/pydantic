@@ -17,16 +17,3 @@ class UndefinedType:
 
     def __deepcopy__(self: T, _: Any) -> T:
         return self
-
-
-class PydanticMetadata:
-    """
-    Base class for annotation markers like `Strict`.
-    """
-
-    __slots__ = ()
-
-
-class CustomMetadata(PydanticMetadata):
-    def __init__(self, **metadata: Any):
-        self.__dict__ = metadata
