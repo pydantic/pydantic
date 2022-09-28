@@ -177,20 +177,20 @@ def test_invalid_constraint():
 
 
 def test_dict_py():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'time', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'time'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({time(12, 1, 1): 2, time(12, 1, 2): 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 
 def test_dict(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'time', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'time'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'12:01:01': 2, '12:01:02': 4}) == {time(12, 1, 1): 2, time(12, 1, 2): 4}
 
 
 def test_union():
-    v = SchemaValidator({'type': 'union', 'choices': ['str', 'time']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}, {'type': 'time'}]})
     assert v.validate_python('12:01:02') == '12:01:02'
     assert v.validate_python(time(12, 1, 2)) == time(12, 1, 2)
 
-    v = SchemaValidator({'type': 'union', 'choices': ['time', 'str']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'time'}, {'type': 'str'}]})
     assert v.validate_python('12:01:02') == '12:01:02'
     assert v.validate_python(time(12, 1, 2)) == time(12, 1, 2)

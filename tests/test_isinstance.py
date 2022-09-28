@@ -51,7 +51,7 @@ def test_internal_error():
         {
             'type': 'new-class',
             'class_type': int,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'int'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'int'}}}},
         }
     )
     with pytest.raises(AttributeError, match="'int' object has no attribute '__dict__'"):

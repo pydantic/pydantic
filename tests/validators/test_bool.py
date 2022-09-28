@@ -82,7 +82,7 @@ def test_bool_repr():
 
 
 def test_bool_key(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'bool', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'bool'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({True: 1, False: 2}) == {True: 1, False: 2}
     assert v.validate_test({'true': 1, 'off': 2}) == {True: 1, False: 2}
     assert v.validate_test({'true': 1, 'off': 2}, strict=False) == {True: 1, False: 2}

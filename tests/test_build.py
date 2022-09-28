@@ -27,7 +27,7 @@ def test_build_error_deep():
 
 
 def test_schema_as_string():
-    v = SchemaValidator('bool')
+    v = SchemaValidator({'type': 'bool'})
     assert v.validate_python('tRuE') is True
 
 
@@ -59,7 +59,7 @@ def test_schema_recursive_error():
 def test_not_schema_recursive_error():
     schema = {
         'type': 'typed-dict',
-        'fields': {f'f_{i}': {'schema': {'type': 'nullable', 'schema': 'int'}} for i in range(101)},
+        'fields': {f'f_{i}': {'schema': {'type': 'nullable', 'schema': {'type': 'int'}}} for i in range(101)},
     }
     v = SchemaValidator(schema)
     assert repr(v).count('TypedDictField') == 101
@@ -82,5 +82,5 @@ def test_function_no_mode():
 
 def test_try_self_schema_discriminator():
     """Trying to use self-schema when it shouldn't be used"""
-    v = SchemaValidator({'type': 'tagged-union', 'choices': {'int': 'int'}, 'discriminator': 'self-schema'})
+    v = SchemaValidator({'type': 'tagged-union', 'choices': {'int': {'type': 'int'}}, 'discriminator': 'self-schema'})
     assert 'discriminator: LookupKey' in repr(v)

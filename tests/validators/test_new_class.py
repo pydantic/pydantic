@@ -156,8 +156,8 @@ def test_union_sub_schema():
             'schema': {
                 'type': 'union',
                 'choices': [
-                    {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'foo': {'schema': 'int'}}},
-                    {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'bar': {'schema': 'int'}}},
+                    {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'foo': {'schema': {'type': 'int'}}}},
+                    {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'bar': {'schema': {'type': 'int'}}}},
                 ],
             },
         }
@@ -185,13 +185,16 @@ def test_tagged_union_sub_schema():
                 'type': 'tagged-union',
                 'discriminator': 'foo',
                 'choices': {
-                    'apple': {'type': 'typed-dict', 'fields': {'foo': {'schema': 'str'}, 'bar': {'schema': 'int'}}},
+                    'apple': {
+                        'type': 'typed-dict',
+                        'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                    },
                     'banana': {
                         'type': 'typed-dict',
                         'return_fields_set': True,
                         'fields': {
-                            'foo': {'schema': 'str'},
-                            'spam': {'schema': {'type': 'list', 'items_schema': 'int'}},
+                            'foo': {'schema': {'type': 'str'}},
+                            'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
                         },
                     },
                 },
@@ -213,7 +216,7 @@ def test_bad_sub_schema():
     class MyModel:
         pass
 
-    v = SchemaValidator({'type': 'new-class', 'class_type': MyModel, 'schema': 'int'})
+    v = SchemaValidator({'type': 'new-class', 'class_type': MyModel, 'schema': {'type': 'int'}})
     assert 'expect_fields_set:false' in plain_repr(v)
     with pytest.raises(TypeError):
         v.validate_python(123)
@@ -255,7 +258,11 @@ def test_model_class_not_type():
             {
                 'type': 'new-class',
                 'class_type': 123,
-                'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'field_a': {'schema': 'str'}}},
+                'schema': {
+                    'type': 'typed-dict',
+                    'return_fields_set': True,
+                    'fields': {'field_a': {'schema': {'type': 'str'}}},
+                },
             }
         )
 
@@ -268,7 +275,7 @@ def test_not_return_fields_set():
         {
             'type': 'new-class',
             'class_type': MyModel,
-            'schema': {'type': 'typed-dict', 'fields': {'field_a': {'schema': 'str'}}},
+            'schema': {'type': 'typed-dict', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
         }
     )
     assert 'expect_fields_set:false' in plain_repr(v)
@@ -390,7 +397,7 @@ def test_internal_error():
         {
             'type': 'new-class',
             'class_type': int,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'int'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'int'}}}},
         }
     )
     with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
