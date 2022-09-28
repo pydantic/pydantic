@@ -315,6 +315,12 @@ class WithDefaultSchema(TypedDict, total=False):
     ref: str
 
 
+class ChainSchema(TypedDict):
+    type: Literal['chain']
+    steps: List[CoreSchema]
+    ref: NotRequired[str]
+
+
 CoreSchema = Union[
     AnySchema,
     BoolSchema,
@@ -347,4 +353,5 @@ CoreSchema = Union[
     ArgumentsSchema,
     CallSchema,
     WithDefaultSchema,
+    ChainSchema,
 ]

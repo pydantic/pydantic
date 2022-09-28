@@ -22,6 +22,7 @@ mod bool;
 mod bytes;
 mod call;
 mod callable;
+mod chain;
 mod date;
 mod datetime;
 mod dict;
@@ -51,6 +52,7 @@ pub struct SchemaValidator {
     validator: CombinedValidator,
     slots: Vec<CombinedValidator>,
     schema: PyObject,
+    #[pyo3(get)]
     title: PyObject,
 }
 
@@ -380,6 +382,8 @@ pub fn build_validator<'a>(
         arguments::ArgumentsValidator,
         // default value
         with_default::WithDefaultValidator,
+        // chain validators
+        chain::ChainValidator,
     )
 }
 
@@ -490,6 +494,8 @@ pub enum CombinedValidator {
     Arguments(arguments::ArgumentsValidator),
     // default value
     WithDefault(with_default::WithDefaultValidator),
+    // chain validators
+    Chain(chain::ChainValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
