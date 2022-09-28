@@ -4,7 +4,7 @@ import re
 import pytest
 from dirty_equals import FunctionCheck, HasAttributes, IsInstance
 
-from pydantic_core import Config, SchemaValidator, ValidationError
+from pydantic_core import CoreConfig, SchemaValidator, ValidationError
 
 from .conftest import Err, plain_repr
 
@@ -227,7 +227,7 @@ def test_sub_model_merge():
     ],
     ids=repr,
 )
-def test_allow_inf_nan(config: Config, float_field_schema, input_value, expected):
+def test_allow_inf_nan(config: CoreConfig, float_field_schema, input_value, expected):
     v = SchemaValidator(
         {
             'type': 'new-class',
