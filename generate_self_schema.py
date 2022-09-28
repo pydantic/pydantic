@@ -2,14 +2,14 @@
 This script generates the schema for the schema - e.g.
 a definition of what inputs can be provided to `SchemaValidator()`.
 
-The schema is generated from `pydantic_core/schema_types.py`.
+The schema is generated from `pydantic_core/core_schema.py`.
 """
 import importlib.util
 import re
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import Any, Dict, ForwardRef, List, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Type, Union
 
 from black import Mode, TargetVersion, format_file_contents
 from typing_extensions import get_args, is_typeddict
@@ -25,10 +25,15 @@ except ImportError:
 THIS_DIR = Path(__file__).parent
 SAVE_PATH = THIS_DIR / 'src' / 'self_schema.py'
 
-# can't import schema_types.py directly as pydantic-core might not be installed
-core_types_spec = importlib.util.spec_from_file_location('_typing', str(THIS_DIR / 'pydantic_core' / 'schema_types.py'))
-core_types = importlib.util.module_from_spec(core_types_spec)
-core_types_spec.loader.exec_module(core_types)
+if TYPE_CHECKING:
+    from pydantic_core import core_schema
+else:
+    # can't import core_schema.py directly as pydantic-core might not be installed
+    core_schema_spec = importlib.util.spec_from_file_location(
+        '_typing', str(THIS_DIR / 'pydantic_core' / 'core_schema.py')
+    )
+    core_schema = importlib.util.module_from_spec(core_schema_spec)
+    core_schema_spec.loader.exec_module(core_schema)
 
 # the validator for referencing schema (Schema is used recursively, so has to use a reference)
 schema_ref_validator = {'type': 'recursive-ref', 'schema_ref': 'root-schema'}
@@ -53,7 +58,7 @@ def get_schema(obj):
         return union_schema(obj)
     elif obj is Callable or origin is Callable:
         return 'callable'
-    elif origin is core_types.Literal:
+    elif origin is core_schema.Literal:
         expected = all_literal_values(obj)
         assert expected, f'literal "expected" cannot be empty, obj={obj}'
         return {'type': 'literal', 'expected': expected}
@@ -91,12 +96,12 @@ def type_dict_schema(typed_dict):
             if matched:
                 required = True
 
-            if 'Schema' == fr_arg or re.search('[^a-zA-Z]Schema', fr_arg):
-                if fr_arg == 'Schema':
+            if 'CoreSchemaCombined' == fr_arg or re.search('[^a-zA-Z]CoreSchemaCombined', fr_arg):
+                if fr_arg == 'CoreSchemaCombined':
                     schema = schema_ref_validator
-                elif fr_arg == 'List[Schema]':
+                elif fr_arg == 'List[CoreSchemaCombined]':
                     schema = {'type': 'list', 'items_schema': schema_ref_validator}
-                elif fr_arg == 'Dict[str, Schema]':
+                elif fr_arg == 'Dict[str, CoreSchemaCombined]':
                     schema = {'type': 'dict', 'keys_schema': 'str', 'values_schema': schema_ref_validator}
                 else:
                     raise ValueError(f'Unknown Schema forward ref: {fr_arg}')
@@ -104,10 +109,10 @@ def type_dict_schema(typed_dict):
                 field_type = eval_forward_ref(field_type)
 
         if schema is None:
-            if get_origin(field_type) == core_types.Required:
+            if get_origin(field_type) == core_schema.Required:
                 required = True
                 field_type = field_type.__args__[0]
-            if get_origin(field_type) == core_types.NotRequired:
+            if get_origin(field_type) == core_schema.NotRequired:
                 required = False
                 field_type = field_type.__args__[0]
 
@@ -123,7 +128,7 @@ def union_schema(union_type):
 
 
 def all_literal_values(type_):
-    if get_origin(type_) is core_types.Literal:
+    if get_origin(type_) is core_schema.Literal:
         values = get_args(type_)
         return [x for value in values for x in all_literal_values(value)]
     else:
@@ -132,23 +137,25 @@ def all_literal_values(type_):
 
 def eval_forward_ref(type_):
     try:
-        return type_._evaluate(core_types.__dict__, None, set())
+        return type_._evaluate(core_schema.__dict__, None, set())
     except TypeError:
         # for older python (3.7 at least)
-        return type_._evaluate(core_types.__dict__, None)
+        return type_._evaluate(core_schema.__dict__, None)
 
 
 def main():
-    schema_union = core_types.Schema
-    assert get_origin(schema_union) is Union, 'expected pydantic_core.schema_types.Schema to be a union'
+    schema_union = core_schema.CoreSchema
+    assert get_origin(schema_union) is Union, 'expected core_schema.CoreSchema to be a Union'
+    schema_strings = core_schema.CoreSchemaStrings
+    assert get_origin(schema_strings) is core_schema.Literal, 'expected core_schema.CoreSchemaStrings to be a Literal'
 
     schema = {
         'type': 'tagged-union',
         'ref': 'root-schema',
         'discriminator': 'self-schema-discriminator',
-        'choices': {'plain-string': get_schema(schema_union.__args__[0])},
+        'choices': {'plain-string': get_schema(schema_strings)},
     }
-    for s in schema_union.__args__[1:]:
+    for s in schema_union.__args__:
         type_ = s.__annotations__['type']
         m = re.search(r"Literal\['(.+?)']", type_.__forward_arg__)
         assert m, f'Unknown schema type: {type_}'
