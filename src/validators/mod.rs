@@ -203,10 +203,10 @@ impl SchemaValidator {
         r.map_err(|e| self.prepare_validation_err(py, e))
     }
 
-    pub fn __repr__(&self) -> String {
+    pub fn __repr__(&self, py: Python) -> String {
         format!(
             "SchemaValidator(name={:?}, validator={:#?}, slots={:#?})",
-            self.validator.get_name(),
+            self.title.extract::<&str>(py).unwrap(),
             self.validator,
             self.slots,
         )

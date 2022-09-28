@@ -8,7 +8,7 @@ from typing import Mapping
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
 
-from pydantic_core import Config, SchemaError, SchemaValidator, ValidationError
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson
 
@@ -130,7 +130,7 @@ field_b
     ],
     ids=repr,
 )
-def test_config(config: Config, input_value, expected):
+def test_config(config: CoreConfig, input_value, expected):
     v = SchemaValidator(
         {'type': 'typed-dict', 'fields': {'a': {'schema': 'int'}, 'b': {'schema': 'float', 'required': False}}}, config
     )

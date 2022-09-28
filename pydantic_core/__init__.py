@@ -1,4 +1,12 @@
 from ._pydantic_core import PydanticValueError, SchemaError, SchemaValidator, ValidationError, __version__
-from .schema_types import Config, Schema
+from .core_schema import CoreConfig, CoreSchema
 
-__all__ = '__version__', 'Config', 'Schema', 'SchemaValidator', 'SchemaError', 'ValidationError', 'PydanticValueError'
+__all__ = (
+    '__version__',
+    'CoreConfig',
+    'CoreSchema',
+    'SchemaValidator',
+    'SchemaError',
+    'ValidationError',
+    'PydanticValueError',
+)
