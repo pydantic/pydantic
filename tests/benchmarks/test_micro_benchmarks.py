@@ -5,6 +5,7 @@ import json
 import os
 import platform
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
@@ -890,3 +891,66 @@ def test_with_default(benchmark):
     def t():
         v.validate_python({'name': 'Foo'})
         v.validate_python({})
+
+
+@pytest.mark.benchmark(group='chain')
+def test_chain_list(benchmark):
+    validator = SchemaValidator(
+        {
+            'type': 'chain',
+            'steps': [
+                {'type': 'str'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: Decimal(v)},
+            ],
+        }
+    )
+    assert validator.validate_python('42.42') == Decimal('42.42')
+
+    benchmark(validator.validate_python, '42.42')
+
+
+@pytest.mark.benchmark(group='chain')
+def test_chain_function(benchmark):
+    validator = SchemaValidator(
+        {'type': 'function', 'mode': 'after', 'schema': {'type': 'str'}, 'function': lambda v, **kwargs: Decimal(v)}
+    )
+    assert validator.validate_python('42.42') == Decimal('42.42')
+
+    benchmark(validator.validate_python, '42.42')
+
+
+@pytest.mark.benchmark(group='chain-functions')
+def test_chain_two_functions(benchmark):
+    validator = SchemaValidator(
+        {
+            'type': 'chain',
+            'steps': [
+                {'type': 'str'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: Decimal(v)},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: v * 2},
+            ],
+        }
+    )
+    assert validator.validate_python('42.42') == Decimal('84.84')
+
+    benchmark(validator.validate_python, '42.42')
+
+
+@pytest.mark.benchmark(group='chain-functions')
+def test_chain_nested_functions(benchmark):
+    validator = SchemaValidator(
+        {
+            'type': 'function',
+            'schema': {
+                'type': 'function',
+                'schema': {'type': 'str'},
+                'mode': 'after',
+                'function': lambda v, **kwargs: Decimal(v),
+            },
+            'mode': 'after',
+            'function': lambda v, **kwargs: v * 2,
+        }
+    )
+    assert validator.validate_python('42.42') == Decimal('84.84')
+
+    benchmark(validator.validate_python, '42.42')
