@@ -42,7 +42,11 @@ def test_branch_nullable():
 
 def test_unused_ref():
     v = SchemaValidator(
-        {'type': 'typed-dict', 'ref': 'Branch', 'fields': {'name': {'schema': 'str'}, 'other': {'schema': 'int'}}}
+        {
+            'type': 'typed-dict',
+            'ref': 'Branch',
+            'fields': {'name': {'schema': {'type': 'str'}}, 'other': {'schema': {'type': 'int'}}},
+        }
     )
     assert plain_repr(v).startswith('SchemaValidator(name="typed-dict",validator=TypedDict(TypedDictValidator')
     assert v.validate_python({'name': 'root', 'other': '4'}) == {'name': 'root', 'other': 4}
@@ -54,7 +58,7 @@ def test_nullable_error():
             'ref': 'Branch',
             'type': 'typed-dict',
             'fields': {
-                'width': {'schema': 'int'},
+                'width': {'schema': {'type': 'int'}},
                 'sub_branch': {
                     'schema': {
                         'type': 'default',
@@ -95,7 +99,7 @@ def test_list():
             'type': 'typed-dict',
             'ref': 'BranchList',
             'fields': {
-                'width': {'schema': 'int'},
+                'width': {'schema': {'type': 'int'}},
                 'branches': {
                     'schema': {
                         'type': 'default',
@@ -135,13 +139,13 @@ def test_multiple_intertwined():
             'ref': 'Foo',
             'type': 'typed-dict',
             'fields': {
-                'height': {'schema': 'int'},
+                'height': {'schema': {'type': 'int'}},
                 'bar': {
                     'schema': {
                         'ref': 'Bar',
                         'type': 'typed-dict',
                         'fields': {
-                            'width': {'schema': 'int'},
+                            'width': {'schema': {'type': 'int'}},
                             'bars': {
                                 'schema': {
                                     'type': 'default',
@@ -197,7 +201,7 @@ def test_model_class():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'width': {'schema': 'int'},
+                    'width': {'schema': {'type': 'int'}},
                     'branch': {
                         'schema': {
                             'type': 'default',
@@ -262,7 +266,7 @@ def test_outside_parent():
                     'schema': {
                         'type': 'tuple',
                         'mode': 'positional',
-                        'items_schema': ['int', 'int', 'str'],
+                        'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'str'}],
                         'ref': 'tuple-iis',
                     }
                 },
@@ -597,7 +601,7 @@ def test_function_name():
                     'function': f,
                     'schema': {'schema_ref': 'root-schema', 'type': 'recursive-ref'},
                 },
-                'int',
+                {'type': 'int'},
             ],
             'ref': 'root-schema',
             'type': 'union',
@@ -725,7 +729,7 @@ def test_new_class_td_recursive():
             'ref': '__main__.Foobar',
             'return_fields_set': True,
             'fields': {
-                'x': {'schema': 'int', 'required': True},
+                'x': {'schema': {'type': 'int'}, 'required': True},
                 'y': {
                     'schema': {
                         'type': 'default',
@@ -737,7 +741,7 @@ def test_new_class_td_recursive():
                                     'class_type': Foobar,
                                     'schema': {'type': 'recursive-ref', 'schema_ref': '__main__.Foobar'},
                                 },
-                                'none',
+                                {'type': 'none'},
                             ],
                         },
                         'default': None,

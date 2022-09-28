@@ -84,7 +84,7 @@ def test_list_int(input_value, expected):
     ],
 )
 def test_list_any(input_value, expected):
-    v = SchemaValidator('list')
+    v = SchemaValidator({'type': 'list'})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -212,7 +212,7 @@ def test_generator_error():
             raise RuntimeError('error')
         yield 3
 
-    v = SchemaValidator({'type': 'list', 'items_schema': 'int'})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     assert v.validate_python(gen(False)) == [1, 2, 3]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(gen(True))
@@ -242,7 +242,7 @@ def test_generator_error():
             [(1, 10), (2, 20), (3, 30)],
             id='Tuple[int, int]',
         ),
-        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', [(1, 10), (2, 20), ('3', '30')], id='Any'),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), {'type': 'any'}, [(1, 10), (2, 20), ('3', '30')], id='Any'),
     ],
 )
 def test_list_from_dict_items(input_value, items_schema, expected):

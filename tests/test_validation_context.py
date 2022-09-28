@@ -9,7 +9,7 @@ def test_after(py_and_json: PyAndJson):
     def f(input_value, *, context, **kwargs):
         return input_value + f'| context: {context}'
 
-    v = py_and_json({'type': 'function', 'mode': 'after', 'function': f, 'schema': 'str'})
+    v = py_and_json({'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_test('foobar') == 'foobar| context: None'
     assert v.validate_test('foobar', None, {1: 10}) == 'foobar| context: {1: 10}'
@@ -21,7 +21,7 @@ def test_mutable_context(py_and_json: PyAndJson):
         context['foo'] = input_value
         return input_value
 
-    v = py_and_json({'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+    v = py_and_json({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
     mutable_context = {}
     assert v.validate_test('foobar', None, mutable_context) == 'foobar'
     assert mutable_context == {'foo': 'foobar'}
@@ -56,7 +56,7 @@ def test_wrap(py_and_json: PyAndJson):
     def f(input_value, *, validator, context, **kwargs):
         return validator(input_value) + f'| context: {context}'
 
-    v = py_and_json({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+    v = py_and_json({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_test('foobar') == 'foobar| context: None'
     assert v.validate_test('foobar', None, {1: 10}) == 'foobar| context: {1: 10}'
@@ -69,7 +69,7 @@ def test_isinstance(py_and_json: PyAndJson):
             raise ValueError('wrong')
         return validator(input_value)
 
-    v = py_and_json({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+    v = py_and_json({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_python('foobar', None, {}) == 'foobar'
 

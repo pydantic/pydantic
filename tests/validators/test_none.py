@@ -6,7 +6,7 @@ from ..conftest import PyAndJson
 
 
 def test_none(py_and_json: PyAndJson):
-    v = py_and_json('none')
+    v = py_and_json({'type': 'none'})
     assert v.validate_test(None) is None
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test(1)

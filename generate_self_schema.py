@@ -4,14 +4,16 @@ a definition of what inputs can be provided to `SchemaValidator()`.
 
 The schema is generated from `pydantic_core/core_schema.py`.
 """
+from __future__ import annotations as _annotations
+
 import importlib.util
 import re
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
+from pprint import pformat
 from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Type, Union
 
-from black import Mode, TargetVersion, format_file_contents
 from typing_extensions import get_args, is_typeddict
 
 try:
@@ -39,25 +41,22 @@ else:
 schema_ref_validator = {'type': 'recursive-ref', 'schema_ref': 'root-schema'}
 
 
-def get_schema(obj):
+def get_schema(obj) -> core_schema.CoreSchema:
     if isinstance(obj, str):
-        return obj
+        return {'type': obj}
     elif obj in (datetime, timedelta, date, time, bool, int, float, str):
-        return obj.__name__
+        return {'type': obj.__name__}
     elif is_typeddict(obj):
         return type_dict_schema(obj)
-    elif obj == Any:
-        return 'any'
-    elif obj == type:
-        # todo
-        return 'any'
+    elif obj == Any or obj == type:
+        return {'type': 'any'}
 
     origin = get_origin(obj)
     assert origin is not None, f'origin cannot be None, obj={obj}, you probably need to fix generate_self_schema.py'
     if origin is Union:
         return union_schema(obj)
     elif obj is Callable or origin is Callable:
-        return 'callable'
+        return {'type': 'callable'}
     elif origin is core_schema.Literal:
         expected = all_literal_values(obj)
         assert expected, f'literal "expected" cannot be empty, obj={obj}'
@@ -71,15 +70,14 @@ def get_schema(obj):
             'values_schema': get_schema(obj.__args__[1]),
         }
     elif issubclass(origin, Type):
-        # can't really use 'is-instance' since this is used for the class_ parameter of
-        # 'is-instance' validators
-        return 'any'
+        # can't really use 'is-instance' since this is used for the class_ parameter of 'is-instance' validators
+        return {'type': 'any'}
     else:
         # debug(obj)
         raise TypeError(f'Unknown type: {obj!r}')
 
 
-def type_dict_schema(typed_dict):
+def type_dict_schema(typed_dict) -> dict[str, Any]:
     required_keys = getattr(typed_dict, '__required_keys__', set())
     fields = {}
 
@@ -96,13 +94,13 @@ def type_dict_schema(typed_dict):
             if matched:
                 required = True
 
-            if 'CoreSchemaCombined' == fr_arg or re.search('[^a-zA-Z]CoreSchemaCombined', fr_arg):
-                if fr_arg == 'CoreSchemaCombined':
+            if 'CoreSchema' == fr_arg or re.search('[^a-zA-Z]CoreSchema', fr_arg):
+                if fr_arg == 'CoreSchema':
                     schema = schema_ref_validator
-                elif fr_arg == 'List[CoreSchemaCombined]':
+                elif fr_arg == 'List[CoreSchema]':
                     schema = {'type': 'list', 'items_schema': schema_ref_validator}
-                elif fr_arg == 'Dict[str, CoreSchemaCombined]':
-                    schema = {'type': 'dict', 'keys_schema': 'str', 'values_schema': schema_ref_validator}
+                elif fr_arg == 'Dict[str, CoreSchema]':
+                    schema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': schema_ref_validator}
                 else:
                     raise ValueError(f'Unknown Schema forward ref: {fr_arg}')
             else:
@@ -123,11 +121,11 @@ def type_dict_schema(typed_dict):
     return {'type': 'typed-dict', 'description': typed_dict.__name__, 'fields': fields, 'extra_behavior': 'forbid'}
 
 
-def union_schema(union_type):
+def union_schema(union_type: type[Union]) -> core_schema.UnionSchema:
     return {'type': 'union', 'choices': [get_schema(arg) for arg in union_type.__args__]}
 
 
-def all_literal_values(type_):
+def all_literal_values(type_: type[core_schema.Literal]) -> list[any]:
     if get_origin(type_) is core_schema.Literal:
         values = get_args(type_)
         return [x for value in values for x in all_literal_values(value)]
@@ -135,7 +133,7 @@ def all_literal_values(type_):
         return [type_]
 
 
-def eval_forward_ref(type_):
+def eval_forward_ref(type_: Any) -> Any:
     try:
         return type_._evaluate(core_schema.__dict__, None, set())
     except TypeError:
@@ -143,18 +141,11 @@ def eval_forward_ref(type_):
         return type_._evaluate(core_schema.__dict__, None)
 
 
-def main():
+def main() -> None:
     schema_union = core_schema.CoreSchema
     assert get_origin(schema_union) is Union, 'expected core_schema.CoreSchema to be a Union'
-    schema_strings = core_schema.CoreSchemaStrings
-    assert get_origin(schema_strings) is core_schema.Literal, 'expected core_schema.CoreSchemaStrings to be a Literal'
 
-    schema = {
-        'type': 'tagged-union',
-        'ref': 'root-schema',
-        'discriminator': 'self-schema-discriminator',
-        'choices': {'plain-string': get_schema(schema_strings)},
-    }
+    choices = {}
     for s in schema_union.__args__:
         type_ = s.__annotations__['type']
         m = re.search(r"Literal\['(.+?)']", type_.__forward_arg__)
@@ -169,18 +160,30 @@ def main():
             else:
                 key = 'tuple-variable'
 
-        schema['choices'][key] = value
+        choices[key] = value
 
+    schema = {
+        'type': 'tagged-union',
+        'ref': 'root-schema',
+        'discriminator': 'self-schema-discriminator',
+        'choices': choices,
+    }
     python_code = (
-        f'# this file is auto-generated by generate_self_schema.py, DO NOT edit manually\nself_schema = {schema}\n'
+        f'# this file is auto-generated by generate_self_schema.py, DO NOT edit manually\n'
+        f'self_schema = {pformat(schema)}\n'
     )
-    mode = Mode(
-        line_length=120,
-        string_normalization=False,
-        magic_trailing_comma=False,
-        target_versions={TargetVersion.PY37, TargetVersion.PY38, TargetVersion.PY39, TargetVersion.PY310},
-    )
-    python_code = format_file_contents(python_code, fast=False, mode=mode)
+    try:
+        from black import Mode, TargetVersion, format_file_contents
+    except ImportError:
+        pass
+    else:
+        mode = Mode(
+            line_length=120,
+            string_normalization=False,
+            magic_trailing_comma=False,
+            target_versions={TargetVersion.PY37, TargetVersion.PY38, TargetVersion.PY39, TargetVersion.PY310},
+        )
+        python_code = format_file_contents(python_code, fast=False, mode=mode)
     SAVE_PATH.write_text(python_code)
     print(f'Self schema definition written to {SAVE_PATH}')
 

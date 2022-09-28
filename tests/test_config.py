@@ -44,7 +44,7 @@ def test_on_model_class():
             'type': 'new-class',
             'class_type': MyModel,
             'config': {'str_max_length': 5},
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'str'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
         }
     )
     assert 'max_length:Some(5)' in plain_repr(v)
@@ -75,7 +75,7 @@ def test_parent_priority():
         {
             'type': 'new-class',
             'class_type': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'str'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_min_length': 2, 'str_max_length': 10},
         },
         {'str_max_length': 5, 'config_choose_priority': 1},
@@ -93,7 +93,7 @@ def test_child_priority():
         {
             'type': 'new-class',
             'class_type': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'str'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_max_length': 5, 'config_choose_priority': 1},
         },
         {'str_min_length': 2, 'str_max_length': 10},
@@ -111,7 +111,7 @@ def test_merge_child_wins():
         {
             'type': 'new-class',
             'class_type': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'str'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_max_length': 5},
         },
         {'str_min_length': 2, 'str_max_length': 10},
@@ -129,7 +129,7 @@ def test_merge_parent_wins():
         {
             'type': 'new-class',
             'class_type': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': 'str'}}},
+            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_max_length': 5},
         },
         {'str_min_length': 2, 'str_max_length': 10, 'config_merge_priority': 1},
@@ -153,7 +153,7 @@ def test_sub_model_merge():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'f': {'schema': 'str'},
+                    'f': {'schema': {'type': 'str'}},
                     'sub_model': {
                         'schema': {
                             'type': 'new-class',
@@ -161,7 +161,7 @@ def test_sub_model_merge():
                             'schema': {
                                 'type': 'typed-dict',
                                 'return_fields_set': True,
-                                'fields': {'f': {'schema': 'str'}},
+                                'fields': {'f': {'schema': {'type': 'str'}}},
                             },
                             'config': {'str_max_length': 6, 'str_to_upper': True},
                         }

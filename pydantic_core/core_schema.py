@@ -51,8 +51,8 @@ class BoolSchema(TypedDict, total=False):
 
 class DictSchema(TypedDict, total=False):
     type: Required[Literal['dict']]
-    keys_schema: CoreSchemaCombined  # default: AnySchema
-    values_schema: CoreSchemaCombined  # default: AnySchema
+    keys_schema: CoreSchema  # default: AnySchema
+    values_schema: CoreSchema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -75,7 +75,7 @@ class FunctionSchema(TypedDict):
     type: Literal['function']
     mode: Literal['before', 'after', 'wrap']
     function: Callable[..., Any]
-    schema: CoreSchemaCombined
+    schema: CoreSchema
     ref: NotRequired[str]
 
 
@@ -99,7 +99,7 @@ class IntSchema(TypedDict, total=False):
 
 class ListSchema(TypedDict, total=False):
     type: Required[Literal['list']]
-    items_schema: CoreSchemaCombined  # default: AnySchema
+    items_schema: CoreSchema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -115,7 +115,7 @@ class LiteralSchema(TypedDict):
 class NewClassSchema(TypedDict):
     type: Literal['new-class']
     class_type: type
-    schema: CoreSchemaCombined
+    schema: CoreSchema
     call_after_init: NotRequired[str]
     strict: NotRequired[bool]
     ref: NotRequired[str]
@@ -123,7 +123,7 @@ class NewClassSchema(TypedDict):
 
 
 class TypedDictField(TypedDict, total=False):
-    schema: Required[CoreSchemaCombined]
+    schema: Required[CoreSchema]
     required: bool
     alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
     frozen: bool
@@ -133,7 +133,7 @@ class TypedDictSchema(TypedDict, total=False):
     type: Required[Literal['typed-dict']]
     fields: Required[Dict[str, TypedDictField]]
     strict: bool
-    extra_validator: CoreSchemaCombined
+    extra_validator: CoreSchema
     return_fields_set: bool
     ref: str
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
@@ -150,7 +150,7 @@ class NoneSchema(TypedDict):
 
 class NullableSchema(TypedDict, total=False):
     type: Required[Literal['nullable']]
-    schema: Required[CoreSchemaCombined]
+    schema: Required[CoreSchema]
     strict: bool
     ref: str
 
@@ -162,7 +162,7 @@ class RecursiveReferenceSchema(TypedDict):
 
 class SetSchema(TypedDict, total=False):
     type: Required[Literal['set']]
-    items_schema: CoreSchemaCombined  # default: AnySchema
+    items_schema: CoreSchema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -171,7 +171,7 @@ class SetSchema(TypedDict, total=False):
 
 class FrozenSetSchema(TypedDict, total=False):
     type: Required[Literal['frozenset']]
-    items_schema: CoreSchemaCombined  # default: AnySchema
+    items_schema: CoreSchema  # default: AnySchema
     min_items: int
     max_items: int
     strict: bool
@@ -192,14 +192,14 @@ class StringSchema(TypedDict, total=False):
 
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
-    choices: Required[List[CoreSchemaCombined]]
+    choices: Required[List[CoreSchema]]
     strict: bool
     ref: str
 
 
 class TaggedUnionSchema(TypedDict):
     type: Literal['tagged-union']
-    choices: Dict[str, CoreSchemaCombined]
+    choices: Dict[str, CoreSchema]
     discriminator: Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
     strict: NotRequired[bool]
     ref: NotRequired[str]
@@ -256,8 +256,8 @@ class TimedeltaSchema(TypedDict, total=False):
 class TuplePositionalSchema(TypedDict, total=False):
     type: Required[Literal['tuple']]
     mode: Required[Literal['positional']]
-    items_schema: Required[List[CoreSchemaCombined]]
-    extra_schema: CoreSchemaCombined
+    items_schema: Required[List[CoreSchema]]
+    extra_schema: CoreSchema
     strict: bool
     ref: str
 
@@ -265,7 +265,7 @@ class TuplePositionalSchema(TypedDict, total=False):
 class TupleVariableSchema(TypedDict, total=False):
     type: Required[Literal['tuple']]
     mode: Literal['variable']
-    items_schema: CoreSchemaCombined
+    items_schema: CoreSchema
     min_items: int
     max_items: int
     strict: bool
@@ -284,7 +284,7 @@ class CallableSchema(TypedDict):
 class Parameter(TypedDict, total=False):
     name: Required[str]
     mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only']  # default positional_or_keyword
-    schema: Required[CoreSchemaCombined]
+    schema: Required[CoreSchema]
     alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
 
 
@@ -292,22 +292,22 @@ class ArgumentsSchema(TypedDict, total=False):
     type: Required[Literal['arguments']]
     arguments_schema: Required[List[Parameter]]
     populate_by_name: bool
-    var_args_schema: CoreSchemaCombined
-    var_kwargs_schema: CoreSchemaCombined
+    var_args_schema: CoreSchema
+    var_kwargs_schema: CoreSchema
     ref: str
 
 
 class CallSchema(TypedDict):
     type: Literal['call']
     function: Callable[..., Any]
-    arguments_schema: CoreSchemaCombined
-    return_schema: NotRequired[CoreSchemaCombined]
+    arguments_schema: CoreSchema
+    return_schema: NotRequired[CoreSchema]
     ref: NotRequired[str]
 
 
 class WithDefaultSchema(TypedDict, total=False):
     type: Required[Literal['default']]
-    schema: Required[CoreSchemaCombined]
+    schema: Required[CoreSchema]
     default: Any
     default_factory: Callable[[], Any]
     on_error: Literal['raise', 'omit', 'default']  # default: 'raise'
@@ -315,66 +315,7 @@ class WithDefaultSchema(TypedDict, total=False):
     ref: str
 
 
-# pydantic allows types to be defined via a simple string instead of dict with just `type`, e.g.
-# 'int' is equivalent to {'type': 'int'}, this only applies to schema types which do not have other required fields
-CoreSchemaStrings = Literal[
-    'any',
-    'none',
-    'str',
-    'bytes',
-    'dict',
-    'int',
-    'bool',
-    'float',
-    'dict',
-    'list',
-    'tuple',
-    'set',
-    'frozenset',
-    'date',
-    'time',
-    'datetime',
-    'timedelta',
-    'callable',
-]
-
 CoreSchema = Union[
-    AnySchema,
-    BoolSchema,
-    BytesSchema,
-    DictSchema,
-    FloatSchema,
-    FunctionSchema,
-    FunctionPlainSchema,
-    IntSchema,
-    ListSchema,
-    LiteralSchema,
-    TypedDictSchema,
-    NewClassSchema,
-    NoneSchema,
-    NullableSchema,
-    RecursiveReferenceSchema,
-    SetSchema,
-    FrozenSetSchema,
-    StringSchema,
-    TuplePositionalSchema,
-    TupleVariableSchema,
-    UnionSchema,
-    TaggedUnionSchema,
-    DateSchema,
-    TimeSchema,
-    DatetimeSchema,
-    TimedeltaSchema,
-    IsInstanceSchema,
-    CallableSchema,
-    ArgumentsSchema,
-    CallSchema,
-    WithDefaultSchema,
-]
-
-CoreSchemaCombined = Union[
-    CoreSchemaStrings,
-    # Contents of `CoreSchema` copied here to avoid pyright error
     AnySchema,
     BoolSchema,
     BytesSchema,

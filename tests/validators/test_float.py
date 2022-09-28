@@ -176,7 +176,7 @@ def test_float_nan(py_and_json: PyAndJson):
 
 
 def test_float_key(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'float', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'float'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 1, '2': 2}) == {1: 1, 2: 2}
     assert v.validate_test({'1.5': 1, '2.4': 2}) == {1.5: 1, 2.4: 2}
     with pytest.raises(ValidationError, match='Input should be a valid number'):

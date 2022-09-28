@@ -10,8 +10,8 @@ def test_typed_dict_default():
         {
             'type': 'typed-dict',
             'fields': {
-                'x': {'schema': 'str'},
-                'y': {'schema': {'type': 'default', 'schema': 'str', 'default': '[default]'}},
+                'x': {'schema': {'type': 'str'}},
+                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': '[default]'}},
             },
         }
     )
@@ -24,8 +24,8 @@ def test_typed_dict_omit():
         {
             'type': 'typed-dict',
             'fields': {
-                'x': {'schema': 'str'},
-                'y': {'schema': {'type': 'default', 'schema': 'str', 'on_error': 'omit'}, 'required': False},
+                'x': {'schema': {'type': 'str'}},
+                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'omit'}, 'required': False},
             },
         }
     )
@@ -42,7 +42,7 @@ def test_arguments():
                 {
                     'name': 'a',
                     'mode': 'positional_or_keyword',
-                    'schema': {'type': 'default', 'schema': 'int', 'default_factory': lambda: 1},
+                    'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default_factory': lambda: 1},
                 }
             ],
         }
@@ -61,7 +61,7 @@ def test_arguments_omit():
                     {
                         'name': 'a',
                         'mode': 'positional_or_keyword',
-                        'schema': {'type': 'default', 'schema': 'int', 'default': 1, 'on_error': 'omit'},
+                        'schema': {'type': 'default', 'schema': {'type': 'int'}, 'default': 1, 'on_error': 'omit'},
                     }
                 ],
             }
@@ -69,14 +69,18 @@ def test_arguments_omit():
 
 
 def test_list(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'list', 'items_schema': {'type': 'default', 'schema': 'int', 'on_error': 'omit'}})
+    v = py_and_json(
+        {'type': 'list', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
+    )
     assert v.validate_test([1, 2, 3]) == [1, 2, 3]
     assert v.validate_test([1, '2', 3]) == [1, 2, 3]
     assert v.validate_test([1, 'wrong', 3]) == [1, 3]
 
 
 def test_set():
-    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'default', 'schema': 'int', 'on_error': 'omit'}})
+    v = SchemaValidator(
+        {'type': 'set', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
+    )
     assert v.validate_python({1, 2, 3}) == {1, 2, 3}
     assert v.validate_python([1, '2', 3]) == {1, 2, 3}
     assert v.validate_python([1, 'wrong', 3]) == {1, 3}
@@ -86,8 +90,8 @@ def test_dict_values(py_and_json: PyAndJson):
     v = py_and_json(
         {
             'type': 'dict',
-            'keys_schema': 'str',
-            'values_schema': {'type': 'default', 'schema': 'int', 'on_error': 'omit'},
+            'keys_schema': {'type': 'str'},
+            'values_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
         }
     )
     assert v.validate_test({'a': 1, 'b': '2'}) == {'a': 1, 'b': 2}
@@ -99,8 +103,8 @@ def test_dict_keys():
     v = SchemaValidator(
         {
             'type': 'dict',
-            'keys_schema': {'type': 'default', 'schema': 'int', 'on_error': 'omit'},
-            'values_schema': 'str',
+            'keys_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
+            'values_schema': {'type': 'str'},
         }
     )
     assert v.validate_python({1: 'a', '2': 'b'}) == {1: 'a', 2: 'b'}
@@ -109,7 +113,9 @@ def test_dict_keys():
 
 
 def test_tuple_variable(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'tuple', 'items_schema': {'type': 'default', 'schema': 'int', 'on_error': 'omit'}})
+    v = py_and_json(
+        {'type': 'tuple', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
+    )
     assert v.validate_python((1, 2, 3)) == (1, 2, 3)
     assert v.validate_python([1, '2', 3]) == (1, 2, 3)
     assert v.validate_python([1, 'wrong', 3]) == (1, 3)
@@ -120,7 +126,7 @@ def test_tuple_positional():
         {
             'type': 'tuple',
             'mode': 'positional',
-            'items_schema': [{'type': 'int'}, {'type': 'default', 'schema': 'int', 'default': 42}],
+            'items_schema': [{'type': 'int'}, {'type': 'default', 'schema': {'type': 'int'}, 'default': 42}],
         }
     )
     assert v.validate_python((1, '2')) == (1, 2)
@@ -134,8 +140,8 @@ def test_tuple_positional_omit():
         {
             'type': 'tuple',
             'mode': 'positional',
-            'items_schema': ['int', 'int'],
-            'extra_schema': {'type': 'default', 'schema': 'int', 'on_error': 'omit'},
+            'items_schema': [{'type': 'int'}, {'type': 'int'}],
+            'extra_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
         }
     )
     assert v.validate_python((1, '2')) == (1, 2)
@@ -146,7 +152,7 @@ def test_tuple_positional_omit():
 
 
 def test_on_error_default():
-    v = SchemaValidator({'type': 'default', 'schema': 'int', 'default': 2, 'on_error': 'default'})
+    v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default': 2, 'on_error': 'default'})
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
     assert v.validate_python('wrong') == 2
@@ -156,7 +162,9 @@ def test_factory_runtime_error():
     def broken():
         raise RuntimeError('this is broken')
 
-    v = SchemaValidator({'type': 'default', 'schema': 'int', 'on_error': 'default', 'default_factory': broken})
+    v = SchemaValidator(
+        {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'default', 'default_factory': broken}
+    )
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
     with pytest.raises(RuntimeError, match='this is broken'):
@@ -167,7 +175,9 @@ def test_factory_type_error():
     def broken(x):
         return 7
 
-    v = SchemaValidator({'type': 'default', 'schema': 'int', 'on_error': 'default', 'default_factory': broken})
+    v = SchemaValidator(
+        {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'default', 'default_factory': broken}
+    )
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
     with pytest.raises(TypeError, match=r"broken\(\) missing 1 required positional argument: 'x'"):
@@ -179,8 +189,8 @@ def test_typed_dict_error():
         {
             'type': 'typed-dict',
             'fields': {
-                'x': {'schema': 'str'},
-                'y': {'schema': {'type': 'default', 'schema': 'str', 'default_factory': lambda y: y * 2}},
+                'x': {'schema': {'type': 'str'}},
+                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': lambda y: y * 2}},
             },
         }
     )
@@ -190,7 +200,7 @@ def test_typed_dict_error():
 
 
 def test_on_error_default_not_int():
-    v = SchemaValidator({'type': 'default', 'schema': 'int', 'default': [1, 2, 3], 'on_error': 'default'})
+    v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default': [1, 2, 3], 'on_error': 'default'})
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
     a = v.validate_python('wrong')
@@ -201,14 +211,16 @@ def test_on_error_default_not_int():
 
 
 def test_on_error_default_factory():
-    v = SchemaValidator({'type': 'default', 'schema': 'int', 'default_factory': lambda: 17, 'on_error': 'default'})
+    v = SchemaValidator(
+        {'type': 'default', 'schema': {'type': 'int'}, 'default_factory': lambda: 17, 'on_error': 'default'}
+    )
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
     assert v.validate_python('wrong') == 17
 
 
 def test_on_error_omit():
-    v = SchemaValidator({'type': 'default', 'schema': 'int', 'on_error': 'omit'})
+    v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'})
     assert v.validate_python(42) == 42
     with pytest.raises(ValueError, match='Uncaught Omit error, please check your usage of `default` validators.'):
         v.validate_python('wrong')
@@ -216,12 +228,12 @@ def test_on_error_omit():
 
 def test_on_error_wrong():
     with pytest.raises(SchemaError, match="'on_error = default' requires a `default` or `default_factory`"):
-        SchemaValidator({'type': 'default', 'schema': 'int', 'on_error': 'default'})
+        SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'default'})
 
 
 def test_build_default_and_default_factory():
     with pytest.raises(SchemaError, match="'default' and 'default_factory' cannot be used together"):
-        SchemaValidator({'type': 'default', 'schema': 'int', 'default_factory': lambda: 1, 'default': 2})
+        SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default_factory': lambda: 1, 'default': 2})
 
 
 def test_model_class():

@@ -231,7 +231,7 @@ def test_custom_invalid_tz():
 
 
 def test_dict_py():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'datetime', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'datetime'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({datetime(2000, 1, 1): 2, datetime(2000, 1, 2): 4}) == {
         datetime(2000, 1, 1): 2,
         datetime(2000, 1, 2): 4,
@@ -239,7 +239,7 @@ def test_dict_py():
 
 
 def test_dict(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'datetime', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'datetime'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'2000-01-01T00:00': 2, '2000-01-02T00:00': 4}) == {
         datetime(2000, 1, 1): 2,
         datetime(2000, 1, 2): 4,
@@ -247,11 +247,11 @@ def test_dict(py_and_json: PyAndJson):
 
 
 def test_union():
-    v = SchemaValidator({'type': 'union', 'choices': ['str', 'datetime']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}, {'type': 'datetime'}]})
     assert v.validate_python('2022-01-02T00:00') == '2022-01-02T00:00'
     assert v.validate_python(datetime(2022, 1, 2)) == datetime(2022, 1, 2)
 
-    v = SchemaValidator({'type': 'union', 'choices': ['datetime', 'str']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'datetime'}, {'type': 'str'}]})
     assert v.validate_python('2022-01-02T00:00') == '2022-01-02T00:00'
     assert v.validate_python(datetime(2022, 1, 2)) == datetime(2022, 1, 2)
 

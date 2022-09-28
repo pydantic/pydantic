@@ -40,7 +40,7 @@ def test_tuple_json(py_and_json: PyAndJson, mode, items, input_value, expected):
 
 
 def test_any_no_copy():
-    v = SchemaValidator('tuple')
+    v = SchemaValidator({'type': 'tuple'})
     input_value = (1, '2', b'3')
     output = v.validate_python(input_value)
     assert output == input_value
@@ -198,7 +198,13 @@ def test_tuple_fix_len_errors(input_value, items, index):
 
 
 def test_multiple_missing(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'int', 'int', 'int']})
+    v = py_and_json(
+        {
+            'type': 'tuple',
+            'mode': 'positional',
+            'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
+        }
+    )
     assert v.validate_test([1, 2, 3, 4]) == (1, 2, 3, 4)
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1])
@@ -215,7 +221,7 @@ def test_multiple_missing(py_and_json: PyAndJson):
 
 
 def test_extra_arguments(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'int']})
+    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'int'}, {'type': 'int'}]})
     assert v.validate_test([1, 2]) == (1, 2)
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1, 2, 3, 4])
@@ -239,7 +245,7 @@ def test_positional_empty(py_and_json: PyAndJson):
 
 
 def test_positional_empty_extra(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': 'int'})
+    v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': {'type': 'int'}})
     assert v.validate_test([]) == ()
     assert v.validate_python(()) == ()
     assert v.validate_test([1]) == (1,)
@@ -360,7 +366,7 @@ def test_union_tuple_fix_len(input_value, expected):
 
 
 def test_tuple_fix_error():
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'str']})
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'int'}, {'type': 'str'}]})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1])
 
@@ -368,7 +374,14 @@ def test_tuple_fix_error():
 
 
 def test_tuple_fix_extra():
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'str'], 'extra_schema': 'str'})
+    v = SchemaValidator(
+        {
+            'type': 'tuple',
+            'mode': 'positional',
+            'items_schema': [{'type': 'int'}, {'type': 'str'}],
+            'extra_schema': {'type': 'str'},
+        }
+    )
     assert v.validate_python([1, 'a']) == (1, 'a')
     assert v.validate_python((1, 'a')) == (1, 'a')
     assert v.validate_python((1, 'a', 'b')) == (1, 'a', 'b')
@@ -379,7 +392,9 @@ def test_tuple_fix_extra():
 
 
 def test_tuple_fix_extra_any():
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['str'], 'extra_schema': 'any'})
+    v = SchemaValidator(
+        {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'str'}], 'extra_schema': {'type': 'any'}}
+    )
     assert v.validate_python([b'1']) == ('1',)
     assert v.validate_python([b'1', 2]) == ('1', 2)
     assert v.validate_python((b'1', 2)) == ('1', 2)
@@ -397,7 +412,7 @@ def test_generator_error():
             raise RuntimeError('error')
         yield 3
 
-    v = SchemaValidator({'type': 'tuple', 'items_schema': 'int'})
+    v = SchemaValidator({'type': 'tuple', 'items_schema': {'type': 'int'}})
     assert v.validate_python(gen(False)) == (1, 2, 3)
 
     with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
@@ -420,7 +435,7 @@ def test_generator_error():
             ((1, 10), (2, 20), (3, 30)),
             id='Tuple[int, int]',
         ),
-        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', ((1, 10), (2, 20), ('3', '30')), id='Any'),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), {'type': 'any'}, ((1, 10), (2, 20), ('3', '30')), id='Any'),
     ],
 )
 def test_frozenset_from_dict_items(input_value, items_schema, expected):
