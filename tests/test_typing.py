@@ -1,7 +1,7 @@
 from datetime import date, datetime, time
 
 from pydantic_core import SchemaError, SchemaValidator
-from pydantic_core.core_schema import CoreSchema, CoreSchemaCombined, CoreSchemaStrings
+from pydantic_core.core_schema import CoreSchema
 
 
 class Foo:
@@ -14,7 +14,10 @@ def foo(bar: str) -> None:
 
 def test_schema_typing() -> None:
     # this gets run by pyright, but we also check that it executes
-    schema: CoreSchema = {'type': 'union', 'choices': ['int', {'type': 'int', 'ge': 1}, {'type': 'float', 'lt': 1.0}]}
+    schema: CoreSchema = {
+        'type': 'union',
+        'choices': [{'type': 'int'}, {'type': 'int', 'ge': 1}, {'type': 'float', 'lt': 1.0}],
+    }
     SchemaValidator(schema)
     schema: CoreSchema = {
         'type': 'tagged-union',
@@ -65,7 +68,7 @@ def test_schema_typing() -> None:
             'a': {'schema': {'type': 'str'}},
             'b': {'schema': {'type': 'str'}, 'alias': 'foobar'},
             'c': {'schema': {'type': 'str'}, 'alias': [['foobar', 0, 'bar'], ['foo']]},
-            'd': {'schema': {'type': 'default', 'schema': 'str', 'default': 'spam'}},
+            'd': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'spam'}},
         },
     }
     SchemaValidator(schema)
@@ -105,26 +108,15 @@ def test_schema_typing() -> None:
     schema: CoreSchema = {
         'type': 'arguments',
         'arguments_schema': [
-            {'name': 'a', 'mode': 'positional_only', 'schema': 'int'},
-            {'name': 'b', 'schema': 'str'},
-            {'name': 'c', 'mode': 'keyword_only', 'schema': 'bool'},
+            {'name': 'a', 'mode': 'positional_only', 'schema': {'type': 'int'}},
+            {'name': 'b', 'schema': {'type': 'str'}},
+            {'name': 'c', 'mode': 'keyword_only', 'schema': {'type': 'bool'}},
         ],
     }
     SchemaValidator(schema)
 
-    schema: CoreSchema = {'type': 'call', 'arguments_schema': 'any', 'function': foo}
+    schema: CoreSchema = {'type': 'call', 'arguments_schema': {'type': 'any'}, 'function': foo}
     SchemaValidator(schema)
-
-
-def test_schema_unions():
-    schema_str: CoreSchemaStrings = 'int'
-    SchemaValidator(schema_str)
-
-    schema_str_combined: CoreSchemaCombined = 'int'
-    SchemaValidator(schema_str_combined)
-
-    schema_dict_combined: CoreSchemaCombined = {'type': 'int'}
-    SchemaValidator(schema_dict_combined)
 
 
 def test_schema_typing_error() -> None:
@@ -132,13 +124,13 @@ def test_schema_typing_error() -> None:
 
 
 def test_schema_validator() -> None:
-    SchemaValidator('int')
+    SchemaValidator({'type': 'int'})
 
 
 def test_schema_validator_wrong() -> None:
     # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
     try:
-        SchemaValidator('bad')  # type: ignore
+        SchemaValidator({'type': 'bad'})  # type: ignore
     except SchemaError:
         pass
     else:

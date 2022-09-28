@@ -173,7 +173,7 @@ jobs:
       with:
         python-version: '3.10'
 
-    - run: pip install 'black>=22.3.0,<23' typing_extensions
+    - run: pip install typing_extensions
     - run: make rust-benchmark
 
   build-wasm-emscripten:

@@ -183,20 +183,20 @@ def test_invalid_constraint():
 
 
 def test_dict_py():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'date', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'date'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({date(2000, 1, 1): 2, date(2000, 1, 2): 4}) == {date(2000, 1, 1): 2, date(2000, 1, 2): 4}
 
 
 def test_dict(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'date', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'date'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'2000-01-01': 2, '2000-01-02': 4}) == {date(2000, 1, 1): 2, date(2000, 1, 2): 4}
 
 
 def test_union():
-    v = SchemaValidator({'type': 'union', 'choices': ['str', 'date']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}, {'type': 'date'}]})
     assert v.validate_python('2022-01-02') == '2022-01-02'
     assert v.validate_python(date(2022, 1, 2)) == date(2022, 1, 2)
 
-    v = SchemaValidator({'type': 'union', 'choices': ['date', 'str']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'date'}, {'type': 'str'}]})
     assert v.validate_python('2022-01-02') == '2022-01-02'
     assert v.validate_python(date(2022, 1, 2)) == date(2022, 1, 2)

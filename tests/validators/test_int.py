@@ -230,7 +230,7 @@ def test_int_nan(py_and_json: PyAndJson):
 
 
 def test_int_key(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'int', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 1, '2': 2}) == {1: 1, 2: 2}
     with pytest.raises(ValidationError, match='Input should be a valid integer'):
         v.validate_test({'1': 1, '2': 2}, strict=True)

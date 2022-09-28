@@ -48,8 +48,14 @@ class TestBenchmarkSimpleModel:
                     'fields': {
                         'name': {'schema': {'type': 'str'}},
                         'age': {'schema': {'type': 'int'}},
-                        'friends': {'schema': {'type': 'list', 'items_schema': 'int'}},
-                        'settings': {'schema': {'type': 'dict', 'keys_schema': 'str', 'values_schema': 'float'}},
+                        'friends': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'settings': {
+                            'schema': {
+                                'type': 'dict',
+                                'keys_schema': {'type': 'str'},
+                                'values_schema': {'type': 'float'},
+                            }
+                        },
                     },
                 },
             }
@@ -69,8 +75,14 @@ class TestBenchmarkSimpleModel:
                     'fields': {
                         'name': {'schema': {'type': 'str'}},
                         'age': {'schema': {'type': 'int'}},
-                        'friends': {'schema': {'type': 'list', 'items_schema': 'int'}},
-                        'settings': {'schema': {'type': 'dict', 'keys_schema': 'str', 'values_schema': 'float'}},
+                        'friends': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'settings': {
+                            'schema': {
+                                'type': 'dict',
+                                'keys_schema': {'type': 'str'},
+                                'values_schema': {'type': 'float'},
+                            }
+                        },
                     },
                 },
             }
@@ -435,7 +447,7 @@ def test_dict_of_ints_pyd(benchmark):
 
 @pytest.mark.benchmark(group='Dict[str, int]')
 def test_dict_of_ints_core(benchmark):
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'str', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}})
 
     @benchmark
     def t():
@@ -469,7 +481,7 @@ def test_dict_of_ints_pyd_json(benchmark):
 
 @pytest.mark.benchmark(group='Dict[str, int] JSON')
 def test_dict_of_ints_core_json(benchmark):
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'str', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}})
 
     json_data = [json.dumps(d) for d in dict_of_ints_data]
 
@@ -496,7 +508,10 @@ def test_many_models_pyd(benchmark):
 
 @pytest.mark.benchmark(group='List[DictSimpleMode]')
 def test_many_models_core_dict(benchmark):
-    model_schema = {'type': 'list', 'items_schema': {'type': 'typed-dict', 'fields': {'age': {'schema': 'int'}}}}
+    model_schema = {
+        'type': 'list',
+        'items_schema': {'type': 'typed-dict', 'fields': {'age': {'schema': {'type': 'int'}}}},
+    }
     v = SchemaValidator(model_schema)
     benchmark(v.validate_python, many_models_data)
 
@@ -512,7 +527,11 @@ def test_many_models_core_model(benchmark):
             'items_schema': {
                 'type': 'new-class',
                 'class_type': MyCoreModel,
-                'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'age': {'schema': 'int'}}},
+                'schema': {
+                    'type': 'typed-dict',
+                    'return_fields_set': True,
+                    'fields': {'age': {'schema': {'type': 'int'}}},
+                },
             },
         }
     )
@@ -533,7 +552,7 @@ def test_list_of_nullable_pyd(benchmark):
 
 @pytest.mark.benchmark(group='List[Nullable[int]]')
 def test_list_of_nullable_core(benchmark):
-    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'nullable', 'schema': 'int'}})
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'nullable', 'schema': {'type': 'int'}}})
 
     benchmark(v.validate_python, list_of_nullable_data)
 
@@ -574,7 +593,11 @@ class TestBenchmarkDateTime:
             {
                 'type': 'new-class',
                 'class_type': CoreModel,
-                'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'dt': {'schema': 'datetime'}}},
+                'schema': {
+                    'type': 'typed-dict',
+                    'return_fields_set': True,
+                    'fields': {'dt': {'schema': {'type': 'datetime'}}},
+                },
             }
         )
 
@@ -797,7 +820,13 @@ def test_raise_error_custom(benchmark):
 
 @pytest.mark.benchmark(group='tuple')
 def test_positional_tuple(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': ['int', 'int', 'int', 'int', 'int']})
+    v = SchemaValidator(
+        {
+            'type': 'tuple',
+            'mode': 'positional',
+            'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
+        }
+    )
     assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
 
     benchmark(v.validate_python, (1, 2, 3, '4', 5))
@@ -805,7 +834,7 @@ def test_positional_tuple(benchmark):
 
 @pytest.mark.benchmark(group='tuple')
 def test_variable_tuple(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'items_schema': 'int'})
+    v = SchemaValidator({'type': 'tuple', 'items_schema': {'type': 'int'}})
     assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
 
     benchmark(v.validate_python, (1, 2, 3, '4', 5))
@@ -813,7 +842,7 @@ def test_variable_tuple(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_variable(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'items_schema': 'int'})
+    v = SchemaValidator({'type': 'tuple', 'items_schema': {'type': 'int'}})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))
@@ -821,7 +850,7 @@ def test_tuple_many_variable(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_positional(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': 'int'})
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': {'type': 'int'}})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))
@@ -833,11 +862,11 @@ def test_arguments(benchmark):
         {
             'type': 'arguments',
             'arguments_schema': [
-                {'name': 'args1', 'mode': 'positional_only', 'schema': 'int'},
-                {'name': 'args2', 'mode': 'positional_only', 'schema': 'str'},
-                {'name': 'a', 'mode': 'positional_or_keyword', 'schema': 'bool'},
-                {'name': 'b', 'mode': 'keyword_only', 'schema': 'str'},
-                {'name': 'c', 'mode': 'keyword_only', 'schema': 'int'},
+                {'name': 'args1', 'mode': 'positional_only', 'schema': {'type': 'int'}},
+                {'name': 'args2', 'mode': 'positional_only', 'schema': {'type': 'str'}},
+                {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'bool'}},
+                {'name': 'b', 'mode': 'keyword_only', 'schema': {'type': 'str'}},
+                {'name': 'c', 'mode': 'keyword_only', 'schema': {'type': 'int'}},
             ],
         }
     )
@@ -849,7 +878,10 @@ def test_arguments(benchmark):
 @pytest.mark.benchmark(group='defaults')
 def test_with_default(benchmark):
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'name': {'schema': {'type': 'default', 'schema': 'str', 'default': 'John'}}}}
+        {
+            'type': 'typed-dict',
+            'fields': {'name': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'John'}}},
+        }
     )
     assert v.validate_python({'name': 'Foo'}) == {'name': 'Foo'}
     assert v.validate_python({}) == {'name': 'John'}

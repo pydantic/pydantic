@@ -173,7 +173,7 @@ def test_invalid_constraint():
 
 
 def test_dict_py():
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'timedelta', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'timedelta'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({timedelta(days=2, hours=1): 2, timedelta(days=2, hours=2): 4}) == {
         timedelta(days=2, hours=1): 2,
         timedelta(days=2, hours=2): 4,
@@ -181,7 +181,7 @@ def test_dict_py():
 
 
 def test_dict_key(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'timedelta', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'timedelta'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'P2DT1H': 2, 'P2DT2H': 4}) == {timedelta(days=2, hours=1): 2, timedelta(days=2, hours=2): 4}
 
     with pytest.raises(
@@ -192,7 +192,7 @@ def test_dict_key(py_and_json: PyAndJson):
 
 
 def test_dict_value(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': 'int', 'values_schema': 'timedelta'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'timedelta'}})
     assert v.validate_test({2: 'P2DT1H', 4: 'P2DT2H'}) == {2: timedelta(days=2, hours=1), 4: timedelta(days=2, hours=2)}
 
     with pytest.raises(
@@ -203,11 +203,11 @@ def test_dict_value(py_and_json: PyAndJson):
 
 
 def test_union():
-    v = SchemaValidator({'type': 'union', 'choices': ['str', 'timedelta']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}, {'type': 'timedelta'}]})
     assert v.validate_python('P2DT1H') == 'P2DT1H'
     assert v.validate_python(timedelta(days=2, hours=1)) == timedelta(days=2, hours=1)
 
-    v = SchemaValidator({'type': 'union', 'choices': ['timedelta', 'str']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'timedelta'}, {'type': 'str'}]})
     assert v.validate_python('P2DT1H') == 'P2DT1H'
     assert v.validate_python(timedelta(days=2, hours=1)) == timedelta(days=2, hours=1)
 

@@ -199,7 +199,7 @@ def test_union_set_int_set_str(input_value, expected):
 
 
 def test_set_as_dict_keys(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'set'}, 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'set'}, 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match=re.escape('Input should be a valid set')):
         v.validate_test({'foo': 'bar'})
 
@@ -212,7 +212,7 @@ def test_generator_error():
             raise RuntimeError('error')
         yield 3
 
-    v = SchemaValidator({'type': 'set', 'items_schema': 'int'})
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
     r = v.validate_python(gen(False))
     assert r == {1, 2, 3}
     assert isinstance(r, set)
@@ -237,7 +237,7 @@ def test_generator_error():
             {(1, 10), (2, 20), (3, 30)},
             id='Tuple[int, int]',
         ),
-        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', {(1, 10), (2, 20), ('3', '30')}, id='Any'),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), {'type': 'any'}, {(1, 10), (2, 20), ('3', '30')}, id='Any'),
     ],
 )
 def test_set_from_dict_items(input_value, items_schema, expected):

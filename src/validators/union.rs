@@ -290,46 +290,41 @@ impl TaggedUnionValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
     ) -> ValResult<'data, Cow<'data, str>> {
-        if input.strict_str().is_ok() {
-            // input is a string, must be a bare type
-            Ok(Cow::Borrowed("plain-string"))
-        } else {
-            let dict = input.strict_dict()?;
-            let either_tag = match dict {
-                GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type")) {
-                    Some(t) => t.strict_str()?,
-                    None => return Err(self.tag_not_found(input)),
+        let dict = input.strict_dict()?;
+        let either_tag = match dict {
+            GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type")) {
+                Some(t) => t.strict_str()?,
+                None => return Err(self.tag_not_found(input)),
+            },
+            _ => unreachable!(),
+        };
+        let tag_cow = either_tag.as_cow()?;
+        let tag = tag_cow.as_ref();
+        // custom logic to distinguish between different function and tuple schemas
+        if tag == "function" || tag == "tuple" {
+            let mode = match dict {
+                GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode")) {
+                    Some(m) => Some(m.strict_str()?),
+                    None => None,
                 },
                 _ => unreachable!(),
             };
-            let tag_cow = either_tag.as_cow()?;
-            let tag = tag_cow.as_ref();
-            // custom logic to distinguish between different function and tuple schemas
-            if tag == "function" || tag == "tuple" {
-                let mode = match dict {
-                    GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode")) {
-                        Some(m) => Some(m.strict_str()?),
-                        None => None,
-                    },
-                    _ => unreachable!(),
-                };
-                if tag == "function" {
-                    let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
-                    if mode.as_cow()?.as_ref() == "plain" {
-                        return Ok(Cow::Borrowed("function-plain"));
-                    }
-                } else {
-                    // tag == "tuple"
-                    if let Some(mode) = mode {
-                        if mode.as_cow()?.as_ref() == "positional" {
-                            return Ok(Cow::Borrowed("tuple-positional"));
-                        }
-                    }
-                    return Ok(Cow::Borrowed("tuple-variable"));
+            if tag == "function" {
+                let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
+                if mode.as_cow()?.as_ref() == "plain" {
+                    return Ok(Cow::Borrowed("function-plain"));
                 }
+            } else {
+                // tag == "tuple"
+                if let Some(mode) = mode {
+                    if mode.as_cow()?.as_ref() == "positional" {
+                        return Ok(Cow::Borrowed("tuple-positional"));
+                    }
+                }
+                return Ok(Cow::Borrowed("tuple-variable"));
             }
-            return Ok(Cow::Owned(tag.to_string()));
         }
+        return Ok(Cow::Owned(tag.to_string()));
     }
 
     fn find_call_validator<'s, 'data>(

@@ -25,14 +25,14 @@ def test_frozenset_ints_both(py_and_json: PyAndJson, input_value, expected):
     [([], frozenset()), ([1, '2', b'3'], {1, '2', b'3'}), (frozenset([1, '2', b'3']), {1, '2', b'3'})],
 )
 def test_frozenset_any(input_value, expected):
-    v = SchemaValidator('frozenset')
+    v = SchemaValidator({'type': 'frozenset'})
     output = v.validate_python(input_value)
     assert output == expected
     assert isinstance(output, frozenset)
 
 
 def test_no_copy():
-    v = SchemaValidator('frozenset')
+    v = SchemaValidator({'type': 'frozenset'})
     input_value = frozenset([1, 2, 3])
     output = v.validate_python(input_value)
     assert output == input_value
@@ -220,7 +220,7 @@ def test_union_frozenset_int_frozenset_str(input_value, expected):
 
 
 def test_frozenset_as_dict_keys(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'frozenset'}, 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'frozenset'}, 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match=re.escape('Input should be a valid frozenset')):
         v.validate_test({'foo': 'bar'})
 
@@ -244,7 +244,7 @@ def test_generator_error():
             raise RuntimeError('error')
         yield 3
 
-    v = SchemaValidator({'type': 'frozenset', 'items_schema': 'int'})
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
     r = v.validate_python(gen(False))
     assert r == {1, 2, 3}
     assert isinstance(r, frozenset)
@@ -269,7 +269,7 @@ def test_generator_error():
             frozenset(((1, 10), (2, 20), (3, 30))),
             id='Tuple[int, int]',
         ),
-        pytest.param({1: 10, 2: 20, '3': '30'}.items(), 'any', {(1, 10), (2, 20), ('3', '30')}, id='Any'),
+        pytest.param({1: 10, 2: 20, '3': '30'}.items(), {'type': 'any'}, {(1, 10), (2, 20), ('3', '30')}, id='Any'),
     ],
 )
 def test_frozenset_from_dict_items(input_value, items_schema, expected):

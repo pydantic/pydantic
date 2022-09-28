@@ -95,10 +95,16 @@ def test_simple_tagged_union(py_and_json: PyAndJson, input_value, expected):
             'type': 'tagged-union',
             'discriminator': 'foo',
             'choices': {
-                'apple': {'type': 'typed-dict', 'fields': {'foo': {'schema': 'str'}, 'bar': {'schema': 'int'}}},
+                'apple': {
+                    'type': 'typed-dict',
+                    'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                },
                 'banana': {
                     'type': 'typed-dict',
-                    'fields': {'foo': {'schema': 'str'}, 'spam': {'schema': {'type': 'list', 'items_schema': 'int'}}},
+                    'fields': {
+                        'foo': {'schema': {'type': 'str'}},
+                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    },
                 },
             },
         }
@@ -119,10 +125,16 @@ def test_discriminator_path(py_and_json: PyAndJson):
             'type': 'tagged-union',
             'discriminator': [['food'], ['menu', 1]],
             'choices': {
-                'apple': {'type': 'typed-dict', 'fields': {'a': {'schema': 'str'}, 'b': {'schema': 'int'}}},
+                'apple': {
+                    'type': 'typed-dict',
+                    'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                },
                 'banana': {
                     'type': 'typed-dict',
-                    'fields': {'c': {'schema': 'str'}, 'd': {'schema': {'type': 'list', 'items_schema': 'int'}}},
+                    'fields': {
+                        'c': {'schema': {'type': 'str'}},
+                        'd': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    },
                 },
             },
         }
@@ -235,8 +247,14 @@ def test_from_attributes():
             'type': 'tagged-union',
             'discriminator': 'foobar',
             'choices': {
-                'apple': {'type': 'typed-dict', 'fields': {'a': {'schema': 'str'}, 'b': {'schema': 'int'}}},
-                'banana': {'type': 'typed-dict', 'fields': {'c': {'schema': 'str'}, 'd': {'schema': 'int'}}},
+                'apple': {
+                    'type': 'typed-dict',
+                    'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                },
+                'banana': {
+                    'type': 'typed-dict',
+                    'fields': {'c': {'schema': {'type': 'str'}}, 'd': {'schema': {'type': 'int'}}},
+                },
             },
         },
         {'from_attributes': True},
@@ -253,9 +271,9 @@ def test_use_ref():
             'type': 'tagged-union',
             'discriminator': 'foobar',
             'choices': {
-                'apple': {'type': 'typed-dict', 'ref': 'apple', 'fields': {'a': {'schema': 'str'}}},
+                'apple': {'type': 'typed-dict', 'ref': 'apple', 'fields': {'a': {'schema': {'type': 'str'}}}},
                 'apple2': {'type': 'recursive-ref', 'schema_ref': 'apple'},
-                'banana': {'type': 'typed-dict', 'fields': {'b': {'schema': 'str'}}},
+                'banana': {'type': 'typed-dict', 'fields': {'b': {'schema': {'type': 'str'}}}},
             },
         },
         {'from_attributes': True},
@@ -266,6 +284,6 @@ def test_use_ref():
 
 
 def test_downcast_error():
-    v = SchemaValidator({'type': 'tagged-union', 'discriminator': lambda x: 123, 'choices': {'str': 'str'}})
+    v = SchemaValidator({'type': 'tagged-union', 'discriminator': lambda x: 123, 'choices': {'str': {'type': 'str'}}})
     with pytest.raises(TypeError, match="'int' object cannot be converted to 'PyString'"):
         v.validate_python('x')

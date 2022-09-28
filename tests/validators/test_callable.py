@@ -53,7 +53,7 @@ def test_callable_cases(input_value, expected):
 
 
 def test_repr():
-    v = SchemaValidator({'type': 'union', 'choices': ['int', 'callable']})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'callable'}]})
     assert v.isinstance_python(4) is True
     assert v.isinstance_python(func) is True
     assert v.isinstance_python('foo') is False

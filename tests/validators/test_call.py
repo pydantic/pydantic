@@ -31,9 +31,9 @@ def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
             'arguments_schema': {
                 'type': 'arguments',
                 'arguments_schema': [
-                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': 'int'},
-                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': 'int'},
-                    {'name': 'c', 'mode': 'positional_or_keyword', 'schema': 'int'},
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                    {'name': 'c', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
                 ],
             },
             'return_schema': {'type': 'int', 'le': 10},
@@ -67,7 +67,9 @@ def test_function_args_any(input_value, expected):
     def my_function(a, b, c):
         return a + b + c
 
-    v = SchemaValidator({'type': 'call', 'function': my_function, 'arguments_schema': 'any', 'return_schema': 'int'})
+    v = SchemaValidator(
+        {'type': 'call', 'function': my_function, 'arguments_schema': {'type': 'any'}, 'return_schema': {'type': 'int'}}
+    )
 
     if isinstance(expected, Exception):
         with pytest.raises(type(expected), match=re.escape(str(expected))):
@@ -81,7 +83,7 @@ def test_function_return_any(input_value, expected):
     def my_function(a):
         return a
 
-    v = SchemaValidator({'type': 'call', 'function': my_function, 'arguments_schema': 'any'})
+    v = SchemaValidator({'type': 'call', 'function': my_function, 'arguments_schema': {'type': 'any'}})
     assert 'name:"call[my_function]"' in plain_repr(v)
 
     assert v.validate_python(input_value) == expected
@@ -100,7 +102,7 @@ def test_in_union():
                     'function': my_function,
                     'arguments_schema': {
                         'type': 'arguments',
-                        'arguments_schema': [{'name': 'a', 'mode': 'positional_or_keyword', 'schema': 'int'}],
+                        'arguments_schema': [{'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}}],
                     },
                 }
             ],
@@ -132,8 +134,8 @@ def test_dataclass():
             'arguments_schema': {
                 'type': 'arguments',
                 'arguments_schema': [
-                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': 'int'},
-                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': 'str'},
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'str'}},
                 ],
             },
         }
@@ -159,8 +161,8 @@ def test_named_tuple():
             'arguments_schema': {
                 'type': 'arguments',
                 'arguments_schema': [
-                    {'name': 'x', 'mode': 'positional_or_keyword', 'schema': 'float'},
-                    {'name': 'y', 'mode': 'positional_or_keyword', 'schema': 'float'},
+                    {'name': 'x', 'mode': 'positional_or_keyword', 'schema': {'type': 'float'}},
+                    {'name': 'y', 'mode': 'positional_or_keyword', 'schema': {'type': 'float'}},
                 ],
             },
         }

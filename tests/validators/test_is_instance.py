@@ -93,7 +93,7 @@ def test_instancecheck():
 
 
 def test_repr():
-    v = SchemaValidator({'type': 'union', 'choices': ['int', {'type': 'is-instance', 'class_': Foo}]})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'is-instance', 'class_': Foo}]})
     assert v.isinstance_python(4) is True
     assert v.isinstance_python(Bar()) is True
     assert v.isinstance_python('foo') is False

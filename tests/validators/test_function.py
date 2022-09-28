@@ -94,7 +94,7 @@ def test_function_wrap():
     def f(input_value, *, validator, **kwargs):
         return validator(input_value) + ' Changed'
 
-    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_python('input value') == 'input value Changed'
 
@@ -104,7 +104,7 @@ def test_function_wrap_repr():
         assert repr(validator) == str(validator)
         return plain_repr(validator)
 
-    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_python('input value') == 'ValidatorCallable(Str(StrValidator{strict:false}))'
 
@@ -113,24 +113,24 @@ def test_function_wrap_str():
     def f(input_value, *, validator, **kwargs):
         return plain_repr(validator)
 
-    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
 
     assert v.validate_python('input value') == 'ValidatorCallable(Str(StrValidator{strict:false}))'
 
 
 def test_function_wrap_not_callable():
     with pytest.raises(SchemaError, match='function -> function\n  Input should be callable'):
-        SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': [], 'schema': 'str'})
+        SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': [], 'schema': {'type': 'str'}})
 
     with pytest.raises(SchemaError, match='function -> function\n  Field required'):
-        SchemaValidator({'type': 'function', 'mode': 'wrap', 'schema': 'str'})
+        SchemaValidator({'type': 'function', 'mode': 'wrap', 'schema': {'type': 'str'}})
 
 
 def test_wrap_error():
     def f(input_value, *, validator, **kwargs):
         return validator(input_value) * 2
 
-    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': 'int'})
+    v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'int'}})
 
     assert v.validate_python('42') == 84
     with pytest.raises(ValidationError) as exc_info:
@@ -147,7 +147,7 @@ def test_wrap_error():
 
 def test_wrong_mode():
     with pytest.raises(SchemaError, match='function -> mode\n  Input should be one of'):
-        SchemaValidator({'type': 'function', 'mode': 'foobar', 'schema': 'str'})
+        SchemaValidator({'type': 'function', 'mode': 'foobar', 'schema': {'type': 'str'}})
 
 
 def test_function_after_data():
@@ -222,7 +222,7 @@ def test_function_plain():
 
 def test_plain_with_schema():
     with pytest.raises(SchemaError, match='function-plain -> schema\n  Extra inputs are not permitted'):
-        SchemaValidator({'type': 'function', 'mode': 'plain', 'function': lambda x: x, 'schema': 'str'})
+        SchemaValidator({'type': 'function', 'mode': 'plain', 'function': lambda x: x, 'schema': {'type': 'str'}})
 
 
 def test_validate_assignment():
@@ -295,7 +295,7 @@ def test_raise_assertion_error():
     def f(input_value, **kwargs):
         raise AssertionError('foobar')
 
-    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('input value')
@@ -315,7 +315,7 @@ def test_raise_assertion_error_plain():
     def f(input_value, **kwargs):
         raise AssertionError
 
-    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('input value')
@@ -340,7 +340,7 @@ def test_error_with_error(base_error: Type[Exception]):
     def f(input_value, **kwargs):
         raise MyError()
 
-    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
 
     with pytest.raises(RuntimeError, match='internal error'):
         v.validate_python('input value')
@@ -350,7 +350,7 @@ def test_raise_type_error():
     def f(input_value, **kwargs):
         raise TypeError('foobar')
 
-    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': 'str'})
+    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
 
     with pytest.raises(TypeError, match='^foobar$'):
         v.validate_python('input value')

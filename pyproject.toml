@@ -1,5 +1,5 @@
 [build-system]
-requires = ['maturin>=0.13,<0.14', 'black>=22.3.0,<23', 'typing_extensions']
+requires = ['maturin>=0.13,<0.14', 'typing_extensions']
 build-backend = 'maturin'
 
 [project]

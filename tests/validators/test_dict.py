@@ -38,7 +38,7 @@ def test_dict(py_and_json: PyAndJson):
     ids=repr,
 )
 def test_dict_cases(input_value, expected):
-    v = SchemaValidator({'type': 'dict', 'keys_schema': 'str', 'values_schema': 'str'})
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'str'}})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)
@@ -47,7 +47,7 @@ def test_dict_cases(input_value, expected):
 
 
 def test_dict_value_error(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'dict', 'values_schema': 'int'})
+    v = py_and_json({'type': 'dict', 'values_schema': {'type': 'int'}})
     assert v.validate_test({'a': 2, 'b': '4'}) == {'a': 2, 'b': 4}
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_test({'a': 2, 'b': 'wrong'})
@@ -62,7 +62,7 @@ def test_dict_value_error(py_and_json: PyAndJson):
 
 
 def test_dict_error_key_int():
-    v = SchemaValidator({'type': 'dict', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, 3: 'wrong'})
     assert exc_info.value.errors() == [
@@ -76,7 +76,7 @@ def test_dict_error_key_int():
 
 
 def test_dict_error_key_other():
-    v = SchemaValidator({'type': 'dict', 'values_schema': 'int'})
+    v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, (1, 2): 'wrong'})
     assert exc_info.value.errors() == [

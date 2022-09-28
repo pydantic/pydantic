@@ -25,7 +25,7 @@ def test_schema_error():
 
 
 def test_validation_error():
-    v = SchemaValidator('int')
+    v = SchemaValidator({'type': 'int'})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(1.5)
 
