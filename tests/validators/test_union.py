@@ -244,3 +244,21 @@ def test_strict_union():
         {'kind': 'bool_type', 'loc': ['bool'], 'message': 'Input should be a valid boolean', 'input_value': '123'},
         {'kind': 'int_type', 'loc': ['int'], 'message': 'Input should be a valid integer', 'input_value': '123'},
     ]
+
+
+def test_custom_error():
+    v = SchemaValidator(
+        {
+            'type': 'union',
+            'choices': [{'type': 'str'}, {'type': 'bytes'}],
+            'custom_error': {'kind': 'my_error', 'message': 'Input should be a string or bytes'},
+        }
+    )
+    assert v.validate_python('hello') == 'hello'
+    assert v.validate_python(b'hello') == b'hello'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(123)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'my_error', 'loc': [], 'message': 'Input should be a string or bytes', 'input_value': 123}
+    ]

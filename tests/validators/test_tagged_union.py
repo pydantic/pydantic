@@ -287,3 +287,48 @@ def test_downcast_error():
     v = SchemaValidator({'type': 'tagged-union', 'discriminator': lambda x: 123, 'choices': {'str': {'type': 'str'}}})
     with pytest.raises(TypeError, match="'int' object cannot be converted to 'PyString'"):
         v.validate_python('x')
+
+
+def test_custom_error():
+    v = SchemaValidator(
+        {
+            'type': 'tagged-union',
+            'discriminator': 'foo',
+            'custom_error': {'kind': 'snap', 'message': 'Input should be a foo or bar'},
+            'choices': {
+                'apple': {
+                    'type': 'typed-dict',
+                    'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                },
+                'banana': {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'foo': {'schema': {'type': 'str'}},
+                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    },
+                },
+            },
+        }
+    )
+    assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'spam': 'apple', 'bar': 'Bar'})
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'snap',
+            'loc': [],
+            'message': 'Input should be a foo or bar',
+            'input_value': {'spam': 'apple', 'bar': 'Bar'},
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'foo': 'other', 'bar': 'Bar'})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'snap',
+            'loc': [],
+            'message': 'Input should be a foo or bar',
+            'input_value': {'foo': 'other', 'bar': 'Bar'},
+        }
+    ]
