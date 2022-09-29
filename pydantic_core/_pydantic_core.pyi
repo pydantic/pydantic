@@ -10,6 +10,7 @@ else:
 
 __all__ = '__version__', 'SchemaValidator', 'SchemaError', 'ValidationError', 'PydanticValueError'
 __version__: str
+build_profile: str
 
 class SchemaValidator:
     title: str
