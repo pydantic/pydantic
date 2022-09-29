@@ -83,10 +83,10 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
     'kwargs,input_value,expected',
     [
         ({}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'min_items': 3}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'min_items': 3}, (1, 2), Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
-        ({'max_items': 4}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'max_items': 3}, (1, 2, 3, 4), Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
+        ({'min_length': 3}, (1, 2, 3, 4), (1, 2, 3, 4)),
+        ({'min_length': 3}, (1, 2), Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
+        ({'max_length': 4}, (1, 2, 3, 4), (1, 2, 3, 4)),
+        ({'max_length': 3}, (1, 2, 3, 4), Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
     ],
 )
 def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
