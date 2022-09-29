@@ -527,9 +527,15 @@ def nullable_schema(schema: CoreSchema, *, strict: bool | None = None, ref: str 
     return dict_not_none(type='nullable', schema=schema, strict=strict, ref=ref)
 
 
+class CustomError(TypedDict):
+    kind: str
+    message: str
+
+
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
     choices: Required[List[CoreSchema]]
+    custom_error: CustomError
     strict: bool
     ref: str
 
@@ -542,6 +548,7 @@ class TaggedUnionSchema(TypedDict):
     type: Literal['tagged-union']
     choices: Dict[str, CoreSchema]
     discriminator: Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
+    custom_error: NotRequired[CustomError]
     strict: NotRequired[bool]
     ref: NotRequired[str]
 
