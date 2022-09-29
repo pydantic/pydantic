@@ -426,3 +426,46 @@ def test_pydantic_value_error_invalid_type():
 
     with pytest.raises(TypeError, match="argument 'context': 'list' object cannot be converted to 'PyDict'"):
         v.validate_python(42)
+
+
+def test_validator_instance_plain():
+    class CustomValidator:
+        def __init__(self):
+            self.foo = 42
+            self.bar = 'before'
+
+        def validate(self, input_value, **kwargs):
+            return f'{input_value} {self.foo} {self.bar}'
+
+    c = CustomValidator()
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'validator_instance': c, 'function': c.validate})
+    c.foo += 1
+
+    assert v.validate_python('input value') == 'input value 43 before'
+    c.bar = 'changed'
+    assert v.validate_python('input value') == 'input value 43 changed'
+
+
+def test_validator_instance_after():
+    class CustomValidator:
+        def __init__(self):
+            self.foo = 42
+
+        def validate(self, input_value, **kwargs):
+            assert isinstance(input_value, str)
+            return f'{input_value} {self.foo}'
+
+    c = CustomValidator()
+    v = SchemaValidator(
+        {
+            'type': 'function',
+            'mode': 'after',
+            'validator_instance': c,
+            'function': c.validate,
+            'schema': {'type': 'str'},
+        }
+    )
+    c.foo += 1
+
+    assert v.validate_python('input value') == 'input value 43'
+    assert v.validate_python(b'is bytes') == 'is bytes 43'
