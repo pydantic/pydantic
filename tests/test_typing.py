@@ -44,15 +44,15 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'bytes'}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'list', 'items_schema': {'type': 'str'}, 'min_items': 3}
+    schema: CoreSchema = {'type': 'list', 'items_schema': {'type': 'str'}, 'min_length': 3}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'set', 'items_schema': {'type': 'str'}, 'max_items': 3}
+    schema: CoreSchema = {'type': 'set', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple', 'mode': 'variable', 'items_schema': {'type': 'str'}, 'max_items': 3}
+    schema: CoreSchema = {'type': 'tuple', 'mode': 'variable', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'frozenset', 'items_schema': {'type': 'str'}, 'max_items': 3}
+    schema: CoreSchema = {'type': 'frozenset', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'any'}}
     SchemaValidator(schema)

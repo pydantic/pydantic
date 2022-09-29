@@ -196,14 +196,14 @@ def test_mapping_error_yield_1():
     [
         ({}, {'1': 1, '2': 2}, {'1': 1, '2': 2}),
         (
-            {'min_items': 3},
+            {'min_length': 3},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
         ),
-        ({'min_items': 3}, {1: '2', 3: '4'}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
-        ({'max_items': 4}, {'1': 1, '2': 2, '3': 3.0}, {'1': 1, '2': 2, '3': 3.0}),
+        ({'min_length': 3}, {1: '2', 3: '4'}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
+        ({'max_length': 4}, {'1': 1, '2': 2, '3': 3.0}, {'1': 1, '2': 2, '3': 3.0}),
         (
-            {'max_items': 3},
+            {'max_length': 3},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
             Err('Input should have at most 3 items, got 4 items [kind=too_long,'),
         ),

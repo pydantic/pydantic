@@ -33,13 +33,13 @@ macro_rules! generic_collection_build {
             };
             let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
             let name = format!($name_template, $name, inner_name);
-            let min_items = schema.get_as(pyo3::intern!(py, "min_items"))?;
-            let max_items = schema.get_as(pyo3::intern!(py, "max_items"))?;
+            let min_length = schema.get_as(pyo3::intern!(py, "min_length"))?;
+            let max_length = schema.get_as(pyo3::intern!(py, "max_length"))?;
             Ok(Self {
                 strict: crate::build_tools::is_strict(schema, config)?,
                 item_validator,
-                size_range: match min_items.is_some() || max_items.is_some() {
-                    true => Some((min_items, max_items)),
+                size_range: match min_length.is_some() || max_length.is_some() {
+                    true => Some((min_length, max_length)),
                     false => None,
                 },
                 name,

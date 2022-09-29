@@ -15,8 +15,8 @@ pub struct DictValidator {
     strict: bool,
     key_validator: Box<CombinedValidator>,
     value_validator: Box<CombinedValidator>,
-    min_items: Option<usize>,
-    max_items: Option<usize>,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
     name: String,
 }
 
@@ -47,8 +47,8 @@ impl BuildValidator for DictValidator {
             strict: is_strict(schema, config)?,
             key_validator,
             value_validator,
-            min_items: schema.get_as(intern!(py, "min_items"))?,
-            max_items: schema.get_as(intern!(py, "max_items"))?,
+            min_length: schema.get_as(intern!(py, "min_length"))?,
+            max_length: schema.get_as(intern!(py, "max_length"))?,
             name,
         }
         .into())
@@ -96,7 +96,7 @@ macro_rules! build_validate {
             recursion_guard: &'s mut RecursionGuard,
         ) -> ValResult<'data, PyObject> {
             let mut op_len: Option<usize> = None;
-            if let Some(min_length) = self.min_items {
+            if let Some(min_length) = self.min_length {
                 let input_length = dict.len();
                 if input_length < min_length {
                     return Err(ValError::new(
@@ -109,7 +109,7 @@ macro_rules! build_validate {
                 }
                 op_len = Some(input_length);
             }
-            if let Some(max_length) = self.max_items {
+            if let Some(max_length) = self.max_length {
                 let input_length = op_len.unwrap_or_else(|| dict.len());
                 if input_length > max_length {
                     return Err(ValError::new(
