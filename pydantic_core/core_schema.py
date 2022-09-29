@@ -76,6 +76,8 @@ class FunctionSchema(TypedDict):
     mode: Literal['before', 'after', 'wrap']
     function: Callable[..., Any]
     schema: CoreSchema
+    # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
+    validator_instance: NotRequired[Any]
     ref: NotRequired[str]
 
 
@@ -83,6 +85,8 @@ class FunctionPlainSchema(TypedDict):
     type: Literal['function']
     mode: Literal['plain']
     function: Callable[..., Any]
+    # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
+    validator_instance: NotRequired[Any]
     ref: NotRequired[str]
 
 

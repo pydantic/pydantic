@@ -117,7 +117,7 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:
 
         fields[field_name] = {'schema': schema, 'required': required}
 
-    return {'type': 'typed-dict', 'description': typed_dict.__name__, 'fields': fields, 'extra_behavior': 'forbid'}
+    return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}
 
 
 def union_schema(union_type: type[Union]) -> core_schema.UnionSchema:
