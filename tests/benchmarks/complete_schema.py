@@ -11,7 +11,7 @@ def schema(*, strict: bool = False) -> dict:
 
     return {
         'type': 'new-class',
-        'class_type': MyModel,
+        'cls': MyModel,
         'config': {'strict': strict},
         'schema': {
             'type': 'typed-dict',

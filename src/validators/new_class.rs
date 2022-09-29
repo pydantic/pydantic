@@ -40,7 +40,7 @@ impl BuildValidator for NewClassValidator {
         // models ignore the parent config and always use the config from this model
         let config = build_config(py, schema, config)?;
 
-        let class: &PyType = schema.get_as_req(intern!(py, "class_type"))?;
+        let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
         let validator = build_validator(sub_schema, config, build_context)?;
 

@@ -17,10 +17,10 @@ pytestmark = pytest.mark.skipif(sys.version_info < (3, 10), reason='requires pyt
 
 def test_complete_valid():
     lax_schema = schema()
-    class_type = lax_schema['class_type']
+    cls = lax_schema['cls']
     lax_validator = SchemaValidator(lax_schema)
     output = lax_validator.validate_python(input_data_lax())
-    assert isinstance(output, class_type)
+    assert isinstance(output, cls)
     assert len(output.__fields_set__) == 39
     output_dict = output.__dict__
     assert output_dict == {

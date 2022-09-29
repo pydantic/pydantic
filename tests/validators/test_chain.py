@@ -123,7 +123,7 @@ def test_ask():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {
                 'type': 'chain',
                 'steps': [
