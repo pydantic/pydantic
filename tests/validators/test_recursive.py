@@ -196,7 +196,7 @@ def test_model_class():
         {
             'type': 'new-class',
             'ref': 'Branch',
-            'class_type': Branch,
+            'cls': Branch,
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -738,7 +738,7 @@ def test_new_class_td_recursive():
                             'choices': [
                                 {
                                     'type': 'new-class',
-                                    'class_type': Foobar,
+                                    'cls': Foobar,
                                     'schema': {'type': 'recursive-ref', 'schema_ref': '__main__.Foobar'},
                                 },
                                 {'type': 'none'},

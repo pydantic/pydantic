@@ -47,7 +47,7 @@ def test_validation_error_multiple():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,

@@ -16,7 +16,7 @@ class Spam:
 
 
 def test_is_instance():
-    v = SchemaValidator({'type': 'is-instance', 'class_': Foo})
+    v = SchemaValidator({'type': 'is-instance', 'cls': Foo})
     foo = Foo()
     assert v.validate_python(foo) == foo
     assert v.isinstance_python(foo) is True
@@ -59,14 +59,14 @@ def test_is_instance():
     ],
 )
 def test_is_instance_cases(schema_class, input_val, value):
-    v = SchemaValidator({'type': 'is-instance', 'class_': schema_class})
+    v = SchemaValidator({'type': 'is-instance', 'cls': schema_class})
     assert v.isinstance_python(input_val) == value
 
 
 @pytest.mark.parametrize('input_cls', [123, 'foo', Foo(), [], {1: 2}])
 def test_is_instance_invalid(input_cls):
     with pytest.raises(SchemaError, match="object cannot be converted to 'PyType'"):
-        SchemaValidator({'type': 'is-instance', 'class_': input_cls})
+        SchemaValidator({'type': 'is-instance', 'cls': input_cls})
 
 
 class HasIsInstanceMeta(type):
@@ -82,7 +82,7 @@ class HasIsInstance(metaclass=HasIsInstanceMeta):
 
 
 def test_instancecheck():
-    v = SchemaValidator({'type': 'is-instance', 'class_': HasIsInstance})
+    v = SchemaValidator({'type': 'is-instance', 'cls': HasIsInstance})
     assert v.validate_python('true') == 'true'
 
     with pytest.raises(ValidationError, match='kind=is_instance_of'):
@@ -93,7 +93,7 @@ def test_instancecheck():
 
 
 def test_repr():
-    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'is-instance', 'class_': Foo}]})
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'is-instance', 'cls': Foo}]})
     assert v.isinstance_python(4) is True
     assert v.isinstance_python(Bar()) is True
     assert v.isinstance_python('foo') is False
@@ -116,5 +116,5 @@ def test_repr():
     ],
 )
 def test_is_type(input_val, value):
-    v = SchemaValidator({'type': 'is-instance', 'class_': type})
+    v = SchemaValidator({'type': 'is-instance', 'cls': type})
     assert v.isinstance_python(input_val) == value

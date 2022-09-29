@@ -58,7 +58,7 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {
         'type': 'new-class',
-        'class_type': Foo,
+        'cls': Foo,
         'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'bar': {'schema': {'type': 'str'}}}},
     }
     SchemaValidator(schema)
@@ -100,7 +100,7 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'datetime', 'ge': datetime.now()}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'is-instance', 'class_': Foo}
+    schema: CoreSchema = {'type': 'is-instance', 'cls': Foo}
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'callable'}
     SchemaValidator(schema)
