@@ -126,10 +126,10 @@ def test_set_multiple_errors():
         ({'strict': True}, (1, 2, 3), Err('Input should be a valid set [kind=set_type,')),
         ({'strict': True}, frozenset([1, 2, 3]), Err('Input should be a valid set [kind=set_type,')),
         ({'strict': True}, 'abc', Err('Input should be a valid set [kind=set_type,')),
-        ({'min_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'min_items': 3}, {1, 2}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
-        ({'max_items': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'max_items': 3}, {1, 2, 3, 4}, Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
+        ({'min_length': 3}, {1, 2, 3}, {1, 2, 3}),
+        ({'min_length': 3}, {1, 2}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
+        ({'max_length': 3}, {1, 2, 3}, {1, 2, 3}),
+        ({'max_length': 3}, {1, 2, 3, 4}, Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
     ],
 )
 def test_set_kwargs(kwargs: Dict[str, Any], input_value, expected):

@@ -53,8 +53,8 @@ class DictSchema(TypedDict, total=False):
     type: Required[Literal['dict']]
     keys_schema: CoreSchema  # default: AnySchema
     values_schema: CoreSchema  # default: AnySchema
-    min_items: int
-    max_items: int
+    min_length: int
+    max_length: int
     strict: bool
     ref: str
 
@@ -104,8 +104,8 @@ class IntSchema(TypedDict, total=False):
 class ListSchema(TypedDict, total=False):
     type: Required[Literal['list']]
     items_schema: CoreSchema  # default: AnySchema
-    min_items: int
-    max_items: int
+    min_length: int
+    max_length: int
     strict: bool
     ref: str
 
@@ -167,8 +167,8 @@ class RecursiveReferenceSchema(TypedDict):
 class SetSchema(TypedDict, total=False):
     type: Required[Literal['set']]
     items_schema: CoreSchema  # default: AnySchema
-    min_items: int
-    max_items: int
+    min_length: int
+    max_length: int
     strict: bool
     ref: str
 
@@ -176,8 +176,8 @@ class SetSchema(TypedDict, total=False):
 class FrozenSetSchema(TypedDict, total=False):
     type: Required[Literal['frozenset']]
     items_schema: CoreSchema  # default: AnySchema
-    min_items: int
-    max_items: int
+    min_length: int
+    max_length: int
     strict: bool
     ref: str
 
@@ -270,8 +270,8 @@ class TupleVariableSchema(TypedDict, total=False):
     type: Required[Literal['tuple']]
     mode: Literal['variable']
     items_schema: CoreSchema
-    min_items: int
-    max_items: int
+    min_length: int
+    max_length: int
     strict: bool
     ref: str
 

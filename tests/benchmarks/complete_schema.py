@@ -37,22 +37,27 @@ def schema(*, strict: bool = False) -> dict:
                 'field_list_any': {'schema': {'type': 'list'}},
                 'field_list_str': {'schema': {'type': 'list', 'items_schema': {'type': 'str'}}},
                 'field_list_str_con': {
-                    'schema': {'type': 'list', 'items_schema': {'type': 'str'}, 'min_items': 3, 'max_items': 42}
+                    'schema': {'type': 'list', 'items_schema': {'type': 'str'}, 'min_length': 3, 'max_length': 42}
                 },
                 'field_set_any': {'schema': {'type': 'set'}},
                 'field_set_int': {'schema': {'type': 'set', 'items_schema': {'type': 'int'}}},
                 'field_set_int_con': {
-                    'schema': {'type': 'set', 'items_schema': {'type': 'int'}, 'min_items': 3, 'max_items': 42}
+                    'schema': {'type': 'set', 'items_schema': {'type': 'int'}, 'min_length': 3, 'max_length': 42}
                 },
                 'field_frozenset_any': {'schema': {'type': 'frozenset'}},
                 'field_frozenset_bytes': {'schema': {'type': 'frozenset', 'items_schema': {'type': 'bytes'}}},
                 'field_frozenset_bytes_con': {
-                    'schema': {'type': 'frozenset', 'items_schema': {'type': 'bytes'}, 'min_items': 3, 'max_items': 42}
+                    'schema': {
+                        'type': 'frozenset',
+                        'items_schema': {'type': 'bytes'},
+                        'min_length': 3,
+                        'max_length': 42,
+                    }
                 },
                 'field_tuple_var_len_any': {'schema': {'type': 'tuple'}},
                 'field_tuple_var_len_float': {'schema': {'type': 'tuple', 'items_schema': {'type': 'float'}}},
                 'field_tuple_var_len_float_con': {
-                    'schema': {'type': 'tuple', 'items_schema': {'type': 'float'}, 'min_items': 3, 'max_items': 42}
+                    'schema': {'type': 'tuple', 'items_schema': {'type': 'float'}, 'min_length': 3, 'max_length': 42}
                 },
                 'field_tuple_fix_len': {
                     'schema': {
