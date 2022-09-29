@@ -6,6 +6,24 @@ license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
 repository = "https://github.com/pydantic/pydantic-core.git"
 readme = "README.md"
+include = [
+    "/pyproject.toml",
+    "/README.md",
+    "/LICENSE",
+    "/Makefile",
+    "/build.rs",
+    "/generate_self_schema.py",
+    "/rust-toolchain",
+    "/src",
+    "!/src/self_schema.py",
+    "/pydantic_core",
+    "/tests",
+    "/.cargo",
+    "!__pycache__",
+    "!tests/.hypothesis",
+    "!tests/.pytest_cache",
+    "!*.so",
+]
 
 [dependencies]
 pyo3 = "0.17.1"
