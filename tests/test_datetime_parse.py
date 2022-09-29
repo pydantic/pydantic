@@ -1,18 +1,9 @@
-"""
-Stolen from https://github.com/django/django/blob/main/tests/utils_tests/test_dateparse.py at
-9718fa2e8abe430c3526a9278dd976443d4ae3c6
-
-Changed to:
-* use standard pytest layout
-* parametrize tests
-"""
 import re
 from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 
 from pydantic import BaseModel, ValidationError, condate, errors
-from pydantic.datetime_parse import parse_date, parse_datetime, parse_duration, parse_time
 
 
 def create_tz(minutes):

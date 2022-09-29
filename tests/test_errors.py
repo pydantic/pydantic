@@ -5,8 +5,7 @@ from uuid import UUID, uuid4
 import pytest
 from typing_extensions import Literal
 
-from pydantic import UUID1, BaseConfig, BaseModel, PydanticTypeError, ValidationError, conint, errors, validator
-from pydantic.error_wrappers import flatten_errors, get_exc_type
+from pydantic import UUID1, BaseModel, PydanticTypeError, ValidationError, conint, validator
 from pydantic.errors import StrRegexError
 
 
@@ -266,29 +265,6 @@ def test_validation_error(result, expected):
         )
 
     assert getattr(exc_info.value, result)() == expected
-
-
-def test_errors_unknown_error_object():
-    with pytest.raises(RuntimeError):
-        list(flatten_errors([object], BaseConfig))
-
-
-@pytest.mark.parametrize(
-    'exc,type_',
-    (
-        (TypeError(), 'type_error'),
-        (ValueError(), 'value_error'),
-        (AssertionError(), 'assertion_error'),
-        (errors.DecimalIsNotFiniteError(), 'value_error.decimal.not_finite'),
-    ),
-)
-def test_get_exc_type(exc, type_):
-    if isinstance(type_, str):
-        assert get_exc_type(type(exc)) == type_
-    else:
-        with pytest.raises(type_) as exc_info:
-            get_exc_type(type(exc))
-        assert isinstance(exc_info.value, type_)
 
 
 def test_single_error():

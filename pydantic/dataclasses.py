@@ -51,7 +51,7 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from pydantic._internal.utils import ClassAttribute
+from pydantic._internal._utils import ClassAttribute
 
 from .config import BaseConfig, ConfigDict, Extra, get_config
 from .errors import DataclassTypeError
@@ -59,7 +59,7 @@ from .fields import Field, FieldInfo, Required, Undefined
 from .main import create_model
 
 if TYPE_CHECKING:
-    from ._internal.typing_extra import CallableGenerator, NoArgAnyCallable
+    from ._internal._typing_extra import CallableGenerator, NoArgAnyCallable
     from .main import BaseModel
 
     DataclassT = TypeVar('DataclassT', bound='Dataclass')

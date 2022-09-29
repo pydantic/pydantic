@@ -1,9 +1,9 @@
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
-from pydantic._internal.utils import to_camel
+from pydantic._internal._utils import to_camel
 
-from ._internal.typing_extra import get_all_type_hints
+from ._internal._typing_extra import get_all_type_hints
 from .config import Extra
 from .errors import ConfigError
 from .main import BaseModel, create_model
@@ -12,7 +12,7 @@ from .validator_functions import validator
 __all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
-    from ._internal.typing_extra import AnyCallable
+    from ._internal._typing_extra import AnyCallable
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
     ConfigType = Union[None, Type[Any], Dict[str, Any]]

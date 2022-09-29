@@ -16,8 +16,8 @@ from pydantic_core import schema_types as core_schema
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
-from ._annotations import CustomMetadata, PydanticMetadata
-from .typing_extra import (
+from ._fields import CustomMetadata, PydanticMetadata
+from ._typing_extra import (
     NoneType,
     NotRequired,
     Required,
@@ -28,10 +28,12 @@ from .typing_extra import (
     is_literal_type,
     origin_is_union,
 )
-from .validation_functions import ValidationFunctions, Validator
+from ._validation_functions import ValidationFunctions, Validator
 
 if TYPE_CHECKING:
     from ..config import BaseConfig
+    from enum import Enum
+    from decimal import Decimal
 
 __all__ = 'generate_config', 'generate_schema', 'model_fields_schema'
 
@@ -67,7 +69,7 @@ def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore compl
         # we assume this is already a valid schema
         return obj  # type: ignore[return-value]
     elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
-        return {'type': obj.__name__}
+        return name_as_schema(obj)
     elif obj is Any or obj is object:
         return {'type': 'any'}
     elif obj is None or obj is NoneType:
@@ -201,8 +203,10 @@ def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> cor
     for c in constraints:
         get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
         if get_schema is not None:
-            return get_schema(schema, constraints)
-        elif isinstance(c, CustomMetadata):
+            schema = get_schema(schema)
+            continue
+
+        if isinstance(c, CustomMetadata):
             constraints_dict = c.__dict__
         elif isinstance(c, (BaseMetadata, PydanticMetadata)):
             constraints_dict = dataclasses.asdict(c)
@@ -344,26 +348,63 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
         return core_schema.IsInstanceSchema(type='is-instance', class_=type_param)
 
 
+def name_as_schema(t: type[Any]) -> core_schema.Schema:
+    return {'type': t.__name__}
+
+
+def enum_schema(enum_obj: Enum) -> core_schema.FunctionSchema:
+    return core_schema.FunctionSchema(
+        type='function',
+        mode='after',
+        schema=core_schema.LiteralSchema(type='literal', expected=[m.value for m in enum_obj.__members__.values()]),
+        function=lambda x, **kwargs: enum_obj(x),
+    )
+
+
+def decimal_schema(decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
+    return core_schema.FunctionSchema(
+        type='function',
+        mode='after',
+        schema=core_schema.UnionSchema(
+            type='union',
+            choices=[
+                core_schema.IntSchema(type='int'),
+                core_schema.FloatSchema(type='float'),
+                core_schema.StringSchema(type='str'),
+            ]
+        ),
+        function=lambda x, **kwargs: decimal_type(x),
+    )
+
+
 def std_types_schema(obj: Any) -> core_schema.Schema | None:
     """
     Generate schema for types in the standard library, could be split if this gets too long.
 
     Import here to avoid the extra import time earlier
     """
-    if isinstance(obj, type):
-        from datetime import date, datetime, time, timedelta
+    if not isinstance(obj, type):
+        return None
 
-        if issubclass(obj, (datetime, timedelta, date, time)):
-            return {'type': obj.__name__}
+    from datetime import date, datetime, time, timedelta
+    from enum import Enum
+    from decimal import Decimal
 
-        from enum import Enum
+    std_lib_type_schemas: dict[type[Any], typing.Callable[[type[Any]], core_schema.Schema]] = {
+        date: name_as_schema,
+        datetime: name_as_schema,
+        time: name_as_schema,
+        timedelta: name_as_schema,
+        Enum: enum_schema,
+        Decimal: decimal_schema,
+    }
 
-        if issubclass(obj, Enum):
-            return core_schema.FunctionSchema(
-                type='function',
-                mode='after',
-                function=lambda x, **kwargs: obj(x),
-                schema=core_schema.LiteralSchema(type='literal', expected=[m.value for m in obj.__members__.values()]),
-            )
-
-    return None
+    # instead of iterating over a list and calling is_instance, this should be somewhat faster,
+    # especially as it should catch most types on the first iteration
+    # (same as we do/used to do in json encoding)
+    for base in obj.__mro__[:-1]:
+        try:
+            encoder = std_lib_type_schemas[base]
+        except KeyError:
+            continue
+        return encoder(obj)

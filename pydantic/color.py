@@ -14,12 +14,12 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
 from pydantic_core import schema_types as core_schema
 
-from pydantic._internal.utils import Representation, almost_equal_floats
+from pydantic._internal._utils import Representation, almost_equal_floats
 
 from .errors import ColorError
 
 if TYPE_CHECKING:
-    from ._internal.typing_extra import ReprArgs
+    from ._internal._typing_extra import ReprArgs
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]

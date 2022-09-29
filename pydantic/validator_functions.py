@@ -5,7 +5,7 @@ from typing import Any, Callable, overload
 
 from typing_extensions import Literal
 
-from ._internal import validation_functions as _validation_functions
+from ._internal import _validation_functions
 from .errors import ConfigError
 
 

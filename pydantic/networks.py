@@ -15,13 +15,13 @@ from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, ca
 
 from pydantic_core import PydanticValueError, schema_types as core_schema
 
-from pydantic._internal.utils import Representation, update_not_none
+from pydantic._internal._utils import Representation, update_not_none
 
 if TYPE_CHECKING:
     import email_validator
     from typing_extensions import Typeddict
 
-    from ._internal.typing_extra import AnyCallable
+    from ._internal._typing_extra import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
 

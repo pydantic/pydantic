@@ -446,7 +446,7 @@ def is_namedtuple(type_: Type[Any]) -> bool:
     Check if a given class is a named tuple.
     It can be either a `typing.NamedTuple` or `collections.namedtuple`
     """
-    from pydantic._internal.utils import lenient_issubclass
+    from ._utils import lenient_issubclass
 
     return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
 

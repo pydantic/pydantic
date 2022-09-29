@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol, TypedDict
 
-from pydantic._internal.utils import GetterDict
+from pydantic._internal._utils import GetterDict
 
-from ._internal.typing_extra import AnyArgTCallable, AnyCallable
+from ._internal._typing_extra import AnyArgTCallable, AnyCallable
 
 if TYPE_CHECKING:
     from typing import overload

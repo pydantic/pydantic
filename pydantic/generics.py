@@ -19,12 +19,11 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from pydantic._internal.utils import LimitedDict, all_identical, lenient_issubclass
+from pydantic._internal._utils import LimitedDict, all_identical, lenient_issubclass
 
-from ._internal.typing_extra import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
+from ._internal._typing_extra import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .main import BaseModel, create_model
 from .types import JsonWrapper
-from .validator_functions import gather_all_validators
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -94,7 +93,8 @@ class GenericModel(BaseModel):
 
         # Create new model with original model as parent inserting fields with DeferredType.
         model_name = cls.__concrete_name__(params)
-        validators = gather_all_validators(cls)
+        raise RuntimeError('TODO gather_all_validators')
+        # validators = gather_all_validators(cls)
 
         type_hints = get_all_type_hints(cls).items()
         instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}

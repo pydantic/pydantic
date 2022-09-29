@@ -17,7 +17,7 @@ passing_files = {
     'test_version.py',
     'test_networks.py',
     'test_color.py',
-    'test_types.py',
+    # 'test_types.py',
 }
 
 

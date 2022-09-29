@@ -26,11 +26,11 @@ from typing import (
 from pydantic_core import Schema as PydanticCoreSchema, SchemaValidator
 from typing_extensions import dataclass_transform
 
-from pydantic._internal.utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
+from pydantic._internal._utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
 
-from ._internal.model_construction import complete_model_class, inspect_namespace
-from ._internal.typing_extra import is_namedtuple
-from ._internal.validation_functions import ValidationFunctions
+from ._internal._model_construction import complete_model_class, inspect_namespace
+from ._internal._typing_extra import is_namedtuple
+from ._internal._validation_functions import ValidationFunctions
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import ConfigError, DictError
 from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
@@ -40,7 +40,7 @@ from .schema import default_ref_template, model_schema
 if TYPE_CHECKING:
     from inspect import Signature
 
-    from ._internal.typing_extra import (
+    from ._internal._typing_extra import (
         AbstractSetIntStr,
         AnyClassMethod,
         CallableGenerator,

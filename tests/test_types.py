@@ -32,6 +32,7 @@ from uuid import UUID
 
 import pytest
 from typing_extensions import Literal, TypedDict
+import annotated_types
 
 from pydantic import (
     UUID1,
@@ -830,6 +831,32 @@ def test_string_import_any():
     assert PyObjectModel(thing='math.cos').dict() == {'thing': math.cos}
     assert PyObjectModel(thing='os.path').dict() == {'thing': os.path}
     assert PyObjectModel(thing=[1, 2, 3]).dict() == {'thing': [1, 2, 3]}
+
+
+@pytest.mark.parametrize(
+    'annotation',
+    [
+        ImportString[Annotated[float, annotated_types.Ge(3), annotated_types.Le(4)]],
+        Annotated[float, annotated_types.Ge(3), annotated_types.Le(4), ImportString],
+    ],
+)
+def test_string_import_constraints(annotation):
+    class PyObjectModel(BaseModel):
+        thing: annotation
+
+    assert PyObjectModel(thing='math.pi').dict() == {'thing': pytest.approx(3.141592654)}
+    with pytest.raises(ValidationError, match='kind=greater_than_equal'):
+        PyObjectModel(thing='math.e')
+
+
+def test_decimal():
+    class Model(BaseModel):
+        v: Decimal
+
+    m = Model(v='1.234')
+    assert m.v == Decimal('1.234')
+    assert isinstance(m.v, Decimal)
+    assert m.dict() == {'v': Decimal('1.234')}
 
 
 @pytest.fixture(scope='session', name='CheckModel')

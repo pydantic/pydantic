@@ -1,14 +1,14 @@
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
-from ._internal.typing_extra import display_as_type
+from ._internal._typing_extra import display_as_type
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
 if TYPE_CHECKING:
-    from ._internal.typing_extra import DictStrAny
+    from ._internal._typing_extra import DictStrAny
 
 
 def _generate_parsing_type_name(type_: Any) -> str:

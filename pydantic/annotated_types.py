@@ -1,7 +1,7 @@
 import sys
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, NamedTuple, Type
 
-from ._internal.typing_extra import is_typeddict, is_typeddict_special
+from ._internal._typing_extra import is_typeddict, is_typeddict_special
 from .fields import Required
 from .main import BaseModel, create_model
 

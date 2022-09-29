@@ -27,8 +27,8 @@ import annotated_types
 from pydantic_core import schema_types as core_schema
 
 from . import errors
-from ._internal import _annotations, _validators
-from ._internal.utils import update_not_none
+from ._internal import _fields, _validators
+from ._internal._utils import update_not_none
 from .annotations import AllowInfNan, Strict
 
 __all__ = [
@@ -76,7 +76,7 @@ __all__ = [
 ]
 
 if TYPE_CHECKING:
-    from ._internal.typing_extra import CallableGenerator
+    from ._internal._typing_extra import CallableGenerator
     from .dataclasses import Dataclass
     from .main import BaseModel
 
@@ -171,7 +171,7 @@ def constr(
         str,
         Strict(strict),
         annotated_types.Len(min_length, max_length),
-        _annotations.CustomMetadata(
+        _fields.CustomMetadata(
             strip_whitespace=strip_whitespace,
             to_upper=to_upper,
             to_lower=to_lower,
@@ -208,20 +208,15 @@ if TYPE_CHECKING:
     ImportString = Annotated[T, ...]
 else:
 
-    class ImportString(_annotations.PydanticMetadata):
+    class ImportString(_fields.PydanticMetadata):
         @classmethod
         def __class_getitem__(cls, item: T) -> T:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_validation_schema__(
-            cls, schema: core_schema.Schema | None = None, cons: list[Any] | None = None
-        ) -> core_schema.Schema:
-            """
-            Treat direct usage of ImportString as the same as ImportString[Any]
-            """
-            assert cons is None or len(cons) <= 1, f'ImportString cannot be used with other constraints {cons!r}'
+        def __get_pydantic_validation_schema__(cls, schema: core_schema.Schema | None = None) -> core_schema.Schema:
             if schema is None or schema == {'type': 'any'}:
+                # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
                 return core_schema.FunctionPlainSchema(
                     type='function',
                     mode='plain',
@@ -319,7 +314,7 @@ def condecimal(
         Strict(strict),
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
         annotated_types.MultipleOf(multiple_of),
-        _annotations.CustomMetadata(max_digits=max_digits, decimal_places=decimal_places),
+        _fields.CustomMetadata(max_digits=max_digits, decimal_places=decimal_places),
     ]
 
 

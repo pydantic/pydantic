@@ -71,7 +71,7 @@ __all__ = [
     'conset',
     'confrozenset',
     'constr',
-    'PyObject',
+    'ImportString',
     'conint',
     'PositiveInt',
     'NegativeInt',

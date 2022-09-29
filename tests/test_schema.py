@@ -34,7 +34,6 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel, Extra, Field, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
-from pydantic.fields import ModelField
 from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -63,7 +62,6 @@ from pydantic.types import (
     NonPositiveInt,
     PositiveFloat,
     PositiveInt,
-    PyObject,
     SecretBytes,
     SecretStr,
     StrictBool,
@@ -1544,9 +1542,9 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'le': 5}, bool),
         ({'gt': 0}, Callable),
         ({'gt': 0}, Callable[[int], int]),
-        ({'gt': 0}, conlist(int, min_items=4)),
-        ({'gt': 0}, conset(int, min_items=4)),
-        ({'gt': 0}, confrozenset(int, min_items=4)),
+        ({'gt': 0}, conlist(int, min_length=4)),
+        ({'gt': 0}, conset(int, min_length=4)),
+        ({'gt': 0}, confrozenset(int, min_length=4)),
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):

@@ -8,8 +8,8 @@ from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Un
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConstrainedList, conlist
-from pydantic._internal.typing_extra import (
+from pydantic import BaseModel, conlist
+from pydantic._internal._typing_extra import (
     all_literal_values,
     display_as_type,
     get_args,
@@ -18,7 +18,7 @@ from pydantic._internal.typing_extra import (
     new_type_supertype,
     resolve_annotations,
 )
-from pydantic._internal.utils import (
+from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
     LimitedDict,
@@ -469,7 +469,7 @@ def test_get_origin(input_value, output_value):
     'input_value,output_value',
     [
         (conlist(str), (str,)),
-        (ConstrainedList, ()),
+        # (ConstrainedList, ()),
         (List[str], (str,)),
         (Dict[str, int], (str, int)),
         (int, ()),

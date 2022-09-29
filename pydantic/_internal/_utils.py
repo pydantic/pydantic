@@ -28,7 +28,7 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from pydantic._internal.typing_extra import (
+from ._typing_extra import (
     NoneType,
     WithArgsTypes,
     all_literal_values,

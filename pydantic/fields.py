@@ -6,17 +6,16 @@ from typing import Any
 import annotated_types
 
 from . import annotations
-from ._internal.fields import UndefinedType
-from ._internal.typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin
-from ._internal.utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
+from ._internal import _fields
+from ._internal._typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin
+from ._internal._utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
 
 if typing.TYPE_CHECKING:
-    from ._internal import _annotations
-    from ._internal.typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
+    from ._internal._typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
 
 Required: Any = Ellipsis
 
-Undefined = UndefinedType()
+Undefined = _fields.UndefinedType()
 
 
 class FieldInfo(Representation):
@@ -43,7 +42,7 @@ class FieldInfo(Representation):
     )
 
     # used to convert kwargs to constraints, None has a special meaning
-    __constraints_lookup__: dict[str, annotated_types.BaseMetadata | _annotations.PydanticMetadata | None] = {
+    __constraints_lookup__: dict[str, annotated_types.BaseMetadata | _fields.PydanticMetadata | None] = {
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
         'lt': annotated_types.Lt,
@@ -140,7 +139,7 @@ class FieldInfo(Representation):
                 else:
                     constraints.append(marker(value))
         if generic_constraints:
-            constraints.append(CustomMetadata(**generic_constraints))
+            constraints.append(_fields.CustomMetadata(**generic_constraints))
         return constraints
 
     def get_default(self) -> Any:

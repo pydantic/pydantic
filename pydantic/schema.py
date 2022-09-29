@@ -30,7 +30,7 @@ from uuid import UUID
 
 from typing_extensions import Annotated, Literal
 
-from ._internal.typing_extra import (
+from ._internal._typing_extra import (
     all_literal_values,
     get_args,
     get_origin,
@@ -41,7 +41,7 @@ from ._internal.typing_extra import (
     is_none_type,
     origin_is_union,
 )
-from ._internal.utils import ROOT_KEY, get_model, lenient_issubclass
+from ._internal._utils import ROOT_KEY, get_model, lenient_issubclass
 from .fields import FieldInfo
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr

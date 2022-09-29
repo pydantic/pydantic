@@ -35,7 +35,7 @@ import hypothesis.strategies as st
 import pydantic
 import pydantic.color
 import pydantic.types
-from pydantic._internal.utils import lenient_issubclass
+from pydantic._internal._utils import lenient_issubclass
 
 # FilePath and DirectoryPath are explicitly unsupported, as we'd have to create
 # them on-disk, and that's unsafe in general without being told *where* to do so.
@@ -76,13 +76,13 @@ else:
         ),
     )
 
-# PyObject - dotted names, in this case taken from the math module.
-st.register_type_strategy(
-    pydantic.PyObject,  # type: ignore[arg-type]
-    st.sampled_from(
-        [cast(pydantic.PyObject, f'math.{name}') for name in sorted(vars(math)) if not name.startswith('_')]
-    ),
-)
+# # PyObject - dotted names, in this case taken from the math module.
+# st.register_type_strategy(
+#     pydantic.PyObject,  # type: ignore[arg-type]
+#     st.sampled_from(
+#         [cast(pydantic.PyObject, f'math.{name}') for name in sorted(vars(math)) if not name.startswith('_')]
+#     ),
+# )
 
 # CSS3 Colors; as name, hex, rgb(a) tuples or strings, or hsl strings
 _color_regexes = (
@@ -164,7 +164,7 @@ st.register_type_strategy(
 # We hook into the con***() functions and the ConstrainedNumberMeta metaclass,
 # so here we only have to register subclasses for other constrained types which
 # don't go via those mechanisms.  Then there are the registration hooks below.
-st.register_type_strategy(pydantic.StrictBool, st.booleans())
+# st.register_type_strategy(pydantic.StrictBool, st.booleans())
 # st.register_type_strategy(pydantic.StrictStr, st.text())
 
 
@@ -182,13 +182,13 @@ def _registered(typ: Type[pydantic.types.T]) -> Type[pydantic.types.T]:
 
 
 @overload
-def _registered(typ: pydantic.types.ConstrainedNumberMeta) -> pydantic.types.ConstrainedNumberMeta:
+def _registered(typ: pydantic.types) -> pydantic.types:
     pass
 
 
 def _registered(
-    typ: Union[Type[pydantic.types.T], pydantic.types.ConstrainedNumberMeta]
-) -> Union[Type[pydantic.types.T], pydantic.types.ConstrainedNumberMeta]:
+    typ: Union[Type[pydantic.types.T]]
+) -> Union[Type[pydantic.types.T]]:
     # This function replaces the version in `pydantic.types`, in order to
     # effect the registration of new constrained types so that Hypothesis
     # can generate valid examples.
@@ -201,7 +201,7 @@ def _registered(
 
 
 def resolves(
-    typ: Union[type, pydantic.types.ConstrainedNumberMeta]
+    typ: Union[type]
 ) -> Callable[[Callable[..., st.SearchStrategy]], Callable[..., st.SearchStrategy]]:  # type: ignore[type-arg]
     def inner(f):  # type: ignore
         assert f not in RESOLVERS
@@ -380,7 +380,7 @@ def resolve_constr(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
 
 
 # Finally, register all previously-defined types, and patch in our new function
-for typ in list(pydantic.types._DEFINED_TYPES):
-    _registered(typ)
+# for typ in list(pydantic.types._DEFINED_TYPES):
+#     _registered(typ)
 pydantic.types._registered = _registered
 st.register_type_strategy(pydantic.Json, resolve_json)
