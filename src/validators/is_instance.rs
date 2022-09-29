@@ -24,7 +24,7 @@ impl BuildValidator for IsInstanceValidator {
         _config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let class: &PyType = schema.get_as_req(intern!(schema.py(), "class_"))?;
+        let class: &PyType = schema.get_as_req(intern!(schema.py(), "cls"))?;
         let class_repr = class.name()?.to_string();
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, class_repr);
         Ok(Self {

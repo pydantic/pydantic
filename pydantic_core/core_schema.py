@@ -118,7 +118,7 @@ class LiteralSchema(TypedDict):
 
 class NewClassSchema(TypedDict):
     type: Literal['new-class']
-    class_type: type
+    cls: Type[Any]
     schema: CoreSchema
     call_after_init: NotRequired[str]
     strict: NotRequired[bool]
@@ -278,7 +278,7 @@ class TupleVariableSchema(TypedDict, total=False):
 
 class IsInstanceSchema(TypedDict):
     type: Literal['is-instance']
-    class_: Type[Any]
+    cls: Type[Any]
 
 
 class CallableSchema(TypedDict):

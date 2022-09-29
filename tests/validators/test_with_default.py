@@ -245,7 +245,7 @@ def test_model_class():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {
                 'type': 'default',
                 'schema': {

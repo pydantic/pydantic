@@ -58,7 +58,7 @@ class TestModelClass:
                 'choices': [
                     {
                         'type': 'new-class',
-                        'class_type': self.ModelA,
+                        'cls': self.ModelA,
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,
@@ -67,7 +67,7 @@ class TestModelClass:
                     },
                     {
                         'type': 'new-class',
-                        'class_type': self.ModelB,
+                        'cls': self.ModelB,
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,
@@ -122,7 +122,7 @@ class TestModelClassSimilar:
                 'choices': [
                     {
                         'type': 'new-class',
-                        'class_type': self.ModelA,
+                        'cls': self.ModelA,
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,
@@ -131,7 +131,7 @@ class TestModelClassSimilar:
                     },
                     {
                         'type': 'new-class',
-                        'class_type': self.ModelB,
+                        'cls': self.ModelB,
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,

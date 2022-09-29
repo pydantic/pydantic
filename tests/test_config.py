@@ -42,7 +42,7 @@ def test_on_model_class():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'config': {'str_max_length': 5},
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
         }
@@ -56,7 +56,7 @@ def test_field_priority_model():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'config': {'str_max_length': 10},
             'schema': {
                 'type': 'typed-dict',
@@ -74,7 +74,7 @@ def test_parent_priority():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_min_length': 2, 'str_max_length': 10},
         },
@@ -92,7 +92,7 @@ def test_child_priority():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_max_length': 5, 'config_choose_priority': 1},
         },
@@ -110,7 +110,7 @@ def test_merge_child_wins():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_max_length': 5},
         },
@@ -128,7 +128,7 @@ def test_merge_parent_wins():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
             'config': {'str_max_length': 5},
         },
@@ -148,7 +148,7 @@ def test_sub_model_merge():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -157,7 +157,7 @@ def test_sub_model_merge():
                     'sub_model': {
                         'schema': {
                             'type': 'new-class',
-                            'class_type': MyModel,
+                            'cls': MyModel,
                             'schema': {
                                 'type': 'typed-dict',
                                 'return_fields_set': True,
@@ -231,7 +231,7 @@ def test_allow_inf_nan(config: CoreConfig, float_field_schema, input_value, expe
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': MyModel,
+            'cls': MyModel,
             'schema': {'type': 'typed-dict', 'fields': {'x': {'schema': float_field_schema}}},
             'config': config,
         }

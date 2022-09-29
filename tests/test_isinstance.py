@@ -50,7 +50,7 @@ def test_internal_error():
     v = SchemaValidator(
         {
             'type': 'new-class',
-            'class_type': int,
+            'cls': int,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'int'}}}},
         }
     )
