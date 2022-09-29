@@ -28,5 +28,6 @@ fn main() {
     if let Some(true) = version_check::supports_feature("no_coverage") {
         println!("cargo:rustc-cfg=has_no_coverage");
     }
-    generate_self_schema()
+    generate_self_schema();
+    println!("cargo:rustc-env=PROFILE={}", std::env::var("PROFILE").unwrap());
 }
