@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 import functools
 import importlib.util
 import json
@@ -31,7 +33,7 @@ def plain_repr(obj):
 @dataclass
 class Err:
     message: str
-    errors: Any = None
+    errors: Any | None = None
 
     def __repr__(self):
         if self.errors:
@@ -41,21 +43,21 @@ class Err:
 
 
 class PyAndJsonValidator:
-    def __init__(self, schema, validator_type: 'Literal["json", "python"] | None' = None):
+    def __init__(self, schema, validator_type: Literal['json', 'python'] | None = None):
         self.validator = SchemaValidator(schema)
         self.validator_type = validator_type
 
-    def validate_python(self, py_input, strict: 'bool | None' = None, context: Any = None):
+    def validate_python(self, py_input, strict: bool | None = None, context: Any = None):
         return self.validator.validate_python(py_input, strict, context)
 
-    def validate_test(self, py_input, strict: 'bool | None' = None, context: Any = None):
+    def validate_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
             return self.validator.validate_json(json.dumps(py_input), strict, context)
         else:
             assert self.validator_type == 'python', self.validator_type
             return self.validator.validate_python(py_input, strict, context)
 
-    def isinstance_test(self, py_input, strict: 'bool | None' = None, context: Any = None):
+    def isinstance_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
             return self.validator.isinstance_json(json.dumps(py_input), strict, context)
         else:
