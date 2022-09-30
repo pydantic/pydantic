@@ -92,6 +92,9 @@ impl Validator for StrConstrainedValidator {
         let either_str = input.validate_str(extra.strict.unwrap_or(self.strict))?;
         let cow = either_str.as_cow()?;
         let mut str = cow.as_ref();
+        if self.strip_whitespace {
+            str = str.trim();
+        }
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_error!("{} is shorter than {}", str, min_length);
@@ -112,10 +115,6 @@ impl Validator for StrConstrainedValidator {
                     input,
                 ));
             }
-        }
-
-        if self.strip_whitespace {
-            str = str.trim();
         }
 
         let py_string = if self.to_lower {
