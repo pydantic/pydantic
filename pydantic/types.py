@@ -1,7 +1,7 @@
 import abc
+import dataclasses as _dataclasses
 import re
 import warnings
-import dataclasses as _dataclasses
 from datetime import date
 from decimal import Decimal
 from enum import Enum
@@ -13,23 +13,23 @@ from typing import (
     ClassVar,
     Dict,
     FrozenSet,
+    Hashable,
     List,
+    Literal,
     Optional,
     Set,
     Tuple,
     Type,
     TypeVar,
     Union,
-    Literal,
-    Hashable,
 )
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import schema_types as core_schema, PydanticValueError
+from pydantic_core import PydanticValueError, core_schema
 
 from . import errors
-from ._internal import _fields, _validators, _utils
+from ._internal import _fields, _utils, _validators
 
 __all__ = [
     'StrictStr',
@@ -86,7 +86,6 @@ if TYPE_CHECKING:
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
     strict: bool | None = True
-
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -196,11 +195,15 @@ StrictStr = Annotated[str, Strict()]
 HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
-def conset(item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None) -> Type[Set[HashableItemType]]:
+def conset(
+    item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
+) -> Type[Set[HashableItemType]]:
     return Annotated[Set[item_type], annotated_types.Len(min_length, max_length)]
 
 
-def confrozenset(item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None) -> Type[FrozenSet[HashableItemType]]:
+def confrozenset(
+    item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
+) -> Type[FrozenSet[HashableItemType]]:
     return Annotated[FrozenSet[item_type], annotated_types.Len(min_length, max_length)]
 
 
@@ -211,7 +214,9 @@ def conlist(item_type: Type[AnyItemType], *, min_length: int = None, max_length:
     return Annotated[List[item_type], annotated_types.Len(min_length, max_length)]
 
 
-def contuple(item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None) -> Type[Tuple[AnyItemType]]:
+def contuple(
+    item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None
+) -> Type[Tuple[AnyItemType]]:
     return Annotated[Tuple[item_type], annotated_types.Len(min_length, max_length)]
 
 
@@ -228,7 +233,9 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_validation_schema__(cls, schema: core_schema.Schema | None = None) -> core_schema.Schema:
+        def __get_pydantic_validation_schema__(
+            cls, schema: core_schema.CoreSchema | None = None
+        ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
                 return core_schema.FunctionPlainSchema(
@@ -342,7 +349,7 @@ class UuidVersion(_fields.PydanticMetadata):
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
-    def __get_pydantic_validation_schema__(self, schema: core_schema.Schema) -> core_schema.Schema:
+    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         return core_schema.FunctionSchema(
             type='function',
             mode='after',
@@ -352,7 +359,9 @@ class UuidVersion(_fields.PydanticMetadata):
 
     def validate(self, value: UUID, **kwargs) -> UUID:
         if value.version != self.uuid_version:
-            raise PydanticValueError('uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version})
+            raise PydanticValueError(
+                'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
+            )
         return value
 
 
@@ -372,7 +381,7 @@ class PathType(_fields.PydanticMetadata):
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(format='file-path')
 
-    def __get_pydantic_validation_schema__(self, schema: core_schema.Schema) -> core_schema.Schema:
+    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         function_lookup = {
             'file': self.validate_file,
             'dir': self.validate_directory,

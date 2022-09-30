@@ -28,6 +28,8 @@ from typing import (
 
 from typing_extensions import Annotated
 
+from pydantic.errors import ConfigError
+
 from ._typing_extra import (
     NoneType,
     WithArgsTypes,
@@ -38,7 +40,6 @@ from ._typing_extra import (
     is_literal_type,
     origin_is_union,
 )
-from pydantic.errors import ConfigError
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -12,7 +12,7 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
-from pydantic_core import schema_types as core_schema
+from pydantic_core import core_schema
 
 from pydantic._internal._utils import Representation, almost_equal_floats
 

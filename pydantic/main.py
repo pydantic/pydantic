@@ -23,7 +23,6 @@ from typing import (
     overload,
 )
 
-from pydantic_core import Schema as PydanticCoreSchema, SchemaValidator
 from typing_extensions import dataclass_transform
 
 from pydantic._internal._utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
@@ -39,6 +38,8 @@ from .schema import default_ref_template, model_schema
 
 if TYPE_CHECKING:
     from inspect import Signature
+
+    from pydantic_core import CoreSchema, SchemaValidator
 
     from ._internal._typing_extra import (
         AbstractSetIntStr,
@@ -121,7 +122,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __pydantic_validator__: ClassVar[SchemaValidator]
-        __pydantic_validation_schema__: ClassVar[PydanticCoreSchema]
+        __pydantic_validation_schema__: ClassVar[CoreSchema]
         __validator_functions__: ClassVar[ValidationFunctions]
         __fields__: ClassVar[Dict[str, FieldInfo]] = {}
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
@@ -144,6 +145,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         Uses something other than `self` the first arg to allow "self" as a field name
         """
+        # __tracebackhide__ tells pytest and some other tools to omit the function from tracebacks
+        __tracebackhide__ = True
         values, fields_set = __pydantic_self__.__pydantic_validator__.validate_python(data)
         object_setattr(__pydantic_self__, '__dict__', values)
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)

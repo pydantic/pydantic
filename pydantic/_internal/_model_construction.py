@@ -3,14 +3,14 @@ from __future__ import annotations as _annotations
 import sys
 import warnings
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Type, get_type_hints
 
-from pydantic_core import SchemaValidator
-from pydantic_core.schema_types import NewClassSchema, RecursiveReferenceSchema
+from pydantic_core import SchemaValidator, core_schema
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._babelfish import generate_config, model_fields_schema
-from ._typing_extra import SchemaRef, is_classvar
+from ._fields import SchemaRef
+from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 from ._validation_functions import ValidationFunctions
 
@@ -90,12 +90,8 @@ def complete_model_class(
     fields: dict[str, FieldInfo] = {}
     core_config = generate_config(cls.__config__)
     model_ref = f'{module_name}.{name}'
-    self_schema = NewClassSchema(
-        type='new-class',
-        class_type=cls,
-        schema=RecursiveReferenceSchema(type='recursive-ref', schema_ref=model_ref),
-    )
-    localns = {name: SchemaRef('SelfType', self_schema)}
+    self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
+    localns = {name: Annotated[Any, SchemaRef('SelfType', self_schema)]}
     for ann_name, ann_type in get_type_hints(cls, base_globals, localns, include_extras=True).items():
         if ann_name.startswith('_') or is_classvar(ann_type):
             continue
@@ -123,12 +119,7 @@ def complete_model_class(
 
     cls.__fields__ = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
-    cls.__pydantic_validation_schema__ = NewClassSchema(
-        type='new-class',
-        class_type=cls,
-        schema=inner_schema,
-        config=core_config,
-    )
+    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(cls, inner_schema, config=core_config)
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))

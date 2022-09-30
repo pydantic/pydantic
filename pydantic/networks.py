@@ -13,7 +13,7 @@ from ipaddress import (
 )
 from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, cast, no_type_check
 
-from pydantic_core import PydanticValueError, schema_types as core_schema
+from pydantic_core import PydanticValueError, core_schema
 
 from pydantic._internal._utils import Representation, update_not_none
 
@@ -583,9 +583,7 @@ class EmailStr(str):
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
-        return core_schema.FunctionSchema(
-            type='function', mode='after', function=cls.validate, schema=core_schema.StringSchema(type='str')
-        )
+        return core_schema.function_after_schema(cls.validate, core_schema.string_schema())
 
     @classmethod
     def validate(cls, value: str, **kwargs) -> str:
@@ -608,16 +606,11 @@ class NameEmail(Representation):
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
-        return core_schema.FunctionSchema(
-            type='function',
-            mode='after',
-            function=cls.validate,
-            schema=core_schema.UnionSchema(
-                type='union',
-                choices=[
-                    core_schema.IsInstanceSchema(type='is-instance', class_=cls),
-                    core_schema.StringSchema(type='str'),
-                ],
+        return core_schema.function_after_schema(
+            cls.validate,
+            core_schema.union_schema(
+                core_schema.is_instance_schema(cls),
+                core_schema.string_schema(),
             ),
         )
 

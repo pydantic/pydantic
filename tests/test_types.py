@@ -30,10 +30,10 @@ from typing import (
 )
 from uuid import UUID
 
+import annotated_types
 import pytest
 from pydantic_core._pydantic_core import SchemaError
 from typing_extensions import Literal, TypedDict
-import annotated_types
 
 from pydantic import (
     UUID1,
@@ -862,17 +862,13 @@ def test_decimal():
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
-        bool_check = True
-        str_check = 's'
-        bytes_check = b's'
-        int_check = 1
-        float_check = 1.0
+        bool_check: bool = True
+        str_check: constr(strip_whitespace=True, max_length=10) = 's'
+        bytes_check: bytes = b's'
+        int_check: int = 1
+        float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
         decimal_check: Decimal = Decimal('42.24')
-
-        class Config:
-            anystr_strip_whitespace = True
-            max_anystr_length = 10
 
     return CheckModel
 
@@ -934,22 +930,22 @@ class BoolCastable:
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
         ('str_check', b'  s  ', 's'),
-        ('str_check', 1, '1'),
+        ('str_check', 1, ValidationError),
         ('str_check', 'x' * 11, ValidationError),
         ('str_check', b'x' * 11, ValidationError),
         ('bytes_check', 's', b's'),
-        ('bytes_check', '  s  ', b's'),
+        ('bytes_check', '  s  ', b'  s  '),
         ('bytes_check', b's', b's'),
-        ('bytes_check', b'  s  ', b's'),
-        ('bytes_check', 1, b'1'),
+        ('bytes_check', 1, ValidationError),
         ('bytes_check', bytearray('xx', encoding='utf8'), b'xx'),
-        ('bytes_check', True, b'True'),
-        ('bytes_check', False, b'False'),
+        ('bytes_check', True, ValidationError),
+        ('bytes_check', False, ValidationError),
         ('bytes_check', {}, ValidationError),
-        ('bytes_check', 'x' * 11, ValidationError),
-        ('bytes_check', b'x' * 11, ValidationError),
+        ('bytes_check', 'x' * 11, b'x' * 11),
+        ('bytes_check', b'x' * 11, b'x' * 11),
         ('int_check', 1, 1),
-        ('int_check', 1.9, 1),
+        ('int_check', 1.0, 1),
+        ('int_check', 1.9, ValidationError),
         ('int_check', '1', 1),
         ('int_check', '1.9', ValidationError),
         ('int_check', b'1', 1),
@@ -974,7 +970,7 @@ class BoolCastable:
         ('decimal_check', '  42.24  ', Decimal('42.24')),
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
-        ('decimal_check', 'NaN', ValidationError),
+        pytest.param('decimal_check', 'NaN', ValidationError, marks=pytest.mark.xfail),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
@@ -986,93 +982,126 @@ def test_default_validators(field, value, result, CheckModel):
         assert CheckModel(**kwargs).dict()[field] == result
 
 
-class StrModel(BaseModel):
-    str_check: str
+@pytest.fixture(scope='session', name='StrModel')
+def str_model_fixture():
+    class StrModel(BaseModel):
+        str_check: Annotated[str, annotated_types.Len(5, 10)]
 
-    class Config:
-        min_anystr_length = 5
-        max_anystr_length = 10
+    return StrModel
 
 
-def test_string_too_long():
+def test_string_too_long(StrModel):
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x' * 150)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('str_check',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'kind': 'too_long',
+            'loc': ['str_check'],
+            'message': 'String should have at most 10 characters',
+            'input_value': 'x' * 150,
+            'context': {'max_length': 10},
         }
     ]
 
 
-def test_string_too_short():
+def test_string_too_short(StrModel):
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('str_check',),
-            'msg': 'ensure this value has at least 5 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 5},
+            'kind': 'too_short',
+            'loc': ['str_check'],
+            'message': 'String should have at least 5 characters',
+            'input_value': 'x',
+            'context': {'min_length': 5},
         }
     ]
 
 
-class DatetimeModel(BaseModel):
-    dt: datetime = ...
-    date_: date = ...
-    time_: time = ...
-    duration: timedelta = ...
+@pytest.fixture(scope='session', name='DatetimeModel')
+def datetime_model_fixture():
+    class DatetimeModel(BaseModel):
+        dt: datetime
+        date_: date
+        time_: time
+        duration: timedelta
+
+    return DatetimeModel
 
 
-def test_datetime_successful():
-    m = DatetimeModel(dt='2017-10-5T19:47:07', date_=1_494_012_000, time_='10:20:30.400', duration='15:30.0001')
+def test_datetime_successful(DatetimeModel):
+    m = DatetimeModel(dt='2017-10-05T19:47:07', date_=1493942400, time_='10:20:30.400', duration='00:15:30.0001')
     assert m.dt == datetime(2017, 10, 5, 19, 47, 7)
     assert m.date_ == date(2017, 5, 5)
     assert m.time_ == time(10, 20, 30, 400_000)
     assert m.duration == timedelta(minutes=15, seconds=30, microseconds=100)
 
 
-def test_datetime_errors():
+def test_datetime_errors(DatetimeModel):
     with pytest.raises(ValueError) as exc_info:
-        DatetimeModel(dt='2017-13-5T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001 broken')
+        DatetimeModel(dt='2017-13-05T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001broken')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'value_error.datetime'},
-        {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'value_error.date'},
-        {'loc': ('time_',), 'msg': 'invalid time format', 'type': 'value_error.time'},
-        {'loc': ('duration',), 'msg': 'invalid duration format', 'type': 'value_error.duration'},
+        {
+            'kind': 'datetime_parsing',
+            'loc': ['dt'],
+            'message': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'input_value': '2017-13-05T19:47:07',
+            'context': {'error': 'month value is outside expected range of 1-12'},
+        },
+        {
+            'kind': 'date_from_datetime_parsing',
+            'loc': ['date_'],
+            'message': 'Input should be a valid date or datetime, invalid character in year',
+            'input_value': 'XX1494012000',
+            'context': {'error': 'invalid character in year'},
+        },
+        {
+            'kind': 'time_parsing',
+            'loc': ['time_'],
+            'message': 'Input should be in a valid time format, hour value is outside expected range of 0-23',
+            'input_value': '25:20:30.400',
+            'context': {'error': 'hour value is outside expected range of 0-23'},
+        },
+        {
+            'kind': 'time_delta_parsing',
+            'loc': ['duration'],
+            'message': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
+            'input_value': '15:30.0001broken',
+            'context': {'error': 'unexpected extra characters at the end of the input'},
+        },
     ]
 
 
-class FruitEnum(str, Enum):
-    pear = 'pear'
-    banana = 'banana'
+@pytest.fixture(scope='session')
+def cooking_model():
+    class FruitEnum(str, Enum):
+        pear = 'pear'
+        banana = 'banana'
 
+    class ToolEnum(IntEnum):
+        spanner = 1
+        wrench = 2
 
-class ToolEnum(IntEnum):
-    spanner = 1
-    wrench = 2
-
-
-@pytest.fixture(scope='session', name='CookingModel')
-def cooking_model_fixture():
     class CookingModel(BaseModel):
         fruit: FruitEnum = FruitEnum.pear
         tool: ToolEnum = ToolEnum.spanner
 
-    return CookingModel
+    return FruitEnum, ToolEnum, CookingModel
 
 
-def test_enum_successful(CookingModel):
+def test_enum_successful(cooking_model):
+    FruitEnum, ToolEnum, CookingModel = cooking_model
     m = CookingModel(tool=2)
     assert m.fruit == FruitEnum.pear
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
-def test_enum_fails(CookingModel):
+def test_enum_fails(cooking_model):
+    FruitEnum, ToolEnum, CookingModel = cooking_model
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
     # insert_assert(exc_info.value.errors())
@@ -1087,7 +1116,8 @@ def test_enum_fails(CookingModel):
     ]
 
 
-def test_int_enum_successful_for_str_int(CookingModel):
+def test_int_enum_successful_for_str_int(cooking_model):
+    FruitEnum, ToolEnum, CookingModel = cooking_model
     m = CookingModel(tool='2')
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
@@ -1095,12 +1125,14 @@ def test_int_enum_successful_for_str_int(CookingModel):
 
 def test_enum_type():
     with pytest.raises(SchemaError, match='"expected" should have length > 0'):
+
         class Model(BaseModel):
             my_int_enum: Enum
 
 
 def test_int_enum_type():
     with pytest.raises(SchemaError, match='"expected" should have length > 0'):
+
         class Model(BaseModel):
             my_int_enum: IntEnum
 
@@ -1110,9 +1142,8 @@ def test_string_success():
     class MoreStringsModel(BaseModel):
         str_strip_enabled: constr(strip_whitespace=True)
         str_strip_disabled: constr(strip_whitespace=False)
-        str_regex: constr(regex=r'^xxx\d{3}$') = ...  # noqa: F722
+        str_regex: constr(pattern=r'^xxx\d{3}$') = ...  # noqa: F722
         str_min_length: constr(min_length=5) = ...
-        str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
 
@@ -1121,14 +1152,12 @@ def test_string_success():
         str_strip_disabled='   xxx123   ',
         str_regex='xxx123',
         str_min_length='12345',
-        str_curtailed='123456',
         str_email='foobar@example.com  ',
         name_email='foo bar  <foobaR@example.com>',
     )
     assert m.str_strip_enabled == 'xxx123'
     assert m.str_strip_disabled == '   xxx123   '
     assert m.str_regex == 'xxx123'
-    assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
     assert repr(m.name_email) == "NameEmail(name='foo bar', email='foobaR@example.com')"
     assert str(m.name_email) == 'foo bar <foobaR@example.com>'
@@ -1139,9 +1168,8 @@ def test_string_success():
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_fails():
     class MoreStringsModel(BaseModel):
-        str_regex: constr(regex=r'^xxx\d{3}$') = ...  # noqa: F722
+        str_regex: constr(pattern=r'^xxx\d{3}$') = ...  # noqa: F722
         str_min_length: constr(min_length=5) = ...
-        str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
 
@@ -1149,40 +1177,44 @@ def test_string_fails():
         MoreStringsModel(
             str_regex='xxx123xxx',
             str_min_length='1234',
-            str_curtailed='123',  # doesn't fail
             str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('str_regex',),
-            'msg': 'string does not match regex "^xxx\\d{3}$"',
-            'type': 'value_error.str.regex',
-            'ctx': {'pattern': '^xxx\\d{3}$'},
+            'kind': 'str_pattern_mismatch',
+            'loc': ['str_regex'],
+            'message': "String should match pattern '^xxx\\d{3}$'",
+            'input_value': 'xxx123xxx',
+            'context': {'pattern': '^xxx\\d{3}$'},
         },
         {
-            'loc': ('str_min_length',),
-            'msg': 'ensure this value has at least 5 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 5},
+            'kind': 'too_short',
+            'loc': ['str_min_length'],
+            'message': 'String should have at least 5 characters',
+            'input_value': '1234',
+            'context': {'min_length': 5},
         },
         {
-            'loc': ('str_email',),
-            'msg': (
-                'value is not a valid email address: The email address contains invalid characters before the @-sign: '
-                'LESS-THAN SIGN.'
+            'kind': 'value_error',
+            'loc': ['str_email'],
+            'message': (
+                'value is not a valid email address: The email address contains invalid '
+                'characters before the @-sign: LESS-THAN SIGN.'
             ),
-            'type': 'value_error.email',
-            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
+            'input_value': 'foobar<@example.com',
+            'context': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
         },
         {
-            'loc': ('name_email',),
-            'msg': (
-                'value is not a valid email address: '
-                'The email address contains invalid characters before the @-sign: SPACE.'
+            'kind': 'value_error',
+            'loc': ['name_email'],
+            'message': (
+                'value is not a valid email address: The email address contains invalid characters '
+                'before the @-sign: SPACE.'
             ),
-            'type': 'value_error.email',
-            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
+            'input_value': 'foobar @example.com',
+            'context': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
         },
     ]
 
@@ -1208,11 +1240,24 @@ def test_dict():
         v: dict
 
     assert Model(v={1: 10, 2: 20}).v == {1: 10, 2: 20}
-    assert Model(v=[(1, 2), (3, 4)]).v == {1: 2, 3: 4}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[(1, 2), (3, 4)])
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'dict_type',
+            'loc': ['v'],
+            'message': 'Input should be a valid dictionary',
+            'input_value': [(1, 2), (3, 4)],
+        }
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'dict_type', 'loc': ['v'], 'message': 'Input should be a valid dictionary', 'input_value': [1, 2, 3]}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1220,9 +1265,7 @@ def test_dict():
     (
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
-        ({1, 2, '3'}, list({1, 2, '3'})),
         ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
-        ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
     ),
 )
 def test_list_success(value, result):
@@ -1232,16 +1275,25 @@ def test_list_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}, deque((1, 2, 3))))
 def test_list_fails(value):
     class Model(BaseModel):
         v: list
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'list_type',
+            'loc': ['v'],
+            'message': 'Input should be a valid list/array',
+            'input_value': value,
+        }
+    ]
 
 
+@pytest.mark.xfail(reason='todo')
 def test_ordered_dict():
     class Model(BaseModel):
         v: OrderedDict
@@ -1260,9 +1312,7 @@ def test_ordered_dict():
     (
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
-        ({1, 2, '3'}, tuple({1, 2, '3'})),
         ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
-        (deque([1, 2, 3]), (1, 2, 3)),
     ),
 )
 def test_tuple_success(value, result):
@@ -1272,14 +1322,17 @@ def test_tuple_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}, deque([1, 2, 3])))
 def test_tuple_fails(value):
     class Model(BaseModel):
         v: tuple
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'tuple_type', 'loc': ['v'], 'message': 'Input should be a valid tuple', 'input_value': value}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1301,13 +1354,27 @@ def test_tuple_variable_len_success(value, cls, result):
 @pytest.mark.parametrize(
     'value, cls, exc',
     [
-        (('a', 'b', [1, 2], 'c'), str, [{'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'}]),
+        (
+            ('a', 'b', [1, 2], 'c'),
+            str,
+            [{'kind': 'str_type', 'loc': ['v', 2], 'message': 'Input should be a valid string', 'input_value': [1, 2]}],
+        ),
         (
             ('a', 'b', [1, 2], 'c', [3, 4]),
             str,
             [
-                {'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'},
-                {'loc': ('v', 4), 'msg': 'str type expected', 'type': 'type_error.str'},
+                {
+                    'kind': 'str_type',
+                    'loc': ['v', 2],
+                    'message': 'Input should be a valid string',
+                    'input_value': [1, 2],
+                },
+                {
+                    'kind': 'str_type',
+                    'loc': ['v', 4],
+                    'message': 'Input should be a valid string',
+                    'input_value': [3, 4],
+                },
             ],
         ),
     ],
@@ -1344,7 +1411,10 @@ def test_set_fails(value):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'set_type', 'loc': ['v'], 'message': 'Input should be a valid set', 'input_value': value}
+    ]
 
 
 def test_list_type_fails():
@@ -1353,7 +1423,10 @@ def test_list_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'list_type', 'loc': ['v'], 'message': 'Input should be a valid list/array', 'input_value': '123'}
+    ]
 
 
 def test_set_type_fails():
@@ -1362,9 +1435,13 @@ def test_set_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'set_type', 'loc': ['v'], 'message': 'Input should be a valid set', 'input_value': '123'}
+    ]
 
 
+@pytest.mark.xfail(reason='Sequence not yet supported')
 @pytest.mark.parametrize(
     'cls, value,result',
     (
@@ -1383,6 +1460,7 @@ def test_sequence_success(cls, value, result):
     assert Model(v=value).v == result
 
 
+@pytest.mark.xfail(reason='Sequence not yet supported')
 @pytest.mark.parametrize(
     'cls, value,result',
     (

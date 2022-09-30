@@ -12,7 +12,7 @@ import typing
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata
-from pydantic_core import schema_types as core_schema
+from pydantic_core import core_schema
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
@@ -38,26 +38,25 @@ __all__ = 'generate_config', 'generate_schema', 'model_fields_schema'
 
 def model_fields_schema(
     ref: str, fields: dict[str, FieldInfo], validator_functions: ValidationFunctions
-) -> core_schema.Schema:
-    schema: core_schema.Schema = core_schema.TypedDictSchema(
-        type='typed-dict',
+) -> core_schema.CoreSchema:
+    schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
+        {k: generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
         ref=ref,
         return_fields_set=True,
-        fields={k: generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
     )
     schema = apply_validators(schema, validator_functions.get_root_validators())
     return schema
 
 
-def generate_config(config: type[BaseConfig]) -> core_schema.Config:
-    return core_schema.Config(
+def generate_config(config: type[BaseConfig]) -> core_schema.CoreConfig:
+    return core_schema.CoreConfig(
         typed_dict_extra_behavior=config.extra.value,
         # allow_inf_nan=config.allow_inf_nan,
         populate_by_name=config.allow_population_by_field_name,
     )
 
 
-def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore complexity)
+def generate_schema(obj: Any) -> core_schema.CoreSchema:  # noqa: C901 (ignore complexity)
     """
     Recursively generate a pydantic-core schema for any supported python type.
     """
@@ -73,7 +72,7 @@ def generate_schema(obj: Any) -> core_schema.Schema:  # noqa: C901 (ignore compl
     elif obj is None or obj is NoneType:
         return {'type': 'none'}
     elif obj == type:
-        return core_schema.IsInstanceSchema(type='is-instance', class_=type)
+        return core_schema.is_instance_schema(type)
     elif is_callable_type(obj):
         return {'type': 'callable'}
     elif is_literal_type(obj):
@@ -125,20 +124,20 @@ def generate_field_schema(
 
     required = False
     if field.default_factory:
-        schema = core_schema.WithDefaultSchema(type='default', schema=schema, default_factory=field.default_factory)
+        schema = core_schema.with_default_schema(schema, default_factory=field.default_factory)
     elif field.default is Undefined:
         required = True
     else:
-        schema = core_schema.WithDefaultSchema(type='default', schema=schema, default=field.default)
+        schema = core_schema.with_default_schema(schema, default=field.default)
 
     schema = apply_validators(schema, validator_functions.get_field_validators(name))
-    field_schema = core_schema.TypedDictField(schema=schema, required=required)
+    field_schema = core_schema.typed_dict_field(schema, required=required)
     if field.alias is not None:
         field_schema['alias'] = field.alias
     return field_schema
 
 
-def apply_validators(schema: core_schema.Schema, validators: list[Validator]) -> core_schema.Schema:
+def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]) -> core_schema.CoreSchema:
     """
     Apply validators to a schema.
     """
@@ -146,11 +145,7 @@ def apply_validators(schema: core_schema.Schema, validators: list[Validator]) ->
         assert validator.sub_path is None, 'validator.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], validator.function)
         if validator.mode == 'plain':
-            schema = core_schema.FunctionPlainSchema(
-                type='function',
-                mode='plain',
-                function=function,
-            )
+            schema = core_schema.function_plain_schema(function)
         else:
             schema = core_schema.FunctionSchema(
                 type='function',
@@ -165,7 +160,7 @@ class PydanticSchemaGenerationError(TypeError):
     pass
 
 
-def union_schema(union_type: Any) -> core_schema.Schema:
+def union_schema(union_type: Any) -> core_schema.CoreSchema:
     """
     Generate schema for a Union.
     """
@@ -181,14 +176,14 @@ def union_schema(union_type: Any) -> core_schema.Schema:
     if len(choices) == 1:
         s = choices[0]
     else:
-        s = core_schema.UnionSchema(type='union', choices=choices)
+        s = core_schema.union_schema(*choices)
 
     if nullable:
-        s = core_schema.NullableSchema(type='nullable', schema=s)
+        s = core_schema.nullable_schema(s)
     return s
 
 
-def annotated_schema(annotated_type: Any) -> core_schema.Schema:
+def annotated_schema(annotated_type: Any) -> core_schema.CoreSchema:
     """
     Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
     """
@@ -197,11 +192,15 @@ def annotated_schema(annotated_type: Any) -> core_schema.Schema:
     return apply_constraints(schema, args[1:])
 
 
-def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> core_schema.Schema:
+def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) -> core_schema.CoreSchema:
     for c in constraints:
-        get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
-        if get_schema is not None:
-            schema = get_schema(schema)
+        c_get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
+        if c_get_schema is not None:
+            schema = c_get_schema(schema)
+            continue
+        c_schema = getattr(c, '__pydantic_validation_schema__', None)
+        if c_schema is not None:
+            schema = c_schema
             continue
 
         if isinstance(c, CustomMetadata):
@@ -220,17 +219,8 @@ def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> cor
             if v is None:
                 continue
             elif k in {'min_inclusive', 'max_exclusive'}:
-                # TODO remove once https://github.com/pydantic/pydantic-core/issues/249 is fixed
-                if schema['type'] in {'list', 'tuple', 'set', 'frozenset'}:
-                    schema[f'{k[:3]}_items'] = v
-                else:
-                    schema[f'{k[:3]}_length'] = v
-            elif k in {'min_length', 'max_length'}:
-                # TODO remove once https://github.com/pydantic/pydantic-core/issues/249 is fixed
-                if schema['type'] in {'list', 'tuple', 'set', 'frozenset'}:
-                    schema[f'{k[:3]}_items'] = v
-                else:
-                    schema[k] = v
+                # TODO remove once https://github.com/annotated-types/annotated-types/pull/24/files is released
+                schema[f'{k[:3]}_length'] = v
             else:
                 schema[k] = v
     return schema
@@ -242,7 +232,7 @@ def literal_schema(literal_type: Any) -> core_schema.LiteralSchema:
     """
     expected = all_literal_values(literal_type)
     assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-    return core_schema.LiteralSchema(type='literal', expected=list(expected))
+    return core_schema.literal_schema(*expected)
 
 
 def type_dict_schema(typed_dict: Any) -> core_schema.TypedDictSchema:
@@ -279,10 +269,10 @@ def type_dict_schema(typed_dict: Any) -> core_schema.TypedDictSchema:
 
         fields[field_name] = {'schema': schema, 'required': required}
 
-    return core_schema.TypedDictSchema(type='typed-dict', fields=fields, extra_behavior='forbid')
+    return core_schema.typed_dict_schema(fields, extra_behavior='forbid')
 
 
-def generic_collection_schema(obj: Any) -> core_schema.Schema:
+def generic_collection_schema(obj: Any) -> core_schema.CoreSchema:
     """
     Generate schema for List, Set etc. - where the schema includes `items_schema`
 
@@ -298,14 +288,14 @@ def generic_collection_schema(obj: Any) -> core_schema.Schema:
     }  # type: ignore[misc,return-value]
 
 
-def tuple_schema(tuple_type: Any) -> core_schema.Schema:
+def tuple_schema(tuple_type: Any) -> core_schema.CoreSchema:
     """
     Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
     """
     params = get_args(tuple_type)
     if params[-1] is Ellipsis:
         if len(params) == 2:
-            sv = core_schema.TupleVariableSchema(type='tuple', mode='variable', items_schema=generate_schema(params[0]))
+            sv = core_schema.tuple_variable_schema(generate_schema(params[0]))
             return sv
 
         # not sure this case is valid in python, but may as well support it here since pydantic-core does
@@ -343,16 +333,16 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
     """
     type_param = get_args(type_)[0]
     if type_param == Any:
-        return core_schema.IsInstanceSchema(type='is-instance', class_=type)
+        return core_schema.is_instance_schema(type)
     else:
-        return core_schema.IsInstanceSchema(type='is-instance', class_=type_param)
+        return core_schema.is_instance_schema(type_param)
 
 
-def name_as_schema(t: type[Any]) -> core_schema.Schema:
+def name_as_schema(t: type[Any]) -> core_schema.CoreSchema:
     return {'type': t.__name__}
 
 
-def std_types_schema(obj: Any) -> core_schema.Schema | None:
+def std_types_schema(obj: Any) -> core_schema.CoreSchema | None:
     """
     Generate schema for types in the standard library, could be split if this gets too long.
     """
@@ -361,7 +351,6 @@ def std_types_schema(obj: Any) -> core_schema.Schema | None:
 
     # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
     from ._std_validators import SCHEMA_LOOKUP
-
 
     # instead of iterating over a list and calling is_instance, this should be somewhat faster,
     # especially as it should catch most types on the first iteration

@@ -27,7 +27,6 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from pydantic_core.schema_types import Schema as PydanticCoreSchema
 from typing_extensions import Annotated, Final, Literal, Required as TypedDictRequired
 
 __all__ = (
@@ -71,8 +70,6 @@ __all__ = (
     'NotRequired',
     'Required',
     'evaluate_forwardref',
-    'FakeType',
-    'SchemaRef',
 )
 
 try:
@@ -551,41 +548,3 @@ def get_sub_types(tp: Any) -> List[Any]:
         return [x for t in get_args(tp) for x in get_sub_types(t)]
     else:
         return [tp]
-
-
-# def get_type_hints():
-#     typing.get_type_hints(cls, base_globals, {name: SchemaRef('SelfType', self_schema)})
-
-
-class FakeType:
-    """
-    Just enough like a "typing type" to mollify `typing._type_check`.
-    """
-
-    def __call__(self) -> NoReturn:
-        """
-        This is here just to mollify typing._type_check which expects "typing types"
-        but will also accept callables
-        """
-        raise TypeError(f'{self} cannot be called')
-
-    def __or__(self, right: Any) -> Any:
-        return Union[self, right]
-
-    def __ror__(self, left: Any) -> Any:
-        return Union[left, self]
-
-
-class SchemaRef(FakeType):
-    """
-    Pretend to be a type for `get_type_hints` while holding schema info.
-    """
-
-    __slots__ = '_name', '__pydantic_validation_schema__'
-
-    def __init__(self, name: str, core_schema: PydanticCoreSchema):
-        self._name = name
-        self.__pydantic_validation_schema__ = core_schema
-
-    def __repr__(self) -> str:
-        return f'SchemaRef({self._name!r}, {self.__pydantic_validation_schema__})'
