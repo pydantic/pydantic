@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
 from pydantic_core import CoreSchema
@@ -47,3 +48,13 @@ class SchemaRef(PydanticMetadata):
 
     def __repr__(self) -> str:
         return f'SchemaRef({self._name!r}, {self.__pydantic_validation_schema__})'
+
+
+class CustomValidator(ABC):
+    @abstractmethod
+    def update(self, **kwargs):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def validate(self, value: int | float | str, **_kwargs: Any) -> Any:
+        raise NotImplementedError()

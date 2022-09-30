@@ -40,7 +40,7 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.1.0',
-    'pydantic-core>=0.2.1',
+    'pydantic-core>=0.3.1',
     'annotated_types>=0.3.0',
 ]
 optional-dependencies = { email = ['email-validator>=1.0.3'] }

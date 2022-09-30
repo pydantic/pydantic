@@ -12,7 +12,7 @@ email-validator==1.2.1
     # via pydantic (pyproject.toml)
 idna==3.3
     # via email-validator
-pydantic-core==0.2.1
+pydantic-core==0.3.1
     # via pydantic (pyproject.toml)
 typing-extensions==4.3.0
     # via

@@ -16,7 +16,7 @@ from pydantic import BaseModel, NameEmail, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
-from pydantic.types import ConstrainedDecimal, DirectoryPath, FilePath, SecretBytes, SecretStr
+from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
 
 class MyEnum(Enum):

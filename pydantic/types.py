@@ -29,7 +29,7 @@ import annotated_types
 from pydantic_core import PydanticValueError, core_schema
 
 from . import errors
-from ._internal import _fields, _utils, _validators
+from ._internal import _fields, _validators
 
 __all__ = [
     'StrictStr',
@@ -50,7 +50,6 @@ __all__ = [
     'NonNegativeFloat',
     'NonPositiveFloat',
     'FiniteFloat',
-    'ConstrainedDecimal',
     'condecimal',
     'UUID1',
     'UUID3',
@@ -117,7 +116,7 @@ StrictInt = Annotated[int, Strict()]
 
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
-    strict: bool | None = True
+    allow_inf_nan: bool | None = True
 
 
 def confloat(
@@ -255,80 +254,17 @@ else:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECIMAL TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-class ConstrainedDecimal(Decimal):
-    gt: Union[None, int, float, Decimal] = None
-    ge: Union[None, int, float, Decimal] = None
-    lt: Union[None, int, float, Decimal] = None
-    le: Union[None, int, float, Decimal] = None
-    max_digits: Optional[int] = None
-    decimal_places: Optional[int] = None
-    multiple_of: Union[None, int, float, Decimal] = None
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        _utils.update_not_none(
-            field_schema,
-            exclusiveMinimum=cls.gt,
-            exclusiveMaximum=cls.lt,
-            minimum=cls.ge,
-            maximum=cls.le,
-            multipleOf=cls.multiple_of,
-        )
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield decimal_validator
-        yield number_size_validator
-        yield number_multiple_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: Decimal) -> Decimal:
-        digit_tuple, exponent = value.as_tuple()[1:]
-        if exponent in {'F', 'n', 'N'}:
-            raise errors.DecimalIsNotFiniteError()
-
-        if exponent >= 0:
-            # A positive exponent adds that many trailing zeros.
-            digits = len(digit_tuple) + exponent
-            decimals = 0
-        else:
-            # If the absolute value of the negative exponent is larger than the
-            # number of digits, then it's the same as the number of digits,
-            # because it'll consume all of the digits in digit_tuple and then
-            # add abs(exponent) - len(digit_tuple) leading zeros after the
-            # decimal point.
-            if abs(exponent) > len(digit_tuple):
-                digits = decimals = abs(exponent)
-            else:
-                digits = len(digit_tuple)
-                decimals = abs(exponent)
-        whole_digits = digits - decimals
-
-        if cls.max_digits is not None and digits > cls.max_digits:
-            raise errors.DecimalMaxDigitsError(max_digits=cls.max_digits)
-
-        if cls.decimal_places is not None and decimals > cls.decimal_places:
-            raise errors.DecimalMaxPlacesError(decimal_places=cls.decimal_places)
-
-        if cls.max_digits is not None and cls.decimal_places is not None:
-            expected = cls.max_digits - cls.decimal_places
-            if whole_digits > expected:
-                raise errors.DecimalWholeDigitsError(whole_digits=expected)
-
-        return value
-
-
 def condecimal(
     *,
     strict: bool = None,
-    gt: Decimal = None,
-    ge: Decimal = None,
-    lt: Decimal = None,
-    le: Decimal = None,
-    multiple_of: Decimal = None,
+    gt: int | Decimal = None,
+    ge: int | Decimal = None,
+    lt: int | Decimal = None,
+    le: int | Decimal = None,
+    multiple_of: int | Decimal = None,
     max_digits: int = None,
     decimal_places: int = None,
+    allow_inf_nan: Optional[bool] = None,
 ) -> Type[Decimal]:
     return Annotated[
         Decimal,
@@ -336,6 +272,7 @@ def condecimal(
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
         annotated_types.MultipleOf(multiple_of),
         _fields.CustomMetadata(max_digits=max_digits, decimal_places=decimal_places),
+        AllowInfNan(allow_inf_nan),
     ]
 
 

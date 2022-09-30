@@ -254,7 +254,7 @@ def resolve_conbytes(cls):  # type: ignore[no-untyped-def]  # pragma: no cover
     return st.from_regex(pattern.encode(), fullmatch=True)
 
 
-@resolves(pydantic.ConstrainedDecimal)
+# @resolves(pydantic.ConstrainedDecimal)
 def resolve_condecimal(cls):  # type: ignore[no-untyped-def]
     min_value = cls.ge
     max_value = cls.le

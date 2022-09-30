@@ -868,7 +868,7 @@ def check_model_fixture():
         int_check: int = 1
         float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
-        decimal_check: Decimal = Decimal('42.24')
+        decimal_check: condecimal(allow_inf_nan=False) = Decimal('42.24')
 
     return CheckModel
 
@@ -970,7 +970,7 @@ class BoolCastable:
         ('decimal_check', '  42.24  ', Decimal('42.24')),
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
-        pytest.param('decimal_check', 'NaN', ValidationError, marks=pytest.mark.xfail),
+        ('decimal_check', 'NaN', ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
@@ -1478,37 +1478,86 @@ def test_sequence_generator_success(cls, value, result):
     assert list(validated) == list(result)
 
 
-def test_infinite_iterable():
+def int_iterable():
+    i = 0
+    while True:
+        i += 1
+        yield str(i)
+
+
+def str_iterable():
+    while True:
+        yield from 'foobarbaz'
+
+
+def test_infinite_iterable_int():
     class Model(BaseModel):
         it: Iterable[int]
-        b: int
 
-    def iterable():
-        i = 0
-        while True:
-            i += 1
-            yield i
+    m = Model(it=int_iterable())
 
-    m = Model(it=iterable(), b=3)
+    assert repr(m.it).startswith('<generator object validate_yield')
 
-    assert m.b == 3
-    assert m.it
-
+    output = []
     for i in m.it:
-        assert i
+        output.append(i)
         if i == 10:
             break
+
+    assert output == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    m = Model(it=[1, 2, 3])
+    assert list(m.it) == [1, 2, 3]
+
+    m = Model(it=str_iterable())
+    with pytest.raises(ValidationError) as exc_info:
+        next(m.it)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'int_parsing',
+            'loc': [],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'f',
+        }
+    ]
+
+
+def test_iterable_any():
+    class Model(BaseModel):
+        it: Iterable[Any]
+
+    m = Model(it=int_iterable())
+
+    output = []
+    for i in m.it:
+        output.append(i)
+        if int(i) == 10:
+            break
+
+    assert output == ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+
+    m = Model(it=[1, '2', b'three'])
+    assert list(m.it) == [1, '2', b'three']
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=3)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be a valid iterable', 'input_value': 3}
+    ]
+
 
 
 def test_invalid_iterable():
     class Model(BaseModel):
         it: Iterable[int]
-        b: int
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(it=3, b=3)
+        Model(it=3)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('it',), 'msg': 'value is not a valid iterable', 'type': 'type_error.iterable'}
+        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be a valid iterable', 'input_value': 3}
     ]
 
 
@@ -1518,20 +1567,8 @@ def test_infinite_iterable_validate_first():
         b: int
 
         @validator('it')
-        def infinite_first_int(cls, it, field):
-            first_value = next(it)
-            if field.sub_fields:
-                sub_field = field.sub_fields[0]
-                v, error = sub_field.validate(first_value, {}, loc='first_value')
-                if error:
-                    raise ValidationError([error], cls)
-            return itertools.chain([first_value], it)
-
-    def int_iterable():
-        i = 0
-        while True:
-            i += 1
-            yield i
+        def infinite_first_int(cls, it, **kwargs):
+            return itertools.chain([next(it)], it)
 
     m = Model(it=int_iterable(), b=3)
 
@@ -1543,17 +1580,20 @@ def test_infinite_iterable_validate_first():
         if i == 10:
             break
 
-    def str_iterable():
-        while True:
-            yield from 'foobarbaz'
-
     with pytest.raises(ValidationError) as exc_info:
         Model(it=str_iterable(), b=3)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('it', 'first_value'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'kind': 'int_parsing',
+            'loc': ['it'],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'f',
+        }
     ]
 
 
+@pytest.mark.xfail(reason='Sequence not yet supported')
 @pytest.mark.parametrize(
     'cls,value,errors',
     (
@@ -1586,6 +1626,7 @@ def test_sequence_generator_fails(cls, value, errors):
     assert exc_info.value.errors() == errors
 
 
+@pytest.mark.xfail(reason='Sequence not yet supported')
 @pytest.mark.parametrize(
     'cls,value,errors',
     (

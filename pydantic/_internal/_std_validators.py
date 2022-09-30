@@ -7,6 +7,8 @@ from pathlib import Path, PurePath
 from typing import Any, Callable
 from uuid import UUID
 
+from ._fields import CustomValidator
+
 from pydantic_core import PydanticValueError, core_schema
 
 __all__ = ('SCHEMA_LOOKUP',)
@@ -40,26 +42,135 @@ def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
         )
 
 
-def decimal_validator(v: int | float | str, **_kwargs: Any) -> Decimal:
-    if isinstance(v, Decimal):
-        return v
+class DecimalValidator(CustomValidator):
+    __slots__ = (
+        'gt',
+        'ge',
+        'lt',
+        'le',
+        'max_digits',
+        'decimal_places',
+        'multiple_of',
+        'allow_inf_nan',
+        'check_digits',
+        'strict',
+    )
 
-    v = str(v)
+    def __init__(self) -> None:
+        self.gt: int | Decimal | None = None
+        self.ge: int | Decimal | None = None
+        self.lt: int | Decimal | None = None
+        self.le: int | Decimal | None = None
+        self.max_digits: int | None = None
+        self.decimal_places: int | None = None
+        self.multiple_of: int | Decimal | None = None
+        self.allow_inf_nan: bool = True
+        self.check_digits: bool = False
+        self.strict: bool = False
 
-    try:
-        return Decimal(v)
-    except DecimalException:
-        raise PydanticValueError('decimal_parsing', 'Input should be a valid decimal')
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            if k not in self.__slots__:
+                raise TypeError(f'{self.__class__.__name__}.update() got an unexpected keyword argument {k!r}')
+            setattr(self, k, v)
+
+        self.check_digits = (
+            self.max_digits is not None or self.decimal_places is not None or self.allow_inf_nan is False
+        )
+
+    def validate(self, value: int | float | str, **_kwargs: Any) -> Decimal:
+        if not isinstance(value, Decimal):
+            v = str(value)
+
+            try:
+                value = Decimal(v)
+            except DecimalException:
+                raise PydanticValueError('decimal_parsing', 'Input should be a valid decimal')
+
+        if self.check_digits:
+            digit_tuple, exponent = value.as_tuple()[1:]
+            if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
+                raise PydanticValueError('decimal_finite_number', 'Input should be a finite number')
+
+            if exponent >= 0:
+                # A positive exponent adds that many trailing zeros.
+                digits = len(digit_tuple) + exponent
+                decimals = 0
+            else:
+                # If the absolute value of the negative exponent is larger than the
+                # number of digits, then it's the same as the number of digits,
+                # because it'll consume all the digits in digit_tuple and then
+                # add abs(exponent) - len(digit_tuple) leading zeros after the
+                # decimal point.
+                if abs(exponent) > len(digit_tuple):
+                    digits = decimals = abs(exponent)
+                else:
+                    digits = len(digit_tuple)
+                    decimals = abs(exponent)
+            whole_digits = digits - decimals
+
+            if self.max_digits is not None and digits > self.max_digits:
+                raise PydanticValueError(
+                    'decimal_max_digits',
+                    'ensure that there are no more than {max_digits} digits in total',
+                    {'max_digits': self.max_digits},
+                )
+
+            if self.decimal_places is not None and decimals > self.decimal_places:
+                raise PydanticValueError(
+                    'decimal_max_places',
+                    'ensure that there are no more than {decimal_places} decimal places',
+                    {'decimal_places': self.decimal_places},
+                )
+
+            if self.max_digits is not None and self.decimal_places is not None:
+                expected = self.max_digits - self.decimal_places
+                if whole_digits > expected:
+                    raise PydanticValueError(
+                        'decimal_whole_digits',
+                        'ensure that there are no more than {whole_digits} digits before the decimal point',
+                        {'whole_digits': whole_digits},
+                    )
+
+        if self.multiple_of is not None:
+            mod = value / self.multiple_of % 1
+            if mod != 0:
+                raise PydanticValueError(
+                    'decimal_multiple_of',
+                    'Input should be a multiple of {multiple_of}',
+                    {'multiple_of': self.multiple_of},
+                )
+
+        if self.gt is not None and not value > self.gt:
+            raise PydanticValueError('greater_than', 'Input should be greater than {gt}', {'gt': self.gt})
+        elif self.ge is not None and not value >= self.ge:
+            raise PydanticValueError(
+                'greater_than_equal', 'Input should be greater than or equal to {ge}', {'ge': self.ge}
+            )
+
+        if self.lt is not None and not value < self.lt:
+            raise PydanticValueError('less_than', 'Input should be less than {lt}', {'lt': self.lt})
+        if self.le is not None and not value <= self.le:
+            raise PydanticValueError('less_than_equal', 'Input should be less than or equal to {le}', {'le': self.le})
+
+        return value
+
+    def __repr__(self) -> str:
+        slots = [(k, getattr(self, k)) for k in self.__slots__]
+        s = ', '.join(f'{k}={v!r}' for k, v in slots if v is not None)
+        return f'DecimalValidator({s})'
 
 
 def decimal_schema(_decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
+    decimal_validator = DecimalValidator()
     return core_schema.function_after_schema(
-        decimal_validator,
+        decimal_validator.validate,
         core_schema.union_schema(
             core_schema.int_schema(),
             core_schema.float_schema(),
             core_schema.string_schema(strip_whitespace=True),
         ),
+        validator_instance=decimal_validator,
     )
 
 

@@ -6,17 +6,18 @@ until I'm sure what it does.
 """
 from __future__ import annotations as _annotations
 
+import collections.abc
 import dataclasses
 import re
 import typing
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata
-from pydantic_core import core_schema
+from pydantic_core import core_schema, PydanticValueError
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
-from ._fields import CustomMetadata, PydanticMetadata
+from ._fields import CustomMetadata, PydanticMetadata, CustomValidator
 from ._typing_extra import (
     NoneType,
     NotRequired,
@@ -56,7 +57,7 @@ def generate_config(config: type[BaseConfig]) -> core_schema.CoreConfig:
     )
 
 
-def generate_schema(obj: Any) -> core_schema.CoreSchema:  # noqa: C901 (ignore complexity)
+def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSchema:  # noqa: C901 (ignore complexity)
     """
     Recursively generate a pydantic-core schema for any supported python type.
     """
@@ -66,7 +67,7 @@ def generate_schema(obj: Any) -> core_schema.CoreSchema:  # noqa: C901 (ignore c
         # we assume this is already a valid schema
         return obj  # type: ignore[return-value]
     elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
-        return name_as_schema(obj)
+        return {'type': obj.__name__}
     elif obj is Any or obj is object:
         return {'type': 'any'}
     elif obj is None or obj is NoneType:
@@ -107,6 +108,8 @@ def generate_schema(obj: Any) -> core_schema.CoreSchema:  # noqa: C901 (ignore c
         return dict_schema(obj)
     elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
         return type_schema(obj)
+    elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
+        return iterable_schema(obj)
     else:
         # debug(obj)
         raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}).')
@@ -215,14 +218,19 @@ def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) ->
                 'or a subclass of PydanticMetadata'
             )
 
-        for k, v in constraints_dict.items():
-            if v is None:
-                continue
-            elif k in {'min_inclusive', 'max_exclusive'}:
-                # TODO remove once https://github.com/annotated-types/annotated-types/pull/24/files is released
-                schema[f'{k[:3]}_length'] = v
-            else:
-                schema[k] = v
+        # TODO we need a way to remove constraints which this line currently prevents
+        constraints_dict = {k: v for k, v in constraints_dict.items() if v is not None}
+
+        validator_instance: CustomValidator | None = schema.get('validator_instance')
+        if validator_instance is not None:
+            validator_instance.update(**constraints_dict)
+        else:
+            for k, v in constraints_dict.items():
+                if k in {'min_inclusive', 'max_exclusive'}:
+                    # TODO remove once https://github.com/annotated-types/annotated-types/pull/24/files is released
+                    schema[f'{k[:3]}_length'] = v
+                else:
+                    schema[k] = v
     return schema
 
 
@@ -338,8 +346,40 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
         return core_schema.is_instance_schema(type_param)
 
 
-def name_as_schema(t: type[Any]) -> core_schema.CoreSchema:
-    return {'type': t.__name__}
+def iterable_any_validator(v: Any, **_kwargs: Any) -> typing.Iterable[Any]:
+    try:
+        return iter(v)
+    except TypeError:
+        raise PydanticValueError('iterable_type', 'Input should be a valid iterable')
+
+
+def validate_yield(
+    iterable: typing.Iterable[Any], validator: typing.Callable[[Any], Any]
+) -> typing.Generator[Any, None, None]:
+    for item in iterable:
+        yield validator(item)
+
+
+def iterable_type_validator(
+    v: Any, *, validator: typing.Callable[[Any], Any], **_kwargs: Any
+) -> typing.Generator[Any, None, None]:
+    try:
+        iterable = iter(v)
+    except TypeError:
+        raise PydanticValueError('iterable_type', 'Input should be a valid iterable')
+    return validate_yield(iterable, validator)
+
+
+def iterable_schema(type_: Any) -> core_schema.FunctionSchema | core_schema.FunctionPlainSchema:
+    """
+    Generate a schema for an `Iterable`, not
+    """
+    param = get_args(type_)[0]
+    if param == Any:
+        return core_schema.function_plain_schema(iterable_any_validator)
+    else:
+        schema = generate_schema(param)
+        return core_schema.function_wrap_schema(iterable_type_validator, schema)
 
 
 def std_types_schema(obj: Any) -> core_schema.CoreSchema | None:
