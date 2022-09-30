@@ -32,8 +32,6 @@ from ._validation_functions import ValidationFunctions, Validator
 
 if TYPE_CHECKING:
     from ..config import BaseConfig
-    from enum import Enum
-    from decimal import Decimal
 
 __all__ = 'generate_config', 'generate_schema', 'model_fields_schema'
 
@@ -122,7 +120,7 @@ def generate_field_schema(
     Prepare a TypedDictField to represent a model or typeddict field.
     """
     assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-    schema: core_schema.Schema = generate_schema(field.annotation)
+    schema = generate_schema(field.annotation)
     schema = apply_constraints(schema, field.constraints)
 
     required = False
@@ -214,8 +212,10 @@ def apply_constraints(schema: core_schema.Schema, constraints: list[Any]) -> cor
             constraints_dict = {k: v for k, v in vars(c).items() if not k.startswith('_')}
         else:
             raise PydanticSchemaGenerationError(
-                'Constraints must be subclasses of annotated_types.BaseMetadata or PydanticMetadata'
+                'Constraints must be subclasses of annotated_types.BaseMetadata or PydanticMetadata '
+                'or a subclass of PydanticMetadata'
             )
+
         for k, v in constraints_dict.items():
             if v is None:
                 continue
@@ -352,59 +352,23 @@ def name_as_schema(t: type[Any]) -> core_schema.Schema:
     return {'type': t.__name__}
 
 
-def enum_schema(enum_obj: Enum) -> core_schema.FunctionSchema:
-    return core_schema.FunctionSchema(
-        type='function',
-        mode='after',
-        schema=core_schema.LiteralSchema(type='literal', expected=[m.value for m in enum_obj.__members__.values()]),
-        function=lambda x, **kwargs: enum_obj(x),
-    )
-
-
-def decimal_schema(decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
-    return core_schema.FunctionSchema(
-        type='function',
-        mode='after',
-        schema=core_schema.UnionSchema(
-            type='union',
-            choices=[
-                core_schema.IntSchema(type='int'),
-                core_schema.FloatSchema(type='float'),
-                core_schema.StringSchema(type='str'),
-            ]
-        ),
-        function=lambda x, **kwargs: decimal_type(x),
-    )
-
-
 def std_types_schema(obj: Any) -> core_schema.Schema | None:
     """
     Generate schema for types in the standard library, could be split if this gets too long.
-
-    Import here to avoid the extra import time earlier
     """
     if not isinstance(obj, type):
         return None
 
-    from datetime import date, datetime, time, timedelta
-    from enum import Enum
-    from decimal import Decimal
+    # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
+    from ._std_validators import SCHEMA_LOOKUP
 
-    std_lib_type_schemas: dict[type[Any], typing.Callable[[type[Any]], core_schema.Schema]] = {
-        date: name_as_schema,
-        datetime: name_as_schema,
-        time: name_as_schema,
-        timedelta: name_as_schema,
-        Enum: enum_schema,
-        Decimal: decimal_schema,
-    }
 
     # instead of iterating over a list and calling is_instance, this should be somewhat faster,
     # especially as it should catch most types on the first iteration
     # (same as we do/used to do in json encoding)
     for base in obj.__mro__[:-1]:
         try:
-            encoder = std_lib_type_schemas[base]
+            encoder = SCHEMA_LOOKUP[base]
         except KeyError:
             continue
         return encoder(obj)

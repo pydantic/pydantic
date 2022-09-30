@@ -1,6 +1,7 @@
 import abc
 import re
 import warnings
+import dataclasses as _dataclasses
 from datetime import date
 from decimal import Decimal
 from enum import Enum
@@ -9,7 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     ClassVar,
     Dict,
     FrozenSet,
@@ -20,16 +20,16 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    Literal,
+    Hashable,
 )
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import schema_types as core_schema
+from pydantic_core import schema_types as core_schema, PydanticValueError
 
 from . import errors
-from ._internal import _fields, _validators
-from ._internal._utils import update_not_none
-from .annotations import AllowInfNan, Strict
+from ._internal import _fields, _validators, _utils
 
 __all__ = [
     'StrictStr',
@@ -82,7 +82,11 @@ if TYPE_CHECKING:
 
     ModelOrDc = Type[Union[BaseModel, Dataclass]]
 
-T = TypeVar('T')
+
+@_dataclasses.dataclass
+class Strict(_fields.PydanticMetadata):
+    strict: bool | None = True
+
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,6 +114,11 @@ NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
 StrictInt = Annotated[int, Strict()]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+@_dataclasses.dataclass
+class AllowInfNan(_fields.PydanticMetadata):
+    strict: bool | None = True
 
 
 def confloat(
@@ -184,33 +193,38 @@ StrictStr = Annotated[str, Strict()]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ COLLECTION TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
-def conset(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[Set[T]]:
+def conset(item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None) -> Type[Set[HashableItemType]]:
     return Annotated[Set[item_type], annotated_types.Len(min_length, max_length)]
 
 
-def confrozenset(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[FrozenSet[T]]:
+def confrozenset(item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None) -> Type[FrozenSet[HashableItemType]]:
     return Annotated[FrozenSet[item_type], annotated_types.Len(min_length, max_length)]
 
 
-def conlist(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[List[T]]:
+AnyItemType = TypeVar('AnyItemType')
+
+
+def conlist(item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None) -> Type[List[AnyItemType]]:
     return Annotated[List[item_type], annotated_types.Len(min_length, max_length)]
 
 
-def contuple(item_type: Type[T], *, min_length: int = None, max_length: int = None) -> Type[Tuple[T]]:
+def contuple(item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None) -> Type[Tuple[AnyItemType]]:
     return Annotated[Tuple[item_type], annotated_types.Len(min_length, max_length)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+AnyType = TypeVar('AnyType')
 if TYPE_CHECKING:
-    ImportString = Annotated[T, ...]
+    ImportString = Annotated[AnyType, ...]
 else:
 
     class ImportString(_fields.PydanticMetadata):
         @classmethod
-        def __class_getitem__(cls, item: T) -> T:
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
 
         @classmethod
@@ -245,7 +259,7 @@ class ConstrainedDecimal(Decimal):
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
+        _utils.update_not_none(
             field_schema,
             exclusiveMinimum=cls.gt,
             exclusiveMaximum=cls.lt,
@@ -320,72 +334,85 @@ def condecimal(
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-if TYPE_CHECKING:
-    UUID1 = UUID
-    UUID3 = UUID
-    UUID4 = UUID
-    UUID5 = UUID
-else:
 
-    class UUID1(UUID):
-        _required_version = 1
+@_dataclasses.dataclass
+class UuidVersion(_fields.PydanticMetadata):
+    uuid_version: Literal[1, 3, 4, 5]
 
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            field_schema.update(type='string', format=f'uuid{cls._required_version}')
+    def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
+        field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
-    class UUID3(UUID1):
-        _required_version = 3
+    def __get_pydantic_validation_schema__(self, schema: core_schema.Schema) -> core_schema.Schema:
+        return core_schema.FunctionSchema(
+            type='function',
+            mode='after',
+            function=self.validate,
+            schema=schema,
+        )
 
-    class UUID4(UUID1):
-        _required_version = 4
+    def validate(self, value: UUID, **kwargs) -> UUID:
+        if value.version != self.uuid_version:
+            raise PydanticValueError('uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version})
+        return value
 
-    class UUID5(UUID1):
-        _required_version = 5
+
+UUID1 = Annotated[UUID, UuidVersion(1)]
+UUID3 = Annotated[UUID, UuidVersion(3)]
+UUID4 = Annotated[UUID, UuidVersion(4)]
+UUID5 = Annotated[UUID, UuidVersion(5)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-if TYPE_CHECKING:
-    FilePath = Path
-    DirectoryPath = Path
-else:
 
-    class FilePath(Path):
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            field_schema.update(format='file-path')
+@_dataclasses.dataclass
+class PathType(_fields.PydanticMetadata):
+    path_type: Literal['file', 'dir', 'new']
 
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield path_validator
-            yield path_exists_validator
-            yield cls.validate
+    def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
+        field_schema.update(format='file-path')
 
-        @classmethod
-        def validate(cls, value: Path) -> Path:
-            if not value.is_file():
-                raise errors.PathNotAFileError(path=value)
+    def __get_pydantic_validation_schema__(self, schema: core_schema.Schema) -> core_schema.Schema:
+        function_lookup = {
+            'file': self.validate_file,
+            'dir': self.validate_directory,
+            'new': self.validate_new,
+        }
 
-            return value
+        return core_schema.FunctionSchema(
+            type='function',
+            mode='after',
+            function=function_lookup[self.path_type],
+            schema=schema,
+        )
 
-    class DirectoryPath(Path):
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            field_schema.update(format='directory-path')
+    @staticmethod
+    def validate_file(path: Path) -> Path:
+        if path.is_file():
+            return path
+        else:
+            raise PydanticValueError('path_not_file', 'path does not point to a file')
 
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield path_validator
-            yield path_exists_validator
-            yield cls.validate
+    @staticmethod
+    def validate_directory(path: Path) -> Path:
+        if path.is_dir():
+            return path
+        else:
+            raise PydanticValueError('path_not_directory', 'path does not point to a directory')
 
-        @classmethod
-        def validate(cls, value: Path) -> Path:
-            if not value.is_dir():
-                raise errors.PathNotADirectoryError(path=value)
+    @staticmethod
+    def validate_new(path: Path) -> Path:
+        if path.exists():
+            raise PydanticValueError('path_exists', 'path already exists')
+        elif not path.parent.exists():
+            raise PydanticValueError('parent_does_not_exist', 'parent directory does not exist')
+        else:
+            return path
 
-            return value
+
+FilePath = Annotated[Path, PathType('file')]
+DirectoryPath = Annotated[Path, PathType('dir')]
+NewPath = Annotated[Path, PathType('new')]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -403,7 +430,7 @@ class JsonMeta(type):
 
 
 if TYPE_CHECKING:
-    Json = Annotated[T, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    Json = Annotated[ItemType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
 
 else:
 

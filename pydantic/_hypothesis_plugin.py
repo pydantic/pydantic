@@ -28,7 +28,7 @@ import ipaddress
 import json
 import math
 from fractions import Fraction
-from typing import Callable, Dict, Type, Union, cast, overload
+from typing import Callable, Dict, Type, Union, TypeVar, overload
 
 import hypothesis.strategies as st
 
@@ -141,10 +141,10 @@ st.register_type_strategy(
 )
 
 # UUIDs
-st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))
-st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))
-st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))
-st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))
+# st.register_type_strategy(pydantic.UUID1, st.uuids(version=1))
+# st.register_type_strategy(pydantic.UUID3, st.uuids(version=3))
+# st.register_type_strategy(pydantic.UUID4, st.uuids(version=4))
+# st.register_type_strategy(pydantic.UUID5, st.uuids(version=5))
 
 # Secrets
 st.register_type_strategy(pydantic.SecretBytes, st.binary().map(pydantic.SecretBytes))
@@ -174,10 +174,10 @@ st.register_type_strategy(
 # satisfying strategy.  First up, the machinery for tracking resolver functions:
 
 RESOLVERS: Dict[type, Callable[[type], st.SearchStrategy]] = {}  # type: ignore[type-arg]
-
+T = TypeVar('T')
 
 @overload
-def _registered(typ: Type[pydantic.types.T]) -> Type[pydantic.types.T]:
+def _registered(typ: Type[T]) -> Type[T]:
     pass
 
 
@@ -187,8 +187,8 @@ def _registered(typ: pydantic.types) -> pydantic.types:
 
 
 def _registered(
-    typ: Union[Type[pydantic.types.T]]
-) -> Union[Type[pydantic.types.T]]:
+    typ: Union[Type[T]]
+) -> Union[Type[T]]:
     # This function replaces the version in `pydantic.types`, in order to
     # effect the registration of new constrained types so that Hypothesis
     # can generate valid examples.

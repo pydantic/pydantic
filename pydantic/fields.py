@@ -5,7 +5,7 @@ from typing import Any
 
 import annotated_types
 
-from . import annotations
+from . import types
 from ._internal import _fields
 from ._internal._typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin
 from ._internal._utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
@@ -48,7 +48,7 @@ class FieldInfo(Representation):
         'lt': annotated_types.Lt,
         'le': annotated_types.Le,
         'multiple_of': annotated_types.MultipleOf,
-        'strict': annotations.Strict,
+        'strict': types.Strict,
         'min_length': None,
         'max_length': None,
         'pattern': None,
