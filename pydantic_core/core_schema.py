@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import sys
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union, overload
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Required
@@ -275,7 +275,7 @@ class LiteralSchema(TypedDict):
 
 
 def literal_schema(*expected: Any, ref: str | None = None) -> LiteralSchema:
-    return dict_not_none(type='literal', expected=list(expected), ref=ref)
+    return dict_not_none(type='literal', expected=expected, ref=ref)
 
 
 class IsInstanceSchema(TypedDict):
@@ -327,8 +327,7 @@ class TuplePositionalSchema(TypedDict, total=False):
 
 
 def tuple_positional_schema(
-    items_schema: List[CoreSchema],
-    *,
+    *items_schema: CoreSchema,
     extra_schema: CoreSchema | None = None,
     strict: bool | None = None,
     ref: str | None = None,
@@ -349,7 +348,7 @@ class TupleVariableSchema(TypedDict, total=False):
 
 
 def tuple_variable_schema(
-    items_schema: CoreSchema,
+    items_schema: CoreSchema | None = None,
     *,
     min_length: int | None = None,
     max_length: int | None = None,
@@ -427,9 +426,9 @@ class DictSchema(TypedDict, total=False):
 
 
 def dict_schema(
-    *,
     keys_schema: CoreSchema | None = None,
     values_schema: CoreSchema | None = None,
+    *,
     min_length: int | None = None,
     max_length: int | None = None,
     strict: bool | None = None,
@@ -456,16 +455,27 @@ class FunctionSchema(TypedDict):
     ref: NotRequired[str]
 
 
-def function_schema(
-    mode: Literal['before', 'after', 'wrap'],
-    function: Callable[..., Any],
-    schema: CoreSchema,
-    *,
-    validator_instance: Any | None = None,
-    ref: str | None = None,
+def function_before_schema(
+    function: Callable[..., Any], schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
 ) -> FunctionSchema:
     return dict_not_none(
-        type='function', mode=mode, function=function, schema=schema, validator_instance=validator_instance, ref=ref
+        type='function', mode='before', function=function, schema=schema, validator_instance=validator_instance, ref=ref
+    )
+
+
+def function_after_schema(
+    function: Callable[..., Any], schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
+) -> FunctionSchema:
+    return dict_not_none(
+        type='function', mode='after', function=function, schema=schema, validator_instance=validator_instance, ref=ref
+    )
+
+
+def function_wrap_schema(
+    function: Callable[..., Any], schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
+) -> FunctionSchema:
+    return dict_not_none(
+        type='function', mode='wrap', function=function, schema=schema, validator_instance=validator_instance, ref=ref
     )
 
 
@@ -496,24 +506,24 @@ class WithDefaultSchema(TypedDict, total=False):
     ref: str
 
 
+Omitted = object()
+
+
 def with_default_schema(
     schema: CoreSchema,
     *,
-    default: Any | None = None,
+    default: Any = Omitted,
     default_factory: Callable[[], Any] | None = None,
     on_error: Literal['raise', 'omit', 'default'] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
 ) -> WithDefaultSchema:
-    return dict_not_none(
-        type='default',
-        schema=schema,
-        default=default,
-        default_factory=default_factory,
-        on_error=on_error,
-        strict=strict,
-        ref=ref,
+    s = dict_not_none(
+        type='default', schema=schema, default_factory=default_factory, on_error=on_error, strict=strict, ref=ref
     )
+    if default is not Omitted:
+        s['default'] = default
+    return s
 
 
 class NullableSchema(TypedDict, total=False):
@@ -532,6 +542,14 @@ class CustomError(TypedDict):
     message: str
 
 
+def _custom_error(kind: str | None, message: str | None) -> CustomError | None:
+    if kind is None and message is None:
+        return None
+    else:
+        # let schema validation raise the error
+        return CustomError(kind=kind, message=message)  # type: ignore
+
+
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
     choices: Required[List[CoreSchema]]
@@ -540,8 +558,36 @@ class UnionSchema(TypedDict, total=False):
     ref: str
 
 
-def union_schema(choices: List[CoreSchema], *, strict: bool | None = None, ref: str | None = None) -> UnionSchema:
-    return dict_not_none(type='union', choices=choices, strict=strict, ref=ref)
+@overload
+def union_schema(
+    *choices: CoreSchema,
+    custom_error_kind: str,
+    custom_error_message: str,
+    strict: bool | None = None,
+    ref: str | None = None,
+) -> UnionSchema:
+    ...
+
+
+@overload
+def union_schema(*choices: CoreSchema, strict: bool | None = None, ref: str | None = None) -> UnionSchema:
+    ...
+
+
+def union_schema(
+    *choices: CoreSchema,
+    custom_error_kind: str | None = None,
+    custom_error_message: str | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+) -> UnionSchema:
+    return dict_not_none(
+        type='union',
+        choices=choices,
+        custom_error=_custom_error(custom_error_kind, custom_error_message),
+        strict=strict,
+        ref=ref,
+    )
 
 
 class TaggedUnionSchema(TypedDict):
@@ -553,6 +599,20 @@ class TaggedUnionSchema(TypedDict):
     ref: NotRequired[str]
 
 
+@overload
+def tagged_union_schema(
+    choices: Dict[str, CoreSchema],
+    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | None],
+    *,
+    custom_error_kind: str,
+    custom_error_message: str,
+    strict: bool | None = None,
+    ref: str | None = None,
+) -> TaggedUnionSchema:
+    ...
+
+
+@overload
 def tagged_union_schema(
     choices: Dict[str, CoreSchema],
     discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | None],
@@ -560,7 +620,26 @@ def tagged_union_schema(
     strict: bool | None = None,
     ref: str | None = None,
 ) -> TaggedUnionSchema:
-    return dict_not_none(type='tagged-union', choices=choices, discriminator=discriminator, strict=strict, ref=ref)
+    ...
+
+
+def tagged_union_schema(
+    choices: Dict[str, CoreSchema],
+    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | None],
+    *,
+    custom_error_kind: str | None = None,
+    custom_error_message: str | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+) -> TaggedUnionSchema:
+    return dict_not_none(
+        type='tagged-union',
+        choices=choices,
+        discriminator=discriminator,
+        custom_error=_custom_error(custom_error_kind, custom_error_message),
+        strict=strict,
+        ref=ref,
+    )
 
 
 class ChainSchema(TypedDict):
@@ -569,7 +648,7 @@ class ChainSchema(TypedDict):
     ref: NotRequired[str]
 
 
-def chain_schema(steps: List[CoreSchema], *, ref: str | None = None) -> ChainSchema:
+def chain_schema(*steps: CoreSchema, ref: str | None = None) -> ChainSchema:
     return dict_not_none(type='chain', steps=steps, ref=ref)
 
 
@@ -681,8 +760,7 @@ class ArgumentsSchema(TypedDict, total=False):
 
 
 def arguments_schema(
-    arguments_schema: List[ArgumentsParameter],
-    *,
+    *arguments: ArgumentsParameter,
     populate_by_name: bool | None = None,
     var_args_schema: CoreSchema | None = None,
     var_kwargs_schema: CoreSchema | None = None,
@@ -690,7 +768,7 @@ def arguments_schema(
 ) -> ArgumentsSchema:
     return dict_not_none(
         type='arguments',
-        arguments_schema=arguments_schema,
+        arguments_schema=arguments,
         populate_by_name=populate_by_name,
         var_args_schema=var_args_schema,
         var_kwargs_schema=var_kwargs_schema,
@@ -700,21 +778,21 @@ def arguments_schema(
 
 class CallSchema(TypedDict):
     type: Literal['call']
-    function: Callable[..., Any]
     arguments_schema: CoreSchema
+    function: Callable[..., Any]
     return_schema: NotRequired[CoreSchema]
     ref: NotRequired[str]
 
 
 def call_schema(
+    arguments: CoreSchema,
     function: Callable[..., Any],
-    arguments_schema: CoreSchema,
     *,
     return_schema: CoreSchema | None = None,
     ref: str | None = None,
 ) -> CallSchema:
     return dict_not_none(
-        type='call', function=function, arguments_schema=arguments_schema, return_schema=return_schema, ref=ref
+        type='call', arguments_schema=arguments, function=function, return_schema=return_schema, ref=ref
     )
 
 

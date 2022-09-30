@@ -70,7 +70,6 @@ precision = 2
 exclude_lines = [
     'pragma: no cover',
     'raise NotImplementedError',
-    'raise NotImplemented',
     'if TYPE_CHECKING:',
     '@overload',
 ]
