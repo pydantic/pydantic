@@ -1,0 +1,1 @@
+Fix `@pydantic.dataclasses.dataclass()` syntax failure on inheriting dataclass without changing fields list

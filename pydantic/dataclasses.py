@@ -197,7 +197,7 @@ def dataclass(
     def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
         import dataclasses
 
-        if is_builtin_dataclass(cls) and _extra_dc_args(_cls) == _extra_dc_args(_cls.__bases__[0]):  # type: ignore
+        if is_builtin_dataclass(cls) and _extra_dc_args(cls) == _extra_dc_args(cls.__bases__[0]):
             dc_cls_doc = ''
             dc_cls = DataclassProxy(cls)
             default_validate_on_init = False

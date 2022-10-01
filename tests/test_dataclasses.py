@@ -1472,3 +1472,26 @@ def test_subclass_post_init_inheritance():
             self.a *= 3
 
     assert C().a == 6  # 1 * 3 + 3
+
+
+def test_issue_4565():
+    @dataclasses.dataclass
+    class A:
+        a: int = 1
+
+    # both @decorator and @decorator() syntax shold be okay
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        b: int = 2
+
+    @pydantic.dataclasses.dataclass
+    class C(A):
+        ...
+
+    @pydantic.dataclasses.dataclass()
+    class BB(A):
+        bb: int = 2
+
+    @pydantic.dataclasses.dataclass()
+    class CC(A):
+        ...
