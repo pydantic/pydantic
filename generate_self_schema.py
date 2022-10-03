@@ -13,14 +13,17 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Type, Union
 
-from typing_extensions import get_args, is_typeddict
+from typing_extensions import get_args, get_origin, is_typeddict
+
+TypingUnionType = Type[Union[str, int]]
 
 try:
-    from typing import get_origin
-except ImportError:
+    from types import UnionType as TypesUnionType
 
-    def get_origin(t):
-        return getattr(t, '__origin__', None)
+    UnionType = Union[TypingUnionType, TypesUnionType]
+
+except ImportError:
+    UnionType = TypingUnionType
 
 
 THIS_DIR = Path(__file__).parent
@@ -120,7 +123,7 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:
     return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}
 
 
-def union_schema(union_type: type[Union]) -> core_schema.UnionSchema:
+def union_schema(union_type: UnionType) -> core_schema.UnionSchema:
     return {'type': 'union', 'choices': [get_schema(arg) for arg in union_type.__args__]}
 
 

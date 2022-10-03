@@ -23,6 +23,12 @@ repos:
     types: [python]
     language: system
     pass_filenames: false
+  - id: typecheck-python
+    name: Typecheck Python
+    entry: make pyright
+    types: [python]
+    language: system
+    pass_filenames: false
   - id: lint-rust
     name: Lint Rust
     entry: make lint-rust
