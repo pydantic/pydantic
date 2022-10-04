@@ -52,6 +52,8 @@ def get_schema(obj) -> core_schema.CoreSchema:
         return type_dict_schema(obj)
     elif obj == Any or obj == type:
         return {'type': 'any'}
+    if isinstance(obj, type) and issubclass(obj, core_schema.Protocol):
+        return {'type': 'callable'}
 
     origin = get_origin(obj)
     assert origin is not None, f'origin cannot be None, obj={obj}, you probably need to fix generate_self_schema.py'
@@ -154,8 +156,12 @@ def main() -> None:
         assert m, f'Unknown schema type: {type_}'
         key = m.group(1)
         value = get_schema(s)
-        if key == 'function' and value['fields']['mode']['schema']['expected'] == ['plain']:
-            key = 'function-plain'
+        if key == 'function':
+            mode = value['fields']['mode']['schema']['expected']
+            if mode == ['plain']:
+                key = 'function-plain'
+            elif mode == ['wrap']:
+                key = 'function-wrap'
         elif key == 'tuple':
             if value['fields']['mode']['schema']['expected'] == ['positional']:
                 key = 'tuple-positional'
