@@ -128,7 +128,12 @@ def test_function_wrap_not_callable():
 
 def test_wrap_error():
     def f(input_value, *, validator, **kwargs):
-        return validator(input_value) * 2
+        try:
+            return validator(input_value) * 2
+        except ValidationError as e:
+            assert e.title == 'ValidatorCallable'
+            assert str(e).startswith('1 validation error for ValidatorCallable\n')
+            raise e
 
     v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'int'}})
 

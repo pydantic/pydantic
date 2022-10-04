@@ -297,7 +297,7 @@ def callable_schema() -> CallableSchema:
 
 class ListSchema(TypedDict, total=False):
     type: Required[Literal['list']]
-    items_schema: CoreSchema  # default: AnySchema
+    items_schema: CoreSchema
     min_length: int
     max_length: int
     strict: bool
@@ -368,7 +368,7 @@ def tuple_variable_schema(
 
 class SetSchema(TypedDict, total=False):
     type: Required[Literal['set']]
-    items_schema: CoreSchema  # default: AnySchema
+    items_schema: CoreSchema
     min_length: int
     max_length: int
     strict: bool
@@ -390,14 +390,14 @@ def set_schema(
 
 class FrozenSetSchema(TypedDict, total=False):
     type: Required[Literal['frozenset']]
-    items_schema: CoreSchema  # default: AnySchema
+    items_schema: CoreSchema
     min_length: int
     max_length: int
     strict: bool
     ref: str
 
 
-def frozen_set_schema(
+def frozenset_schema(
     items_schema: CoreSchema | None = None,
     *,
     min_length: int | None = None,
@@ -413,6 +413,19 @@ def frozen_set_schema(
         strict=strict,
         ref=ref,
     )
+
+
+class GeneratorSchema(TypedDict, total=False):
+    type: Required[Literal['generator']]
+    items_schema: CoreSchema
+    max_length: int
+    ref: str
+
+
+def generator_schema(
+    items_schema: CoreSchema | None = None, *, max_length: int | None = None, ref: str | None = None
+) -> GeneratorSchema:
+    return dict_not_none(type='generator', items_schema=items_schema, max_length=max_length, ref=ref)
 
 
 class DictSchema(TypedDict, total=False):
@@ -865,6 +878,7 @@ CoreSchema = Union[
     TupleVariableSchema,
     SetSchema,
     FrozenSetSchema,
+    GeneratorSchema,
     DictSchema,
     FunctionSchema,
     FunctionWrapSchema,

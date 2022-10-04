@@ -12,6 +12,7 @@ use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{intern, AsPyPointer};
 
 use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
+use crate::input::GenericIterator;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
@@ -438,6 +439,14 @@ impl<'a> Input<'a> for PyAny {
             Ok(PyTuple::new(self.py(), vec).into())
         } else {
             Err(ValError::new(ErrorKind::FrozenSetType, self))
+        }
+    }
+
+    fn validate_iter(&self) -> ValResult<GenericIterator> {
+        if self.iter().is_ok() {
+            Ok(self.into())
+        } else {
+            Err(ValError::new(ErrorKind::IterableType, self))
         }
     }
 

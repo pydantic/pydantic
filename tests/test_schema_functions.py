@@ -79,10 +79,11 @@ def args(*args, **kwargs):
             {'type': 'set', 'items_schema': {'type': 'int'}, 'min_length': 4},
         ],
         [
-            core_schema.frozen_set_schema,
+            core_schema.frozenset_schema,
             args({'type': 'int'}, max_length=5),
             {'type': 'frozenset', 'items_schema': {'type': 'int'}, 'max_length': 5},
         ],
+        [core_schema.generator_schema, args({'type': 'int'}), {'type': 'generator', 'items_schema': {'type': 'int'}}],
         [core_schema.dict_schema, args(), {'type': 'dict'}],
         [
             core_schema.dict_schema,
