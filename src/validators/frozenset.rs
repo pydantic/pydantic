@@ -7,7 +7,7 @@ use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::list::generic_collection_build;
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct FrozenSetValidator {
