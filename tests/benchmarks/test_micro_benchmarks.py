@@ -10,7 +10,13 @@ from typing import Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 
-from pydantic_core import PydanticValueError, SchemaValidator, ValidationError, ValidationError as CoreValidationError
+from pydantic_core import (
+    PydanticValueError,
+    SchemaValidator,
+    ValidationError,
+    ValidationError as CoreValidationError,
+    core_schema,
+)
 
 if os.getenv('BENCHMARK_VS_PYDANTIC'):
     try:
@@ -954,3 +960,46 @@ def test_chain_nested_functions(benchmark):
     assert validator.validate_python('42.42') == Decimal('84.84')
 
     benchmark(validator.validate_python, '42.42')
+
+
+def validate_yield(iterable, validator):
+    for item in iterable:
+        yield validator(item)
+
+
+def generator_gen_python(v, *, validator, **_kwargs):
+    try:
+        iterable = iter(v)
+    except TypeError:
+        raise PydanticValueError('iterable_type', 'Input should be a valid iterable')
+    return validate_yield(iterable, validator)
+
+
+@pytest.mark.benchmark(group='generator')
+def test_generator_python(benchmark):
+    schema = core_schema.function_wrap_schema(generator_gen_python, {'type': 'int'})
+    v = SchemaValidator(schema)
+    input_value = tuple(range(100))
+
+    assert sum(v.validate_python(input_value)) == 4950
+
+    benchmark(v.validate_python, input_value)
+
+
+def generator_gen_rust(v, *, validator, **_kwargs):
+    try:
+        generator = iter(v)
+    except TypeError:
+        raise PydanticValueError('generator_type', 'Input should be a valid generator')
+    return validator.iter(generator)
+
+
+@pytest.mark.benchmark(group='generator')
+def test_generator_rust(benchmark):
+    schema = {'type': 'generator', 'items_schema': {'type': 'int'}}
+    v = SchemaValidator(schema)
+    input_value = tuple(range(100))
+
+    assert sum(v.validate_python(input_value)) == 4950
+
+    benchmark(v.validate_python, input_value)

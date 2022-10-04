@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTuple};
+use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
 
 use crate::errors::{ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
@@ -163,6 +163,93 @@ pub enum GenericMapping<'a> {
 derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyGetAttr, PyAny);
 derive_from!(GenericMapping, JsonObject, JsonObject);
+
+#[derive(Debug, Clone)]
+pub enum GenericIterator {
+    PyIterator(GenericPyIterator),
+    JsonArray(GenericJsonIterator),
+}
+
+impl From<JsonArray> for GenericIterator {
+    fn from(array: JsonArray) -> Self {
+        let length = array.len();
+        let json_iter = GenericJsonIterator {
+            array,
+            length,
+            index: 0,
+        };
+        Self::JsonArray(json_iter)
+    }
+}
+
+impl From<&PyAny> for GenericIterator {
+    fn from(obj: &PyAny) -> Self {
+        let py_iter = GenericPyIterator {
+            obj: obj.to_object(obj.py()),
+            iter: obj.iter().unwrap().into_py(obj.py()),
+            index: 0,
+        };
+        Self::PyIterator(py_iter)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericPyIterator {
+    obj: PyObject,
+    iter: Py<PyIterator>,
+    index: usize,
+}
+
+impl GenericPyIterator {
+    pub fn next<'a>(&'a mut self, py: Python<'a>) -> PyResult<Option<(&'a PyAny, usize)>> {
+        match self.iter.as_ref(py).next() {
+            Some(Ok(next)) => {
+                let a = (next, self.index);
+                self.index += 1;
+                Ok(Some(a))
+            }
+            Some(Err(err)) => Err(err),
+            None => Ok(None),
+        }
+    }
+
+    pub fn input<'a>(&'a self, py: Python<'a>) -> &'a PyAny {
+        self.obj.as_ref(py)
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericJsonIterator {
+    array: JsonArray,
+    length: usize,
+    index: usize,
+}
+
+impl GenericJsonIterator {
+    pub fn next(&mut self, _py: Python) -> PyResult<Option<(&JsonInput, usize)>> {
+        if self.index < self.length {
+            let next = unsafe { self.array.get_unchecked(self.index) };
+            let a = (next, self.index);
+            self.index += 1;
+            Ok(Some(a))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn input<'a>(&'a self, py: Python<'a>) -> &'a PyAny {
+        let input = JsonInput::Array(self.array.clone());
+        input.to_object(py).into_ref(py)
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+}
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyArgs<'a> {

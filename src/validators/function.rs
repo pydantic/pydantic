@@ -9,6 +9,7 @@ use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
+use super::generator::InternalValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 pub struct FunctionBuilder;
@@ -203,13 +204,7 @@ impl Validator for FunctionWrapValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let validator_kwarg = ValidatorCallable {
-            validator: self.validator.clone(),
-            slots: slots.to_vec(),
-            data: extra.data.map(|d| d.into_py(py)),
-            field: extra.field.map(|f| f.to_string()),
-            strict: extra.strict,
-            context: extra.context.map(|d| d.into_py(py)),
-            recursion_guard: recursion_guard.clone(),
+            validator: InternalValidator::new(py, "ValidatorCallable", &self.validator, slots, extra, recursion_guard),
         };
         let kwargs = kwargs!(
             py,
@@ -236,16 +231,10 @@ impl Validator for FunctionWrapValidator {
     }
 }
 
-#[pyclass]
+#[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 struct ValidatorCallable {
-    validator: Box<CombinedValidator>,
-    slots: Vec<CombinedValidator>,
-    data: Option<Py<PyDict>>,
-    field: Option<String>,
-    strict: Option<bool>,
-    context: Option<PyObject>,
-    recursion_guard: RecursionGuard,
+    validator: InternalValidator,
 }
 
 #[pymethods]
@@ -258,15 +247,7 @@ impl ValidatorCallable {
             },
             None => None,
         };
-        let extra = Extra {
-            data: self.data.as_ref().map(|data| data.as_ref(py)),
-            field: self.field.as_deref(),
-            strict: self.strict,
-            context: self.context.as_ref().map(|data| data.as_ref(py)),
-        };
-        self.validator
-            .validate(py, input_value, &extra, &self.slots, &mut self.recursion_guard)
-            .map_err(|e| ValidationError::from_val_error(py, "Model".to_object(py), e, outer_location))
+        self.validator.validate(py, input_value, outer_location)
     }
 
     fn __repr__(&self) -> String {

@@ -16,6 +16,23 @@ pub struct ListValidator {
     name: String,
 }
 
+pub fn get_items_schema(
+    schema: &PyDict,
+    config: Option<&PyDict>,
+    build_context: &mut BuildContext,
+) -> PyResult<Option<Box<CombinedValidator>>> {
+    match schema.get_item(pyo3::intern!(schema.py(), "items_schema")) {
+        Some(d) => {
+            let validator = build_validator(d, config, build_context)?;
+            match validator {
+                CombinedValidator::Any(_) => Ok(None),
+                _ => Ok(Some(Box::new(validator))),
+            }
+        }
+        None => Ok(None),
+    }
+}
+
 macro_rules! generic_collection_build {
     () => {
         super::list::generic_collection_build!("{}[{}]", Self::EXPECTED_TYPE);
@@ -27,10 +44,7 @@ macro_rules! generic_collection_build {
             build_context: &mut BuildContext,
         ) -> PyResult<CombinedValidator> {
             let py = schema.py();
-            let item_validator = match schema.get_item(pyo3::intern!(py, "items_schema")) {
-                Some(d) => Some(Box::new(build_validator(d, config, build_context)?)),
-                None => None,
-            };
+            let item_validator = super::list::get_items_schema(schema, config, build_context)?;
             let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
             let name = format!($name_template, $name, inner_name);
             let min_length = schema.get_as(pyo3::intern!(py, "min_length"))?;

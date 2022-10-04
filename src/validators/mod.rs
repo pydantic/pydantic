@@ -29,6 +29,7 @@ mod dict;
 mod float;
 mod frozenset;
 mod function;
+mod generator;
 mod int;
 mod is_instance;
 mod list;
@@ -384,6 +385,8 @@ pub fn build_validator<'a>(
         with_default::WithDefaultValidator,
         // chain validators
         chain::ChainValidator,
+        // generator validators
+        generator::GeneratorValidator,
     )
 }
 
@@ -496,6 +499,8 @@ pub enum CombinedValidator {
     WithDefault(with_default::WithDefaultValidator),
     // chain validators
     Chain(chain::ChainValidator),
+    // generator validators
+    Generator(generator::GeneratorValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

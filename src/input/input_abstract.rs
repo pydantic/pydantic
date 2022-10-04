@@ -8,7 +8,7 @@ use crate::input::datetime::EitherTime;
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
-use super::{GenericArguments, GenericCollection, GenericMapping};
+use super::{GenericArguments, GenericCollection, GenericIterator, GenericMapping};
 
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
@@ -177,6 +177,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         self.strict_frozenset()
     }
+
+    fn validate_iter(&self) -> ValResult<GenericIterator>;
 
     fn validate_date(&self, strict: bool) -> ValResult<EitherDate> {
         if strict {
