@@ -1,7 +1,10 @@
+from __future__ import annotations as _annotations
+
 from datetime import date, datetime, time
+from typing import Any
 
 from pydantic_core import SchemaError, SchemaValidator
-from pydantic_core.core_schema import CoreSchema
+from pydantic_core.core_schema import CoreConfig, CoreSchema, function_plain_schema
 
 
 class Foo:
@@ -9,6 +12,10 @@ class Foo:
 
 
 def foo(bar: str) -> None:
+    ...
+
+
+def validator(value: Any, **kwargs: Any) -> None:
     ...
 
 
@@ -72,9 +79,9 @@ def test_schema_typing() -> None:
         },
     }
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'function', 'mode': 'wrap', 'function': foo, 'schema': {'type': 'str'}}
+    schema: CoreSchema = {'type': 'function', 'mode': 'wrap', 'function': validator, 'schema': {'type': 'str'}}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'function', 'mode': 'plain', 'function': foo}
+    schema: CoreSchema = {'type': 'function', 'mode': 'plain', 'function': validator}
     SchemaValidator(schema)
     schema: CoreSchema = {
         'ref': 'Branch',
@@ -135,3 +142,26 @@ def test_schema_validator_wrong() -> None:
         pass
     else:
         raise AssertionError('SchemaValidator did not raise SchemaError')
+
+
+def test_correct_function_signature() -> None:
+    def my_validator(value: Any, *, data: Any, config: CoreConfig | None, context: Any, **future_kwargs: Any) -> str:
+        return str(value)
+
+    v = SchemaValidator(function_plain_schema(my_validator))
+    assert v.validate_python(1) == '1'
+
+
+def test_wrong_function_signature() -> None:
+    def wrong_validator(value: Any) -> Any:
+        return value
+
+    v = SchemaValidator(function_plain_schema(wrong_validator))  # type: ignore
+
+    # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
+    try:
+        v.validate_python(1)
+    except TypeError as exc:
+        assert 'unexpected keyword argument' in str(exc)
+    else:
+        raise AssertionError('v.validate_python(1) did not raise TypeError')

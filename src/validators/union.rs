@@ -353,8 +353,10 @@ impl TaggedUnionValidator {
             };
             if tag == "function" {
                 let mode = mode.ok_or_else(|| self.tag_not_found(input))?;
-                if mode.as_cow()?.as_ref() == "plain" {
-                    return Ok(Cow::Borrowed("function-plain"));
+                match mode.as_cow()?.as_ref() {
+                    "plain" => Ok(Cow::Borrowed("function-plain")),
+                    "wrap" => Ok(Cow::Borrowed("function-wrap")),
+                    _ => Ok(Cow::Borrowed("function")),
                 }
             } else {
                 // tag == "tuple"
@@ -363,10 +365,11 @@ impl TaggedUnionValidator {
                         return Ok(Cow::Borrowed("tuple-positional"));
                     }
                 }
-                return Ok(Cow::Borrowed("tuple-variable"));
+                Ok(Cow::Borrowed("tuple-variable"))
             }
+        } else {
+            Ok(Cow::Owned(tag.to_string()))
         }
-        return Ok(Cow::Owned(tag.to_string()));
     }
 
     fn find_call_validator<'s, 'data>(

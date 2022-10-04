@@ -50,6 +50,17 @@ impl ToPyObject for LocItem {
     }
 }
 
+impl LocItem {
+    pub fn try_from(value: &PyAny) -> PyResult<Self> {
+        if let Ok(str) = value.extract::<String>() {
+            Ok(str.into())
+        } else {
+            let int = value.extract::<usize>()?;
+            Ok(int.into())
+        }
+    }
+}
+
 /// Error locations are represented by a vector of `LocItem`s.
 /// e.g. if the error occurred in the third member of a list called `foo`,
 /// the location would be `["foo", 2]`.
