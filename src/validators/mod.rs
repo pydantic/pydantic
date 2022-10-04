@@ -247,7 +247,7 @@ impl SchemaValidator {
     }
 
     fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
-        ValidationError::from_val_error(py, self.title.clone_ref(py), error)
+        ValidationError::from_val_error(py, self.title.clone_ref(py), error, None)
     }
 }
 

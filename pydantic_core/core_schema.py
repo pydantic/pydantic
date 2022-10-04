@@ -5,9 +5,9 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Optional, Type, Union, overload
 
 if sys.version_info < (3, 11):
-    from typing_extensions import NotRequired, Required
+    from typing_extensions import NotRequired, Protocol, Required
 else:
-    from typing import NotRequired, Required
+    from typing import NotRequired, Protocol, Required
 
 if sys.version_info < (3, 9):
     from typing_extensions import Literal, TypedDict
@@ -445,10 +445,17 @@ def dict_schema(
     )
 
 
+class ValidatorFunction(Protocol):
+    def __call__(
+        self, __input_value: Any, *, data: Any, config: CoreConfig | None, context: Any, **future_kwargs: Any
+    ) -> Any:
+        ...
+
+
 class FunctionSchema(TypedDict):
     type: Literal['function']
-    mode: Literal['before', 'after', 'wrap']
-    function: Callable[..., Any]
+    mode: Literal['before', 'after']
+    function: ValidatorFunction
     schema: CoreSchema
     # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
     validator_instance: NotRequired[Any]
@@ -456,7 +463,7 @@ class FunctionSchema(TypedDict):
 
 
 def function_before_schema(
-    function: Callable[..., Any], schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
+    function: ValidatorFunction, schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
 ) -> FunctionSchema:
     return dict_not_none(
         type='function', mode='before', function=function, schema=schema, validator_instance=validator_instance, ref=ref
@@ -464,16 +471,49 @@ def function_before_schema(
 
 
 def function_after_schema(
-    function: Callable[..., Any], schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
+    function: ValidatorFunction, schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
 ) -> FunctionSchema:
     return dict_not_none(
         type='function', mode='after', function=function, schema=schema, validator_instance=validator_instance, ref=ref
     )
 
 
+class CallableValidator(Protocol):
+    def __call__(self, input_value: Any, outer_location: str | int | None = None) -> Any:
+        ...
+
+
+class WrapValidatorFunction(Protocol):
+    def __call__(
+        self,
+        __input_value: Any,
+        *,
+        validator: CallableValidator,
+        data: Any,
+        config: CoreConfig | None,
+        context: Any,
+        **future_kwargs: Any,
+    ) -> Any:
+        ...
+
+
+class FunctionWrapSchema(TypedDict):
+    type: Literal['function']
+    mode: Literal['wrap']
+    function: WrapValidatorFunction
+    schema: CoreSchema
+    # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
+    validator_instance: NotRequired[Any]
+    ref: NotRequired[str]
+
+
 def function_wrap_schema(
-    function: Callable[..., Any], schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
-) -> FunctionSchema:
+    function: WrapValidatorFunction,
+    schema: CoreSchema,
+    *,
+    validator_instance: Any | None = None,
+    ref: str | None = None,
+) -> FunctionWrapSchema:
     return dict_not_none(
         type='function', mode='wrap', function=function, schema=schema, validator_instance=validator_instance, ref=ref
     )
@@ -482,14 +522,14 @@ def function_wrap_schema(
 class FunctionPlainSchema(TypedDict):
     type: Literal['function']
     mode: Literal['plain']
-    function: Callable[..., Any]
+    function: ValidatorFunction
     # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
     validator_instance: NotRequired[Any]
     ref: NotRequired[str]
 
 
 def function_plain_schema(
-    function: Callable[..., Any], *, validator_instance: Any | None = None, ref: str | None = None
+    function: ValidatorFunction, *, validator_instance: Any | None = None, ref: str | None = None
 ) -> FunctionPlainSchema:
     return dict_not_none(
         type='function', mode='plain', function=function, validator_instance=validator_instance, ref=ref
@@ -827,6 +867,7 @@ CoreSchema = Union[
     FrozenSetSchema,
     DictSchema,
     FunctionSchema,
+    FunctionWrapSchema,
     FunctionPlainSchema,
     WithDefaultSchema,
     NullableSchema,

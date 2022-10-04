@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::Write;
 
+use crate::errors::LocItem;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -21,10 +22,16 @@ pub struct ValidationError {
 }
 
 impl ValidationError {
-    pub fn from_val_error(py: Python, title: PyObject, error: ValError) -> PyErr {
+    pub fn from_val_error(py: Python, title: PyObject, error: ValError, outer_location: Option<LocItem>) -> PyErr {
         match error {
             ValError::LineErrors(raw_errors) => {
-                let line_errors: Vec<PyLineError> = raw_errors.into_iter().map(|e| e.into_py(py)).collect();
+                let line_errors: Vec<PyLineError> = match outer_location {
+                    Some(outer_location) => raw_errors
+                        .into_iter()
+                        .map(|e| e.with_outer_location(outer_location.clone()).into_py(py))
+                        .collect(),
+                    None => raw_errors.into_iter().map(|e| e.into_py(py)).collect(),
+                };
                 PyErr::new::<ValidationError, _>((line_errors, title))
             }
             ValError::InternalErr(err) => err,
