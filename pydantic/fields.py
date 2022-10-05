@@ -1042,7 +1042,7 @@ class ModelField(Representation):
         """
         original_cls = original.__class__
 
-        if original_cls == dict or original_cls == Dict:
+        if original_cls in {dict, Dict, list, List, tuple, Tuple}:
             return converted
         elif original_cls in {defaultdict, DefaultDict}:
             return defaultdict(self.type_, converted)

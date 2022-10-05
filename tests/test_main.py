@@ -2107,6 +2107,16 @@ def test_typing_coercion_dict():
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
 
 
+def test_typing_coercion_dict_mapping_items():
+    class Model(BaseModel):
+        x: Dict[Any, Any]
+        y: Mapping[Any, Any]
+
+    v = [['one', 1], ['two', 2]]
+    m = Model(x=v, y=v)
+    assert repr(m) == "Model(x={'one': 1, 'two': 2}, y={'one': 1, 'two': 2})"
+
+
 def test_typing_non_coercion_of_dict_subclasses():
     KT = TypeVar('KT')
     VT = TypeVar('VT')
