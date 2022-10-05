@@ -34,9 +34,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         None
     }
 
-    fn is_instance(&self, _class: &PyType) -> PyResult<bool> {
-        Ok(false)
-    }
+    fn is_instance(&self, class: &PyType, json_mask: u8) -> PyResult<bool>;
 
     fn callable(&self) -> bool {
         false

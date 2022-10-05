@@ -1,4 +1,8 @@
+use pyo3::prelude::*;
+use pyo3::types::PyType;
+
 use crate::errors::{ErrorKind, InputValue, LocItem, ValError, ValResult};
+use crate::input::JsonType;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
@@ -28,6 +32,23 @@ impl<'a> Input<'a> for JsonInput {
 
     fn is_none(&self) -> bool {
         matches!(self, JsonInput::Null)
+    }
+
+    fn is_instance(&self, _class: &PyType, json_mask: u8) -> PyResult<bool> {
+        if json_mask == 0 {
+            Ok(false)
+        } else {
+            let json_type: JsonType = match self {
+                JsonInput::Null => JsonType::Null,
+                JsonInput::Bool(_) => JsonType::Bool,
+                JsonInput::Int(_) => JsonType::Int,
+                JsonInput::Float(_) => JsonType::Float,
+                JsonInput::String(_) => JsonType::String,
+                JsonInput::Array(_) => JsonType::Array,
+                JsonInput::Object(_) => JsonType::Object,
+            };
+            Ok(json_type.matches(json_mask))
+        }
     }
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
@@ -282,6 +303,14 @@ impl<'a> Input<'a> for String {
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn is_none(&self) -> bool {
         false
+    }
+
+    fn is_instance(&self, _class: &PyType, json_mask: u8) -> PyResult<bool> {
+        if json_mask == 0 {
+            Ok(false)
+        } else {
+            Ok(JsonType::String.matches(json_mask))
+        }
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
