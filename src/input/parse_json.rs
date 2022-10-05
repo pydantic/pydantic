@@ -7,7 +7,7 @@ use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, Se
 
 use crate::build_tools::py_error;
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum JsonType {
     Null = 0b10000000,
     Bool = 0b01000000,
