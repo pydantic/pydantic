@@ -11,7 +11,7 @@ import re
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Set, Type, Union
 
 from typing_extensions import get_args, get_origin, is_typeddict
 
@@ -67,6 +67,8 @@ def get_schema(obj) -> core_schema.CoreSchema:
         return {'type': 'literal', 'expected': expected}
     elif issubclass(origin, List):
         return {'type': 'list', 'items_schema': get_schema(obj.__args__[0])}
+    elif issubclass(origin, Set):
+        return {'type': 'set', 'items_schema': get_schema(obj.__args__[0])}
     elif issubclass(origin, Dict):
         return {
             'type': 'dict',

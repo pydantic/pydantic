@@ -81,7 +81,7 @@ impl<'a> Input<'a> for PyAny {
         self.getattr(name).ok()
     }
 
-    fn is_instance(&self, class: &PyType) -> PyResult<bool> {
+    fn is_instance(&self, class: &PyType, _json_mask: u8) -> PyResult<bool> {
         self.is_instance(class)
     }
 
