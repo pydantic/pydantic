@@ -1,10 +1,10 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyType};
+use pyo3::types::{PyDict, PySet, PyType};
 
 use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorKind, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{Input, JsonType};
 use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -12,6 +12,7 @@ use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 #[derive(Debug, Clone)]
 pub struct IsInstanceValidator {
     class: Py<PyType>,
+    json_types: u8,
     class_repr: String,
     name: String,
 }
@@ -27,8 +28,13 @@ impl BuildValidator for IsInstanceValidator {
         let class: &PyType = schema.get_as_req(intern!(schema.py(), "cls"))?;
         let class_repr = class.name()?.to_string();
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, class_repr);
+        let json_types = match schema.get_as::<&PySet>(intern!(schema.py(), "json_types"))? {
+            Some(s) => JsonType::combine(s)?,
+            None => 0,
+        };
         Ok(Self {
             class: class.into(),
+            json_types,
             class_repr,
             name,
         }
@@ -45,7 +51,7 @@ impl Validator for IsInstanceValidator {
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        match input.is_instance(self.class.as_ref(py))? {
+        match input.is_instance(self.class.as_ref(py), self.json_types)? {
             true => Ok(input.to_object(py)),
             false => Err(ValError::new(
                 ErrorKind::IsInstanceOf {

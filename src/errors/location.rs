@@ -50,8 +50,10 @@ impl ToPyObject for LocItem {
     }
 }
 
-impl LocItem {
-    pub fn try_from(value: &PyAny) -> PyResult<Self> {
+impl TryFrom<&PyAny> for LocItem {
+    type Error = PyErr;
+
+    fn try_from(value: &PyAny) -> PyResult<Self> {
         if let Ok(str) = value.extract::<String>() {
             Ok(str.into())
         } else {

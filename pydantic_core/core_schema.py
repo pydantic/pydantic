@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import sys
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Dict, List, Optional, Type, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Set, Type, Union, overload
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Protocol, Required
@@ -278,13 +278,21 @@ def literal_schema(*expected: Any, ref: str | None = None) -> LiteralSchema:
     return dict_not_none(type='literal', expected=expected, ref=ref)
 
 
-class IsInstanceSchema(TypedDict):
-    type: Literal['is-instance']
-    cls: Type[Any]
+# must match input/parse_json.rs::JsonType::try_from
+JsonType = Literal['null', 'bool', 'int', 'float', 'str', 'list', 'dict']
 
 
-def is_instance_schema(cls: Type[Any]) -> IsInstanceSchema:
-    return dict_not_none(type='is-instance', cls=cls)
+class IsInstanceSchema(TypedDict, total=False):
+    type: Required[Literal['is-instance']]
+    cls: Required[Type[Any]]
+    json_types: Set[JsonType]
+    ref: str
+
+
+def is_instance_schema(
+    cls: Type[Any], *, json_types: Set[JsonType] | None = None, ref: str | None = None
+) -> IsInstanceSchema:
+    return dict_not_none(type='is-instance', cls=cls, json_types=json_types, ref=ref)
 
 
 class CallableSchema(TypedDict):

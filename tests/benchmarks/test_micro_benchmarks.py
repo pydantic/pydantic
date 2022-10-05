@@ -1003,3 +1003,15 @@ def test_generator_rust(benchmark):
     assert sum(v.validate_python(input_value)) == 4950
 
     benchmark(v.validate_python, input_value)
+
+
+@pytest.mark.benchmark(group='isinstance-json')
+def test_isinstance_json(benchmark):
+    validator = SchemaValidator(core_schema.is_instance_schema(str, json_types={'str'}))
+    assert validator.isinstance_json('"foo"') is True
+    assert validator.isinstance_json('123') is False
+
+    @benchmark
+    def t():
+        validator.isinstance_json('"foo"')
+        validator.isinstance_json('123')
