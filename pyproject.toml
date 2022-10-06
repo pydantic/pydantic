@@ -46,6 +46,7 @@ Source = 'https://github.com/pydantic/pydantic-core'
 
 [tool.maturin]
 bindings = 'pyo3'
+sdist-include = ['Cargo.lock']
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
