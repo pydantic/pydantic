@@ -391,7 +391,7 @@ pub fn build_validator<'a>(
 }
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
-/// but that would confuse it with context as per samuelcolvin/pydantic#1549
+/// but that would confuse it with context as per pydantic/pydantic#1549
 #[derive(Debug, Default)]
 pub struct Extra<'a> {
     /// This is used as the `data` kwargs to validator functions, it also represents the current model
