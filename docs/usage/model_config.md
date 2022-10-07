@@ -55,7 +55,7 @@ Similarly, if using the `@dataclass` decorator:
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to
   using [the `Field` class](schema.md), except when a field is already
-  defined trough annotation or the Field class, in which case only
+  defined through annotation or the Field class, in which case only
   `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
   `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
   and allow_mutation can be set (for example you cannot set default of default_factory)
