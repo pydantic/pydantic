@@ -1,5 +1,5 @@
 # output-json
-from typing import Callable, Generator, Optional
+from typing import Any, Callable, Dict, Generator, Optional
 
 from pydantic import BaseModel, Field
 from pydantic.fields import ModelField
@@ -11,14 +11,16 @@ class RestrictedAlphabetStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value, field: ModelField):
+    def validate(cls, value: str, field: ModelField):
         alphabet = field.field_info.extra['alphabet']
         if any(c not in alphabet for c in value):
             raise ValueError(f'{value!r} is not restricted to {alphabet!r}')
         return cls(value)
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict, field: Optional[ModelField]):
+    def __modify_schema__(
+        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
+    ):
         if field:
             alphabet = field.field_info.extra['alphabet']
             field_schema['examples'] = [c * 3 for c in alphabet]
