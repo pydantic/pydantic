@@ -426,8 +426,21 @@ impl ErrorKind {
             Self::GreaterThanEqual { .. } => extract_context!(GreaterThanEqual, ctx, ge: String),
             Self::LessThan { .. } => extract_context!(LessThan, ctx, lt: String),
             Self::LessThanEqual { .. } => extract_context!(LessThanEqual, ctx, le: String),
-            Self::TooShort { .. } => extract_context!(TooShort, ctx, min_length: usize, input_length: usize),
-            Self::TooLong { .. } => extract_context!(TooLong, ctx, max_length: usize, input_length: usize),
+            Self::TooShort { .. } => extract_context!(
+                TooShort,
+                ctx,
+                field_type: String,
+                min_length: usize,
+                actual_length: usize
+            ),
+            Self::TooLong { .. } => extract_context!(
+                TooLong,
+                ctx,
+                field_type: String,
+                max_length: usize,
+                actual_length: usize
+            ),
+            Self::IterationError { .. } => extract_context!(IterationError, ctx, error: String),
             Self::StrTooShort { .. } => extract_context!(StrTooShort, ctx, min_length: usize),
             Self::StrTooLong { .. } => extract_context!(StrTooLong, ctx, max_length: usize),
             Self::StrPatternMismatch { .. } => extract_context!(StrPatternMismatch, ctx, pattern: String),
