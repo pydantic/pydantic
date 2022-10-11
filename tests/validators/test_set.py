@@ -1,12 +1,13 @@
 import platform
 import re
+from collections import deque
 from typing import Any, Dict
 
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, infinite_generator
 
 
 @pytest.mark.parametrize(
@@ -63,6 +64,7 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
         ((1, 2, 3, 2, 3), {1, 2, 3}),
         ((), set()),
         (frozenset([1, 2, 3, 2, 3]), {1, 2, 3}),
+        (deque((1, 2, '3')), {1, 2, 3}),
         pytest.param(
             {1: 10, 2: 20, '3': '30'}.keys(),
             {1, 2, 3},
@@ -115,6 +117,12 @@ def test_set_multiple_errors():
     ]
 
 
+def generate_repeats():
+    for i in 1, 2, 3:
+        yield i
+        yield i
+
+
 @pytest.mark.parametrize(
     'kwargs,input_value,expected',
     [
@@ -127,16 +135,42 @@ def test_set_multiple_errors():
         ({'strict': True}, frozenset([1, 2, 3]), Err('Input should be a valid set [kind=set_type,')),
         ({'strict': True}, 'abc', Err('Input should be a valid set [kind=set_type,')),
         ({'min_length': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'min_length': 3}, {1, 2}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
-        ({'max_length': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'max_length': 3}, {1, 2, 3, 4}, Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
+        ({'min_length': 3}, {1, 2}, Err('Set should have at least 3 items after validation, not 2 [kind=too_short,')),
+        (
+            {'max_length': 3},
+            {1, 2, 3, 4},
+            Err('Set should have at most 3 items after validation, not 4 [kind=too_long,'),
+        ),
+        (
+            {'max_length': 3},
+            [1, 2, 3, 4],
+            Err('Set should have at most 3 items after validation, not 4 [kind=too_long,'),
+        ),
+        ({'max_length': 3, 'items_schema': {'type': 'int'}}, {1, 2, 3, 4}, Err('kind=too_long,')),
+        ({'max_length': 3, 'items_schema': {'type': 'int'}}, [1, 2, 3, 4], Err('kind=too_long,')),
+        # length check after set creation
+        ({'max_length': 3}, [1, 1, 2, 2, 3, 3], {1, 2, 3}),
+        ({'max_length': 3}, generate_repeats(), {1, 2, 3}),
+        # because of default max_length * 10
+        (
+            {'max_length': 3},
+            infinite_generator(),
+            Err('Set should have at most 30 items after validation, not 31 [kind=too_long,'),
+        ),
+        (
+            {'max_length': 3, 'generator_max_length': 3},
+            infinite_generator(),
+            Err('Set should have at most 3 items after validation, not 4 [kind=too_long,'),
+        ),
     ],
+    ids=repr,
 )
 def test_set_kwargs(kwargs: Dict[str, Any], input_value, expected):
     v = SchemaValidator({'type': 'set', **kwargs})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_python(input_value)
+            r = v.validate_python(input_value)
+            print(f'unexpected result: {r!r}')
     else:
         assert v.validate_python(input_value) == expected
 
@@ -209,7 +243,7 @@ def test_generator_error():
         yield 1
         yield 2
         if error:
-            raise RuntimeError('error')
+            raise RuntimeError('my error')
         yield 3
 
     v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
@@ -217,7 +251,8 @@ def test_generator_error():
     assert r == {1, 2, 3}
     assert isinstance(r, set)
 
-    with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
+    msg = r'Error iterating over object, error: RuntimeError: my error \[kind=iteration_error,'
+    with pytest.raises(ValidationError, match=msg):
         v.validate_python(gen(True))
 
 
@@ -245,3 +280,20 @@ def test_set_from_dict_items(input_value, items_schema, expected):
     output = v.validate_python(input_value)
     assert isinstance(output, set)
     assert output == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ([], set()),
+        ([1, '2', b'3'], {1, '2', b'3'}),
+        ({1, '2', b'3'}, {1, '2', b'3'}),
+        (frozenset([1, '2', b'3']), {1, '2', b'3'}),
+        (deque([1, '2', b'3']), {1, '2', b'3'}),
+    ],
+)
+def test_set_any(input_value, expected):
+    v = SchemaValidator({'type': 'set'})
+    output = v.validate_python(input_value)
+    assert output == expected
+    assert isinstance(output, set)

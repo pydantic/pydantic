@@ -61,9 +61,9 @@ def test_validation_error_include_context():
         {
             'kind': 'too_long',
             'loc': [],
-            'message': 'Input should have at most 2 items, got 3 items',
+            'message': 'List should have at most 2 items after validation, not 3',
             'input_value': [1, 2, 3],
-            'context': {'max_length': 2, 'input_length': 3},
+            'context': {'field_type': 'List', 'max_length': 2, 'actual_length': 3},
         }
     ]
     # insert_assert(exc_info.value.errors(include_context=False))
@@ -71,7 +71,7 @@ def test_validation_error_include_context():
         {
             'kind': 'too_long',
             'loc': [],
-            'message': 'Input should have at most 2 items, got 3 items',
+            'message': 'List should have at most 2 items after validation, not 3',
             'input_value': [1, 2, 3],
         }
     ]

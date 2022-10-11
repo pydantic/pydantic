@@ -109,8 +109,8 @@ def test_too_long(py_and_json: PyAndJson):
         {
             'kind': 'too_long',
             'loc': [],
-            'message': 'Input should have at most 2 items, got 3 items',
+            'message': 'Generator should have at most 2 items after validation, not 3',
             'input_value': [1, 2, 3],
-            'context': {'max_length': 2, 'input_length': 3},
+            'context': {'field_type': 'Generator', 'max_length': 2, 'actual_length': 3},
         }
     ]

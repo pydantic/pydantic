@@ -1,12 +1,13 @@
 import platform
 import re
+from collections import deque
 from typing import Any, Dict
 
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from ..conftest import Err, PyAndJson, plain_repr
+from ..conftest import Err, PyAndJson, infinite_generator, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -69,6 +70,7 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
         ([1, 2, 3, 2, 3], frozenset({1, 2, 3})),
         ([], frozenset()),
         ((1, 2, 3, 2, 3), frozenset({1, 2, 3})),
+        (deque((1, 2, '3')), frozenset({1, 2, 3})),
         ((), frozenset()),
         (frozenset([1, 2, 3, 2, 3]), frozenset({1, 2, 3})),
         pytest.param(
@@ -131,6 +133,12 @@ def test_frozenset_multiple_errors():
     ]
 
 
+def generate_repeats():
+    for i in 1, 2, 3:
+        yield i
+        yield i
+
+
 @pytest.mark.parametrize(
     'kwargs,input_value,expected',
     [
@@ -144,9 +152,31 @@ def test_frozenset_multiple_errors():
         ({'strict': True}, {1, 2, 3}, Err('Input should be a valid frozenset [kind=frozen_set_type,')),
         ({'strict': True}, 'abc', Err('Input should be a valid frozenset [kind=frozen_set_type,')),
         ({'min_length': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'min_length': 3}, {1, 2}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
+        (
+            {'min_length': 3},
+            {1, 2},
+            Err('Frozenset should have at least 3 items after validation, not 2 [kind=too_short,'),
+        ),
         ({'max_length': 3}, {1, 2, 3}, {1, 2, 3}),
-        ({'max_length': 3}, {1, 2, 3, 4}, Err('Input should have at most 3 items, got 4 items [kind=too_long,')),
+        (
+            {'max_length': 3},
+            {1, 2, 3, 4},
+            Err('Frozenset should have at most 3 items after validation, not 4 [kind=too_long,'),
+        ),
+        # length check after set creation
+        ({'max_length': 3}, [1, 1, 2, 2, 3, 3], {1, 2, 3}),
+        ({'max_length': 3}, generate_repeats(), {1, 2, 3}),
+        # because of default max_length * 10
+        (
+            {'max_length': 3},
+            infinite_generator(),
+            Err('Frozenset should have at most 30 items after validation, not 31 [kind=too_long,'),
+        ),
+        (
+            {'max_length': 3, 'generator_max_length': 3},
+            infinite_generator(),
+            Err('Frozenset should have at most 3 items after validation, not 4 [kind=too_long,'),
+        ),
     ],
 )
 def test_frozenset_kwargs_python(kwargs: Dict[str, Any], input_value, expected):
@@ -231,7 +261,8 @@ def test_repr():
         'SchemaValidator('
         'name="frozenset[any]",'
         'validator=FrozenSet(FrozenSetValidator{'
-        'strict:true,item_validator:None,size_range:Some((Some(42),None)),name:"frozenset[any]"'
+        'strict:true,item_validator:None,min_length:Some(42),max_length:None,generator_max_length:None,'
+        'name:"frozenset[any]"'
         '}),slots=[])'
     )
 
@@ -241,7 +272,7 @@ def test_generator_error():
         yield 1
         yield 2
         if error:
-            raise RuntimeError('error')
+            raise RuntimeError('my error')
         yield 3
 
     v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
@@ -249,7 +280,8 @@ def test_generator_error():
     assert r == {1, 2, 3}
     assert isinstance(r, frozenset)
 
-    with pytest.raises(ValidationError, match=r'Error iterating over object \[kind=iteration_error,'):
+    msg = r'Error iterating over object, error: RuntimeError: my error \[kind=iteration_error,'
+    with pytest.raises(ValidationError, match=msg):
         v.validate_python(gen(True))
 
 
