@@ -11,7 +11,7 @@ from typing import Dict, FrozenSet, List, Optional, Set, Union
 import pytest
 
 from pydantic_core import (
-    PydanticValueError,
+    PydanticCustomError,
     SchemaValidator,
     ValidationError,
     ValidationError as CoreValidationError,
@@ -811,7 +811,7 @@ def test_raise_error_value_error(benchmark):
 @pytest.mark.benchmark(group='raise-error')
 def test_raise_error_custom(benchmark):
     def f(input_value, **kwargs):
-        raise PydanticValueError('my_error', 'this is a custom error {foo}', {'foo': 'FOOBAR'})
+        raise PydanticCustomError('my_error', 'this is a custom error {foo}', {'foo': 'FOOBAR'})
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
 
@@ -971,7 +971,7 @@ def generator_gen_python(v, *, validator, **_kwargs):
     try:
         iterable = iter(v)
     except TypeError:
-        raise PydanticValueError('iterable_type', 'Input should be a valid iterable')
+        raise PydanticCustomError('iterable_type', 'Input should be a valid iterable')
     return validate_yield(iterable, validator)
 
 
@@ -990,7 +990,7 @@ def generator_gen_rust(v, *, validator, **_kwargs):
     try:
         generator = iter(v)
     except TypeError:
-        raise PydanticValueError('generator_type', 'Input should be a valid generator')
+        raise PydanticCustomError('generator_type', 'Input should be a valid generator')
     return validator.iter(generator)
 
 

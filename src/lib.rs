@@ -18,7 +18,7 @@ mod validators;
 
 // required for benchmarks
 pub use build_tools::SchemaError;
-pub use errors::{PydanticValueError, ValidationError};
+pub use errors::{PydanticCustomError, PydanticErrorKind, ValidationError};
 pub use validators::SchemaValidator;
 
 pub fn get_version() -> String {
@@ -38,6 +38,7 @@ fn _pydantic_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SchemaValidator>()?;
     m.add_class::<ValidationError>()?;
     m.add_class::<SchemaError>()?;
-    m.add_class::<PydanticValueError>()?;
+    m.add_class::<PydanticCustomError>()?;
+    m.add_class::<PydanticErrorKind>()?;
     Ok(())
 }

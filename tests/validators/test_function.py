@@ -5,7 +5,7 @@ from typing import Type
 
 import pytest
 
-from pydantic_core import PydanticValueError, SchemaError, SchemaValidator, ValidationError
+from pydantic_core import PydanticCustomError, PydanticErrorKind, SchemaError, SchemaValidator, ValidationError
 
 from ..conftest import plain_repr
 
@@ -392,7 +392,7 @@ def test_raise_type_error():
 
 
 def test_pydantic_value_error():
-    e = PydanticValueError(
+    e = PydanticCustomError(
         'my_error', 'this is a custom error {missed} {foo} {bar} {spam}', {'foo': 'X', 'bar': 42, 'spam': []}
     )
     assert e.message() == 'this is a custom error {missed} X 42 []'
@@ -406,7 +406,7 @@ def test_pydantic_value_error():
 
 
 def test_pydantic_value_error_none():
-    e = PydanticValueError('my_error', 'this is a custom error {missed}')
+    e = PydanticCustomError('my_error', 'this is a custom error {missed}')
     assert e.message() == 'this is a custom error {missed}'
     assert e.message_template == 'this is a custom error {missed}'
     assert e.kind == 'my_error'
@@ -417,7 +417,7 @@ def test_pydantic_value_error_none():
 
 def test_pydantic_value_error_usage():
     def f(input_value, **kwargs):
-        raise PydanticValueError('my_error', 'this is a custom error {foo} {bar}', {'foo': 'FOOBAR', 'bar': 42})
+        raise PydanticCustomError('my_error', 'this is a custom error {foo} {bar}', {'foo': 'FOOBAR', 'bar': 42})
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
 
@@ -437,7 +437,7 @@ def test_pydantic_value_error_usage():
 
 def test_pydantic_value_error_invalid_dict():
     def f(input_value, **kwargs):
-        raise PydanticValueError('my_error', 'this is a custom error {foo}', {(): 'foobar'})
+        raise PydanticCustomError('my_error', 'this is a custom error {foo}', {(): 'foobar'})
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
 
@@ -455,7 +455,7 @@ def test_pydantic_value_error_invalid_dict():
 
 def test_pydantic_value_error_invalid_type():
     def f(input_value, **kwargs):
-        raise PydanticValueError('my_error', 'this is a custom error {foo}', [('foo', 123)])
+        raise PydanticCustomError('my_error', 'this is a custom error {foo}', [('foo', 123)])
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
 
@@ -504,3 +504,518 @@ def test_validator_instance_after():
 
     assert v.validate_python('input value') == 'input value 43'
     assert v.validate_python(b'is bytes') == 'is bytes 43'
+
+
+def test_pydantic_error_kind():
+    e = PydanticErrorKind('invalid_json', {'error': 'Test'})
+    assert e.message() == 'Invalid JSON: Test'
+    assert e.kind == 'invalid_json'
+    assert e.context == {'error': 'Test'}
+    assert str(e) == 'Invalid JSON: Test'
+    assert repr(e) == "Invalid JSON: Test [kind=invalid_json, context={'error': 'Test'}]"
+
+
+def test_pydantic_error_kind_raise_no_ctx():
+    def f(input_value, **kwargs):
+        raise PydanticErrorKind('finite_number')
+
+    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(4)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'finite_number', 'loc': [], 'message': 'Input should be a finite number', 'input_value': 4}
+    ]
+
+
+def test_pydantic_error_kind_raise_ctx():
+    def f(input_value, **kwargs):
+        raise PydanticErrorKind('greater_than', {'gt': 42})
+
+    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(4)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'greater_than',
+            'loc': [],
+            'message': 'Input should be greater than 42',
+            'input_value': 4,
+            'context': {'gt': 42.0},
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'kind, message, context, str_e, repr_e',
+    [
+        ('invalid_input', 'Invalid input', None, 'Invalid input', 'Invalid input [kind=invalid_input, context=None]'),
+        (
+            'invalid_json',
+            'Invalid JSON: foobar',
+            {'error': 'foobar'},
+            'Invalid JSON: foobar',
+            "Invalid JSON: foobar [kind=invalid_json, context={'error': 'foobar'}]",
+        ),
+        (
+            'recursion_loop',
+            'Recursion error - cyclic reference detected',
+            None,
+            'Recursion error - cyclic reference detected',
+            'Recursion error - cyclic reference detected [kind=recursion_loop, context=None]',
+        ),
+        (
+            'dict_attributes_type',
+            'Input should be a valid dictionary or instance to extract fields from',
+            None,
+            'Input should be a valid dictionary or instance to extract fields from',
+            'Input should be a valid dictionary or instance to extract fields from [kind=dict_attributes_type, context=None]',  # noqa: E501
+        ),
+        ('missing', 'Field required', None, 'Field required', 'Field required [kind=missing, context=None]'),
+        ('frozen', 'Field is frozen', None, 'Field is frozen', 'Field is frozen [kind=frozen, context=None]'),
+        (
+            'extra_forbidden',
+            'Extra inputs are not permitted',
+            None,
+            'Extra inputs are not permitted',
+            'Extra inputs are not permitted [kind=extra_forbidden, context=None]',
+        ),
+        (
+            'invalid_key',
+            'Keys should be strings',
+            None,
+            'Keys should be strings',
+            'Keys should be strings [kind=invalid_key, context=None]',
+        ),
+        (
+            'get_attribute_error',
+            'Error extracting attribute: foo',
+            {'error': 'foo'},
+            'Error extracting attribute: foo',
+            "Error extracting attribute: foo [kind=get_attribute_error, context={'error': 'foo'}]",
+        ),
+        (
+            'model_class_type',
+            'Input should be an instance of foo',
+            {'class_name': 'foo'},
+            'Input should be an instance of foo',
+            "Input should be an instance of foo [kind=model_class_type, context={'class_name': 'foo'}]",
+        ),
+        (
+            'none_required',
+            'Input should be None/null',
+            None,
+            'Input should be None/null',
+            'Input should be None/null [kind=none_required, context=None]',
+        ),
+        (
+            'bool',
+            'Input should be a valid boolean',
+            None,
+            'Input should be a valid boolean',
+            'Input should be a valid boolean [kind=bool, context=None]',
+        ),
+        (
+            'greater_than',
+            'Input should be greater than 42.1',
+            {'gt': 42.1},
+            'Input should be greater than 42.1',
+            "Input should be greater than 42.1 [kind=greater_than, context={'gt': 42.1}]",
+        ),
+        (
+            'greater_than_equal',
+            'Input should be greater than or equal to 42.1',
+            {'ge': 42.1},
+            'Input should be greater than or equal to 42.1',
+            "Input should be greater than or equal to 42.1 [kind=greater_than_equal, context={'ge': 42.1}]",
+        ),
+        (
+            'less_than',
+            'Input should be less than 42.1',
+            {'lt': 42.1},
+            'Input should be less than 42.1',
+            "Input should be less than 42.1 [kind=less_than, context={'lt': 42.1}]",
+        ),
+        (
+            'less_than_equal',
+            'Input should be less than or equal to 42.1',
+            {'le': 42.1},
+            'Input should be less than or equal to 42.1',
+            "Input should be less than or equal to 42.1 [kind=less_than_equal, context={'le': 42.1}]",
+        ),
+        (
+            'less_than_equal',
+            'Input should be less than or equal to 42.1',
+            {'le': 42.1},
+            'Input should be less than or equal to 42.1',
+            "Input should be less than or equal to 42.1 [kind=less_than_equal, context={'le': 42.1}]",
+        ),
+        (
+            'too_short',
+            'Data should have at least 42 bytes',
+            {'min_length': 42},
+            'Data should have at least 42 bytes',
+            "Data should have at least 42 bytes [kind=too_short, context={'min_length': 42}]",
+        ),
+        (
+            'too_long',
+            'Data should have at most 42 bytes',
+            {'max_length': 42},
+            'Data should have at most 42 bytes',
+            "Data should have at most 42 bytes [kind=too_long, context={'max_length': 42}]",
+        ),
+        (
+            'str_type',
+            'Input should be a valid string',
+            None,
+            'Input should be a valid string',
+            'Input should be a valid string [kind=str_type, context=None]',
+        ),
+        (
+            'str_unicode',
+            'Input should be a valid string, unable to parse raw data as a unicode string',
+            None,
+            'Input should be a valid string, unable to parse raw data as a unicode string',
+            'Input should be a valid string, unable to parse raw data as a unicode string [kind=str_unicode, context=None]',  # noqa: E501
+        ),
+        (
+            'str_pattern_mismatch',
+            "String should match pattern 'foo'",
+            {'pattern': 'foo'},
+            "String should match pattern 'foo'",
+            "String should match pattern 'foo' [kind=str_pattern_mismatch, context={'pattern': 'foo'}]",
+        ),
+        (
+            'dict_type',
+            'Input should be a valid dictionary',
+            None,
+            'Input should be a valid dictionary',
+            'Input should be a valid dictionary [kind=dict_type, context=None]',
+        ),
+        (
+            'dict_from_mapping',
+            'Unable to convert mapping to a dictionary, error: foobar',
+            {'error': 'foobar'},
+            'Unable to convert mapping to a dictionary, error: foobar',
+            "Unable to convert mapping to a dictionary, error: foobar [kind=dict_from_mapping, context={'error': 'foobar'}]",  # noqa: E501
+        ),
+        (
+            'iteration_error',
+            'Error iterating over object',
+            None,
+            'Error iterating over object',
+            'Error iterating over object [kind=iteration_error, context=None]',
+        ),
+        (
+            'list_type',
+            'Input should be a valid list/array',
+            None,
+            'Input should be a valid list/array',
+            'Input should be a valid list/array [kind=list_type, context=None]',
+        ),
+        (
+            'tuple_type',
+            'Input should be a valid tuple',
+            None,
+            'Input should be a valid tuple',
+            'Input should be a valid tuple [kind=tuple_type, context=None]',
+        ),
+        (
+            'set_type',
+            'Input should be a valid set',
+            None,
+            'Input should be a valid set',
+            'Input should be a valid set [kind=set_type, context=None]',
+        ),
+        (
+            'bool_type',
+            'Input should be a valid boolean',
+            None,
+            'Input should be a valid boolean',
+            'Input should be a valid boolean [kind=bool_type, context=None]',
+        ),
+        (
+            'bool_parsing',
+            'Input should be a valid boolean, unable to interpret input',
+            None,
+            'Input should be a valid boolean, unable to interpret input',
+            'Input should be a valid boolean, unable to interpret input [kind=bool_parsing, context=None]',
+        ),
+        (
+            'int_type',
+            'Input should be a valid integer',
+            None,
+            'Input should be a valid integer',
+            'Input should be a valid integer [kind=int_type, context=None]',
+        ),
+        (
+            'int_parsing',
+            'Input should be a valid integer, unable to parse string as an integer',
+            None,
+            'Input should be a valid integer, unable to parse string as an integer',
+            'Input should be a valid integer, unable to parse string as an integer [kind=int_parsing, context=None]',
+        ),
+        (
+            'int_from_float',
+            'Input should be a valid integer, got a number with a fractional part',
+            None,
+            'Input should be a valid integer, got a number with a fractional part',
+            'Input should be a valid integer, got a number with a fractional part [kind=int_from_float, context=None]',
+        ),
+        (
+            'int_nan',
+            'Input should be a valid integer, got foo',
+            {'nan_value': 'foo'},
+            'Input should be a valid integer, got foo',
+            "Input should be a valid integer, got foo [kind=int_nan, context={'nan_value': 'foo'}]",
+        ),
+        (
+            'multiple_of',
+            'Input should be a multiple of 42.1',
+            {'multiple_of': 42.1},
+            'Input should be a multiple of 42.1',
+            "Input should be a multiple of 42.1 [kind=multiple_of, context={'multiple_of': 42.1}]",
+        ),
+        (
+            'greater_than',
+            'Input should be greater than 42.1',
+            {'gt': 42.1},
+            'Input should be greater than 42.1',
+            "Input should be greater than 42.1 [kind=greater_than, context={'gt': 42.1}]",
+        ),
+        (
+            'greater_than_equal',
+            'Input should be greater than or equal to 42.1',
+            {'ge': 42.1},
+            'Input should be greater than or equal to 42.1',
+            "Input should be greater than or equal to 42.1 [kind=greater_than_equal, context={'ge': 42.1}]",
+        ),
+        (
+            'less_than',
+            'Input should be less than 42.1',
+            {'lt': 42.1},
+            'Input should be less than 42.1',
+            "Input should be less than 42.1 [kind=less_than, context={'lt': 42.1}]",
+        ),
+        (
+            'less_than_equal',
+            'Input should be less than or equal to 42.1',
+            {'le': 42.1},
+            'Input should be less than or equal to 42.1',
+            "Input should be less than or equal to 42.1 [kind=less_than_equal, context={'le': 42.1}]",
+        ),
+        (
+            'float_type',
+            'Input should be a valid number',
+            None,
+            'Input should be a valid number',
+            'Input should be a valid number [kind=float_type, context=None]',
+        ),
+        (
+            'float_parsing',
+            'Input should be a valid number, unable to parse string as an number',
+            None,
+            'Input should be a valid number, unable to parse string as an number',
+            'Input should be a valid number, unable to parse string as an number [kind=float_parsing, context=None]',
+        ),
+        (
+            'finite_number',
+            'Input should be a finite number',
+            None,
+            'Input should be a finite number',
+            'Input should be a finite number [kind=finite_number, context=None]',
+        ),
+        (
+            'bytes_type',
+            'Input should be a valid bytes',
+            None,
+            'Input should be a valid bytes',
+            'Input should be a valid bytes [kind=bytes_type, context=None]',
+        ),
+        (
+            'value_error',
+            'Value error, foobar',
+            {'error': 'foobar'},
+            'Value error, foobar',
+            "Value error, foobar [kind=value_error, context={'error': 'foobar'}]",
+        ),
+        (
+            'assertion_error',
+            'Assertion failed, foobar',
+            {'error': 'foobar'},
+            'Assertion failed, foobar',
+            "Assertion failed, foobar [kind=assertion_error, context={'error': 'foobar'}]",
+        ),
+        (
+            'literal_error',
+            'Input should be one of: foo',
+            {'expected': 'foo'},
+            'Input should be one of: foo',
+            "Input should be one of: foo [kind=literal_error, context={'expected': 'foo'}]",
+        ),
+        (
+            'date_type',
+            'Input should be a valid date',
+            None,
+            'Input should be a valid date',
+            'Input should be a valid date [kind=date_type, context=None]',
+        ),
+        (
+            'date_parsing',
+            'Input should be a valid date in the format YYYY-MM-DD, foobar',
+            {'error': 'foobar'},
+            'Input should be a valid date in the format YYYY-MM-DD, foobar',
+            "Input should be a valid date in the format YYYY-MM-DD, foobar [kind=date_parsing, context={'error': 'foobar'}]",  # noqa: E501
+        ),
+        (
+            'date_from_datetime_parsing',
+            'Input should be a valid date or datetime, foobar',
+            {'error': 'foobar'},
+            'Input should be a valid date or datetime, foobar',
+            "Input should be a valid date or datetime, foobar [kind=date_from_datetime_parsing, context={'error': 'foobar'}]",  # noqa: E501
+        ),
+        (
+            'date_from_datetime_inexact',
+            'Datetimes provided to dates should have zero time - e.g. be exact dates',
+            None,
+            'Datetimes provided to dates should have zero time - e.g. be exact dates',
+            'Datetimes provided to dates should have zero time - e.g. be exact dates [kind=date_from_datetime_inexact, context=None]',  # noqa: E501
+        ),
+        (
+            'time_type',
+            'Input should be a valid time',
+            None,
+            'Input should be a valid time',
+            'Input should be a valid time [kind=time_type, context=None]',
+        ),
+        (
+            'time_parsing',
+            'Input should be in a valid time format, foobar',
+            {'error': 'foobar'},
+            'Input should be in a valid time format, foobar',
+            "Input should be in a valid time format, foobar [kind=time_parsing, context={'error': 'foobar'}]",
+        ),
+        (
+            'datetime_type',
+            'Input should be a valid datetime',
+            None,
+            'Input should be a valid datetime',
+            'Input should be a valid datetime [kind=datetime_type, context=None]',
+        ),
+        (
+            'datetime_parsing',
+            'Input should be a valid datetime, foobar',
+            {'error': 'foobar'},
+            'Input should be a valid datetime, foobar',
+            "Input should be a valid datetime, foobar [kind=datetime_parsing, context={'error': 'foobar'}]",
+        ),
+        (
+            'datetime_object_invalid',
+            'Invalid datetime object, got foobar',
+            {'error': 'foobar'},
+            'Invalid datetime object, got foobar',
+            "Invalid datetime object, got foobar [kind=datetime_object_invalid, context={'error': 'foobar'}]",
+        ),
+        (
+            'time_delta_type',
+            'Input should be a valid timedelta',
+            None,
+            'Input should be a valid timedelta',
+            'Input should be a valid timedelta [kind=time_delta_type, context=None]',
+        ),
+        (
+            'time_delta_parsing',
+            'Input should be a valid timedelta, foobar',
+            {'error': 'foobar'},
+            'Input should be a valid timedelta, foobar',
+            "Input should be a valid timedelta, foobar [kind=time_delta_parsing, context={'error': 'foobar'}]",
+        ),
+        (
+            'frozen_set_type',
+            'Input should be a valid frozenset',
+            None,
+            'Input should be a valid frozenset',
+            'Input should be a valid frozenset [kind=frozen_set_type, context=None]',
+        ),
+        (
+            'is_instance_of',
+            'Input should be an instance of Foo',
+            {'class': 'Foo'},
+            'Input should be an instance of Foo',
+            "Input should be an instance of Foo [kind=is_instance_of, context={'class': 'Foo'}]",
+        ),
+        (
+            'callable_type',
+            'Input should be callable',
+            None,
+            'Input should be callable',
+            'Input should be callable [kind=callable_type, context=None]',
+        ),
+        (
+            'union_tag_invalid',
+            "Input tag 'foo' found using bar does not match any of the expected tags: baz",
+            {'discriminator': 'bar', 'tag': 'foo', 'expected_tags': 'baz'},
+            "Input tag 'foo' found using bar does not match any of the expected tags: baz",
+            "Input tag 'foo' found using bar does not match any of the expected tags: baz [kind=union_tag_invalid, context={'discriminator': 'bar', 'tag': 'foo', 'expected_tags': 'baz'}]",  # noqa: E501
+        ),
+        (
+            'union_tag_not_found',
+            'Unable to extract tag using discriminator foo',
+            {'discriminator': 'foo'},
+            'Unable to extract tag using discriminator foo',
+            "Unable to extract tag using discriminator foo [kind=union_tag_not_found, context={'discriminator': 'foo'}]",  # noqa: E501
+        ),
+        (
+            'arguments_type',
+            'Arguments must be a tuple of (positional arguments, keyword arguments) or a plain dict',
+            None,
+            'Arguments must be a tuple of (positional arguments, keyword arguments) or a plain dict',
+            'Arguments must be a tuple of (positional arguments, keyword arguments) or a plain dict [kind=arguments_type, context=None]',  # noqa: E501
+        ),
+        (
+            'unexpected_keyword_argument',
+            'Unexpected keyword argument',
+            None,
+            'Unexpected keyword argument',
+            'Unexpected keyword argument [kind=unexpected_keyword_argument, context=None]',
+        ),
+        (
+            'missing_keyword_argument',
+            'Missing required keyword argument',
+            None,
+            'Missing required keyword argument',
+            'Missing required keyword argument [kind=missing_keyword_argument, context=None]',
+        ),
+        (
+            'unexpected_positional_argument',
+            'Unexpected positional argument',
+            None,
+            'Unexpected positional argument',
+            'Unexpected positional argument [kind=unexpected_positional_argument, context=None]',
+        ),
+        (
+            'missing_positional_argument',
+            'Missing required positional argument',
+            None,
+            'Missing required positional argument',
+            'Missing required positional argument [kind=missing_positional_argument, context=None]',
+        ),
+        (
+            'multiple_argument_values',
+            'Got multiple values for argument',
+            None,
+            'Got multiple values for argument',
+            'Got multiple values for argument [kind=multiple_argument_values, context=None]',
+        ),
+    ],
+)
+def test_error_kind(kind, message, context, str_e, repr_e):
+    e = PydanticErrorKind(kind, context)
+    assert e.message() == message
+    assert e.kind == kind
+    assert e.context == context
+    assert str(e) == str_e
+    assert repr(e) == repr_e
