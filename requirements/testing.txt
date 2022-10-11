@@ -8,10 +8,8 @@ attrs==22.1.0
     # via pytest
 coverage[toml]==6.4.4
     # via -r requirements/testing.in
-importlib-metadata==4.12.0
-    # via
-    #   pluggy
-    #   pytest
+dirty-equals==0.5.0
+    # via -r requirements/testing.in
 iniconfig==1.1.1
     # via pytest
 packaging==21.3
@@ -33,6 +31,8 @@ pytest-mock==3.8.2
     # via -r requirements/testing.in
 pytest-sugar==0.9.5
     # via -r requirements/testing.in
+pytz==2022.4
+    # via dirty-equals
 termcolor==1.1.0
     # via pytest-sugar
 tomli==2.0.1

@@ -1,5 +1,5 @@
 import pytest
-from pydantic_core import PydanticValueError
+from pydantic_core import PydanticCustomError
 
 from pydantic import (
     AmqpDsn,
@@ -824,7 +824,7 @@ def test_address_valid(value, name, email):
     ],
 )
 def test_address_invalid(value, reason):
-    with pytest.raises(PydanticValueError, match=f'value is not a valid email address: {reason or ""}'):
+    with pytest.raises(PydanticCustomError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 
 

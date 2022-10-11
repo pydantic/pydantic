@@ -36,4 +36,3 @@ pydantic/*.so
 /fastapi/
 /codecov.sh
 /worktrees/
-/tests/insert_assert.py

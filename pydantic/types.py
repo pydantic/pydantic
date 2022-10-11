@@ -26,7 +26,7 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import PydanticValueError, core_schema
+from pydantic_core import PydanticCustomError, core_schema
 
 from . import errors
 from ._internal import _fields, _validators
@@ -287,16 +287,11 @@ class UuidVersion(_fields.PydanticMetadata):
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
     def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        return core_schema.FunctionSchema(
-            type='function',
-            mode='after',
-            function=self.validate,
-            schema=schema,
-        )
+        return core_schema.function_after_schema(self.validate, schema)
 
     def validate(self, value: UUID, **kwargs) -> UUID:
         if value.version != self.uuid_version:
-            raise PydanticValueError(
+            raise PydanticCustomError(
                 'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
             )
         return value
@@ -337,21 +332,21 @@ class PathType(_fields.PydanticMetadata):
         if path.is_file():
             return path
         else:
-            raise PydanticValueError('path_not_file', 'path does not point to a file')
+            raise PydanticCustomError('path_not_file', 'path does not point to a file')
 
     @staticmethod
     def validate_directory(path: Path) -> Path:
         if path.is_dir():
             return path
         else:
-            raise PydanticValueError('path_not_directory', 'path does not point to a directory')
+            raise PydanticCustomError('path_not_directory', 'path does not point to a directory')
 
     @staticmethod
     def validate_new(path: Path) -> Path:
         if path.exists():
-            raise PydanticValueError('path_exists', 'path already exists')
+            raise PydanticCustomError('path_exists', 'path already exists')
         elif not path.parent.exists():
-            raise PydanticValueError('parent_does_not_exist', 'parent directory does not exist')
+            raise PydanticCustomError('parent_does_not_exist', 'parent directory does not exist')
         else:
             return path
 

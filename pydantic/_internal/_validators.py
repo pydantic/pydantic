@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 from typing import Any
 
-from pydantic_core import PydanticValueError
+from pydantic_core import PydanticCustomError
 
 __all__ = ('import_string',)
 
@@ -12,7 +12,7 @@ def import_string(value: Any, **kwargs) -> Any:
         try:
             return _import_string_logic(value)
         except ImportError as e:
-            raise PydanticValueError('import_error', 'Invalid python path: {error}', {'error': str(e)})
+            raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)})
     else:
         # otherwise we just return the value and let the next validator do the test of the work
         return value

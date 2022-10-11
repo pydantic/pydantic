@@ -13,11 +13,11 @@ import typing
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata
-from pydantic_core import core_schema, PydanticValueError
+from pydantic_core import PydanticCustomError, PydanticErrorKind, core_schema
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
-from ._fields import CustomMetadata, PydanticMetadata, CustomValidator
+from ._fields import CustomMetadata, CustomValidator, PydanticMetadata
 from ._typing_extra import (
     NoneType,
     NotRequired,
@@ -52,8 +52,11 @@ def model_fields_schema(
 def generate_config(config: type[BaseConfig]) -> core_schema.CoreConfig:
     return core_schema.CoreConfig(
         typed_dict_extra_behavior=config.extra.value,
-        # allow_inf_nan=config.allow_inf_nan,
+        allow_inf_nan=config.allow_inf_nan,
         populate_by_name=config.allow_population_by_field_name,
+        str_strip_whitespace=config.anystr_strip_whitespace,
+        str_to_lower=config.anystr_lower,
+        str_to_upper=config.anystr_upper,
     )
 
 
@@ -108,6 +111,8 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
         return dict_schema(obj)
     elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
         return type_schema(obj)
+    elif issubclass(origin, typing.Sequence):
+        return sequence_schema(obj)
     elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
         return iterable_schema(obj)
     else:
@@ -346,11 +351,47 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
         return core_schema.is_instance_schema(type_param)
 
 
+def sequence_validator(v: Any, *, validator, **kwargs):
+    if not isinstance(v, typing.Sequence):
+        raise PydanticErrorKind('is_instance_of', {'class': 'Sequence'})
+
+    value_type = type(v)
+    v_list = validator(v)
+    if issubclass(value_type, str):
+        try:
+            return ''.join(v_list)
+        except TypeError:
+            # can happen if you pass a string like '123' to `Sequence[int]`
+            raise PydanticErrorKind('str_type')
+    elif issubclass(value_type, bytes):
+        try:
+            return b''.join(v_list)
+        except TypeError:
+            # can happen if you pass a string like '123' to `Sequence[int]`
+            raise PydanticErrorKind('bytes_type')
+    elif issubclass(value_type, range):
+        # return the list as we probably can't re-create the range
+        return v_list
+    else:
+        return value_type(v_list)
+
+
+def sequence_schema(sequence_type: Any) -> core_schema.FunctionWrapSchema:
+    """
+    Generate schema for a Sequence, e.g. `Sequence[int]`.
+    """
+    arg0 = get_args(sequence_type)[0]
+    return core_schema.function_wrap_schema(
+        sequence_validator,
+        core_schema.list_schema(generate_schema(arg0), allow_any_iter=True),
+    )
+
+
 def iterable_any_validator(v: Any, **_kwargs: Any) -> typing.Iterable[Any]:
     try:
         return iter(v)
     except TypeError:
-        raise PydanticValueError('iterable_type', 'Input should be a valid iterable')
+        raise PydanticCustomError('iterable_type', 'Input should be a valid iterable')
 
 
 def validate_yield(
@@ -366,7 +407,7 @@ def iterable_type_validator(
     try:
         iterable = iter(v)
     except TypeError:
-        raise PydanticValueError('iterable_type', 'Input should be a valid iterable')
+        raise PydanticCustomError('iterable_type', 'Input should be a valid iterable')
     return validate_yield(iterable, validator)
 
 

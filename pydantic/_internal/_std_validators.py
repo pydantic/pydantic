@@ -7,9 +7,9 @@ from pathlib import Path, PurePath
 from typing import Any, Callable
 from uuid import UUID
 
-from ._fields import CustomValidator
+from pydantic_core import PydanticCustomError, PydanticErrorKind, core_schema
 
-from pydantic_core import PydanticValueError, core_schema
+from ._fields import CustomValidator
 
 __all__ = ('SCHEMA_LOOKUP',)
 
@@ -23,7 +23,7 @@ def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
         try:
             return enum_type(v)
         except ValueError:
-            raise PydanticValueError('enum', 'Input is not a valid enum member')
+            raise PydanticCustomError('enum', 'Input is not a valid enum member')
 
     literal_schema = core_schema.literal_schema(*[m.value for m in enum_type.__members__.values()])
 
@@ -85,12 +85,12 @@ class DecimalValidator(CustomValidator):
             try:
                 value = Decimal(v)
             except DecimalException:
-                raise PydanticValueError('decimal_parsing', 'Input should be a valid decimal')
+                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
         if self.check_digits:
             digit_tuple, exponent = value.as_tuple()[1:]
             if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
-                raise PydanticValueError('decimal_finite_number', 'Input should be a finite number')
+                raise PydanticCustomError('decimal_finite_number', 'Input should be a finite number')
 
             if exponent >= 0:
                 # A positive exponent adds that many trailing zeros.
@@ -110,14 +110,14 @@ class DecimalValidator(CustomValidator):
             whole_digits = digits - decimals
 
             if self.max_digits is not None and digits > self.max_digits:
-                raise PydanticValueError(
+                raise PydanticCustomError(
                     'decimal_max_digits',
                     'ensure that there are no more than {max_digits} digits in total',
                     {'max_digits': self.max_digits},
                 )
 
             if self.decimal_places is not None and decimals > self.decimal_places:
-                raise PydanticValueError(
+                raise PydanticCustomError(
                     'decimal_max_places',
                     'ensure that there are no more than {decimal_places} decimal places',
                     {'decimal_places': self.decimal_places},
@@ -126,7 +126,7 @@ class DecimalValidator(CustomValidator):
             if self.max_digits is not None and self.decimal_places is not None:
                 expected = self.max_digits - self.decimal_places
                 if whole_digits > expected:
-                    raise PydanticValueError(
+                    raise PydanticCustomError(
                         'decimal_whole_digits',
                         'ensure that there are no more than {whole_digits} digits before the decimal point',
                         {'whole_digits': whole_digits},
@@ -135,23 +135,21 @@ class DecimalValidator(CustomValidator):
         if self.multiple_of is not None:
             mod = value / self.multiple_of % 1
             if mod != 0:
-                raise PydanticValueError(
+                raise PydanticCustomError(
                     'decimal_multiple_of',
                     'Input should be a multiple of {multiple_of}',
                     {'multiple_of': self.multiple_of},
                 )
 
         if self.gt is not None and not value > self.gt:
-            raise PydanticValueError('greater_than', 'Input should be greater than {gt}', {'gt': self.gt})
+            raise PydanticErrorKind('greater_than', {'gt': self.gt})
         elif self.ge is not None and not value >= self.ge:
-            raise PydanticValueError(
-                'greater_than_equal', 'Input should be greater than or equal to {ge}', {'ge': self.ge}
-            )
+            raise PydanticErrorKind('greater_than_equal', {'ge': self.ge})
 
         if self.lt is not None and not value < self.lt:
-            raise PydanticValueError('less_than', 'Input should be less than {lt}', {'lt': self.lt})
+            raise PydanticErrorKind('less_than', {'lt': self.lt})
         if self.le is not None and not value <= self.le:
-            raise PydanticValueError('less_than_equal', 'Input should be less than or equal to {le}', {'le': self.le})
+            raise PydanticErrorKind('less_than_equal', {'le': self.le})
 
         return value
 
@@ -186,7 +184,7 @@ def uuid_validator(input_value: str | bytes, **_kwargs: Any) -> UUID:
                 # the above check
                 return UUID(bytes=input_value)
     except ValueError:
-        raise PydanticValueError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
+        raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
 
 
 def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
@@ -198,10 +196,10 @@ def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
             core_schema.union_schema(
                 core_schema.string_schema(),
                 core_schema.bytes_schema(),
-                custom_error_kind='uuid_type',
-                custom_error_message='Input should be a valid UUID, string, or bytes',
             ),
         ),
+        custom_error_kind='uuid_type',
+        custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
     )
 
@@ -210,7 +208,7 @@ def path_validator(v: str) -> Path:
     try:
         return Path(v)
     except TypeError:
-        raise PydanticValueError('path', 'Input is not a valid path')
+        raise PydanticCustomError('path', 'Input is not a valid path')
 
 
 def path_schema(path_type: type[PurePath]) -> core_schema.UnionSchema:
