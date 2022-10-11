@@ -3,11 +3,12 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input, JsonObject};
 use crate::recursion_guard::RecursionGuard;
 
 use super::any::AnyValidator;
+use super::list::length_check;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -95,32 +96,6 @@ macro_rules! build_validate {
             slots: &'data [CombinedValidator],
             recursion_guard: &'s mut RecursionGuard,
         ) -> ValResult<'data, PyObject> {
-            let mut op_len: Option<usize> = None;
-            if let Some(min_length) = self.min_length {
-                let input_length = dict.len();
-                if input_length < min_length {
-                    return Err(ValError::new(
-                        ErrorKind::TooShort {
-                            min_length,
-                            input_length,
-                        },
-                        input,
-                    ));
-                }
-                op_len = Some(input_length);
-            }
-            if let Some(max_length) = self.max_length {
-                let input_length = op_len.unwrap_or_else(|| dict.len());
-                if input_length > max_length {
-                    return Err(ValError::new(
-                        ErrorKind::TooLong {
-                            max_length,
-                            input_length,
-                        },
-                        input,
-                    ));
-                }
-            }
             let output = PyDict::new(py);
             let mut errors: Vec<ValLineError> = Vec::new();
 
@@ -160,6 +135,7 @@ macro_rules! build_validate {
             }
 
             if errors.is_empty() {
+                length_check!(input, "Dictionary", self.min_length, self.max_length, output);
                 Ok(output.into())
             } else {
                 Err(ValError::LineErrors(errors))

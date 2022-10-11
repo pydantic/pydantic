@@ -171,7 +171,7 @@ impl<'a> Input<'a> for JsonInput {
         self.validate_dict(false)
     }
 
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_list(&'a self, _strict: bool, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
         match self {
             JsonInput::Array(a) => Ok(a.into()),
             _ => Err(ValError::new(ErrorKind::ListType, self)),
@@ -179,7 +179,7 @@ impl<'a> Input<'a> for JsonInput {
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
-        self.validate_list(false)
+        self.validate_list(false, false)
     }
 
     fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
@@ -371,12 +371,12 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_list(&'a self, _strict: bool, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
         Err(ValError::new(ErrorKind::ListType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
-        self.validate_list(false)
+        self.validate_list(false, false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]

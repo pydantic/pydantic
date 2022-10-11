@@ -6,20 +6,23 @@ use crate::errors::ValResult;
 use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::list::generic_collection_build;
+use super::list::{get_items_schema, length_check};
+use super::set::set_build;
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct FrozenSetValidator {
     strict: bool,
     item_validator: Option<Box<CombinedValidator>>,
-    size_range: Option<(Option<usize>, Option<usize>)>,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
+    generator_max_length: Option<usize>,
     name: String,
 }
 
 impl BuildValidator for FrozenSetValidator {
     const EXPECTED_TYPE: &'static str = "frozenset";
-    generic_collection_build!();
+    set_build!();
 }
 
 impl Validator for FrozenSetValidator {
@@ -33,16 +36,28 @@ impl Validator for FrozenSetValidator {
     ) -> ValResult<'data, PyObject> {
         let seq = input.validate_frozenset(extra.strict.unwrap_or(self.strict))?;
 
-        let length = seq.check_len(self.size_range, input)?;
-
-        let output = match self.item_validator {
-            Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
+        let f_set = match self.item_validator {
+            Some(ref v) => PyFrozenSet::new(
+                py,
+                &seq.validate_to_vec(
+                    py,
+                    input,
+                    self.max_length,
+                    "Frozenset",
+                    self.generator_max_length,
+                    v,
+                    extra,
+                    slots,
+                    recursion_guard,
+                )?,
+            )?,
             None => match seq {
-                GenericCollection::FrozenSet(f_set) => return Ok(f_set.into_py(py)),
-                _ => seq.to_vec(py),
+                GenericCollection::FrozenSet(f_set) => f_set,
+                _ => PyFrozenSet::new(py, &seq.to_vec(py, input, "Frozenset", self.generator_max_length)?)?,
             },
         };
-        Ok(PyFrozenSet::new(py, &output)?.into_py(py))
+        length_check!(input, "Frozenset", self.min_length, self.max_length, f_set);
+        Ok(f_set.into_py(py))
     }
 
     fn get_name(&self) -> &str {

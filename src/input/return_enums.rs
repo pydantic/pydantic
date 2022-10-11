@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
 
-use crate::errors::{ErrorKind, InputValue, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorKind, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
@@ -19,6 +19,7 @@ pub enum GenericCollection<'a> {
     Tuple(&'a PyTuple),
     Set(&'a PySet),
     FrozenSet(&'a PyFrozenSet),
+    PyAny(&'a PyAny),
     JsonArray(&'a [JsonInput]),
 }
 
@@ -35,19 +36,20 @@ derive_from!(GenericCollection, List, PyList);
 derive_from!(GenericCollection, Tuple, PyTuple);
 derive_from!(GenericCollection, Set, PySet);
 derive_from!(GenericCollection, FrozenSet, PyFrozenSet);
+derive_from!(GenericCollection, PyAny, PyAny);
 derive_from!(GenericCollection, JsonArray, JsonArray);
 derive_from!(GenericCollection, JsonArray, [JsonInput]);
 
 fn validate_iter_to_vec<'a, 's>(
     py: Python<'a>,
     iter: impl Iterator<Item = &'a (impl Input<'a> + 'a)>,
-    length: usize,
+    capacity: usize,
     validator: &'s CombinedValidator,
     extra: &Extra,
     slots: &'a [CombinedValidator],
     recursion_guard: &'s mut RecursionGuard,
 ) -> ValResult<'a, Vec<PyObject>> {
-    let mut output: Vec<PyObject> = Vec::with_capacity(length);
+    let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item) in iter.enumerate() {
         match validator.validate(py, item, extra, slots, recursion_guard) {
@@ -67,88 +69,163 @@ fn validate_iter_to_vec<'a, 's>(
     }
 }
 
+macro_rules! any_next_error {
+    ($py:expr, $err:ident, $input:ident, $index:ident) => {
+        ValError::new_with_loc(
+            ErrorKind::IterationError {
+                error: py_err_string($py, $err),
+            },
+            $input,
+            $index,
+        )
+    };
+}
+
+macro_rules! generator_too_long {
+    ($input:ident, $index:ident, $max_length:expr, $field_type:ident) => {
+        if let Some(max_length) = $max_length {
+            if $index > max_length {
+                return Err(ValError::new(
+                    ErrorKind::TooLong {
+                        field_type: $field_type.to_string(),
+                        max_length,
+                        actual_length: $index,
+                    },
+                    $input,
+                ));
+            }
+        }
+    };
+}
+
+// pretty arbitrary default capacity when creating vecs from iteration
+static DEFAULT_CAPACITY: usize = 10;
+
 impl<'a> GenericCollection<'a> {
-    pub fn generic_len(&self) -> usize {
+    pub fn generic_len(&self) -> PyResult<usize> {
         match self {
-            Self::List(v) => v.len(),
-            Self::Tuple(v) => v.len(),
-            Self::Set(v) => v.len(),
-            Self::FrozenSet(v) => v.len(),
-            Self::JsonArray(v) => v.len(),
+            Self::List(v) => Ok(v.len()),
+            Self::Tuple(v) => Ok(v.len()),
+            Self::Set(v) => Ok(v.len()),
+            Self::FrozenSet(v) => Ok(v.len()),
+            Self::PyAny(v) => v.len(),
+            Self::JsonArray(v) => Ok(v.len()),
         }
     }
 
-    pub fn check_len<'s, 'data>(
-        &'s self,
-        size_range: Option<(Option<usize>, Option<usize>)>,
-        input: &'data impl Input<'data>,
-    ) -> ValResult<'data, Option<usize>> {
-        let mut length: Option<usize> = None;
-        if let Some((min_length, max_length)) = size_range {
-            let input_length = self.generic_len();
-            if let Some(min_length) = min_length {
-                if input_length < min_length {
-                    return Err(ValError::new(
-                        ErrorKind::TooShort {
-                            min_length,
-                            input_length,
-                        },
-                        input,
-                    ));
-                }
-            }
-            if let Some(max_length) = max_length {
-                if input_length > max_length {
-                    return Err(ValError::new(
-                        ErrorKind::TooLong {
-                            max_length,
-                            input_length,
-                        },
-                        input,
-                    ));
-                }
-            }
-            length = Some(input_length);
-        }
-        Ok(length)
-    }
-
+    #[allow(clippy::too_many_arguments)]
     pub fn validate_to_vec<'s>(
-        &self,
+        &'s self,
         py: Python<'a>,
-        length: Option<usize>,
+        input: &'a impl Input<'a>,
+        max_length: Option<usize>,
+        field_type: &'static str,
+        generator_max_length: Option<usize>,
         validator: &'s CombinedValidator,
         extra: &Extra,
         slots: &'a [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'a, Vec<PyObject>> {
-        let length = length.unwrap_or_else(|| self.generic_len());
+        let capacity = self
+            .generic_len()
+            .unwrap_or_else(|_| max_length.unwrap_or(DEFAULT_CAPACITY));
         match self {
-            Self::List(collection) => {
-                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
+            Self::List(collection) => validate_iter_to_vec(
+                py,
+                collection.iter(),
+                capacity,
+                validator,
+                extra,
+                slots,
+                recursion_guard,
+            ),
+            Self::Tuple(collection) => validate_iter_to_vec(
+                py,
+                collection.iter(),
+                capacity,
+                validator,
+                extra,
+                slots,
+                recursion_guard,
+            ),
+            Self::Set(collection) => validate_iter_to_vec(
+                py,
+                collection.iter(),
+                capacity,
+                validator,
+                extra,
+                slots,
+                recursion_guard,
+            ),
+            Self::FrozenSet(collection) => validate_iter_to_vec(
+                py,
+                collection.iter(),
+                capacity,
+                validator,
+                extra,
+                slots,
+                recursion_guard,
+            ),
+            Self::PyAny(collection) => {
+                let iter = collection.iter()?;
+                let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
+                let mut errors: Vec<ValLineError> = Vec::new();
+                for (index, item_result) in iter.enumerate() {
+                    let item = item_result.map_err(|e| any_next_error!(collection.py(), e, input, index))?;
+                    match validator.validate(py, item, extra, slots, recursion_guard) {
+                        Ok(item) => {
+                            generator_too_long!(input, index, generator_max_length, field_type);
+                            output.push(item);
+                        }
+                        Err(ValError::LineErrors(line_errors)) => {
+                            errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
+                        }
+                        Err(ValError::Omit) => (),
+                        Err(err) => return Err(err),
+                    }
+                }
+                // TODO do too small check here
+
+                if errors.is_empty() {
+                    Ok(output)
+                } else {
+                    Err(ValError::LineErrors(errors))
+                }
             }
-            Self::Tuple(collection) => {
-                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
-            }
-            Self::Set(collection) => {
-                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
-            }
-            Self::FrozenSet(collection) => {
-                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
-            }
-            Self::JsonArray(collection) => {
-                validate_iter_to_vec(py, collection.iter(), length, validator, extra, slots, recursion_guard)
-            }
+            Self::JsonArray(collection) => validate_iter_to_vec(
+                py,
+                collection.iter(),
+                capacity,
+                validator,
+                extra,
+                slots,
+                recursion_guard,
+            ),
         }
     }
 
-    pub fn to_vec(&self, py: Python) -> Vec<PyObject> {
+    pub fn to_vec<'s>(
+        &'s self,
+        py: Python<'a>,
+        input: &'a impl Input<'a>,
+        field_type: &'static str,
+        generator_max_length: Option<usize>,
+    ) -> ValResult<'a, Vec<PyObject>> {
         match self {
-            Self::List(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
-            Self::Tuple(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
-            Self::Set(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
-            Self::FrozenSet(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
-            Self::JsonArray(collection) => collection.iter().map(|i| i.to_object(py)).collect(),
+            Self::List(collection) => Ok(collection.iter().map(|i| i.to_object(py)).collect()),
+            Self::Tuple(collection) => Ok(collection.iter().map(|i| i.to_object(py)).collect()),
+            Self::Set(collection) => Ok(collection.iter().map(|i| i.to_object(py)).collect()),
+            Self::FrozenSet(collection) => Ok(collection.iter().map(|i| i.to_object(py)).collect()),
+            Self::PyAny(collection) => collection
+                .iter()?
+                .enumerate()
+                .map(|(index, item_result)| {
+                    generator_too_long!(input, index, generator_max_length, field_type);
+                    let item = item_result.map_err(|e| any_next_error!(collection.py(), e, input, index))?;
+                    Ok(item.to_object(py))
+                })
+                .collect(),
+            Self::JsonArray(collection) => Ok(collection.iter().map(|i| i.to_object(py)).collect()),
         }
     }
 }

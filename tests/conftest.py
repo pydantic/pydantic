@@ -15,7 +15,7 @@ from typing_extensions import Literal
 
 from pydantic_core import SchemaValidator
 
-__all__ = 'Err', 'PyAndJson', 'plain_repr'
+__all__ = 'Err', 'PyAndJson', 'plain_repr', 'infinite_generator'
 
 hyp_max_examples = os.getenv('HYPOTHESIS_MAX_EXAMPLES')
 if hyp_max_examples:
@@ -106,3 +106,10 @@ def import_execute(request, tmp_work_path: Path):
             return module
 
     return _import_execute
+
+
+def infinite_generator():
+    i = 0
+    while True:
+        yield i
+        i += 1

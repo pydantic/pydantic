@@ -1,3 +1,5 @@
+from collections import deque
+
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator
@@ -68,22 +70,49 @@ def test_arguments_omit():
         )
 
 
-def test_list(py_and_json: PyAndJson):
+@pytest.mark.parametrize(
+    'input_value,expected', [([1, 2, 3], [1, 2, 3]), ([1, '2', 3], [1, 2, 3]), ([1, 'wrong', 3], [1, 3])]
+)
+def test_list_json(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(
         {'type': 'list', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
     )
-    assert v.validate_test([1, 2, 3]) == [1, 2, 3]
-    assert v.validate_test([1, '2', 3]) == [1, 2, 3]
-    assert v.validate_test([1, 'wrong', 3]) == [1, 3]
+    assert v.validate_test(input_value) == expected
 
 
-def test_set():
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ([1, '2', 3], [1, 2, 3]),
+        ([1, 'wrong', 3], [1, 3]),
+        ((1, '2', 3), [1, 2, 3]),
+        ((1, 'wrong', 3), [1, 3]),
+        (deque([1, '2', 3]), [1, 2, 3]),
+        (deque([1, 'wrong', 3]), [1, 3]),
+    ],
+)
+def test_list(input_value, expected):
+    v = SchemaValidator(
+        {'type': 'list', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
+    )
+    assert v.validate_python(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ({1, '2', 3}, {1, 2, 3}),
+        ([1, '2', 3], {1, 2, 3}),
+        ([1, 'wrong', 3], {1, 3}),
+        (deque([1, '2', 3]), {1, 2, 3}),
+        (deque([1, 'wrong', 3]), {1, 3}),
+    ],
+)
+def test_set(input_value, expected):
     v = SchemaValidator(
         {'type': 'set', 'items_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'}}
     )
-    assert v.validate_python({1, 2, 3}) == {1, 2, 3}
-    assert v.validate_python([1, '2', 3]) == {1, 2, 3}
-    assert v.validate_python([1, 'wrong', 3]) == {1, 3}
+    assert v.validate_python(input_value) == expected
 
 
 def test_dict_values(py_and_json: PyAndJson):
