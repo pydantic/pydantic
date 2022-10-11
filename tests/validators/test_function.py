@@ -704,10 +704,10 @@ def test_pydantic_error_kind_raise_ctx():
         ),
         (
             'iteration_error',
-            'Error iterating over object',
-            None,
-            'Error iterating over object',
-            'Error iterating over object [kind=iteration_error, context=None]',
+            'Error iterating over object, error: foobar',
+            {'error': 'foobar'},
+            'Error iterating over object, error: foobar',
+            "Error iterating over object, error: foobar [kind=iteration_error, context={'error': 'foobar'}]",
         ),
         (
             'list_type',
