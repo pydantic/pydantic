@@ -187,34 +187,30 @@ def test_float_key(py_and_json: PyAndJson):
     'input_value,allow_inf_nan,expected',
     [
         ('NaN', True, FunctionCheck(math.isnan)),
-        (
-            'NaN',
-            False,
-            Err("Input should be a finite number [kind=float_finite_number, input_value='NaN', input_type=str]"),
-        ),
+        ('NaN', False, Err("Input should be a finite number [kind=finite_number, input_value='NaN', input_type=str]")),
         ('+inf', True, FunctionCheck(lambda x: math.isinf(x) and x > 0)),
         (
             '+inf',
             False,
-            Err("Input should be a finite number [kind=float_finite_number, input_value='+inf', input_type=str]"),
+            Err("Input should be a finite number [kind=finite_number, input_value='+inf', input_type=str]"),
         ),
         ('+infinity', True, FunctionCheck(lambda x: math.isinf(x) and x > 0)),
         (
             '+infinity',
             False,
-            Err("Input should be a finite number [kind=float_finite_number, input_value='+infinity', input_type=str]"),
+            Err("Input should be a finite number [kind=finite_number, input_value='+infinity', input_type=str]"),
         ),
         ('-inf', True, FunctionCheck(lambda x: math.isinf(x) and x < 0)),
         (
             '-inf',
             False,
-            Err("Input should be a finite number [kind=float_finite_number, input_value='-inf', input_type=str]"),
+            Err("Input should be a finite number [kind=finite_number, input_value='-inf', input_type=str]"),
         ),
         ('-infinity', True, FunctionCheck(lambda x: math.isinf(x) and x < 0)),
         (
             '-infinity',
             False,
-            Err("Input should be a finite number [kind=float_finite_number, input_value='-infinity', input_type=str]"),
+            Err("Input should be a finite number [kind=finite_number, input_value='-infinity', input_type=str]"),
         ),
         ('0.7', True, 0.7),
         ('0.7', False, 0.7),
@@ -253,7 +249,7 @@ def test_non_finite_json_values(py_and_json: PyAndJson, input_value, allow_inf_n
         (
             float('nan'),
             False,
-            Err('Input should be a finite number [kind=float_finite_number, input_value=nan, input_type=float]'),
+            Err('Input should be a finite number [kind=finite_number, input_value=nan, input_type=float]'),
         ),
     ],
 )
@@ -273,7 +269,7 @@ def test_non_finite_float_values(strict, input_value, allow_inf_nan, expected):
         (
             float('+inf'),
             False,
-            Err('Input should be a finite number [kind=float_finite_number, input_value=inf, input_type=float]'),
+            Err('Input should be a finite number [kind=finite_number, input_value=inf, input_type=float]'),
         ),
         (
             float('-inf'),
@@ -283,7 +279,7 @@ def test_non_finite_float_values(strict, input_value, allow_inf_nan, expected):
         (
             float('-inf'),
             False,
-            Err('Input should be a finite number [kind=float_finite_number, input_value=-inf, input_type=float]'),
+            Err('Input should be a finite number [kind=finite_number, input_value=-inf, input_type=float]'),
         ),
     ],
 )

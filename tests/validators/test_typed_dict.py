@@ -125,7 +125,7 @@ field_b
         (
             {'allow_inf_nan': False},
             {'a': '123', 'b': 'nan'},
-            Err('Input should be a finite number [kind=float_finite_number,'),
+            Err('Input should be a finite number [kind=finite_number,'),
         ),
     ],
     ids=repr,

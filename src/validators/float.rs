@@ -52,7 +52,7 @@ impl Validator for FloatValidator {
     ) -> ValResult<'data, PyObject> {
         let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
         if !self.allow_inf_nan && !float.is_finite() {
-            return Err(ValError::new(ErrorKind::FloatFiniteNumber, input));
+            return Err(ValError::new(ErrorKind::FiniteNumber, input));
         }
         Ok(float.into_py(py))
     }
@@ -84,7 +84,7 @@ impl Validator for ConstrainedFloatValidator {
     ) -> ValResult<'data, PyObject> {
         let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
         if !self.allow_inf_nan && !float.is_finite() {
-            return Err(ValError::new(ErrorKind::FloatFiniteNumber, input));
+            return Err(ValError::new(ErrorKind::FiniteNumber, input));
         }
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {

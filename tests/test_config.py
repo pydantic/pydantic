@@ -209,14 +209,14 @@ def test_sub_model_merge():
             {'allow_inf_nan': False},
             {'type': 'float'},
             {'x': 'nan'},
-            Err('Input should be a finite number [kind=float_finite_number,'),
+            Err('Input should be a finite number [kind=finite_number,'),
         ),
         # field `allow_inf_nan` (if set) should have priority over global config
         (
             {'allow_inf_nan': True},
             {'type': 'float', 'allow_inf_nan': False},
             {'x': 'nan'},
-            Err('Input should be a finite number [kind=float_finite_number,'),
+            Err('Input should be a finite number [kind=finite_number,'),
         ),
         (
             {'allow_inf_nan': False},
