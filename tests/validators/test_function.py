@@ -5,9 +5,16 @@ from typing import Type
 
 import pytest
 
-from pydantic_core import PydanticCustomError, PydanticErrorKind, SchemaError, SchemaValidator, ValidationError
+from pydantic_core import (
+    PydanticCustomError,
+    PydanticErrorKind,
+    PydanticOmit,
+    SchemaError,
+    SchemaValidator,
+    ValidationError,
+)
 
-from ..conftest import plain_repr
+from ..conftest import PyAndJson, plain_repr
 
 
 def test_function_before():
@@ -635,3 +642,33 @@ def test_error_kind(kind, message, context):
     assert e.message() == message
     assert e.kind == kind
     assert e.context == context
+
+
+def test_pydantic_value_error_plain(py_and_json: PyAndJson):
+    def f(input_value, **kwargs):
+        raise PydanticCustomError
+
+    v = py_and_json({'type': 'function', 'mode': 'plain', 'function': f})
+    with pytest.raises(TypeError, match='missing 2 required positional arguments'):
+        v.validate_test('4')
+
+
+@pytest.mark.parametrize('exception', [PydanticOmit(), PydanticOmit])
+def test_list_omit_exception(py_and_json: PyAndJson, exception):
+    def f(input_value, **kwargs):
+        if input_value % 2 == 0:
+            raise exception
+        return input_value
+
+    v = py_and_json(
+        {
+            'type': 'list',
+            'items_schema': {'type': 'function', 'schema': {'type': 'int'}, 'mode': 'after', 'function': f},
+        }
+    )
+    assert v.validate_test([1, 2, '3', '4']) == [1, 3]
+
+
+def test_omit_exc_repr():
+    assert repr(PydanticOmit()) == 'PydanticOmit()'
+    assert str(PydanticOmit()) == 'PydanticOmit()'
