@@ -1,10 +1,30 @@
-use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::exceptions::{PyException, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
 use crate::input::Input;
 
 use super::{ErrorKind, ValError};
+
+#[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
+#[derive(Debug, Clone)]
+pub struct PydanticOmit {}
+
+#[pymethods]
+impl PydanticOmit {
+    #[new]
+    pub fn py_new() -> Self {
+        Self {}
+    }
+
+    fn __str__(&self) -> &'static str {
+        self.__repr__()
+    }
+
+    fn __repr__(&self) -> &'static str {
+        "PydanticOmit()"
+    }
+}
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone, Default)]

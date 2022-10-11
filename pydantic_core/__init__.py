@@ -1,6 +1,7 @@
 from ._pydantic_core import (
     PydanticCustomError,
     PydanticErrorKind,
+    PydanticOmit,
     SchemaError,
     SchemaValidator,
     ValidationError,
@@ -17,4 +18,5 @@ __all__ = (
     'ValidationError',
     'PydanticCustomError',
     'PydanticErrorKind',
+    'PydanticOmit',
 )
