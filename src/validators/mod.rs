@@ -82,7 +82,14 @@ impl SchemaValidator {
         let mut validator = build_validator(schema, config, &mut build_context)?;
         validator.complete(&build_context)?;
         let slots = build_context.into_slots()?;
-        let title = validator.get_name().into_py(py);
+        let config_title = match config {
+            Some(c) => c.get_item("title"),
+            None => None,
+        };
+        let title = match config_title {
+            Some(t) => t.into_py(py),
+            None => validator.get_name().into_py(py),
+        };
         Ok(Self {
             validator,
             slots,

@@ -35,6 +35,54 @@ def test_validation_error():
 
     assert exc_info.value.title == 'int'
     assert exc_info.value.error_count() == 1
+    assert (
+        exc_info.value.errors()
+        == exc_info.value.errors(include_context=False)
+        == [
+            {
+                'kind': 'int_from_float',
+                'loc': [],
+                'message': 'Input should be a valid integer, got a number with a fractional part',
+                'input_value': 1.5,
+            }
+        ]
+    )
+
+
+def test_validation_error_include_context():
+    v = SchemaValidator({'type': 'list', 'max_length': 2})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python([1, 2, 3])
+
+    assert exc_info.value.title == 'list[any]'
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'too_long',
+            'loc': [],
+            'message': 'Input should have at most 2 items, got 3 items',
+            'input_value': [1, 2, 3],
+            'context': {'max_length': 2, 'input_length': 3},
+        }
+    ]
+    # insert_assert(exc_info.value.errors(include_context=False))
+    assert exc_info.value.errors(include_context=False) == [
+        {
+            'kind': 'too_long',
+            'loc': [],
+            'message': 'Input should have at most 2 items, got 3 items',
+            'input_value': [1, 2, 3],
+        }
+    ]
+
+
+def test_custom_title():
+    v = SchemaValidator({'type': 'int'}, {'title': 'MyInt'})
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(1.5)
+
+    assert exc_info.value.title == 'MyInt'
 
 
 def test_validation_error_multiple():
