@@ -8,7 +8,7 @@ use pyo3::types::{PyDict, PyList, PyString};
 use ahash::AHashMap;
 
 use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
-use crate::errors::{ErrorKind, PydanticValueError, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorKind, PydanticCustomError, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::questions::Question;
@@ -19,7 +19,7 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
     choices: Vec<CombinedValidator>,
-    custom_error: Option<PydanticValueError>,
+    custom_error: Option<PydanticCustomError>,
     strict: bool,
     name: String,
 }
@@ -51,9 +51,9 @@ impl BuildValidator for UnionValidator {
     }
 }
 
-fn get_custom_error(py: Python, schema: &PyDict) -> PyResult<Option<PydanticValueError>> {
+fn get_custom_error(py: Python, schema: &PyDict) -> PyResult<Option<PydanticCustomError>> {
     match schema.get_as::<&PyDict>(intern!(py, "custom_error"))? {
-        Some(custom_error) => Ok(Some(PydanticValueError::py_new(
+        Some(custom_error) => Ok(Some(PydanticCustomError::py_new(
             py,
             custom_error.get_as_req::<String>(intern!(py, "kind"))?,
             custom_error.get_as_req::<String>(intern!(py, "message"))?,
@@ -200,7 +200,7 @@ pub struct TaggedUnionValidator {
     discriminator: Discriminator,
     from_attributes: bool,
     strict: bool,
-    custom_error: Option<PydanticValueError>,
+    custom_error: Option<PydanticCustomError>,
     tags_repr: String,
     discriminator_repr: String,
     name: String,

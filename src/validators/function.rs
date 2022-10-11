@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{ErrorKind, LocItem, PydanticValueError, ValError, ValResult, ValidationError};
+use crate::errors::{ErrorKind, LocItem, PydanticCustomError, PydanticErrorKind, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -277,12 +277,14 @@ macro_rules! py_err_string {
     };
 }
 
-/// Only `ValueError` (including `PydanticValueError` and `ValidationError`) and `AssertionError` are considered
+/// Only `ValueError` (including `PydanticCustomError` and `ValidationError`) and `AssertionError` are considered
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
 pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError<'a> {
     if err.is_instance_of::<PyValueError>(py) {
-        if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticValueError>() {
+        if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticCustomError>() {
             pydantic_value_error.into_val_error(input)
+        } else if let Ok(pydantic_error_kind) = err.value(py).extract::<PydanticErrorKind>() {
+            pydantic_error_kind.into_val_error(input)
         } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
             validation_error.into_py(py)
         } else {

@@ -1,4 +1,4 @@
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
@@ -7,15 +7,15 @@ use crate::input::Input;
 use super::{ErrorKind, ValError};
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
-#[derive(Debug, Clone)]
-pub struct PydanticValueError {
+#[derive(Debug, Clone, Default)]
+pub struct PydanticCustomError {
     kind: String,
     message_template: String,
     context: Option<Py<PyDict>>,
 }
 
 #[pymethods]
-impl PydanticValueError {
+impl PydanticCustomError {
     #[new]
     pub fn py_new(py: Python, kind: String, message_template: String, context: Option<&PyDict>) -> Self {
         Self {
@@ -71,9 +71,61 @@ impl PydanticValueError {
     }
 }
 
-impl PydanticValueError {
+impl PydanticCustomError {
     pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
         let kind = ErrorKind::CustomError { value_error: self };
         ValError::new(kind, input)
+    }
+}
+
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[derive(Debug, Clone)]
+pub struct PydanticErrorKind {
+    kind: ErrorKind,
+}
+
+#[pymethods]
+impl PydanticErrorKind {
+    #[new]
+    pub fn py_new(py: Python, kind: &str, context: Option<&PyDict>) -> PyResult<Self> {
+        let kind = ErrorKind::new(py, kind, context).map_err(PyTypeError::new_err)?;
+        Ok(Self { kind })
+    }
+
+    #[getter]
+    pub fn kind(&self) -> String {
+        self.kind.to_string()
+    }
+
+    #[getter]
+    pub fn message_template(&self) -> &'static str {
+        self.kind.message_template()
+    }
+
+    #[getter]
+    pub fn context(&self, py: Python) -> PyResult<Option<Py<PyDict>>> {
+        self.kind.py_dict(py)
+    }
+
+    pub fn message(&self, py: Python) -> PyResult<String> {
+        self.kind.render_message(py)
+    }
+
+    fn __str__(&self, py: Python) -> PyResult<String> {
+        self.message(py)
+    }
+
+    fn __repr__(&self, py: Python) -> PyResult<String> {
+        let msg = self.message(py)?;
+        match { self.context(py)?.as_ref() } {
+            Some(ctx) => Ok(format!("{} [kind={}, context={}]", msg, self.kind(), ctx.as_ref(py))),
+            None => Ok(format!("{} [kind={}, context=None]", msg, self.kind())),
+        }
+    }
+}
+
+impl PydanticErrorKind {
+    pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
+        ValError::new(self.kind, input)
     }
 }
