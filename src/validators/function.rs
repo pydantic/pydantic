@@ -4,7 +4,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
-use crate::errors::{ErrorKind, LocItem, PydanticCustomError, PydanticErrorKind, ValError, ValResult, ValidationError};
+use crate::errors::{
+    ErrorKind, LocItem, PydanticCustomError, PydanticErrorKind, PydanticOmit, ValError, ValResult, ValidationError,
+};
 use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -292,6 +294,8 @@ pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) ->
         }
     } else if err.is_instance_of::<PyAssertionError>(py) {
         py_err_string!(err.value(py), AssertionError, input)
+    } else if err.is_instance_of::<PydanticOmit>(py) {
+        ValError::Omit
     } else {
         ValError::InternalErr(err)
     }

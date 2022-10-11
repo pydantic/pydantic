@@ -8,7 +8,15 @@ if sys.version_info < (3, 11):
 else:
     from typing import NotRequired
 
-__all__ = '__version__', 'SchemaValidator', 'SchemaError', 'ValidationError', 'PydanticCustomError', 'PydanticErrorKind'
+__all__ = (
+    '__version__',
+    'SchemaValidator',
+    'SchemaError',
+    'ValidationError',
+    'PydanticCustomError',
+    'PydanticErrorKind',
+    'PydanticOmit',
+)
 __version__: str
 build_profile: str
 
@@ -58,3 +66,6 @@ class PydanticErrorKind(ValueError):
 
     def __init__(self, kind: str, context: 'dict[str, str | int] | None' = None) -> None: ...
     def message(self) -> str: ...
+
+class PydanticOmit(Exception):
+    def __init__(self) -> None: ...
