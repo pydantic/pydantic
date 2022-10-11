@@ -112,8 +112,9 @@ impl ValidatorIterator {
                                 if index >= max_length {
                                     let val_error = ValError::new(
                                         ErrorKind::TooLong {
+                                            field_type: "Generator".to_string(),
                                             max_length,
-                                            input_length: index + 1,
+                                            actual_length: index + 1,
                                         },
                                         $iter.input(py),
                                     );

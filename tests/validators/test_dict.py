@@ -200,12 +200,16 @@ def test_mapping_error_yield_1():
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
         ),
-        ({'min_length': 3}, {1: '2', 3: '4'}, Err('Input should have at least 3 items, got 2 items [kind=too_short,')),
+        (
+            {'min_length': 3},
+            {1: '2', 3: '4'},
+            Err('Dictionary should have at least 3 items after validation, not 2 [kind=too_short,'),
+        ),
         ({'max_length': 4}, {'1': 1, '2': 2, '3': 3.0}, {'1': 1, '2': 2, '3': 3.0}),
         (
             {'max_length': 3},
             {'1': 1, '2': 2, '3': 3.0, '4': [1, 2, 3, 4]},
-            Err('Input should have at most 3 items, got 4 items [kind=too_long,'),
+            Err('Dictionary should have at most 3 items after validation, not 4 [kind=too_long,'),
         ),
     ],
 )

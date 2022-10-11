@@ -11,8 +11,10 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 #[derive(Debug, Clone)]
 pub struct ListValidator {
     strict: bool,
+    allow_any_iter: bool,
     item_validator: Option<Box<CombinedValidator>>,
-    size_range: Option<(Option<usize>, Option<usize>)>,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
     name: String,
 }
 
@@ -33,40 +35,62 @@ pub fn get_items_schema(
     }
 }
 
-macro_rules! generic_collection_build {
-    () => {
-        super::list::generic_collection_build!("{}[{}]", Self::EXPECTED_TYPE);
-    };
-    ($name_template:literal, $name:expr) => {
-        fn build(
-            schema: &PyDict,
-            config: Option<&PyDict>,
-            build_context: &mut BuildContext,
-        ) -> PyResult<CombinedValidator> {
-            let py = schema.py();
-            let item_validator = super::list::get_items_schema(schema, config, build_context)?;
-            let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
-            let name = format!($name_template, $name, inner_name);
-            let min_length = schema.get_as(pyo3::intern!(py, "min_length"))?;
-            let max_length = schema.get_as(pyo3::intern!(py, "max_length"))?;
-            Ok(Self {
-                strict: crate::build_tools::is_strict(schema, config)?,
-                item_validator,
-                size_range: match min_length.is_some() || max_length.is_some() {
-                    true => Some((min_length, max_length)),
-                    false => None,
-                },
-                name,
+macro_rules! length_check {
+    ($input:ident, $field_type:literal, $min_length:expr, $max_length:expr, $obj:ident) => {{
+        let mut op_actual_length: Option<usize> = None;
+        if let Some(min_length) = $min_length {
+            let actual_length = $obj.len();
+            if actual_length < min_length {
+                return Err(crate::errors::ValError::new(
+                    crate::errors::ErrorKind::TooShort {
+                        field_type: $field_type.to_string(),
+                        min_length,
+                        actual_length,
+                    },
+                    $input,
+                ));
             }
-            .into())
+            op_actual_length = Some(actual_length);
         }
-    };
+        if let Some(max_length) = $max_length {
+            let actual_length = op_actual_length.unwrap_or_else(|| $obj.len());
+            if actual_length > max_length {
+                return Err(crate::errors::ValError::new(
+                    crate::errors::ErrorKind::TooLong {
+                        field_type: $field_type.to_string(),
+                        max_length,
+                        actual_length,
+                    },
+                    $input,
+                ));
+            }
+        }
+    }};
 }
-pub(crate) use generic_collection_build;
+pub(crate) use length_check;
 
 impl BuildValidator for ListValidator {
     const EXPECTED_TYPE: &'static str = "list";
-    generic_collection_build!();
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext,
+    ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
+        let item_validator = get_items_schema(schema, config, build_context)?;
+        let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
+        let name = format!("{}[{}]", Self::EXPECTED_TYPE, inner_name);
+        Ok(Self {
+            strict: crate::build_tools::is_strict(schema, config)?,
+            allow_any_iter: schema.get_as(pyo3::intern!(py, "allow_any_iter"))?.unwrap_or(false),
+            item_validator,
+            min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
+            max_length: schema.get_as(pyo3::intern!(py, "max_length"))?,
+            name,
+        }
+        .into())
+    }
 }
 
 impl Validator for ListValidator {
@@ -78,17 +102,29 @@ impl Validator for ListValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let seq = input.validate_list(extra.strict.unwrap_or(self.strict))?;
-
-        let length = seq.check_len(self.size_range, input)?;
+        let seq = input.validate_list(extra.strict.unwrap_or(self.strict), self.allow_any_iter)?;
 
         let output = match self.item_validator {
-            Some(ref v) => seq.validate_to_vec(py, length, v, extra, slots, recursion_guard)?,
+            Some(ref v) => seq.validate_to_vec(
+                py,
+                input,
+                self.max_length,
+                "List",
+                self.max_length,
+                v,
+                extra,
+                slots,
+                recursion_guard,
+            )?,
             None => match seq {
-                GenericCollection::List(list) => return Ok(list.into_py(py)),
-                _ => seq.to_vec(py),
+                GenericCollection::List(list) => {
+                    length_check!(input, "List", self.min_length, self.max_length, list);
+                    return Ok(list.into_py(py));
+                }
+                _ => seq.to_vec(py, input, "List", self.max_length)?,
             },
         };
+        length_check!(input, "List", self.min_length, self.max_length, output);
         Ok(output.into_py(py))
     }
 
