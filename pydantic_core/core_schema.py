@@ -20,6 +20,7 @@ def dict_not_none(**kwargs: Any) -> Any:
 
 
 class CoreConfig(TypedDict, total=False):
+    title: str
     strict: bool
     # higher priority configs take precedence of over lower, if priority matches the two configs are merged, default 0
     config_choose_priority: int

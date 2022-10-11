@@ -77,11 +77,11 @@ impl ValidationError {
         self.line_errors.len()
     }
 
-    fn errors(&self, py: Python) -> PyResult<PyObject> {
+    fn errors(&self, py: Python, include_context: Option<bool>) -> PyResult<PyObject> {
         Ok(self
             .line_errors
             .iter()
-            .map(|e| e.as_dict(py))
+            .map(|e| e.as_dict(py, include_context))
             .collect::<PyResult<Vec<PyObject>>>()?
             .into_py(py))
     }
@@ -150,14 +150,16 @@ impl<'a> IntoPy<ValLineError<'a>> for PyLineError {
 }
 
 impl PyLineError {
-    pub fn as_dict(&self, py: Python) -> PyResult<PyObject> {
+    pub fn as_dict(&self, py: Python, include_context: Option<bool>) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
         dict.set_item("kind", self.kind.kind())?;
         dict.set_item("loc", self.location.to_object(py))?;
         dict.set_item("message", self.kind.render_message(py)?)?;
         dict.set_item("input_value", &self.input_value)?;
-        if let Some(context) = self.kind.py_dict(py)? {
-            dict.set_item("context", context)?;
+        if include_context.unwrap_or(true) {
+            if let Some(context) = self.kind.py_dict(py)? {
+                dict.set_item("context", context)?;
+            }
         }
         Ok(dict.into_py(py))
     }
