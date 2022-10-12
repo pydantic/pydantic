@@ -441,6 +441,11 @@ impl ErrorKind {
         }
     }
 
+    pub fn valid_kind(py: Python, kind: &str) -> bool {
+        let lookup = ERROR_KIND_LOOKUP.get_or_init(py, Self::build_lookup);
+        lookup.contains_key(kind)
+    }
+
     fn build_lookup() -> AHashMap<String, Self> {
         let mut lookup = AHashMap::new();
         for error_kind in Self::iter() {

@@ -7,8 +7,8 @@ use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
-use crate::errors::{ErrorKind, PydanticCustomError, ValError, ValLineError, ValResult};
+use crate::build_tools::{is_strict, py_error, schema_or_config, SchemaDict};
+use crate::errors::{ErrorKind, PydanticCustomError, PydanticKindError, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::questions::Question;
@@ -17,9 +17,16 @@ use crate::recursion_guard::RecursionGuard;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
+enum CustomError {
+    Custom(PydanticCustomError),
+    Kind(PydanticKindError),
+    None,
+}
+
+#[derive(Debug, Clone)]
 pub struct UnionValidator {
     choices: Vec<CombinedValidator>,
-    custom_error: Option<PydanticCustomError>,
+    custom_error: CustomError,
     strict: bool,
     name: String,
 }
@@ -51,15 +58,29 @@ impl BuildValidator for UnionValidator {
     }
 }
 
-fn get_custom_error(py: Python, schema: &PyDict) -> PyResult<Option<PydanticCustomError>> {
-    match schema.get_as::<&PyDict>(intern!(py, "custom_error"))? {
-        Some(custom_error) => Ok(Some(PydanticCustomError::py_new(
+fn get_custom_error(py: Python, schema: &PyDict) -> PyResult<CustomError> {
+    let custom_error: &PyDict = match schema.get_as(intern!(py, "custom_error"))? {
+        Some(ce) => ce,
+        None => return Ok(CustomError::None),
+    };
+    let kind: String = custom_error.get_as_req(intern!(py, "kind"))?;
+    let context: Option<&PyDict> = custom_error.get_as(intern!(py, "context"))?;
+
+    if ErrorKind::valid_kind(py, &kind) {
+        if custom_error.contains(intern!(py, "message"))? {
+            py_error!("custom_error.message should not be provided if kind matches a known error")
+        } else {
+            let error = PydanticKindError::py_new(py, &kind, context)?;
+            Ok(CustomError::Kind(error))
+        }
+    } else {
+        let error = PydanticCustomError::py_new(
             py,
-            custom_error.get_as_req::<String>(intern!(py, "kind"))?,
+            kind,
             custom_error.get_as_req::<String>(intern!(py, "message"))?,
-            None,
-        ))),
-        None => Ok(None),
+            context,
+        );
+        Ok(CustomError::Custom(error))
     }
 }
 
@@ -72,8 +93,11 @@ impl UnionValidator {
         if let Some(errors) = errors {
             ValError::LineErrors(errors)
         } else {
-            let value_error = self.custom_error.as_ref().unwrap();
-            value_error.clone().into_val_error(input)
+            match self.custom_error {
+                CustomError::Kind(ref kind_error) => kind_error.clone().into_val_error(input),
+                CustomError::Custom(ref custom_error) => custom_error.clone().into_val_error(input),
+                CustomError::None => unreachable!(),
+            }
         }
     }
 }
@@ -89,8 +113,8 @@ impl Validator for UnionValidator {
     ) -> ValResult<'data, PyObject> {
         if extra.strict.unwrap_or(self.strict) {
             let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
-                Some(_) => None,
-                None => Some(Vec::with_capacity(self.choices.len())),
+                CustomError::None => Some(Vec::with_capacity(self.choices.len())),
+                _ => None,
             };
             let strict_extra = extra.as_strict();
 
@@ -124,8 +148,8 @@ impl Validator for UnionValidator {
             }
 
             let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
-                Some(_) => None,
-                None => Some(Vec::with_capacity(self.choices.len())),
+                CustomError::None => Some(Vec::with_capacity(self.choices.len())),
+                _ => None,
             };
 
             // 2nd pass: check if the value can be coerced into one of the Union types, e.g. use validate
@@ -200,7 +224,7 @@ pub struct TaggedUnionValidator {
     discriminator: Discriminator,
     from_attributes: bool,
     strict: bool,
-    custom_error: Option<PydanticCustomError>,
+    custom_error: CustomError,
     tags_repr: String,
     discriminator_repr: String,
     name: String,
@@ -386,30 +410,32 @@ impl TaggedUnionValidator {
                 Ok(res) => Ok(res),
                 Err(err) => Err(err.with_outer_location(tag.as_ref().into())),
             }
-        } else if let Some(ref custom_error) = self.custom_error {
-            Err(custom_error.clone().into_val_error(input))
         } else {
-            Err(ValError::new(
-                ErrorKind::UnionTagInvalid {
-                    discriminator: self.discriminator_repr.clone(),
-                    tag: tag.to_string(),
-                    expected_tags: self.tags_repr.clone(),
-                },
-                input,
-            ))
+            match self.custom_error {
+                CustomError::Kind(ref kind_error) => Err(kind_error.clone().into_val_error(input)),
+                CustomError::Custom(ref custom_error) => Err(custom_error.clone().into_val_error(input)),
+                CustomError::None => Err(ValError::new(
+                    ErrorKind::UnionTagInvalid {
+                        discriminator: self.discriminator_repr.clone(),
+                        tag: tag.to_string(),
+                        expected_tags: self.tags_repr.clone(),
+                    },
+                    input,
+                )),
+            }
         }
     }
 
     fn tag_not_found<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValError<'data> {
-        if let Some(ref custom_error) = self.custom_error {
-            custom_error.clone().into_val_error(input)
-        } else {
-            ValError::new(
+        match self.custom_error {
+            CustomError::Kind(ref kind_error) => kind_error.clone().into_val_error(input),
+            CustomError::Custom(ref custom_error) => custom_error.clone().into_val_error(input),
+            CustomError::None => ValError::new(
                 ErrorKind::UnionTagNotFound {
                     discriminator: self.discriminator_repr.clone(),
                 },
                 input,
-            )
+            ),
         }
     }
 }
