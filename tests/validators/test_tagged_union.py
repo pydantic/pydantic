@@ -332,3 +332,48 @@ def test_custom_error():
             'input_value': {'foo': 'other', 'bar': 'Bar'},
         }
     ]
+
+
+def test_custom_error_kind():
+    v = SchemaValidator(
+        {
+            'type': 'tagged-union',
+            'discriminator': 'foo',
+            'custom_error': {'kind': 'finite_number'},
+            'choices': {
+                'apple': {
+                    'type': 'typed-dict',
+                    'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                },
+                'banana': {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'foo': {'schema': {'type': 'str'}},
+                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    },
+                },
+            },
+        }
+    )
+    assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'spam': 'apple', 'bar': 'Bar'})
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'finite_number',
+            'loc': [],
+            'message': 'Input should be a finite number',
+            'input_value': {'spam': 'apple', 'bar': 'Bar'},
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'foo': 'other', 'bar': 'Bar'})
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'finite_number',
+            'loc': [],
+            'message': 'Input should be a finite number',
+            'input_value': {'foo': 'other', 'bar': 'Bar'},
+        }
+    ]

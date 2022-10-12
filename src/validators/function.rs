@@ -5,7 +5,7 @@ use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_error, SchemaDict};
 use crate::errors::{
-    ErrorKind, LocItem, PydanticCustomError, PydanticErrorKind, PydanticOmit, ValError, ValResult, ValidationError,
+    ErrorKind, LocItem, PydanticCustomError, PydanticKindError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
 use crate::questions::Question;
@@ -285,7 +285,7 @@ pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) ->
     if err.is_instance_of::<PyValueError>(py) {
         if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticCustomError>() {
             pydantic_value_error.into_val_error(input)
-        } else if let Ok(pydantic_error_kind) = err.value(py).extract::<PydanticErrorKind>() {
+        } else if let Ok(pydantic_error_kind) = err.value(py).extract::<PydanticKindError>() {
             pydantic_error_kind.into_val_error(input)
         } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
             validation_error.into_py(py)

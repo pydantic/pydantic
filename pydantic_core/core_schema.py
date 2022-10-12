@@ -618,17 +618,20 @@ def nullable_schema(schema: CoreSchema, *, strict: bool | None = None, ref: str 
     return dict_not_none(type='nullable', schema=schema, strict=strict, ref=ref)
 
 
-class CustomError(TypedDict):
-    kind: str
+class CustomError(TypedDict, total=False):
+    kind: Required[str]
     message: str
+    context: Dict[str, Union[str, int]]
 
 
-def _custom_error(kind: str | None, message: str | None) -> CustomError | None:
-    if kind is None and message is None:
+def _custom_error(
+    kind: str | None, message: str | None, context: dict[str, str | int] | None = None
+) -> CustomError | None:
+    if kind is None and message is None and context is None:
         return None
     else:
         # let schema validation raise the error
-        return CustomError(kind=kind, message=message)  # type: ignore
+        return dict_not_none(kind=kind, message=message, context=context)
 
 
 class UnionSchema(TypedDict, total=False):
@@ -659,13 +662,14 @@ def union_schema(
     *choices: CoreSchema,
     custom_error_kind: str | None = None,
     custom_error_message: str | None = None,
+    custom_error_context: dict[str, str | int] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
 ) -> UnionSchema:
     return dict_not_none(
         type='union',
         choices=choices,
-        custom_error=_custom_error(custom_error_kind, custom_error_message),
+        custom_error=_custom_error(custom_error_kind, custom_error_message, custom_error_context),
         strict=strict,
         ref=ref,
     )
@@ -710,6 +714,7 @@ def tagged_union_schema(
     *,
     custom_error_kind: str | None = None,
     custom_error_message: str | None = None,
+    custom_error_context: dict[str, int | str] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
 ) -> TaggedUnionSchema:
@@ -717,7 +722,7 @@ def tagged_union_schema(
         type='tagged-union',
         choices=choices,
         discriminator=discriminator,
-        custom_error=_custom_error(custom_error_kind, custom_error_message),
+        custom_error=_custom_error(custom_error_kind, custom_error_message, custom_error_context),
         strict=strict,
         ref=ref,
     )

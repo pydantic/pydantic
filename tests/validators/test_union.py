@@ -262,3 +262,41 @@ def test_custom_error():
     assert exc_info.value.errors() == [
         {'kind': 'my_error', 'loc': [], 'message': 'Input should be a string or bytes', 'input_value': 123}
     ]
+
+
+def test_custom_error_kind():
+    v = SchemaValidator(
+        {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'custom_error': {'kind': 'string_type'}}
+    )
+    assert v.validate_python('hello') == 'hello'
+    assert v.validate_python(b'hello') == b'hello'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(123)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'string_type', 'loc': [], 'message': 'Input should be a valid string', 'input_value': 123}
+    ]
+
+
+def test_custom_error_kind_context():
+    v = SchemaValidator(
+        {
+            'type': 'union',
+            'choices': [{'type': 'str'}, {'type': 'bytes'}],
+            'custom_error': {'kind': 'less_than', 'context': {'lt': 42}},
+        }
+    )
+    assert v.validate_python('hello') == 'hello'
+    assert v.validate_python(b'hello') == b'hello'
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(123)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'less_than',
+            'loc': [],
+            'message': 'Input should be less than 42',
+            'input_value': 123,
+            'context': {'lt': 42.0},
+        }
+    ]

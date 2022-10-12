@@ -213,6 +213,14 @@ def test_schema_functions(function, args_kwargs, expected_schema):
 
 
 def test_invalid_custom_error():
-    s = core_schema.union_schema({'type': 'int'}, {'type': 'str'}, custom_error_kind='foobar')
-    with pytest.raises(SchemaError, match=r'custom_error \-> message\s+Input should be a valid string'):
+    s = core_schema.union_schema({'type': 'int'}, {'type': 'str'}, custom_error_message='foobar')
+    with pytest.raises(SchemaError, match=r'custom_error \-> kind\s+Field required'):
+        SchemaValidator(s)
+
+
+def test_invalid_custom_error_kind():
+    s = core_schema.union_schema(
+        {'type': 'int'}, {'type': 'str'}, custom_error_kind='finite_number', custom_error_message='x'
+    )
+    with pytest.raises(SchemaError, match='custom_error.message should not be provided if kind matches a known error'):
         SchemaValidator(s)
