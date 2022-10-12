@@ -203,7 +203,7 @@ def test_union_set_list(input_value, expected):
                     },
                     # second because validation on the string choice comes second
                     {
-                        'kind': 'str_type',
+                        'kind': 'string_type',
                         'loc': ['set[str]', 0],
                         'message': 'Input should be a valid string',
                         'input_value': 1,

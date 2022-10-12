@@ -72,7 +72,7 @@ impl Validator for TimeDeltaValidator {
                         if !raw_timedelta.$constraint(constraint) {
                             return Err(ValError::new(
                                 ErrorKind::$error {
-                                    $constraint: constraint.to_string(),
+                                    $constraint: constraint.to_string().into(),
                                 },
                                 input,
                             ));

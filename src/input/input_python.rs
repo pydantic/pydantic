@@ -127,7 +127,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(py_str) = self.cast_as::<PyString>() {
             Ok(py_str.into())
         } else {
-            Err(ValError::new(ErrorKind::StrType, self))
+            Err(ValError::new(ErrorKind::StringType, self))
         }
     }
 
@@ -137,17 +137,17 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
                 Ok(s) => s,
-                Err(_) => return Err(ValError::new(ErrorKind::StrUnicode, self)),
+                Err(_) => return Err(ValError::new(ErrorKind::StringUnicode, self)),
             };
             Ok(str.into())
         } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
             let str = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
                 Ok(s) => s,
-                Err(_) => return Err(ValError::new(ErrorKind::StrUnicode, self)),
+                Err(_) => return Err(ValError::new(ErrorKind::StringUnicode, self)),
             };
             Ok(str.into())
         } else {
-            Err(ValError::new(ErrorKind::StrType, self))
+            Err(ValError::new(ErrorKind::StringType, self))
         }
     }
 
@@ -517,7 +517,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(dt) = self.cast_as::<PyDateTime>() {
             Ok(dt.into())
         } else {
-            Err(ValError::new(ErrorKind::DateTimeType, self))
+            Err(ValError::new(ErrorKind::DatetimeType, self))
         }
     }
 
@@ -530,7 +530,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_datetime(self, py_bytes.as_bytes())
         } else if self.cast_as::<PyBool>().is_ok() {
-            Err(ValError::new(ErrorKind::DateTimeType, self))
+            Err(ValError::new(ErrorKind::DatetimeType, self))
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_datetime(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
@@ -538,7 +538,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date_as_datetime(date)?)
         } else {
-            Err(ValError::new(ErrorKind::DateTimeType, self))
+            Err(ValError::new(ErrorKind::DatetimeType, self))
         }
     }
 

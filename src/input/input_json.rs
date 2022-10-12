@@ -78,13 +78,13 @@ impl<'a> Input<'a> for JsonInput {
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
-            _ => Err(ValError::new(ErrorKind::StrType, self)),
+            _ => Err(ValError::new(ErrorKind::StringType, self)),
         }
     }
     fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
-            _ => Err(ValError::new(ErrorKind::StrType, self)),
+            _ => Err(ValError::new(ErrorKind::StringType, self)),
         }
     }
 
@@ -262,7 +262,7 @@ impl<'a> Input<'a> for JsonInput {
     fn strict_datetime(&self) -> ValResult<EitherDateTime> {
         match self {
             JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes()),
-            _ => Err(ValError::new(ErrorKind::DateTimeType, self)),
+            _ => Err(ValError::new(ErrorKind::DatetimeType, self)),
         }
     }
     fn lax_datetime(&self) -> ValResult<EitherDateTime> {
@@ -270,7 +270,7 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes()),
             JsonInput::Int(v) => int_as_datetime(self, *v, 0),
             JsonInput::Float(v) => float_as_datetime(self, *v),
-            _ => Err(ValError::new(ErrorKind::DateTimeType, self)),
+            _ => Err(ValError::new(ErrorKind::DatetimeType, self)),
         }
     }
 
