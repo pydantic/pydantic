@@ -100,12 +100,12 @@ impl PydanticCustomError {
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
-pub struct PydanticErrorKind {
+pub struct PydanticKindError {
     kind: ErrorKind,
 }
 
 #[pymethods]
-impl PydanticErrorKind {
+impl PydanticKindError {
     #[new]
     pub fn py_new(py: Python, kind: &str, context: Option<&PyDict>) -> PyResult<Self> {
         let kind = ErrorKind::new(py, kind, context).map_err(PyTypeError::new_err)?;
@@ -144,7 +144,7 @@ impl PydanticErrorKind {
     }
 }
 
-impl PydanticErrorKind {
+impl PydanticKindError {
     pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
         ValError::new(self.kind, input)
     }

@@ -14,7 +14,7 @@ __all__ = (
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',
-    'PydanticErrorKind',
+    'PydanticKindError',
     'PydanticOmit',
 )
 __version__: str
@@ -59,7 +59,7 @@ class PydanticCustomError(ValueError):
     def __init__(self, kind: str, message_template: str, context: 'dict[str, str | int] | None' = None) -> None: ...
     def message(self) -> str: ...
 
-class PydanticErrorKind(ValueError):
+class PydanticKindError(ValueError):
     kind: str
     message_template: str
     context: 'dict[str, str | int] | None'

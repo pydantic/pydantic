@@ -7,7 +7,7 @@ import pytest
 
 from pydantic_core import (
     PydanticCustomError,
-    PydanticErrorKind,
+    PydanticKindError,
     PydanticOmit,
     SchemaError,
     SchemaValidator,
@@ -514,7 +514,7 @@ def test_validator_instance_after():
 
 
 def test_pydantic_error_kind():
-    e = PydanticErrorKind('invalid_json', {'error': 'Test'})
+    e = PydanticKindError('invalid_json', {'error': 'Test'})
     assert e.message() == 'Invalid JSON: Test'
     assert e.kind == 'invalid_json'
     assert e.context == {'error': 'Test'}
@@ -524,7 +524,7 @@ def test_pydantic_error_kind():
 
 def test_pydantic_error_kind_raise_no_ctx():
     def f(input_value, **kwargs):
-        raise PydanticErrorKind('finite_number')
+        raise PydanticKindError('finite_number')
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
 
@@ -538,7 +538,7 @@ def test_pydantic_error_kind_raise_no_ctx():
 
 def test_pydantic_error_kind_raise_ctx():
     def f(input_value, **kwargs):
-        raise PydanticErrorKind('greater_than', {'gt': 42})
+        raise PydanticKindError('greater_than', {'gt': 42})
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
 
@@ -649,7 +649,7 @@ def test_pydantic_error_kind_raise_ctx():
     ],
 )
 def test_error_kind(kind, message, context):
-    e = PydanticErrorKind(kind, context)
+    e = PydanticKindError(kind, context)
     assert e.message() == message
     assert e.kind == kind
     assert e.context == context
