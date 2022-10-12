@@ -524,7 +524,7 @@ def test_union_ref_strictness():
 
     assert exc_info.value.errors() == [
         {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Input should be a valid integer', 'input_value': []},
-        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Input should be a valid string', 'input_value': []},
+        {'kind': 'string_type', 'loc': ['b', 'str'], 'message': 'Input should be a valid string', 'input_value': []},
     ]
 
 
@@ -546,7 +546,7 @@ def test_union_container_strictness():
 
     assert exc_info.value.errors() == [
         {'kind': 'int_type', 'loc': ['b', 'int'], 'message': 'Input should be a valid integer', 'input_value': []},
-        {'kind': 'str_type', 'loc': ['b', 'str'], 'message': 'Input should be a valid string', 'input_value': []},
+        {'kind': 'string_type', 'loc': ['b', 'str'], 'message': 'Input should be a valid string', 'input_value': []},
     ]
 
 

@@ -71,7 +71,7 @@ impl Validator for DateTimeValidator {
                 Ok(dt) => dt,
                 Err(err) => {
                     let error = py_err_string(py, err);
-                    return Err(ValError::new(ErrorKind::DateTimeObjectInvalid { error }, input));
+                    return Err(ValError::new(ErrorKind::DatetimeObjectInvalid { error }, input));
                 }
             };
             macro_rules! check_constraint {
@@ -80,7 +80,7 @@ impl Validator for DateTimeValidator {
                         if !speedate_dt.$constraint(constraint) {
                             return Err(ValError::new(
                                 ErrorKind::$error {
-                                    $constraint: constraint.to_string(),
+                                    $constraint: constraint.to_string().into(),
                                 },
                                 input,
                             ));

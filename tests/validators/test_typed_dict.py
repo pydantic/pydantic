@@ -64,7 +64,7 @@ def test_strict():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'field_a': 123, 'field_b': '123'})
     assert exc_info.value.errors() == [
-        {'kind': 'str_type', 'loc': ['field_a'], 'message': 'Input should be a valid string', 'input_value': 123},
+        {'kind': 'string_type', 'loc': ['field_a'], 'message': 'Input should be a valid string', 'input_value': 123},
         {'kind': 'int_type', 'loc': ['field_b'], 'message': 'Input should be a valid integer', 'input_value': '123'},
     ]
 
@@ -270,7 +270,7 @@ def test_validate_assignment_strict_field():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment('field_a', b'abc', {'field_a': 'test'})
     assert exc_info.value.errors() == [
-        {'input_value': b'abc', 'kind': 'str_type', 'loc': ['field_a'], 'message': 'Input should be a valid string'}
+        {'input_value': b'abc', 'kind': 'string_type', 'loc': ['field_a'], 'message': 'Input should be a valid string'}
     ]
 
 
@@ -473,7 +473,7 @@ def test_all_optional_fields():
         assert v.validate_python({'x': 123})
 
     assert exc_info.value.errors() == [
-        {'kind': 'str_type', 'loc': ['x'], 'message': 'Input should be a valid string', 'input_value': 123}
+        {'kind': 'string_type', 'loc': ['x'], 'message': 'Input should be a valid string', 'input_value': 123}
     ]
 
 
@@ -1222,7 +1222,7 @@ class TestOnError:
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
         assert exc_info.value.errors() == [
-            {'input_value': ['foo'], 'kind': 'str_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
+            {'input_value': ['foo'], 'kind': 'string_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
         ]
 
     def test_on_error_raise_explicit(self, py_and_json: PyAndJson):
@@ -1236,7 +1236,7 @@ class TestOnError:
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
         assert exc_info.value.errors() == [
-            {'input_value': ['foo'], 'kind': 'str_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
+            {'input_value': ['foo'], 'kind': 'string_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
         ]
 
     def test_on_error_omit(self, py_and_json: PyAndJson):

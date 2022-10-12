@@ -73,7 +73,7 @@ impl Validator for TimeValidator {
                         if !raw_time.$constraint(constraint) {
                             return Err(ValError::new(
                                 ErrorKind::$error {
-                                    $constraint: constraint.to_string(),
+                                    $constraint: constraint.to_string().into(),
                                 },
                                 input,
                             ));

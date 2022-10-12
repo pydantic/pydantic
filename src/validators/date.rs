@@ -83,7 +83,7 @@ impl Validator for DateValidator {
                         if !raw_date.$constraint(constraint) {
                             return Err(ValError::new(
                                 ErrorKind::$error {
-                                    $constraint: constraint.to_string(),
+                                    $constraint: constraint.to_string().into(),
                                 },
                                 input,
                             ));
@@ -120,7 +120,7 @@ fn date_from_datetime<'data>(
                     // convert DateTimeParsing -> DateFromDatetimeParsing but keep the rest of the error unchanged
                     for line_error in line_errors.iter_mut() {
                         match line_error.kind {
-                            ErrorKind::DateTimeParsing { ref error } => {
+                            ErrorKind::DatetimeParsing { ref error } => {
                                 line_error.kind = ErrorKind::DateFromDatetimeParsing {
                                     error: error.to_string(),
                                 };

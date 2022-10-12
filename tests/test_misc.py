@@ -4,7 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from pydantic_core._pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, build_profile
+from pydantic_core._pydantic_core import (
+    SchemaError,
+    SchemaValidator,
+    ValidationError,
+    __version__,
+    build_profile,
+    list_all_errors,
+)
 
 
 @pytest.mark.parametrize('obj', [ValidationError, SchemaValidator, SchemaError])
@@ -125,11 +132,11 @@ def test_validation_error_multiple():
     assert repr(exc_info.value) == (
         '2 validation errors for MyModel\n'
         'x\n'
-        '  Input should be a valid number, unable to parse string as an number [kind=float_parsing, '
-        "input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
+        '  Input should be a valid number, unable to parse string as an number '
+        "[kind=float_parsing, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
         'y\n'
-        "  Input should be a valid integer, unable to parse string as an integer [kind=int_parsing, input_value='y', "
-        'input_type=str]'
+        '  Input should be a valid integer, unable to parse string as an integer '
+        "[kind=int_parsing, input_value='y', input_type=str]"
     )
 
 
@@ -139,3 +146,23 @@ def test_readme(import_execute):
     readme = (this_dir / '..' / 'README.md').read_text()
     example_code = re.search(r'\n```py\n(.*?)\n```\n', readme, re.M | re.S).group(1)
     import_execute(example_code)
+
+
+def test_all_errors():
+    errors = list_all_errors()
+    # print(f'{len(errors)=}')
+    assert len(errors) == len(set(e['kind'] for e in errors)), 'error kinds are not unique'
+    assert errors[:2] == [
+        {
+            'kind': 'invalid_json',
+            'message_template': 'Invalid JSON: {error}',
+            'example_message': 'Invalid JSON: ',
+            'example_context': {'error': ''},
+        },
+        {
+            'kind': 'recursion_loop',
+            'message_template': 'Recursion error - cyclic reference detected',
+            'example_message': 'Recursion error - cyclic reference detected',
+            'example_context': None,
+        },
+    ]

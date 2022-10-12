@@ -162,10 +162,10 @@ def test_discriminator_path(py_and_json: PyAndJson):
         (
             'baz',
             Err(
-                'literal_error',
+                'literal_multiple_error',
                 [
                     {
-                        'kind': 'literal_error',
+                        'kind': 'literal_multiple_error',
                         'loc': ['str'],
                         'message': "Input should be one of: 'foo', 'bar'",
                         'input_value': 'baz',

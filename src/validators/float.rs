@@ -88,27 +88,32 @@ impl Validator for ConstrainedFloatValidator {
         }
         if let Some(multiple_of) = self.multiple_of {
             if float % multiple_of != 0.0 {
-                return Err(ValError::new(ErrorKind::FloatMultipleOf { multiple_of }, input));
+                return Err(ValError::new(
+                    ErrorKind::MultipleOf {
+                        multiple_of: multiple_of.into(),
+                    },
+                    input,
+                ));
             }
         }
         if let Some(le) = self.le {
             if float > le {
-                return Err(ValError::new(ErrorKind::FloatLessThanEqual { le }, input));
+                return Err(ValError::new(ErrorKind::LessThanEqual { le: le.into() }, input));
             }
         }
         if let Some(lt) = self.lt {
             if float >= lt {
-                return Err(ValError::new(ErrorKind::FloatLessThan { lt }, input));
+                return Err(ValError::new(ErrorKind::LessThan { lt: lt.into() }, input));
             }
         }
         if let Some(ge) = self.ge {
             if float < ge {
-                return Err(ValError::new(ErrorKind::FloatGreaterThanEqual { ge }, input));
+                return Err(ValError::new(ErrorKind::GreaterThanEqual { ge: ge.into() }, input));
             }
         }
         if let Some(gt) = self.gt {
             if float <= gt {
-                return Err(ValError::new(ErrorKind::FloatGreaterThan { gt }, input));
+                return Err(ValError::new(ErrorKind::GreaterThan { gt: gt.into() }, input));
             }
         }
         Ok(float.into_py(py))

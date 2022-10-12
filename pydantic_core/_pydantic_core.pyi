@@ -43,7 +43,7 @@ class ErrorDetails(TypedDict):
     loc: 'list[int | str]'
     message: str
     input_value: Any
-    context: NotRequired['dict[str, Any]']
+    context: NotRequired['dict[str, str | int | float]']
 
 class ValidationError(ValueError):
     title: str
@@ -69,3 +69,14 @@ class PydanticErrorKind(ValueError):
 
 class PydanticOmit(Exception):
     def __init__(self) -> None: ...
+
+class ErrorKind(TypedDict):
+    kind: str
+    message_template: str
+    example_message: str
+    example_context: 'dict[str, str | int | float] | None'
+
+def list_all_errors() -> 'list[ErrorKind]':
+    """
+    Get information about all built-in errors.
+    """

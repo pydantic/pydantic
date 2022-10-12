@@ -35,9 +35,9 @@ def test_null():
 def test_str():
     s = SchemaValidator({'type': 'str'})
     assert s.validate_json('"foobar"') == 'foobar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=str_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=string_type,'):
         s.validate_json('false')
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=str_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=string_type,'):
         s.validate_json('123')
 
 
