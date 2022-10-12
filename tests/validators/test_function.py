@@ -59,7 +59,7 @@ def test_function_before_error():
         v.validate_python('12345')
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
+            'kind': 'string_too_long',
             'loc': [],
             'message': 'String should have at most 5 characters',
             'input_value': '12345x',
@@ -88,7 +88,7 @@ def test_function_before_error_model():
         v.validate_python({'my_field': '12345'})
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
+            'kind': 'string_too_long',
             'loc': ['my_field'],
             'message': 'String should have at most 5 characters',
             'input_value': '12345x',
@@ -329,7 +329,7 @@ def test_class_with_validator():
         v.validate_python(True)
 
     assert exc_info.value.errors() == [
-        {'kind': 'str_type', 'loc': [], 'message': 'Input should be a valid string', 'input_value': True}
+        {'kind': 'string_type', 'loc': [], 'message': 'Input should be a valid string', 'input_value': True}
     ]
 
 
@@ -559,7 +559,6 @@ def test_pydantic_error_kind_raise_ctx():
 @pytest.mark.parametrize(
     'kind, message, context',
     [
-        ('invalid_input', 'Invalid input', None),
         ('invalid_json', 'Invalid JSON: foobar', {'error': 'foobar'}),
         ('recursion_loop', 'Recursion error - cyclic reference detected', None),
         ('dict_attributes_type', 'Input should be a valid dictionary or instance to extract fields from', None),
@@ -572,15 +571,26 @@ def test_pydantic_error_kind_raise_ctx():
         ('none_required', 'Input should be None/null', None),
         ('bool', 'Input should be a valid boolean', None),
         ('greater_than', 'Input should be greater than 42.1', {'gt': 42.1}),
+        ('greater_than', 'Input should be greater than 2020-01-01', {'gt': '2020-01-01'}),
         ('greater_than_equal', 'Input should be greater than or equal to 42.1', {'ge': 42.1}),
         ('less_than', 'Input should be less than 42.1', {'lt': 42.1}),
         ('less_than_equal', 'Input should be less than or equal to 42.1', {'le': 42.1}),
-        ('less_than_equal', 'Input should be less than or equal to 42.1', {'le': 42.1}),
-        ('too_short', 'Data should have at least 42 bytes', {'min_length': 42}),
-        ('too_long', 'Data should have at most 42 bytes', {'max_length': 42}),
-        ('str_type', 'Input should be a valid string', None),
-        ('str_unicode', 'Input should be a valid string, unable to parse raw data as a unicode string', None),
-        ('str_pattern_mismatch', "String should match pattern 'foo'", {'pattern': 'foo'}),
+        ('finite_number', 'Input should be a finite number', None),
+        (
+            'too_short',
+            'Foobar should have at least 42 items after validation, not 40',
+            {'field_type': 'Foobar', 'min_length': 42, 'actual_length': 40},
+        ),
+        (
+            'too_long',
+            'Foobar should have at most 42 items after validation, not 50',
+            {'field_type': 'Foobar', 'max_length': 42, 'actual_length': 50},
+        ),
+        ('string_type', 'Input should be a valid string', None),
+        ('string_unicode', 'Input should be a valid string, unable to parse raw data as a unicode string', None),
+        ('string_pattern_mismatch', "String should match pattern 'foo'", {'pattern': 'foo'}),
+        ('string_too_short', 'String should have at least 42 characters', {'min_length': 42}),
+        ('string_too_long', 'String should have at most 42 characters', {'max_length': 42}),
         ('dict_type', 'Input should be a valid dictionary', None),
         ('dict_from_mapping', 'Unable to convert mapping to a dictionary, error: foobar', {'error': 'foobar'}),
         ('iteration_error', 'Error iterating over object, error: foobar', {'error': 'foobar'}),
@@ -592,7 +602,6 @@ def test_pydantic_error_kind_raise_ctx():
         ('int_type', 'Input should be a valid integer', None),
         ('int_parsing', 'Input should be a valid integer, unable to parse string as an integer', None),
         ('int_from_float', 'Input should be a valid integer, got a number with a fractional part', None),
-        ('int_nan', 'Input should be a valid integer, got foo', {'nan_value': 'foo'}),
         ('multiple_of', 'Input should be a multiple of 42.1', {'multiple_of': 42.1}),
         ('greater_than', 'Input should be greater than 42.1', {'gt': 42.1}),
         ('greater_than_equal', 'Input should be greater than or equal to 42.1', {'ge': 42.1}),
@@ -600,11 +609,13 @@ def test_pydantic_error_kind_raise_ctx():
         ('less_than_equal', 'Input should be less than or equal to 42.1', {'le': 42.1}),
         ('float_type', 'Input should be a valid number', None),
         ('float_parsing', 'Input should be a valid number, unable to parse string as an number', None),
-        ('finite_number', 'Input should be a finite number', None),
         ('bytes_type', 'Input should be a valid bytes', None),
+        ('bytes_too_short', 'Data should have at least 42 bytes', {'min_length': 42}),
+        ('bytes_too_long', 'Data should have at most 42 bytes', {'max_length': 42}),
         ('value_error', 'Value error, foobar', {'error': 'foobar'}),
         ('assertion_error', 'Assertion failed, foobar', {'error': 'foobar'}),
-        ('literal_error', 'Input should be one of: foo', {'expected': 'foo'}),
+        ('literal_single_error', 'Input should be: foo', {'expected': 'foo'}),
+        ('literal_multiple_error', 'Input should be one of: foo,bar', {'expected': 'foo,bar'}),
         ('date_type', 'Input should be a valid date', None),
         ('date_parsing', 'Input should be a valid date in the format YYYY-MM-DD, foobar', {'error': 'foobar'}),
         ('date_from_datetime_parsing', 'Input should be a valid date or datetime, foobar', {'error': 'foobar'}),

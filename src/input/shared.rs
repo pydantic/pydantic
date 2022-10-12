@@ -48,27 +48,8 @@ pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<
 }
 
 pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<'a, i64> {
-    if float == f64::INFINITY {
-        Err(ValError::new(
-            ErrorKind::IntNan {
-                nan_value: "infinity".to_string(),
-            },
-            input,
-        ))
-    } else if float == f64::NEG_INFINITY {
-        Err(ValError::new(
-            ErrorKind::IntNan {
-                nan_value: "negative infinity".to_string(),
-            },
-            input,
-        ))
-    } else if float.is_nan() {
-        Err(ValError::new(
-            ErrorKind::IntNan {
-                nan_value: "NaN".to_string(),
-            },
-            input,
-        ))
+    if float == f64::INFINITY || float == f64::NEG_INFINITY || float.is_nan() {
+        Err(ValError::new(ErrorKind::FiniteNumber, input))
     } else if float % 1.0 != 0.0 {
         Err(ValError::new(ErrorKind::IntFromFloat, input))
     } else {

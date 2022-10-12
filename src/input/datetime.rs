@@ -2,6 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyTime, PyTzInfo};
 use speedate::{Date, DateTime, Duration, Time};
+use std::borrow::Cow;
 use strum::EnumMessage;
 
 use crate::errors::{ErrorKind, ValError, ValResult};
@@ -257,7 +258,7 @@ pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
             ErrorKind::DateParsing {
-                error: err.get_documentation().unwrap_or_default().to_string(),
+                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
         )),
@@ -269,7 +270,7 @@ pub fn bytes_as_time<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
             ErrorKind::TimeParsing {
-                error: err.get_documentation().unwrap_or_default().to_string(),
+                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
         )),
@@ -280,8 +281,8 @@ pub fn bytes_as_datetime<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> 
     match DateTime::parse_bytes(bytes) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::DateTimeParsing {
-                error: err.get_documentation().unwrap_or_default().to_string(),
+            ErrorKind::DatetimeParsing {
+                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
         )),
@@ -296,8 +297,8 @@ pub fn int_as_datetime<'a>(
     match DateTime::from_timestamp(timestamp, timestamp_microseconds) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::DateTimeParsing {
-                error: err.get_documentation().unwrap_or_default().to_string(),
+            ErrorKind::DatetimeParsing {
+                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
         )),
@@ -338,7 +339,7 @@ pub fn int_as_time<'a>(
         t if t < 0_i64 => {
             return Err(ValError::new(
                 ErrorKind::TimeParsing {
-                    error: "time in seconds should be positive".to_string(),
+                    error: Cow::Borrowed("time in seconds should be positive"),
                 },
                 input,
             ));
@@ -352,7 +353,7 @@ pub fn int_as_time<'a>(
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
             ErrorKind::TimeParsing {
-                error: err.get_documentation().unwrap_or_default().to_string(),
+                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
         )),
@@ -370,7 +371,7 @@ pub fn bytes_as_timedelta<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) ->
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
             ErrorKind::TimeDeltaParsing {
-                error: err.get_documentation().unwrap_or_default().to_string(),
+                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
         )),

@@ -203,29 +203,23 @@ def test_long_int(py_and_json: PyAndJson):
         v.validate_test('1' * 400)
 
     assert exc_info.value.errors() == [
-        {
-            'kind': 'int_nan',
-            'loc': [],
-            'message': 'Input should be a valid integer, got infinity',
-            'input_value': '1' * 400,
-            'context': {'nan_value': 'infinity'},
-        }
+        {'kind': 'finite_number', 'loc': [], 'message': 'Input should be a finite number', 'input_value': '1' * 400}
     ]
     assert repr(exc_info.value) == (
         '1 validation error for int\n'
-        '  Input should be a valid integer, got infinity '
-        '[kind=int_nan, '
+        '  Input should be a finite number '
+        '[kind=finite_number, '
         "input_value='111111111111111111111111...11111111111111111111111', input_type=str]"
     )
 
 
-def test_int_nan(py_and_json: PyAndJson):
+def test_finite_number(py_and_json: PyAndJson):
     v = py_and_json({'type': 'int'})
 
-    with pytest.raises(ValidationError, match='Input should be a valid integer, got negative infinity'):
+    with pytest.raises(ValidationError, match='Input should be a finite number'):
         v.validate_test('-' + '1' * 400)
 
-    with pytest.raises(ValidationError, match='Input should be a valid integer, got NaN'):
+    with pytest.raises(ValidationError, match='Input should be a finite number'):
         v.validate_test('nan')
 
 

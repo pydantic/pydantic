@@ -1,12 +1,33 @@
+use std::borrow::Cow;
+use std::fmt;
+
 use ahash::AHashMap;
+use pyo3::exceptions::PyTypeError;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 
+use crate::build_tools::py_error;
 use strum::{Display, EnumMessage, IntoEnumIterator};
 use strum_macros::EnumIter;
 
 use super::PydanticCustomError;
+
+#[pyfunction]
+pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
+    let mut errors: Vec<&PyDict> = Vec::with_capacity(100);
+    for error_kind in ErrorKind::iter() {
+        if !matches!(error_kind, ErrorKind::CustomError { .. }) {
+            let d = PyDict::new(py);
+            d.set_item("kind", error_kind.to_string())?;
+            d.set_item("message_template", error_kind.message_template())?;
+            d.set_item("example_message", error_kind.render_message(py)?)?;
+            d.set_item("example_context", error_kind.py_dict(py)?)?;
+            errors.push(d);
+        }
+    }
+    Ok(PyList::new(py, errors))
+}
 
 /// Definite each validation error.
 /// NOTE: if an error has parameters:
@@ -16,8 +37,6 @@ use super::PydanticCustomError;
 #[derive(Clone, Debug, Display, EnumMessage, EnumIter)]
 #[strum(serialize_all = "snake_case")]
 pub enum ErrorKind {
-    #[strum(message = "Invalid input")]
-    InvalidInput,
     #[strum(message = "Invalid JSON: {error}")]
     InvalidJson {
         error: String,
@@ -60,20 +79,26 @@ pub enum ErrorKind {
     // own type, bounds arguments are Strings so they can be created from any type
     #[strum(message = "Input should be greater than {gt}")]
     GreaterThan {
-        gt: String,
+        gt: Number,
     },
     #[strum(message = "Input should be greater than or equal to {ge}")]
     GreaterThanEqual {
-        ge: String,
+        ge: Number,
     },
     #[strum(message = "Input should be less than {lt}")]
     LessThan {
-        lt: String,
+        lt: Number,
     },
     #[strum(message = "Input should be less than or equal to {le}")]
     LessThanEqual {
-        le: String,
+        le: Number,
     },
+    #[strum(message = "Input should be a multiple of {multiple_of}")]
+    MultipleOf {
+        multiple_of: Number,
+    },
+    #[strum(message = "Input should be a finite number")]
+    FiniteNumber,
     // ---------------------
     // generic length errors - used for everything with a length except strings and bytes which need custom messages
     #[strum(
@@ -103,25 +128,19 @@ pub enum ErrorKind {
     // ---------------------
     // string errors
     #[strum(message = "Input should be a valid string")]
-    StrType,
+    StringType,
     #[strum(message = "Input should be a valid string, unable to parse raw data as a unicode string")]
-    StrUnicode,
-    #[strum(
-        message = "String should have at least {min_length} characters",
-        serialize = "too_short"
-    )]
-    StrTooShort {
+    StringUnicode,
+    #[strum(message = "String should have at least {min_length} characters")]
+    StringTooShort {
         min_length: usize,
     },
-    #[strum(
-        message = "String should have at most {max_length} characters",
-        serialize = "too_long"
-    )]
-    StrTooLong {
+    #[strum(message = "String should have at most {max_length} characters")]
+    StringTooLong {
         max_length: usize,
     },
     #[strum(message = "String should match pattern '{pattern}'")]
-    StrPatternMismatch {
+    StringPatternMismatch {
         pattern: String,
     },
     // ---------------------
@@ -158,79 +177,21 @@ pub enum ErrorKind {
     IntParsing,
     #[strum(message = "Input should be a valid integer, got a number with a fractional part")]
     IntFromFloat,
-    #[strum(message = "Input should be a valid integer, got {nan_value}")]
-    IntNan {
-        nan_value: String,
-    },
-    #[strum(serialize = "multiple_of", message = "Input should be a multiple of {multiple_of}")]
-    IntMultipleOf {
-        multiple_of: i64,
-    },
-    #[strum(serialize = "greater_than", message = "Input should be greater than {gt}")]
-    IntGreaterThan {
-        gt: i64,
-    },
-    #[strum(
-        serialize = "greater_than_equal",
-        message = "Input should be greater than or equal to {ge}"
-    )]
-    IntGreaterThanEqual {
-        ge: i64,
-    },
-    #[strum(serialize = "less_than", message = "Input should be less than {lt}")]
-    IntLessThan {
-        lt: i64,
-    },
-    #[strum(
-        serialize = "less_than_equal",
-        message = "Input should be less than or equal to {le}"
-    )]
-    IntLessThanEqual {
-        le: i64,
-    },
     // ---------------------
     // float errors
     #[strum(message = "Input should be a valid number")]
     FloatType,
     #[strum(message = "Input should be a valid number, unable to parse string as an number")]
     FloatParsing,
-    #[strum(message = "Input should be a finite number")]
-    FiniteNumber,
-    #[strum(serialize = "multiple_of", message = "Input should be a multiple of {multiple_of}")]
-    FloatMultipleOf {
-        multiple_of: f64,
-    },
-    #[strum(serialize = "greater_than", message = "Input should be greater than {gt}")]
-    FloatGreaterThan {
-        gt: f64,
-    },
-    #[strum(
-        serialize = "greater_than_equal",
-        message = "Input should be greater than or equal to {ge}"
-    )]
-    FloatGreaterThanEqual {
-        ge: f64,
-    },
-    #[strum(serialize = "less_than", message = "Input should be less than {lt}")]
-    FloatLessThan {
-        lt: f64,
-    },
-    #[strum(
-        serialize = "less_than_equal",
-        message = "Input should be less than or equal to {le}"
-    )]
-    FloatLessThanEqual {
-        le: f64,
-    },
     // ---------------------
     // bytes errors
     #[strum(message = "Input should be a valid bytes")]
     BytesType,
-    #[strum(message = "Data should have at least {min_length} bytes", serialize = "too_short")]
+    #[strum(message = "Data should have at least {min_length} bytes")]
     BytesTooShort {
         min_length: usize,
     },
-    #[strum(message = "Data should have at most {max_length} bytes", serialize = "too_long")]
+    #[strum(message = "Data should have at most {max_length} bytes")]
     BytesTooLong {
         max_length: usize,
     },
@@ -250,11 +211,11 @@ pub enum ErrorKind {
     },
     // ---------------------
     // literals
-    #[strum(serialize = "literal_error", message = "Input should be {expected}")]
+    #[strum(message = "Input should be: {expected}")]
     LiteralSingleError {
         expected: String,
     },
-    #[strum(serialize = "literal_error", message = "Input should be one of: {expected}")]
+    #[strum(message = "Input should be one of: {expected}")]
     LiteralMultipleError {
         expected: String,
     },
@@ -264,7 +225,7 @@ pub enum ErrorKind {
     DateType,
     #[strum(message = "Input should be a valid date in the format YYYY-MM-DD, {error}")]
     DateParsing {
-        error: String,
+        error: Cow<'static, str>,
     },
     #[strum(message = "Input should be a valid date or datetime, {error}")]
     DateFromDatetimeParsing {
@@ -278,24 +239,18 @@ pub enum ErrorKind {
     TimeType,
     #[strum(message = "Input should be in a valid time format, {error}")]
     TimeParsing {
-        error: String,
+        error: Cow<'static, str>,
     },
     // ---------------------
     // datetime errors
-    #[strum(serialize = "datetime_type", message = "Input should be a valid datetime")]
-    DateTimeType,
-    #[strum(
-        serialize = "datetime_parsing",
-        message = "Input should be a valid datetime, {error}"
-    )]
-    DateTimeParsing {
-        error: String,
+    #[strum(message = "Input should be a valid datetime")]
+    DatetimeType,
+    #[strum(message = "Input should be a valid datetime, {error}")]
+    DatetimeParsing {
+        error: Cow<'static, str>,
     },
-    #[strum(
-        serialize = "datetime_object_invalid",
-        message = "Invalid datetime object, got {error}"
-    )]
-    DateTimeObjectInvalid {
+    #[strum(message = "Invalid datetime object, got {error}")]
+    DatetimeObjectInvalid {
         error: String,
     },
     // ---------------------
@@ -304,7 +259,7 @@ pub enum ErrorKind {
     TimeDeltaType,
     #[strum(message = "Input should be a valid timedelta, {error}")]
     TimeDeltaParsing {
-        error: String,
+        error: Cow<'static, str>,
     },
     // ---------------------
     // frozenset errors
@@ -374,14 +329,21 @@ macro_rules! py_dict {
     ($py:ident, $($value:expr),* $(,)?) => {{
         let dict = PyDict::new($py);
         $(
-            dict.set_item::<&str, Py<PyAny>>(stringify!($value), $value.into_py($py))?;
+            dict.set_item::<&str, Py<PyAny>>(stringify!($value), $value.to_object($py))?;
         )*
         Ok(Some(dict.into_py($py)))
     }};
 }
 
+fn do_nothing<T>(v: T) -> T {
+    v
+}
+
 macro_rules! extract_context {
-    ($kind:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {{
+    ($kind:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {
+        extract_context!(do_nothing, $kind, $context, $($key: $type_,)*)
+    };
+    ($function:path, $kind:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {{
         let context = match $context {
             Some(context) => context,
             None => {
@@ -391,11 +353,13 @@ macro_rules! extract_context {
         };
         Ok(Self::$kind{
             $(
-                $key: context
-                  .get_item(stringify!($key))
-                  .ok_or(format!("{}: '{}' required in context", stringify!($kind), stringify!($key)))?
-                  .extract::<$type_>()
-                  .map_err(|_| format!("{}: '{}' context value must be a {}", stringify!($kind), stringify!($key), stringify!($type_)))?,
+                $key: $function(
+                    context
+                    .get_item(stringify!($key))
+                    .ok_or(format!("{}: '{}' required in context", stringify!($kind), stringify!($key)))?
+                    .extract::<$type_>()
+                    .map_err(|_| format!("{}: '{}' context value must be a {}", stringify!($kind), stringify!($key), stringify!($type_)))?
+                ),
             )*
         })
     }};
@@ -422,10 +386,11 @@ impl ErrorKind {
             Self::InvalidJson { .. } => extract_context!(InvalidJson, ctx, error: String),
             Self::GetAttributeError { .. } => extract_context!(GetAttributeError, ctx, error: String),
             Self::ModelClassType { .. } => extract_context!(ModelClassType, ctx, class_name: String),
-            Self::GreaterThan { .. } => extract_context!(GreaterThan, ctx, gt: String),
-            Self::GreaterThanEqual { .. } => extract_context!(GreaterThanEqual, ctx, ge: String),
-            Self::LessThan { .. } => extract_context!(LessThan, ctx, lt: String),
-            Self::LessThanEqual { .. } => extract_context!(LessThanEqual, ctx, le: String),
+            Self::GreaterThan { .. } => extract_context!(GreaterThan, ctx, gt: Number),
+            Self::GreaterThanEqual { .. } => extract_context!(GreaterThanEqual, ctx, ge: Number),
+            Self::LessThan { .. } => extract_context!(LessThan, ctx, lt: Number),
+            Self::LessThanEqual { .. } => extract_context!(LessThanEqual, ctx, le: Number),
+            Self::MultipleOf { .. } => extract_context!(MultipleOf, ctx, multiple_of: Number),
             Self::TooShort { .. } => extract_context!(
                 TooShort,
                 ctx,
@@ -441,33 +406,22 @@ impl ErrorKind {
                 actual_length: usize
             ),
             Self::IterationError { .. } => extract_context!(IterationError, ctx, error: String),
-            Self::StrTooShort { .. } => extract_context!(StrTooShort, ctx, min_length: usize),
-            Self::StrTooLong { .. } => extract_context!(StrTooLong, ctx, max_length: usize),
-            Self::StrPatternMismatch { .. } => extract_context!(StrPatternMismatch, ctx, pattern: String),
+            Self::StringTooShort { .. } => extract_context!(StringTooShort, ctx, min_length: usize),
+            Self::StringTooLong { .. } => extract_context!(StringTooLong, ctx, max_length: usize),
+            Self::StringPatternMismatch { .. } => extract_context!(StringPatternMismatch, ctx, pattern: String),
             Self::DictFromMapping { .. } => extract_context!(DictFromMapping, ctx, error: String),
-            Self::IntNan { .. } => extract_context!(IntNan, ctx, nan_value: String),
-            Self::IntMultipleOf { .. } => extract_context!(IntMultipleOf, ctx, multiple_of: i64),
-            Self::IntGreaterThan { .. } => extract_context!(IntGreaterThan, ctx, gt: i64),
-            Self::IntGreaterThanEqual { .. } => extract_context!(IntGreaterThanEqual, ctx, ge: i64),
-            Self::IntLessThan { .. } => extract_context!(IntLessThan, ctx, lt: i64),
-            Self::IntLessThanEqual { .. } => extract_context!(IntLessThanEqual, ctx, le: i64),
-            Self::FloatMultipleOf { .. } => extract_context!(FloatMultipleOf, ctx, multiple_of: f64),
-            Self::FloatGreaterThan { .. } => extract_context!(FloatGreaterThan, ctx, gt: f64),
-            Self::FloatGreaterThanEqual { .. } => extract_context!(FloatGreaterThanEqual, ctx, ge: f64),
-            Self::FloatLessThan { .. } => extract_context!(FloatLessThan, ctx, lt: f64),
-            Self::FloatLessThanEqual { .. } => extract_context!(FloatLessThanEqual, ctx, le: f64),
             Self::BytesTooShort { .. } => extract_context!(BytesTooShort, ctx, min_length: usize),
             Self::BytesTooLong { .. } => extract_context!(BytesTooLong, ctx, max_length: usize),
             Self::ValueError { .. } => extract_context!(ValueError, ctx, error: String),
             Self::AssertionError { .. } => extract_context!(AssertionError, ctx, error: String),
             Self::LiteralSingleError { .. } => extract_context!(LiteralSingleError, ctx, expected: String),
             Self::LiteralMultipleError { .. } => extract_context!(LiteralMultipleError, ctx, expected: String),
-            Self::DateParsing { .. } => extract_context!(DateParsing, ctx, error: String),
+            Self::DateParsing { .. } => extract_context!(Cow::Owned, DateParsing, ctx, error: String),
             Self::DateFromDatetimeParsing { .. } => extract_context!(DateFromDatetimeParsing, ctx, error: String),
-            Self::TimeParsing { .. } => extract_context!(TimeParsing, ctx, error: String),
-            Self::DateTimeParsing { .. } => extract_context!(DateTimeParsing, ctx, error: String),
-            Self::DateTimeObjectInvalid { .. } => extract_context!(DateTimeObjectInvalid, ctx, error: String),
-            Self::TimeDeltaParsing { .. } => extract_context!(TimeDeltaParsing, ctx, error: String),
+            Self::TimeParsing { .. } => extract_context!(Cow::Owned, TimeParsing, ctx, error: String),
+            Self::DatetimeParsing { .. } => extract_context!(Cow::Owned, DatetimeParsing, ctx, error: String),
+            Self::DatetimeObjectInvalid { .. } => extract_context!(DatetimeObjectInvalid, ctx, error: String),
+            Self::TimeDeltaParsing { .. } => extract_context!(Cow::Owned, TimeDeltaParsing, ctx, error: String),
             Self::IsInstanceOf { .. } => extract_context!(IsInstanceOf, ctx, class: String),
             Self::UnionTagInvalid { .. } => extract_context!(
                 UnionTagInvalid,
@@ -513,10 +467,11 @@ impl ErrorKind {
             Self::InvalidJson { error } => render!(self, error),
             Self::GetAttributeError { error } => render!(self, error),
             Self::ModelClassType { class_name } => render!(self, class_name),
-            Self::GreaterThan { gt } => render!(self, gt),
-            Self::GreaterThanEqual { ge } => render!(self, ge),
-            Self::LessThan { lt } => render!(self, lt),
-            Self::LessThanEqual { le } => render!(self, le),
+            Self::GreaterThan { gt } => to_string_render!(self, gt),
+            Self::GreaterThanEqual { ge } => to_string_render!(self, ge),
+            Self::LessThan { lt } => to_string_render!(self, lt),
+            Self::LessThanEqual { le } => to_string_render!(self, le),
+            Self::MultipleOf { multiple_of } => to_string_render!(self, multiple_of),
             Self::TooShort {
                 field_type,
                 min_length,
@@ -534,21 +489,10 @@ impl ErrorKind {
                 to_string_render!(self, field_type, max_length, actual_length, expected_plural)
             }
             Self::IterationError { error } => render!(self, error),
-            Self::StrTooShort { min_length } => to_string_render!(self, min_length),
-            Self::StrTooLong { max_length } => to_string_render!(self, max_length),
-            Self::StrPatternMismatch { pattern } => render!(self, pattern),
+            Self::StringTooShort { min_length } => to_string_render!(self, min_length),
+            Self::StringTooLong { max_length } => to_string_render!(self, max_length),
+            Self::StringPatternMismatch { pattern } => render!(self, pattern),
             Self::DictFromMapping { error } => render!(self, error),
-            Self::IntNan { nan_value } => render!(self, nan_value),
-            Self::IntMultipleOf { multiple_of } => to_string_render!(self, multiple_of),
-            Self::IntGreaterThan { gt } => to_string_render!(self, gt),
-            Self::IntGreaterThanEqual { ge } => to_string_render!(self, ge),
-            Self::IntLessThan { lt } => to_string_render!(self, lt),
-            Self::IntLessThanEqual { le } => to_string_render!(self, le),
-            Self::FloatMultipleOf { multiple_of } => to_string_render!(self, multiple_of),
-            Self::FloatGreaterThan { gt } => to_string_render!(self, gt),
-            Self::FloatGreaterThanEqual { ge } => to_string_render!(self, ge),
-            Self::FloatLessThan { lt } => to_string_render!(self, lt),
-            Self::FloatLessThanEqual { le } => to_string_render!(self, le),
             Self::BytesTooShort { min_length } => to_string_render!(self, min_length),
             Self::BytesTooLong { max_length } => to_string_render!(self, max_length),
             Self::ValueError { error } => render!(self, error),
@@ -559,8 +503,8 @@ impl ErrorKind {
             Self::DateParsing { error } => render!(self, error),
             Self::DateFromDatetimeParsing { error } => render!(self, error),
             Self::TimeParsing { error } => render!(self, error),
-            Self::DateTimeParsing { error } => render!(self, error),
-            Self::DateTimeObjectInvalid { error } => render!(self, error),
+            Self::DatetimeParsing { error } => render!(self, error),
+            Self::DatetimeObjectInvalid { error } => render!(self, error),
             Self::TimeDeltaParsing { error } => render!(self, error),
             Self::IsInstanceOf { class } => render!(self, class),
             Self::UnionTagInvalid {
@@ -582,6 +526,7 @@ impl ErrorKind {
             Self::GreaterThanEqual { ge } => py_dict!(py, ge),
             Self::LessThan { lt } => py_dict!(py, lt),
             Self::LessThanEqual { le } => py_dict!(py, le),
+            Self::MultipleOf { multiple_of } => py_dict!(py, multiple_of),
             Self::TooShort {
                 field_type,
                 min_length,
@@ -593,21 +538,10 @@ impl ErrorKind {
                 actual_length,
             } => py_dict!(py, field_type, max_length, actual_length),
             Self::IterationError { error } => py_dict!(py, error),
-            Self::StrTooShort { min_length } => py_dict!(py, min_length),
-            Self::StrTooLong { max_length } => py_dict!(py, max_length),
-            Self::StrPatternMismatch { pattern } => py_dict!(py, pattern),
+            Self::StringTooShort { min_length } => py_dict!(py, min_length),
+            Self::StringTooLong { max_length } => py_dict!(py, max_length),
+            Self::StringPatternMismatch { pattern } => py_dict!(py, pattern),
             Self::DictFromMapping { error } => py_dict!(py, error),
-            Self::IntNan { nan_value } => py_dict!(py, nan_value),
-            Self::IntMultipleOf { multiple_of } => py_dict!(py, multiple_of),
-            Self::IntGreaterThan { gt } => py_dict!(py, gt),
-            Self::IntGreaterThanEqual { ge } => py_dict!(py, ge),
-            Self::IntLessThan { lt } => py_dict!(py, lt),
-            Self::IntLessThanEqual { le } => py_dict!(py, le),
-            Self::FloatMultipleOf { multiple_of } => py_dict!(py, multiple_of),
-            Self::FloatGreaterThan { gt } => py_dict!(py, gt),
-            Self::FloatGreaterThanEqual { ge } => py_dict!(py, ge),
-            Self::FloatLessThan { lt } => py_dict!(py, lt),
-            Self::FloatLessThanEqual { le } => py_dict!(py, le),
             Self::BytesTooShort { min_length } => py_dict!(py, min_length),
             Self::BytesTooLong { max_length } => py_dict!(py, max_length),
             Self::ValueError { error } => py_dict!(py, error),
@@ -618,8 +552,8 @@ impl ErrorKind {
             Self::DateParsing { error } => py_dict!(py, error),
             Self::DateFromDatetimeParsing { error } => py_dict!(py, error),
             Self::TimeParsing { error } => py_dict!(py, error),
-            Self::DateTimeParsing { error } => py_dict!(py, error),
-            Self::DateTimeObjectInvalid { error } => py_dict!(py, error),
+            Self::DatetimeParsing { error } => py_dict!(py, error),
+            Self::DatetimeObjectInvalid { error } => py_dict!(py, error),
             Self::TimeDeltaParsing { error } => py_dict!(py, error),
             Self::IsInstanceOf { class } => py_dict!(py, class),
             Self::UnionTagInvalid {
@@ -629,6 +563,76 @@ impl ErrorKind {
             } => py_dict!(py, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => py_dict!(py, discriminator),
             _ => Ok(None),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Number {
+    Int(i64),
+    Float(f64),
+    String(String),
+}
+
+impl Default for Number {
+    fn default() -> Self {
+        Self::Int(0)
+    }
+}
+
+impl From<i64> for Number {
+    fn from(i: i64) -> Self {
+        Self::Int(i)
+    }
+}
+
+impl From<f64> for Number {
+    fn from(f: f64) -> Self {
+        Self::Float(f)
+    }
+}
+
+impl From<String> for Number {
+    fn from(s: String) -> Self {
+        Self::String(s)
+    }
+}
+
+impl From<&str> for Number {
+    fn from(s: &str) -> Self {
+        Self::String(s.to_string())
+    }
+}
+
+impl FromPyObject<'_> for Number {
+    fn extract(obj: &PyAny) -> PyResult<Self> {
+        if let Ok(int) = obj.extract::<i64>() {
+            Ok(Number::Int(int))
+        } else if let Ok(float) = obj.extract::<f64>() {
+            Ok(Number::Float(float))
+        } else if let Ok(string) = obj.extract::<String>() {
+            Ok(Number::String(string))
+        } else {
+            py_error!(PyTypeError; "Expected int or float or String, got {}", obj.get_type())
+        }
+    }
+}
+
+impl fmt::Display for Number {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Float(s) => write!(f, "{}", s),
+            Self::Int(i) => write!(f, "{}", i),
+            Self::String(s) => write!(f, "{}", s),
+        }
+    }
+}
+impl ToPyObject for Number {
+    fn to_object(&self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::Int(i) => i.into_py(py),
+            Self::Float(f) => f.into_py(py),
+            Self::String(s) => s.into_py(py),
         }
     }
 }

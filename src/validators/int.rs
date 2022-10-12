@@ -78,27 +78,32 @@ impl Validator for ConstrainedIntValidator {
         let int = input.validate_int(extra.strict.unwrap_or(self.strict))?;
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
-                return Err(ValError::new(ErrorKind::IntMultipleOf { multiple_of }, input));
+                return Err(ValError::new(
+                    ErrorKind::MultipleOf {
+                        multiple_of: multiple_of.into(),
+                    },
+                    input,
+                ));
             }
         }
         if let Some(le) = self.le {
             if int > le {
-                return Err(ValError::new(ErrorKind::IntLessThanEqual { le }, input));
+                return Err(ValError::new(ErrorKind::LessThanEqual { le: le.into() }, input));
             }
         }
         if let Some(lt) = self.lt {
             if int >= lt {
-                return Err(ValError::new(ErrorKind::IntLessThan { lt }, input));
+                return Err(ValError::new(ErrorKind::LessThan { lt: lt.into() }, input));
             }
         }
         if let Some(ge) = self.ge {
             if int < ge {
-                return Err(ValError::new(ErrorKind::IntGreaterThanEqual { ge }, input));
+                return Err(ValError::new(ErrorKind::GreaterThanEqual { ge: ge.into() }, input));
             }
         }
         if let Some(gt) = self.gt {
             if int <= gt {
-                return Err(ValError::new(ErrorKind::IntGreaterThan { gt }, input));
+                return Err(ValError::new(ErrorKind::GreaterThan { gt: gt.into() }, input));
             }
         }
         Ok(int.into_py(py))
