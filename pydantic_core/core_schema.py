@@ -489,7 +489,7 @@ def dict_schema(
 class ValidatorFunction(Protocol):
     def __call__(
         self, __input_value: Any, *, data: Any, config: CoreConfig | None, context: Any, **future_kwargs: Any
-    ) -> Any:
+    ) -> Any:  # pragma: no cover
         ...
 
 
@@ -520,7 +520,7 @@ def function_after_schema(
 
 
 class CallableValidator(Protocol):
-    def __call__(self, input_value: Any, outer_location: str | int | None = None) -> Any:
+    def __call__(self, input_value: Any, outer_location: str | int | None = None) -> Any:  # pragma: no cover
         ...
 
 
@@ -534,7 +534,7 @@ class WrapValidatorFunction(Protocol):
         config: CoreConfig | None,
         context: Any,
         **future_kwargs: Any,
-    ) -> Any:
+    ) -> Any:  # pragma: no cover
         ...
 
 
