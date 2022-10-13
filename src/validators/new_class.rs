@@ -8,7 +8,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
-use crate::build_tools::SchemaDict;
+use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::questions::Question;
@@ -137,7 +137,7 @@ impl NewClassValidator {
                     // null kwargs dict.
                     new_func(raw_type, args.as_ptr(), null_mut()),
                 )?,
-                None => return Err(PyTypeError::new_err("base type without tp_new")),
+                None => return py_err!(PyTypeError; "base type without tp_new"),
             }
         };
 

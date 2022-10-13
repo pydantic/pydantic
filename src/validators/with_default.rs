@@ -4,7 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{ValError, ValResult};
 use crate::input::Input;
 use crate::questions::Question;
@@ -48,7 +48,7 @@ impl BuildValidator for WithDefaultValidator {
             schema.get_as(intern!(py, "default"))?,
             schema.get_as(intern!(py, "default_factory"))?,
         ) {
-            (Some(_), Some(_)) => return py_error!("'default' and 'default_factory' cannot be used together"),
+            (Some(_), Some(_)) => return py_err!("'default' and 'default_factory' cannot be used together"),
             (Some(default), None) => DefaultType::Default(default),
             (None, Some(default_factory)) => DefaultType::DefaultFactory(default_factory),
             (None, None) => DefaultType::None,
@@ -58,7 +58,7 @@ impl BuildValidator for WithDefaultValidator {
             Some("omit") => OnError::Omit,
             Some("default") => {
                 if matches!(default, DefaultType::None) {
-                    return py_error!("'on_error = default' requires a `default` or `default_factory`");
+                    return py_err!("'on_error = default' requires a `default` or `default_factory`");
                 }
                 OnError::Default
             }

@@ -6,7 +6,7 @@ use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::{NoHashSet, RecursionGuard};
@@ -26,7 +26,7 @@ impl BuildValidator for LiteralBuilder {
     ) -> PyResult<CombinedValidator> {
         let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
-            return py_error!(r#""expected" should have length > 0"#);
+            return py_err!(r#""expected" should have length > 0"#);
         } else if expected.len() == 1 {
             let first = expected.get_item(0)?;
             if let Ok(py_str) = first.cast_as::<PyString>() {

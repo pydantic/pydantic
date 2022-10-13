@@ -12,6 +12,7 @@ from pydantic_core._pydantic_core import (
     build_profile,
     list_all_errors,
 )
+from pydantic_core.core_schema import ErrorKind
 
 
 @pytest.mark.parametrize('obj', [ValidationError, SchemaValidator, SchemaError])
@@ -166,3 +167,8 @@ def test_all_errors():
             'example_context': None,
         },
     ]
+    kinds = [e['kind'] for e in errors]
+    if kinds != list(ErrorKind.__args__):
+        literal = ''.join(f'\n    {e!r},' for e in kinds)
+        print(f'python code:\n\nErrorKind = Literal[{literal}\n]')
+        pytest.fail('core_schema.ErrorKind needs to be updated')

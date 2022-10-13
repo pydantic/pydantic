@@ -7,7 +7,7 @@ use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{is_strict, py_error, schema_or_config, SchemaDict};
+use crate::build_tools::{is_strict, py_err, schema_or_config, SchemaDict};
 use crate::errors::{ErrorKind, PydanticCustomError, PydanticKindError, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
@@ -68,7 +68,7 @@ fn get_custom_error(py: Python, schema: &PyDict) -> PyResult<CustomError> {
 
     if ErrorKind::valid_kind(py, &kind) {
         if custom_error.contains(intern!(py, "message"))? {
-            py_error!("custom_error.message should not be provided if kind matches a known error")
+            py_err!("custom_error.message should not be provided if kind matches a known error")
         } else {
             let error = PydanticKindError::py_new(py, &kind, context)?;
             Ok(CustomError::Kind(error))
