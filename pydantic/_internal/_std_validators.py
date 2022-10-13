@@ -7,7 +7,7 @@ from pathlib import Path, PurePath
 from typing import Any, Callable
 from uuid import UUID
 
-from pydantic_core import PydanticCustomError, PydanticErrorKind, core_schema
+from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 
 from ._fields import CustomValidator
 
@@ -64,7 +64,7 @@ class DecimalValidator(CustomValidator):
         self.max_digits: int | None = None
         self.decimal_places: int | None = None
         self.multiple_of: int | Decimal | None = None
-        self.allow_inf_nan: bool = True
+        self.allow_inf_nan: bool = False
         self.check_digits: bool = False
         self.strict: bool = False
 
@@ -74,9 +74,9 @@ class DecimalValidator(CustomValidator):
                 raise TypeError(f'{self.__class__.__name__}.update() got an unexpected keyword argument {k!r}')
             setattr(self, k, v)
 
-        self.check_digits = (
-            self.max_digits is not None or self.decimal_places is not None or self.allow_inf_nan is False
-        )
+        self.check_digits = self.max_digits is not None or self.decimal_places is not None
+        if self.check_digits and self.allow_inf_nan:
+            raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
     def validate(self, value: int | float | str, **_kwargs: Any) -> Decimal:
         if not isinstance(value, Decimal):
@@ -87,50 +87,51 @@ class DecimalValidator(CustomValidator):
             except DecimalException:
                 raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
-        if self.check_digits:
-            digit_tuple, exponent = value.as_tuple()[1:]
+        if not self.allow_inf_nan or self.check_digits:
+            _, digit_tuple, exponent = value.as_tuple()
             if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
-                raise PydanticCustomError('decimal_finite_number', 'Input should be a finite number')
+                raise PydanticKindError('finite_number')
 
-            if exponent >= 0:
-                # A positive exponent adds that many trailing zeros.
-                digits = len(digit_tuple) + exponent
-                decimals = 0
-            else:
-                # If the absolute value of the negative exponent is larger than the
-                # number of digits, then it's the same as the number of digits,
-                # because it'll consume all the digits in digit_tuple and then
-                # add abs(exponent) - len(digit_tuple) leading zeros after the
-                # decimal point.
-                if abs(exponent) > len(digit_tuple):
-                    digits = decimals = abs(exponent)
+            if self.check_digits:
+                if exponent >= 0:
+                    # A positive exponent adds that many trailing zeros.
+                    digits = len(digit_tuple) + exponent
+                    decimals = 0
                 else:
-                    digits = len(digit_tuple)
-                    decimals = abs(exponent)
-            whole_digits = digits - decimals
+                    # If the absolute value of the negative exponent is larger than the
+                    # number of digits, then it's the same as the number of digits,
+                    # because it'll consume all the digits in digit_tuple and then
+                    # add abs(exponent) - len(digit_tuple) leading zeros after the
+                    # decimal point.
+                    if abs(exponent) > len(digit_tuple):
+                        digits = decimals = abs(exponent)
+                    else:
+                        digits = len(digit_tuple)
+                        decimals = abs(exponent)
 
-            if self.max_digits is not None and digits > self.max_digits:
-                raise PydanticCustomError(
-                    'decimal_max_digits',
-                    'ensure that there are no more than {max_digits} digits in total',
-                    {'max_digits': self.max_digits},
-                )
-
-            if self.decimal_places is not None and decimals > self.decimal_places:
-                raise PydanticCustomError(
-                    'decimal_max_places',
-                    'ensure that there are no more than {decimal_places} decimal places',
-                    {'decimal_places': self.decimal_places},
-                )
-
-            if self.max_digits is not None and self.decimal_places is not None:
-                expected = self.max_digits - self.decimal_places
-                if whole_digits > expected:
+                if self.max_digits is not None and digits > self.max_digits:
                     raise PydanticCustomError(
-                        'decimal_whole_digits',
-                        'ensure that there are no more than {whole_digits} digits before the decimal point',
-                        {'whole_digits': whole_digits},
+                        'decimal_max_digits',
+                        'ensure that there are no more than {max_digits} digits in total',
+                        {'max_digits': self.max_digits},
                     )
+
+                if self.decimal_places is not None and decimals > self.decimal_places:
+                    raise PydanticCustomError(
+                        'decimal_max_places',
+                        'ensure that there are no more than {decimal_places} decimal places',
+                        {'decimal_places': self.decimal_places},
+                    )
+
+                if self.max_digits is not None and self.decimal_places is not None:
+                    whole_digits = digits - decimals
+                    expected = self.max_digits - self.decimal_places
+                    if whole_digits > expected:
+                        raise PydanticCustomError(
+                            'decimal_whole_digits',
+                            'ensure that there are no more than {whole_digits} digits before the decimal point',
+                            {'whole_digits': expected},
+                        )
 
         if self.multiple_of is not None:
             mod = value / self.multiple_of % 1
@@ -142,14 +143,14 @@ class DecimalValidator(CustomValidator):
                 )
 
         if self.gt is not None and not value > self.gt:
-            raise PydanticErrorKind('greater_than', {'gt': self.gt})
+            raise PydanticKindError('greater_than', {'gt': self.gt})
         elif self.ge is not None and not value >= self.ge:
-            raise PydanticErrorKind('greater_than_equal', {'ge': self.ge})
+            raise PydanticKindError('greater_than_equal', {'ge': self.ge})
 
         if self.lt is not None and not value < self.lt:
-            raise PydanticErrorKind('less_than', {'lt': self.lt})
+            raise PydanticKindError('less_than', {'lt': self.lt})
         if self.le is not None and not value <= self.le:
-            raise PydanticErrorKind('less_than_equal', {'le': self.le})
+            raise PydanticKindError('less_than_equal', {'le': self.le})
 
         return value
 
@@ -164,9 +165,11 @@ def decimal_schema(_decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     return core_schema.function_after_schema(
         decimal_validator.validate,
         core_schema.union_schema(
+            core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
             core_schema.int_schema(),
             core_schema.float_schema(),
             core_schema.string_schema(strip_whitespace=True),
+            strict=True,
         ),
         validator_instance=decimal_validator,
     )
@@ -204,11 +207,11 @@ def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
     )
 
 
-def path_validator(v: str) -> Path:
+def path_validator(v: str, **kwargs) -> Path:
     try:
         return Path(v)
     except TypeError:
-        raise PydanticCustomError('path', 'Input is not a valid path')
+        raise PydanticCustomError('path_type', 'Input is not a valid path')
 
 
 def path_schema(path_type: type[PurePath]) -> core_schema.UnionSchema:
@@ -219,6 +222,8 @@ def path_schema(path_type: type[PurePath]) -> core_schema.UnionSchema:
             path_validator,
             core_schema.string_schema(),
         ),
+        custom_error_kind='path_type',
+        custom_error_message='Input is not a valid path',
         strict=True,
     )
 

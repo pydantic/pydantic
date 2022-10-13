@@ -13,7 +13,7 @@ import typing
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata
-from pydantic_core import PydanticCustomError, PydanticErrorKind, core_schema
+from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
@@ -225,17 +225,17 @@ def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) ->
 
         # TODO we need a way to remove constraints which this line currently prevents
         constraints_dict = {k: v for k, v in constraints_dict.items() if v is not None}
-
-        validator_instance: CustomValidator | None = schema.get('validator_instance')
-        if validator_instance is not None:
-            validator_instance.update(**constraints_dict)
-        else:
-            for k, v in constraints_dict.items():
-                if k in {'min_inclusive', 'max_exclusive'}:
-                    # TODO remove once https://github.com/annotated-types/annotated-types/pull/24/files is released
-                    schema[f'{k[:3]}_length'] = v
-                else:
-                    schema[k] = v
+        if constraints_dict:
+            validator_instance: CustomValidator | None = schema.get('validator_instance')
+            if validator_instance is not None:
+                validator_instance.update(**constraints_dict)
+            else:
+                for k, v in constraints_dict.items():
+                    if k in {'min_inclusive', 'max_exclusive'}:
+                        # TODO remove once https://github.com/annotated-types/annotated-types/pull/24/files is released
+                        schema[f'{k[:3]}_length'] = v
+                    else:
+                        schema[k] = v
     return schema
 
 
@@ -353,7 +353,7 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
 
 def sequence_validator(v: Any, *, validator, **kwargs):
     if not isinstance(v, typing.Sequence):
-        raise PydanticErrorKind('is_instance_of', {'class': 'Sequence'})
+        raise PydanticKindError('is_instance_of', {'class': 'Sequence'})
 
     value_type = type(v)
     v_list = validator(v)
@@ -362,13 +362,13 @@ def sequence_validator(v: Any, *, validator, **kwargs):
             return ''.join(v_list)
         except TypeError:
             # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticErrorKind('str_type')
+            raise PydanticKindError('str_type')
     elif issubclass(value_type, bytes):
         try:
             return b''.join(v_list)
         except TypeError:
             # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticErrorKind('bytes_type')
+            raise PydanticKindError('bytes_type')
     elif issubclass(value_type, range):
         # return the list as we probably can't re-create the range
         return v_list

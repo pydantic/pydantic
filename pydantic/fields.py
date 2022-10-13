@@ -34,15 +34,13 @@ class FieldInfo(Representation):
         'exclude',
         'include',
         'constraints',
-        'max_digits',
-        'decimal_places',
         'repr',
         'discriminator',
         'extra',
     )
 
     # used to convert kwargs to constraints, None has a special meaning
-    __constraints_lookup__: dict[str, annotated_types.BaseMetadata | _fields.PydanticMetadata | None] = {
+    constraints_lookup: dict[str, annotated_types.BaseMetadata | _fields.PydanticMetadata | None] = {
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
         'lt': annotated_types.Lt,
@@ -56,6 +54,8 @@ class FieldInfo(Representation):
         'min_items': None,
         'max_items': None,
         'frozen': None,
+        'max_digits': None,
+        'decimal_places': None,
     }
 
     def __init__(self, **kwargs: Any) -> None:
@@ -79,8 +79,6 @@ class FieldInfo(Representation):
         self.exclude = kwargs.pop('exclude', None)
         self.include = kwargs.pop('include', None)
         self.constraints = self._collect_constraints(kwargs) + annotation_constraints
-        self.max_digits = kwargs.pop('max_digits', None)
-        self.decimal_places = kwargs.pop('decimal_places', None)
         self.discriminator = kwargs.pop('discriminator', None)
         self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
@@ -128,7 +126,7 @@ class FieldInfo(Representation):
         generic_constraints = {}
         for key, value in list(kwargs.items()):
             try:
-                marker = cls.__constraints_lookup__[key]
+                marker = cls.constraints_lookup[key]
             except KeyError:
                 continue
 

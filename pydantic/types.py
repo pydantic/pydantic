@@ -328,25 +328,25 @@ class PathType(_fields.PydanticMetadata):
         )
 
     @staticmethod
-    def validate_file(path: Path) -> Path:
+    def validate_file(path: Path, **kwargs) -> Path:
         if path.is_file():
             return path
         else:
-            raise PydanticCustomError('path_not_file', 'path does not point to a file')
+            raise PydanticCustomError('path_not_file', 'Path does not point to a file')
 
     @staticmethod
-    def validate_directory(path: Path) -> Path:
+    def validate_directory(path: Path, **kwargs) -> Path:
         if path.is_dir():
             return path
         else:
-            raise PydanticCustomError('path_not_directory', 'path does not point to a directory')
+            raise PydanticCustomError('path_not_directory', 'Path does not point to a directory')
 
     @staticmethod
-    def validate_new(path: Path) -> Path:
+    def validate_new(path: Path, **kwargs) -> Path:
         if path.exists():
             raise PydanticCustomError('path_exists', 'path already exists')
         elif not path.parent.exists():
-            raise PydanticCustomError('parent_does_not_exist', 'parent directory does not exist')
+            raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
         else:
             return path
 
