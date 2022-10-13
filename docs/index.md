@@ -175,7 +175,7 @@ Hundreds of organisations and packages are using *pydantic*, including:
   *pydantic* models.
 
 For a more comprehensive list of open-source projects using *pydantic* see the
-[list of dependents on github](https://github.com/pydantic/pydantic/network/dependents).
+[list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), Or you can find some awesome projects using *pydantic* in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
 
 ## Discussion of Pydantic
 
