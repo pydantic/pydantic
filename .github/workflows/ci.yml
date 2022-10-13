@@ -403,9 +403,3 @@ jobs:
           files: |
             wasm/*.whl
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
-
-      - name: upload wasm to pypi
-        run: twine upload wasm/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_token }}

@@ -84,23 +84,50 @@ def test_float_strict(py_and_json: PyAndJson, input_value, expected):
         ({'le': 0}, 0.1, Err('Input should be less than or equal to 0')),
         ({'lt': 0}, 0, Err('Input should be less than 0')),
         ({'lt': 0.123456}, 1, Err('Input should be less than 0.123456')),
-        ({'multiple_of': 0.5}, 0.5, 0.5),
-        ({'multiple_of': 0.5}, 1, 1),
-        ({'multiple_of': 0.5}, 0.6, Err('Input should be a multiple of 0.5')),
     ],
 )
 def test_float_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
     v = py_and_json({'type': 'float', **kwargs})
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        if 'context' in errors[0]:
-            assert errors[0]['context'] == kwargs
     else:
         output = v.validate_test(input_value)
         assert output == expected
+        assert isinstance(output, float)
+
+
+@pytest.mark.parametrize(
+    'multiple_of,input_value,error',
+    [
+        (0.5, 0.5, None),
+        (0.5, 1, None),
+        (0.5, 0.6, Err('Input should be a multiple of 0.5')),
+        (0.5, 0.51, Err('Input should be a multiple of 0.5')),
+        (0.5, 0.501, Err('Input should be a multiple of 0.5')),
+        (0.5, 1_000_000.5, None),
+        (0.5, 1_000_000.49, Err('Input should be a multiple of 0.5')),
+        (0.1, 0, None),
+        (0.1, 0.0, None),
+        (0.1, 0.2, None),
+        (0.1, 0.3, None),
+        (0.1, 0.4, None),
+        (0.1, 0.5, None),
+        (0.1, 0.5001, Err('Input should be a multiple of 0.1')),
+        (0.1, 1, None),
+        (0.1, 1.0, None),
+        (0.1, int(5e10), None),
+    ],
+    ids=repr,
+)
+def test_float_multiple_of(py_and_json: PyAndJson, multiple_of, input_value, error):
+    v = py_and_json({'type': 'float', 'multiple_of': multiple_of})
+    if error:
+        with pytest.raises(ValidationError, match=re.escape(error.message)):
+            v.validate_test(input_value)
+    else:
+        output = v.validate_test(input_value)
+        assert output == input_value
         assert isinstance(output, float)
 
 
