@@ -87,7 +87,9 @@ impl Validator for ConstrainedFloatValidator {
             return Err(ValError::new(ErrorKind::FiniteNumber, input));
         }
         if let Some(multiple_of) = self.multiple_of {
-            if float % multiple_of != 0.0 {
+            let rem = float % multiple_of;
+            let threshold = float / 1e9;
+            if rem.abs() > threshold && (rem - multiple_of).abs() > threshold {
                 return Err(ValError::new(
                     ErrorKind::MultipleOf {
                         multiple_of: multiple_of.into(),

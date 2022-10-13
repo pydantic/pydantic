@@ -199,7 +199,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "ahash",
  "enum_dispatch",
