@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
 
-use crate::build_tools::py_error;
+use crate::build_tools::py_err;
 
 #[derive(Copy, Clone, Debug)]
 pub enum JsonType {
@@ -41,7 +41,7 @@ impl TryFrom<&PyAny> for JsonType {
             "str" => Ok(Self::String),
             "list" => Ok(Self::Array),
             "dict" => Ok(Self::Object),
-            _ => py_error!("Invalid json type: {}", s),
+            _ => py_err!("Invalid json type: {}", s),
         }
     }
 }

@@ -2,12 +2,12 @@ use std::borrow::Cow;
 use std::fmt;
 
 use ahash::AHashMap;
-use pyo3::exceptions::PyTypeError;
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::py_error;
+use crate::build_tools::{py_err, py_error_type};
 use strum::{Display, EnumMessage, IntoEnumIterator};
 use strum_macros::EnumIter;
 
@@ -348,7 +348,7 @@ macro_rules! extract_context {
             Some(context) => context,
             None => {
                 let context_parts = [$(format!("{}: {}", stringify!($key), stringify!($type_)),)*];
-                return Err(format!("{} requires context: {{{}}}", stringify!($kind), context_parts.join(", ")));
+                return py_err!(PyTypeError; "{} requires context: {{{}}}", stringify!($kind), context_parts.join(", "));
             }
         };
         Ok(Self::$kind{
@@ -356,9 +356,9 @@ macro_rules! extract_context {
                 $key: $function(
                     context
                     .get_item(stringify!($key))
-                    .ok_or(format!("{}: '{}' required in context", stringify!($kind), stringify!($key)))?
+                    .ok_or(py_error_type!(PyTypeError; "{}: '{}' required in context", stringify!($kind), stringify!($key)))?
                     .extract::<$type_>()
-                    .map_err(|_| format!("{}: '{}' context value must be a {}", stringify!($kind), stringify!($key), stringify!($type_)))?
+                    .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", stringify!($kind), stringify!($key), stringify!($type_)))?
                 ),
             )*
         })
@@ -376,11 +376,11 @@ fn plural_s(value: &usize) -> &'static str {
 static ERROR_KIND_LOOKUP: GILOnceCell<AHashMap<String, ErrorKind>> = GILOnceCell::new();
 
 impl ErrorKind {
-    pub fn new(py: Python, value: &str, ctx: Option<&PyDict>) -> Result<Self, String> {
+    pub fn new(py: Python, value: &str, ctx: Option<&PyDict>) -> PyResult<Self> {
         let lookup = ERROR_KIND_LOOKUP.get_or_init(py, Self::build_lookup);
         let error_kind = match lookup.get(value) {
             Some(error_kind) => error_kind.clone(),
-            None => return Err(format!("Invalid error kind: '{}'", value)),
+            None => return py_err!(PyKeyError; "Invalid error kind: '{}'", value),
         };
         match error_kind {
             Self::InvalidJson { .. } => extract_context!(InvalidJson, ctx, error: String),
@@ -433,7 +433,7 @@ impl ErrorKind {
             Self::UnionTagNotFound { .. } => extract_context!(UnionTagNotFound, ctx, discriminator: String),
             _ => {
                 if ctx.is_some() {
-                    Err(format!("'{}' errors do not require context", value))
+                    py_err!(PyTypeError; "'{}' errors do not require context", value)
                 } else {
                     Ok(error_kind)
                 }
@@ -618,7 +618,7 @@ impl FromPyObject<'_> for Number {
         } else if let Ok(string) = obj.extract::<String>() {
             Ok(Number::String(string))
         } else {
-            py_error!(PyTypeError; "Expected int or float or String, got {}", obj.get_type())
+            py_err!(PyTypeError; "Expected int or float or String, got {}", obj.get_type())
         }
     }
 }

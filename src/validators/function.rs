@@ -3,7 +3,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{
     ErrorKind, LocItem, PydanticCustomError, PydanticKindError, PydanticOmit, ValError, ValResult, ValidationError,
 };
@@ -245,7 +245,7 @@ impl ValidatorCallable {
         let outer_location = match outer_location {
             Some(ol) => match LocItem::try_from(ol) {
                 Ok(ol) => Some(ol),
-                Err(_) => return py_error!(PyTypeError; "ValidatorCallable outer_location must be a str or int"),
+                Err(_) => return py_err!(PyTypeError; "ValidatorCallable outer_location must be a str or int"),
             },
             None => None,
         };

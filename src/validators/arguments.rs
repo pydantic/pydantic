@@ -3,7 +3,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 
-use crate::build_tools::{py_error, schema_or_config_same, SchemaDict};
+use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
@@ -76,13 +76,13 @@ impl BuildValidator for ArgumentsValidator {
 
             let validator = match build_validator(schema, config, build_context) {
                 Ok(v) => v,
-                Err(err) => return py_error!("Parameter '{}':\n  {}", name, err),
+                Err(err) => return py_err!("Parameter '{}':\n  {}", name, err),
             };
 
             let has_default = match validator {
                 CombinedValidator::WithDefault(ref v) => {
                     if v.omit_on_error() {
-                        return py_error!("Parameter '{}': omit_on_error cannot be used with arguments", name);
+                        return py_err!("Parameter '{}': omit_on_error cannot be used with arguments", name);
                     }
                     v.has_default()
                 }
@@ -90,7 +90,7 @@ impl BuildValidator for ArgumentsValidator {
             };
 
             if had_default_arg && !has_default {
-                return py_error!("Non-default argument '{}' follows default argument", name);
+                return py_err!("Non-default argument '{}' follows default argument", name);
             } else if has_default {
                 had_default_arg = true;
             }

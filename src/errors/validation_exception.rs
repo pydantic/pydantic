@@ -6,6 +6,7 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use crate::build_tools::py_error_type;
 use crate::input::repr_string;
 
 use super::kinds::ErrorKind;
@@ -36,7 +37,7 @@ impl ValidationError {
             }
             ValError::InternalErr(err) => err,
             ValError::Omit => {
-                PyValueError::new_err("Uncaught Omit error, please check your usage of `default` validators.")
+                py_error_type!(PyValueError; "Uncaught Omit error, please check your usage of `default` validators.")
             }
         }
     }
