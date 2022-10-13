@@ -4,7 +4,7 @@ use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 
-use crate::build_tools::py_error;
+use crate::build_tools::py_err;
 use crate::input::{JsonInput, JsonObject};
 
 /// Used got getting items from python dicts, python objects, or JSON objects, in different ways
@@ -60,7 +60,7 @@ impl LookupKey {
             let list: &PyList = value.cast_as()?;
             let first = match list.get_item(0) {
                 Ok(v) => v,
-                Err(_) => return py_error!("Lookup paths should have at least one element"),
+                Err(_) => return py_err!("Lookup paths should have at least one element"),
             };
             let mut locs: Vec<Path> = if first.cast_as::<PyString>().is_ok() {
                 // list of strings rather than list of lists
@@ -89,7 +89,7 @@ impl LookupKey {
             .collect::<PyResult<Path>>()?;
 
         if path.is_empty() {
-            py_error!("Each alias path should have at least one element")
+            py_err!("Each alias path should have at least one element")
         } else {
             Ok(path)
         }
@@ -242,7 +242,7 @@ impl PathItem {
         } else {
             let int_key = obj.extract::<usize>()?;
             if index == 0 {
-                py_error!(PyTypeError; "The first item in an alias path should be a string")
+                py_err!(PyTypeError; "The first item in an alias path should be a string")
             } else {
                 Ok(Self::I(int_key))
             }

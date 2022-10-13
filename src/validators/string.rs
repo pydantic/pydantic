@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_tools::{is_strict, py_error, schema_or_config};
+use crate::build_tools::{is_strict, py_err, schema_or_config};
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
@@ -97,7 +97,7 @@ impl Validator for StrConstrainedValidator {
         }
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
-                // return py_error!("{} is shorter than {}", str, min_length);
+                // return py_err!("{} is shorter than {}", str, min_length);
                 return Err(ValError::new(ErrorKind::StringTooShort { min_length }, input));
             }
         }
@@ -177,6 +177,6 @@ impl StrConstrainedValidator {
 fn build_regex(pattern: &str) -> PyResult<Regex> {
     match Regex::new(pattern) {
         Ok(r) => Ok(r),
-        Err(e) => py_error!("{}", e),
+        Err(e) => py_err!("{}", e),
     }
 }

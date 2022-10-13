@@ -1,4 +1,4 @@
-use pyo3::exceptions::{PyException, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
@@ -108,7 +108,7 @@ pub struct PydanticKindError {
 impl PydanticKindError {
     #[new]
     pub fn py_new(py: Python, kind: &str, context: Option<&PyDict>) -> PyResult<Self> {
-        let kind = ErrorKind::new(py, kind, context).map_err(PyTypeError::new_err)?;
+        let kind = ErrorKind::new(py, kind, context)?;
         Ok(Self { kind })
     }
 

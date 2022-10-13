@@ -35,7 +35,7 @@ impl<'py> SchemaDict<'py> for PyDict {
     {
         match self.get_item(key) {
             Some(t) => <T>::extract(t),
-            None => py_error!(PyKeyError; "{}", key),
+            None => py_err!(PyKeyError; "{}", key),
         }
     }
 }
@@ -58,7 +58,7 @@ impl<'py> SchemaDict<'py> for Option<&PyDict> {
     {
         match self {
             Some(d) => d.get_as_req(key),
-            None => py_error!(PyKeyError; "{}", key),
+            None => py_err!(PyKeyError; "{}", key),
         }
     }
 }
@@ -159,20 +159,38 @@ impl SchemaError {
     }
 }
 
-macro_rules! py_error {
+macro_rules! py_error_type {
     ($msg:expr) => {
-        crate::build_tools::py_error!(crate::build_tools::SchemaError; $msg)
+        crate::build_tools::py_error_type!(crate::build_tools::SchemaError; $msg)
     };
     ($msg:expr, $( $msg_args:expr ),+ ) => {
-        crate::build_tools::py_error!(crate::build_tools::SchemaError; $msg, $( $msg_args ),+)
+        crate::build_tools::py_error_type!(crate::build_tools::SchemaError; $msg, $( $msg_args ),+)
     };
 
     ($error_type:ty; $msg:expr) => {
-        Err(<$error_type>::new_err($msg))
+        <$error_type>::new_err($msg)
     };
 
     ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
-        Err(<$error_type>::new_err(format!($msg, $( $msg_args ),+)))
+        <$error_type>::new_err(format!($msg, $( $msg_args ),+))
     };
 }
-pub(crate) use py_error;
+pub(crate) use py_error_type;
+
+macro_rules! py_err {
+    ($msg:expr) => {
+        Err(crate::build_tools::py_error_type!($msg))
+    };
+    ($msg:expr, $( $msg_args:expr ),+ ) => {
+        Err(crate::build_tools::py_error_type!($msg, $( $msg_args ),+))
+    };
+
+    ($error_type:ty; $msg:expr) => {
+        Err(crate::build_tools::py_error_type!($error_type; $msg))
+    };
+
+    ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
+        Err(crate::build_tools::py_error_type!($error_type; $msg, $( $msg_args ),+))
+    };
+}
+pub(crate) use py_err;

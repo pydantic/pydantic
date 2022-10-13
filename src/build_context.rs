@@ -4,7 +4,7 @@ use pyo3::types::{PyDict, PyList};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{py_error, SchemaDict};
+use crate::build_tools::{py_err, SchemaDict};
 use crate::questions::Answers;
 use crate::validators::{CombinedValidator, Validator};
 
@@ -62,7 +62,7 @@ impl BuildContext {
                 };
                 Ok(())
             }
-            None => py_error!("Slots Error: slot {} not found", slot_id),
+            None => py_err!("Slots Error: slot {} not found", slot_id),
         }
     }
 
@@ -74,7 +74,7 @@ impl BuildContext {
                 let slot = self.slots.get(id).unwrap();
                 Ok((id, slot.answers.clone()))
             }
-            None => py_error!("Slots Error: ref '{}' not found", slot_ref),
+            None => py_err!("Slots Error: ref '{}' not found", slot_ref),
         }
     }
 
@@ -84,9 +84,9 @@ impl BuildContext {
         match self.slots.get(slot_id) {
             Some(slot) => match slot.op_validator {
                 Some(ref validator) => Ok(validator),
-                None => py_error!("Slots Error: slot {} not yet filled", slot_id),
+                None => py_err!("Slots Error: slot {} not yet filled", slot_id),
             },
-            None => py_error!("Slots Error: slot {} not found", slot_id),
+            None => py_err!("Slots Error: slot {} not found", slot_id),
         }
     }
 
@@ -101,7 +101,7 @@ impl BuildContext {
                     validator.complete(&self_clone)?;
                     Ok(validator)
                 }
-                None => py_error!("Slots Error: slot not yet filled"),
+                None => py_err!("Slots Error: slot not yet filled"),
             })
             .collect()
     }

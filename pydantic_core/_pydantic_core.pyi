@@ -1,7 +1,7 @@
 import sys
 from typing import Any, TypedDict
 
-from pydantic_core.core_schema import CoreConfig, CoreSchema
+from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorKind
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired
@@ -60,23 +60,23 @@ class PydanticCustomError(ValueError):
     def message(self) -> str: ...
 
 class PydanticKindError(ValueError):
-    kind: str
+    kind: ErrorKind
     message_template: str
     context: 'dict[str, str | int] | None'
 
-    def __init__(self, kind: str, context: 'dict[str, str | int] | None' = None) -> None: ...
+    def __init__(self, kind: ErrorKind, context: 'dict[str, str | int] | None' = None) -> None: ...
     def message(self) -> str: ...
 
 class PydanticOmit(Exception):
     def __init__(self) -> None: ...
 
-class ErrorKind(TypedDict):
-    kind: str
+class ErrorKindInfo(TypedDict):
+    kind: ErrorKind
     message_template: str
     example_message: str
     example_context: 'dict[str, str | int | float] | None'
 
-def list_all_errors() -> 'list[ErrorKind]':
+def list_all_errors() -> 'list[ErrorKindInfo]':
     """
     Get information about all built-in errors.
     """
