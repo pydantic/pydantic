@@ -100,6 +100,10 @@ jobs:
       DEPS: yes
 
     runs-on: ${{ matrix.os }}-latest
+
+    continue-on-error: >-
+      ${{ startsWith(matrix.python-version, '3.11') && true || false }}
+
     steps:
     - uses: actions/checkout@v3
 
@@ -219,29 +223,55 @@ jobs:
           name: coverage-html
           path: htmlcov
 
-# FastAPI has a version constraint of pydantic<2.0.0, so we can't run tests, we expect them to break for now anyway
-#  test-fastapi:
-#    name: test fastAPI
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v3
-#
-#    - name: set up python
-#      uses: actions/setup-python@v4
-#      with:
-#        python-version: '3.10'
-#
-#    - name: install
-#      run: |
-#        pip install -r requirements/pyproject-all.txt
-#        pip install .
-#
-#    - name: test
-#      run: make test-fastapi
+  test-fastapi:
+    # FastAPI has a version constraint of pydantic<2.0.0,
+    # so we can't run tests, we expect them to break for now anyway
+    # FIXME: drop this commend and the if-clause once that's fixed
+    if: false
+    name: test fastAPI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: install
+      run: |
+        pip install -r requirements/pyproject-all.txt
+        pip install .
+
+    - name: test
+      run: make test-fastapi
+
+  # https://github.com/marketplace/actions/alls-green#why
+  check:  # This job does nothing and is only used for the branch protection
+
+    if: always()
+
+    needs:
+      - lint
+      - docs-build
+      - test
+      - test-old-mypy
+      - test-fastapi
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          allowed-failures: test-old-mypy
+          allowed-skips: test-fastapi  # TODO: drop once re-enabled
+          jobs: ${{ toJSON(needs) }}
 
   deploy:
     name: Deploy
-    needs: [lint, docs-build, test, test-old-mypy]  # TODO re-add test-fastapi once fixed
+    needs:
+      - check
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
