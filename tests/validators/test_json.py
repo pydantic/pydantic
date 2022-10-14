@@ -182,3 +182,12 @@ def test_ask():
             'input_value': 'wrong',
         },
     ]
+
+
+def test_any_schema_no_schema():
+    v = SchemaValidator(core_schema.json_schema())
+    assert 'validator:None' in plain_repr(v)
+    v = SchemaValidator(core_schema.json_schema(core_schema.any_schema()))
+    assert 'validator:None' in plain_repr(v)
+    v = SchemaValidator(core_schema.json_schema(core_schema.int_schema()))
+    assert 'validator:Some(' in plain_repr(v)

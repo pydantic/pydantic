@@ -25,7 +25,13 @@ impl BuildValidator for JsonValidator {
         build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let validator = match schema.get_as(intern!(schema.py(), "schema"))? {
-            Some(schema) => Some(Box::new(build_validator(schema, config, build_context)?)),
+            Some(schema) => {
+                let validator = build_validator(schema, config, build_context)?;
+                match validator {
+                    CombinedValidator::Any(_) => None,
+                    _ => Some(Box::new(validator)),
+                }
+            }
             None => None,
         };
         let name = format!(
