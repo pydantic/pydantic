@@ -2634,15 +2634,6 @@ def test_number_multiple_of_float_invalid(value):
     ]
 
 
-@pytest.mark.parametrize('fn', [conint, confloat, condecimal])
-def test_bounds_config_exceptions(fn):
-    with pytest.raises(ConfigError):
-        fn(gt=0, ge=0)
-
-    with pytest.raises(ConfigError):
-        fn(lt=0, le=0)
-
-
 def test_new_type_success():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
@@ -2655,7 +2646,7 @@ def test_new_type_success():
 
     m = Model(a=42, b=24, c=[1, 2, 3])
     assert m.dict() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
-    assert repr(Model.__fields__['c']) == "ModelField(name='c', type=List[int], required=True)"
+    assert repr(Model.__fields__['c']) == 'FieldInfo(annotation=NewType, required=True)'
 
 
 def test_new_type_fails():
@@ -2670,16 +2661,27 @@ def test_new_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foo', b='bar', c=['foo'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('c', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'kind': 'int_parsing',
+            'loc': ['a'],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'foo',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['b'],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'bar',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['c', 0],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'foo',
+        },
     ]
-
-
-def test_json_any_is_json():
-    """Mypy doesn't allow plain Json, so Json[Any] must behave just as Json did."""
-    assert Json[Any] is Json
 
 
 def test_valid_simple_json():
@@ -2698,24 +2700,26 @@ def test_valid_simple_json_any():
     assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
-def test_invalid_simple_json():
+@pytest.mark.parametrize('gen_type', [lambda: Json, lambda: Json[Any]])
+def test_invalid_simple_json(gen_type):
+    t = gen_type()
+
     class JsonModel(BaseModel):
-        json_obj: Json
+        json_obj: t
 
     obj = '{a: 1, b: [2, 3]}'
     with pytest.raises(ValidationError) as exc_info:
         JsonModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
-
-
-def test_invalid_simple_json_any():
-    class JsonModel(BaseModel):
-        json_obj: Json[Any]
-
-    obj = '{a: 1, b: [2, 3]}'
-    with pytest.raises(ValidationError) as exc_info:
-        JsonModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'json_invalid',
+            'loc': ['json_obj'],
+            'message': 'Invalid JSON: key must be a string at line 1 column 2',
+            'input_value': '{a: 1, b: [2, 3]}',
+            'context': {'error': 'key must be a string at line 1 column 2'},
+        }
+    ]
 
 
 def test_valid_simple_json_bytes():
@@ -2733,23 +2737,22 @@ def test_valid_detailed_json():
     obj = '[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
-
-def test_invalid_detailed_json_value_error():
-    class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+    obj = b'[1, 2, 3]'
+    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
     obj = '(1, 2, 3)'
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
-
-
-def test_valid_detailed_json_bytes():
-    class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
-
-    obj = b'[1, 2, 3]'
-    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'json_invalid',
+            'loc': ['json_obj'],
+            'message': 'Invalid JSON: expected value at line 1 column 1',
+            'input_value': '(1, 2, 3)',
+            'context': {'error': 'expected value at line 1 column 1'},
+        }
+    ]
 
 
 def test_valid_model_json():
@@ -2779,8 +2782,9 @@ def test_invalid_model_json():
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('json_obj', 'b'), 'msg': 'field required', 'type': 'value_error.missing'}
+        {'kind': 'missing', 'loc': ['json_obj', 'b'], 'message': 'Field required', 'input_value': {'a': 1, 'c': [2, 3]}}
     ]
 
 
@@ -2791,10 +2795,26 @@ def test_invalid_detailed_json_type_error():
     obj = '["a", "b", "c"]'
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('json_obj', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('json_obj', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'kind': 'int_parsing',
+            'loc': ['json_obj', 0],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'a',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['json_obj', 1],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'b',
+        },
+        {
+            'kind': 'int_parsing',
+            'loc': ['json_obj', 2],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'c',
+        },
     ]
 
 
@@ -2805,11 +2825,15 @@ def test_json_not_str():
     obj = 12
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {
-        'loc': ('json_obj',),
-        'msg': 'JSON object must be str, bytes or bytearray',
-        'type': 'type_error.json',
-    }
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'json_type',
+            'loc': ['json_obj'],
+            'message': 'JSON input should be str, bytes or bytearray',
+            'input_value': 12,
+        }
+    ]
 
 
 def test_json_pre_validator():
@@ -2818,8 +2842,8 @@ def test_json_pre_validator():
     class JsonModel(BaseModel):
         json_obj: Json
 
-        @validator('json_obj', pre=True)
-        def check(cls, v):
+        @validator('json_obj', mode='before')
+        def check(cls, v, **kwargs):
             assert v == '"foobar"'
             nonlocal call_count
             call_count += 1
@@ -2848,29 +2872,26 @@ def test_json_optional_complex():
 
     with pytest.raises(ValidationError) as exc_info:
         JsonOptionalModel(json_obj='["i should fail"]')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'kind': 'int_parsing',
+            'loc': ['json_obj', 0],
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'i should fail',
+        }
     ]
 
 
-def test_json_explicitly_required():
-    class JsonRequired(BaseModel):
-        json_obj: Json = ...
-
-    assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
-    assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    with pytest.raises(ValidationError) as exc_info:
-        JsonRequired()
-    assert exc_info.value.errors() == [{'loc': ('json_obj',), 'msg': 'field required', 'type': 'value_error.missing'}]
-
-
-def test_json_no_default():
+def test_json_required():
     class JsonRequired(BaseModel):
         json_obj: Json
 
-    assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    assert JsonRequired().dict() == {'json_obj': None}
+    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[kind=json_type,'):
+        JsonRequired(json_obj=None)
+    with pytest.raises(ValidationError, match=r'Field required \[kind=missing,'):
+        JsonRequired()
 
 
 @pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
@@ -2889,12 +2910,12 @@ def test_pattern(pattern_type):
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
-    assert Foobar.schema() == {
-        'type': 'object',
-        'title': 'Foobar',
-        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
-        'required': ['pattern'],
-    }
+    # assert Foobar.schema() == {
+    #     'type': 'object',
+    #     'title': 'Foobar',
+    #     'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+    #     'required': ['pattern'],
+    # }
 
 
 @pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
@@ -2904,8 +2925,14 @@ def test_pattern_error(pattern_type):
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(pattern='[xx')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
+        {
+            'kind': 'pattern_regex',
+            'loc': ['pattern'],
+            'message': 'Input should be a valid regular expression',
+            'input_value': '[xx',
+        }
     ]
 
 
@@ -2913,8 +2940,7 @@ def test_secretfield():
     class Foobar(SecretField):
         ...
 
-    message = "Can't instantiate abstract class Foobar with abstract methods? get_secret_value"
-
+    message = r"SecretField.__init__\(\) missing 1 required positional argument: 'secret_value'"
     with pytest.raises(TypeError, match=message):
         Foobar()
 
@@ -2940,15 +2966,6 @@ def test_secretstr():
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == '1234'
     assert f.empty_password.get_secret_value() == ''
-
-    with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
-        assert f.password.display() == '**********'
-    with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
-        assert f.empty_password.display() == ''
-
-    # Assert that SecretStr is equal to SecretStr if the secret is the same.
-    assert f == f.copy()
-    assert f != f.copy(update=dict(password='4321'))
 
 
 def test_secretstr_is_secret_field():
@@ -2981,9 +2998,18 @@ def test_secretstr_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
-    assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'string_type',
+            'loc': ['password'],
+            'message': 'Input should be a valid string',
+            'input_value': [6, 23, 'abc'],
+        }
+    ]
 
 
+@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/292')
 def test_secretstr_min_max_length():
     class Foobar(BaseModel):
         password: SecretStr = Field(min_length=6, max_length=10)
@@ -3038,11 +3064,6 @@ def test_secretbytes():
     assert f.password.get_secret_value() == b'wearebytes'
     assert f.empty_password.get_secret_value() == b''
 
-    with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
-        assert f.password.display() == '**********'
-    with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
-        assert f.empty_password.display() == ''
-
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
     assert f == f.copy()
     assert f != f.copy(update=dict(password=b'4321'))
@@ -3077,10 +3098,19 @@ def test_secretbytes_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
-    assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'bytes_type',
+            'loc': ['password'],
+            'message': 'Input should be a valid bytes',
+            'input_value': [6, 23, 'abc'],
+        }
+    ]
 
 
-def test_secretbytes_min_max_length():
+@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/292')
+def test_secret_bytes_min_max_length():
     class Foobar(BaseModel):
         password: SecretBytes = Field(min_length=6, max_length=10)
 
@@ -3112,6 +3142,7 @@ def test_secretbytes_min_max_length():
     assert Foobar(password=value).password.get_secret_value() == value
 
 
+@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/292')
 @pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
 @pytest.mark.parametrize(
     'field_kw,schema_kw',
@@ -3155,10 +3186,21 @@ def test_generic_without_params_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(generic_list=0, generic_dict=0, generic_tuple=0)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
-        {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
-        {'loc': ('generic_tuple',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'},
+        {
+            'kind': 'list_type',
+            'loc': ['generic_list'],
+            'message': 'Input should be a valid list/array',
+            'input_value': 0,
+        },
+        {
+            'kind': 'dict_type',
+            'loc': ['generic_dict'],
+            'message': 'Input should be a valid dictionary',
+            'input_value': 0,
+        },
+        {'kind': 'tuple_type', 'loc': ['generic_tuple'], 'message': 'Input should be a valid tuple', 'input_value': 0},
     ]
 
 
@@ -3169,12 +3211,14 @@ def test_literal_single():
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
         Model(a='b')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('a',),
-            'msg': "unexpected value; permitted: 'a'",
-            'type': 'value_error.const',
-            'ctx': {'given': 'b', 'permitted': ('a',)},
+            'kind': 'literal_single_error',
+            'loc': ['a'],
+            'message': "Input should be: 'a'",
+            'input_value': 'b',
+            'context': {'expected': "'a'"},
         }
     ]
 
@@ -3187,19 +3231,20 @@ def test_literal_multiple():
     Model(a_or_b='b')
     with pytest.raises(ValidationError) as exc_info:
         Model(a_or_b='c')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('a_or_b',),
-            'msg': "unexpected value; permitted: 'a', 'b'",
-            'type': 'value_error.const',
-            'ctx': {'given': 'c', 'permitted': ('a', 'b')},
+            'kind': 'literal_multiple_error',
+            'loc': ['a_or_b'],
+            'message': "Input should be one of: 'a', 'b'",
+            'input_value': 'c',
+            'context': {'expected': "'a', 'b'"},
         }
     ]
 
 
 def test_unsupported_field_type():
-    with pytest.raises(TypeError, match=r'MutableSet(.*)not supported'):
-
+    with pytest.raises(TypeError, match=r'Unable to generate pydantic-core schema MutableSet'):
         class UnsupportedModel(BaseModel):
             unsupported: MutableSet[int]
 

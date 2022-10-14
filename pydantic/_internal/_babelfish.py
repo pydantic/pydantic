@@ -12,7 +12,7 @@ import re
 import typing
 from typing import TYPE_CHECKING, Any
 
-from annotated_types import BaseMetadata
+from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 from typing_extensions import get_args, is_typeddict
 
@@ -83,6 +83,10 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
         return literal_schema(obj)
     elif is_typeddict(obj):
         return type_dict_schema(obj)
+    elif isinstance(obj, typing.NewType):
+        return generate_schema(obj.__supertype__)
+    elif obj == re.Pattern:
+        return pattern_schema(obj)
 
     std_schema = std_types_schema(obj)
     if std_schema is not None:
@@ -113,8 +117,12 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
         return type_schema(obj)
     elif issubclass(origin, typing.Sequence):
         return sequence_schema(obj)
+    elif issubclass(origin, typing.MutableSet):
+        raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema MutableSet TODO.')
     elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
         return iterable_schema(obj)
+    elif issubclass(origin, (re.Pattern, typing.Pattern)):
+        return pattern_schema(obj)
     else:
         # debug(obj)
         raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}).')
@@ -211,6 +219,11 @@ def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) ->
             schema = c_schema
             continue
 
+        if isinstance(c, GroupedMetadata):
+            # GroupedMetadata yields constraints
+            schema = apply_constraints(schema, c)
+            continue
+
         if isinstance(c, CustomMetadata):
             constraints_dict = c.__dict__
         elif isinstance(c, (BaseMetadata, PydanticMetadata)):
@@ -230,12 +243,7 @@ def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) ->
             if validator_instance is not None:
                 validator_instance.update(**constraints_dict)
             else:
-                for k, v in constraints_dict.items():
-                    if k in {'min_inclusive', 'max_exclusive'}:
-                        # TODO remove once https://github.com/annotated-types/annotated-types/pull/24/files is released
-                        schema[f'{k[:3]}_length'] = v
-                    else:
-                        schema[k] = v
+                schema.update(**constraints_dict)
     return schema
 
 
@@ -295,10 +303,15 @@ def generic_collection_schema(obj: Any) -> core_schema.CoreSchema:
         name = obj.__name__
     except AttributeError:
         name = get_origin(obj).__name__  # type: ignore[union-attr]
-    return {
-        'type': name.lower(),
-        'items_schema': generate_schema(get_args(obj)[0]),
-    }  # type: ignore[misc,return-value]
+
+    schema = {'type': name.lower()}
+    try:
+        arg = get_args(obj)[0]
+    except IndexError:
+        pass
+    else:
+        schema['items_schema'] = generate_schema(arg)
+    return schema  # type: ignore[misc,return-value]
 
 
 def tuple_schema(tuple_type: Any) -> core_schema.CoreSchema:
@@ -306,6 +319,9 @@ def tuple_schema(tuple_type: Any) -> core_schema.CoreSchema:
     Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
     """
     params = get_args(tuple_type)
+    if not params:
+        return core_schema.tuple_variable_schema()
+
     if params[-1] is Ellipsis:
         if len(params) == 2:
             sv = core_schema.tuple_variable_schema(generate_schema(params[0]))
@@ -313,31 +329,26 @@ def tuple_schema(tuple_type: Any) -> core_schema.CoreSchema:
 
         # not sure this case is valid in python, but may as well support it here since pydantic-core does
         *items_schema, extra_schema = params
-        return {
-            'type': 'tuple',
-            'mode': 'positional',
-            'items_schema': [generate_schema(p) for p in items_schema],
-            'extra_schema': generate_schema(extra_schema),
-        }
-    else:
-        sp = core_schema.TuplePositionalSchema(
-            type='tuple',
-            mode='positional',
-            items_schema=[generate_schema(p) for p in params],
+        return core_schema.tuple_positional_schema(
+            *[generate_schema(p) for p in items_schema], extra_schema=generate_schema(extra_schema)
         )
-        return sp
+    else:
+        return core_schema.tuple_positional_schema(*[generate_schema(p) for p in params])
 
 
 def dict_schema(dict_type: Any) -> core_schema.DictSchema:
     """
     Generate schema for a Dict, e.g. `dict[str, int]`.
     """
-    arg0, arg1 = get_args(dict_type)
-    return core_schema.DictSchema(
-        type='dict',
-        keys_schema=generate_schema(arg0),
-        values_schema=generate_schema(arg1),
-    )
+    try:
+        arg0, arg1 = get_args(dict_type)
+    except ValueError:
+        return core_schema.dict_schema()
+    else:
+        return core_schema.dict_schema(
+            keys_schema=generate_schema(arg0),
+            values_schema=generate_schema(arg1),
+        )
 
 
 def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
@@ -423,9 +434,25 @@ def iterable_schema(type_: Any) -> core_schema.FunctionSchema | core_schema.Func
         return core_schema.function_wrap_schema(iterable_type_validator, schema)
 
 
+def pattern_schema(pattern_type: Any) -> core_schema.CoreSchema:
+    from . import _validators
+
+    if pattern_type == typing.Pattern or pattern_type == re.Pattern:
+        # bare type
+        return core_schema.function_plain_schema(_validators.pattern_either_validator)
+
+    param = get_args(pattern_type)[0]
+    if param == str:
+        return core_schema.function_plain_schema(_validators.pattern_str_validator)
+    elif param == bytes:
+        return core_schema.function_plain_schema(_validators.pattern_bytes_validator)
+    else:
+        raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {pattern_type!r}.')
+
+
 def std_types_schema(obj: Any) -> core_schema.CoreSchema | None:
     """
-    Generate schema for types in the standard library, could be split if this gets too long.
+    Generate schema for types in the standard library.
     """
     if not isinstance(obj, type):
         return None

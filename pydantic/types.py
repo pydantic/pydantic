@@ -13,6 +13,7 @@ from typing import (
     ClassVar,
     Dict,
     FrozenSet,
+    Generic,
     Hashable,
     List,
     Literal,
@@ -58,7 +59,6 @@ __all__ = [
     'FilePath',
     'DirectoryPath',
     'Json',
-    'JsonWrapper',
     'SecretField',
     'SecretStr',
     'SecretBytes',
@@ -73,6 +73,8 @@ __all__ = [
     'ConstrainedDate',
     'condate',
 ]
+
+from ._internal._utils import update_not_none
 
 if TYPE_CHECKING:
     from ._internal._typing_extra import CallableGenerator
@@ -155,7 +157,7 @@ def conbytes(
     max_length: int = None,
     strict: bool = None,
 ) -> type[bytes]:
-    return Annotated[bytes, Strict(strict), annotated_types.Len(min_length, max_length)]
+    return Annotated[bytes, Strict(strict), annotated_types.Len(min_length or 0, max_length)]
 
 
 StrictBytes = Annotated[bytes, Strict()]
@@ -177,7 +179,7 @@ def constr(
     return Annotated[
         str,
         Strict(strict),
-        annotated_types.Len(min_length, max_length),
+        annotated_types.Len(min_length or 0, max_length),
         _fields.CustomMetadata(
             strip_whitespace=strip_whitespace,
             to_upper=to_upper,
@@ -197,26 +199,26 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 def conset(
     item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
 ) -> Type[Set[HashableItemType]]:
-    return Annotated[Set[item_type], annotated_types.Len(min_length, max_length)]
+    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 def confrozenset(
     item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
 ) -> Type[FrozenSet[HashableItemType]]:
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length, max_length)]
+    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 AnyItemType = TypeVar('AnyItemType')
 
 
 def conlist(item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None) -> Type[List[AnyItemType]]:
-    return Annotated[List[item_type], annotated_types.Len(min_length, max_length)]
+    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 def contuple(
     item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None
 ) -> Type[Tuple[AnyItemType]]:
-    return Annotated[Tuple[item_type], annotated_types.Len(min_length, max_length)]
+    return Annotated[Tuple[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -237,18 +239,12 @@ else:
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.FunctionPlainSchema(
-                    type='function',
-                    mode='plain',
-                    function=_validators.import_string,
-                )
+                return core_schema.function_plain_schema(_validators.import_string)
             else:
-                return core_schema.FunctionSchema(
-                    type='function',
-                    mode='before',
-                    function=_validators.import_string,
-                    schema=schema,
-                )
+                return core_schema.function_before_schema(_validators.import_string, schema)
+
+        def __repr__(self) -> str:
+            return 'ImportString'
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECIMAL TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -358,104 +354,64 @@ NewPath = Annotated[Path, PathType('new')]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-class JsonWrapper:
-    pass
-
-
-class JsonMeta(type):
-    def __getitem__(self, t: Type[Any]) -> Type[JsonWrapper]:
-        if t is Any:
-            return Json  # allow Json[Any] to replecate plain Json
-        return type('JsonWrapperValue', (JsonWrapper,), {'inner_type': t})
-
-
 if TYPE_CHECKING:
-    Json = Annotated[ItemType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    Json = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
 
 else:
 
-    class Json(metaclass=JsonMeta):
+    class Json(_fields.PydanticMetadata):
+        @classmethod
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
+            return Annotated[item, cls()]
+
+        @classmethod
+        def __get_pydantic_validation_schema__(
+            cls, schema: core_schema.CoreSchema | None = None
+        ) -> core_schema.JsonSchema:
+            return core_schema.json_schema(schema)
+
         @classmethod
         def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
             field_schema.update(type='string', format='json-string')
 
+        def __repr__(self) -> str:
+            return 'Json'
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
-class SecretField(abc.ABC):
-    """
-    Note: this should be implemented as a generic like `SecretField(ABC, Generic[T])`,
-          the `__init__()` should be part of the abstract class and the
-          `get_secret_value()` method should use the generic `T` type.
-
-          However Cython doesn't support very well generics at the moment and
-          the generated code fails to be imported (see
-          https://github.com/cython/cython/issues/2753).
-    """
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
-
-    def __str__(self) -> str:
-        return '**********' if self.get_secret_value() else ''
-
-    def __hash__(self) -> int:
-        return hash(self.get_secret_value())
-
-    @abc.abstractmethod
-    def get_secret_value(self) -> Any:  # pragma: no cover
-        ...
+SecretType = TypeVar('SecretType', str, bytes)
 
 
-class SecretStr(SecretField):
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(
-            field_schema,
-            type='string',
-            writeOnly=True,
-            format='password',
-            minLength=cls.min_length,
-            maxLength=cls.max_length,
-        )
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-        yield constr_length_validator
-
-    @classmethod
-    def validate(cls, value: Any) -> 'SecretStr':
-        if isinstance(value, cls):
-            return value
-        value = str_validator(value)
-        return cls(value)
-
-    def __init__(self, value: str):
-        self._secret_value = value
-
-    def __repr__(self) -> str:
-        return f"SecretStr('{self}')"
-
-    def __len__(self) -> int:
-        return len(self._secret_value)
-
-    def display(self) -> str:
-        warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
-        return str(self)
+class SecretField(abc.ABC, Generic[SecretType]):
+    def __init__(self, secret_value: SecretType) -> None:
+        self._secret_value = secret_value
 
     def get_secret_value(self) -> str:
         return self._secret_value
 
+    @classmethod
+    def __get_pydantic_validation_schema__(cls) -> core_schema.UnionSchema:
+        if cls is SecretStr:
+            pre_schema = core_schema.string_schema()
+            error_kind = 'string_type'
+        else:
+            assert cls is SecretBytes, f'Unknown SecretField subclass {cls!r}'
+            pre_schema = core_schema.bytes_schema()
+            error_kind = 'bytes_type'
+        return core_schema.union_schema(
+            core_schema.is_instance_schema(cls),
+            core_schema.function_after_schema(function=cls._validate, schema=pre_schema),
+            strict=True,
+            custom_error_kind=error_kind,
+        )
 
-class SecretBytes(SecretField):
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
+    @classmethod
+    def _validate(cls, value: SecretType, **kwargs) -> 'SecretField[SecretType]':
+        if isinstance(value, cls):
+            return value
+        else:
+            return cls(value)
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -464,37 +420,31 @@ class SecretBytes(SecretField):
             type='string',
             writeOnly=True,
             format='password',
-            minLength=cls.min_length,
-            maxLength=cls.max_length,
         )
 
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-        yield constr_length_validator
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
 
-    @classmethod
-    def validate(cls, value: Any) -> 'SecretBytes':
-        if isinstance(value, cls):
-            return value
-        value = bytes_validator(value)
-        return cls(value)
-
-    def __init__(self, value: bytes):
-        self._secret_value = value
-
-    def __repr__(self) -> str:
-        return f"SecretBytes(b'{self}')"
+    def __hash__(self) -> int:
+        return hash(self.get_secret_value())
 
     def __len__(self) -> int:
         return len(self._secret_value)
 
-    def display(self) -> str:
-        warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
-        return str(self)
+    def __str__(self) -> str:
+        return '**********' if self.get_secret_value() else ''
 
-    def get_secret_value(self) -> bytes:
-        return self._secret_value
+    def __repr__(self) -> str:
+        prefix = 'b' if isinstance(self, SecretBytes) else ''
+        return f"{self.__class__.__name__}({prefix}'{self}')"
+
+
+class SecretStr(SecretField[str]):
+    pass
+
+
+class SecretBytes(SecretField[bytes]):
+    pass
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -628,12 +578,12 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+        # TODO better schema
+        return core_schema.function_plain_schema(cls.validate)
 
     @classmethod
-    def validate(cls, v: Union[str, int, float]) -> 'ByteSize':
-
+    def validate(cls, v: Any, **kwargs) -> 'ByteSize':
         try:
             return cls(int(v))
         except ValueError:
@@ -641,7 +591,7 @@ class ByteSize(int):
 
         str_match = byte_string_re.match(str(v))
         if str_match is None:
-            raise errors.InvalidByteSize()
+            raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
         scalar, unit = str_match.groups()
         if unit is None:
@@ -650,7 +600,7 @@ class ByteSize(int):
         try:
             unit_mult = BYTE_SIZES[unit.lower()]
         except KeyError:
-            raise errors.InvalidByteSizeUnit(unit=unit)
+            raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         return cls(int(float(scalar) * unit_mult))
 
