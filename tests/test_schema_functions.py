@@ -137,7 +137,8 @@ def args(*args, **kwargs):
             {
                 'type': 'union',
                 'choices': ({'type': 'int'}, {'type': 'str'}),
-                'custom_error': {'kind': 'foobar', 'message': 'This is Foobar'},
+                'custom_error_kind': 'foobar',
+                'custom_error_message': 'This is Foobar',
             },
         ],
         [
@@ -197,6 +198,16 @@ def args(*args, **kwargs):
             },
         ],
         [core_schema.recursive_reference_schema, args('foo'), {'type': 'recursive-ref', 'schema_ref': 'foo'}],
+        [
+            core_schema.custom_error_schema,
+            args(core_schema.int_schema(), 'foobar', custom_error_message='Hello'),
+            {
+                'type': 'custom_error',
+                'schema': {'type': 'int'},
+                'custom_error_kind': 'foobar',
+                'custom_error_message': 'Hello',
+            },
+        ],
     ],
     ids=ids_function,
 )
@@ -213,8 +224,8 @@ def test_schema_functions(function, args_kwargs, expected_schema):
 
 
 def test_invalid_custom_error():
-    s = core_schema.union_schema({'type': 'int'}, {'type': 'str'}, custom_error_message='foobar')
-    with pytest.raises(SchemaError, match=r'custom_error \-> kind\s+Field required'):
+    s = core_schema.union_schema({'type': 'int'}, {'type': 'str'}, custom_error_kind='foobar')
+    with pytest.raises(SchemaError, match=r"KeyError: 'custom_error_message'"):
         SchemaValidator(s)
 
 

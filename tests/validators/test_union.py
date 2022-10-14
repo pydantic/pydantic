@@ -251,7 +251,8 @@ def test_custom_error():
         {
             'type': 'union',
             'choices': [{'type': 'str'}, {'type': 'bytes'}],
-            'custom_error': {'kind': 'my_error', 'message': 'Input should be a string or bytes'},
+            'custom_error_kind': 'my_error',
+            'custom_error_message': 'Input should be a string or bytes',
         }
     )
     assert v.validate_python('hello') == 'hello'
@@ -266,7 +267,7 @@ def test_custom_error():
 
 def test_custom_error_kind():
     v = SchemaValidator(
-        {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'custom_error': {'kind': 'string_type'}}
+        {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'custom_error_kind': 'string_type'}
     )
     assert v.validate_python('hello') == 'hello'
     assert v.validate_python(b'hello') == b'hello'
@@ -283,7 +284,8 @@ def test_custom_error_kind_context():
         {
             'type': 'union',
             'choices': [{'type': 'str'}, {'type': 'bytes'}],
-            'custom_error': {'kind': 'less_than', 'context': {'lt': 42}},
+            'custom_error_kind': 'less_than',
+            'custom_error_context': {'lt': 42},
         }
     )
     assert v.validate_python('hello') == 'hello'
