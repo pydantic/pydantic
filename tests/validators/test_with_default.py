@@ -251,7 +251,7 @@ def test_on_error_default_factory():
 def test_on_error_omit():
     v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'})
     assert v.validate_python(42) == 42
-    with pytest.raises(ValueError, match='Uncaught Omit error, please check your usage of `default` validators.'):
+    with pytest.raises(SchemaError, match='Uncaught Omit error, please check your usage of `default` validators.'):
         v.validate_python('wrong')
 
 

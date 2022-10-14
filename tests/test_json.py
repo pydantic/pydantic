@@ -24,7 +24,7 @@ def test_input_types(input_value):
 
 def test_input_type_invalid():
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
-    with pytest.raises(TypeError, match='^JSON input should be str, bytes or bytearray, not list$'):
+    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[kind=json_type,'):
         v.validate_json([])
 
 
@@ -144,14 +144,14 @@ def test_dict_any_value():
     assert v.validate_json('{"1": 1, "2": "a", "3": null}') == {'1': 1, '2': 'a', '3': None}
 
 
-def test_invalid_json():
+def test_json_invalid():
     v = SchemaValidator({'type': 'bool'})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foobar')
     assert exc_info.value.errors() == [
         {
-            'kind': 'invalid_json',
+            'kind': 'json_invalid',
             'loc': [],
             'message': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
             'input_value': '"foobar',
@@ -162,7 +162,7 @@ def test_invalid_json():
         v.validate_json('[1,\n2,\n3,]')
     assert exc_info.value.errors() == [
         {
-            'kind': 'invalid_json',
+            'kind': 'json_invalid',
             'loc': [],
             'message': 'Invalid JSON: trailing comma at line 3 column 3',
             'input_value': '[1,\n2,\n3,]',

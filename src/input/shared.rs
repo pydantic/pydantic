@@ -2,6 +2,15 @@ use crate::errors::{ErrorKind, ValError, ValResult};
 
 use super::Input;
 
+pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> ValError<'a> {
+    ValError::new(
+        ErrorKind::JsonInvalid {
+            error: error.to_string(),
+        },
+        input,
+    )
+}
+
 #[inline]
 pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bool> {
     if str == "0"

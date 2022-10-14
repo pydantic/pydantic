@@ -153,12 +153,18 @@ def test_all_errors():
     errors = list_all_errors()
     # print(f'{len(errors)=}')
     assert len(errors) == len(set(e['kind'] for e in errors)), 'error kinds are not unique'
-    assert errors[:2] == [
+    assert errors[:3] == [
         {
-            'kind': 'invalid_json',
+            'kind': 'json_invalid',
             'message_template': 'Invalid JSON: {error}',
             'example_message': 'Invalid JSON: ',
             'example_context': {'error': ''},
+        },
+        {
+            'kind': 'json_type',
+            'message_template': 'JSON input should be str, bytes or bytearray',
+            'example_message': 'JSON input should be str, bytes or bytearray',
+            'example_context': None,
         },
         {
             'kind': 'recursion_loop',
