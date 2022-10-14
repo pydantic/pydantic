@@ -1,0 +1,107 @@
+use pyo3::intern;
+use pyo3::prelude::*;
+use pyo3::types::PyDict;
+
+use crate::build_tools::{py_err, SchemaDict};
+use crate::errors::{ErrorKind, PydanticCustomError, PydanticKindError, ValError, ValResult};
+use crate::input::Input;
+use crate::questions::Question;
+use crate::recursion_guard::RecursionGuard;
+
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+
+#[derive(Debug, Clone)]
+pub enum CustomError {
+    Custom(PydanticCustomError),
+    Kind(PydanticKindError),
+}
+
+impl CustomError {
+    pub fn build(schema: &PyDict) -> PyResult<Option<Self>> {
+        let py = schema.py();
+        let kind: String = match schema.get_as(intern!(py, "custom_error_kind"))? {
+            Some(kind) => kind,
+            None => return Ok(None),
+        };
+        let context: Option<&PyDict> = schema.get_as(intern!(py, "custom_error_context"))?;
+
+        if ErrorKind::valid_kind(py, &kind) {
+            if schema.contains(intern!(py, "custom_error_message"))? {
+                py_err!("custom_error_message should not be provided if kind matches a known error")
+            } else {
+                let error = PydanticKindError::py_new(py, &kind, context)?;
+                Ok(Some(Self::Kind(error)))
+            }
+        } else {
+            let error = PydanticCustomError::py_new(
+                py,
+                kind,
+                schema.get_as_req::<String>(intern!(py, "custom_error_message"))?,
+                context,
+            );
+            Ok(Some(Self::Custom(error)))
+        }
+    }
+
+    pub fn as_val_error<'a>(&self, input: &'a impl Input<'a>) -> ValError<'a> {
+        match self {
+            CustomError::Kind(ref kind_error) => kind_error.clone().into_val_error(input),
+            CustomError::Custom(ref custom_error) => custom_error.clone().into_val_error(input),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct CustomErrorValidator {
+    validator: Box<CombinedValidator>,
+    custom_error: CustomError,
+    name: String,
+}
+
+impl BuildValidator for CustomErrorValidator {
+    const EXPECTED_TYPE: &'static str = "custom_error";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext,
+    ) -> PyResult<CombinedValidator> {
+        let custom_error = CustomError::build(schema)?.unwrap();
+        let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
+        let validator = Box::new(build_validator(schema, config, build_context)?);
+        let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
+        Ok(Self {
+            validator,
+            name,
+            custom_error,
+        }
+        .into())
+    }
+}
+
+impl Validator for CustomErrorValidator {
+    fn validate<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data impl Input<'data>,
+        extra: &Extra,
+        slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        self.validator
+            .validate(py, input, extra, slots, recursion_guard)
+            .map_err(|_| self.custom_error.as_val_error(input))
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn ask(&self, question: &Question) -> bool {
+        self.validator.ask(question)
+    }
+
+    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+        self.validator.complete(build_context)
+    }
+}

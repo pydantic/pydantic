@@ -23,6 +23,7 @@ mod bytes;
 mod call;
 mod callable;
 mod chain;
+mod custom_error;
 mod date;
 mod datetime;
 mod dict;
@@ -393,6 +394,8 @@ pub fn build_validator<'a>(
         chain::ChainValidator,
         // generator validators
         generator::GeneratorValidator,
+        // custom error
+        custom_error::CustomErrorValidator,
     )
 }
 
@@ -507,6 +510,8 @@ pub enum CombinedValidator {
     Chain(chain::ChainValidator),
     // generator validators
     Generator(generator::GeneratorValidator),
+    // custom error
+    CustomError(custom_error::CustomErrorValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

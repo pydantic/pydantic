@@ -294,7 +294,8 @@ def test_custom_error():
         {
             'type': 'tagged-union',
             'discriminator': 'foo',
-            'custom_error': {'kind': 'snap', 'message': 'Input should be a foo or bar'},
+            'custom_error_kind': 'snap',
+            'custom_error_message': 'Input should be a foo or bar',
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
@@ -339,7 +340,7 @@ def test_custom_error_kind():
         {
             'type': 'tagged-union',
             'discriminator': 'foo',
-            'custom_error': {'kind': 'finite_number'},
+            'custom_error_kind': 'finite_number',
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
