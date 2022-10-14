@@ -3,16 +3,15 @@ use std::fmt::Debug;
 use enum_dispatch::enum_dispatch;
 
 use ahash::AHashSet;
-use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyByteArray, PyBytes, PyDict, PyString};
+use pyo3::types::{PyAny, PyDict};
 
 use crate::build_context::{extract_used_refs, BuildContext};
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
-use crate::errors::{ErrorKind, ValError, ValResult, ValidationError};
-use crate::input::{Input, JsonInput};
+use crate::errors::{ValError, ValResult, ValidationError};
+use crate::input::Input;
 use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
 
@@ -33,6 +32,7 @@ mod function;
 mod generator;
 mod int;
 mod is_instance;
+mod json;
 mod list;
 mod literal;
 mod new_class;
@@ -138,7 +138,8 @@ impl SchemaValidator {
         ) {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
-            _ => Ok(false),
+            Err(ValError::Omit) => Err(ValidationError::omit_error()),
+            Err(ValError::LineErrors(_)) => Ok(false),
         }
     }
 
@@ -149,7 +150,7 @@ impl SchemaValidator {
         strict: Option<bool>,
         context: Option<&PyAny>,
     ) -> PyResult<PyObject> {
-        match parse_json(input)? {
+        match input.parse_json() {
             Ok(input) => {
                 let r = self.validator.validate(
                     py,
@@ -160,10 +161,7 @@ impl SchemaValidator {
                 );
                 r.map_err(|e| self.prepare_validation_err(py, e))
             }
-            Err(e) => {
-                let err = ValError::new(ErrorKind::InvalidJson { error: e.to_string() }, input);
-                Err(self.prepare_validation_err(py, err))
-            }
+            Err(err) => Err(self.prepare_validation_err(py, err)),
         }
     }
 
@@ -174,7 +172,7 @@ impl SchemaValidator {
         strict: Option<bool>,
         context: Option<&PyAny>,
     ) -> PyResult<bool> {
-        match parse_json(input)? {
+        match input.parse_json() {
             Ok(input) => {
                 match self.validator.validate(
                     py,
@@ -185,7 +183,8 @@ impl SchemaValidator {
                 ) {
                     Ok(_) => Ok(true),
                     Err(ValError::InternalErr(err)) => Err(err),
-                    _ => Ok(false),
+                    Err(ValError::Omit) => Err(ValidationError::omit_error()),
+                    Err(ValError::LineErrors(_)) => Ok(false),
                 }
             }
             Err(_) => Ok(false),
@@ -256,20 +255,6 @@ impl SchemaValidator {
 
     fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
         ValidationError::from_val_error(py, self.title.clone_ref(py), error, None)
-    }
-}
-
-fn parse_json(input: &PyAny) -> PyResult<serde_json::Result<JsonInput>> {
-    if let Ok(py_bytes) = input.cast_as::<PyBytes>() {
-        Ok(serde_json::from_slice(py_bytes.as_bytes()))
-    } else if let Ok(py_str) = input.cast_as::<PyString>() {
-        let str = py_str.to_str()?;
-        Ok(serde_json::from_str(str))
-    } else if let Ok(py_byte_array) = input.cast_as::<PyByteArray>() {
-        Ok(serde_json::from_slice(unsafe { py_byte_array.as_bytes() }))
-    } else {
-        let input_type = input.get_type().name().unwrap_or("unknown");
-        py_err!(PyTypeError; "JSON input should be str, bytes or bytearray, not {}", input_type)
     }
 }
 
@@ -396,6 +381,8 @@ pub fn build_validator<'a>(
         generator::GeneratorValidator,
         // custom error
         custom_error::CustomErrorValidator,
+        // json data
+        json::JsonValidator,
     )
 }
 
@@ -512,6 +499,8 @@ pub enum CombinedValidator {
     Generator(generator::GeneratorValidator),
     // custom error
     CustomError(custom_error::CustomErrorValidator),
+    // json data
+    Json(json::JsonValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

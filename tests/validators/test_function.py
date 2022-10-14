@@ -514,12 +514,12 @@ def test_validator_instance_after():
 
 
 def test_pydantic_error_kind():
-    e = PydanticKindError('invalid_json', {'error': 'Test'})
+    e = PydanticKindError('json_invalid', {'error': 'Test'})
     assert e.message() == 'Invalid JSON: Test'
-    assert e.kind == 'invalid_json'
+    assert e.kind == 'json_invalid'
     assert e.context == {'error': 'Test'}
     assert str(e) == 'Invalid JSON: Test'
-    assert repr(e) == "Invalid JSON: Test [kind=invalid_json, context={'error': 'Test'}]"
+    assert repr(e) == "Invalid JSON: Test [kind=json_invalid, context={'error': 'Test'}]"
 
 
 def test_pydantic_error_kind_raise_no_ctx():
@@ -559,7 +559,7 @@ def test_pydantic_error_kind_raise_ctx():
 @pytest.mark.parametrize(
     'kind, message, context',
     [
-        ('invalid_json', 'Invalid JSON: foobar', {'error': 'foobar'}),
+        ('json_invalid', 'Invalid JSON: foobar', {'error': 'foobar'}),
         ('recursion_loop', 'Recursion error - cyclic reference detected', None),
         ('dict_attributes_type', 'Input should be a valid dictionary or instance to extract fields from', None),
         ('missing', 'Field required', None),

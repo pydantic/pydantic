@@ -38,9 +38,11 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
 #[strum(serialize_all = "snake_case")]
 pub enum ErrorKind {
     #[strum(message = "Invalid JSON: {error}")]
-    InvalidJson {
+    JsonInvalid {
         error: String,
     },
+    #[strum(message = "JSON input should be str, bytes or bytearray")]
+    JsonType,
     // ---------------------
     // recursion error
     #[strum(message = "Recursion error - cyclic reference detected")]
@@ -383,7 +385,7 @@ impl ErrorKind {
             None => return py_err!(PyKeyError; "Invalid error kind: '{}'", value),
         };
         match error_kind {
-            Self::InvalidJson { .. } => extract_context!(InvalidJson, ctx, error: String),
+            Self::JsonInvalid { .. } => extract_context!(JsonInvalid, ctx, error: String),
             Self::GetAttributeError { .. } => extract_context!(GetAttributeError, ctx, error: String),
             Self::ModelClassType { .. } => extract_context!(ModelClassType, ctx, class_name: String),
             Self::GreaterThan { .. } => extract_context!(GreaterThan, ctx, gt: Number),
@@ -469,7 +471,7 @@ impl ErrorKind {
 
     pub fn render_message(&self, py: Python) -> PyResult<String> {
         match self {
-            Self::InvalidJson { error } => render!(self, error),
+            Self::JsonInvalid { error } => render!(self, error),
             Self::GetAttributeError { error } => render!(self, error),
             Self::ModelClassType { class_name } => render!(self, class_name),
             Self::GreaterThan { gt } => to_string_render!(self, gt),
@@ -524,7 +526,7 @@ impl ErrorKind {
 
     pub fn py_dict(&self, py: Python) -> PyResult<Option<Py<PyDict>>> {
         match self {
-            Self::InvalidJson { error } => py_dict!(py, error),
+            Self::JsonInvalid { error } => py_dict!(py, error),
             Self::GetAttributeError { error } => py_dict!(py, error),
             Self::ModelClassType { class_name } => py_dict!(py, class_name),
             Self::GreaterThan { gt } => py_dict!(py, gt),

@@ -9,7 +9,7 @@ use super::datetime::{
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
 use super::parse_json::JsonArray;
-use super::shared::{float_as_int, int_as_bool, str_as_bool, str_as_int};
+use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
     EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericIterator, GenericMapping,
     Input, JsonArgs, JsonInput,
@@ -72,6 +72,13 @@ impl<'a> Input<'a> for JsonInput {
                 }
             }
             _ => Err(ValError::new(ErrorKind::ArgumentsType, self)),
+        }
+    }
+
+    fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
+        match self {
+            JsonInput::String(s) => serde_json::from_str(s.as_str()).map_err(|e| map_json_err(self, e)),
+            _ => Err(ValError::new(ErrorKind::JsonType, self)),
         }
     }
 
@@ -316,6 +323,10 @@ impl<'a> Input<'a> for String {
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
         Err(ValError::new(ErrorKind::ArgumentsType, self))
+    }
+
+    fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
+        serde_json::from_str(self.as_str()).map_err(|e| map_json_err(self, e))
     }
 
     fn validate_str(&'a self, _strict: bool) -> ValResult<EitherString<'a>> {

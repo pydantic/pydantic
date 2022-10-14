@@ -4,11 +4,10 @@ use pyo3::prelude::*;
 use pyo3::types::{PyString, PyType};
 
 use crate::errors::{InputValue, LocItem, ValResult};
-use crate::input::datetime::EitherTime;
 
-use super::datetime::{EitherDate, EitherDateTime, EitherTimedelta};
+use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
-use super::{GenericArguments, GenericCollection, GenericIterator, GenericMapping};
+use super::{GenericArguments, GenericCollection, GenericIterator, GenericMapping, JsonInput};
 
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
@@ -41,6 +40,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     }
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>>;
+
+    fn parse_json(&'a self) -> ValResult<'a, JsonInput>;
 
     fn validate_str(&'a self, strict: bool) -> ValResult<EitherString<'a>> {
         if strict {
