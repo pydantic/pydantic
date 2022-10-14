@@ -60,6 +60,15 @@ impl<'a> ValError<'a> {
             other => other,
         }
     }
+
+    /// a bit like clone but change the lifetime to match py
+    pub fn duplicate<'py>(&self, py: Python<'py>) -> ValError<'py> {
+        match self {
+            ValError::LineErrors(errors) => errors.iter().map(|e| e.duplicate(py)).collect::<Vec<_>>().into(),
+            ValError::InternalErr(err) => ValError::InternalErr(err.clone_ref(py)),
+            ValError::Omit => ValError::Omit,
+        }
+    }
 }
 
 pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String {
@@ -114,6 +123,15 @@ impl<'a> ValLineError<'a> {
     pub fn with_kind(mut self, kind: ErrorKind) -> Self {
         self.kind = kind;
         self
+    }
+
+    /// a bit like clone but change the lifetime to match py, used by ValError.duplicate above
+    pub fn duplicate<'py>(&'a self, py: Python<'py>) -> ValLineError<'py> {
+        ValLineError {
+            kind: self.kind.clone(),
+            input_value: InputValue::<'py>::from(self.input_value.to_object(py)),
+            location: self.location.clone(),
+        }
     }
 }
 

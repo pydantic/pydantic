@@ -36,9 +36,7 @@ impl ValidationError {
                 PyErr::new::<ValidationError, _>((line_errors, title))
             }
             ValError::InternalErr(err) => err,
-            ValError::Omit => {
-                py_error_type!(PyValueError; "Uncaught Omit error, please check your usage of `default` validators.")
-            }
+            ValError::Omit => Self::omit_error(),
         }
     }
 
@@ -48,6 +46,10 @@ impl ValidationError {
         let title: &str = self.title.extract(py).unwrap();
         let line_errors = pretty_py_line_errors(py, self.line_errors.iter());
         format!("{} validation error{} for {}\n{}", count, plural, title, line_errors)
+    }
+
+    pub fn omit_error() -> PyErr {
+        py_error_type!("Uncaught Omit error, please check your usage of `default` validators.")
     }
 }
 

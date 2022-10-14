@@ -876,6 +876,16 @@ def custom_error_schema(
     )
 
 
+class JsonSchema(TypedDict):
+    type: Literal['json']
+    schema: NotRequired[CoreSchema]
+    ref: NotRequired[str]
+
+
+def json_schema(schema: CoreSchema | None = None, *, ref: str | None = None) -> JsonSchema:
+    return dict_not_none(type='json', schema=schema, ref=ref)
+
+
 CoreSchema = Union[
     AnySchema,
     NoneSchema,
@@ -912,12 +922,14 @@ CoreSchema = Union[
     CallSchema,
     RecursiveReferenceSchema,
     CustomErrorSchema,
+    JsonSchema,
 ]
 
 # used in _pydantic_core.pyi::PydanticKindError
 # to update this, call `pytest -k test_all_errors` and copy the output
 ErrorKind = Literal[
-    'invalid_json',
+    'json_invalid',
+    'json_type',
     'recursion_loop',
     'dict_attributes_type',
     'missing',
