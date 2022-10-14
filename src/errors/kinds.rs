@@ -378,6 +378,8 @@ fn plural_s(value: &usize) -> &'static str {
 static ERROR_KIND_LOOKUP: GILOnceCell<AHashMap<String, ErrorKind>> = GILOnceCell::new();
 
 impl ErrorKind {
+    /// create an new ErrorKind from python, no_coverage since coverage doesn't work properly here due to the macro
+    #[cfg_attr(has_no_coverage, no_coverage)]
     pub fn new(py: Python, value: &str, ctx: Option<&PyDict>) -> PyResult<Self> {
         let lookup = ERROR_KIND_LOOKUP.get_or_init(py, Self::build_lookup);
         let error_kind = match lookup.get(value) {
@@ -602,12 +604,6 @@ impl From<f64> for Number {
 impl From<String> for Number {
     fn from(s: String) -> Self {
         Self::String(s)
-    }
-}
-
-impl From<&str> for Number {
-    fn from(s: &str) -> Self {
-        Self::String(s.to_string())
     }
 }
 
