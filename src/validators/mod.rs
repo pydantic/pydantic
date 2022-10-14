@@ -445,8 +445,8 @@ pub enum CombinedValidator {
     TaggedUnion(union::TaggedUnionValidator),
     // nullables
     Nullable(nullable::NullableValidator),
-    // model classes
-    ModelClass(new_class::NewClassValidator),
+    // create new model classes
+    NewClass(new_class::NewClassValidator),
     // strings
     Str(string::StrValidator),
     StrConstrained(string::StrConstrainedValidator),
