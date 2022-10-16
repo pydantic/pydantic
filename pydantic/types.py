@@ -596,9 +596,10 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def unique_items_validator(cls, v: 'List[T]') -> 'List[T]':
-        for i, value in enumerate(v, start=1):
-            if value in v[i:]:
-                raise errors.ListUniqueItemsError()
+        if v is not None:
+            for i, value in enumerate(v, start=1):
+                if value in v[i:]:
+                    raise errors.ListUniqueItemsError()
 
         return v
 
