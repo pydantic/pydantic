@@ -4,9 +4,9 @@ from typing import Any, Dict
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -181,3 +181,8 @@ def test_regex_error():
             'context': {'pattern': '11'},
         }
     ]
+
+
+def test_default_validator():
+    v = SchemaValidator(core_schema.string_schema(strict=True, to_lower=False), {'str_strip_whitespace': False})
+    assert plain_repr(v) == 'SchemaValidator(name="str",validator=Str(StrValidator{strict:true}),slots=[])'

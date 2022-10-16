@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_tools::{is_strict, py_err, schema_or_config};
+use crate::build_tools::{is_strict, py_error_type, schema_or_config, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
@@ -23,29 +23,13 @@ impl BuildValidator for StrValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let py = schema.py();
-        let use_constrained = schema.get_item(intern!(py, "pattern")).is_some()
-            || schema.get_item(intern!(py, "max_length")).is_some()
-            || schema.get_item(intern!(py, "min_length")).is_some()
-            || schema.get_item(intern!(py, "strip_whitespace")).is_some()
-            || schema.get_item(intern!(py, "to_lower")).is_some()
-            || schema.get_item(intern!(py, "to_upper")).is_some()
-            || match config {
-                Some(config) => {
-                    config.get_item(intern!(py, "str_pattern")).is_some()
-                        || config.get_item(intern!(py, "str_max_length")).is_some()
-                        || config.get_item(intern!(py, "str_min_length")).is_some()
-                        || config.get_item(intern!(py, "str_strip_whitespace")).is_some()
-                        || config.get_item(intern!(py, "str_to_lower")).is_some()
-                        || config.get_item(intern!(py, "str_to_upper")).is_some()
-                }
-                None => false,
-            };
-        if use_constrained {
-            StrConstrainedValidator::build(schema, config)
+        let con_str_validator = StrConstrainedValidator::build(schema, config)?;
+
+        if con_str_validator.has_constraints_set() {
+            Ok(con_str_validator.into())
         } else {
             Ok(Self {
-                strict: is_strict(schema, config)?,
+                strict: con_str_validator.strict,
             }
             .into())
         }
@@ -69,7 +53,8 @@ impl Validator for StrValidator {
     }
 }
 
-#[derive(Debug, Clone)]
+/// Any new properties set here must be reflected in `has_constraints_set`
+#[derive(Debug, Clone, Default)]
 pub struct StrConstrainedValidator {
     strict: bool,
     pattern: Option<Regex>,
@@ -136,12 +121,10 @@ impl Validator for StrConstrainedValidator {
 }
 
 impl StrConstrainedValidator {
-    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+    fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let py = schema.py();
-        let pattern_str: Option<&str> =
-            schema_or_config(schema, config, intern!(py, "pattern"), intern!(py, "str_pattern"))?;
-        let pattern = match pattern_str {
-            Some(s) => Some(build_regex(s)?),
+        let pattern = match schema.get_as(intern!(py, "pattern"))? {
+            Some(s) => Some(Regex::new(s).map_err(|e| py_error_type!("{}", e))?),
             None => None,
         };
         let min_length: Option<usize> =
@@ -169,14 +152,17 @@ impl StrConstrainedValidator {
             strip_whitespace,
             to_lower,
             to_upper,
-        }
-        .into())
+        })
     }
-}
 
-fn build_regex(pattern: &str) -> PyResult<Regex> {
-    match Regex::new(pattern) {
-        Ok(r) => Ok(r),
-        Err(e) => py_err!("{}", e),
+    // whether any of the constraints/customisations are actually enabled
+    // except strict which can be set on StrValidator
+    fn has_constraints_set(&self) -> bool {
+        self.pattern.is_some()
+            || self.max_length.is_some()
+            || self.min_length.is_some()
+            || self.strip_whitespace
+            || self.to_lower
+            || self.to_upper
     }
 }
