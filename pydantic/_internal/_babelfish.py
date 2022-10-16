@@ -126,7 +126,7 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
     elif issubclass(origin, typing.Sequence):
         return sequence_schema(obj)
     elif issubclass(origin, typing.MutableSet):
-        raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema MutableSet TODO.')
+        raise PydanticSchemaGenerationError('Unable to generate pydantic-core schema MutableSet TODO.')
     elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
         return iterable_schema(obj)
     elif issubclass(origin, (re.Pattern, typing.Pattern)):

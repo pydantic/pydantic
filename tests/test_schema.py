@@ -31,9 +31,10 @@ from uuid import UUID
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Extra, Field, ValidationError, confrozenset, conlist, conset, validator
+from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
+from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
@@ -1110,7 +1111,7 @@ def test_callable_type(type_, default_value):
 
 def test_error_non_supported_types():
     class Model(BaseModel):
-        a: PyObject
+        a: ImportString
 
     with pytest.raises(ValueError):
         Model.schema()
@@ -2627,8 +2628,8 @@ def test_complex_nested_generic():
 def test_schema_with_field_parameter():
     class RestrictedAlphabetStr(str):
         @classmethod
-        def __modify_schema__(cls, field_schema, field: Optional[ModelField]):
-            assert isinstance(field, ModelField)
+        def __modify_schema__(cls, field_schema, field: Optional[FieldInfo]):
+            assert isinstance(field, FieldInfo)
             alphabet = field.field_info.extra['alphabet']
             field_schema['examples'] = [c * 3 for c in alphabet]
 

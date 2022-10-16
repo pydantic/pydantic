@@ -117,10 +117,9 @@ def test_any_url_success(value):
         ('/', 'url.scheme', 'invalid or missing URL scheme', None),
         ('+http://example.com/', 'url.scheme', 'invalid or missing URL scheme', None),
         ('ht*tp://example.com/', 'url.scheme', 'invalid or missing URL scheme', None),
-        # TODO uncomment https://github.com/pydantic/pydantic-core/issues/251
-        # (' ', 'any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
-        ('', 'too_short', 'String should have at least 1 characters', {'min_length': 1}),
-        (None, 'str_type', 'Input should be a valid string', None),
+        (' ', 'string_too_short', 'String should have at least 1 characters', {'min_length': 1}),
+        ('', 'string_too_short', 'String should have at least 1 characters', {'min_length': 1}),
+        (None, 'string_type', 'Input should be a valid string', None),
         (
             'http://2001:db8::ff00:42:8329',
             'url.extra',
@@ -312,7 +311,7 @@ def test_http_url_success(value):
         ('https://example.ab123', 'url.host', 'URL host invalid, top level domain required', None),
         (
             'x' * 2084,
-            'too_long',
+            'string_too_long',
             'String should have at most 2083 characters',
             {'max_length': 2083},
         ),

@@ -174,23 +174,23 @@ def test_custom_iso_timedelta():
     assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
 
 
-def test_con_decimal_encode() -> None:
-    """
-    Makes sure a decimal with decimal_places = 0, as well as one with places
-    can handle a encode/decode roundtrip.
-    """
-
-    class Id(ConstrainedDecimal):
-        max_digits = 22
-        decimal_places = 0
-        ge = 0
-
-    class Obj(BaseModel):
-        id: Id
-        price: Decimal = Decimal('0.01')
-
-    assert Obj(id=1).json() == '{"id": 1, "price": 0.01}'
-    assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
+# def test_con_decimal_encode() -> None:
+#     """
+#     Makes sure a decimal with decimal_places = 0, as well as one with places
+#     can handle a encode/decode roundtrip.
+#     """
+#
+#     class Id(ConstrainedDecimal):
+#         max_digits = 22
+#         decimal_places = 0
+#         ge = 0
+#
+#     class Obj(BaseModel):
+#         id: Id
+#         price: Decimal = Decimal('0.01')
+#
+#     assert Obj(id=1).json() == '{"id": 1, "price": 0.01}'
+#     assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
 
 
 def test_json_encoder_simple_inheritance():

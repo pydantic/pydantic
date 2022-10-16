@@ -1,10 +1,11 @@
 from __future__ import annotations as _annotations
 
 import typing
-from collections import deque, OrderedDict
+from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
 from typing import Any, Callable
 from uuid import UUID
@@ -16,11 +17,27 @@ from . import _validators
 
 __all__ = ('SCHEMA_LOOKUP',)
 
+StdSchemaFunction = Callable[[type[Any]], core_schema.CoreSchema]
+SCHEMA_LOOKUP: dict[type[Any], StdSchemaFunction] = {}
 
+
+def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaFunction]:
+    def wrapper(func: StdSchemaFunction) -> StdSchemaFunction:
+        SCHEMA_LOOKUP[type] = func
+        return func
+
+    return wrapper
+
+
+@schema_function(date)
+@schema_function(datetime)
+@schema_function(time)
+@schema_function(timedelta)
 def name_as_schema(t: type[Any]) -> core_schema.CoreSchema:
     return {'type': t.__name__}
 
 
+@schema_function(Enum)
 def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
     def to_enum(v: Any, **_kwargs: Any) -> Enum:
         try:
@@ -45,6 +62,7 @@ def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
         )
 
 
+@schema_function(Decimal)
 def decimal_schema(_decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     decimal_validator = _validators.DecimalValidator()
     return core_schema.function_after_schema(
@@ -60,6 +78,7 @@ def decimal_schema(_decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     )
 
 
+@schema_function(UUID)
 def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     return core_schema.union_schema(
@@ -77,6 +96,7 @@ def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
     )
 
 
+@schema_function(PurePath)
 def path_schema(path_type: type[PurePath]) -> core_schema.UnionSchema:
     # TODO, is this actually faster than `function_after(...)` as above?
     return core_schema.union_schema(
@@ -95,6 +115,7 @@ def _deque_any_schema() -> core_schema.FunctionWrapSchema:
     return core_schema.function_wrap_schema(_validators.deque_any_validator, core_schema.list_schema())
 
 
+@schema_function(deque)
 def deque_schema(obj: Any) -> core_schema.CoreSchema:
     if obj == deque:
         # bare `deque` type used as annotation
@@ -123,6 +144,7 @@ def _ordered_dict_any_schema() -> core_schema.FunctionWrapSchema:
     return core_schema.function_wrap_schema(_validators.ordered_dict_any_validator, core_schema.dict_schema())
 
 
+@schema_function(OrderedDict)
 def ordered_dict_schema(obj: Any):
     if obj == OrderedDict:
         # bare `ordered_dict` type used as annotation
@@ -147,15 +169,31 @@ def ordered_dict_schema(obj: Any):
         )
 
 
-SCHEMA_LOOKUP: dict[type[Any], Callable[[type[Any]], core_schema.CoreSchema]] = {
-    date: name_as_schema,
-    datetime: name_as_schema,
-    time: name_as_schema,
-    timedelta: name_as_schema,
-    Enum: enum_schema,
-    Decimal: decimal_schema,
-    UUID: uuid_schema,
-    PurePath: path_schema,
-    deque: deque_schema,
-    OrderedDict: ordered_dict_schema,
-}
+@schema_function(IPv4Address)
+def ip_v4_address_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+    return core_schema.function_plain_schema(_validators.ip_v4_address_validator)
+
+
+@schema_function(IPv4Interface)
+def ip_v4_interface_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+    return core_schema.function_plain_schema(_validators.ip_v4_interface_validator)
+
+
+@schema_function(IPv4Network)
+def ip_v4_network_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+    return core_schema.function_plain_schema(_validators.ip_v4_network_validator)
+
+
+@schema_function(IPv6Address)
+def ip_v6_address_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+    return core_schema.function_plain_schema(_validators.ip_v6_address_validator)
+
+
+@schema_function(IPv6Interface)
+def ip_v6_interface_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+    return core_schema.function_plain_schema(_validators.ip_v6_interface_validator)
+
+
+@schema_function(IPv6Network)
+def ip_v6_network_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+    return core_schema.function_plain_schema(_validators.ip_v6_network_validator)

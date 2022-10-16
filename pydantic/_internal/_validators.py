@@ -2,8 +2,9 @@ from __future__ import annotations as _annotations
 
 import re
 import typing
-from collections import deque, OrderedDict
+from collections import OrderedDict, deque
 from decimal import Decimal, DecimalException
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -15,7 +16,7 @@ from ._fields import CustomValidator
 __all__ = ('import_string',)
 
 
-def import_string(value: Any, **kwargs) -> Any:
+def import_string(value: Any, **kwargs: Any) -> Any:
     if isinstance(value, str):
         try:
             return _import_string_logic(value)
@@ -71,14 +72,14 @@ class DecimalValidator(CustomValidator):
         self.check_digits: bool = False
         self.strict: bool = False
 
-    def __pydantic_update_schema__(self, _schema, **kwargs) -> None:
+    def __pydantic_update_schema__(self, _schema: core_schema.CoreSchema, **kwargs: Any) -> None:
         self._update_attrs(kwargs)
 
         self.check_digits = self.max_digits is not None or self.decimal_places is not None
         if self.check_digits and self.allow_inf_nan:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
-    def __call__(self, value: int | float | str, **_kwargs: Any) -> Decimal:
+    def __call__(self, value: int | float | str, **_kwargs: Any) -> Decimal:  # noqa: C901 (ignore complexity)
         if not isinstance(value, Decimal):
             v = str(value)
 
@@ -247,3 +248,75 @@ def ordered_dict_any_validator(v: Any, *, validator: core_schema.CallableValidat
 
 def ordered_dict_typed_validator(v: list[Any], **kwargs) -> OrderedDict:
     return OrderedDict(v)
+
+
+def ip_v4_address_validator(v: Any, **_kwargs) -> IPv4Address:
+    if isinstance(v, IPv4Address):
+        return v
+
+    try:
+        return IPv4Address(v)
+    except ValueError:
+        raise PydanticCustomError('ip_v4_address', 'Input is not a valid IPv4 address')
+
+
+def ip_v6_address_validator(v: Any, **_kwargs) -> IPv6Address:
+    if isinstance(v, IPv6Address):
+        return v
+
+    try:
+        return IPv6Address(v)
+    except ValueError:
+        raise PydanticCustomError('ip_v6_address', 'Input is not a valid IPv6 address')
+
+
+def ip_v4_network_validator(v: Any, **_kwargs) -> IPv4Network:
+    """
+    Assume IPv4Network initialised with a default ``strict`` argument
+
+    See more:
+    https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
+    """
+    if isinstance(v, IPv4Network):
+        return v
+
+    try:
+        return IPv4Network(v)
+    except ValueError:
+        raise PydanticCustomError('ip_v4_network', 'Input is not a valid IPv4 network')
+
+
+def ip_v6_network_validator(v: Any, **_kwargs) -> IPv6Network:
+    """
+    Assume IPv6Network initialised with a default ``strict`` argument
+
+    See more:
+    https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network
+    """
+    if isinstance(v, IPv6Network):
+        return v
+
+    try:
+        return IPv6Network(v)
+    except ValueError:
+        raise PydanticCustomError('ip_v6_network', 'Input is not a valid IPv6 network')
+
+
+def ip_v4_interface_validator(v: Any, **_kwargs) -> IPv4Interface:
+    if isinstance(v, IPv4Interface):
+        return v
+
+    try:
+        return IPv4Interface(v)
+    except ValueError:
+        raise PydanticCustomError('ip_v4_interface', 'Input is not a valid IPv4 interface')
+
+
+def ip_v6_interface_validator(v: Any, **_kwargs) -> IPv6Interface:
+    if isinstance(v, IPv6Interface):
+        return v
+
+    try:
+        return IPv6Interface(v)
+    except ValueError:
+        raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')

@@ -23,7 +23,6 @@ from pydantic._internal._utils import LimitedDict, all_identical, lenient_issubc
 
 from ._internal._typing_extra import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .main import BaseModel, create_model
-from .types import JsonWrapper
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -109,7 +108,7 @@ class GenericModel(BaseModel):
                 __module__=model_module or cls.__module__,
                 __base__=(cls,) + tuple(cls.__parameterized_bases__(typevars_map)),
                 __config__=None,
-                __validators__=validators,
+                # __validators__=validators,
                 __cls_kwargs__=None,
                 **fields,
             ),
@@ -291,11 +290,11 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             return type_
         return resolved_list
 
-    # For JsonWrapperValue, need to handle its inner type to allow correct parsing
-    # of generic Json arguments like Json[T]
-    if not origin_type and lenient_issubclass(type_, JsonWrapper):
-        type_.inner_type = replace_types(type_.inner_type, type_map)
-        return type_
+    # # For JsonWrapperValue, need to handle its inner type to allow correct parsing
+    # # of generic Json arguments like Json[T]
+    # if not origin_type and lenient_issubclass(type_, JsonWrapper):
+    #     type_.inner_type = replace_types(type_.inner_type, type_map)
+    #     return type_
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.

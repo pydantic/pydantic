@@ -1,7 +1,6 @@
 import abc
 import dataclasses as _dataclasses
 import re
-import warnings
 from datetime import date
 from decimal import Decimal
 from enum import Enum
@@ -23,7 +22,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    Sized,
 )
 from uuid import UUID
 
@@ -71,14 +69,12 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
-    'ConstrainedDate',
     'condate',
 ]
 
 from ._internal._utils import update_not_none
 
 if TYPE_CHECKING:
-    from ._internal._typing_extra import CallableGenerator
     from .dataclasses import Dataclass
     from .main import BaseModel
 
@@ -392,7 +388,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.UnionSchema:
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
         if cls is SecretStr:
             pre_schema = core_schema.string_schema()
             error_kind = 'string_type'
@@ -410,7 +406,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 custom_error_kind=error_kind,
             ),
             validator,
-            extra=validator
+            extra=validator,
         )
 
     @classmethod
@@ -442,8 +438,9 @@ class SecretField(abc.ABC, Generic[SecretType]):
 class SecretFieldValidator(_validators.CustomValidator, Generic[SecretType]):
     __slots__ = 'field_type', 'min_length', 'max_length', 'error_prefix'
 
-    def __init__(self, field_type: Type[SecretField[SecretType]], min_length: int | None = None,
-                 max_length: int | None = None) -> None:
+    def __init__(
+        self, field_type: Type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
+    ) -> None:
         self.field_type = field_type
         self.min_length = min_length
         self.max_length = max_length
@@ -500,19 +497,26 @@ class PaymentCardNumber(str):
     brand: PaymentCardBrand
 
     def __init__(self, card_number: str):
+        self.validate_digits(card_number)
+
+        card_number = self.validate_luhn_check_digit(card_number)
+
         self.bin = card_number[:6]
         self.last4 = card_number[-4:]
-        self.brand = self._get_brand(card_number)
+        self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield str_validator
-        yield constr_strip_whitespace
-        yield constr_length_validator
-        yield cls.validate_digits
-        yield cls.validate_luhn_check_digit
-        yield cls
-        yield cls.validate_length_for_brand
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
+        return core_schema.function_after_schema(
+            core_schema.string_schema(
+                min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
+            ),
+            cls.validate,
+        )
+
+    @classmethod
+    def validate(cls, v: str, **_kwargs) -> 'PaymentCardNumber':
+        return cls(v)
 
     @property
     def masked(self) -> str:
@@ -520,10 +524,9 @@ class PaymentCardNumber(str):
         return f'{self.bin}{"*" * num_masked}{self.last4}'
 
     @classmethod
-    def validate_digits(cls, card_number: str) -> str:
+    def validate_digits(cls, card_number: str) -> None:
         if not card_number.isdigit():
-            raise errors.NotDigitError
-        return card_number
+            raise PydanticCustomError('payment_card_number_digits', 'Card number is not all digits')
 
     @classmethod
     def validate_luhn_check_digit(cls, card_number: str) -> str:
@@ -542,33 +545,15 @@ class PaymentCardNumber(str):
             sum_ += digit
         valid = sum_ % 10 == 0
         if not valid:
-            raise errors.LuhnValidationError
+            raise PydanticCustomError('payment_card_number_luhn', 'Card number is not luhn valid')
         return card_number
 
-    @classmethod
-    def validate_length_for_brand(cls, card_number: 'PaymentCardNumber') -> 'PaymentCardNumber':
+    @staticmethod
+    def validate_brand(card_number: str) -> PaymentCardBrand:
         """
         Validate length based on BIN for major brands:
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
         """
-        required_length: Union[None, int, str] = None
-        if card_number.brand in PaymentCardBrand.mastercard:
-            required_length = 16
-            valid = len(card_number) == required_length
-        elif card_number.brand == PaymentCardBrand.visa:
-            required_length = '13, 16 or 19'
-            valid = len(card_number) in {13, 16, 19}
-        elif card_number.brand == PaymentCardBrand.amex:
-            required_length = 15
-            valid = len(card_number) == required_length
-        else:
-            valid = True
-        if not valid:
-            raise errors.InvalidLengthForBrand(brand=card_number.brand, required_length=required_length)
-        return card_number
-
-    @staticmethod
-    def _get_brand(card_number: str) -> PaymentCardBrand:
         if card_number[0] == '4':
             brand = PaymentCardBrand.visa
         elif 51 <= int(card_number[:2]) <= 55:
@@ -577,6 +562,26 @@ class PaymentCardNumber(str):
             brand = PaymentCardBrand.amex
         else:
             brand = PaymentCardBrand.other
+
+        required_length: Union[None, int, str] = None
+        if brand in PaymentCardBrand.mastercard:
+            required_length = 16
+            valid = len(card_number) == required_length
+        elif brand == PaymentCardBrand.visa:
+            required_length = '13, 16 or 19'
+            valid = len(card_number) in {13, 16, 19}
+        elif brand == PaymentCardBrand.amex:
+            required_length = 15
+            valid = len(card_number) == required_length
+        else:
+            valid = True
+
+        if not valid:
+            raise PydanticCustomError(
+                'payment_card_number_brand',
+                'Length for a {brand} card must be {required_length}',
+                {'brand': brand, 'required_length': required_length},
+            )
         return brand
 
 
@@ -630,14 +635,13 @@ class ByteSize(int):
         return cls(int(float(scalar) * unit_mult))
 
     def human_readable(self, decimal: bool = False) -> str:
-
         if decimal:
             divisor = 1000
-            units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+            units = 'B', 'KB', 'MB', 'GB', 'TB', 'PB'
             final_unit = 'EB'
         else:
             divisor = 1024
-            units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+            units = 'B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'
             final_unit = 'EiB'
 
         num = float(self)
@@ -661,60 +665,46 @@ class ByteSize(int):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    PastDate = date
-    FutureDate = date
+    PastDate = Annotated[date, ...]
+    FutureDate = Annotated[date, ...]
 else:
 
-    class PastDate(date):
+    class PastDate(_fields.PydanticMetadata):
         @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield parse_date
-            yield cls.validate
+        def __get_pydantic_validation_schema__(
+            cls, schema: core_schema.CoreSchema | None = None
+        ) -> core_schema.CoreSchema:
+            if schema is None:
+                # used directly as a type
+                return core_schema.date_schema(now_op='past')
+            else:
+                assert schema['type'] == 'date'
+                schema['now_op'] = 'past'
+                return schema
 
+        def __repr__(self) -> str:
+            return 'PastDate'
+
+    class FutureDate(_fields.PydanticMetadata):
         @classmethod
-        def validate(cls, value: date) -> date:
-            if value >= date.today():
-                raise errors.DateNotInThePastError()
+        def __get_pydantic_validation_schema__(
+            cls, schema: core_schema.CoreSchema | None = None
+        ) -> core_schema.CoreSchema:
+            if schema is None:
+                # used directly as a type
+                return core_schema.date_schema(now_op='future')
+            else:
+                assert schema['type'] == 'date'
+                schema['now_op'] = 'future'
+                return schema
 
-            return value
-
-    class FutureDate(date):
-        @classmethod
-        def __get_validators__(cls) -> 'CallableGenerator':
-            yield parse_date
-            yield cls.validate
-
-        @classmethod
-        def validate(cls, value: date) -> date:
-            if value <= date.today():
-                raise errors.DateNotInTheFutureError()
-
-            return value
+        def __repr__(self) -> str:
+            return 'PastDate'
 
 
-class ConstrainedDate(date):
-    gt: Optional[date] = None
-    ge: Optional[date] = None
-    lt: Optional[date] = None
-    le: Optional[date] = None
-
-    @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-        update_not_none(field_schema, exclusiveMinimum=cls.gt, exclusiveMaximum=cls.lt, minimum=cls.ge, maximum=cls.le)
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield parse_date
-        yield number_size_validator
-
-
-def condate(
-    *,
-    gt: date = None,
-    ge: date = None,
-    lt: date = None,
-    le: date = None,
-) -> Type[date]:
-    # use kwargs then define conf in a dict to aid with IDE type hinting
-    namespace = dict(gt=gt, ge=ge, lt=lt, le=le)
-    return type('ConstrainedDateValue', (ConstrainedDate,), namespace)
+def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date = None, le: date = None) -> type[date]:
+    return Annotated[
+        date,
+        Strict(strict),
+        annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
+    ]

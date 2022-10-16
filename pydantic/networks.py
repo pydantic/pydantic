@@ -628,16 +628,7 @@ class NameEmail(Representation):
 class IPvAnyAddress(_BaseAddress):
     __slots__ = ()
 
-    @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        field_schema.update(type='string', format='ipvanyaddress')
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: str | bytes | int) -> IPv4Address | IPv6Address:
+    def __new__(cls, value: str | bytes | int) -> IPv4Address | IPv6Address:
         try:
             return IPv4Address(value)
         except ValueError:
@@ -646,22 +637,25 @@ class IPvAnyAddress(_BaseAddress):
         try:
             return IPv6Address(value)
         except ValueError:
-            raise PydanticCustomError('value_error', 'value is not a valid IPv4 or IPv6 address')
+            raise PydanticCustomError('ip_any_address', 'value is not a valid IPv4 or IPv6 address')
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        field_schema.update(type='string', format='ipvanyaddress')
+
+    @classmethod
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+        return core_schema.function_plain_schema(cls._validate)
+
+    @classmethod
+    def _validate(cls, value: NetworkType, **_kwargs) -> IPv4Address | IPv6Address:
+        return cls(value)
 
 
 class IPvAnyInterface(_BaseAddress):
     __slots__ = ()
 
-    @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        field_schema.update(type='string', format='ipvanyinterface')
-
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:
+    def __new__(cls, value: NetworkType):
         try:
             return IPv4Interface(value)
         except ValueError:
@@ -670,20 +664,25 @@ class IPvAnyInterface(_BaseAddress):
         try:
             return IPv6Interface(value)
         except ValueError:
-            raise PydanticCustomError('value_error', 'value is not a valid IPv4 or IPv6 interface')
+            raise PydanticCustomError('ip_any_interface', 'value is not a valid IPv4 or IPv6 interface')
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        field_schema.update(type='string', format='ipvanyinterface')
+
+    @classmethod
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+        return core_schema.function_plain_schema(cls._validate)
+
+    @classmethod
+    def _validate(cls, value: NetworkType, **_kwargs) -> IPv4Interface | IPv6Interface:
+        return cls(value)
 
 
 class IPvAnyNetwork(_BaseNetwork):  # type: ignore
-    @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        field_schema.update(type='string', format='ipvanynetwork')
+    __slots__ = ()
 
-    @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value: NetworkType) -> IPv4Network | IPv6Network:
+    def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:
         # Assume IP Network is defined with a default value for ``strict`` argument.
         # Define your own class if you want to specify network address check strictness.
         try:
@@ -694,7 +693,19 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
         try:
             return IPv6Network(value)
         except ValueError:
-            raise PydanticCustomError('value_error', 'value is not a valid IPv4 or IPv6 network')
+            raise PydanticCustomError('ip_any_network', 'value is not a valid IPv4 or IPv6 network')
+
+    @classmethod
+    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        field_schema.update(type='string', format='ipvanynetwork')
+
+    @classmethod
+    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+        return core_schema.function_plain_schema(cls._validate)
+
+    @classmethod
+    def _validate(cls, value: NetworkType, **_kwargs) -> IPv4Network | IPv6Network:
+        return cls(value)
 
 
 pretty_email_regex = re.compile(r' *([\w ]*?) *<(.+?)> *')

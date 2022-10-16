@@ -1,9 +1,12 @@
 import importlib
 import inspect
+import re
 import secrets
 import sys
 import textwrap
+from dataclasses import dataclass
 from types import FunctionType
+from typing import Any
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -16,8 +19,11 @@ passing_files = {
     'test_structural_pattern_matching.py',
     'test_version.py',
     'test_networks.py',
+    'test_networks_ipaddress.py',
     'test_color.py',
     'test_types.py',
+    'test_datetime_parse.py',
+    'test_types_payment_card_number.py',
 }
 
 
@@ -80,3 +86,18 @@ def create_module(tmp_path, request):
         return module
 
     return run
+
+
+@dataclass
+class Err:
+    message: str
+    errors: Any | None = None
+
+    def __repr__(self):
+        if self.errors:
+            return f'Err({self.message!r}, errors={self.errors!r})'
+        else:
+            return f'Err({self.message!r})'
+
+    def message_escaped(self):
+        return re.escape(self.message)

@@ -16,7 +16,6 @@ from typing import (
     Dict,
     FrozenSet,
     Iterable,
-    Iterator,
     List,
     MutableSet,
     NewType,
@@ -82,6 +81,9 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+# TODO add back tests for Iterator
 
 
 @pytest.fixture(scope='session', name='ConBytesModel')

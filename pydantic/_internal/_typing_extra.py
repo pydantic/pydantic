@@ -15,7 +15,6 @@ from typing import (  # type: ignore
     List,
     Mapping,
     NewType,
-    NoReturn,
     Optional,
     Set,
     Tuple,
