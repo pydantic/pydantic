@@ -213,7 +213,7 @@ def resolves(
 # Type-to-strategy resolver functions
 
 
-@resolves(pydantic.JsonWrapper)
+# @resolves(pydantic.JsonWrapper)
 def resolve_json(cls):  # type: ignore[no-untyped-def]
     try:
         inner = st.none() if cls.inner_type is None else st.from_type(cls.inner_type)

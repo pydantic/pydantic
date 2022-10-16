@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations
 
 import re
 import typing
-from collections import deque
+from collections import deque, OrderedDict
 from decimal import Decimal, DecimalException
 from pathlib import Path
 from typing import Any
@@ -71,17 +71,14 @@ class DecimalValidator(CustomValidator):
         self.check_digits: bool = False
         self.strict: bool = False
 
-    def update(self, **kwargs):
-        for k, v in kwargs.items():
-            if k not in self.__slots__:
-                raise TypeError(f'{self.__class__.__name__}.update() got an unexpected keyword argument {k!r}')
-            setattr(self, k, v)
+    def __pydantic_update_schema__(self, _schema, **kwargs) -> None:
+        self._update_attrs(kwargs)
 
         self.check_digits = self.max_digits is not None or self.decimal_places is not None
         if self.check_digits and self.allow_inf_nan:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
-    def validate(self, value: int | float | str, **_kwargs: Any) -> Decimal:
+    def __call__(self, value: int | float | str, **_kwargs: Any) -> Decimal:
         if not isinstance(value, Decimal):
             v = str(value)
 
@@ -230,12 +227,23 @@ def compile_pattern(pattern: str | bytes) -> typing.Pattern:
         raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
 
 
-def deque_any_validator(v: Any, validator: core_schema.CallableValidator, **kwargs) -> typing.Deque:
+def deque_any_validator(v: Any, *, validator: core_schema.CallableValidator, **_kwargs) -> deque:
     if isinstance(v, deque):
         return v
     else:
         return deque(validator(v))
 
 
-def deque_typed_validator(v: list[Any], **kwargs) -> typing.Deque:
+def deque_typed_validator(v: list[Any], **kwargs) -> deque:
     return deque(v)
+
+
+def ordered_dict_any_validator(v: Any, *, validator: core_schema.CallableValidator, **_kwargs) -> OrderedDict:
+    if isinstance(v, OrderedDict):
+        return v
+    else:
+        return OrderedDict(validator(v))
+
+
+def ordered_dict_typed_validator(v: list[Any], **kwargs) -> OrderedDict:
+    return OrderedDict(v)

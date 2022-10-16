@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
-from pydantic_core import CoreSchema
+from pydantic_core import core_schema
 
 T = TypeVar('T')
 
@@ -42,7 +42,7 @@ class SchemaRef(PydanticMetadata):
 
     __slots__ = '_name', '__pydantic_validation_schema__'
 
-    def __init__(self, name: str, core_schema: CoreSchema):
+    def __init__(self, name: str, core_schema: core_schema.CoreSchema):
         self._name = name
         self.__pydantic_validation_schema__ = core_schema
 
@@ -52,9 +52,16 @@ class SchemaRef(PydanticMetadata):
 
 class CustomValidator(ABC):
     @abstractmethod
-    def update(self, **kwargs):
+    def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **constraints: Any) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def validate(self, value: int | float | str, **_kwargs: Any) -> Any:
+    def __call__(self, value: Any, **_kwargs: Any) -> Any:
         raise NotImplementedError()
+
+    def _update_attrs(self, constraints: dict[str, Any], attrs: set[str] | None = None) -> None:
+        attrs = attrs or set(self.__slots__)
+        for k, v in constraints.items():
+            if k not in attrs:
+                raise TypeError(f'{self.__class__.__name__} has no attribute {k!r}')
+            setattr(self, k, v)

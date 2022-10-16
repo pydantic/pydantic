@@ -1288,18 +1288,19 @@ def test_list_fails(value):
     ]
 
 
-@pytest.mark.skip(reason='todo')
 def test_ordered_dict():
     class Model(BaseModel):
         v: OrderedDict
 
     assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
-    assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
-    assert Model(v=[(1, 2), (3, 4)]).v == OrderedDict([(1, 2), (3, 4)])
+    assert Model(v={1: 10, 2: 20}).v == OrderedDict([(1, 10), (2, 20)])
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'kind': 'dict_type', 'loc': ['v'], 'message': 'Input should be a valid dictionary', 'input_value': [1, 2, 3]}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1954,7 +1955,6 @@ def test_strict_bytes_max_length():
         Model(u=b'1234567')
 
 
-@pytest.mark.skip(reason="TODO string enums definitely shouldn't be allowed")
 def test_strict_str():
     class FruitEnum(str, Enum):
         pear = 'pear'
@@ -1965,7 +1965,8 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    with pytest.raises(ValidationError, match='Input should be a valid string'):
+    msg = r'Input should be a string, not an instance of a subclass of str \[kind=string_sub_type,'
+    with pytest.raises(ValidationError, match=msg):
         Model(v=FruitEnum.banana)
 
     with pytest.raises(ValidationError, match='Input should be a valid string'):
@@ -2600,7 +2601,6 @@ def test_number_multiple_of_int_invalid(value):
     ]
 
 
-@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/286')
 @pytest.mark.parametrize('value', [0.2, 0.3, 0.4, 0.5, 1])
 def test_number_multiple_of_float_valid(value):
     class Model(BaseModel):
@@ -2609,7 +2609,6 @@ def test_number_multiple_of_float_valid(value):
     assert Model(a=value).dict() == {'a': value}
 
 
-@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/286')
 @pytest.mark.parametrize('value', [0.07, 1.27, 1.003])
 def test_number_multiple_of_float_invalid(value):
     class Model(BaseModel):
@@ -3004,32 +3003,35 @@ def test_secretstr_error():
     ]
 
 
-@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/292')
-def test_secretstr_min_max_length():
+def test_secret_str_min_max_length():
     class Foobar(BaseModel):
         password: SecretStr = Field(min_length=6, max_length=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password='')
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('password',),
-            'msg': 'ensure this value has at least 6 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 6},
+            'kind': 'string_too_short',
+            'loc': ['password'],
+            'message': 'String should have at least 6 characters',
+            'input_value': '',
+            'context': {'min_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password='1' * 20)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('password',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'kind': 'string_too_long',
+            'loc': ['password'],
+            'message': 'String should have at most 10 characters',
+            'input_value': '11111111111111111111',
+            'context': {'max_length': 10},
         }
     ]
 
@@ -3104,7 +3106,6 @@ def test_secretbytes_error():
     ]
 
 
-@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/292')
 def test_secret_bytes_min_max_length():
     class Foobar(BaseModel):
         password: SecretBytes = Field(min_length=6, max_length=10)
@@ -3112,55 +3113,33 @@ def test_secret_bytes_min_max_length():
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=b'')
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('password',),
-            'msg': 'ensure this value has at least 6 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 6},
+            'kind': 'bytes_too_short',
+            'loc': ['password'],
+            'message': 'Data should have at least 6 bytes',
+            'input_value': b'',
+            'context': {'min_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=b'1' * 20)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('password',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'kind': 'bytes_too_long',
+            'loc': ['password'],
+            'message': 'Data should have at most 10 bytes',
+            'input_value': b'11111111111111111111',
+            'context': {'max_length': 10},
         }
     ]
 
     value = b'1' * 8
     assert Foobar(password=value).password.get_secret_value() == value
-
-
-@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic-core/pull/292')
-@pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
-@pytest.mark.parametrize(
-    'field_kw,schema_kw',
-    [
-        [{}, {}],
-        [{'min_length': 6}, {'minLength': 6}],
-        [{'max_length': 10}, {'maxLength': 10}],
-        [{'min_length': 6, 'max_length': 10}, {'minLength': 6, 'maxLength': 10}],
-    ],
-    ids=['no-constrains', 'min-constraint', 'max-constraint', 'min-max-constraints'],
-)
-def test_secrets_schema(secret_cls, field_kw, schema_kw):
-    class Foobar(BaseModel):
-        password: secret_cls = Field(**field_kw)
-
-    assert Foobar.schema() == {
-        'title': 'Foobar',
-        'type': 'object',
-        'properties': {
-            'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
-        },
-        'required': ['password'],
-    }
 
 
 def test_generic_without_params():
@@ -3440,7 +3419,7 @@ def test_deque_fails(cls, value, expected_error):
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
     assert exc_info.value.error_count() == 1
-    debug(exc_info.value.errors()[0])
+    # debug(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == expected_error
 
 
@@ -3562,7 +3541,9 @@ def test_union_subclass():
     class Model(BaseModel):
         x: Union[int, str]
 
-    assert Model(x=MyStr('1')).x == '1'
+    # see https://github.com/pydantic/pydantic-core/pull/294, since subclasses are no-longer allowed as valid
+    # inputs to strict-string, this doesn't work
+    assert Model(x=MyStr('1')).x == 1
 
 
 def test_union_compound_types():
@@ -3580,19 +3561,19 @@ def test_union_compound_types():
     assert e.value.errors() == [
         {
             'kind': 'string_type',
-            'loc': ['values', 'dict[constrained-str,constrained-str]', 'x'],
+            'loc': ['values', 'dict[str,str]', 'x'],
             'message': 'Input should be a valid string',
             'input_value': {'a': 'b'},
         },
         {
             'kind': 'list_type',
-            'loc': ['values', 'list[constrained-str]'],
+            'loc': ['values', 'list[str]'],
             'message': 'Input should be a valid list/array',
             'input_value': {'x': {'a': 'b'}},
         },
         {
             'kind': 'list_type',
-            'loc': ['values', 'dict[constrained-str,list[constrained-str]]', 'x'],
+            'loc': ['values', 'dict[str,list[str]]', 'x'],
             'message': 'Input should be a valid list/array',
             'input_value': {'a': 'b'},
         },

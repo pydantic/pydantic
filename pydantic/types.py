@@ -23,11 +23,12 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    Sized,
 )
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 
 from . import errors
 from ._internal import _fields, _validators
@@ -283,7 +284,7 @@ class UuidVersion(_fields.PydanticMetadata):
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
     def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        return core_schema.function_after_schema(self.validate, schema)
+        return core_schema.function_after_schema(schema, self.validate)
 
     def validate(self, value: UUID, **kwargs) -> UUID:
         if value.version != self.uuid_version:
@@ -399,19 +400,18 @@ class SecretField(abc.ABC, Generic[SecretType]):
             assert cls is SecretBytes, f'Unknown SecretField subclass {cls!r}'
             pre_schema = core_schema.bytes_schema()
             error_kind = 'bytes_type'
-        return core_schema.union_schema(
-            core_schema.is_instance_schema(cls),
-            core_schema.function_after_schema(function=cls._validate, schema=pre_schema),
-            strict=True,
-            custom_error_kind=error_kind,
-        )
 
-    @classmethod
-    def _validate(cls, value: SecretType, **kwargs) -> 'SecretField[SecretType]':
-        if isinstance(value, cls):
-            return value
-        else:
-            return cls(value)
+        validator = SecretFieldValidator(cls)
+        return core_schema.function_after_schema(
+            core_schema.union_schema(
+                core_schema.is_instance_schema(cls),
+                pre_schema,
+                strict=True,
+                custom_error_kind=error_kind,
+            ),
+            validator,
+            extra=validator
+        )
 
     @classmethod
     def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
@@ -437,6 +437,31 @@ class SecretField(abc.ABC, Generic[SecretType]):
     def __repr__(self) -> str:
         prefix = 'b' if isinstance(self, SecretBytes) else ''
         return f"{self.__class__.__name__}({prefix}'{self}')"
+
+
+class SecretFieldValidator(_validators.CustomValidator, Generic[SecretType]):
+    __slots__ = 'field_type', 'min_length', 'max_length', 'error_prefix'
+
+    def __init__(self, field_type: Type[SecretField[SecretType]], min_length: int | None = None,
+                 max_length: int | None = None) -> None:
+        self.field_type = field_type
+        self.min_length = min_length
+        self.max_length = max_length
+        self.error_prefix = 'string' if field_type is SecretStr else 'bytes'
+
+    def __call__(self, value: SecretField[SecretType] | SecretType, **_kwargs: Any) -> Any:
+        if self.min_length is not None and len(value) < self.min_length:
+            raise PydanticKindError(f'{self.error_prefix}_too_short', {'min_length': self.min_length})
+        if self.max_length is not None and len(value) > self.max_length:
+            raise PydanticKindError(f'{self.error_prefix}_too_long', {'max_length': self.max_length})
+
+        if isinstance(value, self.field_type):
+            return value
+        else:
+            return self.field_type(value)
+
+    def __pydantic_update_schema__(self, schema: core_schema.UnionSchema, **constraints: Any) -> None:
+        self._update_attrs(constraints, {'min_length', 'max_length'})
 
 
 class SecretStr(SecretField[str]):

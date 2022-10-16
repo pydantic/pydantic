@@ -3054,3 +3054,28 @@ def test_model_with_type_attributes():
         'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
         'required': ['a', 'b'],
     }
+
+
+@pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
+@pytest.mark.parametrize(
+    'field_kw,schema_kw',
+    [
+        [{}, {}],
+        [{'min_length': 6}, {'minLength': 6}],
+        [{'max_length': 10}, {'maxLength': 10}],
+        [{'min_length': 6, 'max_length': 10}, {'minLength': 6, 'maxLength': 10}],
+    ],
+    ids=['no-constrains', 'min-constraint', 'max-constraint', 'min-max-constraints'],
+)
+def test_secrets_schema(secret_cls, field_kw, schema_kw):
+    class Foobar(BaseModel):
+        password: secret_cls = Field(**field_kw)
+
+    assert Foobar.schema() == {
+        'title': 'Foobar',
+        'type': 'object',
+        'properties': {
+            'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
+        },
+        'required': ['password'],
+    }

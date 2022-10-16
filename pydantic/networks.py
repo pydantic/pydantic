@@ -583,7 +583,7 @@ class EmailStr(str):
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
-        return core_schema.function_after_schema(cls.validate, core_schema.string_schema())
+        return core_schema.function_after_schema(core_schema.string_schema(), cls.validate)
 
     @classmethod
     def validate(cls, value: str, **kwargs) -> str:
@@ -607,11 +607,11 @@ class NameEmail(Representation):
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(
-            cls.validate,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
                 core_schema.string_schema(),
             ),
+            cls.validate,
         )
 
     @classmethod

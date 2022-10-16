@@ -119,6 +119,10 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
         from ._std_validators import deque_schema
 
         return deque_schema(obj)
+    elif issubclass(origin, typing.OrderedDict):
+        from ._std_validators import ordered_dict_schema
+
+        return ordered_dict_schema(obj)
     elif issubclass(origin, typing.Sequence):
         return sequence_schema(obj)
     elif issubclass(origin, typing.MutableSet):
@@ -243,11 +247,18 @@ def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) ->
         # TODO we need a way to remove constraints which this line currently prevents
         constraints_dict = {k: v for k, v in constraints_dict.items() if v is not None}
         if constraints_dict:
-            validator_instance: CustomValidator | None = schema.get('validator_instance')
-            if validator_instance is not None:
-                validator_instance.update(**constraints_dict)
-            else:
+            extra: CustomValidator | dict[str, Any] | None = schema.get('extra')
+            if extra is None:
                 schema.update(**constraints_dict)
+            else:
+                if isinstance(extra, dict):
+                    update_schema_function = extra['__pydantic_update_schema__']
+                else:
+                    update_schema_function = extra.__pydantic_update_schema__
+
+                new_schema = update_schema_function(schema, **constraints_dict)
+                if new_schema is not None:
+                    schema = new_schema
     return schema
 
 
