@@ -318,14 +318,22 @@ class IsInstanceSchema(TypedDict, total=False):
     type: Required[Literal['is-instance']]
     cls: Required[Type[Any]]
     json_types: Set[JsonType]
+    json_function: Callable[[Any], Any]
     ref: str
     extra: Any
 
 
 def is_instance_schema(
-    cls: Type[Any], *, json_types: Set[JsonType] | None = None, ref: str | None = None, extra: Any = None
+    cls: Type[Any],
+    *,
+    json_types: Set[JsonType] | None = None,
+    json_function: Callable[[Any], Any] | None = None,
+    ref: str | None = None,
+    extra: Any = None,
 ) -> IsInstanceSchema:
-    return dict_not_none(type='is-instance', cls=cls, json_types=json_types, ref=ref, extra=extra)
+    return dict_not_none(
+        type='is-instance', cls=cls, json_types=json_types, json_function=json_function, ref=ref, extra=extra
+    )
 
 
 class CallableSchema(TypedDict, total=False):
