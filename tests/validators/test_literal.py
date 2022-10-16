@@ -2,9 +2,9 @@ import re
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import Err, PyAndJson
+from ..conftest import Err, PyAndJson, plain_repr
 
 
 @pytest.mark.parametrize(
@@ -84,3 +84,12 @@ def test_literal_not_json(kwarg_expected, input_value, expected):
 def test_build_error():
     with pytest.raises(SchemaError, match='SchemaError: "expected" should have length > 0'):
         SchemaValidator({'type': 'literal', 'expected': []})
+
+
+def test_literal_none():
+    v = SchemaValidator(core_schema.literal_schema(None))
+    assert v.isinstance_python(None) is True
+    assert v.isinstance_python(0) is False
+    assert v.isinstance_json('null') is True
+    assert v.isinstance_json('""') is False
+    assert plain_repr(v) == 'SchemaValidator(name="none",validator=None(NoneValidator),slots=[])'
