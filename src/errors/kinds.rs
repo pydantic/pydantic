@@ -131,6 +131,8 @@ pub enum ErrorKind {
     // string errors
     #[strum(message = "Input should be a valid string")]
     StringType,
+    #[strum(message = "Input should be a string, not an instance of a subclass of str")]
+    StringSubType,
     #[strum(message = "Input should be a valid string, unable to parse raw data as a unicode string")]
     StringUnicode,
     #[strum(message = "String should have at least {min_length} characters")]
