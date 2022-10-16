@@ -1,5 +1,7 @@
 from __future__ import annotations as _annotations
 
+import typing
+from collections import deque
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -8,6 +10,7 @@ from typing import Any, Callable
 from uuid import UUID
 
 from pydantic_core import PydanticCustomError, core_schema
+from typing_extensions import get_args
 
 from . import _validators
 
@@ -88,6 +91,33 @@ def path_schema(path_type: type[PurePath]) -> core_schema.UnionSchema:
     )
 
 
+def deque_any_schema() -> core_schema.FunctionWrapSchema:
+    return core_schema.function_wrap_schema(_validators.deque_any_validator, core_schema.list_schema())
+
+
+def deque_schema(obj: Any):
+    if obj == deque:
+        # bare `deque` type used as annotation
+        return deque_any_schema()
+
+    try:
+        arg = get_args(obj)[0]
+    except IndexError:
+        # not argument bare `Deque` is equivalent to `Deque[Any]`
+        return deque_any_schema()
+
+    if arg == typing.Any:
+        # `Deque[Any]`
+        return deque_any_schema()
+    else:
+        # `Deque[Something]`
+        from ._babelfish import generate_schema
+
+        return core_schema.function_after_schema(
+            _validators.deque_typed_validator, core_schema.list_schema(generate_schema(arg))
+        )
+
+
 SCHEMA_LOOKUP: dict[type[Any], Callable[[type[Any]], core_schema.CoreSchema]] = {
     date: name_as_schema,
     datetime: name_as_schema,
@@ -97,4 +127,5 @@ SCHEMA_LOOKUP: dict[type[Any], Callable[[type[Any]], core_schema.CoreSchema]] = 
     Decimal: decimal_schema,
     UUID: uuid_schema,
     PurePath: path_schema,
+    deque: deque_schema,
 }

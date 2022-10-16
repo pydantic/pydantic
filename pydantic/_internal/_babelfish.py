@@ -115,6 +115,10 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
         return dict_schema(obj)
     elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
         return type_schema(obj)
+    elif issubclass(origin, typing.Deque):
+        from ._std_validators import deque_schema
+
+        return deque_schema(obj)
     elif issubclass(origin, typing.Sequence):
         return sequence_schema(obj)
     elif issubclass(origin, typing.MutableSet):

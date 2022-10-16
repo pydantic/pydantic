@@ -2,12 +2,13 @@ from __future__ import annotations as _annotations
 
 import re
 import typing
+from collections import deque
 from decimal import Decimal, DecimalException
 from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic_core import PydanticCustomError, PydanticKindError
+from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 
 from ._fields import CustomValidator
 
@@ -227,3 +228,14 @@ def compile_pattern(pattern: str | bytes) -> typing.Pattern:
         return re.compile(pattern)
     except re.error:
         raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
+
+
+def deque_any_validator(v: Any, validator: core_schema.CallableValidator, **kwargs) -> typing.Deque:
+    if isinstance(v, deque):
+        return v
+    else:
+        return deque(validator(v))
+
+
+def deque_typed_validator(v: list[Any], **kwargs) -> typing.Deque:
+    return deque(v)
