@@ -11,6 +11,7 @@ use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::{NoHashSet, RecursionGuard};
 
+use super::none::NoneValidator;
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug)]
@@ -21,8 +22,8 @@ impl BuildValidator for LiteralBuilder {
 
     fn build(
         schema: &PyDict,
-        _config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
         let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
@@ -31,9 +32,10 @@ impl BuildValidator for LiteralBuilder {
             let first = expected.get_item(0)?;
             if let Ok(py_str) = first.cast_as::<PyString>() {
                 return Ok(LiteralSingleStringValidator::new(py_str.to_str()?.to_string()).into());
-            }
-            if let Ok(int) = first.extract::<i64>() {
+            } else if let Ok(int) = first.extract::<i64>() {
                 return Ok(LiteralSingleIntValidator::new(int).into());
+            } else if first.is_none() {
+                return NoneValidator::build(schema, config, build_context);
             }
         }
 
