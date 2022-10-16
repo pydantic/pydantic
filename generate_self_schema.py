@@ -92,9 +92,6 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:
         schema = None
         if type(field_type) == ForwardRef:
             fr_arg = field_type.__forward_arg__
-            fr_arg, matched = re.subn(r'NotRequired\[(.+)]', r'\1', fr_arg)
-            if matched:
-                required = False
 
             fr_arg, matched = re.subn(r'Required\[(.+)]', r'\1', fr_arg)
             if matched:
@@ -115,9 +112,6 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:
         if schema is None:
             if get_origin(field_type) == core_schema.Required:
                 required = True
-                field_type = field_type.__args__[0]
-            if get_origin(field_type) == core_schema.NotRequired:
-                required = False
                 field_type = field_type.__args__[0]
 
             schema = get_schema(field_type)
