@@ -7,12 +7,14 @@ use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{Input, JsonType};
 use crate::recursion_guard::RecursionGuard;
 
+use super::function::convert_err;
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IsInstanceValidator {
     class: Py<PyType>,
     json_types: u8,
+    json_function: Option<PyObject>,
     class_repr: String,
     name: String,
 }
@@ -25,16 +27,18 @@ impl BuildValidator for IsInstanceValidator {
         _config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let class: &PyType = schema.get_as_req(intern!(schema.py(), "cls"))?;
+        let py = schema.py();
+        let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let class_repr = class.name()?.to_string();
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, class_repr);
-        let json_types = match schema.get_as::<&PySet>(intern!(schema.py(), "json_types"))? {
+        let json_types = match schema.get_as::<&PySet>(intern!(py, "json_types"))? {
             Some(s) => JsonType::combine(s)?,
             None => 0,
         };
         Ok(Self {
             class: class.into(),
             json_types,
+            json_function: schema.get_item(intern!(py, "json_function")).map(|f| f.into_py(py)),
             class_repr,
             name,
         }
@@ -52,7 +56,16 @@ impl Validator for IsInstanceValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         match input.is_instance(self.class.as_ref(py), self.json_types)? {
-            true => Ok(input.to_object(py)),
+            true => {
+                if input.get_type().is_json() {
+                    if let Some(ref json_function) = self.json_function {
+                        return json_function
+                            .call1(py, (input.to_object(py),))
+                            .map_err(|e| convert_err(py, e, input));
+                    }
+                }
+                Ok(input.to_object(py))
+            }
             false => Err(ValError::new(
                 ErrorKind::IsInstanceOf {
                     class: self.class_repr.clone(),

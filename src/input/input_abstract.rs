@@ -9,11 +9,25 @@ use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
 use super::{GenericArguments, GenericCollection, GenericIterator, GenericMapping, JsonInput};
 
+pub enum InputType {
+    Python,
+    Json,
+    String,
+}
+
+impl InputType {
+    pub fn is_json(&self) -> bool {
+        matches!(self, Self::Json)
+    }
+}
+
 /// all types have three methods: `validate_*`, `strict_*`, `lax_*`
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
 pub trait Input<'a>: fmt::Debug + ToPyObject {
+    fn get_type(&self) -> &'static InputType;
+
     fn as_loc_item(&self) -> LocItem;
 
     fn as_error_value(&'a self) -> InputValue<'a>;
