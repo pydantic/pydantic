@@ -5,9 +5,9 @@ from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
 if sys.version_info < (3, 11):
-    from typing_extensions import NotRequired, Protocol, Required
+    from typing_extensions import Protocol, Required
 else:
-    from typing import NotRequired, Protocol, Required
+    from typing import Protocol, Required
 
 if sys.version_info < (3, 9):
     from typing_extensions import Literal, TypedDict
@@ -44,31 +44,35 @@ class CoreConfig(TypedDict, total=False):
     allow_inf_nan: bool  # default: True
 
 
-class AnySchema(TypedDict):
-    type: Literal['any']
+class AnySchema(TypedDict, total=False):
+    type: Required[Literal['any']]
+    ref: str
+    extra: Any
 
 
-def any_schema() -> AnySchema:
-    return {'type': 'any'}
+def any_schema(*, ref: str | None = None, extra: Any = None) -> AnySchema:
+    return dict_not_none(type='any', ref=ref, extra=extra)
 
 
-class NoneSchema(TypedDict):
-    type: Literal['none']
-    ref: NotRequired[str]
+class NoneSchema(TypedDict, total=False):
+    type: Required[Literal['none']]
+    ref: str
+    extra: Any
 
 
-def none_schema(*, ref: str | None = None) -> NoneSchema:
-    return dict_not_none(type='none', ref=ref)
+def none_schema(*, ref: str | None = None, extra: Any = None) -> NoneSchema:
+    return dict_not_none(type='none', ref=ref, extra=extra)
 
 
 class BoolSchema(TypedDict, total=False):
     type: Required[Literal['bool']]
     strict: bool
     ref: str
+    extra: Any
 
 
-def bool_schema(strict: bool | None = None, ref: str | None = None) -> BoolSchema:
-    return dict_not_none(type='bool', strict=strict, ref=ref)
+def bool_schema(strict: bool | None = None, ref: str | None = None, extra: Any = None) -> BoolSchema:
+    return dict_not_none(type='bool', strict=strict, ref=ref, extra=extra)
 
 
 class IntSchema(TypedDict, total=False):
@@ -80,6 +84,7 @@ class IntSchema(TypedDict, total=False):
     gt: int
     strict: bool
     ref: str
+    extra: Any
 
 
 def int_schema(
@@ -91,8 +96,11 @@ def int_schema(
     gt: int | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> IntSchema:
-    return dict_not_none(type='int', multiple_of=multiple_of, le=le, ge=ge, lt=lt, gt=gt, strict=strict, ref=ref)
+    return dict_not_none(
+        type='int', multiple_of=multiple_of, le=le, ge=ge, lt=lt, gt=gt, strict=strict, ref=ref, extra=extra
+    )
 
 
 class FloatSchema(TypedDict, total=False):
@@ -105,6 +113,7 @@ class FloatSchema(TypedDict, total=False):
     gt: float
     strict: bool
     ref: str
+    extra: Any
 
 
 def float_schema(
@@ -117,6 +126,7 @@ def float_schema(
     gt: float | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> FloatSchema:
     return dict_not_none(
         type='float',
@@ -128,6 +138,7 @@ def float_schema(
         gt=gt,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -141,6 +152,7 @@ class StringSchema(TypedDict, total=False):
     to_upper: bool
     strict: bool
     ref: str
+    extra: Any
 
 
 def string_schema(
@@ -153,6 +165,7 @@ def string_schema(
     to_upper: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> StringSchema:
     return dict_not_none(
         type='str',
@@ -164,6 +177,7 @@ def string_schema(
         to_upper=to_upper,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -173,12 +187,20 @@ class BytesSchema(TypedDict, total=False):
     min_length: int
     strict: bool
     ref: str
+    extra: Any
 
 
 def bytes_schema(
-    *, max_length: int | None = None, min_length: int | None = None, strict: bool | None = None, ref: str | None = None
+    *,
+    max_length: int | None = None,
+    min_length: int | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    extra: Any = None,
 ) -> BytesSchema:
-    return dict_not_none(type='bytes', max_length=max_length, min_length=min_length, strict=strict, ref=ref)
+    return dict_not_none(
+        type='bytes', max_length=max_length, min_length=min_length, strict=strict, ref=ref, extra=extra
+    )
 
 
 class DateSchema(TypedDict, total=False):
@@ -189,6 +211,7 @@ class DateSchema(TypedDict, total=False):
     lt: date
     gt: date
     ref: str
+    extra: Any
 
 
 def date_schema(
@@ -199,8 +222,9 @@ def date_schema(
     lt: date | None = None,
     gt: date | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> DateSchema:
-    return dict_not_none(type='date', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref)
+    return dict_not_none(type='date', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, extra=extra)
 
 
 class TimeSchema(TypedDict, total=False):
@@ -211,6 +235,7 @@ class TimeSchema(TypedDict, total=False):
     lt: time
     gt: time
     ref: str
+    extra: Any
 
 
 def time_schema(
@@ -221,8 +246,9 @@ def time_schema(
     lt: time | None = None,
     gt: time | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> TimeSchema:
-    return dict_not_none(type='time', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref)
+    return dict_not_none(type='time', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, extra=extra)
 
 
 class DatetimeSchema(TypedDict, total=False):
@@ -233,6 +259,7 @@ class DatetimeSchema(TypedDict, total=False):
     lt: datetime
     gt: datetime
     ref: str
+    extra: Any
 
 
 def datetime_schema(
@@ -243,8 +270,9 @@ def datetime_schema(
     lt: datetime | None = None,
     gt: datetime | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> DatetimeSchema:
-    return dict_not_none(type='datetime', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref)
+    return dict_not_none(type='datetime', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, extra=extra)
 
 
 class TimedeltaSchema(TypedDict, total=False):
@@ -255,6 +283,7 @@ class TimedeltaSchema(TypedDict, total=False):
     lt: timedelta
     gt: timedelta
     ref: str
+    extra: Any
 
 
 def timedelta_schema(
@@ -265,18 +294,20 @@ def timedelta_schema(
     lt: timedelta | None = None,
     gt: timedelta | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> TimedeltaSchema:
-    return dict_not_none(type='timedelta', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref)
+    return dict_not_none(type='timedelta', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, extra=extra)
 
 
-class LiteralSchema(TypedDict):
-    type: Literal['literal']
-    expected: List[Any]
-    ref: NotRequired[str]
+class LiteralSchema(TypedDict, total=False):
+    type: Required[Literal['literal']]
+    expected: Required[List[Any]]
+    ref: str
+    extra: Any
 
 
-def literal_schema(*expected: Any, ref: str | None = None) -> LiteralSchema:
-    return dict_not_none(type='literal', expected=expected, ref=ref)
+def literal_schema(*expected: Any, ref: str | None = None, extra: Any = None) -> LiteralSchema:
+    return dict_not_none(type='literal', expected=expected, ref=ref, extra=extra)
 
 
 # must match input/parse_json.rs::JsonType::try_from
@@ -288,20 +319,23 @@ class IsInstanceSchema(TypedDict, total=False):
     cls: Required[Type[Any]]
     json_types: Set[JsonType]
     ref: str
+    extra: Any
 
 
 def is_instance_schema(
-    cls: Type[Any], *, json_types: Set[JsonType] | None = None, ref: str | None = None
+    cls: Type[Any], *, json_types: Set[JsonType] | None = None, ref: str | None = None, extra: Any = None
 ) -> IsInstanceSchema:
-    return dict_not_none(type='is-instance', cls=cls, json_types=json_types, ref=ref)
+    return dict_not_none(type='is-instance', cls=cls, json_types=json_types, ref=ref, extra=extra)
 
 
-class CallableSchema(TypedDict):
-    type: Literal['callable']
+class CallableSchema(TypedDict, total=False):
+    type: Required[Literal['callable']]
+    ref: str
+    extra: Any
 
 
-def callable_schema() -> CallableSchema:
-    return dict_not_none(type='callable')
+def callable_schema(*, ref: str | None = None, extra: Any = None) -> CallableSchema:
+    return dict_not_none(type='callable', ref=ref, extra=extra)
 
 
 class ListSchema(TypedDict, total=False):
@@ -312,6 +346,7 @@ class ListSchema(TypedDict, total=False):
     strict: bool
     allow_any_iter: bool
     ref: str
+    extra: Any
 
 
 def list_schema(
@@ -322,6 +357,7 @@ def list_schema(
     strict: bool | None = None,
     allow_any_iter: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> ListSchema:
     return dict_not_none(
         type='list',
@@ -331,6 +367,7 @@ def list_schema(
         strict=strict,
         allow_any_iter=allow_any_iter,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -341,6 +378,7 @@ class TuplePositionalSchema(TypedDict, total=False):
     extra_schema: CoreSchema
     strict: bool
     ref: str
+    extra: Any
 
 
 def tuple_positional_schema(
@@ -348,9 +386,16 @@ def tuple_positional_schema(
     extra_schema: CoreSchema | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> TuplePositionalSchema:
     return dict_not_none(
-        type='tuple', mode='positional', items_schema=items_schema, extra_schema=extra_schema, strict=strict, ref=ref
+        type='tuple',
+        mode='positional',
+        items_schema=items_schema,
+        extra_schema=extra_schema,
+        strict=strict,
+        ref=ref,
+        extra=extra,
     )
 
 
@@ -362,6 +407,7 @@ class TupleVariableSchema(TypedDict, total=False):
     max_length: int
     strict: bool
     ref: str
+    extra: Any
 
 
 def tuple_variable_schema(
@@ -371,6 +417,7 @@ def tuple_variable_schema(
     max_length: int | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> TupleVariableSchema:
     return dict_not_none(
         type='tuple',
@@ -380,6 +427,7 @@ def tuple_variable_schema(
         max_length=max_length,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -391,6 +439,7 @@ class SetSchema(TypedDict, total=False):
     generator_max_length: int
     strict: bool
     ref: str
+    extra: Any
 
 
 def set_schema(
@@ -401,6 +450,7 @@ def set_schema(
     generator_max_length: int | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> SetSchema:
     return dict_not_none(
         type='set',
@@ -410,6 +460,7 @@ def set_schema(
         generator_max_length=generator_max_length,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -421,6 +472,7 @@ class FrozenSetSchema(TypedDict, total=False):
     generator_max_length: int
     strict: bool
     ref: str
+    extra: Any
 
 
 def frozenset_schema(
@@ -431,6 +483,7 @@ def frozenset_schema(
     generator_max_length: int | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> FrozenSetSchema:
     return dict_not_none(
         type='frozenset',
@@ -440,6 +493,7 @@ def frozenset_schema(
         generator_max_length=generator_max_length,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -448,12 +502,13 @@ class GeneratorSchema(TypedDict, total=False):
     items_schema: CoreSchema
     max_length: int
     ref: str
+    extra: Any
 
 
 def generator_schema(
-    items_schema: CoreSchema | None = None, *, max_length: int | None = None, ref: str | None = None
+    items_schema: CoreSchema | None = None, *, max_length: int | None = None, ref: str | None = None, extra: Any = None
 ) -> GeneratorSchema:
-    return dict_not_none(type='generator', items_schema=items_schema, max_length=max_length, ref=ref)
+    return dict_not_none(type='generator', items_schema=items_schema, max_length=max_length, ref=ref, extra=extra)
 
 
 class DictSchema(TypedDict, total=False):
@@ -464,6 +519,7 @@ class DictSchema(TypedDict, total=False):
     max_length: int
     strict: bool
     ref: str
+    extra: Any
 
 
 def dict_schema(
@@ -474,6 +530,7 @@ def dict_schema(
     max_length: int | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> DictSchema:
     return dict_not_none(
         type='dict',
@@ -483,6 +540,7 @@ def dict_schema(
         max_length=max_length,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
@@ -493,30 +551,25 @@ class ValidatorFunction(Protocol):
         ...
 
 
-class FunctionSchema(TypedDict):
-    type: Literal['function']
-    mode: Literal['before', 'after']
-    function: ValidatorFunction
-    schema: CoreSchema
-    # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
-    validator_instance: NotRequired[Any]
-    ref: NotRequired[str]
+class FunctionSchema(TypedDict, total=False):
+    type: Required[Literal['function']]
+    mode: Required[Literal['before', 'after']]
+    function: Required[ValidatorFunction]
+    schema: Required[CoreSchema]
+    ref: str
+    extra: Any
 
 
 def function_before_schema(
-    function: ValidatorFunction, schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
+    function: ValidatorFunction, schema: CoreSchema, *, ref: str | None = None, extra: Any = None
 ) -> FunctionSchema:
-    return dict_not_none(
-        type='function', mode='before', function=function, schema=schema, validator_instance=validator_instance, ref=ref
-    )
+    return dict_not_none(type='function', mode='before', function=function, schema=schema, ref=ref, extra=extra)
 
 
 def function_after_schema(
-    function: ValidatorFunction, schema: CoreSchema, *, validator_instance: Any | None = None, ref: str | None = None
+    schema: CoreSchema, function: ValidatorFunction, *, ref: str | None = None, extra: Any = None
 ) -> FunctionSchema:
-    return dict_not_none(
-        type='function', mode='after', function=function, schema=schema, validator_instance=validator_instance, ref=ref
-    )
+    return dict_not_none(type='function', mode='after', function=function, schema=schema, ref=ref, extra=extra)
 
 
 class CallableValidator(Protocol):
@@ -538,43 +591,33 @@ class WrapValidatorFunction(Protocol):
         ...
 
 
-class FunctionWrapSchema(TypedDict):
-    type: Literal['function']
-    mode: Literal['wrap']
-    function: WrapValidatorFunction
-    schema: CoreSchema
-    # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
-    validator_instance: NotRequired[Any]
-    ref: NotRequired[str]
+class FunctionWrapSchema(TypedDict, total=False):
+    type: Required[Literal['function']]
+    mode: Required[Literal['wrap']]
+    function: Required[WrapValidatorFunction]
+    schema: Required[CoreSchema]
+    ref: str
+    extra: Any
 
 
 def function_wrap_schema(
-    function: WrapValidatorFunction,
-    schema: CoreSchema,
-    *,
-    validator_instance: Any | None = None,
-    ref: str | None = None,
+    function: WrapValidatorFunction, schema: CoreSchema, *, ref: str | None = None, extra: Any = None
 ) -> FunctionWrapSchema:
-    return dict_not_none(
-        type='function', mode='wrap', function=function, schema=schema, validator_instance=validator_instance, ref=ref
-    )
+    return dict_not_none(type='function', mode='wrap', function=function, schema=schema, ref=ref, extra=extra)
 
 
-class FunctionPlainSchema(TypedDict):
-    type: Literal['function']
-    mode: Literal['plain']
-    function: ValidatorFunction
-    # validator_instance is used by pydantic for progressively preparing the function, ignored by pydantic-core
-    validator_instance: NotRequired[Any]
-    ref: NotRequired[str]
+class FunctionPlainSchema(TypedDict, total=False):
+    type: Required[Literal['function']]
+    mode: Required[Literal['plain']]
+    function: Required[ValidatorFunction]
+    ref: str
+    extra: Any
 
 
 def function_plain_schema(
-    function: ValidatorFunction, *, validator_instance: Any | None = None, ref: str | None = None
+    function: ValidatorFunction, *, ref: str | None = None, extra: Any = None
 ) -> FunctionPlainSchema:
-    return dict_not_none(
-        type='function', mode='plain', function=function, validator_instance=validator_instance, ref=ref
-    )
+    return dict_not_none(type='function', mode='plain', function=function, ref=ref, extra=extra)
 
 
 class WithDefaultSchema(TypedDict, total=False):
@@ -585,6 +628,7 @@ class WithDefaultSchema(TypedDict, total=False):
     on_error: Literal['raise', 'omit', 'default']  # default: 'raise'
     strict: bool
     ref: str
+    extra: Any
 
 
 Omitted = object()
@@ -598,9 +642,16 @@ def with_default_schema(
     on_error: Literal['raise', 'omit', 'default'] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> WithDefaultSchema:
     s = dict_not_none(
-        type='default', schema=schema, default_factory=default_factory, on_error=on_error, strict=strict, ref=ref
+        type='default',
+        schema=schema,
+        default_factory=default_factory,
+        on_error=on_error,
+        strict=strict,
+        ref=ref,
+        extra=extra,
     )
     if default is not Omitted:
         s['default'] = default
@@ -612,10 +663,13 @@ class NullableSchema(TypedDict, total=False):
     schema: Required[CoreSchema]
     strict: bool
     ref: str
+    extra: Any
 
 
-def nullable_schema(schema: CoreSchema, *, strict: bool | None = None, ref: str | None = None) -> NullableSchema:
-    return dict_not_none(type='nullable', schema=schema, strict=strict, ref=ref)
+def nullable_schema(
+    schema: CoreSchema, *, strict: bool | None = None, ref: str | None = None, extra: Any = None
+) -> NullableSchema:
+    return dict_not_none(type='nullable', schema=schema, strict=strict, ref=ref, extra=extra)
 
 
 class CustomError(TypedDict, total=False):
@@ -632,6 +686,7 @@ class UnionSchema(TypedDict, total=False):
     custom_error_context: Dict[str, Union[str, int, float]]
     strict: bool
     ref: str
+    extra: Any
 
 
 def union_schema(
@@ -641,6 +696,7 @@ def union_schema(
     custom_error_context: dict[str, str | int] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> UnionSchema:
     return dict_not_none(
         type='union',
@@ -650,18 +706,22 @@ def union_schema(
         custom_error_context=custom_error_context,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
-class TaggedUnionSchema(TypedDict):
-    type: Literal['tagged-union']
-    choices: Dict[str, CoreSchema]
-    discriminator: Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
-    custom_error_kind: NotRequired[str]
-    custom_error_message: NotRequired[str]
-    custom_error_context: NotRequired[Dict[str, Union[str, int, float]]]
-    strict: NotRequired[bool]
-    ref: NotRequired[str]
+class TaggedUnionSchema(TypedDict, total=False):
+    type: Required[Literal['tagged-union']]
+    choices: Required[Dict[str, CoreSchema]]
+    discriminator: Required[
+        Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
+    ]
+    custom_error_kind: str
+    custom_error_message: str
+    custom_error_context: Dict[str, Union[str, int, float]]
+    strict: bool
+    ref: str
+    extra: Any
 
 
 def tagged_union_schema(
@@ -673,6 +733,7 @@ def tagged_union_schema(
     custom_error_context: dict[str, int | str | float] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> TaggedUnionSchema:
     return dict_not_none(
         type='tagged-union',
@@ -683,17 +744,19 @@ def tagged_union_schema(
         custom_error_context=custom_error_context,
         strict=strict,
         ref=ref,
+        extra=extra,
     )
 
 
-class ChainSchema(TypedDict):
-    type: Literal['chain']
-    steps: List[CoreSchema]
-    ref: NotRequired[str]
+class ChainSchema(TypedDict, total=False):
+    type: Required[Literal['chain']]
+    steps: Required[List[CoreSchema]]
+    ref: str
+    extra: Any
 
 
-def chain_schema(*steps: CoreSchema, ref: str | None = None) -> ChainSchema:
-    return dict_not_none(type='chain', steps=steps, ref=ref)
+def chain_schema(*steps: CoreSchema, ref: str | None = None, extra: Any = None) -> ChainSchema:
+    return dict_not_none(type='chain', steps=steps, ref=ref, extra=extra)
 
 
 class TypedDictField(TypedDict, total=False):
@@ -720,6 +783,7 @@ class TypedDictSchema(TypedDict, total=False):
     extra_validator: CoreSchema
     return_fields_set: bool
     ref: str
+    extra: Any
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: Literal['allow', 'forbid', 'ignore']
     total: bool  # default: True
@@ -734,6 +798,7 @@ def typed_dict_schema(
     extra_validator: CoreSchema | None = None,
     return_fields_set: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
     extra_behavior: Literal['allow', 'forbid', 'ignore'] | None = None,
     total: bool | None = None,
     populate_by_name: bool | None = None,
@@ -746,6 +811,7 @@ def typed_dict_schema(
         extra_validator=extra_validator,
         return_fields_set=return_fields_set,
         ref=ref,
+        extra=extra,
         extra_behavior=extra_behavior,
         total=total,
         populate_by_name=populate_by_name,
@@ -753,14 +819,15 @@ def typed_dict_schema(
     )
 
 
-class NewClassSchema(TypedDict):
-    type: Literal['new-class']
-    cls: Type[Any]
-    schema: CoreSchema
-    call_after_init: NotRequired[str]
-    strict: NotRequired[bool]
-    ref: NotRequired[str]
-    config: NotRequired[CoreConfig]
+class NewClassSchema(TypedDict, total=False):
+    type: Required[Literal['new-class']]
+    cls: Required[Type[Any]]
+    schema: Required[CoreSchema]
+    call_after_init: str
+    strict: bool
+    ref: str
+    extra: Any
+    config: CoreConfig
 
 
 def new_class_schema(
@@ -770,6 +837,7 @@ def new_class_schema(
     call_after_init: str | None = None,
     strict: bool | None = None,
     ref: str | None = None,
+    extra: Any = None,
     config: CoreConfig | None = None,
 ) -> NewClassSchema:
     return dict_not_none(
@@ -801,6 +869,7 @@ class ArgumentsSchema(TypedDict, total=False):
     var_args_schema: CoreSchema
     var_kwargs_schema: CoreSchema
     ref: str
+    extra: Any
 
 
 def arguments_schema(
@@ -809,6 +878,7 @@ def arguments_schema(
     var_args_schema: CoreSchema | None = None,
     var_kwargs_schema: CoreSchema | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> ArgumentsSchema:
     return dict_not_none(
         type='arguments',
@@ -817,15 +887,17 @@ def arguments_schema(
         var_args_schema=var_args_schema,
         var_kwargs_schema=var_kwargs_schema,
         ref=ref,
+        extra=extra,
     )
 
 
-class CallSchema(TypedDict):
-    type: Literal['call']
-    arguments_schema: CoreSchema
-    function: Callable[..., Any]
-    return_schema: NotRequired[CoreSchema]
-    ref: NotRequired[str]
+class CallSchema(TypedDict, total=False):
+    type: Required[Literal['call']]
+    arguments_schema: Required[CoreSchema]
+    function: Required[Callable[..., Any]]
+    return_schema: CoreSchema
+    ref: str
+    extra: Any
 
 
 def call_schema(
@@ -834,28 +906,30 @@ def call_schema(
     *,
     return_schema: CoreSchema | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> CallSchema:
     return dict_not_none(
-        type='call', arguments_schema=arguments, function=function, return_schema=return_schema, ref=ref
+        type='call', arguments_schema=arguments, function=function, return_schema=return_schema, ref=ref, extra=extra
     )
 
 
-class RecursiveReferenceSchema(TypedDict):
-    type: Literal['recursive-ref']
-    schema_ref: str
+class RecursiveReferenceSchema(TypedDict, total=False):
+    type: Required[Literal['recursive-ref']]
+    schema_ref: Required[str]
 
 
 def recursive_reference_schema(schema_ref: str) -> RecursiveReferenceSchema:
     return {'type': 'recursive-ref', 'schema_ref': schema_ref}
 
 
-class CustomErrorSchema(TypedDict):
-    type: Literal['custom_error']
-    schema: CoreSchema
-    custom_error_kind: str
-    custom_error_message: NotRequired[str]
-    custom_error_context: NotRequired[Dict[str, Union[str, int, float]]]
-    ref: NotRequired[str]
+class CustomErrorSchema(TypedDict, total=False):
+    type: Required[Literal['custom_error']]
+    schema: Required[CoreSchema]
+    custom_error_kind: Required[str]
+    custom_error_message: str
+    custom_error_context: Dict[str, Union[str, int, float]]
+    ref: str
+    extra: Any
 
 
 def custom_error_schema(
@@ -865,6 +939,7 @@ def custom_error_schema(
     custom_error_message: str | None = None,
     custom_error_context: dict[str, str | int | float] | None = None,
     ref: str | None = None,
+    extra: Any = None,
 ) -> CustomErrorSchema:
     return dict_not_none(
         type='custom_error',
@@ -873,17 +948,19 @@ def custom_error_schema(
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
         ref=ref,
+        extra=extra,
     )
 
 
-class JsonSchema(TypedDict):
-    type: Literal['json']
-    schema: NotRequired[CoreSchema]
-    ref: NotRequired[str]
+class JsonSchema(TypedDict, total=False):
+    type: Required[Literal['json']]
+    schema: CoreSchema
+    ref: str
+    extra: Any
 
 
-def json_schema(schema: CoreSchema | None = None, *, ref: str | None = None) -> JsonSchema:
-    return dict_not_none(type='json', schema=schema, ref=ref)
+def json_schema(schema: CoreSchema | None = None, *, ref: str | None = None, extra: Any = None) -> JsonSchema:
+    return dict_not_none(type='json', schema=schema, ref=ref, extra=extra)
 
 
 CoreSchema = Union[
