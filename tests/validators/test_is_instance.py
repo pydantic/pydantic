@@ -1,3 +1,5 @@
+from collections import deque
+
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
@@ -183,3 +185,15 @@ def test_json_mask():
     assert 'json_types:0' in plain_repr(SchemaValidator(core_schema.is_instance_schema(str, json_types=set())))
     v = SchemaValidator(core_schema.is_instance_schema(str, json_types={'list', 'dict'}))
     assert 'json_types:6' in plain_repr(v)  # 2 + 4
+
+
+def test_json_function():
+    v = SchemaValidator(core_schema.is_instance_schema(deque, json_types={'list'}, json_function=deque))
+    output = v.validate_python(deque([1, 2, 3]))
+    assert output == deque([1, 2, 3])
+    output = v.validate_json('[1, 2, 3]')
+    assert output == deque([1, 2, 3])
+    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[kind=is_instance_of,'):
+        v.validate_python([1, 2, 3])
+    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[kind=is_instance_of,'):
+        v.validate_json('{"1": 2}')

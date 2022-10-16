@@ -2,20 +2,24 @@ use pyo3::prelude::*;
 use pyo3::types::PyType;
 
 use crate::errors::{ErrorKind, InputValue, LocItem, ValError, ValResult};
-use crate::input::JsonType;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
+use super::input_abstract::InputType;
 use super::parse_json::JsonArray;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
     EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericIterator, GenericMapping,
-    Input, JsonArgs, JsonInput,
+    Input, JsonArgs, JsonInput, JsonType,
 };
 
 impl<'a> Input<'a> for JsonInput {
+    fn get_type(&self) -> &'static InputType {
+        &InputType::Json
+    }
+
     /// This is required by since JSON object keys are always strings, I don't think it can be called
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn as_loc_item(&self) -> LocItem {
@@ -299,6 +303,10 @@ impl<'a> Input<'a> for JsonInput {
 
 /// Required for Dict keys so the string can behave like an Input
 impl<'a> Input<'a> for String {
+    fn get_type(&self) -> &'static InputType {
+        &InputType::String
+    }
+
     fn as_loc_item(&self) -> LocItem {
         self.to_string().into()
     }
