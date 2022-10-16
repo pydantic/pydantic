@@ -87,7 +87,7 @@ def test_validator_instance_plain():
             return f'{input_value} {self.foo} {self.bar}'
 
     c = CustomValidator()
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'validator_instance': c, 'function': c.validate})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'extra': {'instance': c}, 'function': c.validate})
     c.foo += 1
 
     assert v.validate_python('input value') == 'input value 43 before'
@@ -109,7 +109,7 @@ def test_validator_instance_after():
         {
             'type': 'function',
             'mode': 'after',
-            'validator_instance': c,
+            'extra': {'instance': c},
             'function': c.validate,
             'schema': {'type': 'str'},
         }
