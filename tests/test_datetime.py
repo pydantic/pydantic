@@ -391,8 +391,6 @@ def test_future_date_validation_success(value, result):
     (
         date.today(),
         date.today() - timedelta(1),
-        # datetime.today(),
-        # datetime.today() - timedelta(1),
         '1996-01-22',
     ),
 )

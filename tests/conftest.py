@@ -22,7 +22,7 @@ passing_files = {
     'test_networks_ipaddress.py',
     'test_color.py',
     'test_types.py',
-    'test_datetime_parse.py',
+    'test_datetime.py',
     'test_types_payment_card_number.py',
 }
 

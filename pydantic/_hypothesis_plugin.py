@@ -327,7 +327,7 @@ def resolve_conint(cls):  # type: ignore[no-untyped-def]
     return st.integers(min_value, max_value).map(lambda x: x * cls.multiple_of)
 
 
-@resolves(pydantic.ConstrainedDate)
+# @resolves(pydantic.ConstrainedDate)
 def resolve_condate(cls):  # type: ignore[no-untyped-def]
     if cls.ge is not None:
         assert cls.gt is None, 'Set `gt` or `ge`, but not both'

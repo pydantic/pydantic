@@ -50,7 +50,6 @@ from pydantic.types import (
     UUID3,
     UUID4,
     UUID5,
-    ConstrainedDate,
     DirectoryPath,
     FilePath,
     Json,
@@ -728,7 +727,6 @@ def test_date_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (ConstrainedDate, {}),
         (condate(), {}),
         (
             condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
