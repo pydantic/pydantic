@@ -10,7 +10,7 @@ use pyo3::types::{
 };
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
-use pyo3::{intern, AsPyPointer};
+use pyo3::{intern, AsPyPointer, PyTypeInfo};
 
 use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
 
@@ -142,7 +142,11 @@ impl<'a> Input<'a> for PyAny {
 
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
-            Ok(py_str.into())
+            if is_builtin_str(py_str) {
+                Ok(py_str.into())
+            } else {
+                Err(ValError::new(ErrorKind::StringSubType, self))
+            }
         } else {
             Err(ValError::new(ErrorKind::StringType, self))
         }
@@ -150,7 +154,13 @@ impl<'a> Input<'a> for PyAny {
 
     fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = self.cast_as::<PyString>() {
-            Ok(py_str.into())
+            if is_builtin_str(py_str) {
+                Ok(py_str.into())
+            } else {
+                // force to a rust string to make sure behaviour is consistent whether or not we go via a
+                // rust string in StrConstrainedValidator - e.g. to_lower
+                Ok(py_string_str(py_str)?.into())
+            }
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
                 Ok(s) => s,
@@ -671,4 +681,8 @@ fn is_deque(v: &PyAny) -> bool {
 fn import_type(py: Python, module: &str, attr: &str) -> PyResult<Py<PyType>> {
     let obj = py.import(module)?.getattr(attr)?;
     Ok(obj.cast_as::<PyType>()?.into())
+}
+
+fn is_builtin_str(py_str: &PyString) -> bool {
+    py_str.get_type().is(PyString::type_object(py_str.py()))
 }

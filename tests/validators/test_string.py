@@ -186,3 +186,44 @@ def test_regex_error():
 def test_default_validator():
     v = SchemaValidator(core_schema.string_schema(strict=True, to_lower=False), {'str_strip_whitespace': False})
     assert plain_repr(v) == 'SchemaValidator(name="str",validator=Str(StrValidator{strict:true}),slots=[])'
+
+
+@pytest.fixture(scope='session', name='FruitEnum')
+def fruit_enum_fixture():
+    from enum import Enum
+
+    class FruitEnum(str, Enum):
+        pear = 'pear'
+        banana = 'banana'
+
+    return FruitEnum
+
+
+@pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)
+def test_strict_subclass(FruitEnum, kwargs):
+    v = SchemaValidator(core_schema.string_schema(strict=True, **kwargs))
+    assert v.validate_python('foobar') == 'foobar'
+    with pytest.raises(ValidationError, match='kind=string_type,'):
+        v.validate_python(b'foobar')
+    with pytest.raises(ValidationError, match='kind=string_sub_type,') as exc_info:
+        v.validate_python(FruitEnum.pear)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'string_sub_type',
+            'loc': [],
+            'message': 'Input should be a string, not an instance of a subclass of str',
+            'input_value': FruitEnum.pear,
+        }
+    ]
+
+
+@pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)
+def test_lax_subclass(FruitEnum, kwargs):
+    v = SchemaValidator(core_schema.string_schema(**kwargs))
+    assert v.validate_python('foobar') == 'foobar'
+    assert v.validate_python(b'foobar') == 'foobar'
+    p = v.validate_python(FruitEnum.pear)
+    assert p == 'pear'
+    assert type(p) is str
+    assert repr(p) == "'pear'"
