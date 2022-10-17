@@ -1,3 +1,4 @@
+import decimal
 import sys
 from typing import Any, TypedDict
 
@@ -54,17 +55,19 @@ class ValidationError(ValueError):
 class PydanticCustomError(ValueError):
     kind: str
     message_template: str
-    context: 'dict[str, str | int] | None'
+    context: 'dict[str, Any] | None'
 
-    def __init__(self, kind: str, message_template: str, context: 'dict[str, str | int] | None' = None) -> None: ...
+    def __init__(self, kind: str, message_template: str, context: 'dict[str, Any] | None' = None) -> None: ...
     def message(self) -> str: ...
 
 class PydanticKindError(ValueError):
     kind: ErrorKind
     message_template: str
-    context: 'dict[str, str | int] | None'
+    context: 'dict[str, str | int | float] | None'
 
-    def __init__(self, kind: ErrorKind, context: 'dict[str, str | int] | None' = None) -> None: ...
+    def __init__(
+        self, kind: ErrorKind, context: 'dict[str, str | int | float | decimal.Decimal] | None' = None
+    ) -> None: ...
     def message(self) -> str: ...
 
 class PydanticOmit(Exception):
