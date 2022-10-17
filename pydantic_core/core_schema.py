@@ -210,6 +210,10 @@ class DateSchema(TypedDict, total=False):
     ge: date
     lt: date
     gt: date
+    now_op: Literal['past', 'future']
+    # defaults to current local utc offset from `time.localtime().tm_gmtoff`
+    # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
+    now_utc_offset: int
     ref: str
     extra: Any
 
@@ -222,9 +226,22 @@ def date_schema(
     lt: date | None = None,
     gt: date | None = None,
     ref: str | None = None,
+    now_op: Literal['past', 'future'] | None = None,
+    now_utc_offset: int | None = None,
     extra: Any = None,
 ) -> DateSchema:
-    return dict_not_none(type='date', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, extra=extra)
+    return dict_not_none(
+        type='date',
+        strict=strict,
+        le=le,
+        ge=ge,
+        lt=lt,
+        gt=gt,
+        now_op=now_op,
+        now_utc_offset=now_utc_offset,
+        ref=ref,
+        extra=extra,
+    )
 
 
 class TimeSchema(TypedDict, total=False):
@@ -258,6 +275,10 @@ class DatetimeSchema(TypedDict, total=False):
     ge: datetime
     lt: datetime
     gt: datetime
+    now_op: Literal['past', 'future']
+    # defaults to current local utc offset from `time.localtime().tm_gmtoff`
+    # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
+    now_utc_offset: int
     ref: str
     extra: Any
 
@@ -269,10 +290,23 @@ def datetime_schema(
     ge: datetime | None = None,
     lt: datetime | None = None,
     gt: datetime | None = None,
+    now_op: Literal['past', 'future'] | None = None,
+    now_utc_offset: int | None = None,
     ref: str | None = None,
     extra: Any = None,
 ) -> DatetimeSchema:
-    return dict_not_none(type='datetime', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, extra=extra)
+    return dict_not_none(
+        type='datetime',
+        strict=strict,
+        le=le,
+        ge=ge,
+        lt=lt,
+        gt=gt,
+        now_op=now_op,
+        now_utc_offset=now_utc_offset,
+        ref=ref,
+        extra=extra,
+    )
 
 
 class TimedeltaSchema(TypedDict, total=False):
@@ -1064,11 +1098,15 @@ ErrorKind = Literal[
     'date_parsing',
     'date_from_datetime_parsing',
     'date_from_datetime_inexact',
+    'date_past',
+    'date_future',
     'time_type',
     'time_parsing',
     'datetime_type',
     'datetime_parsing',
     'datetime_object_invalid',
+    'datetime_past',
+    'datetime_future',
     'time_delta_type',
     'time_delta_parsing',
     'frozen_set_type',

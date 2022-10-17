@@ -100,6 +100,7 @@ await micropip.install([
     'dirty-equals',
     'hypothesis',
     'pytest-speed',
+    'pytest-mock',
     'file:${wheel_path}',
 ])
 importlib.invalidate_caches()

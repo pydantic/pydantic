@@ -1,7 +1,7 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyTime, PyTzInfo};
-use speedate::{Date, DateTime, Duration, Time};
+use speedate::{Date, DateTime, Duration, ParseError, Time};
 use std::borrow::Cow;
 use strum::EnumMessage;
 
@@ -305,7 +305,21 @@ pub fn int_as_datetime<'a>(
     }
 }
 
+macro_rules! nan_check {
+    ($input:ident, $float_value:ident, $error_kind:ident) => {
+        if $float_value.is_nan() {
+            return Err(ValError::new(
+                ErrorKind::$error_kind {
+                    error: Cow::Borrowed("NaN values not permitted"),
+                },
+                $input,
+            ));
+        }
+    };
+}
+
 pub fn float_as_datetime<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult<EitherDateTime> {
+    nan_check!(input, timestamp, DatetimeParsing);
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // checking for extra digits in microseconds is unreliable with large floats,
     // so we just round to the nearest microsecond
@@ -361,39 +375,46 @@ pub fn int_as_time<'a>(
 }
 
 pub fn float_as_time<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult<EitherTime> {
+    nan_check!(input, timestamp, TimeParsing);
     let microseconds = timestamp.fract().abs() * 1_000_000.0;
     // round for same reason as above
     int_as_time(input, timestamp.floor() as i64, microseconds.round() as u32)
 }
 
+fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError<'a> {
+    ValError::new(
+        ErrorKind::TimeDeltaParsing {
+            error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+        },
+        input,
+    )
+}
+
 pub fn bytes_as_timedelta<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> ValResult<'a, EitherTimedelta<'a>> {
     match Duration::parse_bytes(bytes) {
         Ok(dt) => Ok(dt.into()),
-        Err(err) => Err(ValError::new(
-            ErrorKind::TimeDeltaParsing {
-                error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
-            },
-            input,
-        )),
+        Err(err) => Err(map_timedelta_err(input, err)),
     }
 }
 
-pub fn int_as_duration(total_seconds: i64) -> Duration {
+pub fn int_as_duration<'a>(input: &'a impl Input<'a>, total_seconds: i64) -> ValResult<Duration> {
     let positive = total_seconds >= 0;
     let total_seconds = total_seconds.unsigned_abs();
     // we can safely unwrap here since we've guaranteed seconds and microseconds can't cause overflow
     let days = (total_seconds / 86400) as u32;
     let seconds = (total_seconds % 86400) as u32;
-    Duration::new(positive, days, seconds, 0).unwrap()
+    Duration::new(positive, days, seconds, 0).map_err(|err| map_timedelta_err(input, err))
 }
 
-pub fn float_as_duration(total_seconds: f64) -> Duration {
+pub fn float_as_duration<'a>(input: &'a impl Input<'a>, total_seconds: f64) -> ValResult<Duration> {
+    nan_check!(input, total_seconds, TimeDeltaParsing);
     let positive = total_seconds >= 0_f64;
     let total_seconds = total_seconds.abs();
     let microsecond = total_seconds.fract() * 1_000_000.0;
     let days = (total_seconds / 86400f64) as u32;
     let seconds = total_seconds as u64 % 86400;
-    Duration::new(positive, days, seconds as u32, microsecond.round() as u32).unwrap()
+    Duration::new(positive, days, seconds as u32, microsecond.round() as u32)
+        .map_err(|err| map_timedelta_err(input, err))
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core", extends = PyTzInfo)]
