@@ -237,6 +237,10 @@ pub enum ErrorKind {
     },
     #[strum(message = "Datetimes provided to dates should have zero time - e.g. be exact dates")]
     DateFromDatetimeInexact,
+    #[strum(message = "Date should be in the past")]
+    DatePast,
+    #[strum(message = "Date should be in the future")]
+    DateFuture,
     // ---------------------
     // date errors
     #[strum(message = "Input should be a valid time")]
@@ -257,6 +261,10 @@ pub enum ErrorKind {
     DatetimeObjectInvalid {
         error: String,
     },
+    #[strum(message = "Datetime should be in the past")]
+    DatetimePast,
+    #[strum(message = "Datetime should be in the future")]
+    DatetimeFuture,
     // ---------------------
     // timedelta errors
     #[strum(message = "Input should be a valid timedelta")]

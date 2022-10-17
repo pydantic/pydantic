@@ -586,9 +586,9 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_timedelta(self, py_bytes.as_bytes())
         } else if let Ok(int) = self.extract::<i64>() {
-            Ok(int_as_duration(int).into())
+            Ok(int_as_duration(self, int)?.into())
         } else if let Ok(float) = self.extract::<f64>() {
-            Ok(float_as_duration(float).into())
+            Ok(float_as_duration(self, float)?.into())
         } else {
             Err(ValError::new(ErrorKind::TimeDeltaType, self))
         }

@@ -294,8 +294,8 @@ impl<'a> Input<'a> for JsonInput {
     fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
         match self {
             JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
-            JsonInput::Int(v) => Ok(int_as_duration(*v).into()),
-            JsonInput::Float(v) => Ok(float_as_duration(*v).into()),
+            JsonInput::Int(v) => Ok(int_as_duration(self, *v)?.into()),
+            JsonInput::Float(v) => Ok(float_as_duration(self, *v)?.into()),
             _ => Err(ValError::new(ErrorKind::TimeDeltaType, self)),
         }
     }

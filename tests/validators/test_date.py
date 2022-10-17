@@ -1,11 +1,11 @@
 import re
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -35,13 +35,35 @@ from ..conftest import Err, PyAndJson
         ),
         pytest.param(True, Err('Input should be a valid date'), id='bool'),
         pytest.param(time(1, 2, 3), Err('Input should be a valid date [kind=date_type'), id='time'),
+        pytest.param(
+            float('nan'),
+            Err('Input should be a valid date or datetime, NaN values not permitted [kind=date_from_datetime_parsing,'),
+            id='nan',
+        ),
+        pytest.param(
+            float('inf'),
+            Err(
+                'Input should be a valid date or datetime, dates after 9999 are not supported as unix timestamps '
+                '[kind=date_from_datetime_parsing,'
+            ),
+            id='inf',
+        ),
+        pytest.param(
+            float('-inf'),
+            Err(
+                'Input should be a valid date or datetime, dates before 1600 are not supported as unix timestamps '
+                '[kind=date_from_datetime_parsing,'
+            ),
+            id='-inf',
+        ),
     ],
 )
 def test_date(input_value, expected):
     v = SchemaValidator({'type': 'date'})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_python(input_value)
+            result = v.validate_python(input_value)
+            print(f'input_value={input_value} result={result}')
         assert v.isinstance_python(input_value) is False
     else:
         output = v.validate_python(input_value)
@@ -200,3 +222,64 @@ def test_union():
     v = SchemaValidator({'type': 'union', 'choices': [{'type': 'date'}, {'type': 'str'}]})
     assert v.validate_python('2022-01-02') == '2022-01-02'
     assert v.validate_python(date(2022, 1, 2)) == date(2022, 1, 2)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('2022-06-08', date(2022, 6, 8)),
+        (1654646400, date(2022, 6, 8)),
+        ('2068-06-08', Err('Date should be in the past [kind=date_past,')),
+        (3105734400, Err('Date should be in the past [kind=date_past,')),
+    ],
+)
+def test_date_past(py_and_json: PyAndJson, input_value, expected):
+    # now_utc_offset must be set for all these tests to allow mocking in test_datetime.py!
+    v = py_and_json(core_schema.date_schema(now_op='past', now_utc_offset=0))
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+        assert v.isinstance_test(input_value) is False
+    else:
+        output = v.validate_test(input_value)
+        assert output == expected
+        assert v.isinstance_test(input_value) is True
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('2022-06-08', Err('Date should be in the future [kind=date_future,')),
+        (1654646400, Err('Date should be in the future [kind=date_future,')),
+        ('2068-06-08', date(2068, 6, 8)),
+        (3105734400, date(2068, 6, 1)),
+    ],
+)
+def test_date_future(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json(core_schema.date_schema(now_op='future', now_utc_offset=0))
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+        assert v.isinstance_test(input_value) is False
+    else:
+        output = v.validate_test(input_value)
+        assert output == expected
+        assert v.isinstance_test(input_value) is True
+
+
+def test_date_past_future_today():
+    v = SchemaValidator(core_schema.date_schema(now_op='past', now_utc_offset=0))
+    today = datetime.utcnow().replace(tzinfo=timezone.utc).date()
+    assert v.isinstance_python(today) is False
+    assert v.isinstance_python(today - timedelta(days=1)) is True
+    assert v.isinstance_python(today + timedelta(days=1)) is False
+
+    v = SchemaValidator(core_schema.date_schema(now_op='future', now_utc_offset=0))
+    assert v.isinstance_python(today) is False
+    assert v.isinstance_python(today - timedelta(days=1)) is False
+    assert v.isinstance_python(today + timedelta(days=1)) is True
+
+
+def test_offset_too_large():
+    with pytest.raises(SchemaError, match=r'Input should be less than 86400 \[kind=less_than,'):
+        SchemaValidator(core_schema.date_schema(now_op='past', now_utc_offset=24 * 3600))

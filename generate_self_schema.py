@@ -116,6 +116,9 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:
 
             schema = get_schema(field_type)
 
+        # now_utc_offset is an int that must be in the range -24 hours to +24 hours, we manually add a constraint here
+        if field_name == 'now_utc_offset':
+            schema.update(gt=-86_400, lt=86_400)
         fields[field_name] = {'schema': schema, 'required': required}
 
     return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}

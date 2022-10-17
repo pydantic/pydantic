@@ -2,11 +2,13 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDict, PyString};
 use speedate::{Date, Time};
+use strum::EnumMessage;
 
-use crate::build_tools::{is_strict, SchemaDict};
+use crate::build_tools::{is_strict, py_error_type, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
 use crate::input::{EitherDate, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::validators::datetime::{NowConstraint, NowOp};
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
@@ -14,14 +16,6 @@ use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 pub struct DateValidator {
     strict: bool,
     constraints: Option<DateConstraints>,
-}
-
-#[derive(Debug, Clone)]
-struct DateConstraints {
-    le: Option<Date>,
-    lt: Option<Date>,
-    ge: Option<Date>,
-    gt: Option<Date>,
 }
 
 impl BuildValidator for DateValidator {
@@ -32,23 +26,9 @@ impl BuildValidator for DateValidator {
         config: Option<&PyDict>,
         _build_context: &mut BuildContext,
     ) -> PyResult<CombinedValidator> {
-        let py = schema.py();
-        let has_constraints = schema.get_item(intern!(py, "le")).is_some()
-            || schema.get_item(intern!(py, "lt")).is_some()
-            || schema.get_item(intern!(py, "ge")).is_some()
-            || schema.get_item(intern!(py, "gt")).is_some();
-
         Ok(Self {
             strict: is_strict(schema, config)?,
-            constraints: match has_constraints {
-                true => Some(DateConstraints {
-                    le: convert_pydate(schema, intern!(py, "le"))?,
-                    lt: convert_pydate(schema, intern!(py, "lt"))?,
-                    ge: convert_pydate(schema, intern!(py, "ge"))?,
-                    gt: convert_pydate(schema, intern!(py, "gt"))?,
-                }),
-                false => None,
-            },
+            constraints: DateConstraints::from_py(schema)?,
         }
         .into())
     }
@@ -96,6 +76,24 @@ impl Validator for DateValidator {
             check_constraint!(lt, LessThan);
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
+
+            if let Some(ref today_constraint) = constraints.today {
+                let offset = today_constraint.utc_offset(py)?;
+                let today = Date::today(offset).map_err(|e| {
+                    py_error_type!("Date::today() error: {}", e.get_documentation().unwrap_or("unknown"))
+                })?;
+                // `if let Some(c)` to match behaviour of gt/lt/le/ge
+                if let Some(c) = raw_date.partial_cmp(&today) {
+                    let date_compliant = today_constraint.op.compare(c);
+                    if !date_compliant {
+                        let kind = match today_constraint.op {
+                            NowOp::Past => ErrorKind::DatePast,
+                            NowOp::Future => ErrorKind::DateFuture,
+                        };
+                        return Err(ValError::new(kind, input));
+                    }
+                }
+            }
         }
         Ok(date.try_into_py(py)?)
     }
@@ -147,6 +145,33 @@ fn date_from_datetime<'data>(
         Ok(EitherDate::Raw(dt.date))
     } else {
         Err(ValError::new(ErrorKind::DateFromDatetimeInexact, input))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DateConstraints {
+    le: Option<Date>,
+    lt: Option<Date>,
+    ge: Option<Date>,
+    gt: Option<Date>,
+    today: Option<NowConstraint>,
+}
+
+impl DateConstraints {
+    fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+        let py = schema.py();
+        let c = Self {
+            le: convert_pydate(schema, intern!(py, "le"))?,
+            lt: convert_pydate(schema, intern!(py, "lt"))?,
+            ge: convert_pydate(schema, intern!(py, "ge"))?,
+            gt: convert_pydate(schema, intern!(py, "gt"))?,
+            today: NowConstraint::from_py(schema)?,
+        };
+        if c.le.is_some() || c.lt.is_some() || c.ge.is_some() || c.gt.is_some() || c.today.is_some() {
+            Ok(Some(c))
+        } else {
+            Ok(None)
+        }
     }
 }
 
