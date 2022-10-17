@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 import pytz
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -28,13 +28,17 @@ from ..conftest import Err, PyAndJson
         (Decimal('1654646400.1234568'), datetime(2022, 6, 8, 0, 0, 0, 123457)),
         (253_402_300_800_000, Err('should be a valid datetime, dates after 9999 are not supported as unix timestamps')),
         (-20_000_000_000, Err('should be a valid datetime, dates before 1600 are not supported as unix timestamps')),
+        (float('nan'), Err('Input should be a valid datetime, NaN values not permitted [kind=datetime_parsing,')),
+        (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
+        (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
     ],
 )
 def test_datetime(input_value, expected):
     v = SchemaValidator({'type': 'datetime'})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_python(input_value)
+            result = v.validate_python(input_value)
+            print(f'input_value={input_value} result={result}')
     else:
         output = v.validate_python(input_value)
         assert output == expected
@@ -259,3 +263,106 @@ def test_union():
 def test_invalid_constraint():
     with pytest.raises(SchemaError, match='datetime -> gt\n  Input should be a valid datetime'):
         SchemaValidator({'type': 'datetime', 'gt': 'foobar'})
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
+        ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
+        (1655205632, datetime(2022, 6, 14, 11, 20, 32)),
+        ('2068-06-08T12:13:14', Err('Datetime should be in the past [kind=datetime_past,')),
+        (3105730800, Err('Datetime should be in the past [kind=datetime_past,')),
+    ],
+)
+def test_datetime_past(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json(core_schema.datetime_schema(now_utc_offset=0, now_op='past'))
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        output = v.validate_test(input_value)
+        assert output == expected
+
+
+def test_datetime_past_timezone():
+    v = SchemaValidator(core_schema.datetime_schema(now_utc_offset=0, now_op='past'))
+    now_utc = datetime.utcnow().replace(tzinfo=timezone.utc) - timedelta(seconds=1)
+    assert v.isinstance_python(now_utc)
+    # "later" in the day
+    assert v.isinstance_python(now_utc.astimezone(pytz.timezone('Europe/Istanbul')))
+    # "earlier" in the day
+    assert v.isinstance_python(now_utc.astimezone(pytz.timezone('America/Los_Angeles')))
+
+    soon_utc = now_utc + timedelta(minutes=1)
+    assert not v.isinstance_python(soon_utc)
+
+    # "later" in the day
+    assert not v.isinstance_python(soon_utc.astimezone(pytz.timezone('Europe/Istanbul')))
+    # "earlier" in the day
+    assert not v.isinstance_python(soon_utc.astimezone(pytz.timezone('America/Los_Angeles')))
+
+    # input value is timezone naive, so we do a dumb comparison in these terms the istanbul time is later so fails
+    # wile the LA time is earlier so passes
+    assert not v.isinstance_python(soon_utc.astimezone(pytz.timezone('Europe/Istanbul')).replace(tzinfo=None))
+    assert v.isinstance_python(soon_utc.astimezone(pytz.timezone('America/Los_Angeles')).replace(tzinfo=None))
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('2068-06-08T12:13:14', datetime(2068, 6, 8, 12, 13, 14)),
+        ('2068-06-08T12:13:14Z', datetime(2068, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
+        (3105730800, datetime(2068, 5, 31, 23, 0)),
+        ('2022-06-08T12:13:14', Err('Datetime should be in the future [kind=datetime_future,')),
+        (1655205632, Err('Datetime should be in the future [kind=datetime_future,')),
+    ],
+)
+def test_datetime_future(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json(core_schema.datetime_schema(now_utc_offset=0, now_op='future'))
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        output = v.validate_test(input_value)
+        assert output == expected
+
+
+def test_datetime_future_timezone():
+    v = SchemaValidator(core_schema.datetime_schema(now_utc_offset=0, now_op='future'))
+    now_utc = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+    soon_utc = now_utc + timedelta(minutes=1)
+    assert v.isinstance_python(soon_utc)
+
+    # "later" in the day
+    assert v.isinstance_python(soon_utc.astimezone(pytz.timezone('Europe/Istanbul')))
+    # "earlier" in the day
+    assert v.isinstance_python(soon_utc.astimezone(pytz.timezone('America/Los_Angeles')))
+
+    past_utc = now_utc - timedelta(minutes=1)
+    assert not v.isinstance_python(past_utc)
+
+    # "later" in the day
+    assert not v.isinstance_python(past_utc.astimezone(pytz.timezone('Europe/Istanbul')))
+    # "earlier" in the day
+    assert not v.isinstance_python(past_utc.astimezone(pytz.timezone('America/Los_Angeles')))
+
+
+def test_mock_utc_offset_8_hours(mocker):
+    """
+    Test that mocking time.localtime() is working, note that due to caching in datetime.rs,
+    time.localtime() will return `{'tm_gmtoff': 8 * 60 * 60}` for the rest of the session.
+    """
+    mocker.patch('time.localtime', return_value=type('time.struct_time', (), {'tm_gmtoff': 8 * 60 * 60}))
+    v = SchemaValidator(core_schema.datetime_schema(now_op='future'))
+    future = datetime.utcnow() + timedelta(hours=8, minutes=1)
+    assert v.isinstance_python(future)
+
+    future = datetime.utcnow() + timedelta(hours=7, minutes=59)
+    assert not v.isinstance_python(future)
+
+
+def test_offset_too_large():
+    with pytest.raises(SchemaError, match=r'Input should be greater than -86400 \[kind=greater_than,'):
+        SchemaValidator(core_schema.datetime_schema(now_op='past', now_utc_offset=-24 * 3600))
