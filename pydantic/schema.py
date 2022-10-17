@@ -45,20 +45,7 @@ from ._internal._utils import ROOT_KEY, get_model, lenient_issubclass
 from .fields import FieldInfo
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
-from .types import (
-    SecretBytes,
-    SecretStr,
-    StrictBytes,
-    StrictStr,
-    conbytes,
-    condecimal,
-    confloat,
-    confrozenset,
-    conint,
-    conlist,
-    conset,
-    constr,
-)
+from .types import SecretBytes, SecretStr, StrictBytes, StrictStr, conbytes, condecimal, confloat, conint, constr
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -1019,26 +1006,26 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             if origin_is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
-            if issubclass(origin, List) and (
-                field_info.min_items is not None
-                or field_info.max_items is not None
-                or field_info.unique_items is not None
-            ):
-                used_constraints.update({'min_items', 'max_items', 'unique_items'})
-                return conlist(
-                    go(args[0]),
-                    min_items=field_info.min_items,
-                    max_items=field_info.max_items,
-                    unique_items=field_info.unique_items,
-                )
+            # if issubclass(origin, List) and (
+            #     field_info.min_items is not None
+            #     or field_info.max_items is not None
+            #     or field_info.unique_items is not None
+            # ):
+            #     used_constraints.update({'min_items', 'max_items', 'unique_items'})
+            #     return conlist(
+            #         go(args[0]),
+            #         min_items=field_info.min_items,
+            #         max_items=field_info.max_items,
+            #         unique_items=field_info.unique_items,
+            #     )
 
-            if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
-
-            if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            # if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
+            #     used_constraints.update({'min_items', 'max_items'})
+            #     return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            #
+            # if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items isnotNone):
+            #     used_constraints.update({'min_items', 'max_items'})
+            #     return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore

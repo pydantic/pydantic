@@ -1,17 +1,8 @@
 from __future__ import annotations as _annotations
 
 import re
-from ipaddress import (
-    IPv4Address,
-    IPv4Interface,
-    IPv4Network,
-    IPv6Address,
-    IPv6Interface,
-    IPv6Network,
-    _BaseAddress,
-    _BaseNetwork,
-)
-from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, cast, no_type_check
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from typing import TYPE_CHECKING, Annotated, Any, Collection, Generator, Match, Pattern, cast, no_type_check
 
 from pydantic_core import PydanticCustomError, core_schema
 
@@ -218,7 +209,7 @@ class AnyUrl(str):
             path=path,
             query=query,
             fragment=fragment,
-            **_kwargs,  # type: ignore[misc]
+            **_kwargs,
         )
 
         url = scheme + '://'
@@ -258,10 +249,10 @@ class AnyUrl(str):
         )
 
     @classmethod
-    def validate(cls, url: str, **kwargs) -> str | AnyUrl:
-        if url.__class__ == cls:
-            return url
-
+    def validate(cls, __input_value: str, **_kwargs: Any) -> str | AnyUrl:
+        if __input_value.__class__ == cls:
+            return __input_value
+        url = __input_value
         m = cls._match_url(url)
         # the regex should always match, if it doesn't please report with details of the URL tried
         assert m, 'URL regex failed unexpectedly'
@@ -339,7 +330,7 @@ class AnyUrl(str):
     def validate_host(cls, parts: 'Parts') -> tuple[str, str | None, str, bool]:
         tld, host_type, rebuild = None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
-            host = parts[f]  # type: ignore[literal-required]
+            host = parts[f]
             if host:
                 host_type = f
                 break
@@ -379,13 +370,13 @@ class AnyUrl(str):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {}
+        return {}  # type: ignore[return-value]
 
     @classmethod
     def apply_default_parts(cls, parts: 'Parts') -> 'Parts':
         for key, value in cls.get_default_parts(parts).items():
-            if not parts[key]:  # type: ignore[literal-required]
-                parts[key] = value  # type: ignore[literal-required]
+            if not parts[key]:
+                parts[key] = value
         return parts
 
     def __repr__(self) -> str:
@@ -407,7 +398,7 @@ class HttpUrl(AnyHttpUrl):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {'port': '80' if parts['scheme'] == 'http' else '443'}
+        return {'port': '80' if parts['scheme'] == 'http' else '443'}  # type: ignore[return-value]
 
 
 class FileUrl(AnyUrl):
@@ -442,7 +433,7 @@ class MultiHostDsn(AnyUrl):
             port = d.get('port')
             cls._validate_port(port)
             hosts_parts.append(
-                {
+                {  # type: ignore[arg-type]
                     'host': host,
                     'host_type': host_type,
                     'tld': tld,
@@ -518,7 +509,7 @@ class RedisDsn(AnyUrl):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {
+        return {  # type: ignore[return-value]
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '6379',
             'path': '/0',
@@ -531,9 +522,7 @@ class MongoDsn(AnyUrl):
     # TODO: Needed to generic "Parts" for "Replica Set", "Sharded Cluster", and other mongodb deployment modes
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {
-            'port': '27017',
-        }
+        return {'port': '27017'}  # type: ignore[return-value]
 
 
 class KafkaDsn(AnyUrl):
@@ -541,10 +530,7 @@ class KafkaDsn(AnyUrl):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {
-            'domain': 'localhost',
-            'port': '9092',
-        }
+        return {'domain': 'localhost', 'port': '9092'}  # type: ignore[return-value]
 
 
 def stricturl(
@@ -576,18 +562,28 @@ def import_email_validator() -> None:
         raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
 
 
-class EmailStr(str):
-    @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        field_schema.update(type='string', format='email')
+if TYPE_CHECKING:
+    EmailStr = Annotated[str, ...]
+else:
 
-    @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
-        return core_schema.function_after_schema(core_schema.string_schema(), cls.validate)
+    class EmailStr:
+        @classmethod
+        def __get_pydantic_validation_schema__(
+            cls, schema: core_schema.CoreSchema | None = None
+        ) -> core_schema.CoreSchema:
+            if schema is None:
+                return core_schema.function_after_schema(core_schema.string_schema(), cls.validate)
+            else:
+                assert schema['type'] == 'str', 'EmailStr must be used with string fields'
+                return core_schema.function_after_schema(schema, cls.validate)
 
-    @classmethod
-    def validate(cls, value: str, **kwargs) -> str:
-        return validate_email(value)[1]
+        @classmethod
+        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+            field_schema.update(type='string', format='email')
+
+        @classmethod
+        def validate(cls, __input_value: str, **_kwargs: Any) -> str:
+            return validate_email(__input_value)[1]
 
 
 class NameEmail(Representation):
@@ -615,20 +611,21 @@ class NameEmail(Representation):
         )
 
     @classmethod
-    def validate(cls, value: NameError | str, **kwargs) -> NameEmail:
-        if isinstance(value, cls):
-            return value
+    def validate(cls, __input_value: NameEmail | str, **_kwargs: Any) -> NameEmail:
+        if isinstance(__input_value, cls):
+            return __input_value
         else:
-            return cls(*validate_email(value))
+            name, email = validate_email(__input_value)  # type: ignore[arg-type]
+            return cls(name, email)
 
     def __str__(self) -> str:
         return f'{self.name} <{self.email}>'
 
 
-class IPvAnyAddress(_BaseAddress):
+class IPvAnyAddress:
     __slots__ = ()
 
-    def __new__(cls, value: str | bytes | int) -> IPv4Address | IPv6Address:
+    def __new__(cls, value: Any) -> IPv4Address | IPv6Address:  # type: ignore[misc]
         try:
             return IPv4Address(value)
         except ValueError:
@@ -648,14 +645,14 @@ class IPvAnyAddress(_BaseAddress):
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
-    def _validate(cls, value: NetworkType, **_kwargs) -> IPv4Address | IPv6Address:
-        return cls(value)
+    def _validate(cls, __input_value: Any, **_kwargs: Any) -> IPv4Address | IPv6Address:
+        return cls(__input_value)  # type: ignore[return-value]
 
 
-class IPvAnyInterface(_BaseAddress):
+class IPvAnyInterface:
     __slots__ = ()
 
-    def __new__(cls, value: NetworkType):
+    def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:  # type: ignore[misc]
         try:
             return IPv4Interface(value)
         except ValueError:
@@ -675,14 +672,14 @@ class IPvAnyInterface(_BaseAddress):
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
-    def _validate(cls, value: NetworkType, **_kwargs) -> IPv4Interface | IPv6Interface:
-        return cls(value)
+    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Interface | IPv6Interface:
+        return cls(__input_value)  # type: ignore[return-value]
 
 
-class IPvAnyNetwork(_BaseNetwork):  # type: ignore
+class IPvAnyNetwork:
     __slots__ = ()
 
-    def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:
+    def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]
         # Assume IP Network is defined with a default value for ``strict`` argument.
         # Define your own class if you want to specify network address check strictness.
         try:
@@ -704,8 +701,8 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
-    def _validate(cls, value: NetworkType, **_kwargs) -> IPv4Network | IPv6Network:
-        return cls(value)
+    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Network | IPv6Network:
+        return cls(__input_value)  # type: ignore[return-value]
 
 
 pretty_email_regex = re.compile(r' *([\w ]*?) *<(.+?)> *')

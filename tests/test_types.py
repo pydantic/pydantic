@@ -1483,7 +1483,7 @@ def test_infinite_iterable_int():
 
     m = Model(it=int_iterable())
 
-    assert repr(m.it).startswith('<generator object validate_yield')
+    assert repr(m.it) == 'ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))'
 
     output = []
     for i in m.it:
@@ -1503,16 +1503,17 @@ def test_infinite_iterable_int():
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
-            'loc': [],
+            'loc': [0],
             'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'f',
         }
     ]
 
 
-def test_iterable_any():
+@pytest.mark.parametrize('type_annotation', (Iterable[Any], Iterable))
+def test_iterable_any(type_annotation):
     class Model(BaseModel):
-        it: Iterable[Any]
+        it: type_annotation
 
     m = Model(it=int_iterable())
 
@@ -1531,7 +1532,7 @@ def test_iterable_any():
         Model(it=3)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be a valid iterable', 'input_value': 3}
+        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be iterable', 'input_value': 3}
     ]
 
 
@@ -1543,7 +1544,7 @@ def test_invalid_iterable():
         Model(it=3)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be a valid iterable', 'input_value': 3}
+        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be iterable', 'input_value': 3}
     ]
 
 
@@ -1572,7 +1573,7 @@ def test_infinite_iterable_validate_first():
     assert exc_info.value.errors() == [
         {
             'kind': 'int_parsing',
-            'loc': ['it'],
+            'loc': ['it', 0],
             'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'f',
         }

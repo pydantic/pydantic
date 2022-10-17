@@ -385,14 +385,14 @@ def create_pydantic_model_from_dataclass(
 
         field_definitions[field.name] = (field.type, field_info)
 
-    from .validator_functions import gather_all_validators
+    # from .validator_functions import gather_all_validators
 
-    validators = gather_all_validators(dc_cls)
+    # validators = gather_all_validators(dc_cls)
     model: Type['BaseModel'] = create_model(
         dc_cls.__name__,
         __config__=config,
         __module__=dc_cls.__module__,
-        __validators__=validators,
+        # __validators__=validators,
         __cls_kwargs__={'__resolve_forward_refs__': False},
         **field_definitions,
     )

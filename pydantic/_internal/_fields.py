@@ -60,11 +60,11 @@ class CustomValidator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def __call__(self, value: Any, **_kwargs: Any) -> Any:
+    def __call__(self, __input_value: Any, **_kwargs: Any) -> Any:
         raise NotImplementedError()
 
     def _update_attrs(self, constraints: dict[str, Any], attrs: set[str] | None = None) -> None:
-        attrs = attrs or set(self.__slots__)
+        attrs = attrs or set(self.__slots__)  # type: ignore[attr-defined]
         for k, v in constraints.items():
             if k not in attrs:
                 raise TypeError(f'{self.__class__.__name__} has no attribute {k!r}')

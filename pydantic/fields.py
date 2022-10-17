@@ -6,19 +6,17 @@ from typing import Any
 import annotated_types
 
 from . import types
-from ._internal import _fields
-from ._internal._typing_extra import NoArgAnyCallable, display_as_type, get_args, get_origin
-from ._internal._utils import PyObjectStr, Representation, lenient_issubclass, smart_deepcopy
+from ._internal import _fields, _typing_extra, _utils
 
 if typing.TYPE_CHECKING:
-    from ._internal._typing_extra import AbstractSetIntStr, MappingIntStrAny, ReprArgs
+    from ._internal._typing_extra import ReprArgs
 
 Required: Any = Ellipsis
 
 Undefined = _fields.UndefinedType()
 
 
-class FieldInfo(Representation):
+class FieldInfo(_utils.Representation):
     """
     Captures extra information about a field.
     """
@@ -40,7 +38,7 @@ class FieldInfo(Representation):
     )
 
     # used to convert kwargs to constraints, None has a special meaning
-    constraints_lookup: dict[str, annotated_types.BaseMetadata | _fields.PydanticMetadata | None] = {
+    constraints_lookup: dict[str, typing.Callable[[Any], Any] | None] = {
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
         'lt': annotated_types.Lt,
@@ -108,9 +106,9 @@ class FieldInfo(Representation):
     @classmethod
     def _extract_constraints(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         if annotation is not None:
-            origin = get_origin(annotation)
-            if lenient_issubclass(origin, typing.Annotated):
-                args = get_args(annotation)
+            origin = _typing_extra.get_origin(annotation)
+            if _utils.lenient_issubclass(origin, typing.Annotated):
+                args = _typing_extra.get_args(annotation)
                 return args[0], list(args[1:])
 
         return annotation, []
@@ -141,13 +139,13 @@ class FieldInfo(Representation):
         return constraints
 
     def get_default(self) -> Any:
-        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
     def is_required(self) -> bool:
         return self.default is Undefined and self.default_factory is None
 
     def __repr_args__(self) -> 'ReprArgs':
-        yield 'annotation', PyObjectStr(display_as_type(self.annotation))
+        yield 'annotation', _utils.PyObjectStr(_typing_extra.display_as_type(self.annotation))
         yield 'required', self.is_required()
 
         for s in self.__slots__:
@@ -158,7 +156,7 @@ class FieldInfo(Representation):
             elif s == 'repr' and self.repr is True:
                 continue
             if s == 'default_factory' and self.default_factory is not None:
-                yield 'default_factory', PyObjectStr(display_as_type(self.default_factory))
+                yield 'default_factory', _utils.PyObjectStr(_typing_extra.display_as_type(self.default_factory))
             elif s != 'extra' or self.extra:
                 value = getattr(self, s)
                 if value is not None and value is not Undefined:
@@ -168,12 +166,12 @@ class FieldInfo(Representation):
 def Field(
     default: Any = Undefined,
     *,
-    default_factory: NoArgAnyCallable | None = None,
+    default_factory: typing.Callable[[], Any] | None = None,
     alias: str = None,
     title: str = None,
     description: str = None,
-    exclude: AbstractSetIntStr | MappingIntStrAny | Any = None,
-    include: AbstractSetIntStr | MappingIntStrAny | Any = None,
+    exclude: typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any = None,
+    include: typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any = None,
     gt: float = None,
     ge: float = None,
     lt: float = None,
@@ -268,10 +266,10 @@ def Field(
     )
 
 
-class ModelPrivateAttr(Representation):
+class ModelPrivateAttr(_utils.Representation):
     __slots__ = 'default', 'default_factory'
 
-    def __init__(self, default: Any = Undefined, *, default_factory: NoArgAnyCallable | None = None) -> None:
+    def __init__(self, default: Any = Undefined, *, default_factory: typing.Callable[[], Any] | None = None) -> None:
         self.default = default
         self.default_factory = default_factory
 
@@ -289,7 +287,7 @@ class ModelPrivateAttr(Representation):
                     set_name(cls, name)
 
     def get_default(self) -> Any:
-        return smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and (self.default, self.default_factory) == (
@@ -301,7 +299,7 @@ class ModelPrivateAttr(Representation):
 def PrivateAttr(
     default: Any = Undefined,
     *,
-    default_factory: NoArgAnyCallable | None = None,
+    default_factory: typing.Callable[[], Any] | None = None,
 ) -> Any:
     """
     Indicates that attribute is only used internally and never mixed with regular fields.

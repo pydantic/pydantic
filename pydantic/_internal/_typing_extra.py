@@ -354,7 +354,7 @@ else:
         return False
 
 
-def display_as_type(v: Type[Any]) -> str:
+def display_as_type(v: Any) -> str:
     """
     Pretty representation of a type, should be as close as possible to the original type definition string.
 
@@ -452,7 +452,7 @@ def is_typeddict(type_: Type[Any]) -> bool:
     Check if a given class is a typed dict (from `typing` or `typing_extensions`)
     In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
     """
-    from pydantic._internal.utils import lenient_issubclass
+    from pydantic._internal._utils import lenient_issubclass
 
     return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
 

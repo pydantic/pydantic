@@ -10,7 +10,7 @@ import typing
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
-from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
+from pydantic_core import core_schema
 from typing_extensions import get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
@@ -62,20 +62,20 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
     Recursively generate a pydantic-core schema for any supported python type.
     """
     if isinstance(obj, str):
-        return {'type': str}
+        return {'type': obj}  # type: ignore[return-value,misc]
     elif isinstance(obj, dict):
         # we assume this is already a valid schema
         return obj  # type: ignore[return-value]
-    elif obj in (bool, int, float, str, bytes, list, set, frozenset, tuple, dict):
-        return {'type': obj.__name__}
+    elif obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
+        return {'type': obj.__name__}  # type: ignore[return-value,misc]
     elif obj is Any or obj is object:
-        return {'type': 'any'}
+        return core_schema.AnySchema(type='any')
     elif obj is None or obj is NoneType:
-        return {'type': 'none'}
+        return core_schema.NoneSchema(type='none')
     elif obj == type:
         return core_schema.is_instance_schema(type)
     elif is_callable_type(obj):
-        return {'type': 'callable'}
+        return core_schema.CallableSchema(type='callable')
     elif is_literal_type(obj):
         return literal_schema(obj)
     elif is_typeddict(obj):
@@ -102,7 +102,7 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
         raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r}.')
     elif origin_is_union(origin):
         return union_schema(obj)
-    elif issubclass(origin, typing.Annotated):
+    elif issubclass(origin, typing.Annotated):  # type: ignore[arg-type]
         return annotated_schema(obj)
     elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
         return generic_collection_schema(obj)
@@ -167,6 +167,8 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
         function = typing.cast(typing.Callable[..., Any], validator.function)
         if validator.mode == 'plain':
             schema = core_schema.function_plain_schema(function)
+        elif validator.mode == 'wrap':
+            schema = core_schema.function_wrap_schema(function, schema)
         else:
             schema = core_schema.FunctionSchema(
                 type='function',
@@ -213,7 +215,7 @@ def annotated_schema(annotated_type: Any) -> core_schema.CoreSchema:
     return apply_constraints(schema, args[1:])
 
 
-def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) -> core_schema.CoreSchema:
+def apply_constraints(schema: core_schema.CoreSchema, constraints: typing.Iterable[Any]) -> core_schema.CoreSchema:
     for c in constraints:
         c_get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
         if c_get_schema is not None:
@@ -244,9 +246,9 @@ def apply_constraints(schema: core_schema.CoreSchema, constraints: list[Any]) ->
         # TODO we need a way to remove constraints which this line currently prevents
         constraints_dict = {k: v for k, v in constraints_dict.items() if v is not None}
         if constraints_dict:
-            extra: CustomValidator | dict[str, Any] | None = schema.get('extra')
+            extra: CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
             if extra is None:
-                schema.update(**constraints_dict)
+                schema.update(constraints_dict)  # type: ignore[typeddict-item]
             else:
                 if isinstance(extra, dict):
                     update_schema_function = extra['__pydantic_update_schema__']
@@ -305,25 +307,18 @@ def type_dict_schema(typed_dict: Any) -> core_schema.TypedDictSchema:
     return core_schema.typed_dict_schema(fields, extra_behavior='forbid')
 
 
-def generic_collection_schema(obj: Any) -> core_schema.CoreSchema:
+def generic_collection_schema(type_: Any) -> core_schema.CoreSchema:
     """
     Generate schema for List, Set etc. - where the schema includes `items_schema`
 
     e.g. `list[int]`.
     """
     try:
-        name = obj.__name__
+        name = type_.__name__
     except AttributeError:
-        name = get_origin(obj).__name__  # type: ignore[union-attr]
+        name = get_origin(type_).__name__  # type: ignore[union-attr]
 
-    schema = {'type': name.lower()}
-    try:
-        arg = get_args(obj)[0]
-    except IndexError:
-        pass
-    else:
-        schema['items_schema'] = generate_schema(arg)
-    return schema  # type: ignore[misc,return-value]
+    return {'type': name.lower(), 'items_schema': get_item_type(type_)}  # type: ignore[misc,return-value]
 
 
 def tuple_schema(tuple_type: Any) -> core_schema.CoreSchema:
@@ -374,76 +369,32 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
         return core_schema.is_instance_schema(type_param)
 
 
-def sequence_validator(v: Any, *, validator, **kwargs):
-    if not isinstance(v, typing.Sequence):
-        raise PydanticKindError('is_instance_of', {'class': 'Sequence'})
-
-    value_type = type(v)
-    v_list = validator(v)
-    if issubclass(value_type, str):
-        try:
-            return ''.join(v_list)
-        except TypeError:
-            # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticKindError('str_type')
-    elif issubclass(value_type, bytes):
-        try:
-            return b''.join(v_list)
-        except TypeError:
-            # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticKindError('bytes_type')
-    elif issubclass(value_type, range):
-        # return the list as we probably can't re-create the range
-        return v_list
-    else:
-        return value_type(v_list)
-
-
-def sequence_schema(sequence_type: Any) -> core_schema.FunctionWrapSchema:
+def sequence_schema(sequence_type: Any) -> core_schema.ChainSchema:
     """
     Generate schema for a Sequence, e.g. `Sequence[int]`.
     """
-    arg0 = get_args(sequence_type)[0]
-    return core_schema.function_wrap_schema(
-        sequence_validator,
-        core_schema.list_schema(generate_schema(arg0), allow_any_iter=True),
+    from ._validators import sequence_validator
+
+    item_type = get_item_type(sequence_type)
+
+    return core_schema.chain_schema(
+        core_schema.is_instance_schema(typing.Sequence, json_types={'list'}),
+        core_schema.function_wrap_schema(
+            sequence_validator,
+            core_schema.list_schema(generate_schema(item_type), allow_any_iter=True),
+        ),
     )
 
 
-def iterable_any_validator(v: Any, **_kwargs: Any) -> typing.Iterable[Any]:
-    try:
-        return iter(v)
-    except TypeError:
-        raise PydanticCustomError('iterable_type', 'Input should be a valid iterable')
-
-
-def validate_yield(
-    iterable: typing.Iterable[Any], validator: typing.Callable[[Any], Any]
-) -> typing.Generator[Any, None, None]:
-    for item in iterable:
-        yield validator(item)
-
-
-def iterable_type_validator(
-    v: Any, *, validator: typing.Callable[[Any], Any], **_kwargs: Any
-) -> typing.Generator[Any, None, None]:
-    try:
-        iterable = iter(v)
-    except TypeError:
-        raise PydanticCustomError('iterable_type', 'Input should be a valid iterable')
-    return validate_yield(iterable, validator)
-
-
-def iterable_schema(type_: Any) -> core_schema.FunctionSchema | core_schema.FunctionPlainSchema:
+def iterable_schema(type_: Any) -> core_schema.GeneratorSchema:
     """
-    Generate a schema for an `Iterable`, not
+    Generate a schema for an `Iterable`.
+
+    TODO replace with pydantic-core's generator validator.
     """
-    param = get_args(type_)[0]
-    if param == Any:
-        return core_schema.function_plain_schema(iterable_any_validator)
-    else:
-        schema = generate_schema(param)
-        return core_schema.function_wrap_schema(iterable_type_validator, schema)
+    item_type = get_item_type(type_)
+
+    return core_schema.generator_schema(generate_schema(item_type))
 
 
 def pattern_schema(pattern_type: Any) -> core_schema.CoreSchema:
@@ -481,3 +432,14 @@ def std_types_schema(obj: Any) -> core_schema.CoreSchema | None:
         except KeyError:
             continue
         return encoder(obj)
+    return None
+
+
+def get_item_type(type_: Any) -> Any:
+    """
+    Get the first argument from a typing object, e.g. `List[int]` -> `int`, or `Any` if no argument.
+    """
+    try:
+        return get_args(type_)[0]
+    except ValueError:
+        return Any

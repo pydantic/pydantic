@@ -44,7 +44,7 @@ from ._typing_extra import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pydantic._internal.typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
+    from pydantic._internal._typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
     from pydantic.dataclasses import Dataclass
     from pydantic.main import BaseModel
 
@@ -158,7 +158,7 @@ def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any],
         return False
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
@@ -218,7 +218,7 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
 
 
 def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
-    from .main import BaseModel
+    from ..main import BaseModel
 
     try:
         model_cls = obj.__pydantic_model__  # type: ignore

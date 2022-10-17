@@ -20,6 +20,38 @@ from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 from . import _fields
 
 
+def sequence_validator(
+    __input_value: typing.Sequence[Any], *, validator: core_schema.CallableValidator, **_kwargs: Any
+) -> typing.Sequence[Any]:
+    """
+    Validator for `Sequence` types, isinstance(v, Sequence) has already been called.
+    """
+    value_type = type(__input_value)
+    v_list = validator(__input_value)
+
+    # the rest of the logic is just re-creating the original type from `v_list`
+    if value_type == list:
+        return v_list
+    elif issubclass(value_type, str):
+        try:
+            return ''.join(v_list)
+        except TypeError:
+            # can happen if you pass a string like '123' to `Sequence[int]`
+            raise PydanticKindError('string_type')
+    elif issubclass(value_type, bytes):
+        try:
+            return b''.join(v_list)
+        except TypeError:
+            # can happen if you pass a string like '123' to `Sequence[int]`
+            raise PydanticKindError('bytes_type')
+    elif issubclass(value_type, range):
+        # return the list as we probably can't re-create the range
+        return v_list
+    else:
+        # best guess at how to re-create the original type, more custom construction logic might be required
+        return value_type(v_list)  # type: ignore[call-arg]
+
+
 def import_string(value: Any, **_kwargs: Any) -> Any:
     if isinstance(value, str):
         try:
@@ -76,19 +108,19 @@ class DecimalValidator(_fields.CustomValidator):
         self.check_digits: bool = False
         self.strict: bool = False
 
-    def __pydantic_update_schema__(self, _schema: core_schema.CoreSchema, **kwargs: Any) -> None:
+    def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **kwargs: Any) -> None:
         self._update_attrs(kwargs)
 
         self.check_digits = self.max_digits is not None or self.decimal_places is not None
         if self.check_digits and self.allow_inf_nan:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
-    def __call__(self, value: int | float | str, **_kwargs: Any) -> Decimal:  # noqa: C901 (ignore complexity)
-        if not isinstance(value, Decimal):
-            v = str(value)
-
+    def __call__(self, __input_value: int | float | str, **_kwargs: Any) -> Decimal:  # noqa: C901 (ignore complexity)
+        if isinstance(__input_value, Decimal):
+            value = __input_value
+        else:
             try:
-                value = Decimal(v)
+                value = Decimal(str(__input_value))
             except DecimalException:
                 raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
@@ -165,162 +197,167 @@ class DecimalValidator(_fields.CustomValidator):
         return f'DecimalValidator({s})'
 
 
-def uuid_validator(input_value: str | bytes, **_kwargs: Any) -> UUID:
+def uuid_validator(__input_value: str | bytes, **_kwargs: Any) -> UUID:
     try:
-        if isinstance(input_value, str):
-            return UUID(input_value)
+        if isinstance(__input_value, str):
+            return UUID(__input_value)
         else:
             try:
-                return UUID(input_value.decode())
+                return UUID(__input_value.decode())
             except ValueError:
                 # 16 bytes in big-endian order as the bytes argument fail
                 # the above check
-                return UUID(bytes=input_value)
+                return UUID(bytes=__input_value)
     except ValueError:
         raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
 
 
-def path_validator(v: str, **kwargs) -> Path:
+def path_validator(__input_value: str, **_kwargs: Any) -> Path:
     try:
-        return Path(v)
+        return Path(__input_value)
     except TypeError:
         raise PydanticCustomError('path_type', 'Input is not a valid path')
 
 
-def pattern_either_validator(v, **kwargs):
-    if isinstance(v, typing.Pattern):
-        return v
-    elif isinstance(v, (str, bytes)):
+def pattern_either_validator(__input_value: Any, **_kwargs: Any) -> typing.Pattern[Any]:
+    if isinstance(__input_value, typing.Pattern):
+        return __input_value
+    elif isinstance(__input_value, (str, bytes)):
         # todo strict mode
-        return compile_pattern(v)
+        return compile_pattern(__input_value)
     else:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_str_validator(v, **kwargs):
-    if isinstance(v, typing.Pattern):
-        if isinstance(v.pattern, str):
-            return v
+def pattern_str_validator(__input_value: Any, **_kwargs: Any) -> typing.Pattern[str]:
+    if isinstance(__input_value, typing.Pattern):
+        if isinstance(__input_value.pattern, str):
+            return __input_value
         else:
             raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
-    elif isinstance(v, str):
-        return compile_pattern(v)
-    elif isinstance(v, bytes):
+    elif isinstance(__input_value, str):
+        return compile_pattern(__input_value)
+    elif isinstance(__input_value, bytes):
         raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
     else:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_bytes_validator(v, **kwargs):
-    if isinstance(v, typing.Pattern):
-        if isinstance(v.pattern, bytes):
-            return v
+def pattern_bytes_validator(__input_value: Any, **_kwargs: Any) -> Any:
+    if isinstance(__input_value, typing.Pattern):
+        if isinstance(__input_value.pattern, bytes):
+            return __input_value
         else:
             raise PydanticCustomError('pattern_bytes_type', 'Input should be a bytes pattern')
-    elif isinstance(v, bytes):
-        return compile_pattern(v)
-    elif isinstance(v, str):
+    elif isinstance(__input_value, bytes):
+        return compile_pattern(__input_value)
+    elif isinstance(__input_value, str):
         raise PydanticCustomError('pattern_bytes_type', 'Input should be a bytes pattern')
     else:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def compile_pattern(pattern: str | bytes) -> typing.Pattern:
+PatternType = typing.TypeVar('PatternType', str, bytes)
+
+
+def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
     try:
         return re.compile(pattern)
     except re.error:
         raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
 
 
-def deque_any_validator(v: Any, *, validator: core_schema.CallableValidator, **_kwargs) -> deque:
-    if isinstance(v, deque):
-        return v
+def deque_any_validator(__input_value: Any, *, validator: core_schema.CallableValidator, **_kwargs: Any) -> deque[Any]:
+    if isinstance(__input_value, deque):
+        return __input_value
     else:
-        return deque(validator(v))
+        return deque(validator(__input_value))
 
 
-def deque_typed_validator(v: list[Any], **kwargs) -> deque:
-    return deque(v)
+def deque_typed_validator(__input_value: list[Any], **kwargs: Any) -> deque[Any]:
+    return deque(__input_value)
 
 
-def ordered_dict_any_validator(v: Any, *, validator: core_schema.CallableValidator, **_kwargs) -> OrderedDict:
-    if isinstance(v, OrderedDict):
-        return v
+def ordered_dict_any_validator(
+    __input_value: Any, *, validator: core_schema.CallableValidator, **_kwargs: Any
+) -> OrderedDict[Any, Any]:
+    if isinstance(__input_value, OrderedDict):
+        return __input_value
     else:
-        return OrderedDict(validator(v))
+        return OrderedDict(validator(__input_value))
 
 
-def ordered_dict_typed_validator(v: list[Any], **kwargs) -> OrderedDict:
-    return OrderedDict(v)
+def ordered_dict_typed_validator(__input_value: list[Any], **_kwargs: Any) -> OrderedDict[Any, Any]:
+    return OrderedDict(__input_value)
 
 
-def ip_v4_address_validator(v: Any, **_kwargs) -> IPv4Address:
-    if isinstance(v, IPv4Address):
-        return v
+def ip_v4_address_validator(__input_value: Any, **_kwargs: Any) -> IPv4Address:
+    if isinstance(__input_value, IPv4Address):
+        return __input_value
 
     try:
-        return IPv4Address(v)
+        return IPv4Address(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v4_address', 'Input is not a valid IPv4 address')
 
 
-def ip_v6_address_validator(v: Any, **_kwargs) -> IPv6Address:
-    if isinstance(v, IPv6Address):
-        return v
+def ip_v6_address_validator(__input_value: Any, **_kwargs: Any) -> IPv6Address:
+    if isinstance(__input_value, IPv6Address):
+        return __input_value
 
     try:
-        return IPv6Address(v)
+        return IPv6Address(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v6_address', 'Input is not a valid IPv6 address')
 
 
-def ip_v4_network_validator(v: Any, **_kwargs) -> IPv4Network:
+def ip_v4_network_validator(__input_value: Any, **_kwargs: Any) -> IPv4Network:
     """
     Assume IPv4Network initialised with a default ``strict`` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
     """
-    if isinstance(v, IPv4Network):
-        return v
+    if isinstance(__input_value, IPv4Network):
+        return __input_value
 
     try:
-        return IPv4Network(v)
+        return IPv4Network(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v4_network', 'Input is not a valid IPv4 network')
 
 
-def ip_v6_network_validator(v: Any, **_kwargs) -> IPv6Network:
+def ip_v6_network_validator(__input_value: Any, **_kwargs: Any) -> IPv6Network:
     """
     Assume IPv6Network initialised with a default ``strict`` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network
     """
-    if isinstance(v, IPv6Network):
-        return v
+    if isinstance(__input_value, IPv6Network):
+        return __input_value
 
     try:
-        return IPv6Network(v)
+        return IPv6Network(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v6_network', 'Input is not a valid IPv6 network')
 
 
-def ip_v4_interface_validator(v: Any, **_kwargs) -> IPv4Interface:
-    if isinstance(v, IPv4Interface):
-        return v
+def ip_v4_interface_validator(__input_value: Any, **_kwargs: Any) -> IPv4Interface:
+    if isinstance(__input_value, IPv4Interface):
+        return __input_value
 
     try:
-        return IPv4Interface(v)
+        return IPv4Interface(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v4_interface', 'Input is not a valid IPv4 interface')
 
 
-def ip_v6_interface_validator(v: Any, **_kwargs) -> IPv6Interface:
-    if isinstance(v, IPv6Interface):
-        return v
+def ip_v6_interface_validator(__input_value: Any, **_kwargs: Any) -> IPv6Interface:
+    if isinstance(__input_value, IPv6Interface):
+        return __input_value
 
     try:
-        return IPv6Interface(v)
+        return IPv6Interface(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')

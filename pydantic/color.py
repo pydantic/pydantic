@@ -196,8 +196,8 @@ class Color(Representation):
         return core_schema.FunctionPlainSchema(type='function', mode='plain', function=cls._validate)
 
     @classmethod
-    def _validate(cls, v: Any, **kwargs) -> 'Color':
-        return cls(v)
+    def _validate(cls, __input_value: Any, **_kwargs: Any) -> 'Color':
+        return cls(__input_value)
 
     def __str__(self) -> str:
         return self.as_named(fallback=True)

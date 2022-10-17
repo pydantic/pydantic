@@ -13,7 +13,6 @@ from ._internal._typing_extra import AnyArgTCallable, AnyCallable
 if TYPE_CHECKING:
     from typing import overload
 
-    from .fields import ModelField
     from .main import BaseModel
 
     ConfigType = Type['BaseConfig']
@@ -132,7 +131,7 @@ class BaseConfig:
         return field_info
 
     @classmethod
-    def prepare_field(cls, field: 'ModelField') -> None:
+    def prepare_field(cls, field: Any) -> None:
         """
         Optional hook to check or modify fields during model creation.
         """

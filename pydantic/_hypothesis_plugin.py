@@ -194,7 +194,7 @@ def _registered(typ: Union[Type[T]]) -> Union[Type[T]]:
     pydantic.types._DEFINED_TYPES.add(typ)
     for supertype, resolver in RESOLVERS.items():
         if issubclass(typ, supertype):
-            st.register_type_strategy(typ, resolver(typ))  # type: ignore
+            st.register_type_strategy(typ, resolver(typ))
             return typ
     raise NotImplementedError(f'Unknown type {typ!r} has no resolver to register')  # pragma: no cover
 

@@ -39,14 +39,14 @@ def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaF
 @schema_function(time)
 @schema_function(timedelta)
 def name_as_schema(t: type[Any]) -> core_schema.CoreSchema:
-    return {'type': t.__name__}
+    return {'type': t.__name__}  # type: ignore[return-value,misc]
 
 
 @schema_function(Enum)
 def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
-    def to_enum(v: Any, **_kwargs: Any) -> Enum:
+    def to_enum(__input_value: Any, **_kwargs: Any) -> Enum:
         try:
-            return enum_type(v)
+            return enum_type(__input_value)
         except ValueError:
             raise PydanticCustomError('enum', 'Input is not a valid enum member')
 
@@ -150,7 +150,7 @@ def _ordered_dict_any_schema() -> core_schema.FunctionWrapSchema:
 
 
 @schema_function(OrderedDict)
-def ordered_dict_schema(obj: Any):
+def ordered_dict_schema(obj: Any) -> core_schema.CoreSchema:
     if obj == OrderedDict:
         # bare `ordered_dict` type used as annotation
         return _ordered_dict_any_schema()
