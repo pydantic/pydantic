@@ -435,7 +435,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return f"{self.__class__.__name__}({prefix}'{self}')"
 
 
-class SecretFieldValidator(_validators.CustomValidator, Generic[SecretType]):
+class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
     __slots__ = 'field_type', 'min_length', 'max_length', 'error_prefix'
 
     def __init__(

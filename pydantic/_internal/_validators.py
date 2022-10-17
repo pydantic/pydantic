@@ -1,3 +1,9 @@
+"""
+Validator functions for standard library types.
+
+Import of this module is deferred since it contains imports of many standard library modules.
+"""
+
 from __future__ import annotations as _annotations
 
 import re
@@ -11,12 +17,10 @@ from uuid import UUID
 
 from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 
-from ._fields import CustomValidator
-
-__all__ = ('import_string',)
+from . import _fields
 
 
-def import_string(value: Any, **kwargs: Any) -> Any:
+def import_string(value: Any, **_kwargs: Any) -> Any:
     if isinstance(value, str):
         try:
             return _import_string_logic(value)
@@ -46,7 +50,7 @@ def _import_string_logic(dotted_path: str) -> Any:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
-class DecimalValidator(CustomValidator):
+class DecimalValidator(_fields.CustomValidator):
     __slots__ = (
         'gt',
         'ge',

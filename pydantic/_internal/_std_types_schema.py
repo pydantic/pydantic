@@ -1,3 +1,8 @@
+"""
+Logic for generating pydantic-core schemas for standard library types.
+
+Import of this module is deferred since it contains imports of many standard library modules.
+"""
 from __future__ import annotations as _annotations
 
 import typing
@@ -132,7 +137,7 @@ def deque_schema(obj: Any) -> core_schema.CoreSchema:
         return _deque_any_schema()
     else:
         # `Deque[Something]`
-        from ._babelfish import generate_schema
+        from ._generate_schema import generate_schema
 
         return core_schema.function_after_schema(
             core_schema.list_schema(generate_schema(arg)),
@@ -161,7 +166,7 @@ def ordered_dict_schema(obj: Any):
         return _ordered_dict_any_schema()
     else:
         # `OrderedDict[Foo, Bar]`
-        from ._babelfish import generate_schema
+        from ._generate_schema import generate_schema
 
         return core_schema.function_after_schema(
             core_schema.dict_schema(generate_schema(keys_arg), generate_schema(values_arg)),

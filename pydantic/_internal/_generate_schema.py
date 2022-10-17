@@ -1,8 +1,5 @@
 """
 Convert python types to pydantic-core schema.
-
-We probably want to rename this to something more descriptive, but I'll leave it like this
-until I'm sure what it does.
 """
 from __future__ import annotations as _annotations
 
@@ -116,11 +113,11 @@ def generate_schema(obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSc
     elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
         return type_schema(obj)
     elif issubclass(origin, typing.Deque):
-        from ._std_validators import deque_schema
+        from ._std_types_schema import deque_schema
 
         return deque_schema(obj)
     elif issubclass(origin, typing.OrderedDict):
-        from ._std_validators import ordered_dict_schema
+        from ._std_types_schema import ordered_dict_schema
 
         return ordered_dict_schema(obj)
     elif issubclass(origin, typing.Sequence):
@@ -473,7 +470,7 @@ def std_types_schema(obj: Any) -> core_schema.CoreSchema | None:
         return None
 
     # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
-    from ._std_validators import SCHEMA_LOOKUP
+    from ._std_types_schema import SCHEMA_LOOKUP
 
     # instead of iterating over a list and calling is_instance, this should be somewhat faster,
     # especially as it should catch most types on the first iteration
