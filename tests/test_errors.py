@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from pydantic_core import PydanticCustomError, PydanticKindError, PydanticOmit, SchemaValidator, ValidationError
@@ -178,6 +180,7 @@ def test_pydantic_error_kind_raise_ctx():
         ('none_required', 'Input should be None/null', None),
         ('bool', 'Input should be a valid boolean', None),
         ('greater_than', 'Input should be greater than 42.1', {'gt': 42.1}),
+        ('greater_than', 'Input should be greater than 42.1', {'gt': '42.1'}),
         ('greater_than', 'Input should be greater than 2020-01-01', {'gt': '2020-01-01'}),
         ('greater_than_equal', 'Input should be greater than or equal to 42.1', {'ge': 42.1}),
         ('less_than', 'Input should be less than 42.1', {'lt': 42.1}),
@@ -260,6 +263,21 @@ def test_error_kind(kind, message, context):
     assert e.message() == message
     assert e.kind == kind
     assert e.context == context
+
+
+def test_error_decimal():
+    e = PydanticKindError('greater_than', {'gt': Decimal('42.1')})
+    assert e.message() == 'Input should be greater than 42.1'
+    assert e.kind == 'greater_than'
+    assert e.context == {'gt': 42.1}
+
+
+def test_custom_error_decimal():
+    e = PydanticCustomError('my_error', 'this is a custom error {foobar}', {'foobar': Decimal('42.010')})
+    assert e.message() == 'this is a custom error 42.010'
+    assert e.message_template == 'this is a custom error {foobar}'
+    assert e.kind == 'my_error'
+    assert e.context == {'foobar': Decimal('42.010')}
 
 
 def test_pydantic_value_error_plain(py_and_json: PyAndJson):
