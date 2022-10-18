@@ -87,7 +87,8 @@ class GenerateSchema:
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._type_dict_schema(obj)
-        elif isinstance(obj, typing.NewType):
+        elif hasattr(obj, '__supertype__'):
+            # NewType, can't use isinstance because it fails <3.7
             return self.generate_schema(obj.__supertype__)
         elif obj == re.Pattern:
             return self._pattern_schema(obj)

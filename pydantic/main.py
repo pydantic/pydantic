@@ -25,11 +25,11 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from pydantic._internal._utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
-
 from ._internal._model_construction import complete_model_class, inspect_namespace
 from ._internal._typing_extra import is_namedtuple
 from ._internal._validation_functions import ValidationFunctions
+from ._internal._utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
+
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import ConfigError, DictError
 from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
