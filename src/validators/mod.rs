@@ -32,6 +32,7 @@ mod function;
 mod generator;
 mod int;
 mod is_instance;
+mod is_subclass;
 mod json;
 mod list;
 mod literal;
@@ -370,6 +371,7 @@ pub fn build_validator<'a>(
         timedelta::TimeDeltaValidator,
         // introspection types
         is_instance::IsInstanceValidator,
+        is_subclass::IsSubclassValidator,
         callable::CallableValidator,
         // arguments
         arguments::ArgumentsValidator,
@@ -488,6 +490,7 @@ pub enum CombinedValidator {
     Timedelta(timedelta::TimeDeltaValidator),
     // introspection types
     IsInstance(is_instance::IsInstanceValidator),
+    IsSubclass(is_subclass::IsSubclassValidator),
     Callable(callable::CallableValidator),
     // arguments
     Arguments(arguments::ArgumentsValidator),

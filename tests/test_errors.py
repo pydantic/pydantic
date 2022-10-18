@@ -239,6 +239,7 @@ def test_pydantic_error_kind_raise_ctx():
         ('time_delta_parsing', 'Input should be a valid timedelta, foobar', {'error': 'foobar'}),
         ('frozen_set_type', 'Input should be a valid frozenset', None),
         ('is_instance_of', 'Input should be an instance of Foo', {'class': 'Foo'}),
+        ('is_subclass_of', 'Input should be a subclass of Foo', {'class': 'Foo'}),
         ('callable_type', 'Input should be callable', None),
         (
             'union_tag_invalid',

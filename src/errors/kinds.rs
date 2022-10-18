@@ -279,6 +279,10 @@ pub enum ErrorKind {
     IsInstanceOf {
         class: String,
     },
+    #[strum(message = "Input should be a subclass of {class}")]
+    IsSubclassOf {
+        class: String,
+    },
     #[strum(message = "Input should be callable")]
     CallableType,
     // ---------------------
@@ -432,6 +436,7 @@ impl ErrorKind {
             Self::DatetimeObjectInvalid { .. } => extract_context!(DatetimeObjectInvalid, ctx, error: String),
             Self::TimeDeltaParsing { .. } => extract_context!(Cow::Owned, TimeDeltaParsing, ctx, error: String),
             Self::IsInstanceOf { .. } => extract_context!(IsInstanceOf, ctx, class: String),
+            Self::IsSubclassOf { .. } => extract_context!(IsSubclassOf, ctx, class: String),
             Self::UnionTagInvalid { .. } => extract_context!(
                 UnionTagInvalid,
                 ctx,
@@ -520,6 +525,7 @@ impl ErrorKind {
             Self::DatetimeObjectInvalid { error } => render!(self, error),
             Self::TimeDeltaParsing { error } => render!(self, error),
             Self::IsInstanceOf { class } => render!(self, class),
+            Self::IsSubclassOf { class } => render!(self, class),
             Self::UnionTagInvalid {
                 discriminator,
                 tag,
@@ -568,6 +574,7 @@ impl ErrorKind {
             Self::DatetimeObjectInvalid { error } => py_dict!(py, error),
             Self::TimeDeltaParsing { error } => py_dict!(py, error),
             Self::IsInstanceOf { class } => py_dict!(py, class),
+            Self::IsSubclassOf { class } => py_dict!(py, class),
             Self::UnionTagInvalid {
                 discriminator,
                 tag,
