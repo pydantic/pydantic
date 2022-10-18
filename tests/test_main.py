@@ -132,18 +132,14 @@ def test_nullable_strings_fails(NoneCheckModel):
         )
     assert exc_info.value.errors() == [
         {
-            'kind': 'str_type',
-            'loc': [
-                'required_str_value',
-            ],
+            'kind': 'string_type',
+            'loc': ['required_str_value'],
             'message': 'Input should be a valid string',
             'input_value': None,
         },
         {
             'kind': 'bytes_type',
-            'loc': [
-                'required_bytes_value',
-            ],
+            'loc': ['required_bytes_value'],
             'message': 'Input should be a valid bytes',
             'input_value': None,
         },
@@ -526,7 +522,7 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         p.b = ''
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
+            'kind': 'string_too_short',
             'loc': ['b'],
             'message': 'String should have at least 1 characters',
             'input_value': '',
@@ -550,6 +546,7 @@ def test_enum_values():
     assert isinstance(m.foo, FooEnum)
 
 
+@pytest.mark.xfail()
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
@@ -571,7 +568,7 @@ def test_literal_enum_values():
         {
             'kind': 'literal_error',
             'loc': ['baz'],
-            'message': "Input should be one of: <FooEnum.foo: 'foo_value'>",
+            'message': "Input should be <FooEnum.foo: 'foo_value'>",
             'input_value': FooEnum.bar,
             'context': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
@@ -656,36 +653,35 @@ def test_arbitrary_types_not_allowed():
             t: ArbitraryType
 
 
-def test_type_type_validation_success():
-    class ArbitraryClassAllowedModel(BaseModel):
+@pytest.fixture(scope='session', name='TypeTypeModel')
+def type_type_model_fixture():
+    class TypeTypeModel(BaseModel):
         t: Type[ArbitraryType]
 
+    return TypeTypeModel
+
+
+def test_type_type_validation_success(TypeTypeModel):
     arbitrary_type_class = ArbitraryType
-    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    m = TypeTypeModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
 
-def test_type_type_subclass_validation_success():
-    class ArbitraryClassAllowedModel(BaseModel):
-        t: Type[ArbitraryType]
-
+def test_type_type_subclass_validation_success(TypeTypeModel):
     class ArbitrarySubType(ArbitraryType):
         pass
 
     arbitrary_type_class = ArbitrarySubType
-    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    m = TypeTypeModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
 
-def test_type_type_validation_fails_for_instance():
-    class ArbitraryClassAllowedModel(BaseModel):
-        t: Type[ArbitraryType]
-
+def test_type_type_validation_fails_for_instance(TypeTypeModel):
     class C:
         pass
 
     with pytest.raises(ValidationError) as exc_info:
-        ArbitraryClassAllowedModel(t=C)
+        TypeTypeModel(t=C)
     assert exc_info.value.errors() == [
         {
             'loc': ['t'],
@@ -696,12 +692,10 @@ def test_type_type_validation_fails_for_instance():
     ]
 
 
-def test_type_type_validation_fails_for_basic_type():
-    class ArbitraryClassAllowedModel(BaseModel):
-        t: Type[ArbitraryType]
+def test_type_type_validation_fails_for_basic_type(TypeTypeModel):
 
     with pytest.raises(ValidationError) as exc_info:
-        ArbitraryClassAllowedModel(t=1)
+        TypeTypeModel(t=1)
     assert exc_info.value.errors() == [
         {
             'loc': ['t'],
@@ -714,22 +708,22 @@ def test_type_type_validation_fails_for_basic_type():
 
 @pytest.mark.parametrize('bare_type', [type, Type])
 def test_bare_type_type_validation_success(bare_type):
-    class ArbitraryClassAllowedModel(BaseModel):
+    class TypeTypeModel(BaseModel):
         t: bare_type
 
     arbitrary_type_class = ArbitraryType
-    m = ArbitraryClassAllowedModel(t=arbitrary_type_class)
+    m = TypeTypeModel(t=arbitrary_type_class)
     assert m.t == arbitrary_type_class
 
 
 @pytest.mark.parametrize('bare_type', [type, Type])
 def test_bare_type_type_validation_fails(bare_type):
-    class ArbitraryClassAllowedModel(BaseModel):
+    class TypeTypeModel(BaseModel):
         t: bare_type
 
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
-        ArbitraryClassAllowedModel(t=arbitrary_type)
+        TypeTypeModel(t=arbitrary_type)
     assert exc_info.value.errors() == [{'loc': ['t'], 'message': 'a class is expected', 'kind': 'type_error.class'}]
 
 

@@ -18,11 +18,14 @@ from uuid import UUID
 from pydantic_core import PydanticCustomError, core_schema
 from typing_extensions import get_args
 
+if typing.TYPE_CHECKING:
+    from ._generate_schema import GenerateSchema
+
 from . import _validators
 
 __all__ = ('SCHEMA_LOOKUP',)
 
-StdSchemaFunction = Callable[[type[Any]], core_schema.CoreSchema]
+StdSchemaFunction = Callable[['GenerateSchema', type[Any]], core_schema.CoreSchema]
 SCHEMA_LOOKUP: dict[type[Any], StdSchemaFunction] = {}
 
 
@@ -38,12 +41,12 @@ def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaF
 @schema_function(datetime)
 @schema_function(time)
 @schema_function(timedelta)
-def name_as_schema(t: type[Any]) -> core_schema.CoreSchema:
+def name_as_schema(_schema_generator: GenerateSchema, t: type[Any]) -> core_schema.CoreSchema:
     return {'type': t.__name__}  # type: ignore[return-value,misc]
 
 
 @schema_function(Enum)
-def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
+def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> core_schema.CoreSchema:
     def to_enum(__input_value: Any, **_kwargs: Any) -> Enum:
         try:
             return enum_type(__input_value)
@@ -68,7 +71,7 @@ def enum_schema(enum_type: type[Enum]) -> core_schema.CoreSchema:
 
 
 @schema_function(Decimal)
-def decimal_schema(_decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
+def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     decimal_validator = _validators.DecimalValidator()
     return core_schema.function_after_schema(
         core_schema.union_schema(
@@ -84,7 +87,7 @@ def decimal_schema(_decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
 
 
 @schema_function(UUID)
-def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
+def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.UnionSchema:
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     return core_schema.union_schema(
         core_schema.is_instance_schema(uuid_type),
@@ -102,7 +105,7 @@ def uuid_schema(uuid_type: type[UUID]) -> core_schema.UnionSchema:
 
 
 @schema_function(PurePath)
-def path_schema(path_type: type[PurePath]) -> core_schema.UnionSchema:
+def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) -> core_schema.UnionSchema:
     # TODO, is this actually faster than `function_after(...)` as above?
     return core_schema.union_schema(
         core_schema.is_instance_schema(path_type),
@@ -121,7 +124,7 @@ def _deque_any_schema() -> core_schema.FunctionWrapSchema:
 
 
 @schema_function(deque)
-def deque_schema(obj: Any) -> core_schema.CoreSchema:
+def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.CoreSchema:
     if obj == deque:
         # bare `deque` type used as annotation
         return _deque_any_schema()
@@ -137,10 +140,8 @@ def deque_schema(obj: Any) -> core_schema.CoreSchema:
         return _deque_any_schema()
     else:
         # `Deque[Something]`
-        from ._generate_schema import generate_schema
-
         return core_schema.function_after_schema(
-            core_schema.list_schema(generate_schema(arg)),
+            core_schema.list_schema(schema_generator.generate_schema(arg)),
             _validators.deque_typed_validator,
         )
 
@@ -150,7 +151,7 @@ def _ordered_dict_any_schema() -> core_schema.FunctionWrapSchema:
 
 
 @schema_function(OrderedDict)
-def ordered_dict_schema(obj: Any) -> core_schema.CoreSchema:
+def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.CoreSchema:
     if obj == OrderedDict:
         # bare `ordered_dict` type used as annotation
         return _ordered_dict_any_schema()
@@ -166,39 +167,39 @@ def ordered_dict_schema(obj: Any) -> core_schema.CoreSchema:
         return _ordered_dict_any_schema()
     else:
         # `OrderedDict[Foo, Bar]`
-        from ._generate_schema import generate_schema
-
         return core_schema.function_after_schema(
-            core_schema.dict_schema(generate_schema(keys_arg), generate_schema(values_arg)),
+            core_schema.dict_schema(
+                schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
+            ),
             _validators.ordered_dict_typed_validator,
         )
 
 
 @schema_function(IPv4Address)
-def ip_v4_address_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v4_address_validator)
 
 
 @schema_function(IPv4Interface)
-def ip_v4_interface_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v4_interface_validator)
 
 
 @schema_function(IPv4Network)
-def ip_v4_network_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v4_network_validator)
 
 
 @schema_function(IPv6Address)
-def ip_v6_address_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v6_address_validator)
 
 
 @schema_function(IPv6Interface)
-def ip_v6_interface_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v6_interface_validator)
 
 
 @schema_function(IPv6Network)
-def ip_v6_network_schema(_obj: Any) -> core_schema.FunctionPlainSchema:
+def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v6_network_validator)

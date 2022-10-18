@@ -117,7 +117,7 @@ def complete_model_class(
             # 2. To avoid false positives in the NameError check above
             delattr(cls, ann_name)
 
-    inner_schema = model_fields_schema(model_ref, fields, validator_functions)
+    inner_schema = model_fields_schema(model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed)
     validator_functions.check_for_unused()
 
     cls.__fields__ = fields

@@ -9,7 +9,6 @@ install:
 
 .PHONY: format
 format:
-	pyupgrade --py37-plus --exit-zero-even-if-changed `find $(sources) -name "*.py" -type f`
 	isort $(sources)
 	black $(sources)
 

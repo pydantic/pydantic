@@ -40,8 +40,8 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.1.0',
-    'pydantic-core>=0.3.1',
-    'annotated_types>=0.3.0',
+    'pydantic-core>=0.5.1',
+    'annotated-types>=0.4.0',
 ]
 optional-dependencies = { email = ['email-validator>=1.0.3'] }
 dynamic = ['version']

@@ -1103,11 +1103,11 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_multiple_error',
+            'kind': 'literal_error',
             'loc': ['tool'],
-            'message': 'Input should be one of: 1, 2',
+            'message': 'Input should be 1 or 2',
             'input_value': 3,
-            'context': {'expected': '1, 2'},
+            'context': {'expected': '1 or 2'},
         }
     ]
 
@@ -3191,9 +3191,9 @@ def test_literal_single():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_single_error',
+            'kind': 'literal_error',
             'loc': ['a'],
-            'message': "Input should be: 'a'",
+            'message': "Input should be 'a'",
             'input_value': 'b',
             'context': {'expected': "'a'"},
         }
@@ -3211,11 +3211,11 @@ def test_literal_multiple():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_multiple_error',
+            'kind': 'literal_error',
             'loc': ['a_or_b'],
-            'message': "Input should be one of: 'a', 'b'",
+            'message': "Input should be 'a' or 'b'",
             'input_value': 'c',
-            'context': {'expected': "'a', 'b'"},
+            'context': {'expected': "'a' or 'b'"},
         }
     ]
 
