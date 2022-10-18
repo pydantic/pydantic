@@ -35,7 +35,7 @@ isort==5.10.1
     # via -r requirements/linting.in
 mccabe==0.7.0
     # via flake8
-mypy==0.971
+mypy==0.982
     # via -r requirements/linting.in
 mypy-extensions==0.4.3
     # via
