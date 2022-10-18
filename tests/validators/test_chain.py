@@ -94,7 +94,7 @@ def test_flatten():
     )
 
     assert validator.validate_python('input') == 'input-1-2-3'
-    assert validator.title == 'chain[function-plain,function-plain,function-plain]'
+    assert validator.title == 'chain[function-plain[<lambda>()],function-plain[<lambda>()],function-plain[<lambda>()]]'
 
 
 def test_chain_empty():
@@ -107,7 +107,7 @@ def test_chain_one():
         {'type': 'chain', 'steps': [{'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-1'}]}
     )
     assert validator.validate_python('input') == 'input-1'
-    assert validator.title == 'function-plain'
+    assert validator.title == 'function-plain[<lambda>()]'
 
 
 def test_ask():
