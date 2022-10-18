@@ -40,11 +40,11 @@ def test_function_before_raise():
 
 
 def test_function_before_error():
-    def f(input_value, **kwargs):
+    def my_function(input_value, **kwargs):
         return input_value + 'x'
 
     v = SchemaValidator(
-        {'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str', 'max_length': 5}}
+        {'type': 'function', 'mode': 'before', 'function': my_function, 'schema': {'type': 'str', 'max_length': 5}}
     )
 
     assert v.validate_python('1234') == '1234x'
@@ -59,6 +59,7 @@ def test_function_before_error():
             'context': {'max_length': 5},
         }
     ]
+    assert repr(exc_info.value).startswith('1 validation error for function-before[my_function(), constrained-str]\n')
 
 
 def test_function_before_error_model():
