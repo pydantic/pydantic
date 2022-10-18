@@ -85,10 +85,6 @@ impl<'a> Input<'a> for PyAny {
         self.is_none()
     }
 
-    fn is_type(&self, class: &PyType) -> ValResult<bool> {
-        Ok(self.get_type().eq(class)?)
-    }
-
     fn get_attr(&self, name: &PyString) -> Option<&PyAny> {
         self.getattr(name).ok()
     }
@@ -99,6 +95,18 @@ impl<'a> Input<'a> for PyAny {
         let result = unsafe { ffi::PyObject_IsInstance(self.as_ptr(), class.as_ptr()) };
         py_error_on_minusone(self.py(), result)?;
         Ok(result == 1)
+    }
+
+    fn is_exact_instance(&self, class: &PyType) -> PyResult<bool> {
+        self.get_type().eq(class)
+    }
+
+    fn input_is_subclass(&self, class: &PyType) -> PyResult<bool> {
+        if let Ok(py_type) = self.cast_as::<PyType>() {
+            py_type.is_subclass(class)
+        } else {
+            Ok(false)
+        }
     }
 
     fn callable(&self) -> bool {

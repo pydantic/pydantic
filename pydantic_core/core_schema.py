@@ -378,6 +378,20 @@ def is_instance_schema(
     )
 
 
+class IsSubclassSchema(TypedDict, total=False):
+    type: Required[Literal['is-subclass']]
+    cls: Required[Type[Any]]
+    cls_repr: str
+    ref: str
+    extra: Any
+
+
+def is_subclass_schema(
+    cls: Type[Any], *, cls_repr: str | None = None, ref: str | None = None, extra: Any = None
+) -> IsInstanceSchema:
+    return dict_not_none(type='is-subclass', cls=cls, cls_repr=cls_repr, ref=ref, extra=extra)
+
+
 class CallableSchema(TypedDict, total=False):
     type: Required[Literal['callable']]
     ref: str
@@ -1027,6 +1041,7 @@ CoreSchema = Union[
     TimedeltaSchema,
     LiteralSchema,
     IsInstanceSchema,
+    IsSubclassSchema,
     CallableSchema,
     ListSchema,
     TuplePositionalSchema,
@@ -1118,6 +1133,7 @@ ErrorKind = Literal[
     'time_delta_parsing',
     'frozen_set_type',
     'is_instance_of',
+    'is_subclass_of',
     'callable_type',
     'union_tag_invalid',
     'union_tag_not_found',

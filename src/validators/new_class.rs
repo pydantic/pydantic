@@ -74,7 +74,7 @@ impl Validator for NewClassValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let class = self.class.as_ref(py);
-        if input.is_type(class)? {
+        if input.is_exact_instance(class)? {
             if self.revalidate {
                 let fields_set = input.get_attr(intern!(py, "__fields_set__"));
                 let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
