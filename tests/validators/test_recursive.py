@@ -616,7 +616,7 @@ def test_function_name():
     assert exc_info.value.errors() == [
         {
             'kind': 'recursion_loop',
-            'loc': ['function-after[...]'],
+            'loc': ['function-after[f(), ...]'],
             'message': 'Recursion error - cyclic reference detected',
             'input_value': 'input value',
         },

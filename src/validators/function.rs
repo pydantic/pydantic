@@ -51,10 +51,16 @@ macro_rules! impl_build {
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
                 let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?;
-                let name = format!("{}[{}]", $name, validator.get_name());
+                let function = schema.get_as_req::<&PyAny>(intern!(py, "function"))?;
+                let name = format!(
+                    "{}[{}(), {}]",
+                    $name,
+                    function_name(function)?,
+                    validator.get_name()
+                );
                 Ok(Self {
                     validator: Box::new(validator),
-                    func: schema.get_as_req::<&PyAny>(intern!(py, "function"))?.into_py(py),
+                    func: function.into_py(py),
                     config: match config {
                         Some(c) => c.into(),
                         None => py.None(),
@@ -65,6 +71,13 @@ macro_rules! impl_build {
             }
         }
     };
+}
+
+fn function_name(f: &PyAny) -> PyResult<String> {
+    match f.getattr(intern!(f.py(), "__name__")) {
+        Ok(name) => name.extract(),
+        _ => f.repr()?.extract(),
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -150,17 +163,20 @@ impl Validator for FunctionAfterValidator {
 pub struct FunctionPlainValidator {
     func: PyObject,
     config: PyObject,
+    name: String,
 }
 
 impl FunctionPlainValidator {
     pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
         let py = schema.py();
+        let function = schema.get_as_req::<&PyAny>(intern!(py, "function"))?;
         Ok(Self {
-            func: schema.get_as_req::<&PyAny>(intern!(py, "function"))?.into_py(py),
+            func: function.into_py(py),
             config: match config {
                 Some(c) => c.into(),
                 None => py.None(),
             },
+            name: format!("function-plain[{}()]", function_name(function)?),
         }
         .into())
     }
@@ -182,7 +198,7 @@ impl Validator for FunctionPlainValidator {
     }
 
     fn get_name(&self) -> &str {
-        "function-plain"
+        &self.name
     }
 }
 

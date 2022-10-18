@@ -52,16 +52,16 @@ def test_pydantic_value_error_usage():
 
 
 def test_pydantic_value_error_invalid_dict():
-    def f(input_value, **kwargs):
+    def my_function(input_value, **kwargs):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', {(): 'foobar'})
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': my_function})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(42)
 
     assert str(exc_info.value) == (
-        '1 validation error for function-plain\n'
+        '1 validation error for function-plain[my_function()]\n'
         "  (error rendering message: TypeError: 'tuple' object cannot be converted to 'PyString') "
         '[kind=my_error, input_value=42, input_type=int]'
     )
