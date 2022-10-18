@@ -1,3 +1,4 @@
+import typing
 from collections import deque
 
 import pytest
@@ -69,7 +70,7 @@ def test_is_instance_cases(schema_class, input_val, value):
 
 @pytest.mark.parametrize('input_cls', [123, 'foo', Foo(), [], {1: 2}])
 def test_is_instance_invalid(input_cls):
-    with pytest.raises(SchemaError, match="object cannot be converted to 'PyType'"):
+    with pytest.raises(SchemaError, match="SchemaError: 'cls' must be valid as the first argument to 'isinstance'"):
         SchemaValidator({'type': 'is-instance', 'cls': input_cls})
 
 
@@ -197,3 +198,28 @@ def test_json_function():
         v.validate_python([1, 2, 3])
     with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[kind=is_instance_of,'):
         v.validate_json('{"1": 2}')
+
+
+def test_is_instance_sequence():
+    v = SchemaValidator(core_schema.is_instance_schema(typing.Sequence))
+    assert v.isinstance_python(1) is False
+    assert v.isinstance_python([1]) is True
+
+    with pytest.raises(ValidationError, match=r'Input should be an instance of typing.Sequence \[kind=is_instance_of,'):
+        v.validate_python(1)
+
+
+def test_is_instance_tuple():
+    v = SchemaValidator(core_schema.is_instance_schema((int, str)))
+    assert v.isinstance_python(1) is True
+    assert v.isinstance_python('foobar') is True
+    assert v.isinstance_python([1]) is False
+    with pytest.raises(ValidationError, match=r"Input should be an instance of \(<class 'int'>, <class 'str'>\)"):
+        v.validate_python([1])
+
+
+def test_class_repr():
+    v = SchemaValidator(core_schema.is_instance_schema(int, cls_repr='Foobar'))
+    assert v.validate_python(1) == 1
+    with pytest.raises(ValidationError, match=r'Input should be an instance of Foobar \[kind=is_instance_of,'):
+        v.validate_python('1')
