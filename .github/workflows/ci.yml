@@ -204,14 +204,6 @@ jobs:
           version: '3.1.14'
           actions-cache-folder: emsdk-cache
 
-      - name: set package version
-        run: python .github/set_version.py
-        if: "startsWith(github.ref, 'refs/tags/')"
-
-      - name: Sync Cargo.lock
-        run: cargo update -p pydantic-core
-        if: "startsWith(github.ref, 'refs/tags/')"
-
       - run: pip install 'maturin>=0.13,<0.14' 'black>=22.3.0,<23' typing_extensions
 
       - name: build wheels
@@ -230,11 +222,21 @@ jobs:
           name: wasm_wheels
           path: dist
 
+  # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
+  check:
+    if: always()
+    needs: [test, lint, bench, build-wasm-emscripten]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
+
   build:
     name: build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
     # only run on push to main and on release
     if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build'))"
-    needs: [test, lint]
     strategy:
       fail-fast: false
       matrix:
@@ -294,14 +296,6 @@ jobs:
         with:
           python-version: '3.10'
           architecture: ${{ matrix.python-architecture || 'x64' }}
-
-      - name: set package version
-        run: python .github/set_version.py
-        if: "startsWith(github.ref, 'refs/tags/')"
-
-      - name: Sync Cargo.lock
-        run: cargo update -p pydantic-core
-        if: "startsWith(github.ref, 'refs/tags/')"
 
       - run: pip install -U twine 'black>=22.3.0,<23' typing_extensions
       # generate self-schema now, so we don't have to do so inside docker in maturin build
@@ -363,7 +357,7 @@ jobs:
          python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
   release:
-    needs: [build, build-wasm-emscripten]
+    needs: [build, check]
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
@@ -376,6 +370,9 @@ jobs:
           python-version: '3.10'
 
       - run: pip install -U twine
+
+      - name: check package version
+        run: python .github/check_version.py
 
       - name: get dist artifacts
         uses: actions/download-artifact@v3
