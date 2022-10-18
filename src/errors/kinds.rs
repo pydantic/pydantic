@@ -215,12 +215,8 @@ pub enum ErrorKind {
     },
     // ---------------------
     // literals
-    #[strum(message = "Input should be: {expected}")]
-    LiteralSingleError {
-        expected: String,
-    },
-    #[strum(message = "Input should be one of: {expected}")]
-    LiteralMultipleError {
+    #[strum(message = "Input should be {expected}")]
+    LiteralError {
         expected: String,
     },
     // ---------------------
@@ -428,8 +424,7 @@ impl ErrorKind {
             Self::BytesTooLong { .. } => extract_context!(BytesTooLong, ctx, max_length: usize),
             Self::ValueError { .. } => extract_context!(ValueError, ctx, error: String),
             Self::AssertionError { .. } => extract_context!(AssertionError, ctx, error: String),
-            Self::LiteralSingleError { .. } => extract_context!(LiteralSingleError, ctx, expected: String),
-            Self::LiteralMultipleError { .. } => extract_context!(LiteralMultipleError, ctx, expected: String),
+            Self::LiteralError { .. } => extract_context!(LiteralError, ctx, expected: String),
             Self::DateParsing { .. } => extract_context!(Cow::Owned, DateParsing, ctx, error: String),
             Self::DateFromDatetimeParsing { .. } => extract_context!(DateFromDatetimeParsing, ctx, error: String),
             Self::TimeParsing { .. } => extract_context!(Cow::Owned, TimeParsing, ctx, error: String),
@@ -517,8 +512,7 @@ impl ErrorKind {
             Self::ValueError { error } => render!(self, error),
             Self::AssertionError { error } => render!(self, error),
             Self::CustomError { value_error } => value_error.message(py),
-            Self::LiteralSingleError { expected } => render!(self, expected),
-            Self::LiteralMultipleError { expected } => render!(self, expected),
+            Self::LiteralError { expected } => render!(self, expected),
             Self::DateParsing { error } => render!(self, error),
             Self::DateFromDatetimeParsing { error } => render!(self, error),
             Self::TimeParsing { error } => render!(self, error),
@@ -566,8 +560,7 @@ impl ErrorKind {
             Self::ValueError { error } => py_dict!(py, error),
             Self::AssertionError { error } => py_dict!(py, error),
             Self::CustomError { value_error } => Ok(value_error.context(py)),
-            Self::LiteralSingleError { expected } => py_dict!(py, expected),
-            Self::LiteralMultipleError { expected } => py_dict!(py, expected),
+            Self::LiteralError { expected } => py_dict!(py, expected),
             Self::DateParsing { error } => py_dict!(py, error),
             Self::DateFromDatetimeParsing { error } => py_dict!(py, error),
             Self::TimeParsing { error } => py_dict!(py, error),

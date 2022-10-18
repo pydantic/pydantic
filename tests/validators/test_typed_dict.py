@@ -1190,7 +1190,7 @@ def test_bad_default_factory(default_factory, error_message):
 
 class TestOnError:
     def test_on_error_bad_name(self):
-        with pytest.raises(SchemaError, match="Input should be one of: 'raise', 'omit', 'default'"):
+        with pytest.raises(SchemaError, match="Input should be 'raise', 'omit' or 'default'"):
             SchemaValidator(
                 {
                     'type': 'typed-dict',
