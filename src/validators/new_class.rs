@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::os::raw::c_int;
 use std::ptr::null_mut;
 
 use pyo3::conversion::AsPyPointer;
@@ -10,7 +9,7 @@ use pyo3::{ffi, intern};
 
 use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{ErrorKind, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{py_error_on_minusone, Input};
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
@@ -159,20 +158,10 @@ where
     let attr_name = attr_name.to_object(py);
     let value = value.to_object(py);
     unsafe {
-        error_on_minusone(
+        py_error_on_minusone(
             py,
             ffi::PyObject_GenericSetAttr(obj.as_ptr(), attr_name.as_ptr(), value.as_ptr()),
         )
-    }
-}
-
-// Defined here as it's not exported by pyo3
-#[inline]
-fn error_on_minusone(py: Python<'_>, result: c_int) -> PyResult<()> {
-    if result != -1 {
-        Ok(())
-    } else {
-        Err(PyErr::fetch(py))
     }
 }
 

@@ -1,3 +1,5 @@
+use std::os::raw::c_int;
+
 use pyo3::prelude::*;
 
 mod datetime;
@@ -18,4 +20,13 @@ pub use return_enums::{
 
 pub fn repr_string(v: &PyAny) -> PyResult<String> {
     v.repr()?.extract()
+}
+
+// Defined here as it's not exported by pyo3
+pub fn py_error_on_minusone(py: Python<'_>, result: c_int) -> PyResult<()> {
+    if result != -1 {
+        Ok(())
+    } else {
+        Err(PyErr::fetch(py))
+    }
 }

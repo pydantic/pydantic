@@ -10,7 +10,7 @@ use pyo3::types::{
 };
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
-use pyo3::{intern, AsPyPointer, PyTypeInfo};
+use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
 use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
 
@@ -22,8 +22,8 @@ use super::datetime::{
 use super::input_abstract::InputType;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    py_string_str, repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection,
-    GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
+    py_error_on_minusone, py_string_str, repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments,
+    GenericCollection, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
 };
 
 /// Extract generators and deques into a `GenericCollection`
@@ -93,8 +93,12 @@ impl<'a> Input<'a> for PyAny {
         self.getattr(name).ok()
     }
 
-    fn is_instance(&self, class: &PyType, _json_mask: u8) -> PyResult<bool> {
-        self.is_instance(class)
+    fn input_is_instance(&self, class: &PyAny, _json_mask: u8) -> PyResult<bool> {
+        // See PyO3/pyo3#2694 - we can't use `is_instance` here since it requires PyType,
+        // and some check objects are not types, this logic is lifted from `is_instance` in PyO3
+        let result = unsafe { ffi::PyObject_IsInstance(self.as_ptr(), class.as_ptr()) };
+        py_error_on_minusone(self.py(), result)?;
+        Ok(result == 1)
     }
 
     fn callable(&self) -> bool {
