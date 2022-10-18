@@ -24,7 +24,7 @@ passing_files = {
     'test_types.py',
     'test_datetime.py',
     'test_types_payment_card_number.py',
-    # 'test_main.py',
+    'test_main.py',
 }
 
 

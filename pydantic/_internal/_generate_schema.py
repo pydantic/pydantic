@@ -80,7 +80,7 @@ class GenerateSchema:
         elif obj is None or obj is NoneType:
             return core_schema.NoneSchema(type='none')
         elif obj == type:
-            return core_schema.is_instance_schema(type)
+            return self._type_schema()
         elif is_callable_type(obj):
             return core_schema.CallableSchema(type='callable')
         elif is_literal_type(obj):
@@ -91,6 +91,10 @@ class GenerateSchema:
             return self.generate_schema(obj.__supertype__)
         elif obj == re.Pattern:
             return self._pattern_schema(obj)
+        elif isinstance(obj, type):
+            if issubclass(obj, dict):
+                return self._dict_subclass_schema(obj)
+            # probably need to take care of other subclasses here
 
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
@@ -119,10 +123,16 @@ class GenerateSchema:
             return self._generic_collection_schema(obj)
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             return self._tuple_schema(obj)
-        elif issubclass(origin, typing.Dict):
+        elif issubclass(origin, typing.Counter):
+            return self._counter_schema(obj)
+        elif origin == typing.Dict:
             return self._dict_schema(obj)
+        elif issubclass(origin, typing.Dict):
+            return self._dict_subclass_schema(obj)
+        elif issubclass(origin, typing.Mapping):
+            return self._mapping_schema(obj)
         elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
-            return self._type_schema(obj)
+            return self._subclass_schema(obj)
         elif issubclass(origin, typing.Deque):
             from ._std_types_schema import deque_schema
 
@@ -232,7 +242,7 @@ class GenerateSchema:
 
         return {  # type: ignore[misc,return-value]
             'type': name.lower(),
-            'items_schema': self.generate_schema(get_item_type(type_)),
+            'items_schema': self.generate_schema(get_first_arg(type_)),
         }
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
@@ -270,28 +280,97 @@ class GenerateSchema:
                 values_schema=self.generate_schema(arg1),
             )
 
-    def _type_schema(self, type_: Any) -> core_schema.IsInstanceSchema:
+    def _dict_subclass_schema(self, dict_subclass: Any) -> core_schema.CoreSchema:
+        """
+        Generate schema for a subclass of dict or Dict
+        """
+        try:
+            arg0, arg1 = get_args(dict_subclass)
+        except ValueError:
+            arg0, arg1 = Any, Any
+
+        from ._validators import mapping_validator
+
+        # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(dict_subclass), ...` in strict mode
+        return core_schema.function_wrap_schema(
+            mapping_validator,
+            core_schema.dict_schema(
+                keys_schema=self.generate_schema(arg0),
+                values_schema=self.generate_schema(arg1),
+            ),
+        )
+
+    def _counter_schema(self, counter_type: Any) -> core_schema.CoreSchema:
+        """
+        Generate schema for `typing.Counter`
+        """
+        arg = get_first_arg(counter_type)
+
+        from ._validators import construct_counter
+
+        # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(Counter), ...` in strict mode
+        return core_schema.function_after_schema(
+            core_schema.dict_schema(
+                keys_schema=self.generate_schema(arg),
+                values_schema=core_schema.int_schema(),
+            ),
+            construct_counter,
+        )
+
+    def _mapping_schema(self, mapping_type: Any) -> core_schema.CoreSchema:
+        """
+        Generate schema for a Dict, e.g. `dict[str, int]`.
+        """
+        try:
+            arg0, arg1 = get_args(mapping_type)
+        except ValueError:
+            return core_schema.is_instance_schema(typing.Mapping, cls_repr='Mapping')
+        else:
+            from ._validators import mapping_validator
+
+            return core_schema.function_wrap_schema(
+                mapping_validator,
+                core_schema.dict_schema(
+                    keys_schema=self.generate_schema(arg0),
+                    values_schema=self.generate_schema(arg1),
+                ),
+            )
+
+    def _type_schema(self) -> core_schema.CoreSchema:
+        return core_schema.custom_error_schema(
+            core_schema.is_instance_schema(type),
+            custom_error_kind='is_type',
+            custom_error_message='Input should be a type',
+        )
+
+    def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """
         Generate schema for a Type, e.g. `Type[int]`.
         """
-        type_param = get_args(type_)[0]
+        type_param = get_first_arg(type_)
         if type_param == Any:
-            return core_schema.is_instance_schema(type)
+            return self._type_schema()
         else:
-            return core_schema.is_instance_schema(type_param)
+            return core_schema.is_subclass_schema(type_param)
 
-    def _sequence_schema(self, sequence_type: Any) -> core_schema.FunctionWrapSchema:
+    def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
         """
         Generate schema for a Sequence, e.g. `Sequence[int]`.
         """
-        from ._validators import sequence_validator
+        item_type = get_first_arg(sequence_type)
 
-        item_type = get_item_type(sequence_type)
+        if item_type == Any:
+            return core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
+        else:
+            from ._validators import sequence_validator
 
-        return core_schema.function_wrap_schema(
-            sequence_validator,
-            core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
-        )
+            return core_schema.chain_schema(
+                core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence'),
+                core_schema.function_wrap_schema(
+                    sequence_validator,
+                    core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
+                ),
+            )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
         """
@@ -299,7 +378,7 @@ class GenerateSchema:
 
         TODO replace with pydantic-core's generator validator.
         """
-        item_type = get_item_type(type_)
+        item_type = get_first_arg(type_)
 
         return core_schema.generator_schema(self.generate_schema(item_type))
 
@@ -442,7 +521,7 @@ class PydanticSchemaGenerationError(TypeError):
     pass
 
 
-def get_item_type(type_: Any) -> Any:
+def get_first_arg(type_: Any) -> Any:
     """
     Get the first argument from a typing object, e.g. `List[int]` -> `int`, or `Any` if no argument.
     """

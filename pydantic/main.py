@@ -603,7 +603,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         return [
             (k, v)
             for k, v in self.__dict__.items()
-            # if k not in DUNDER_ATTRIBUTES and (k not in self.__fields__ or self.__fields__[k].field_info.repr)
+            if not k.startswith('_') and (k not in self.__fields__ or self.__fields__[k].repr)
         ]
 
 

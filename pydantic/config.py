@@ -68,6 +68,9 @@ class ConfigDict(TypedDict, total=False):
     post_init_call: Literal['before_validation', 'after_validation']
 
 
+config_keys = set(ConfigDict.__annotations__.keys())
+
+
 class BaseConfig:
     title: Optional[str] = None
     anystr_lower: bool = False  # TODO rename to str_to_lower
@@ -183,7 +186,7 @@ def build_config(
 
     Note: merging json_encoders is not currently implemented
     """
-    config_kwargs = {k: v for k, v in kwargs.items() if not k.startswith('_')}
+    config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
     config_from_namespace = namespace.get('Config')
 
     config_bases = []
@@ -207,7 +210,7 @@ def build_config(
         return combined_config, new_model_config
     else:
         # we want to use CombinedConfig for `__config__`, but we
-        return combined_config, None
+        return combined_config, combined_config
 
 
 def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:

@@ -12,6 +12,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Set,
     Type,
     TypeVar,
     get_type_hints,
@@ -546,7 +547,6 @@ def test_enum_values():
     assert isinstance(m.foo, FooEnum)
 
 
-@pytest.mark.xfail()
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
@@ -564,6 +564,7 @@ def test_literal_enum_values():
     with pytest.raises(ValidationError) as exc_info:
         Model(baz=FooEnum.bar)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
             'kind': 'literal_error',
@@ -623,7 +624,10 @@ def test_arbitrary_type_allowed_validation_success():
     assert m.t == arbitrary_type_instance
 
 
-@pytest.mark.xfail
+class OtherClass:
+    pass
+
+
 def test_arbitrary_type_allowed_validation_fails():
     class ArbitraryTypeAllowedModel(BaseModel):
         t: ArbitraryType
@@ -631,17 +635,17 @@ def test_arbitrary_type_allowed_validation_fails():
         class Config:
             arbitrary_types_allowed = True
 
-    class C:
-        pass
-
+    input_value = OtherClass()
     with pytest.raises(ValidationError) as exc_info:
-        ArbitraryTypeAllowedModel(t=C())
+        ArbitraryTypeAllowedModel(t=input_value)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'kind': 'is_instance_of',
             'loc': ['t'],
-            'message': 'instance of ArbitraryType expected',
-            'kind': 'type_error.arbitrary_type',
-            'ctx': {'expected_arbitrary_type': 'ArbitraryType'},
+            'message': 'Input should be an instance of ArbitraryType',
+            'input_value': input_value,
+            'context': {'class': 'ArbitraryType'},
         }
     ]
 
@@ -676,32 +680,18 @@ def test_type_type_subclass_validation_success(TypeTypeModel):
     assert m.t == arbitrary_type_class
 
 
-def test_type_type_validation_fails_for_instance(TypeTypeModel):
-    class C:
-        pass
-
+@pytest.mark.parametrize('input_value', [OtherClass, 1])
+def test_type_type_validation_fails(TypeTypeModel, input_value):
     with pytest.raises(ValidationError) as exc_info:
-        TypeTypeModel(t=C)
+        TypeTypeModel(t=input_value)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'kind': 'is_subclass_of',
             'loc': ['t'],
-            'message': 'subclass of ArbitraryType expected',
-            'kind': 'type_error.subclass',
-            'ctx': {'expected_class': 'ArbitraryType'},
-        }
-    ]
-
-
-def test_type_type_validation_fails_for_basic_type(TypeTypeModel):
-
-    with pytest.raises(ValidationError) as exc_info:
-        TypeTypeModel(t=1)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ['t'],
-            'message': 'subclass of ArbitraryType expected',
-            'kind': 'type_error.subclass',
-            'ctx': {'expected_class': 'ArbitraryType'},
+            'message': 'Input should be a subclass of ArbitraryType',
+            'input_value': input_value,
+            'context': {'class': 'ArbitraryType'},
         }
     ]
 
@@ -724,7 +714,15 @@ def test_bare_type_type_validation_fails(bare_type):
     arbitrary_type = ArbitraryType()
     with pytest.raises(ValidationError) as exc_info:
         TypeTypeModel(t=arbitrary_type)
-    assert exc_info.value.errors() == [{'loc': ['t'], 'message': 'a class is expected', 'kind': 'type_error.class'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'is_type',
+            'loc': ['t'],
+            'message': 'Input should be a type',
+            'input_value': arbitrary_type,
+        }
+    ]
 
 
 def test_annotation_field_name_shadows_attribute():
@@ -735,11 +733,10 @@ def test_annotation_field_name_shadows_attribute():
 
 
 def test_value_field_name_shadows_attribute():
-    # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
-    with pytest.raises(NameError):
+    class BadModel(BaseModel):
+        schema = 'abc'  # This conflicts with the BaseModel's schema() class method, but has no annotation
 
-        class BadModel(BaseModel):
-            schema = 'abc'  # This conflicts with the BaseModel's schema() class method
+    assert len(BadModel.__fields__) == 0
 
 
 def test_class_var():
@@ -882,157 +879,6 @@ def test_dict_with_extra_keys():
     assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
 
 
-def test_root():
-    class MyModel(BaseModel):
-        __root__: str
-
-    m = MyModel(__root__='a')
-    assert m.dict() == {'__root__': 'a'}
-    assert m.__root__ == 'a'
-
-
-def test_root_list():
-    class MyModel(BaseModel):
-        __root__: List[str]
-
-    m = MyModel(__root__=['a'])
-    assert m.dict() == {'__root__': ['a']}
-    assert m.__root__ == ['a']
-
-
-def test_root_nested():
-    class MyList(BaseModel):
-        __root__: List[str]
-
-    class MyModel(BaseModel):
-        my_list: MyList
-
-    my_list = MyList(__root__=['pika'])
-    assert MyModel(my_list=my_list).dict() == {'my_list': ['pika']}
-
-
-def test_encode_nested_root():
-    house_dict = {'pets': ['dog', 'cats']}
-
-    class Pets(BaseModel):
-        __root__: List[str]
-
-    class House(BaseModel):
-        pets: Pets
-
-    assert House(**house_dict).dict() == house_dict
-
-    class PetsDeep(BaseModel):
-        __root__: Pets
-
-    class HouseDeep(BaseModel):
-        pets: PetsDeep
-
-    assert HouseDeep(**house_dict).dict() == house_dict
-
-
-def test_root_failed():
-    with pytest.raises(ValueError, match='__root__ cannot be mixed with other fields'):
-
-        class MyModel(BaseModel):
-            __root__: str
-            a: str
-
-
-def test_root_undefined_failed():
-    class MyModel(BaseModel):
-        a: List[str]
-
-    with pytest.raises(ValidationError) as exc_info:
-        MyModel(__root__=['a'])
-        assert exc_info.value.errors() == [{'loc': ['a'], 'message': 'field required', 'kind': 'value_error.missing'}]
-
-
-def test_parse_root_as_mapping():
-    class MyModel(BaseModel):
-        __root__: Mapping[str, str]
-
-    assert MyModel.parse_obj({1: 2}).__root__ == {'1': '2'}
-
-    with pytest.raises(ValidationError) as exc_info:
-        MyModel.parse_obj({'__root__': {'1': '2'}})
-    assert exc_info.value.errors() == [
-        {'loc': ['__root__', '__root__'], 'message': 'str type expected', 'kind': 'type_error.str'}
-    ]
-
-
-def test_parse_obj_non_mapping_root():
-    class MyModel(BaseModel):
-        __root__: List[str]
-
-    assert MyModel.parse_obj(['a']).__root__ == ['a']
-    assert MyModel.parse_obj({'__root__': ['a']}).__root__ == ['a']
-    with pytest.raises(ValidationError) as exc_info:
-        MyModel.parse_obj({'__not_root__': ['a']})
-    assert exc_info.value.errors() == [
-        {'loc': ['__root__'], 'message': 'value is not a valid list', 'kind': 'type_error.list'}
-    ]
-    with pytest.raises(ValidationError):
-        MyModel.parse_obj({'__root__': ['a'], 'other': 1})
-    assert exc_info.value.errors() == [
-        {'loc': ['__root__'], 'message': 'value is not a valid list', 'kind': 'type_error.list'}
-    ]
-
-
-def test_parse_obj_nested_root():
-    class Pokemon(BaseModel):
-        name: str
-        level: int
-
-    class Pokemons(BaseModel):
-        __root__: List[Pokemon]
-
-    class Player(BaseModel):
-        rank: int
-        pokemons: Pokemons
-
-    class Players(BaseModel):
-        __root__: Dict[str, Player]
-
-    class Tournament(BaseModel):
-        players: Players
-        city: str
-
-    payload = {
-        'players': {
-            'Jane': {
-                'rank': 1,
-                'pokemons': [
-                    {
-                        'name': 'Pikachu',
-                        'level': 100,
-                    },
-                    {
-                        'name': 'Bulbasaur',
-                        'level': 13,
-                    },
-                ],
-            },
-            'Tarzan': {
-                'rank': 2,
-                'pokemons': [
-                    {
-                        'name': 'Jigglypuff',
-                        'level': 7,
-                    },
-                ],
-            },
-        },
-        'city': 'Qwerty',
-    }
-
-    tournament = Tournament.parse_obj(payload)
-    assert tournament.city == 'Qwerty'
-    assert len(tournament.players.__root__) == 2
-    assert len(tournament.players.__root__['Jane'].pokemons.__root__) == 2
-    assert tournament.players.__root__['Jane'].pokemons.__root__[0].name == 'Pikachu'
-
-
 def test_untouched_types():
     from pydantic import BaseModel
 
@@ -1055,45 +901,6 @@ def test_untouched_types():
 
     assert Model.class_name == 'Model'
     assert Model().class_name == 'Model'
-
-
-def test_custom_types_fail_without_keep_untouched():
-    from pydantic import BaseModel
-
-    class _ClassPropertyDescriptor:
-        def __init__(self, getter):
-            self.getter = getter
-
-        def __get__(self, instance, owner):
-            return self.getter(owner)
-
-    classproperty = _ClassPropertyDescriptor
-
-    with pytest.raises(RuntimeError) as e:
-
-        class Model(BaseModel):
-            @classproperty
-            def class_name(cls) -> str:
-                return cls.__name__
-
-        Model.class_name
-
-    assert str(e.value) == (
-        "no validator found for <class 'tests.test_main.test_custom_types_fail_without_keep_untouched.<locals>."
-        "_ClassPropertyDescriptor'>, see `arbitrary_types_allowed` in Config"
-    )
-
-    class Model(BaseModel):
-        class Config:
-            arbitrary_types_allowed = True
-
-        @classproperty
-        def class_name(cls) -> str:
-            return cls.__name__
-
-    with pytest.raises(AttributeError) as e:
-        Model.class_name
-    assert str(e.value) == "type object 'Model' has no attribute 'class_name'"
 
 
 def test_model_iteration():
@@ -1224,6 +1031,7 @@ def test_model_export_dict_exclusion(excludes, expected):
     assert excludes == original_excludes
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_exclude_config_field_merging():
     """Test merging field exclude values from config."""
 
@@ -1258,6 +1066,7 @@ def test_model_exclude_config_field_merging():
     assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_exclude_copy_on_model_validation():
     """When `Config.copy_on_model_validation` is set, it should keep private attributes and excluded fields"""
 
@@ -1297,6 +1106,7 @@ def test_model_exclude_copy_on_model_validation():
     assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_exclude_copy_on_model_validation_shallow():
     """When `Config.copy_on_model_validation` is set and `Config.copy_on_model_validation_shallow` is set,
     do the same as the previous test but perform a shallow copy"""
@@ -1318,6 +1128,7 @@ def test_model_exclude_copy_on_model_validation_shallow():
     assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
 
 
+@pytest.mark.skip(reason='not implemented')
 @pytest.mark.parametrize('comv_value', [True, False])
 def test_copy_on_model_validation_warning(comv_value):
     class User(BaseModel):
@@ -1342,6 +1153,7 @@ def test_copy_on_model_validation_warning(comv_value):
     assert t.user.hobbies is my_user.hobbies
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_validation_deep_copy():
     """By default, Config.copy_on_model_validation should do a deep copy"""
 
@@ -1361,6 +1173,7 @@ def test_validation_deep_copy():
     assert b.list_a == [A(name='a')]
 
 
+@pytest.mark.skip(reason='not implemented')
 @pytest.mark.parametrize(
     'kinds',
     [
@@ -1422,6 +1235,7 @@ def test_model_export_exclusion_with_fields_and_config(kinds, exclude, expected)
     assert m.dict(exclude=exclude) == expected, 'Unexpected model export result'
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_export_exclusion_inheritance():
     class Sub(BaseModel):
         s1: str = 'v1'
@@ -1448,6 +1262,7 @@ def test_model_export_exclusion_inheritance():
     assert actual == expected, 'Unexpected model export result'
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_export_with_true_instead_of_ellipsis():
     class Sub(BaseModel):
         s1: int = 1
@@ -1465,6 +1280,7 @@ def test_model_export_with_true_instead_of_ellipsis():
     assert m.dict(exclude={'s': True}) == {'a': 2}
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_export_inclusion():
     class Sub(BaseModel):
         s1: str = 'v1'
@@ -1491,6 +1307,7 @@ def test_model_export_inclusion():
     assert actual == expected, 'Unexpected model export result'
 
 
+@pytest.mark.skip(reason='not implemented')
 def test_model_export_inclusion_inheritance():
     class Sub(BaseModel):
         s1: str = Field('v1', include=...)
@@ -1536,13 +1353,12 @@ def test_custom_init_subclass_params():
     assert NewModel.something == 2
 
 
-def test_update_forward_refs_does_not_modify_module_dict():
+def test_recursive_model():
     class MyModel(BaseModel):
         field: Optional['MyModel']  # noqa: F821
 
-    MyModel.update_forward_refs()
-
-    assert 'MyModel' not in sys.modules[MyModel.__module__].__dict__
+    m = MyModel(field={'field': {'field': None}})
+    assert m.dict() == {'field': {'field': {'field': None}}}
 
 
 def test_two_defaults():
@@ -1642,8 +1458,9 @@ def test_default_factory_validate_children():
     with pytest.raises(ValidationError) as exc_info:
         Parent(children=[{'x': 1}, {'y': 2}])
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ['children', 1, 'x'], 'message': 'field required', 'kind': 'value_error.missing'},
+        {'kind': 'missing', 'loc': ['children', 1, 'x'], 'message': 'Field required', 'input_value': {'y': 2}}
     ]
 
 
@@ -1659,23 +1476,6 @@ def test_default_factory_parse():
     parsed = Outer.parse_obj(default)
     assert parsed.dict() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
-
-
-def test_none_min_max_items():
-    # None default
-    class Foo(BaseModel):
-        foo: List = Field(None)
-        bar: List = Field(None, min_items=0)
-        baz: List = Field(None, max_items=10)
-
-    f1 = Foo()
-    f2 = Foo(bar=None)
-    f3 = Foo(baz=None)
-    f4 = Foo(bar=None, baz=None)
-    for f in (f1, f2, f3, f4):
-        assert f.foo is None
-        assert f.bar is None
-        assert f.baz is None
 
 
 def test_reuse_same_field():
@@ -1700,6 +1500,7 @@ def test_base_config_type_hinting():
     get_type_hints(M.__config__)
 
 
+@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic-core/pull/237')
 def test_allow_mutation_field():
     """assigning a allow_mutation=False field should raise a TypeError"""
 
@@ -1722,14 +1523,14 @@ def test_allow_mutation_field():
 def test_repr_field():
     class Model(BaseModel):
         a: int = Field()
-        b: int = Field(repr=True)
-        c: int = Field(repr=False)
+        b: float = Field(repr=True)
+        c: bool = Field(repr=False)
 
-    m = Model(a=1, b=2, c=3)
-    assert repr(m) == 'Model(a=1, b=2)'
-    assert repr(m.__fields__['a'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
-    assert repr(m.__fields__['b'].field_info) == 'FieldInfo(default=PydanticUndefined, extra={})'
-    assert repr(m.__fields__['c'].field_info) == 'FieldInfo(default=PydanticUndefined, repr=False, extra={})'
+    m = Model(a=1, b=2.5, c=True)
+    assert repr(m) == 'Model(a=1, b=2.5)'
+    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(m.__fields__['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.__fields__['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():
@@ -1742,7 +1543,7 @@ def test_inherited_model_field_copy():
             return id(self)
 
     class Item(BaseModel):
-        images: List[Image]
+        images: Set[Image]
 
     image_1 = Image(path='my_image1.png')
     image_2 = Image(path='my_image2.png')
@@ -1750,8 +1551,8 @@ def test_inherited_model_field_copy():
     item = Item(images={image_1, image_2})
     assert image_1 in item.images
 
-    assert id(image_1) != id(item.images[0])
-    assert id(image_2) != id(item.images[1])
+    assert id(image_1) in {id(image) for image in item.images}
+    assert id(image_2) in {id(image) for image in item.images}
 
 
 def test_inherited_model_field_untouched():
@@ -1797,13 +1598,13 @@ def test_mapping_retains_type_defaultdict():
         x: Mapping[str, int]
 
     d = defaultdict(int)
-    d[1] = '2'
-    d['3']
+    d['foo'] = '2'
+    d['bar']
 
     m = Model(x=d)
     assert isinstance(m.x, defaultdict)
-    assert m.x['1'] == 2
-    assert m.x['3'] == 0
+    assert m.x['foo'] == 2
+    assert m.x['bar'] == 0
 
 
 def test_mapping_retains_type_fallback_error():
@@ -1820,7 +1621,7 @@ def test_mapping_retains_type_fallback_error():
     d['one'] = 1
     d['two'] = 2
 
-    with pytest.raises(RuntimeError, match="Could not convert dictionary to 'CustomMap'"):
+    with pytest.raises(TypeError, match='test'):
         Model(x=d)
 
 
@@ -1832,24 +1633,28 @@ def test_typing_coercion_dict():
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
 
 
-def test_typing_non_coercion_of_dict_subclasses():
-    KT = TypeVar('KT')
-    VT = TypeVar('VT')
+KT = TypeVar('KT')
+VT = TypeVar('VT')
 
-    class MyDict(Dict[KT, VT]):
-        def __repr__(self):
-            return f'MyDict({super().__repr__()})'
 
+class MyDict(Dict[KT, VT]):
+    def __repr__(self):
+        return f'MyDict({super().__repr__()})'
+
+
+def test_dict_subclasses_bare():
     class Model(BaseModel):
         a: MyDict
-        b: MyDict[str, int]
-        c: Dict[str, int]
-        d: Mapping[str, int]
 
-    assert (
-        repr(Model(a=MyDict({'a': 1}), b=MyDict({'a': '1'}), c=MyDict({'a': '1'}), d=MyDict({'a': '1'})))
-        == "Model(a=MyDict({'a': 1}), b=MyDict({'a': 1}), c={'a': 1}, d=MyDict({'a': 1}))"
-    )
+    assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
+    assert repr(Model(a=MyDict({b'x': (1, 2)})).a) == "MyDict({b'x': (1, 2)})"
+
+
+def test_dict_subclasses_typed():
+    class Model(BaseModel):
+        a: MyDict[str, int]
+
+    assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
 
 
 def test_typing_coercion_defaultdict():
@@ -1859,16 +1664,17 @@ def test_typing_coercion_defaultdict():
     d = defaultdict(str)
     d['1']
     m = Model(x=d)
-    m.x['a']
-    assert repr(m) == "Model(x=defaultdict(<class 'str'>, {1: '', 'a': ''}))"
+    assert isinstance(m.x, defaultdict)
+    assert repr(m.x) == "defaultdict(<class 'str'>, {1: ''})"
 
 
 def test_typing_coercion_counter():
     class Model(BaseModel):
         x: Counter[str]
 
-    assert Model.__fields__['x'].type_ is int
-    assert repr(Model(x={'a': 10})) == "Model(x=Counter({'a': 10}))"
+    m = Model(x={'a': 10})
+    assert isinstance(m.x, Counter)
+    assert repr(m.x) == "Counter({'a': 10})"
 
 
 def test_typing_counter_value_validation():
@@ -1878,11 +1684,13 @@ def test_typing_counter_value_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(x={'a': 'a'})
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'kind': 'int_parsing',
             'loc': ['x', 'a'],
-            'message': 'value is not a valid integer',
-            'kind': 'type_error.integer',
+            'message': 'Input should be a valid integer, unable to parse string as an integer',
+            'input_value': 'a',
         }
     ]
 
@@ -1893,14 +1701,14 @@ def test_class_kwargs_config():
 
     assert Base.__config__.extra is Extra.forbid
     assert Base.__config__.alias_generator is str.upper
-    assert Base.__fields__['a'].alias == 'A'
+    # assert Base.__fields__['a'].alias == 'A'
 
     class Model(Base, extra='allow'):
         b: int
 
     assert Model.__config__.extra is Extra.allow  # overwritten as intended
     assert Model.__config__.alias_generator is str.upper  # inherited as intended
-    assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+    # assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
 
 
 def test_class_kwargs_config_json_encoders():
@@ -1911,16 +1719,16 @@ def test_class_kwargs_config_json_encoders():
 
 
 def test_class_kwargs_config_and_attr_conflict():
+    class Model(BaseModel, extra='allow', alias_generator=str.upper):
+        b: int
 
-    with pytest.raises(
-        TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
-    ):
+        class Config:
+            extra = 'forbid'
+            title = 'Foobar'
 
-        class Model(BaseModel, extra='allow'):
-            b: int
-
-            class Config:
-                extra = 'forbid'
+    assert Model.__config__.extra is Extra.allow
+    assert Model.__config__.alias_generator is str.upper
+    assert Model.__config__.title == 'Foobar'
 
 
 def test_class_kwargs_custom_config():
@@ -1928,10 +1736,10 @@ def test_class_kwargs_custom_config():
         class Config(BaseConfig):
             some_config = 'value'
 
-    class Model(Base, some_config='new_value'):
-        a: int
+    with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
 
-    assert Model.__config__.some_config == 'new_value'
+        class Model(Base, some_config='new_value'):
+            a: int
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
@@ -1942,14 +1750,14 @@ def test_new_union_origin():
         x: int | str
 
     assert Model(x=3).x == 3
-    assert Model(x='3').x == 3
+    assert Model(x='3').x == '3'
     assert Model(x='pika').x == 'pika'
-    assert Model.schema() == {
-        'title': 'Model',
-        'kind': 'object',
-        'properties': {'x': {'title': 'X', 'anyOf': [{'kind': 'integer'}, {'kind': 'string'}]}},
-        'required': ['x'],
-    }
+    # assert Model.schema() == {
+    #     'title': 'Model',
+    #     'kind': 'object',
+    #     'properties': {'x': {'title': 'X', 'anyOf': [{'kind': 'integer'}, {'kind': 'string'}]}},
+    #     'required': ['x'],
+    # }
 
 
 def test_annotated_class():
@@ -1990,6 +1798,7 @@ def test_annotated_class():
 #     assert Model.__fields__['a'].final
 
 
+@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 @pytest.mark.parametrize(
     'ann',
     [Final, Final[int]],
@@ -2005,6 +1814,7 @@ def test_final_field_decl_with_default_val(ann):
     assert 'a' not in Model.__fields__
 
 
+@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 def test_final_field_reassignment():
     class Model(BaseModel):
         a: Final[int]
@@ -2018,6 +1828,7 @@ def test_final_field_reassignment():
         obj.a = 20
 
 
+@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 def test_field_by_default_is_not_final():
     class Model(BaseModel):
         a: int

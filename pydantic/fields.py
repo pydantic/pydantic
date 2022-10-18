@@ -139,7 +139,9 @@ class FieldInfo(_utils.Representation):
         return constraints
 
     def get_default(self) -> Any:
-        return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
+        # we don't want to call default_factory as it may have side-effects, so we default to None as the
+        # least-worse alternative
+        return _utils.smart_deepcopy(self.default) if self.default_factory is None else None
 
     def is_required(self) -> bool:
         return self.default is Undefined and self.default_factory is None
