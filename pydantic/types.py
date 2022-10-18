@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 import abc
 import dataclasses as _dataclasses
 import re
@@ -16,12 +18,12 @@ from typing import (
     Hashable,
     List,
     Literal,
-    Optional,
     Set,
     Tuple,
     Type,
     TypeVar,
     Union,
+    cast,
 )
 from uuid import UUID
 
@@ -83,7 +85,7 @@ if TYPE_CHECKING:
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
-    strict: bool | None = True
+    strict: bool = True
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,13 +96,19 @@ StrictBool = Annotated[bool, Strict()]
 
 
 def conint(
-    *, strict: bool = None, gt: int = None, ge: int = None, lt: int = None, le: int = None, multiple_of: int = None
+    *,
+    strict: bool | None = None,
+    gt: int | None = None,
+    ge: int | None = None,
+    lt: int | None = None,
+    le: int | None = None,
+    multiple_of: int | None = None,
 ) -> type[int]:
-    return Annotated[
+    return Annotated[  # type: ignore[return-value]
         int,
-        Strict(strict),
+        Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
-        annotated_types.MultipleOf(multiple_of),
+        annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
     ]
 
 
@@ -115,25 +123,25 @@ StrictInt = Annotated[int, Strict()]
 
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
-    allow_inf_nan: bool | None = True
+    allow_inf_nan: bool = True
 
 
 def confloat(
     *,
-    strict: bool = False,
-    gt: float = None,
-    ge: float = None,
-    lt: float = None,
-    le: float = None,
-    multiple_of: float = None,
-    allow_inf_nan: Optional[bool] = None,
+    strict: bool | None = None,
+    gt: float | None = None,
+    ge: float | None = None,
+    lt: float | None = None,
+    le: float | None = None,
+    multiple_of: float | None = None,
+    allow_inf_nan: bool | None = None,
 ) -> type[float]:
-    return Annotated[
+    return Annotated[  # type: ignore[return-value]
         float,
-        Strict(strict),
+        Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
-        annotated_types.MultipleOf(multiple_of),
-        AllowInfNan(allow_inf_nan),
+        annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
+        AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
 
 
@@ -154,7 +162,11 @@ def conbytes(
     max_length: int = None,
     strict: bool = None,
 ) -> type[bytes]:
-    return Annotated[bytes, Strict(strict), annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[  # type: ignore[return-value]
+        bytes,
+        Strict(strict) if strict is not None else None,
+        annotated_types.Len(min_length or 0, max_length),
+    ]
 
 
 StrictBytes = Annotated[bytes, Strict()]
@@ -165,17 +177,17 @@ StrictBytes = Annotated[bytes, Strict()]
 
 def constr(
     *,
-    strip_whitespace: bool = False,
-    to_upper: bool = False,
-    to_lower: bool = False,
-    strict: bool = False,
-    min_length: int = None,
-    max_length: int = None,
-    pattern: str = None,
+    strip_whitespace: bool | None = None,
+    to_upper: bool | None = None,
+    to_lower: bool | None = None,
+    strict: bool | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    pattern: str | None = None,
 ) -> type[str]:
-    return Annotated[
+    return Annotated[  # type: ignore[return-value]
         str,
-        Strict(strict),
+        Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
         _fields.CustomMetadata(
             strip_whitespace=strip_whitespace,
@@ -196,26 +208,39 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 def conset(
     item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
 ) -> Type[Set[HashableItemType]]:
-    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[  # type: ignore[return-value]
+        Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
+    ]
 
 
 def confrozenset(
-    item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
+    item_type: Type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> Type[FrozenSet[HashableItemType]]:
-    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[  # type: ignore[return-value]
+        FrozenSet[item_type],  # type: ignore[valid-type]
+        annotated_types.Len(min_length or 0, max_length),
+    ]
 
 
 AnyItemType = TypeVar('AnyItemType')
 
 
-def conlist(item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None) -> Type[List[AnyItemType]]:
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
+def conlist(
+    item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> Type[List[AnyItemType]]:
+    return Annotated[  # type: ignore[return-value]
+        List[item_type],  # type: ignore[valid-type]
+        annotated_types.Len(min_length or 0, max_length),
+    ]
 
 
 def contuple(
-    item_type: Type[AnyItemType], *, min_length: int = None, max_length: int = None
+    item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> Type[Tuple[AnyItemType]]:
-    return Annotated[Tuple[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[  # type: ignore[return-value]
+        Tuple[item_type],
+        annotated_types.Len(min_length or 0, max_length),
+    ]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,23 +274,23 @@ else:
 
 def condecimal(
     *,
-    strict: bool = None,
-    gt: int | Decimal = None,
-    ge: int | Decimal = None,
-    lt: int | Decimal = None,
-    le: int | Decimal = None,
-    multiple_of: int | Decimal = None,
-    max_digits: int = None,
-    decimal_places: int = None,
-    allow_inf_nan: Optional[bool] = None,
+    strict: bool | None = None,
+    gt: int | Decimal | None = None,
+    ge: int | Decimal | None = None,
+    lt: int | Decimal | None = None,
+    le: int | Decimal | None = None,
+    multiple_of: int | Decimal | None = None,
+    max_digits: int | None = None,
+    decimal_places: int | None = None,
+    allow_inf_nan: bool | None = None,
 ) -> Type[Decimal]:
-    return Annotated[
+    return Annotated[  # type: ignore[return-value]
         Decimal,
-        Strict(strict),
+        Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
-        annotated_types.MultipleOf(multiple_of),
+        annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
         _fields.CustomMetadata(max_digits=max_digits, decimal_places=decimal_places),
-        AllowInfNan(allow_inf_nan),
+        AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
 
 
@@ -279,10 +304,10 @@ class UuidVersion(_fields.PydanticMetadata):
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
-    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        return core_schema.function_after_schema(schema, self.validate)
+    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.FunctionSchema:
+        return core_schema.function_after_schema(schema, cast(core_schema.ValidatorFunction, self.validate))
 
-    def validate(self, value: UUID, **kwargs) -> UUID:
+    def validate(self, value: UUID, **_kwargs: Any) -> UUID:
         if value.version != self.uuid_version:
             raise PydanticCustomError(
                 'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
@@ -306,36 +331,34 @@ class PathType(_fields.PydanticMetadata):
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(format='file-path')
 
-    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.FunctionSchema:
         function_lookup = {
-            'file': self.validate_file,
-            'dir': self.validate_directory,
-            'new': self.validate_new,
+            'file': cast(core_schema.ValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.ValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.ValidatorFunction, self.validate_new),
         }
 
-        return core_schema.FunctionSchema(
-            type='function',
-            mode='after',
-            function=function_lookup[self.path_type],
-            schema=schema,
+        return core_schema.function_after_schema(
+            schema,
+            function_lookup[self.path_type],
         )
 
     @staticmethod
-    def validate_file(path: Path, **kwargs) -> Path:
+    def validate_file(path: Path, **_kwargs: Any) -> Path:
         if path.is_file():
             return path
         else:
             raise PydanticCustomError('path_not_file', 'Path does not point to a file')
 
     @staticmethod
-    def validate_directory(path: Path, **kwargs) -> Path:
+    def validate_directory(path: Path, **_kwargs: Any) -> Path:
         if path.is_dir():
             return path
         else:
             raise PydanticCustomError('path_not_directory', 'Path does not point to a directory')
 
     @staticmethod
-    def validate_new(path: Path, **kwargs) -> Path:
+    def validate_new(path: Path, **_kwargs: Any) -> Path:
         if path.exists():
             raise PydanticCustomError('path_exists', 'path already exists')
         elif not path.parent.exists():
@@ -382,15 +405,15 @@ SecretType = TypeVar('SecretType', str, bytes)
 
 class SecretField(abc.ABC, Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
-        self._secret_value = secret_value
+        self._secret_value: SecretType = secret_value
 
-    def get_secret_value(self) -> str:
+    def get_secret_value(self) -> SecretType:
         return self._secret_value
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
         if cls is SecretStr:
-            pre_schema = core_schema.string_schema()
+            pre_schema: core_schema.CoreSchema = core_schema.string_schema()
             error_kind = 'string_type'
         else:
             assert cls is SecretBytes, f'Unknown SecretField subclass {cls!r}'
@@ -441,23 +464,25 @@ class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
     def __init__(
         self, field_type: Type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
     ) -> None:
-        self.field_type = field_type
+        self.field_type: Type[SecretField[SecretType]] = field_type
         self.min_length = min_length
         self.max_length = max_length
-        self.error_prefix = 'string' if field_type is SecretStr else 'bytes'
+        self.error_prefix: Literal['string', 'bytes'] = 'string' if field_type is SecretStr else 'bytes'
 
-    def __call__(self, value: SecretField[SecretType] | SecretType, **_kwargs: Any) -> Any:
-        if self.min_length is not None and len(value) < self.min_length:
-            raise PydanticKindError(f'{self.error_prefix}_too_short', {'min_length': self.min_length})
-        if self.max_length is not None and len(value) > self.max_length:
-            raise PydanticKindError(f'{self.error_prefix}_too_long', {'max_length': self.max_length})
+    def __call__(self, __value: SecretField[SecretType] | SecretType, **_kwargs: Any) -> Any:
+        if self.min_length is not None and len(__value) < self.min_length:
+            short_kind: core_schema.ErrorKind = f'{self.error_prefix}_too_short'  # type: ignore[assignment]
+            raise PydanticKindError(short_kind, {'min_length': self.min_length})
+        if self.max_length is not None and len(__value) > self.max_length:
+            long_kind: core_schema.ErrorKind = f'{self.error_prefix}_too_long'  # type: ignore[assignment]
+            raise PydanticKindError(long_kind, {'max_length': self.max_length})
 
-        if isinstance(value, self.field_type):
-            return value
+        if isinstance(__value, self.field_type):
+            return __value
         else:
-            return self.field_type(value)
+            return self.field_type(__value)  # type: ignore[arg-type]
 
-    def __pydantic_update_schema__(self, schema: core_schema.UnionSchema, **constraints: Any) -> None:
+    def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **constraints: Any) -> None:
         self._update_attrs(constraints, {'min_length', 'max_length'})
 
 
@@ -515,8 +540,8 @@ class PaymentCardNumber(str):
         )
 
     @classmethod
-    def validate(cls, v: str, **_kwargs) -> 'PaymentCardNumber':
-        return cls(v)
+    def validate(cls, __input_value: str, **_kwargs: Any) -> 'PaymentCardNumber':
+        return cls(__input_value)
 
     @property
     def masked(self) -> str:
@@ -613,13 +638,13 @@ class ByteSize(int):
         return core_schema.function_plain_schema(cls.validate)
 
     @classmethod
-    def validate(cls, v: Any, **kwargs) -> 'ByteSize':
+    def validate(cls, __input_value: Any, **_kwargs: Any) -> 'ByteSize':
         try:
-            return cls(int(v))
+            return cls(int(__input_value))
         except ValueError:
             pass
 
-        str_match = byte_string_re.match(str(v))
+        str_match = byte_string_re.match(str(__input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
@@ -703,8 +728,8 @@ else:
 
 
 def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date = None, le: date = None) -> type[date]:
-    return Annotated[
+    return Annotated[  # type: ignore[return-value]
         date,
-        Strict(strict),
+        Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
     ]

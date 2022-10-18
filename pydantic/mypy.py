@@ -44,7 +44,7 @@ from mypy.plugin import (
     SemanticAnalyzerPluginInterface,
 )
 from mypy.plugins import dataclasses
-from mypy.semanal import set_callable_name  # type: ignore
+from mypy.semanal import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
     AnyType,

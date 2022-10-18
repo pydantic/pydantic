@@ -10,13 +10,13 @@ from pydantic._internal._utils import Representation, update_not_none
 
 if TYPE_CHECKING:
     import email_validator
-    from typing_extensions import Typeddict
+    from typing_extensions import TypedDict
 
     from ._internal._typing_extra import AnyCallable
 
     CallableGenerator = Generator[AnyCallable, None, None]
 
-    class Parts(Typeddict, total=False):
+    class Parts(TypedDict, total=False):
         scheme: str
         user: str | None
         password: str | None
@@ -28,14 +28,14 @@ if TYPE_CHECKING:
         query: str | None
         fragment: str | None
 
-    class HostParts(Typeddict, total=False):
+    class HostParts(TypedDict, total=False):
         host: str
         tld: str | None
         host_type: str | None
         port: str | None
         rebuild: bool
 
-    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]
+    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]  # type: ignore[misc]
 
 else:
     email_validator = None
@@ -200,7 +200,7 @@ class AnyUrl(str):
         fragment: str | None = None,
         **_kwargs: str,
     ) -> str:
-        parts = Parts(
+        parts = Parts(  # type: ignore[misc]
             scheme=scheme,
             user=user,
             password=password,
@@ -330,7 +330,7 @@ class AnyUrl(str):
     def validate_host(cls, parts: 'Parts') -> tuple[str, str | None, str, bool]:
         tld, host_type, rebuild = None, None, False
         for f in ('domain', 'ipv4', 'ipv6'):
-            host = parts[f]
+            host = parts[f]  # type: ignore[literal-required]
             if host:
                 host_type = f
                 break
@@ -370,13 +370,13 @@ class AnyUrl(str):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {}  # type: ignore[return-value]
+        return {}
 
     @classmethod
     def apply_default_parts(cls, parts: 'Parts') -> 'Parts':
         for key, value in cls.get_default_parts(parts).items():
-            if not parts[key]:
-                parts[key] = value
+            if not parts[key]:  # type: ignore[literal-required]
+                parts[key] = value  # type: ignore[literal-required]
         return parts
 
     def __repr__(self) -> str:
@@ -398,7 +398,7 @@ class HttpUrl(AnyHttpUrl):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {'port': '80' if parts['scheme'] == 'http' else '443'}  # type: ignore[return-value]
+        return {'port': '80' if parts['scheme'] == 'http' else '443'}
 
 
 class FileUrl(AnyUrl):
@@ -433,7 +433,7 @@ class MultiHostDsn(AnyUrl):
             port = d.get('port')
             cls._validate_port(port)
             hosts_parts.append(
-                {  # type: ignore[arg-type]
+                {
                     'host': host,
                     'host_type': host_type,
                     'tld': tld,
@@ -509,7 +509,7 @@ class RedisDsn(AnyUrl):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {  # type: ignore[return-value]
+        return {
             'domain': 'localhost' if not (parts['ipv4'] or parts['ipv6']) else '',
             'port': '6379',
             'path': '/0',
@@ -522,7 +522,7 @@ class MongoDsn(AnyUrl):
     # TODO: Needed to generic "Parts" for "Replica Set", "Sharded Cluster", and other mongodb deployment modes
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {'port': '27017'}  # type: ignore[return-value]
+        return {'port': '27017'}
 
 
 class KafkaDsn(AnyUrl):
@@ -530,7 +530,7 @@ class KafkaDsn(AnyUrl):
 
     @staticmethod
     def get_default_parts(parts: 'Parts') -> 'Parts':
-        return {'domain': 'localhost', 'port': '9092'}  # type: ignore[return-value]
+        return {'domain': 'localhost', 'port': '9092'}
 
 
 def stricturl(

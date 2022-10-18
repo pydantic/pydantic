@@ -7,7 +7,6 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     CockroachDsn,
-    EmailStr,
     FileUrl,
     HttpUrl,
     KafkaDsn,
@@ -831,15 +830,6 @@ def test_address_invalid(value, reason):
 def test_email_validator_not_installed():
     with pytest.raises(ImportError):
         validate_email('s@muelcolvin.com')
-
-
-@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
-def test_email_str():
-    class Model(BaseModel):
-        v: EmailStr
-
-    assert Model(v=EmailStr('foo@example.org')).v == 'foo@example.org'
-    assert Model(v='foo@example.org').v == 'foo@example.org'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

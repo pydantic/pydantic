@@ -366,7 +366,7 @@ def test_past_date_validation_fails(value):
         {
             'kind': 'date_past',
             'loc': ['foo'],
-            'message': 'Input date value should be in the past',
+            'message': 'Date should be in the past',
             'input_value': value,
         }
     ]
@@ -405,7 +405,7 @@ def test_future_date_validation_fails(value):
         {
             'kind': 'date_future',
             'loc': ['foo'],
-            'message': 'Input date value should be in the future',
+            'message': 'Date should be in the future',
             'input_value': value,
         }
     ]

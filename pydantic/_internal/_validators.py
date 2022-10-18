@@ -26,6 +26,9 @@ def sequence_validator(
     """
     Validator for `Sequence` types, isinstance(v, Sequence) has already been called.
     """
+    if not isinstance(__input_value, typing.Sequence):
+        raise PydanticKindError('is_instance_of', {'class': 'Sequence'})
+
     value_type = type(__input_value)
     v_list = validator(__input_value)
 

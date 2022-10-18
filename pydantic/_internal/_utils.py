@@ -160,7 +160,7 @@ def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any],
 
 def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:
     try:
-        return isinstance(cls, type) and issubclass(cls, class_or_tuple)  # type: ignore[arg-type]
+        return isinstance(cls, type) and issubclass(cls, class_or_tuple)
     except TypeError:
         if isinstance(cls, WithArgsTypes):
             return False

@@ -217,6 +217,9 @@ def annotated_schema(annotated_type: Any) -> core_schema.CoreSchema:
 
 def apply_constraints(schema: core_schema.CoreSchema, constraints: typing.Iterable[Any]) -> core_schema.CoreSchema:
     for c in constraints:
+        if c is None:
+            continue
+
         c_get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
         if c_get_schema is not None:
             schema = c_get_schema(schema)
@@ -318,7 +321,10 @@ def generic_collection_schema(type_: Any) -> core_schema.CoreSchema:
     except AttributeError:
         name = get_origin(type_).__name__  # type: ignore[union-attr]
 
-    return {'type': name.lower(), 'items_schema': get_item_type(type_)}  # type: ignore[misc,return-value]
+    return {  # type: ignore[misc,return-value]
+        'type': name.lower(),
+        'items_schema': generate_schema(get_item_type(type_)),
+    }
 
 
 def tuple_schema(tuple_type: Any) -> core_schema.CoreSchema:
@@ -369,7 +375,7 @@ def type_schema(type_: Any) -> core_schema.IsInstanceSchema:
         return core_schema.is_instance_schema(type_param)
 
 
-def sequence_schema(sequence_type: Any) -> core_schema.ChainSchema:
+def sequence_schema(sequence_type: Any) -> core_schema.FunctionWrapSchema:
     """
     Generate schema for a Sequence, e.g. `Sequence[int]`.
     """
@@ -377,12 +383,9 @@ def sequence_schema(sequence_type: Any) -> core_schema.ChainSchema:
 
     item_type = get_item_type(sequence_type)
 
-    return core_schema.chain_schema(
-        core_schema.is_instance_schema(typing.Sequence, json_types={'list'}),
-        core_schema.function_wrap_schema(
-            sequence_validator,
-            core_schema.list_schema(generate_schema(item_type), allow_any_iter=True),
-        ),
+    return core_schema.function_wrap_schema(
+        sequence_validator,
+        core_schema.list_schema(generate_schema(item_type), allow_any_iter=True),
     )
 
 
@@ -441,5 +444,5 @@ def get_item_type(type_: Any) -> Any:
     """
     try:
         return get_args(type_)[0]
-    except ValueError:
+    except IndexError:
         return Any
