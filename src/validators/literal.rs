@@ -332,5 +332,10 @@ fn expected_repr_name(mut repr_args: Vec<String>) -> (String, String) {
     let name = format!("literal[{}]", repr_args.join(","));
     // unwrap is okay since we check the length in build at the top of this file
     let last_repr = repr_args.pop().unwrap();
-    (format!("{} or {}", repr_args.join(", "), last_repr), name)
+    let repr = if repr_args.is_empty() {
+        last_repr
+    } else {
+        format!("{} or {}", repr_args.join(", "), last_repr)
+    };
+    (repr, name)
 }

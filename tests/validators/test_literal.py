@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 
 import pytest
 
@@ -106,6 +107,7 @@ def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
         if expected.errors is not None:
+            # debug(exc_info.value.errors())
             assert exc_info.value.errors() == expected.errors
     else:
         assert v.validate_test(input_value) == expected
@@ -123,13 +125,34 @@ def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value
             Err("Input should be 1 or b'whatever' [kind=literal_error, input_value=3, input_type=int]"),
             id='wrong-general',
         ),
+        ([b'bite'], b'bite', b'bite'),
+        pytest.param(
+            [b'bite'],
+            'spoon',
+            Err(
+                "Input should be b'bite' [kind=literal_error, input_value='spoon', input_type=str]",
+                [
+                    {
+                        'kind': 'literal_error',
+                        'loc': [],
+                        'message': "Input should be 1 or '1'",
+                        'input_value': '2',
+                        'context': {'expected': "1 or '1'"},
+                    }
+                ],
+            ),
+            id='single-byte',
+        ),
     ],
 )
 def test_literal_not_json(kwarg_expected, input_value, expected):
     v = SchemaValidator({'type': 'literal', 'expected': kwarg_expected})
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
+            if expected.errors is not None:
+                # debug(exc_info.value.errors())
+                assert exc_info.value.errors() == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -169,4 +192,24 @@ def test_union():
             'message': 'Input should be a valid integer, unable to parse string as an integer',
             'input_value': 'c',
         },
+    ]
+
+
+def test_enum():
+    class FooEnum(Enum):
+        foo = 'foo_value'
+
+    v = SchemaValidator(core_schema.literal_schema(FooEnum.foo))
+    assert v.validate_python(FooEnum.foo) == FooEnum.foo
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('foo_value')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'kind': 'literal_error',
+            'loc': [],
+            'message': "Input should be <FooEnum.foo: 'foo_value'>",
+            'input_value': 'foo_value',
+            'context': {'expected': "<FooEnum.foo: 'foo_value'>"},
+        }
     ]
