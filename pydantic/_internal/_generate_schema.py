@@ -11,12 +11,11 @@ from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import core_schema
-from typing_extensions import get_args, is_typeddict
+from typing_extensions import Annotated, get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
 from ._fields import CustomMetadata, CustomValidator, PydanticMetadata
 from ._typing_extra import (
-    Annotated,
     NoneType,
     NotRequired,
     Required,

@@ -26,10 +26,11 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Annotated
+
 from pydantic.errors import ConfigError
 
 from ._typing_extra import (
-    Annotated,
     NoneType,
     WithArgsTypes,
     all_literal_values,

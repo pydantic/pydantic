@@ -4,9 +4,9 @@ import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, cast, no_type_check
 
+import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
 
-from ._internal import _typing_extra
 from ._internal._utils import Representation, update_not_none
 
 if TYPE_CHECKING:
@@ -564,7 +564,7 @@ def import_email_validator() -> None:
 
 
 if TYPE_CHECKING:
-    EmailStr = _typing_extra.Annotated[str, ...]
+    EmailStr = typing_extensions.Annotated[str, ...]
 else:
 
     class EmailStr:
