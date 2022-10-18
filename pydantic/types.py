@@ -30,7 +30,7 @@ import annotated_types
 from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 
 from . import errors
-from ._internal import _fields, _validators, _typing_extra
+from ._internal import _fields, _typing_extra, _validators
 
 __all__ = [
     'StrictStr',

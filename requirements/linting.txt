@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/linting.txt requirements/linting.in
 #
+annotated-types==0.4.0
+    # via -r requirements/linting.in
 attrs==22.1.0
     # via hypothesis
 black==22.8.0

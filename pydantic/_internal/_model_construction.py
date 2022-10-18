@@ -13,7 +13,7 @@ from pydantic_core import SchemaValidator, core_schema
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._fields import SchemaRef
 from ._generate_schema import generate_config, model_fields_schema
-from ._typing_extra import is_classvar, Annotated
+from ._typing_extra import Annotated, is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 from ._validation_functions import ValidationFunctions
 
