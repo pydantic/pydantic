@@ -9,7 +9,6 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
-    Annotated,
     Any,
     Callable,
     Deque,
@@ -32,7 +31,7 @@ import annotated_types
 import pytest
 from dirty_equals import AnyThing, HasRepr
 from pydantic_core._pydantic_core import SchemaError
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Annotated, Literal, TypedDict
 
 from pydantic import (
     UUID1,

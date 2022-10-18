@@ -15,7 +15,6 @@ from typing import (
     Generic,
     Hashable,
     List,
-    Literal,
     Set,
     Tuple,
     Type,
@@ -26,8 +25,8 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-import typing_extensions
 from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
+from typing_extensions import Annotated, Literal
 
 from . import errors
 from ._internal import _fields, _validators
@@ -89,7 +88,7 @@ class Strict(_fields.PydanticMetadata):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-StrictBool = typing_extensions.Annotated[bool, Strict()]
+StrictBool = Annotated[bool, Strict()]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INTEGER TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -103,7 +102,7 @@ def conint(
     le: int | None = None,
     multiple_of: int | None = None,
 ) -> type[int]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         int,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -111,11 +110,11 @@ def conint(
     ]
 
 
-PositiveInt = typing_extensions.Annotated[int, annotated_types.Gt(0)]
-NegativeInt = typing_extensions.Annotated[int, annotated_types.Lt(0)]
-NonPositiveInt = typing_extensions.Annotated[int, annotated_types.Le(0)]
-NonNegativeInt = typing_extensions.Annotated[int, annotated_types.Ge(0)]
-StrictInt = typing_extensions.Annotated[int, Strict()]
+PositiveInt = Annotated[int, annotated_types.Gt(0)]
+NegativeInt = Annotated[int, annotated_types.Lt(0)]
+NonPositiveInt = Annotated[int, annotated_types.Le(0)]
+NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
+StrictInt = Annotated[int, Strict()]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -135,7 +134,7 @@ def confloat(
     multiple_of: float | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[float]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         float,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -144,12 +143,12 @@ def confloat(
     ]
 
 
-PositiveFloat = typing_extensions.Annotated[float, annotated_types.Gt(0)]
-NegativeFloat = typing_extensions.Annotated[float, annotated_types.Lt(0)]
-NonPositiveFloat = typing_extensions.Annotated[float, annotated_types.Le(0)]
-NonNegativeFloat = typing_extensions.Annotated[float, annotated_types.Ge(0)]
-StrictFloat = typing_extensions.Annotated[float, Strict(True)]
-FiniteFloat = typing_extensions.Annotated[float, AllowInfNan(False)]
+PositiveFloat = Annotated[float, annotated_types.Gt(0)]
+NegativeFloat = Annotated[float, annotated_types.Lt(0)]
+NonPositiveFloat = Annotated[float, annotated_types.Le(0)]
+NonNegativeFloat = Annotated[float, annotated_types.Ge(0)]
+StrictFloat = Annotated[float, Strict(True)]
+FiniteFloat = Annotated[float, AllowInfNan(False)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,14 +160,14 @@ def conbytes(
     max_length: int = None,
     strict: bool = None,
 ) -> type[bytes]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         bytes,
         Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
     ]
 
 
-StrictBytes = typing_extensions.Annotated[bytes, Strict()]
+StrictBytes = Annotated[bytes, Strict()]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -184,7 +183,7 @@ def constr(
     max_length: int | None = None,
     pattern: str | None = None,
 ) -> type[str]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         str,
         Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
@@ -197,7 +196,7 @@ def constr(
     ]
 
 
-StrictStr = typing_extensions.Annotated[str, Strict()]
+StrictStr = Annotated[str, Strict()]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ COLLECTION TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,7 +206,7 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 def conset(
     item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
 ) -> Type[Set[HashableItemType]]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
     ]
 
@@ -215,7 +214,7 @@ def conset(
 def confrozenset(
     item_type: Type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> Type[FrozenSet[HashableItemType]]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         FrozenSet[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
     ]
@@ -227,7 +226,7 @@ AnyItemType = TypeVar('AnyItemType')
 def conlist(
     item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> Type[List[AnyItemType]]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
     ]
@@ -236,7 +235,7 @@ def conlist(
 def contuple(
     item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> Type[Tuple[AnyItemType]]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         Tuple[item_type],
         annotated_types.Len(min_length or 0, max_length),
     ]
@@ -246,13 +245,13 @@ def contuple(
 
 AnyType = TypeVar('AnyType')
 if TYPE_CHECKING:
-    ImportString = typing_extensions.Annotated[AnyType, ...]
+    ImportString = Annotated[AnyType, ...]
 else:
 
     class ImportString(_fields.PydanticMetadata):
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
-            return typing_extensions.Annotated[item, cls()]
+            return Annotated[item, cls()]
 
         @classmethod
         def __get_pydantic_validation_schema__(
@@ -283,7 +282,7 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> Type[Decimal]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         Decimal,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -314,10 +313,10 @@ class UuidVersion(_fields.PydanticMetadata):
         return value
 
 
-UUID1 = typing_extensions.Annotated[UUID, UuidVersion(1)]
-UUID3 = typing_extensions.Annotated[UUID, UuidVersion(3)]
-UUID4 = typing_extensions.Annotated[UUID, UuidVersion(4)]
-UUID5 = typing_extensions.Annotated[UUID, UuidVersion(5)]
+UUID1 = Annotated[UUID, UuidVersion(1)]
+UUID3 = Annotated[UUID, UuidVersion(3)]
+UUID4 = Annotated[UUID, UuidVersion(4)]
+UUID5 = Annotated[UUID, UuidVersion(5)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -366,22 +365,22 @@ class PathType(_fields.PydanticMetadata):
             return path
 
 
-FilePath = typing_extensions.Annotated[Path, PathType('file')]
-DirectoryPath = typing_extensions.Annotated[Path, PathType('dir')]
-NewPath = typing_extensions.Annotated[Path, PathType('new')]
+FilePath = Annotated[Path, PathType('file')]
+DirectoryPath = Annotated[Path, PathType('dir')]
+NewPath = Annotated[Path, PathType('new')]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    Json = typing_extensions.Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    Json = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
 
 else:
 
     class Json(_fields.PydanticMetadata):
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
-            return typing_extensions.Annotated[item, cls()]
+            return Annotated[item, cls()]
 
         @classmethod
         def __get_pydantic_validation_schema__(
@@ -689,8 +688,8 @@ class ByteSize(int):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 if TYPE_CHECKING:
-    PastDate = typing_extensions.Annotated[date, ...]
-    FutureDate = typing_extensions.Annotated[date, ...]
+    PastDate = Annotated[date, ...]
+    FutureDate = Annotated[date, ...]
 else:
 
     class PastDate(_fields.PydanticMetadata):
@@ -727,7 +726,7 @@ else:
 
 
 def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date = None, le: date = None) -> type[date]:
-    return typing_extensions.Annotated[  # type: ignore[return-value]
+    return Annotated[  # type: ignore[return-value]
         date,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),

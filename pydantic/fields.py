@@ -4,6 +4,7 @@ import typing
 from typing import Any
 
 import annotated_types
+import typing_extensions
 
 from . import types
 from ._internal import _fields, _typing_extra, _utils
@@ -107,7 +108,7 @@ class FieldInfo(_utils.Representation):
     def _extract_constraints(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         if annotation is not None:
             origin = _typing_extra.get_origin(annotation)
-            if _utils.lenient_issubclass(origin, typing.Annotated):
+            if _utils.lenient_issubclass(origin, typing_extensions.Annotated):
                 args = _typing_extra.get_args(annotation)
                 return args[0], list(args[1:])
 
