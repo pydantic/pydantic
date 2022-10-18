@@ -181,7 +181,7 @@ def test_function_wrap_invalid_location():
 
 
 def test_wrong_mode():
-    with pytest.raises(SchemaError, match='function -> mode\n  Input should be one of'):
+    with pytest.raises(SchemaError, match=r"function -> mode\s+Input should be 'before' or 'after'"):
         SchemaValidator({'type': 'function', 'mode': 'foobar', 'schema': {'type': 'str'}})
 
 
