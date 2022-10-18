@@ -2,11 +2,12 @@ from __future__ import annotations as _annotations
 
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Annotated, Any, Collection, Generator, Match, Pattern, cast, no_type_check
+from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, cast, no_type_check
 
 from pydantic_core import PydanticCustomError, core_schema
 
-from pydantic._internal._utils import Representation, update_not_none
+from ._internal import _typing_extra
+from ._internal._utils import Representation, update_not_none
 
 if TYPE_CHECKING:
     import email_validator
@@ -563,7 +564,7 @@ def import_email_validator() -> None:
 
 
 if TYPE_CHECKING:
-    EmailStr = Annotated[str, ...]
+    EmailStr = _typing_extra.Annotated[str, ...]
 else:
 
     class EmailStr:
@@ -571,6 +572,7 @@ else:
         def __get_pydantic_validation_schema__(
             cls, schema: core_schema.CoreSchema | None = None
         ) -> core_schema.CoreSchema:
+            import_email_validator()
             if schema is None:
                 return core_schema.function_after_schema(core_schema.string_schema(), cls.validate)
             else:
@@ -602,6 +604,7 @@ class NameEmail(Representation):
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
+        import_email_validator()
         return core_schema.function_after_schema(
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),

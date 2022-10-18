@@ -6,14 +6,14 @@ from __future__ import annotations as _annotations
 import sys
 import warnings
 from types import FunctionType
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Type, get_type_hints
+from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
 
 from pydantic_core import SchemaValidator, core_schema
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._fields import SchemaRef
 from ._generate_schema import generate_config, model_fields_schema
-from ._typing_extra import is_classvar
+from ._typing_extra import is_classvar, Annotated
 from ._utils import ClassAttribute, is_valid_identifier
 from ._validation_functions import ValidationFunctions
 

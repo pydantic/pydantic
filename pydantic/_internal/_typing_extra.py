@@ -26,9 +26,15 @@ from typing import (  # type: ignore
     get_type_hints,
 )
 
-from typing_extensions import Annotated, Final, Literal, Required as TypedDictRequired
+from typing_extensions import Final, Literal, Required as TypedDictRequired
+
+try:
+    from typing import Annotated
+except ImportError:
+    from typing_extensions import Annotated
 
 __all__ = (
+    'Annotated',
     'AnyCallable',
     'NoArgAnyCallable',
     'NoneType',

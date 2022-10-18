@@ -16,6 +16,7 @@ from typing_extensions import get_args, is_typeddict
 from ..fields import FieldInfo, Undefined
 from ._fields import CustomMetadata, CustomValidator, PydanticMetadata
 from ._typing_extra import (
+    Annotated,
     NoneType,
     NotRequired,
     Required,
@@ -117,7 +118,7 @@ class GenerateSchema:
 
         if origin_is_union(origin):
             return self._union_schema(obj)
-        elif issubclass(origin, typing.Annotated):  # type: ignore[arg-type]
+        elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
         elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
             return self._generic_collection_schema(obj)
