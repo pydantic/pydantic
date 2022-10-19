@@ -4,21 +4,22 @@ Private logic for creating models.
 from __future__ import annotations as _annotations
 
 import sys
+import typing
 import warnings
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Type, get_type_hints
+from typing import Any, Callable
 
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+from . import _typing_extra
 from ._fields import SchemaRef
 from ._generate_schema import generate_config, model_fields_schema
-from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 from ._validation_functions import ValidationFunctions
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from inspect import Signature
 
     from ..config import BaseConfig
@@ -70,7 +71,7 @@ def single_underscore(name: str) -> bool:
 
 
 def complete_model_class(
-    cls: Type[BaseModel], name: str, validator_functions: ValidationFunctions, bases: tuple[type[Any], ...]
+    cls: type[BaseModel], name: str, validator_functions: ValidationFunctions, bases: tuple[type[Any], ...]
 ) -> None:
     """
     Collect bound validator functions, build the model validation schema and set the model signature.
@@ -96,8 +97,8 @@ def complete_model_class(
     model_ref = f'{module_name}.{name}'
     self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
     localns = {name: Annotated[Any, SchemaRef('SelfType', self_schema)]}
-    for ann_name, ann_type in get_type_hints(cls, base_globals, localns, include_extras=True).items():
-        if ann_name.startswith('_') or is_classvar(ann_type):
+    for ann_name, ann_type in _typing_extra.get_type_hints(cls, base_globals, localns, include_extras=True).items():
+        if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
 
         for base in bases:
@@ -130,7 +131,7 @@ def complete_model_class(
 
 
 def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config: Type[BaseConfig]
+    init: Callable[..., None], fields: dict[str, FieldInfo], config: type[BaseConfig]
 ) -> Signature:
     """
     Generate signature for model based on its fields

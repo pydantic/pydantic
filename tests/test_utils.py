@@ -3,21 +3,13 @@ import os
 import pickle
 import sys
 from copy import copy, deepcopy
-from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
+from typing import Callable, Dict, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, conlist
-from pydantic._internal._typing_extra import (
-    all_literal_values,
-    display_as_type,
-    get_args,
-    get_origin,
-    is_new_type,
-    new_type_supertype,
-    resolve_annotations,
-)
+from pydantic._internal._typing_extra import all_literal_values, display_as_type, get_args, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
@@ -203,13 +195,6 @@ def test_is_new_type():
     assert is_new_type(new_type)
     assert is_new_type(new_new_type)
     assert not is_new_type(str)
-
-
-def test_new_type_supertype():
-    new_type = NewType('new_type', str)
-    new_new_type = NewType('new_new_type', new_type)
-    assert new_type_supertype(new_type) == str
-    assert new_type_supertype(new_new_type) == str
 
 
 def test_pretty():
@@ -483,12 +468,6 @@ def test_get_args(input_value, output_value):
     if input_value is None:
         pytest.skip('Skipping undefined hint for this python version')
     assert get_args(input_value) == output_value
-
-
-def test_resolve_annotations_no_module():
-    # TODO: is there a better test for this, can this case really happen?
-    fr = ForwardRef('Foo')
-    assert resolve_annotations({'Foo': ForwardRef('Foo')}, None) == {'Foo': fr}
 
 
 def test_all_identical():

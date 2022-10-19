@@ -40,6 +40,6 @@ tomli==2.0.1
     #   coverage
     #   pytest
 typing-extensions==4.3.0
-    # via importlib-metadata
+    # via dirty-equals
 zipp==3.8.1
     # via importlib-metadata

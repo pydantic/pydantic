@@ -1,9 +1,7 @@
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
-from pydantic._internal._utils import to_camel
-
-from ._internal._typing_extra import get_all_type_hints
+from ._internal import _typing_extra, _utils
 from .config import Extra
 from .errors import ConfigError
 from .main import BaseModel, create_model
@@ -76,7 +74,7 @@ class ValidatedFunction:
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
-        type_hints = get_all_type_hints(function)
+        type_hints = _typing_extra.get_type_hints(function, include_extras=True)
         takes_args = False
         takes_kwargs = False
         fields: Dict[str, Tuple[Any, Any]] = {}
@@ -262,4 +260,4 @@ class ValidatedFunction:
             class Config(CustomConfig):
                 extra = getattr(CustomConfig, 'extra', Extra.forbid)
 
-        self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
+        self.model = create_model(_utils.to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)

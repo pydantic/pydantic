@@ -14,22 +14,11 @@ from pydantic_core import core_schema
 from typing_extensions import Annotated, get_args, is_typeddict
 
 from ..fields import FieldInfo, Undefined
-from ._fields import CustomMetadata, CustomValidator, PydanticMetadata
-from ._typing_extra import (
-    NoneType,
-    NotRequired,
-    Required,
-    all_literal_values,
-    evaluate_forwardref,
-    get_origin,
-    is_callable_type,
-    is_literal_type,
-    origin_is_union,
-)
-from ._validation_functions import ValidationFunctions, Validator
+from . import _fields, _typing_extra
 
 if TYPE_CHECKING:
     from ..config import BaseConfig
+    from ._validation_functions import ValidationFunctions, Validator
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -77,17 +66,17 @@ class GenerateSchema:
             return {'type': obj.__name__}  # type: ignore[return-value,misc]
         elif obj is Any or obj is object:
             return core_schema.AnySchema(type='any')
-        elif obj is None or obj is NoneType:
+        elif obj is None or obj is _typing_extra.NoneType:
             return core_schema.NoneSchema(type='none')
         elif obj == type:
             return self._type_schema()
-        elif is_callable_type(obj):
+        elif _typing_extra.is_callable_type(obj):
             return core_schema.CallableSchema(type='callable')
-        elif is_literal_type(obj):
+        elif _typing_extra.is_literal_type(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._type_dict_schema(obj)
-        elif hasattr(obj, '__supertype__'):
+        elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.7
             return self.generate_schema(obj.__supertype__)
         elif obj == re.Pattern:
@@ -109,14 +98,14 @@ class GenerateSchema:
         if get_schema is not None:
             return get_schema()
 
-        origin = get_origin(obj)
+        origin = _typing_extra.get_origin(obj)
         if origin is None:
             if self.arbitrary_types:
                 return core_schema.is_instance_schema(obj)
             else:
                 raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {obj!r}.')
 
-        if origin_is_union(origin):
+        if _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
@@ -164,7 +153,7 @@ class GenerateSchema:
         choices = []
         nullable = False
         for arg in args:
-            if arg is None or arg is NoneType:
+            if arg is None or arg is _typing_extra.NoneType:
                 nullable = True
             else:
                 choices.append(self.generate_schema(arg))
@@ -190,7 +179,7 @@ class GenerateSchema:
         """
         Generate schema for a Literal.
         """
-        expected = all_literal_values(literal_type)
+        expected = _typing_extra.all_literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         return core_schema.literal_schema(*expected)
 
@@ -214,13 +203,13 @@ class GenerateSchema:
                 if matched:
                     required = True
 
-                field_type = evaluate_forwardref(field_type)  # type: ignore
+                field_type = _typing_extra.evaluate_forwardref(field_type)  # type: ignore
 
             if schema is None:
-                if get_origin(field_type) == Required:
+                if _typing_extra.get_origin(field_type) == _typing_extra.Required:
                     required = True
                     field_type = field_type.__args__[0]
-                if get_origin(field_type) == NotRequired:
+                if _typing_extra.get_origin(field_type) == _typing_extra.NotRequired:
                     required = False
                     field_type = field_type.__args__[0]
 
@@ -239,7 +228,7 @@ class GenerateSchema:
         try:
             name = type_.__name__
         except AttributeError:
-            name = get_origin(type_).__name__  # type: ignore[union-attr]
+            name = _typing_extra.get_origin(type_).__name__  # type: ignore[union-attr]
 
         return {  # type: ignore[misc,return-value]
             'type': name.lower(),
@@ -488,11 +477,11 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
             schema = apply_annotations(schema, c)
             continue
 
-        if isinstance(c, CustomMetadata):
+        if isinstance(c, _fields.CustomMetadata):
             constraints_dict = c.__dict__
-        elif isinstance(c, (BaseMetadata, PydanticMetadata)):
+        elif isinstance(c, (BaseMetadata, _fields.PydanticMetadata)):
             constraints_dict = dataclasses.asdict(c)
-        elif issubclass(c, PydanticMetadata):
+        elif issubclass(c, _fields.PydanticMetadata):
             constraints_dict = {k: v for k, v in vars(c).items() if not k.startswith('_')}
         else:
             raise PydanticSchemaGenerationError(
@@ -503,7 +492,7 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
         # TODO we need a way to remove constraints which this line currently prevents
         constraints_dict = {k: v for k, v in constraints_dict.items() if v is not None}
         if constraints_dict:
-            extra: CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
+            extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
             if extra is None:
                 schema.update(constraints_dict)  # type: ignore[typeddict-item]
             else:

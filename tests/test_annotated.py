@@ -4,7 +4,7 @@ import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
-from pydantic._internal._typing_extra import get_all_type_hints
+from pydantic._internal._typing_extra import get_type_hints
 from pydantic.fields import Undefined
 
 
@@ -43,7 +43,7 @@ def test_annotated(hint_fn, value):
 
     assert M().x == 5
     assert M(x=10).x == 10
-    assert get_all_type_hints(M)['x'] == hint
+    assert get_type_hints(M, include_extras=True)['x'] == hint
 
 
 @pytest.mark.parametrize(

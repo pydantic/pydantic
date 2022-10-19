@@ -1,12 +1,16 @@
+"""
+Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap python's typing module.
+"""
+from __future__ import annotations as _annotations
+
 import sys
 import types
+import typing
 from collections.abc import Callable
 from os import PathLike
-from typing import (  # type: ignore
-    TYPE_CHECKING,
+from typing import (
     AbstractSet,
     Any,
-    Callable as TypingCallable,
     ClassVar,
     Dict,
     ForwardRef,
@@ -21,9 +25,7 @@ from typing import (  # type: ignore
     Type,
     TypeVar,
     Union,
-    _eval_type,
     cast,
-    get_type_hints,
 )
 
 from typing_extensions import Annotated, Final, Literal, Required as TypedDictRequired
@@ -34,7 +36,6 @@ __all__ = (
     'NoneType',
     'is_none_type',
     'display_as_type',
-    'resolve_annotations',
     'is_callable_type',
     'is_literal_type',
     'all_literal_values',
@@ -42,7 +43,6 @@ __all__ = (
     'is_typeddict',
     'is_typeddict_special',
     'is_new_type',
-    'new_type_supertype',
     'is_classvar',
     'is_finalvar',
     'TupleGenerator',
@@ -62,13 +62,13 @@ __all__ = (
     'get_origin',
     'get_sub_types',
     'typing_base',
-    'get_all_type_hints',
     'origin_is_union',
     'StrPath',
     'MappingIntStrAny',
     'NotRequired',
     'Required',
     'evaluate_forwardref',
+    'get_type_hints',
 )
 
 try:
@@ -89,6 +89,12 @@ except ImportError:
     TypesUnionType = ()  # type: ignore[misc,assignment]
 
 
+if sys.version_info < (3, 11):
+    from typing_extensions import NotRequired, Required
+else:
+    from typing import NotRequired, Required
+
+
 if sys.version_info < (3, 9):
 
     def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any = None) -> Any:
@@ -102,30 +108,13 @@ else:
         return cast(Any, type_)._evaluate(globalns, localns or None, set())
 
 
-if sys.version_info < (3, 9):
-    # Ensure we always get all the whole `Annotated` hint, not just the annotated type.
-    # For 3.7 to 3.8, `get_type_hints` doesn't recognize `typing_extensions.Annotated`,
-    # so it already returns the full annotation
-    get_all_type_hints = get_type_hints
-
-else:
-
-    def get_all_type_hints(obj: Any, globalns: Any = None, localns: Any = None) -> Any:
-        return get_type_hints(obj, globalns, localns, include_extras=True)
-
-
-if sys.version_info < (3, 11):
-    from typing_extensions import NotRequired, Required
-else:
-    from typing import NotRequired, Required
-
 _T = TypeVar('_T')
 
-AnyCallable = TypingCallable[..., Any]
-NoArgAnyCallable = TypingCallable[[], Any]
+AnyCallable = typing.Callable[..., Any]
+NoArgAnyCallable = typing.Callable[[], Any]
 
 # workaround for https://github.com/python/mypy/issues/9496
-AnyArgTCallable = TypingCallable[..., _T]
+AnyArgTCallable = typing.Callable[..., _T]
 
 
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
@@ -301,7 +290,7 @@ else:
     # StrPath = Union[str, PathLike[str]]
 
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
     DictAny = Dict[Any, Any]
@@ -380,38 +369,6 @@ def display_as_type(v: Any) -> str:
         return str(v).replace('typing.', '')
 
 
-def resolve_annotations(raw_annotations: Dict[str, Type[Any]], module_name: Optional[str]) -> Dict[str, Type[Any]]:
-    """
-    Partially taken from typing.get_type_hints.
-
-    Resolve string or ForwardRef annotations into type objects if possible.
-    """
-    base_globals: Optional[Dict[str, Any]] = None
-    if module_name:
-        try:
-            module = sys.modules[module_name]
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
-        else:
-            base_globals = module.__dict__
-
-    annotations = {}
-    for name, value in raw_annotations.items():
-        if isinstance(value, str):
-            if (3, 10) > sys.version_info >= (3, 9, 8) or sys.version_info >= (3, 10, 1):
-                value = ForwardRef(value, is_argument=False, is_class=True)
-            else:
-                value = ForwardRef(value, is_argument=False)
-        try:
-            value = _eval_type(value, base_globals, None)
-        except NameError:
-            # this is ok, it can be fixed with update_forward_refs
-            pass
-        annotations[name] = value
-    return annotations
-
-
 def is_callable_type(type_: Type[Any]) -> bool:
     return type_ is Callable or get_origin(type_) is Callable
 
@@ -468,20 +425,16 @@ def is_typeddict_special(type_: Any) -> bool:
     return _check_typeddict_special(type_) or _check_typeddict_special(get_origin(type_))
 
 
-test_type = NewType('test_type', str)
+test_new_type = NewType('test_new_type', str)
 
 
 def is_new_type(type_: Type[Any]) -> bool:
     """
-    Check whether type_ was created using typing.NewType
+    Check whether type_ was created using typing.NewType.
+
+    Can't use isinstance because it fails <3.10.
     """
-    return isinstance(type_, test_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore
-
-
-def new_type_supertype(type_: Type[Any]) -> Type[Any]:
-    while hasattr(type_, '__supertype__'):
-        type_ = type_.__supertype__
-    return type_
+    return isinstance(type_, test_new_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore[arg-type]
 
 
 def _check_classvar(v: Optional[Type[Any]]) -> bool:
@@ -547,3 +500,137 @@ def get_sub_types(tp: Any) -> List[Any]:
         return [x for t in get_args(tp) for x in get_sub_types(t)]
     else:
         return [tp]
+
+
+if sys.version_info >= (3, 10):  # noqa C901
+    get_type_hints = typing.get_type_hints
+
+else:
+
+    @typing.no_type_check
+    def get_type_hints(
+        obj: Any,
+        globalns: dict[str, Any] | None = None,
+        localns: dict[str, Any] | None = None,
+        include_extras: bool = False,
+    ) -> dict[str, Any]:  # pragma: no cover
+        """
+        Taken verbatim from python 3.10.8 unchanged, except:
+        * type annotations of the function definition above.
+        * prefixing `typing.` where appropriate
+        * Change `ForwardRef` usage to remove `is_class` kwarg, see https://github.com/python/cpython/pull/28560
+
+        https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
+
+        DO NOT CHANGE THIS METHOD UNLESS ABSOLUTELY NECESSARY.
+        ==========================
+
+        Return type hints for an object.
+
+        This is often the same as obj.__annotations__, but it handles
+        forward references encoded as string literals, adds Optional[t] if a
+        default value equal to None is set and recursively replaces all
+        'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
+
+        The argument may be a module, class, method, or function. The annotations
+        are returned as a dictionary. For classes, annotations include also
+        inherited members.
+
+        TypeError is raised if the argument is not of a type that can contain
+        annotations, and an empty dictionary is returned if no annotations are
+        present.
+
+        BEWARE -- the behavior of globalns and localns is counterintuitive
+        (unless you are familiar with how eval() and exec() work).  The
+        search order is locals first, then globals.
+
+        - If no dict arguments are passed, an attempt is made to use the
+          globals from obj (or the respective module's globals for classes),
+          and these are also used as the locals.  If the object does not appear
+          to have globals, an empty dictionary is used.  For classes, the search
+          order is globals first then locals.
+
+        - If one dict argument is passed, it is used for both globals and
+          locals.
+
+        - If two dict arguments are passed, they specify globals and
+          locals, respectively.
+        """
+
+        if getattr(obj, '__no_type_check__', None):
+            return {}
+        # Classes require a special treatment.
+        if isinstance(obj, type):
+            hints = {}
+            for base in reversed(obj.__mro__):
+                if globalns is None:
+                    base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
+                else:
+                    base_globals = globalns
+                ann = base.__dict__.get('__annotations__', {})
+                if isinstance(ann, types.GetSetDescriptorType):
+                    ann = {}
+                base_locals = dict(vars(base)) if localns is None else localns
+                if localns is None and globalns is None:
+                    # This is surprising, but required.  Before Python 3.10,
+                    # get_type_hints only evaluated the globalns of
+                    # a class.  To maintain backwards compatibility, we reverse
+                    # the globalns and localns order so that eval() looks into
+                    # *base_globals* first rather than *base_locals*.
+                    # This only affects ForwardRefs.
+                    base_globals, base_locals = base_locals, base_globals
+                for name, value in ann.items():
+                    if value is None:
+                        value = type(None)
+                    if isinstance(value, str):
+
+                        # { CHANGED IN PYDANTIC: `is_class=True` removed
+                        value = ForwardRef(value, is_argument=False)
+                        # } END OF CHANGE IN PYDANTIC
+
+                    value = typing._eval_type(value, base_globals, base_locals)
+                    hints[name] = value
+            return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}
+
+        if globalns is None:
+            if isinstance(obj, types.ModuleType):
+                globalns = obj.__dict__
+            else:
+                nsobj = obj
+                # Find globalns for the unwrapped object.
+                while hasattr(nsobj, '__wrapped__'):
+                    nsobj = nsobj.__wrapped__
+                globalns = getattr(nsobj, '__globals__', {})
+            if localns is None:
+                localns = globalns
+        elif localns is None:
+            localns = globalns
+        hints = getattr(obj, '__annotations__', None)
+        if hints is None:
+            # Return empty annotations for something that _could_ have them.
+            if isinstance(obj, typing._allowed_types):
+                return {}
+            else:
+                raise TypeError('{!r} is not a module, class, method, ' 'or function.'.format(obj))
+        defaults = typing._get_defaults(obj)
+        hints = dict(hints)
+        for name, value in hints.items():
+            if value is None:
+                value = type(None)
+            if isinstance(value, str):
+                # class-level forward refs were handled above, this must be either
+                # a module-level annotation or a function argument annotation
+
+                # { CHANGED IN PYDANTIC: `is_class=False` removed
+                value = ForwardRef(
+                    value,
+                    is_argument=not isinstance(obj, types.ModuleType),
+                    # is_class=False,
+                )
+                # } END OF CHANGE IN PYDANTIC
+
+            value = typing._eval_type(value, globalns, localns)
+            if name in defaults and defaults[name] is None:
+                value = Optional[value]
+            hints[name] = value
+        return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}

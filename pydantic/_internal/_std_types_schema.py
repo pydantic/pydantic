@@ -18,14 +18,15 @@ from uuid import UUID
 from pydantic_core import PydanticCustomError, core_schema
 from typing_extensions import get_args
 
+from . import _validators
+
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
 
-from . import _validators
+    StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
 
 __all__ = ('SCHEMA_LOOKUP',)
 
-StdSchemaFunction = Callable[['GenerateSchema', type[Any]], core_schema.CoreSchema]
 SCHEMA_LOOKUP: dict[type[Any], StdSchemaFunction] = {}
 
 

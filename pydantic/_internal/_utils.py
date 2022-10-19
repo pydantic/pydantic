@@ -16,7 +16,6 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    MutableMapping,
     NoReturn,
     Optional,
     Set,
@@ -728,8 +727,8 @@ def _get_union_alias_and_all_values(
 KT = TypeVar('KT')
 VT = TypeVar('VT')
 if TYPE_CHECKING:
-    # Annoying inheriting from `MutableMapping` and `dict` breaks cython, hence this work around
-    class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+    # define like this to work with older python
+    class LimitedDict(dict[KT, VT]):
         def __init__(self, size_limit: int = 1000):
             ...
 
