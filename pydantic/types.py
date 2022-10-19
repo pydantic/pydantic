@@ -402,6 +402,8 @@ SecretType = TypeVar('SecretType', str, bytes)
 
 
 class SecretField(abc.ABC, Generic[SecretType]):
+    _error_kind: str
+
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -410,25 +412,22 @@ class SecretField(abc.ABC, Generic[SecretType]):
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
-        if cls is SecretStr:
-            pre_schema: core_schema.CoreSchema = core_schema.string_schema()
-            error_kind = 'string_type'
-        else:
-            assert cls is SecretBytes, f'Unknown SecretField subclass {cls!r}'
-            pre_schema = core_schema.bytes_schema()
-            error_kind = 'bytes_type'
-
         validator = SecretFieldValidator(cls)
         return core_schema.function_after_schema(
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
-                pre_schema,
+                cls._pre_core_schema(),
                 strict=True,
-                custom_error_kind=error_kind,
+                custom_error_kind=cls._error_kind,
             ),
             validator,
             extra=validator,
         )
+
+    @classmethod
+    @abc.abstractmethod
+    def _pre_core_schema(cls) -> core_schema.CoreSchema:
+        ...
 
     @classmethod
     def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
@@ -448,12 +447,19 @@ class SecretField(abc.ABC, Generic[SecretType]):
     def __len__(self) -> int:
         return len(self._secret_value)
 
+    @abc.abstractmethod
+    def _display(self) -> SecretType:
+        ...
+
     def __str__(self) -> str:
-        return '**********' if self.get_secret_value() else ''
+        return str(self._display())
 
     def __repr__(self) -> str:
-        prefix = 'b' if isinstance(self, SecretBytes) else ''
-        return f"{self.__class__.__name__}({prefix}'{self}')"
+        return f'{self.__class__.__name__}({self._display()!r})'
+
+
+def secret_display(secret_field: SecretField[Any]) -> str:
+    return '**********' if secret_field.get_secret_value() else ''
 
 
 class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
@@ -485,11 +491,25 @@ class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
 
 
 class SecretStr(SecretField[str]):
-    pass
+    _error_kind = 'string_type'
+
+    @classmethod
+    def _pre_core_schema(cls) -> core_schema.CoreSchema:
+        return core_schema.string_schema()
+
+    def _display(self) -> str:
+        return secret_display(self)
 
 
 class SecretBytes(SecretField[bytes]):
-    pass
+    _error_kind = 'bytes_type'
+
+    @classmethod
+    def _pre_core_schema(cls) -> core_schema.CoreSchema:
+        return core_schema.bytes_schema()
+
+    def _display(self) -> bytes:
+        return secret_display(self).encode()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

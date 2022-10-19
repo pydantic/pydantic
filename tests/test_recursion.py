@@ -7,11 +7,12 @@ def fix_model(create_module):
         # language=Python
         """
 from __future__ import annotations
+from typing import Union
 from pydantic import BaseModel
 
 class Foobar(BaseModel):
     x: int
-    y: Foobar | None = None
+    y: Union[Foobar, None] = None
 """
     )
     return module.Foobar

@@ -2642,7 +2642,6 @@ def test_new_type_success():
 
     m = Model(a=42, b=24, c=[1, 2, 3])
     assert m.dict() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
-    assert repr(Model.__fields__['c']) == 'FieldInfo(annotation=NewType, required=True)'
 
 
 def test_new_type_fails():
@@ -2932,15 +2931,6 @@ def test_pattern_error(pattern_type):
     ]
 
 
-def test_secretfield():
-    class Foobar(SecretField):
-        ...
-
-    message = r"SecretField.__init__\(\) missing 1 required positional argument: 'secret_value'"
-    with pytest.raises(TypeError, match=message):
-        Foobar()
-
-
 def test_secretstr():
     class Foobar(BaseModel):
         password: SecretStr
@@ -3054,8 +3044,8 @@ def test_secretbytes():
     assert f.empty_password.__class__.__name__ == 'SecretBytes'
 
     # Assert str and repr are correct.
-    assert str(f.password) == '**********'
-    assert str(f.empty_password) == ''
+    assert str(f.password) == "b'**********'"
+    assert str(f.empty_password) == "b''"
     assert repr(f.password) == "SecretBytes(b'**********')"
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
