@@ -523,7 +523,7 @@ else:
         https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
 
         DO NOT CHANGE THIS METHOD UNLESS ABSOLUTELY NECESSARY.
-        ==========================
+        ======================================================
 
         Return type hints for an object.
 

@@ -60,6 +60,7 @@ testpaths = 'tests'
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:certifi',
+    'ignore:path is deprecated.*:DeprecationWarning:mypy',
 ]
 
 # configuring https://github.com/pydantic/hooky
