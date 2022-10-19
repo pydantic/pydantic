@@ -2,20 +2,18 @@ from __future__ import annotations as _annotations
 
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Any, Collection, Generator, Match, Pattern, cast, no_type_check
+from typing import TYPE_CHECKING, Any, Callable, Collection, Generator, Match, Pattern, cast, no_type_check
 
 import typing_extensions
 from pydantic_core import PydanticCustomError, core_schema
 
-from ._internal._utils import Representation, update_not_none
+from ._internal import _repr, _utils
 
 if TYPE_CHECKING:
     import email_validator
     from typing_extensions import TypedDict
 
-    from ._internal._typing_extra import AnyCallable
-
-    CallableGenerator = Generator[AnyCallable, None, None]
+    CallableGenerator = Generator[Callable[..., Any], None, None]
 
     class Parts(TypedDict, total=False):
         scheme: str
@@ -233,7 +231,7 @@ class AnyUrl(str):
 
     @classmethod
     def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
-        update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length, format='uri')
+        _utils.update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length, format='uri')
 
     @classmethod
     def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
@@ -588,7 +586,7 @@ else:
             return validate_email(__input_value)[1]
 
 
-class NameEmail(Representation):
+class NameEmail(_repr.Representation):
     __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):

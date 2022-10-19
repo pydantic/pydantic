@@ -25,10 +25,7 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from ._internal._model_construction import complete_model_class, inspect_namespace
-from ._internal._typing_extra import is_namedtuple
-from ._internal._utils import GetterDict, Representation, ValueItems, is_valid_field, sequence_like
-from ._internal._validation_functions import ValidationFunctions
+from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import ConfigError, DictError
 from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
@@ -47,7 +44,6 @@ if TYPE_CHECKING:
         DictAny,
         DictStrAny,
         MappingIntStrAny,
-        ReprArgs,
         SetStr,
         TupleGenerator,
     )
@@ -78,9 +74,9 @@ class ModelMetaclass(ABCMeta):
                 namespace['Config'] = new_model_config
             namespace['__config__'] = __config__
 
-            inspect_namespace(namespace)
+            _model_construction.inspect_namespace(namespace)
 
-            validator_functions = ValidationFunctions(bases)
+            validator_functions = _validation_functions.ValidationFunctions(bases)
 
             for name, value in namespace.items():
                 validator_functions.extract_validator(name, value)
@@ -99,7 +95,7 @@ class ModelMetaclass(ABCMeta):
                 namespace['__hash__'] = hash_func
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
-            complete_model_class(cls, cls_name, validator_functions, bases)
+            _model_construction.complete_model_class(cls, cls_name, validator_functions, bases)
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
@@ -117,12 +113,12 @@ class ModelMetaclass(ABCMeta):
 object_setattr = object.__setattr__
 
 
-class BaseModel(Representation, metaclass=ModelMetaclass):
+class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     if TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __pydantic_validator__: ClassVar[SchemaValidator]
         __pydantic_validation_schema__: ClassVar[CoreSchema]
-        __validator_functions__: ClassVar[ValidationFunctions]
+        __validator_functions__: ClassVar[_validation_functions.ValidationFunctions]
         __fields__: ClassVar[Dict[str, FieldInfo]] = {}
         __config__: ClassVar[Type[BaseConfig]] = BaseConfig
         __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
@@ -414,12 +410,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             return cls(**value_as_dict)
 
     @classmethod
-    def _decompose_class(cls: Type['Model'], obj: Any) -> GetterDict:
-        if isinstance(obj, GetterDict):
-            return obj
-        return cls.__config__.getter_dict(obj)
-
-    @classmethod
     @no_type_check
     def _get_value(
         cls,
@@ -446,8 +436,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             else:
                 return v.copy(include=include, exclude=exclude)
 
-        value_exclude = ValueItems(v, exclude) if exclude else None
-        value_include = ValueItems(v, include) if include else None
+        value_exclude = _utils.ValueItems(v, exclude) if exclude else None
+        value_include = _utils.ValueItems(v, include) if include else None
 
         if isinstance(v, dict):
             return {
@@ -466,7 +456,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 and (not value_include or value_include.is_included(k_))
             }
 
-        elif sequence_like(v):
+        elif _utils.sequence_like(v):
             seq_args = (
                 cls._get_value(
                     v_,
@@ -483,7 +473,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
                 and (not value_include or value_include.is_included(i))
             )
 
-            return v.__class__(*seq_args) if is_namedtuple(v.__class__) else v.__class__(seq_args)
+            return v.__class__(*seq_args) if _typing_extra.is_namedtuple(v.__class__) else v.__class__(seq_args)
 
         elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
             return v.value
@@ -518,10 +508,10 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
         # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
         # if exclude is not None or self.__exclude_fields__ is not None:
-        #     exclude = ValueItems.merge(self.__exclude_fields__, exclude)
+        #     exclude = _utils.ValueItems.merge(self.__exclude_fields__, exclude)
         #
         # if include is not None or self.__include_fields__ is not None:
-        #     include = ValueItems.merge(self.__include_fields__, include, intersect=True)
+        #     include = _utils.ValueItems.merge(self.__include_fields__, include, intersect=True)
 
         allowed_keys = self._calculate_keys(
             include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
@@ -531,8 +521,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             yield from self.__dict__.items()
             return
 
-        value_exclude = ValueItems(self, exclude) if exclude is not None else None
-        value_include = ValueItems(self, include) if include is not None else None
+        value_exclude = _utils.ValueItems(self, exclude) if exclude is not None else None
+        value_include = _utils.ValueItems(self, include) if include is not None else None
 
         for field_key, v in self.__dict__.items():
             if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
@@ -588,7 +578,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
             keys -= update.keys()
 
         if exclude:
-            keys -= {k for k, v in exclude.items() if ValueItems.is_true(v)}
+            keys -= {k for k, v in exclude.items() if _utils.ValueItems.is_true(v)}
 
         return keys
 
@@ -598,7 +588,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         else:
             return self.dict() == other
 
-    def __repr_args__(self) -> 'ReprArgs':
+    def __repr_args__(self) -> _repr.ReprArgs:
         return [
             (k, v)
             for k, v in self.__dict__.items()
@@ -682,7 +672,7 @@ def create_model(
     annotations = {}
 
     for f_name, f_def in field_definitions.items():
-        if not is_valid_field(f_name):
+        if f_name.startswith('_'):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             try:

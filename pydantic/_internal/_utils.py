@@ -1,3 +1,8 @@
+"""
+Bucket of reusable internal utilities.
+"""
+from __future__ import annotations as _annotations
+
 import keyword
 import weakref
 from collections import OrderedDict, defaultdict, deque
@@ -11,7 +16,6 @@ from typing import (
     Callable,
     Collection,
     Dict,
-    Generator,
     Iterable,
     Iterator,
     List,
@@ -29,11 +33,11 @@ from typing_extensions import Annotated
 
 from pydantic.errors import ConfigError
 
+from . import _repr
 from ._typing_extra import (
     NoneType,
     WithArgsTypes,
     all_literal_values,
-    display_as_type,
     get_args,
     get_origin,
     is_literal_type,
@@ -43,11 +47,9 @@ from ._typing_extra import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pydantic._internal._typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
-    from pydantic.dataclasses import Dataclass
-    from pydantic.main import BaseModel
-
-    RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
+    from ..dataclasses import Dataclass
+    from ..main import BaseModel
+    from ._typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny
 
 __all__ = (
     'import_string',
@@ -65,7 +67,6 @@ __all__ = (
     'is_valid_field',
     'smart_deepcopy',
     'PyObjectStr',
-    'Representation',
     'GetterDict',
     'ValueItems',
     'ClassAttribute',
@@ -276,67 +277,7 @@ class PyObjectStr(str):
         return str(self)
 
 
-class Representation:
-    """
-    Mixin to provide __str__, __repr__, and __pretty__ methods. See #884 for more details.
-
-    __pretty__ is used by [devtools](https://python-devtools.helpmanual.io/) to provide human readable representations
-    of objects.
-    """
-
-    __slots__: Tuple[str, ...] = tuple()
-
-    def __repr_args__(self) -> 'ReprArgs':
-        """
-        Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
-
-        Can either return:
-        * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
-        * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
-        """
-        attrs = ((s, getattr(self, s)) for s in self.__slots__)
-        return [(a, v) for a, v in attrs if v is not None]
-
-    def __repr_name__(self) -> str:
-        """
-        Name of the instance's class, used in __repr__.
-        """
-        return self.__class__.__name__
-
-    def __repr_str__(self, join_str: str) -> str:
-        return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
-
-    def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any, None, None]:
-        """
-        Used by devtools (https://python-devtools.helpmanual.io/) to provide a human readable representations of objects
-        """
-        yield self.__repr_name__() + '('
-        yield 1
-        for name, value in self.__repr_args__():
-            if name is not None:
-                yield name + '='
-            yield fmt(value)
-            yield ','
-            yield 0
-        yield -1
-        yield ')'
-
-    def __str__(self) -> str:
-        return self.__repr_str__(' ')
-
-    def __repr__(self) -> str:
-        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
-
-    def __rich_repr__(self) -> 'RichReprResult':
-        """Get fields for Rich library"""
-        for name, field_repr in self.__repr_args__():
-            if name is None:
-                yield field_repr
-            else:
-                yield name, field_repr
-
-
-class GetterDict(Representation):
+class GetterDict(_repr.Representation):
     """
     Hack to make object's smell just enough like dicts for validate_model.
 
@@ -391,14 +332,14 @@ class GetterDict(Representation):
     def __eq__(self, other: Any) -> bool:
         return dict(self) == dict(other.items())
 
-    def __repr_args__(self) -> 'ReprArgs':
+    def __repr_args__(self) -> _repr.ReprArgs:
         return [(None, dict(self))]
 
     def __repr_name__(self) -> str:
-        return f'GetterDict[{display_as_type(self._obj)}]'
+        return f'GetterDict[{_repr.display_as_type(self._obj)}]'
 
 
-class ValueItems(Representation):
+class ValueItems(_repr.Representation):
     """
     Class for more convenient calculation of excluded or included fields on values.
     """
@@ -540,7 +481,7 @@ class ValueItems(Representation):
     def is_true(v: Any) -> bool:
         return v is True or v is ...
 
-    def __repr_args__(self) -> 'ReprArgs':
+    def __repr_args__(self) -> _repr.ReprArgs:
         return [(None, self._items)]
 
 
@@ -696,7 +637,7 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
 
         if len(set(all_values)) > 1:
             raise ConfigError(
-                f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}'
+                f'Field {discriminator_key!r} is not the same for all submodels of {_repr.display_as_type(tp)!r}'
             )
 
         return alias, all_values[0]

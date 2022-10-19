@@ -2,7 +2,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Sequence, Set, Tuple, Type, Union
 
-from ._internal._typing_extra import display_as_type
+from ._internal._repr import display_as_type
 
 if TYPE_CHECKING:
     from ._internal._typing_extra import DictStrAny

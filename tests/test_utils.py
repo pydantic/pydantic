@@ -9,7 +9,8 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, conlist
-from pydantic._internal._typing_extra import all_literal_values, display_as_type, get_args, get_origin, is_new_type
+from pydantic._internal import _repr
+from pydantic._internal._typing_extra import all_literal_values, get_args, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
@@ -55,12 +56,12 @@ def test_import_no_attr():
     'value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]'), (list, 'list'))
 )
 def test_display_as_type(value, expected):
-    assert display_as_type(value) == expected
+    assert _repr.display_as_type(value) == expected
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
 def test_display_as_type_generic_alias():
-    assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
+    assert _repr.display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
 
 
 def test_lenient_issubclass():

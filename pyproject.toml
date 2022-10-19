@@ -59,8 +59,7 @@ Changelog = 'https://pydantic-docs.helpmanual.io/changelog'
 testpaths = 'tests'
 filterwarnings = [
     'error',
-    'ignore:path is deprecated.*:DeprecationWarning:certifi',
-    'ignore:path is deprecated.*:DeprecationWarning:mypy',
+    'ignore:path is deprecated.*:DeprecationWarning:',
 ]
 
 # configuring https://github.com/pydantic/hooky

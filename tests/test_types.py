@@ -2476,7 +2476,6 @@ def test_directory_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
-# @pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
 @pytest.mark.parametrize(
     'value', ['nonexistentdirectory', Path('nonexistentdirectory'), 'tests/test_t.py', Path('tests/test_ypestypes.py')]
 )

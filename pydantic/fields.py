@@ -7,17 +7,17 @@ import annotated_types
 import typing_extensions
 
 from . import types
-from ._internal import _fields, _typing_extra, _utils
+from ._internal import _fields, _repr, _typing_extra, _utils
 
 if typing.TYPE_CHECKING:
-    from ._internal._typing_extra import ReprArgs
+    from ._internal._repr import ReprArgs
 
 Required: Any = Ellipsis
 
 Undefined = _fields.UndefinedType()
 
 
-class FieldInfo(_utils.Representation):
+class FieldInfo(_repr.Representation):
     """
     Captures extra information about a field.
     """
@@ -148,7 +148,7 @@ class FieldInfo(_utils.Representation):
         return self.default is Undefined and self.default_factory is None
 
     def __repr_args__(self) -> 'ReprArgs':
-        yield 'annotation', _utils.PyObjectStr(_typing_extra.display_as_type(self.annotation))
+        yield 'annotation', _utils.PyObjectStr(_repr.display_as_type(self.annotation))
         yield 'required', self.is_required()
 
         for s in self.__slots__:
@@ -159,7 +159,7 @@ class FieldInfo(_utils.Representation):
             elif s == 'repr' and self.repr is True:
                 continue
             if s == 'default_factory' and self.default_factory is not None:
-                yield 'default_factory', _utils.PyObjectStr(_typing_extra.display_as_type(self.default_factory))
+                yield 'default_factory', _utils.PyObjectStr(_repr.display_as_type(self.default_factory))
             elif s != 'extra' or self.extra:
                 value = getattr(self, s)
                 if value is not None and value is not Undefined:
@@ -269,7 +269,7 @@ def Field(
     )
 
 
-class ModelPrivateAttr(_utils.Representation):
+class ModelPrivateAttr(_repr.Representation):
     __slots__ = 'default', 'default_factory'
 
     def __init__(self, default: Any = Undefined, *, default_factory: typing.Callable[[], Any] | None = None) -> None:

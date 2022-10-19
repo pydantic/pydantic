@@ -19,7 +19,7 @@ from typing import (
 
 from typing_extensions import Annotated
 
-from ._internal import _typing_extra, _utils
+from ._internal import _repr, _typing_extra, _utils
 from .main import BaseModel, create_model
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
@@ -159,7 +159,7 @@ class GenericModel(BaseModel):
 
         This method can be overridden to achieve a custom naming scheme for GenericModels.
         """
-        param_names = [_typing_extra.display_as_type(param) for param in params]
+        param_names = [_repr.display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 

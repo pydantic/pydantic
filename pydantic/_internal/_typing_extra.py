@@ -15,7 +15,6 @@ from typing import (
     Dict,
     ForwardRef,
     Generator,
-    Iterable,
     List,
     Mapping,
     NewType,
@@ -35,7 +34,6 @@ __all__ = (
     'NoArgAnyCallable',
     'NoneType',
     'is_none_type',
-    'display_as_type',
     'is_callable_type',
     'is_literal_type',
     'all_literal_values',
@@ -54,7 +52,6 @@ __all__ = (
     'AbstractSetIntStr',
     'DictIntStrAny',
     'CallableGenerator',
-    'ReprArgs',
     'AnyClassMethod',
     'CallableGenerator',
     'WithArgsTypes',
@@ -301,7 +298,6 @@ if typing.TYPE_CHECKING:
     DictIntStrAny = Dict[IntStr, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
-    ReprArgs = Iterable[Tuple[Optional[str], Any]]
     AnyClassMethod = classmethod[Any]
 
 
@@ -341,32 +337,6 @@ else:
             if type_ is none_type:
                 return True
         return False
-
-
-def display_as_type(v: Any) -> str:
-    """
-    Pretty representation of a type, should be as close as possible to the original type definition string.
-
-    TODO replace with typing._type_repr like logic.
-    """
-    if isinstance(v, types.FunctionType):
-        return v.__name__
-
-    if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
-        v = v.__class__
-
-    if origin_is_union(get_origin(v)):
-        return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
-
-    if isinstance(v, WithArgsTypes):
-        # Generic alias are constructs like `list[int]`
-        return str(v).replace('typing.', '')
-
-    try:
-        return v.__name__
-    except AttributeError:
-        # happens with typing objects
-        return str(v).replace('typing.', '')
 
 
 def is_callable_type(type_: Type[Any]) -> bool:

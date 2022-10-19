@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
 
-from ._internal._typing_extra import display_as_type
+from ._internal import _repr
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 def _generate_parsing_type_name(type_: Any) -> str:
-    return f'ParsingModel[{display_as_type(type_)}]'
+    return f'ParsingModel[{_repr.display_as_type(type_)}]'
 
 
 @lru_cache(maxsize=2048)

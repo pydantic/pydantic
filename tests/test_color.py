@@ -1,10 +1,10 @@
 from datetime import datetime
 
 import pytest
+from pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
-from pydantic.errors import ColorError
 
 
 @pytest.mark.parametrize(
@@ -92,8 +92,9 @@ def test_color_success(raw_color, as_tuple):
     ],
 )
 def test_color_fail(color):
-    with pytest.raises(ColorError):
+    with pytest.raises(PydanticCustomError) as exc_info:
         Color(color)
+    assert exc_info.value.kind == 'color_error'
 
 
 def test_model_validation():
@@ -107,11 +108,10 @@ def test_model_validation():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'value_error',
+            'kind': 'color_error',
             'loc': ['color'],
-            'message': 'Value error, value is not a valid color: string not recognised as a valid color',
+            'message': 'value is not a valid color: string not recognised as a valid color',
             'input_value': 'snot',
-            'context': {'error': 'value is not a valid color: string not recognised as a valid color'},
         }
     ]
 
