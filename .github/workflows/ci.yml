@@ -264,7 +264,6 @@ jobs:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1
         with:
-          allowed-failures: test-old-mypy
           allowed-skips: test-fastapi  # TODO: drop once re-enabled
           jobs: ${{ toJSON(needs) }}
 
