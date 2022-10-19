@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol, TypedDict
 
-from ._internal._typing_extra import AnyArgTCallable, AnyCallable
-
 if TYPE_CHECKING:
     from typing import overload
 
@@ -57,8 +55,8 @@ class ConfigDict(TypedDict, total=False):
     keep_untouched: Tuple[type, ...]
     schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
     json_loads: Callable[[str], object]
-    json_dumps: AnyArgTCallable[str]
-    json_encoders: Dict[Type[object], AnyCallable]
+    json_dumps: Callable[..., Any]
+    json_encoders: Dict[Type[object], Callable[..., Any]]
     underscore_attrs_are_private: bool
     allow_inf_nan: bool
     copy_on_model_validation: Literal['none', 'deep', 'shallow']
@@ -91,7 +89,7 @@ class BaseConfig:
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}  # TODO remove, new model method
     json_loads: Callable[[str], Any] = json.loads  # TODO decide
     json_dumps: Callable[..., str] = json.dumps  # TODO decide
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], AnyCallable] = {}  # TODO decide
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]] = {}  # TODO decide
     underscore_attrs_are_private: bool = False  # TODO remove
     allow_inf_nan: bool = True
 

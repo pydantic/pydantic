@@ -1,29 +1,15 @@
 from __future__ import annotations as _annotations
 
+import typing
 import warnings
 from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
 from functools import partial
 from types import prepare_class, resolve_bases
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    no_type_check,
-    overload,
-)
+from typing import Any
 
-from typing_extensions import dataclass_transform
+import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from .config import BaseConfig, Extra, build_config, inherit_config
@@ -32,30 +18,25 @@ from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .schema import default_ref_template, model_schema
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from inspect import Signature
 
     from pydantic_core import CoreSchema, SchemaValidator
 
-    from ._internal._typing_extra import (
-        AbstractSetIntStr,
-        AnyClassMethod,
-        CallableGenerator,
-        DictAny,
-        DictStrAny,
-        MappingIntStrAny,
-        SetStr,
-        TupleGenerator,
-    )
+    from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
-    Model = TypeVar('Model', bound='BaseModel')
+    AnyClassMethod = classmethod[Any]
+    CallableGenerator = typing.Generator[typing.Callable[..., Any], None, None]
+    TupleGenerator = typing.Generator[tuple[str, Any], None, None]
+    DictStrAny = dict[str, Any]
+    Model = typing.TypeVar('Model', bound='BaseModel')
 
 __all__ = (
     'BaseModel',
     'create_model',
 )
 
-_T = TypeVar('_T')
+_T = typing.TypeVar('_T')
 
 
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
@@ -65,7 +46,7 @@ _T = TypeVar('_T')
 _base_class_defined = False
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any) -> type:
         if _base_class_defined:
@@ -114,18 +95,18 @@ object_setattr = object.__setattr__
 
 
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
-    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
-        __pydantic_validator__: ClassVar[SchemaValidator]
-        __pydantic_validation_schema__: ClassVar[CoreSchema]
-        __validator_functions__: ClassVar[_validation_functions.ValidationFunctions]
-        __fields__: ClassVar[Dict[str, FieldInfo]] = {}
-        __config__: ClassVar[Type[BaseConfig]] = BaseConfig
-        __json_encoder__: ClassVar[Callable[[Any], Any]] = lambda x: x
-        __schema_cache__: ClassVar['DictAny'] = {}
-        __signature__: ClassVar[Signature]
-        __private_attributes__: ClassVar[Dict[str, ModelPrivateAttr]]
-        __class_vars__: ClassVar[set[str]]
+        __pydantic_validator__: typing.ClassVar[SchemaValidator]
+        __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
+        __validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
+        __fields__: typing.ClassVar[dict[str, FieldInfo]] = {}
+        __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
+        __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x
+        __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
+        __signature__: typing.ClassVar[Signature]
+        __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
+        __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
 
     Config = BaseConfig
@@ -147,7 +128,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         __pydantic_self__._init_private_attributes()
 
-    @no_type_check
+    @typing.no_type_check
     def __setattr__(self, name, value):
         if name.startswith('_'):
             object_setattr(self, name, value)
@@ -164,7 +145,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             self.__dict__[name] = value
             self.__fields_set__.add(name)
 
-    def __getstate__(self) -> 'DictAny':
+    def __getstate__(self) -> dict[Any, Any]:
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
         return {
             '__dict__': self.__dict__,
@@ -172,7 +153,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
         }
 
-    def __setstate__(self, state: 'DictAny') -> None:
+    def __setstate__(self, state: dict[Any, Any]) -> None:
         object_setattr(self, '__dict__', state['__dict__'])
         object_setattr(self, '__fields_set__', state['__fields_set__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
@@ -187,14 +168,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def dict(
         self,
         *,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        include: AbstractSetIntStr | MappingIntStrAny | None = None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         by_alias: bool = False,
-        skip_defaults: Optional[bool] = None,
+        skip_defaults: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> 'DictStrAny':
+    ) -> dict[str, Any]:
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -221,14 +202,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def json(
         self,
         *,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        include: AbstractSetIntStr | MappingIntStrAny | None = None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         by_alias: bool = False,
-        skip_defaults: Optional[bool] = None,
+        skip_defaults: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: Optional[Callable[[Any], Any]] = None,
+        encoder: typing.Callable[[Any], Any] | None = None,
         models_as_dict: bool = True,
         **dumps_kwargs: Any,
     ) -> str:
@@ -243,7 +224,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
-        encoder = cast(Callable[[Any], Any], encoder or self.__json_encoder__)
+        encoder = typing.cast(typing.Callable[[Any], Any], encoder or self.__json_encoder__)
 
         # We don't directly call `self.dict()`, which does exactly this with `to_dict=True`
         # because we want to be able to keep raw `BaseModel` instances and not as `dict`.
@@ -262,7 +243,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: Type['Model'], obj: Any) -> 'Model':
+    def parse_obj(cls: type[Model], obj: Any) -> Model:
         values, fields_set = cls.__pydantic_validator__.validate_python(obj)
         m = cls.__new__(cls)
         object_setattr(m, '__dict__', values)
@@ -271,19 +252,19 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return m
 
     @classmethod
-    def from_orm(cls: Type['Model'], obj: Any) -> 'Model':
+    def from_orm(cls: type[Model], obj: Any) -> Model:
         # TODO remove
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls: Type['Model'], _fields_set: Optional['SetStr'] = None, **values: Any) -> 'Model':
+    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
         """
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
         Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
         """
         m = cls.__new__(cls)
-        fields_values: Dict[str, Any] = {}
+        fields_values: dict[str, Any] = {}
         for name, field in cls.__fields__.items():
             if field.alias and field.alias in values:
                 fields_values[name] = values[field.alias]
@@ -299,7 +280,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         m._init_private_attributes()
         return m
 
-    def _copy_and_set_values(self: 'Model', values: 'DictStrAny', fields_set: 'SetStr', *, deep: bool) -> 'Model':
+    def _copy_and_set_values(self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
         if deep:
             # chances of having empty dict here are quite low for using smart_deepcopy
             values = deepcopy(values)
@@ -318,13 +299,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return m
 
     def copy(
-        self: 'Model',
+        self: Model,
         *,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        update: Optional['DictStrAny'] = None,
+        include: AbstractSetIntStr | MappingIntStrAny | None = None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+        update: typing.Dict[str, Any] | None = None,
         deep: bool = False,
-    ) -> 'Model':
+    ) -> Model:
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
@@ -350,7 +331,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
-    def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> 'DictStrAny':
+    def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> typing.Dict[str, Any]:
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
@@ -369,15 +350,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls) -> CallableGenerator:
         yield cls.validate
 
     @classmethod
-    def validate(cls: Type['Model'], value: Any) -> 'Model':
+    def validate(cls: type[Model], value: Any) -> 'Model':
         if isinstance(value, cls):
             copy_on_model_validation = cls.__config__.copy_on_model_validation
             # whether to deep or shallow copy the model on validation, None means do not copy
-            deep_copy: Optional[bool] = None
+            deep_copy: bool | None = None
             if copy_on_model_validation not in {'deep', 'shallow', 'none'}:
                 # Warn about deprecated behavior
                 warnings.warn(
@@ -410,14 +391,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return cls(**value_as_dict)
 
     @classmethod
-    @no_type_check
+    @typing.no_type_check
     def _get_value(
         cls,
         v: Any,
         to_dict: bool,
         by_alias: bool,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']],
+        include: AbstractSetIntStr | MappingIntStrAny | None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None,
         exclude_unset: bool,
         exclude_defaults: bool,
         exclude_none: bool,
@@ -498,8 +479,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         self,
         to_dict: bool = False,
         by_alias: bool = False,
-        include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
-        exclude: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']] = None,
+        include: AbstractSetIntStr | MappingIntStrAny | None = None,
+        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
@@ -557,15 +538,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def _calculate_keys(
         self,
-        include: Optional['MappingIntStrAny'],
-        exclude: Optional['MappingIntStrAny'],
+        include: MappingIntStrAny | None,
+        exclude: MappingIntStrAny | None,
         exclude_unset: bool,
-        update: Optional['DictStrAny'] = None,
-    ) -> Optional[AbstractSet[str]]:
+        update: typing.Dict[str, Any] | None = None,
+    ) -> typing.AbstractSet[str] | None:
         if include is None and exclude is None and exclude_unset is False:
             return None
 
-        keys: AbstractSet[str]
+        keys: typing.AbstractSet[str]
         if exclude_unset:
             keys = self.__fields_set__.copy()
         else:
@@ -599,45 +580,45 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 _base_class_defined = True
 
 
-@overload
+@typing.overload
 def create_model(
     __model_name: str,
     *,
-    __config__: Optional[Type[BaseConfig]] = None,
+    __config__: type[BaseConfig] | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: Dict[str, 'AnyClassMethod'] = None,
-    __cls_kwargs__: Dict[str, Any] = None,
+    __validators__: dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: dict[str, Any] = None,
     **field_definitions: Any,
-) -> Type['BaseModel']:
+) -> type[Model]:
     ...
 
 
-@overload
+@typing.overload
 def create_model(
     __model_name: str,
     *,
-    __config__: Optional[Type[BaseConfig]] = None,
-    __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
+    __config__: type[BaseConfig] | None = None,
+    __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: Dict[str, 'AnyClassMethod'] = None,
-    __cls_kwargs__: Dict[str, Any] = None,
+    __validators__: dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: dict[str, Any] = None,
     **field_definitions: Any,
-) -> Type['Model']:
+) -> type[Model]:
     ...
 
 
 def create_model(
     __model_name: str,
     *,
-    __config__: Optional[Type[BaseConfig]] = None,
-    __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
+    __config__: type[BaseConfig] | None = None,
+    __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
-    __validators__: Dict[str, 'AnyClassMethod'] = None,
-    __cls_kwargs__: Dict[str, Any] = None,
-    __slots__: Optional[Tuple[str, ...]] = None,
+    __validators__: dict[str, 'AnyClassMethod'] = None,
+    __cls_kwargs__: dict[str, Any] = None,
+    __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
-) -> Type['Model']:
+) -> type[Model]:
     """
     Dynamically create a model.
     :param __model_name: name of the created model
@@ -664,7 +645,7 @@ def create_model(
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (cast(Type['Model'], BaseModel),)
+        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -690,7 +671,7 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
-    namespace: 'DictStrAny' = {'__annotations__': annotations, '__module__': __module__}
+    namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)

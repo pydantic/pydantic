@@ -1,14 +1,11 @@
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Type, TypeVar, Union
 
 from ._internal import _repr
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
-
-if TYPE_CHECKING:
-    from ._internal._typing_extra import DictStrAny
 
 
 def _generate_parsing_type_name(type_: Any) -> str:
@@ -34,7 +31,7 @@ def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] =
     return model_type(__root__=obj).__root__
 
 
-def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
+def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'dict[str, Any]':
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema(**schema_kwargs)
 

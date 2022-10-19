@@ -10,7 +10,7 @@ from .validator_functions import validator
 __all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
-    from ._internal._typing_extra import AnyCallable
+    AnyCallable = Callable[..., Any]
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
     ConfigType = Union[None, Type[Any], Dict[str, Any]]

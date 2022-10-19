@@ -7,31 +7,11 @@ import sys
 import types
 import typing
 from collections.abc import Callable
-from os import PathLike
-from typing import (
-    AbstractSet,
-    Any,
-    ClassVar,
-    Dict,
-    ForwardRef,
-    Generator,
-    List,
-    Mapping,
-    NewType,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any
 
 from typing_extensions import Annotated, Final, Literal, Required as TypedDictRequired
 
 __all__ = (
-    'AnyCallable',
-    'NoArgAnyCallable',
     'NoneType',
     'is_none_type',
     'is_callable_type',
@@ -43,25 +23,12 @@ __all__ = (
     'is_new_type',
     'is_classvar',
     'is_finalvar',
-    'TupleGenerator',
-    'DictStrAny',
-    'DictAny',
-    'SetStr',
-    'ListStr',
-    'IntStr',
-    'AbstractSetIntStr',
-    'DictIntStrAny',
-    'CallableGenerator',
-    'AnyClassMethod',
-    'CallableGenerator',
     'WithArgsTypes',
     'get_args',
     'get_origin',
     'get_sub_types',
     'typing_base',
     'origin_is_union',
-    'StrPath',
-    'MappingIntStrAny',
     'NotRequired',
     'Required',
     'evaluate_forwardref',
@@ -94,24 +61,13 @@ else:
 
 if sys.version_info < (3, 9):
 
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any = None) -> Any:
+    def evaluate_forwardref(type_: typing.ForwardRef, globalns: Any, localns: Any = None) -> Any:
         return type_._evaluate(globalns, localns or None)
 
 else:
 
-    def evaluate_forwardref(type_: ForwardRef, globalns: Any, localns: Any = None) -> Any:
-        # Even though it is the right signature for python 3.9, mypy complains with
-        # `error: Too many arguments for "_evaluate" of "ForwardRef"` hence the cast...
-        return cast(Any, type_)._evaluate(globalns, localns or None, set())
-
-
-_T = TypeVar('_T')
-
-AnyCallable = typing.Callable[..., Any]
-NoArgAnyCallable = typing.Callable[[], Any]
-
-# workaround for https://github.com/python/mypy/issues/9496
-AnyArgTCallable = typing.Callable[..., _T]
+    def evaluate_forwardref(type_: typing.ForwardRef, globalns: Any, localns: Any = None) -> Any:
+        return type_._evaluate(globalns, localns or None, set())  # type: ignore[call-arg]
 
 
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
@@ -121,16 +77,16 @@ AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
 
 if sys.version_info < (3, 8):
 
-    def get_origin(t: Type[Any]) -> Optional[Type[Any]]:
+    def get_origin(t: type[Any]) -> type[Any] | None:
         if type(t).__name__ in AnnotatedTypeNames:
             # weirdly this is a runtime requirement, as well as for mypy
-            return cast(Type[Any], Annotated)
+            return typing.cast(typing.Type[Any], Annotated)
         return getattr(t, '__origin__', None)
 
 else:
     from typing import get_origin as _typing_get_origin
 
-    def get_origin(tp: Type[Any]) -> Optional[Type[Any]]:
+    def get_origin(tp: type[Any]) -> type[Any] | None:
         """
         We can't directly use `typing.get_origin` since we need a fallback to support
         custom generic classes like `ConstrainedList`
@@ -138,14 +94,14 @@ else:
         solved and https://github.com/pydantic/pydantic/pull/1753 is merged.
         """
         if type(tp).__name__ in AnnotatedTypeNames:
-            return cast(Type[Any], Annotated)  # mypy complains about _SpecialForm
+            return typing.cast(type[Any], Annotated)  # mypy complains about _SpecialForm
         return _typing_get_origin(tp) or getattr(tp, '__origin__', None)
 
 
 if sys.version_info < (3, 8):
     from typing import _GenericAlias
 
-    def get_args(t: Type[Any]) -> Tuple[Any, ...]:
+    def get_args(t: type[Any]) -> tuple[Any, ...]:
         """
         Compatibility version of get_args for python 3.7.
 
@@ -164,7 +120,7 @@ if sys.version_info < (3, 8):
 else:
     from typing import get_args as _typing_get_args
 
-    def _generic_get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+    def _generic_get_args(tp: type[Any]) -> tuple[Any, ...]:
         """
         In python 3.9, `typing.Dict`, `typing.List`, ...
         do have an empty `__args__` by default (instead of the generic ~T for example).
@@ -177,14 +133,14 @@ else:
         # in python 3.10- but now returns () for `tuple` and `Tuple`.
         # This will probably be clarified in pydantic v2
         try:
-            if tp == Tuple[()] or sys.version_info >= (3, 9) and tp == tuple[()]:  # type: ignore[misc]
+            if tp == typing.Tuple[()] or sys.version_info >= (3, 9) and tp == tuple[()]:  # type: ignore[misc]
                 return ((),)
         # there is a TypeError when compiled with cython
         except TypeError:  # pragma: no cover
             pass
         return ()
 
-    def get_args(tp: Type[Any]) -> Tuple[Any, ...]:
+    def get_args(tp: type[Any]) -> tuple[Any, ...]:
         """
         Get type arguments with all substitutions performed.
 
@@ -202,109 +158,25 @@ else:
         return _typing_get_args(tp) or getattr(tp, '__args__', ()) or _generic_get_args(tp)
 
 
-if sys.version_info < (3, 9):
-
-    def convert_generics(tp: Type[Any]) -> Type[Any]:
-        """
-        Python 3.9 and older only supports generics from `typing` module.
-        They convert strings to ForwardRef automatically.
-
-        Examples::
-            typing.List['Hero'] == typing.List[ForwardRef('Hero')]
-        """
-        return tp
-
-else:
-    from typing import _UnionGenericAlias  # type: ignore
-
-    from typing_extensions import _AnnotatedAlias
-
-    def convert_generics(tp: Type[Any]) -> Type[Any]:
-        """
-        Recursively searches for `str` type hints and replaces them with ForwardRef.
-
-        Examples::
-            convert_generics(list['Hero']) == list[ForwardRef('Hero')]
-            convert_generics(dict['Hero', 'Team']) == dict[ForwardRef('Hero'), ForwardRef('Team')]
-            convert_generics(typing.Dict['Hero', 'Team']) == typing.Dict[ForwardRef('Hero'), ForwardRef('Team')]
-            convert_generics(list[str | 'Hero'] | int) == list[str | ForwardRef('Hero')] | int
-        """
-        origin = get_origin(tp)
-        if not origin or not hasattr(tp, '__args__'):
-            return tp
-
-        args = get_args(tp)
-
-        # typing.Annotated needs special treatment
-        if origin is Annotated:
-            return _AnnotatedAlias(convert_generics(args[0]), args[1:])
-
-        # recursively replace `str` instances inside of `GenericAlias` with `ForwardRef(arg)`
-        converted = tuple(
-            ForwardRef(arg) if isinstance(arg, str) and isinstance(tp, TypingGenericAlias) else convert_generics(arg)
-            for arg in args
-        )
-
-        if converted == args:
-            return tp
-        elif isinstance(tp, TypingGenericAlias):
-            return TypingGenericAlias(origin, converted)
-        elif isinstance(tp, TypesUnionType):
-            # recreate types.UnionType (PEP604, Python >= 3.10)
-            return _UnionGenericAlias(origin, converted)
-        else:
-            try:
-                setattr(tp, '__args__', converted)
-            except AttributeError:
-                pass
-            return tp
-
-
 if sys.version_info < (3, 10):
 
-    def origin_is_union(tp: Optional[Type[Any]]) -> bool:
-        return tp is Union
+    def origin_is_union(tp: type[Any] | None) -> bool:
+        return tp is typing.Union
 
     WithArgsTypes = (TypingGenericAlias,)
 
 else:
-    import typing
 
-    def origin_is_union(tp: Optional[Type[Any]]) -> bool:
-        return tp is Union or tp is types.UnionType  # noqa: E721
+    def origin_is_union(tp: type[Any] | None) -> bool:
+        return tp is typing.Union or tp is types.UnionType  # noqa: E721
 
-    WithArgsTypes = (typing._GenericAlias, types.GenericAlias, types.UnionType)  # type: ignore[attr-defined]
-
-
-if sys.version_info < (3, 9):
-    StrPath = Union[str, PathLike]
-else:
-    StrPath = Union[str, PathLike]
-    # TODO: Once we switch to Cython 3 to handle generics properly
-    #  (https://github.com/cython/cython/issues/2753), use following lines instead
-    #  of the one above
-    # # os.PathLike only becomes subscriptable from Python 3.9 onwards
-    # StrPath = Union[str, PathLike[str]]
-
-
-if typing.TYPE_CHECKING:
-    TupleGenerator = Generator[Tuple[str, Any], None, None]
-    DictStrAny = Dict[str, Any]
-    DictAny = Dict[Any, Any]
-    SetStr = Set[str]
-    ListStr = List[str]
-    IntStr = Union[int, str]
-    AbstractSetIntStr = AbstractSet[IntStr]
-    DictIntStrAny = Dict[IntStr, Any]
-    MappingIntStrAny = Mapping[IntStr, Any]
-    CallableGenerator = Generator[AnyCallable, None, None]
-    AnyClassMethod = classmethod[Any]
+    WithArgsTypes = typing._GenericAlias, types.GenericAlias, types.UnionType  # type: ignore[attr-defined]
 
 
 NoneType = None.__class__
 
 
-NONE_TYPES: Tuple[Any, Any, Any] = (None, NoneType, Literal[None])
+NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
 
 if sys.version_info < (3, 8):
@@ -339,19 +211,19 @@ else:
         return False
 
 
-def is_callable_type(type_: Type[Any]) -> bool:
+def is_callable_type(type_: type[Any]) -> bool:
     return type_ is Callable or get_origin(type_) is Callable
 
 
-def is_literal_type(type_: Type[Any]) -> bool:
+def is_literal_type(type_: type[Any]) -> bool:
     return Literal is not None and get_origin(type_) is Literal
 
 
-def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
+def literal_values(type_: type[Any]) -> tuple[Any, ...]:
     return get_args(type_)
 
 
-def all_literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
+def all_literal_values(type_: type[Any]) -> tuple[Any, ...]:
     """
     This method is used to retrieve all Literal values as
     Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
@@ -364,7 +236,7 @@ def all_literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
     return tuple(x for value in values for x in all_literal_values(value))
 
 
-def is_namedtuple(type_: Type[Any]) -> bool:
+def is_namedtuple(type_: type[Any]) -> bool:
     """
     Check if a given class is a named tuple.
     It can be either a `typing.NamedTuple` or `collections.namedtuple`
@@ -374,7 +246,7 @@ def is_namedtuple(type_: Type[Any]) -> bool:
     return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
 
 
-def is_typeddict(type_: Type[Any]) -> bool:
+def is_typeddict(type_: type[Any]) -> bool:
     """
     Check if a given class is a typed dict (from `typing` or `typing_extensions`)
     In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
@@ -395,10 +267,10 @@ def is_typeddict_special(type_: Any) -> bool:
     return _check_typeddict_special(type_) or _check_typeddict_special(get_origin(type_))
 
 
-test_new_type = NewType('test_new_type', str)
+test_new_type = typing.NewType('test_new_type', str)
 
 
-def is_new_type(type_: Type[Any]) -> bool:
+def is_new_type(type_: type[Any]) -> bool:
     """
     Check whether type_ was created using typing.NewType.
 
@@ -407,14 +279,14 @@ def is_new_type(type_: Type[Any]) -> bool:
     return isinstance(type_, test_new_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore[arg-type]
 
 
-def _check_classvar(v: Optional[Type[Any]]) -> bool:
+def _check_classvar(v: type[Any] | None) -> bool:
     if v is None:
         return False
 
-    return v.__class__ == ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
+    return v.__class__ == typing.ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
 
 
-def _check_finalvar(v: Optional[Type[Any]]) -> bool:
+def _check_finalvar(v: type[Any] | None) -> bool:
     """
     Check if a given type is a `typing.Final` type.
     """
@@ -424,41 +296,23 @@ def _check_finalvar(v: Optional[Type[Any]]) -> bool:
     return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, '_name', None) == 'Final')
 
 
-def is_classvar(ann_type: Type[Any]) -> bool:
+def is_classvar(ann_type: type[Any]) -> bool:
     if _check_classvar(ann_type) or _check_classvar(get_origin(ann_type)):
         return True
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
     # forward references, see #3679
-    if ann_type.__class__ == ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):
+    if ann_type.__class__ == typing.ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):
         return True
 
     return False
 
 
-def is_finalvar(ann_type: Type[Any]) -> bool:
+def is_finalvar(ann_type: type[Any]) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 
-def get_class(type_: Type[Any]) -> Union[None, bool, Type[Any]]:
-    """
-    Tries to get the class of a Type[T] annotation. Returns True if Type is used
-    without brackets. Otherwise returns None.
-    """
-    if type_ is type:
-        return True
-
-    if get_origin(type_) is None:
-        return None
-
-    args = get_args(type_)
-    if not args or not isinstance(args[0], type):
-        return True
-    else:
-        return args[0]
-
-
-def get_sub_types(tp: Any) -> List[Any]:
+def get_sub_types(tp: Any) -> list[Any]:
     """
     Return all the types that are allowed by type `tp`
     `tp` can be a `Union` of allowed types or an `Annotated` type
@@ -555,7 +409,7 @@ else:
                     if isinstance(value, str):
 
                         # { CHANGED IN PYDANTIC: `is_class=True` removed
-                        value = ForwardRef(value, is_argument=False)
+                        value = typing.ForwardRef(value, is_argument=False)
                         # } END OF CHANGE IN PYDANTIC
 
                     value = typing._eval_type(value, base_globals, base_locals)
@@ -592,7 +446,7 @@ else:
                 # a module-level annotation or a function argument annotation
 
                 # { CHANGED IN PYDANTIC: `is_class=False` removed
-                value = ForwardRef(
+                value = typing.ForwardRef(
                     value,
                     is_argument=not isinstance(obj, types.ModuleType),
                     # is_class=False,
@@ -601,6 +455,6 @@ else:
 
             value = typing._eval_type(value, globalns, localns)
             if name in defaults and defaults[name] is None:
-                value = Optional[value]
+                value = typing.Optional[value]
             hints[name] = value
         return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}

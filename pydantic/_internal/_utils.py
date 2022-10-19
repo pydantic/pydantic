@@ -4,35 +4,22 @@ Bucket of reusable internal utilities.
 from __future__ import annotations as _annotations
 
 import keyword
+import typing
 import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, TypeVar
 
-from . import _repr
-from ._typing_extra import NoneType, WithArgsTypes
+from . import _repr, _typing_extra
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from ..dataclasses import Dataclass
     from ..main import BaseModel
-    from ._typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny
+
+    MappingIntStrAny = typing.Mapping[int | str, Any]
+    AbstractSetIntStr = typing.AbstractSet[int | str]
 
 __all__ = (
     'sequence_like',
@@ -52,11 +39,13 @@ __all__ = (
     'ROOT_KEY',
     'LimitedDict',
     'dict_not_none',
+    'AbstractSetIntStr',
+    'MappingIntStrAny',
 )
 
 ROOT_KEY = '__root__'
 # these are types that are returned unchanged by deepcopy
-IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
+IMMUTABLE_NON_COLLECTIONS_TYPES: set[type[Any]] = {
     int,
     float,
     complex,
@@ -64,7 +53,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
     bool,
     bytes,
     type,
-    NoneType,
+    _typing_extra.NoneType,
     FunctionType,
     BuiltinFunctionType,
     LambdaType,
@@ -79,7 +68,7 @@ IMMUTABLE_NON_COLLECTIONS_TYPES: Set[Type[Any]] = {
 }
 
 # these are types that if empty, might be copied with simple copy() instead of deepcopy()
-BUILTIN_COLLECTIONS: Set[Type[Any]] = {
+BUILTIN_COLLECTIONS: set[type[Any]] = {
     list,
     set,
     tuple,
@@ -95,7 +84,7 @@ def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
-def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
+def validate_field_name(bases: list[type[BaseModel]], field_name: str) -> None:
     """
     Ensure that the field's name does not shadow an existing attribute of the model.
     """
@@ -107,7 +96,7 @@ def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None
             )
 
 
-def lenient_isinstance(o: Any, class_or_tuple: Union[Type[Any], Tuple[Type[Any], ...], None]) -> bool:
+def lenient_isinstance(o: Any, class_or_tuple: type[Any] | tuple[type[Any], ...] | None) -> bool:
     try:
         return isinstance(o, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
@@ -118,7 +107,7 @@ def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)
     except TypeError:
-        if isinstance(cls, WithArgsTypes):
+        if isinstance(cls, _typing_extra.WithArgsTypes):
             return False
         raise  # pragma: no cover
 
@@ -147,7 +136,7 @@ def is_valid_identifier(identifier: str) -> bool:
 KeyType = TypeVar('KeyType')
 
 
-def deep_update(mapping: Dict[KeyType, Any], *updating_mappings: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
+def deep_update(mapping: dict[KeyType, Any], *updating_mappings: dict[KeyType, Any]) -> dict[KeyType, Any]:
     updated_mapping = mapping.copy()
     for updating_mapping in updating_mappings:
         for k, v in updating_mapping.items():
@@ -158,11 +147,11 @@ def deep_update(mapping: Dict[KeyType, Any], *updating_mappings: Dict[KeyType, A
     return updated_mapping
 
 
-def dict_not_none(__pos: Dict[str, Any] = None, **kwargs: Any) -> Dict[str, Any]:
+def dict_not_none(__pos: dict[str, Any] = None, **kwargs: Any) -> dict[str, Any]:
     return {k: v for k, v in (__pos or kwargs).items() if v is not None}
 
 
-def update_not_none(mapping: Dict[Any, Any], **update: Any) -> None:
+def update_not_none(mapping: dict[Any, Any], **update: Any) -> None:
     mapping.update({k: v for k, v in update.items() if v is not None})
 
 
@@ -173,7 +162,7 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
-def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
+def get_model(obj: type[BaseModel] | type[Dataclass]) -> type[BaseModel]:
     from ..main import BaseModel
 
     try:
@@ -201,17 +190,17 @@ T = TypeVar('T')
 
 
 def unique_list(
-    input_list: Union[List[T], Tuple[T, ...]],
+    input_list: list[T] | tuple[T, ...],
     *,
-    name_factory: Callable[[T], str] = str,
-) -> List[T]:
+    name_factory: typing.Callable[[T], str] = str,
+) -> list[T]:
     """
     Make a list unique while maintaining order.
     We update the list if another one with the same name is set
     (e.g. root validator overridden in subclass)
     """
-    result: List[T] = []
-    result_names: List[str] = []
+    result: list[T] = []
+    result_names: list[str] = []
     for v in input_list:
         v_name = name_factory(v)
         if v_name not in result_names:
@@ -230,13 +219,13 @@ class ValueItems(_repr.Representation):
 
     __slots__ = ('_items', '_type')
 
-    def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
+    def __init__(self, value: Any, items: AbstractSetIntStr | MappingIntStrAny) -> None:
         items = self._coerce_items(items)
 
         if isinstance(value, (list, tuple)):
             items = self._normalize_indexes(items, len(value))
 
-        self._items: 'MappingIntStrAny' = items
+        self._items: MappingIntStrAny = items
 
     def is_excluded(self, item: Any) -> bool:
         """
@@ -254,7 +243,7 @@ class ValueItems(_repr.Representation):
         """
         return item in self._items
 
-    def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
+    def for_element(self, e: int | str) -> AbstractSetIntStr | MappingIntStrAny | None:
         """
         :param e: key or index of element on value
         :return: raw values for element if self._items is dict and contain needed element
@@ -263,7 +252,7 @@ class ValueItems(_repr.Representation):
         item = self._items.get(e)
         return item if not self.is_true(item) else None
 
-    def _normalize_indexes(self, items: 'MappingIntStrAny', v_length: int) -> 'DictIntStrAny':
+    def _normalize_indexes(self, items: MappingIntStrAny, v_length: int) -> dict[int | str, Any]:
         """
         :param items: dict or set of indexes which will be normalized
         :param v_length: length of sequence indexes of which will be
@@ -274,10 +263,10 @@ class ValueItems(_repr.Representation):
         {0: True, 1: True, 2: True, 3: True}
         """
 
-        normalized_items: 'DictIntStrAny' = {}
+        normalized_items: dict[int | str, Any] = {}
         all_items = None
         for i, v in items.items():
-            if not (isinstance(v, Mapping) or isinstance(v, AbstractSet) or self.is_true(v)):
+            if not (isinstance(v, typing.Mapping) or isinstance(v, typing.AbstractSet) or self.is_true(v)):
                 raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
             if i == '__all__':
                 all_items = self._coerce_value(v)
@@ -333,7 +322,7 @@ class ValueItems(_repr.Representation):
         else:
             merge_keys = list(base) + [k for k in override if k not in base]
 
-        merged: 'DictIntStrAny' = {}
+        merged: dict[int | str, Any] = {}
         for k in merge_keys:
             merged_item = cls.merge(base.get(k), override.get(k), intersect=intersect)
             if merged_item is not None:
@@ -342,10 +331,10 @@ class ValueItems(_repr.Representation):
         return merged
 
     @staticmethod
-    def _coerce_items(items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> 'MappingIntStrAny':
-        if isinstance(items, Mapping):
+    def _coerce_items(items: AbstractSetIntStr | MappingIntStrAny) -> MappingIntStrAny:
+        if isinstance(items, typing.Mapping):
             pass
-        elif isinstance(items, AbstractSet):
+        elif isinstance(items, typing.AbstractSet):
             items = dict.fromkeys(items, ...)
         else:
             class_name = getattr(items, '__class__', '???')
@@ -366,7 +355,7 @@ class ValueItems(_repr.Representation):
         return [(None, self._items)]
 
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
 
     def ClassAttribute(name: str, value: T) -> T:
         ...
@@ -384,7 +373,7 @@ else:
             self.name = name
             self.value = value
 
-        def __get__(self, instance: Any, owner: Type[Any]) -> None:
+        def __get__(self, instance: Any, owner: type[Any]) -> None:
             if instance is None:
                 return self.value
             raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
@@ -417,7 +406,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
 _EMPTY = object()
 
 
-def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
+def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bool:
     """
     Check that the items of `left` are the same objects as those in `right`.
 
@@ -433,7 +422,7 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
     return True
 
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     # define like this to work with older python
     KT = TypeVar('KT')
     VT = TypeVar('VT')

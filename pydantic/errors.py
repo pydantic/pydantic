@@ -1,11 +1,13 @@
+"""
+TODO remove completely.
+"""
+from __future__ import annotations as _annotations
+
 from decimal import Decimal
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Set, Tuple, Type, Union
+from typing import Any, Callable, Sequence, Set, Type, Union
 
-from ._internal._repr import display_as_type
-
-if TYPE_CHECKING:
-    from ._internal._typing_extra import DictStrAny
+from ._internal import _repr
 
 # explicitly state exports to avoid "from .errors import *" also importing Decimal, Path etc.
 __all__ = (
@@ -105,7 +107,7 @@ __all__ = (
 )
 
 
-def cls_kwargs(cls: Type['PydanticErrorMixin'], ctx: 'DictStrAny') -> 'PydanticErrorMixin':
+def cls_kwargs(cls: Type['PydanticErrorMixin'], ctx: 'dict[str, Any]') -> 'PydanticErrorMixin':
     """
     For built-in exceptions like ValueError or TypeError, we need to implement
     __reduce__ to override the default behaviour (instead of __getstate__/__setstate__)
@@ -126,7 +128,7 @@ class PydanticErrorMixin:
     def __str__(self) -> str:
         return self.msg_template.format(**self.__dict__)
 
-    def __reduce__(self) -> Tuple[Callable[..., 'PydanticErrorMixin'], Tuple[Type['PydanticErrorMixin'], 'DictStrAny']]:
+    def __reduce__(self) -> tuple[Callable[..., PydanticErrorMixin], tuple[type[PydanticErrorMixin], dict[str, Any]]]:
         return cls_kwargs, (self.__class__, self.__dict__)
 
 
@@ -513,7 +515,7 @@ class ArbitraryTypeError(PydanticTypeError):
     msg_template = 'instance of {expected_arbitrary_type} expected'
 
     def __init__(self, *, expected_arbitrary_type: Type[Any]) -> None:
-        super().__init__(expected_arbitrary_type=display_as_type(expected_arbitrary_type))
+        super().__init__(expected_arbitrary_type=_repr.display_as_type(expected_arbitrary_type))
 
 
 class ClassError(PydanticTypeError):
@@ -526,7 +528,7 @@ class SubclassError(PydanticTypeError):
     msg_template = 'subclass of {expected_class} expected'
 
     def __init__(self, *, expected_class: Type[Any]) -> None:
-        super().__init__(expected_class=display_as_type(expected_class))
+        super().__init__(expected_class=_repr.display_as_type(expected_class))
 
 
 class JsonError(PydanticValueError):

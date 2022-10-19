@@ -59,9 +59,10 @@ from .fields import Field, FieldInfo, Required, Undefined
 from .main import create_model
 
 if TYPE_CHECKING:
-    from ._internal._typing_extra import CallableGenerator, NoArgAnyCallable
     from .main import BaseModel
 
+    NoArgAnyCallable = Callable[[], Any]
+    CallableGenerator = Generator[Callable[..., Any], None, None]
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
     DataclassClassOrWrapper = Union[Type['Dataclass'], 'DataclassProxy']

@@ -12,10 +12,10 @@ if typing.TYPE_CHECKING:
     RichReprResult = typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
 
 
-class PyObjectStr(str):
+class PlainRepr(str):
     """
     String class where repr doesn't include quotes. Useful with Representation when you want to return a string
-    representation of something that valid (or pseudo-valid) python.
+    representation of something that is valid (or pseudo-valid) python.
     """
 
     def __repr__(self) -> str:
