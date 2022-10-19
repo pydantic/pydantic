@@ -148,7 +148,7 @@ class FieldInfo(_repr.Representation):
         return self.default is Undefined and self.default_factory is None
 
     def __repr_args__(self) -> 'ReprArgs':
-        yield 'annotation', _utils.PyObjectStr(_repr.display_as_type(self.annotation))
+        yield 'annotation', _repr.PyObjectStr(_repr.display_as_type(self.annotation))
         yield 'required', self.is_required()
 
         for s in self.__slots__:
@@ -159,7 +159,7 @@ class FieldInfo(_repr.Representation):
             elif s == 'repr' and self.repr is True:
                 continue
             if s == 'default_factory' and self.default_factory is not None:
-                yield 'default_factory', _utils.PyObjectStr(_repr.display_as_type(self.default_factory))
+                yield 'default_factory', _repr.PyObjectStr(_repr.display_as_type(self.default_factory))
             elif s != 'extra' or self.extra:
                 value = getattr(self, s)
                 if value is not None and value is not Undefined:

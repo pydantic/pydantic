@@ -19,13 +19,12 @@ from pydantic._internal._utils import (
     all_identical,
     deep_update,
     get_model,
-    import_string,
     lenient_issubclass,
-    path_type,
     smart_deepcopy,
     to_lower_camel,
     unique_list,
 )
+from pydantic._internal._validators import import_string
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -364,32 +363,6 @@ def test_all_literal_values():
 
     L312 = Literal['3', Literal[L1, L2]]
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
-
-
-def test_path_type(tmp_path):
-    assert path_type(tmp_path) == 'directory'
-    file = tmp_path / 'foobar.txt'
-    file.write_text('hello')
-    assert path_type(file) == 'file'
-
-
-def test_path_type_unknown(tmp_path):
-    p = type(
-        'FakePath',
-        (),
-        {
-            'exists': lambda: True,
-            'is_dir': lambda: False,
-            'is_file': lambda: False,
-            'is_mount': lambda: False,
-            'is_symlink': lambda: False,
-            'is_block_device': lambda: False,
-            'is_char_device': lambda: False,
-            'is_fifo': lambda: False,
-            'is_socket': lambda: False,
-        },
-    )
-    assert path_type(p) == 'unknown'
 
 
 @pytest.mark.parametrize(

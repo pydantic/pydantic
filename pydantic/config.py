@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol, TypedDict
 
-from pydantic._internal._utils import GetterDict
-
 from ._internal._typing_extra import AnyArgTCallable, AnyCallable
 
 if TYPE_CHECKING:
@@ -55,7 +53,6 @@ class ConfigDict(TypedDict, total=False):
     error_msg_templates: Dict[str, str]
     arbitrary_types_allowed: bool
     orm_mode: bool
-    getter_dict: Type[GetterDict]
     alias_generator: Optional[Callable[[str], str]]
     keep_untouched: Tuple[type, ...]
     schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
@@ -89,7 +86,6 @@ class BaseConfig:
     error_msg_templates: Dict[str, str] = {}  # TODO remove
     arbitrary_types_allowed: bool = False  # TODO default True, or remove
     orm_mode: bool = False  # TODO rename to from_attributes
-    getter_dict: Type[GetterDict] = GetterDict  # TODO remove
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()  # TODO remove??
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}  # TODO remove, new model method

@@ -14,13 +14,10 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
-    Collection,
     Dict,
     Iterable,
-    Iterator,
     List,
     Mapping,
-    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -29,30 +26,15 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Annotated
-
-from pydantic.errors import ConfigError
-
 from . import _repr
-from ._typing_extra import (
-    NoneType,
-    WithArgsTypes,
-    all_literal_values,
-    get_args,
-    get_origin,
-    is_literal_type,
-    origin_is_union,
-)
+from ._typing_extra import NoneType, WithArgsTypes
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from ..dataclasses import Dataclass
     from ..main import BaseModel
     from ._typing_extra import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny
 
 __all__ = (
-    'import_string',
     'sequence_like',
     'validate_field_name',
     'lenient_isinstance',
@@ -64,17 +46,10 @@ __all__ = (
     'almost_equal_floats',
     'get_model',
     'to_camel',
-    'is_valid_field',
     'smart_deepcopy',
-    'PyObjectStr',
-    'GetterDict',
     'ValueItems',
     'ClassAttribute',
-    'path_type',
     'ROOT_KEY',
-    'get_unique_discriminator_alias',
-    'get_discriminator_alias_and_values',
-    'DUNDER_ATTRIBUTES',
     'LimitedDict',
     'dict_not_none',
 )
@@ -114,25 +89,6 @@ BUILTIN_COLLECTIONS: Set[Type[Any]] = {
     defaultdict,
     deque,
 }
-
-
-def import_string(dotted_path: str) -> Any:
-    """
-    Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
-    last name in the path. Raise ImportError if the import fails.
-    """
-    from importlib import import_module
-
-    try:
-        module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
-    except ValueError as e:
-        raise ImportError(f'"{dotted_path}" doesn\'t look like a module path') from e
-
-    module = import_module(module_path)
-    try:
-        return getattr(module, class_name)
-    except AttributeError as e:
-        raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
 
 
 def sequence_like(v: Any) -> bool:
@@ -267,78 +223,6 @@ def unique_list(
     return result
 
 
-class PyObjectStr(str):
-    """
-    String class where repr doesn't include quotes. Useful with Representation when you want to return a string
-    representation of something that valid (or pseudo-valid) python.
-    """
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-class GetterDict(_repr.Representation):
-    """
-    Hack to make object's smell just enough like dicts for validate_model.
-
-    We can't inherit from Mapping[str, Any] because it upsets cython so we have to implement all methods ourselves.
-    """
-
-    __slots__ = ('_obj',)
-
-    def __init__(self, obj: Any):
-        self._obj = obj
-
-    def __getitem__(self, key: str) -> Any:
-        try:
-            return getattr(self._obj, key)
-        except AttributeError as e:
-            raise KeyError(key) from e
-
-    def get(self, key: Any, default: Any = None) -> Any:
-        return getattr(self._obj, key, default)
-
-    def extra_keys(self) -> Set[Any]:
-        """
-        We don't want to get any other attributes of obj if the model didn't explicitly ask for them
-        """
-        return set()
-
-    def keys(self) -> List[Any]:
-        """
-        Keys of the pseudo dictionary, uses a list not set so order information can be maintained like python
-        dictionaries.
-        """
-        return list(self)
-
-    def values(self) -> List[Any]:
-        return [self[k] for k in self]
-
-    def items(self) -> Iterator[Tuple[str, Any]]:
-        for k in self:
-            yield k, self.get(k)
-
-    def __iter__(self) -> Iterator[str]:
-        for name in dir(self._obj):
-            if not name.startswith('_'):
-                yield name
-
-    def __len__(self) -> int:
-        return sum(1 for _ in self)
-
-    def __contains__(self, item: Any) -> bool:
-        return item in self.keys()
-
-    def __eq__(self, other: Any) -> bool:
-        return dict(self) == dict(other.items())
-
-    def __repr_args__(self) -> _repr.ReprArgs:
-        return [(None, dict(self))]
-
-    def __repr_name__(self) -> str:
-        return f'GetterDict[{_repr.display_as_type(self._obj)}]'
-
-
 class ValueItems(_repr.Representation):
     """
     Class for more convenient calculation of excluded or included fields on values.
@@ -465,10 +349,7 @@ class ValueItems(_repr.Representation):
             items = dict.fromkeys(items, ...)
         else:
             class_name = getattr(items, '__class__', '???')
-            assert_never(
-                items,
-                f'Unexpected type of exclude value {class_name}',
-            )
+            raise TypeError(f'Unexpected type of exclude value {class_name}')
         return items
 
     @classmethod
@@ -509,30 +390,6 @@ else:
             raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
 
 
-path_types = {
-    'is_dir': 'directory',
-    'is_file': 'file',
-    'is_mount': 'mount point',
-    'is_symlink': 'symlink',
-    'is_block_device': 'block device',
-    'is_char_device': 'char device',
-    'is_fifo': 'FIFO',
-    'is_socket': 'socket',
-}
-
-
-def path_type(p: 'Path') -> str:
-    """
-    Find out what sort of thing a path is.
-    """
-    assert p.exists(), 'path does not exist'
-    for method, name in path_types.items():
-        if getattr(p, method)():
-            return name
-
-    return 'unknown'
-
-
 Obj = TypeVar('Obj')
 
 
@@ -557,25 +414,6 @@ def smart_deepcopy(obj: Obj) -> Obj:
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
 
 
-def is_valid_field(name: str) -> bool:
-    return not name.startswith('_')
-
-
-DUNDER_ATTRIBUTES = {
-    '__annotations__',
-    '__classcell__',
-    '__doc__',
-    '__module__',
-    '__orig_bases__',
-    '__orig_class__',
-    '__qualname__',
-}
-
-
-def is_valid_private_name(name: str) -> bool:
-    return not is_valid_field(name) and name not in DUNDER_ATTRIBUTES
-
-
 _EMPTY = object()
 
 
@@ -595,80 +433,11 @@ def all_identical(left: Iterable[Any], right: Iterable[Any]) -> bool:
     return True
 
 
-def assert_never(obj: NoReturn, msg: str) -> NoReturn:
-    """
-    Helper to make sure that we have covered all possible types.
-
-    This is mostly useful for ``mypy``, docs:
-    https://mypy.readthedocs.io/en/latest/literal_types.html#exhaustive-checks
-    """
-    raise TypeError(msg)
-
-
-def get_unique_discriminator_alias(all_aliases: Collection[str], discriminator_key: str) -> str:
-    """Validate that all aliases are the same and if that's the case return the alias"""
-    unique_aliases = set(all_aliases)
-    if len(unique_aliases) > 1:
-        raise ConfigError(
-            f'Aliases for discriminator {discriminator_key!r} must be the same (got {", ".join(sorted(all_aliases))})'
-        )
-    return unique_aliases.pop()
-
-
-def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple[str, Tuple[str, ...]]:
-    """
-    Get alias and all valid values in the `Literal` type of the discriminator field
-    `tp` can be a `BaseModel` class or directly an `Annotated` `Union` of many.
-    """
-    is_root_model = getattr(tp, '__custom_root_type__', False)
-
-    if get_origin(tp) is Annotated:
-        tp = get_args(tp)[0]
-
-    if hasattr(tp, '__pydantic_model__'):
-        tp = tp.__pydantic_model__
-
-    if origin_is_union(get_origin(tp)):
-        alias, all_values = _get_union_alias_and_all_values(tp, discriminator_key)
-        return alias, tuple(v for values in all_values for v in values)
-    elif is_root_model:
-        union_type = tp.__fields__[ROOT_KEY].type_
-        alias, all_values = _get_union_alias_and_all_values(union_type, discriminator_key)
-
-        if len(set(all_values)) > 1:
-            raise ConfigError(
-                f'Field {discriminator_key!r} is not the same for all submodels of {_repr.display_as_type(tp)!r}'
-            )
-
-        return alias, all_values[0]
-
-    else:
-        try:
-            t_discriminator_type = tp.__fields__[discriminator_key].type_
-        except AttributeError as e:
-            raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`') from e
-        except KeyError as e:
-            raise ConfigError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}') from e
-
-        if not is_literal_type(t_discriminator_type):
-            raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
-
-        return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)
-
-
-def _get_union_alias_and_all_values(
-    union_type: Type[Any], discriminator_key: str
-) -> Tuple[str, Tuple[Tuple[str, ...], ...]]:
-    zipped_aliases_values = [get_discriminator_alias_and_values(t, discriminator_key) for t in get_args(union_type)]
-    # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
-    all_aliases, all_values = zip(*zipped_aliases_values)
-    return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values
-
-
-KT = TypeVar('KT')
-VT = TypeVar('VT')
 if TYPE_CHECKING:
     # define like this to work with older python
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
     class LimitedDict(dict[KT, VT]):
         def __init__(self, size_limit: int = 1000):
             ...

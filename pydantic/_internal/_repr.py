@@ -28,7 +28,8 @@ class Representation:
     # `__rich_repr__` is used by [rich](https://rich.readthedocs.io/en/stable/pretty.html).
     # (this is not a docstring to avoid adding a docstring to classes which inherit from Representation)
 
-    __slots__: tuple[str, ...] = tuple()
+    # we don't want to use a type annotation here as it can break get_type_hints
+    __slots__ = tuple()  # type: typing.Collection[str]
 
     def __repr_args__(self) -> 'ReprArgs':
         """
