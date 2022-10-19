@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import core_schema
-from typing_extensions import Annotated, get_args, is_typeddict
+from typing_extensions import Annotated, get_args, get_origin, is_typeddict
 
 from ..fields import FieldInfo, Undefined
 from . import _fields, _typing_extra
@@ -98,7 +98,7 @@ class GenerateSchema:
         if get_schema is not None:
             return get_schema()
 
-        origin = _typing_extra.get_origin(obj)
+        origin = get_origin(obj)
         if origin is None:
             if self.arbitrary_types:
                 return core_schema.is_instance_schema(obj)
@@ -206,10 +206,10 @@ class GenerateSchema:
                 field_type = _typing_extra.evaluate_forwardref(field_type)  # type: ignore
 
             if schema is None:
-                if _typing_extra.get_origin(field_type) == _typing_extra.Required:
+                if get_origin(field_type) == _typing_extra.Required:
                     required = True
                     field_type = field_type.__args__[0]
-                if _typing_extra.get_origin(field_type) == _typing_extra.NotRequired:
+                if get_origin(field_type) == _typing_extra.NotRequired:
                     required = False
                     field_type = field_type.__args__[0]
 
@@ -228,7 +228,7 @@ class GenerateSchema:
         try:
             name = type_.__name__
         except AttributeError:
-            name = _typing_extra.get_origin(type_).__name__  # type: ignore[union-attr]
+            name = get_origin(type_).__name__  # type: ignore[union-attr]
 
         return {  # type: ignore[misc,return-value]
             'type': name.lower(),

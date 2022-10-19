@@ -1,29 +1,12 @@
 """
 Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`.
 """
-
 from __future__ import annotations as _annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, TypeVar
+from typing import Any
 
 from pydantic_core import core_schema
-
-T = TypeVar('T')
-
-
-class UndefinedType:
-    def __repr__(self) -> str:
-        return 'PydanticUndefined'
-
-    def __copy__(self: T) -> T:
-        return self
-
-    def __reduce__(self) -> str:
-        return 'Undefined'
-
-    def __deepcopy__(self: T, _: Any) -> T:
-        return self
 
 
 class PydanticMetadata:

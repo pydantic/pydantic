@@ -7,6 +7,10 @@ import types
 import typing
 from typing import Any
 
+import typing_extensions
+
+from . import _typing_extra
+
 if typing.TYPE_CHECKING:
     ReprArgs = typing.Iterable[tuple[str | None, Any]]
     RichReprResult = typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
@@ -81,29 +85,27 @@ class Representation:
                 yield name, field_repr
 
 
-def display_as_type(v: Any) -> str:
+def display_as_type(obj: Any) -> str:
     """
     Pretty representation of a type, should be as close as possible to the original type definition string.
 
-    TODO replace with typing._type_repr like logic.
+    Takes some logic from `typing._type_repr`.
     """
-    from ._typing_extra import WithArgsTypes, get_args, get_origin, origin_is_union, typing_base
+    if isinstance(obj, types.FunctionType):
+        return obj.__name__
+    elif obj is ...:
+        return '...'
 
-    if isinstance(v, types.FunctionType):
-        return v.__name__
+    if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
+        obj = obj.__class__
 
-    if not isinstance(v, typing_base) and not isinstance(v, WithArgsTypes) and not isinstance(v, type):
-        v = v.__class__
-
-    if origin_is_union(get_origin(v)):
-        return f'Union[{", ".join(map(display_as_type, get_args(v)))}]'
-
-    if isinstance(v, WithArgsTypes):
-        # Generic alias are constructs like `list[int]`
-        return str(v).replace('typing.', '')
-
-    try:
-        return v.__name__
-    except AttributeError:
-        # happens with typing objects
-        return str(v).replace('typing.', '')
+    if _typing_extra.origin_is_union(typing_extensions.get_origin(obj)):
+        args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+        return f'Union[{args}]'
+    elif isinstance(obj, _typing_extra.WithArgsTypes):
+        args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+        return f'{obj.__qualname__}[{args}]'
+    elif isinstance(obj, type):
+        return obj.__qualname__
+    else:
+        return repr(obj).replace('typing.', '')

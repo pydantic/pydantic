@@ -25,6 +25,8 @@ passing_files = {
     'test_datetime.py',
     'test_types_payment_card_number.py',
     'test_main.py',
+    'test_utils.py',
+    'test_typing.py',
 }
 
 

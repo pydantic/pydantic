@@ -17,7 +17,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Annotated
+import typing_extensions
 
 from ._internal import _repr, _typing_extra, _utils
 from .main import BaseModel, create_model
@@ -68,7 +68,7 @@ class GenericModel(BaseModel):
         """
 
         def _cache_key(_params: Any) -> Tuple[Type[GenericModelT], Any, Tuple[Any, ...]]:
-            return cls, _params, _typing_extra.get_args(_params)
+            return cls, _params, typing_extensions.get_args(_params)
 
         cached = _generic_types_cache.get(_cache_key(params))
         if cached is not None:
@@ -94,7 +94,7 @@ class GenericModel(BaseModel):
         # validators = gather_all_validators(cls)
 
         type_hints = _typing_extra.get_type_hints(cls, include_extras=True).items()
-        instance_type_hints = {k: v for k, v in type_hints if _typing_extra.get_origin(v) is not ClassVar}
+        instance_type_hints = {k: v for k, v in type_hints if typing_extensions.get_origin(v) is not ClassVar}
 
         fields = {k: (DeferredType(), cls.__fields__[k]) for k in instance_type_hints if k in cls.__fields__}
 
@@ -243,12 +243,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     if not type_map:
         return type_
 
-    type_args = _typing_extra.get_args(type_)
-    origin_type = _typing_extra.get_origin(type_)
+    type_args = typing_extensions.get_args(type_)
+    origin_type = typing_extensions.get_origin(type_)
 
-    if origin_type is Annotated:
+    if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
-        return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
+        return typing_extensions.Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
@@ -315,14 +315,16 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     if isinstance(v, TypeVar):
         yield v
     elif (
-        hasattr(v, '__parameters__') and not _typing_extra.get_origin(v) and _utils.lenient_issubclass(v, GenericModel)
+        hasattr(v, '__parameters__')
+        and not typing_extensions.get_origin(v)
+        and _utils.lenient_issubclass(v, GenericModel)
     ):
         yield from v.__parameters__
     elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
     else:
-        args = _typing_extra.get_args(v)
+        args = typing_extensions.get_args(v)
         for arg in args:
             yield from iter_contained_typevars(arg)
 

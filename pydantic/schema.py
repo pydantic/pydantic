@@ -28,11 +28,10 @@ from typing import (
 )
 from uuid import UUID
 
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, get_args
 
 from ._internal._typing_extra import (
     all_literal_values,
-    get_args,
     get_origin,
     get_sub_types,
     is_callable_type,

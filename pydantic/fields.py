@@ -7,14 +7,35 @@ import annotated_types
 import typing_extensions
 
 from . import types
-from ._internal import _fields, _repr, _typing_extra, _utils
+from ._internal import _fields, _repr, _utils
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
 
 Required: Any = Ellipsis
 
-Undefined = _fields.UndefinedType()
+
+class _UndefinedType:
+    """
+    Singleton class to represent an undefined value.
+
+    Has to be defined here, not in _internal for pickling to work properly.
+    """
+
+    def __repr__(self) -> str:
+        return 'PydanticUndefined'
+
+    def __copy__(self) -> '_UndefinedType':
+        return self
+
+    def __reduce__(self) -> str:
+        return 'Undefined'
+
+    def __deepcopy__(self, _: Any) -> '_UndefinedType':
+        return self
+
+
+Undefined = _UndefinedType()
 
 
 class FieldInfo(_repr.Representation):
@@ -107,9 +128,9 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def _extract_constraints(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         if annotation is not None:
-            origin = _typing_extra.get_origin(annotation)
+            origin = typing_extensions.get_origin(annotation)
             if _utils.lenient_issubclass(origin, typing_extensions.Annotated):
-                args = _typing_extra.get_args(annotation)
+                args = typing_extensions.get_args(annotation)
                 return args[0], list(args[1:])
 
         return annotation, []
