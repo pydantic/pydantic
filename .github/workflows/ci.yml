@@ -226,7 +226,7 @@ jobs:
   test-fastapi:
     # FastAPI has a version constraint of pydantic<2.0.0,
     # so we can't run tests, we expect them to break for now anyway
-    # FIXME: drop this commend and the if-clause once that's fixed
+    # FIXME: drop this comment and the if-clause once that's fixed
     if: false
     name: test fastAPI
     runs-on: ubuntu-latest
