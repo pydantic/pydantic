@@ -12,7 +12,7 @@ use pyo3::types::{
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
-use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValLineError, ValResult};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
@@ -114,26 +114,54 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
-        if let Ok(kwargs) = self.cast_as::<PyDict>() {
-            Ok(PyArgs::new(None, Some(kwargs)).into())
-        } else if let Ok((args, kwargs)) = self.extract::<(&PyAny, &PyAny)>() {
-            let args = if let Ok(tuple) = args.cast_as::<PyTuple>() {
-                Some(tuple)
-            } else if args.is_none() {
-                None
-            } else if let Ok(list) = args.cast_as::<PyList>() {
-                Some(PyTuple::new(self.py(), list.iter().collect::<Vec<_>>()))
-            } else {
-                return Err(ValError::new(ErrorKind::ArgumentsType, self));
-            };
-            let kwargs = if let Ok(dict) = kwargs.cast_as::<PyDict>() {
-                Some(dict)
-            } else if kwargs.is_none() {
-                None
-            } else {
-                return Err(ValError::new(ErrorKind::ArgumentsType, self));
-            };
-            Ok(PyArgs::new(args, kwargs).into())
+        if let Ok(dict) = self.cast_as::<PyDict>() {
+            if let Some(args) = dict.get_item("__args__") {
+                if let Some(kwargs) = dict.get_item("__kwargs__") {
+                    // we only try this logic if there are only these two items in the dict
+                    if dict.len() == 2 {
+                        let args = if let Ok(tuple) = args.cast_as::<PyTuple>() {
+                            Ok(Some(tuple))
+                        } else if args.is_none() {
+                            Ok(None)
+                        } else if let Ok(list) = args.cast_as::<PyList>() {
+                            Ok(Some(PyTuple::new(self.py(), list.iter().collect::<Vec<_>>())))
+                        } else {
+                            Err(ValLineError::new_with_loc(
+                                ErrorKind::PositionalArgumentsType,
+                                args,
+                                "__args__",
+                            ))
+                        };
+
+                        let kwargs = if let Ok(dict) = kwargs.cast_as::<PyDict>() {
+                            Ok(Some(dict))
+                        } else if kwargs.is_none() {
+                            Ok(None)
+                        } else {
+                            Err(ValLineError::new_with_loc(
+                                ErrorKind::KeywordArgumentsType,
+                                kwargs,
+                                "__kwargs__",
+                            ))
+                        };
+
+                        return match (args, kwargs) {
+                            (Ok(args), Ok(kwargs)) => Ok(PyArgs::new(args, kwargs).into()),
+                            (Err(args_error), Err(kwargs_error)) => {
+                                Err(ValError::LineErrors(vec![args_error, kwargs_error]))
+                            }
+                            (Err(error), _) => Err(ValError::LineErrors(vec![error])),
+                            (_, Err(error)) => Err(ValError::LineErrors(vec![error])),
+                        };
+                    }
+                }
+            }
+            Ok(PyArgs::new(None, Some(dict)).into())
+        } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
+            Ok(PyArgs::new(Some(tuple), None).into())
+        } else if let Ok(list) = self.cast_as::<PyList>() {
+            let tuple = PyTuple::new(self.py(), list.iter().collect::<Vec<_>>());
+            Ok(PyArgs::new(Some(tuple), None).into())
         } else {
             Err(ValError::new(ErrorKind::ArgumentsType, self))
         }

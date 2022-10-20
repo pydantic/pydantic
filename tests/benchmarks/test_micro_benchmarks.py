@@ -889,9 +889,12 @@ def test_arguments(benchmark):
             ],
         }
     )
-    assert v.validate_python(((1, 'a', 'true'), {'b': 'bb', 'c': 3})) == ((1, 'a', True), {'b': 'bb', 'c': 3})
+    assert v.validate_python({'__args__': (1, 'a', 'true'), '__kwargs__': {'b': 'bb', 'c': 3}}) == (
+        (1, 'a', True),
+        {'b': 'bb', 'c': 3},
+    )
 
-    benchmark(v.validate_python, ((1, 'a', 'true'), {'b': 'bb', 'c': 3}))
+    benchmark(v.validate_python, {'__args__': (1, 'a', 'true'), '__kwargs__': {'b': 'bb', 'c': 3}})
 
 
 @pytest.mark.benchmark(group='defaults')

@@ -12,12 +12,12 @@ from ..conftest import Err, PyAndJson, plain_repr
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1, 2, 3), None), 6],
-        [(None, {'a': 1, 'b': 1, 'c': 1}), 3],
-        [((1,), {'b': 1, 'c': 1}), 3],
-        [((1, 2, 'x'), None), Err('arguments -> 2\n  Input should be a valid integer,')],
-        [((3, 3, 4), None), 10],
-        [((3, 3, 5), None), Err('return-value\n  Input should be less than or equal to 10')],
+        [(1, 2, 3), 6],
+        [{'a': 1, 'b': 1, 'c': 1}, 3],
+        [{'__args__': (1,), '__kwargs__': {'b': 1, 'c': 1}}, 3],
+        [(1, 2, 'x'), Err('arguments -> 2\n  Input should be a valid integer,')],
+        [(3, 3, 4), 10],
+        [(3, 3, 5), Err('return-value\n  Input should be less than or equal to 10')],
     ],
 )
 def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
@@ -108,9 +108,9 @@ def test_in_union():
             ],
         }
     )
-    assert v.validate_python(((1,), {})) == 1
+    assert v.validate_python((1,)) == 1
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(((1, 2), {}))
+        v.validate_python((1, 2))
     assert exc_info.value.errors() == [
         {
             'kind': 'unexpected_positional_argument',
@@ -140,11 +140,11 @@ def test_dataclass():
             },
         }
     )
-    d = v.validate_python((('1', b'2'), {}))
+    d = v.validate_python(('1', b'2'))
     assert dataclasses.is_dataclass(d)
     assert d.a == 1
     assert d.b == '2'
-    d = v.validate_python(((), {'a': 1, 'b': '2'}))
+    d = v.validate_python({'a': 1, 'b': '2'})
     assert dataclasses.is_dataclass(d)
     assert d.a == 1
     assert d.b == '2'
@@ -167,7 +167,7 @@ def test_named_tuple():
             },
         }
     )
-    d = v.validate_python((('1.1', '2.2'), {}))
+    d = v.validate_python(('1.1', '2.2'))
     assert isinstance(d, Point)
     assert d.x == 1.1
     assert d.y == 2.2

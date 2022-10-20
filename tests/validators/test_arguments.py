@@ -5,7 +5,6 @@ from inspect import Parameter, signature
 from typing import Any, get_type_hints
 
 import pytest
-from dirty_equals import IsListOrTuple
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
@@ -15,16 +14,22 @@ from ..conftest import Err, PyAndJson, plain_repr
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1, 'a', True), None), ((1, 'a', True), {})],
-        [((1, 'a', True), {}), ((1, 'a', True), {})],
-        [([1, 'a', True], None), ((1, 'a', True), {})],
-        [((1, 'a', 'true'), None), ((1, 'a', True), {})],
+        [(1, 'a', True), ((1, 'a', True), {})],
+        [[1, 'a', True], ((1, 'a', True), {})],
+        [{'__args__': (1, 'a', True), '__kwargs__': {}}, ((1, 'a', True), {})],
+        [[1, 'a', True], ((1, 'a', True), {})],
+        [(1, 'a', 'true'), ((1, 'a', True), {})],
         ['x', Err('kind=arguments_type,')],
-        [((1, 'a', True), ()), Err('kind=arguments_type,')],
-        [(4, {}), Err('kind=arguments_type,')],
-        [(1, 2, 3), Err('kind=arguments_type,')],
         [
-            ([1, 'a', True], {'x': 1}),
+            {'__args__': (1, 'a', True), '__kwargs__': ()},
+            Err('Keyword arguments must be a dictionary [kind=keyword_arguments_type,'),
+        ],
+        [
+            {'__args__': {}, '__kwargs__': {}},
+            Err('Positional arguments must be a list or tuple [kind=positional_arguments_type,'),
+        ],
+        [
+            {'__args__': [1, 'a', True], '__kwargs__': {'x': 1}},
             Err(
                 '',
                 [
@@ -38,7 +43,7 @@ from ..conftest import Err, PyAndJson, plain_repr
             ),
         ],
         [
-            ([1], None),
+            [1],
             Err(
                 '',
                 [
@@ -46,19 +51,19 @@ from ..conftest import Err, PyAndJson, plain_repr
                         'kind': 'missing_positional_argument',
                         'loc': [1],
                         'message': 'Missing required positional argument',
-                        'input_value': IsListOrTuple([1], None),
+                        'input_value': [1],
                     },
                     {
                         'kind': 'missing_positional_argument',
                         'loc': [2],
                         'message': 'Missing required positional argument',
-                        'input_value': IsListOrTuple([1], None),
+                        'input_value': [1],
                     },
                 ],
             ),
         ],
         [
-            ([1, 'a', True, 4], None),
+            [1, 'a', True, 4],
             Err(
                 '',
                 [
@@ -72,7 +77,7 @@ from ..conftest import Err, PyAndJson, plain_repr
             ),
         ],
         [
-            ([1, 'a', True, 4, 5], None),
+            [1, 'a', True, 4, 5],
             Err(
                 '',
                 [
@@ -92,7 +97,7 @@ from ..conftest import Err, PyAndJson, plain_repr
             ),
         ],
         [
-            (('x', 'a', 'wrong'), None),
+            ('x', 'a', 'wrong'),
             Err(
                 '',
                 [
@@ -112,7 +117,7 @@ from ..conftest import Err, PyAndJson, plain_repr
             ),
         ],
         [
-            (None, None),
+            {'__args__': None, '__kwargs__': None},
             Err(
                 '3 validation errors for arguments',
                 [
@@ -120,19 +125,19 @@ from ..conftest import Err, PyAndJson, plain_repr
                         'kind': 'missing_positional_argument',
                         'loc': [0],
                         'message': 'Missing required positional argument',
-                        'input_value': IsListOrTuple(None, None),
+                        'input_value': {'__args__': None, '__kwargs__': None},
                     },
                     {
                         'kind': 'missing_positional_argument',
                         'loc': [1],
                         'message': 'Missing required positional argument',
-                        'input_value': IsListOrTuple(None, None),
+                        'input_value': {'__args__': None, '__kwargs__': None},
                     },
                     {
                         'kind': 'missing_positional_argument',
                         'loc': [2],
                         'message': 'Missing required positional argument',
-                        'input_value': IsListOrTuple(None, None),
+                        'input_value': {'__args__': None, '__kwargs__': None},
                     },
                 ],
             ),
@@ -160,21 +165,17 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
     else:
         assert v.validate_test(input_value) == expected
 
-    with pytest.raises(ValidationError, match='kind=arguments_type,'):
-        # lists are not allowed from python, but no equivalent restriction in JSON
-        v.validate_python([(1, 'a', True), None])
-
 
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [(None, {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
+        [{'__args__': None, '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, ((), {'a': 1, 'b': 'a', 'c': True})],
         [{'a': 1, 'b': 'a', 'c': True}, ((), {'a': 1, 'b': 'a', 'c': True})],
-        [(None, {'a': '1', 'b': 'a', 'c': 'True'}), ((), {'a': 1, 'b': 'a', 'c': True})],
-        [((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
-        [((1,), {'a': 1, 'b': 'a', 'c': True}), Err('kind=unexpected_positional_argument,')],
+        [{'__args__': None, '__kwargs__': {'a': '1', 'b': 'a', 'c': 'True'}}, ((), {'a': 1, 'b': 'a', 'c': True})],
+        [{'__args__': (), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, ((), {'a': 1, 'b': 'a', 'c': True})],
+        [{'__args__': (1,), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, Err('kind=unexpected_positional_argument,')],
         [
-            ((), {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}),
+            {'__args__': (), '__kwargs__': {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}},
             Err(
                 'kind=unexpected_keyword_argument,',
                 [
@@ -188,7 +189,7 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            ([], {'a': 1, 'b': 'a'}),
+            {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
             Err(
                 'kind=missing_keyword_argument,',
                 [
@@ -196,13 +197,13 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
                         'kind': 'missing_keyword_argument',
                         'loc': ['c'],
                         'message': 'Missing required keyword argument',
-                        'input_value': IsListOrTuple([], {'a': 1, 'b': 'a'}),
+                        'input_value': {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
                     }
                 ],
             ),
         ],
         [
-            ((), {'a': 'x', 'b': 'a', 'c': 'wrong'}),
+            {'__args__': (), '__kwargs__': {'a': 'x', 'b': 'a', 'c': 'wrong'}},
             Err(
                 '',
                 [
@@ -222,7 +223,7 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            (None, None),
+            {'__args__': None, '__kwargs__': None},
             Err(
                 '',
                 [
@@ -230,19 +231,19 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
                         'kind': 'missing_keyword_argument',
                         'loc': ['a'],
                         'message': 'Missing required keyword argument',
-                        'input_value': IsListOrTuple(None, None),
+                        'input_value': {'__args__': None, '__kwargs__': None},
                     },
                     {
                         'kind': 'missing_keyword_argument',
                         'loc': ['b'],
                         'message': 'Missing required keyword argument',
-                        'input_value': IsListOrTuple(None, None),
+                        'input_value': {'__args__': None, '__kwargs__': None},
                     },
                     {
                         'kind': 'missing_keyword_argument',
                         'loc': ['c'],
                         'message': 'Missing required keyword argument',
-                        'input_value': IsListOrTuple(None, None),
+                        'input_value': {'__args__': None, '__kwargs__': None},
                     },
                 ],
             ),
@@ -274,11 +275,12 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [(None, {'a': 1, 'b': 'bb', 'c': True}), ((), {'a': 1, 'b': 'bb', 'c': True})],
-        [((1, 'bb'), {'c': True}), ((1, 'bb'), {'c': True})],
-        [((1,), {'b': 'bb', 'c': True}), ((1,), {'b': 'bb', 'c': True})],
+        [{'a': 1, 'b': 'bb', 'c': True}, ((), {'a': 1, 'b': 'bb', 'c': True})],
+        [{'__args__': None, '__kwargs__': {'a': 1, 'b': 'bb', 'c': True}}, ((), {'a': 1, 'b': 'bb', 'c': True})],
+        [{'__args__': (1, 'bb'), '__kwargs__': {'c': True}}, ((1, 'bb'), {'c': True})],
+        [{'__args__': (1,), '__kwargs__': {'b': 'bb', 'c': True}}, ((1,), {'b': 'bb', 'c': True})],
         [
-            ((1,), {'a': 11, 'b': 'bb', 'c': True}),
+            {'__args__': (1,), '__kwargs__': {'a': 11, 'b': 'bb', 'c': True}},
             Err(
                 'kind=multiple_argument_values,',
                 [
@@ -292,7 +294,7 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            ([1, 'bb', 'cc'], {'b': 'bb', 'c': True}),
+            {'__args__': [1, 'bb', 'cc'], '__kwargs__': {'b': 'bb', 'c': True}},
             Err(
                 'kind=unexpected_positional_argument,',
                 [
@@ -312,7 +314,7 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            ((1, 'b1'), {'a': 11, 'b': 'b2', 'c': True}),
+            {'__args__': (1, 'b1'), '__kwargs__': {'a': 11, 'b': 'b2', 'c': True}},
             Err(
                 'kind=multiple_argument_values,',
                 [
@@ -355,7 +357,7 @@ def test_positional_or_keyword(py_and_json: PyAndJson, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
-@pytest.mark.parametrize('input_value,expected', [[((1,), None), ((1,), {})], [((), None), ((42,), {})]], ids=repr)
+@pytest.mark.parametrize('input_value,expected', [[(1,), ((1,), {})], [(), ((42,), {})]], ids=repr)
 def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(
         {
@@ -382,10 +384,11 @@ def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [(None, {'a': 1}), ((), {'a': 1})],
-        [(None, None), ((), {'a': 1})],
-        [((), {'a': 1}), ((), {'a': 1})],
-        [((), None), ((), {'a': 1})],
+        [{'a': 1}, ((), {'a': 1})],
+        [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1})],
+        [{'__args__': None, '__kwargs__': None}, ((), {'a': 1})],
+        [{'__args__': (), '__kwargs__': {'a': 1}}, ((), {'a': 1})],
+        [{'__args__': (), '__kwargs__': None}, ((), {'a': 1})],
     ],
     ids=repr,
 )
@@ -415,11 +418,15 @@ def test_p_or_k_optional(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [([1, 2, 3], None), ((1, 2, 3), {})],
-        [([1], None), ((1,), {})],
-        [([], None), ((), {})],
-        [([], {}), ((), {})],
-        [([1, 2, 3], {'a': 1}), Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
+        [[1, 2, 3], ((1, 2, 3), {})],
+        [{'__args__': [1, 2, 3], '__kwargs__': None}, ((1, 2, 3), {})],
+        [[1], ((1,), {})],
+        [[], ((), {})],
+        [{'__args__': [], '__kwargs__': {}}, ((), {})],
+        [
+            {'__args__': [1, 2, 3], '__kwargs__': {'a': 1}},
+            Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+        ],
     ],
     ids=repr,
 )
@@ -438,12 +445,12 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [([1, 2, 3], None), ((1, 2, 3), {})],
-        [(['1', '2', '3'], None), ((1, 2, 3), {})],
-        [([1], None), ((1,), {})],
-        [([], None), Err('0\n  Missing required positional argument')],
+        [[1, 2, 3], ((1, 2, 3), {})],
+        [['1', '2', '3'], ((1, 2, 3), {})],
+        [[1], ((1,), {})],
+        [[], Err('0\n  Missing required positional argument')],
         [
-            (['x'], None),
+            ['x'],
             Err(
                 'kind=int_parsing,',
                 [
@@ -457,7 +464,7 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            ([1, 'x', 'y'], None),
+            [1, 'x', 'y'],
             Err(
                 'kind=int_parsing,',
                 [
@@ -476,7 +483,10 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
                 ],
             ),
         ],
-        [([1, 2, 3], {'a': 1}), Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
+        [
+            {'__args__': [1, 2, 3], '__kwargs__': {'a': 1}},
+            Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+        ],
     ],
     ids=repr,
 )
@@ -501,10 +511,13 @@ def test_args_var_args_only(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [([1, 'a', 'true'], {'b': 'bb', 'c': 3}), ((1, 'a', True), {'b': 'bb', 'c': 3})],
-        [([1, 'a'], {'a': 'true', 'b': 'bb', 'c': 3}), ((1, 'a'), {'a': True, 'b': 'bb', 'c': 3})],
+        [{'__args__': [1, 'a', 'true'], '__kwargs__': {'b': 'bb', 'c': 3}}, ((1, 'a', True), {'b': 'bb', 'c': 3})],
         [
-            ([1, 'a', 'true', 4, 5], {'b': 'bb', 'c': 3}),
+            {'__args__': [1, 'a'], '__kwargs__': {'a': 'true', 'b': 'bb', 'c': 3}},
+            ((1, 'a'), {'a': True, 'b': 'bb', 'c': 3}),
+        ],
+        [
+            {'__args__': [1, 'a', 'true', 4, 5], '__kwargs__': {'b': 'bb', 'c': 3}},
             Err(
                 'kind=unexpected_positional_argument,',
                 [
@@ -551,14 +564,14 @@ def test_both(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [([], {}), ((), {})],
-        [(None, None), ((), {})],
-        [(None, {}), ((), {})],
-        [([], None), ((), {})],
-        [([1], None), Err('0\n  Unexpected positional argument [kind=unexpected_positional_argument,')],
-        [([], {'a': 1}), Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
+        [{'__args__': [], '__kwargs__': {}}, ((), {})],
+        [{'__args__': None, '__kwargs__': None}, ((), {})],
+        [{'__args__': None, '__kwargs__': {}}, ((), {})],
+        [[], ((), {})],
+        [[1], Err('0\n  Unexpected positional argument [kind=unexpected_positional_argument,')],
+        [{'a': 1}, Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
         [
-            ([1], {'a': 2}),
+            {'__args__': [1], '__kwargs__': {'a': 2}},
             Err(
                 '[kind=unexpected_keyword_argument,',
                 [
@@ -612,18 +625,18 @@ def test_internal_error(py_and_json: PyAndJson):
             ],
         }
     )
-    assert v.validate_test(((1, 2), None)) == ((1, 4), {})
+    assert v.validate_test((1, 2)) == ((1, 4), {})
     with pytest.raises(RuntimeError, match='bust'):
-        v.validate_test(((1, 1), None))
+        v.validate_test((1, 1))
 
 
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1, 2), None), ((1, 2), {})],
-        [((1,), None), ((1,), {'b': 42})],
-        [((1,), {'b': 3}), ((1,), {'b': 3})],
-        [(None, {'a': 1}), ((), {'a': 1, 'b': 42})],
+        [{'__args__': (1, 2), '__kwargs__': None}, ((1, 2), {})],
+        [{'__args__': (1,), '__kwargs__': None}, ((1,), {'b': 42})],
+        [{'__args__': (1,), '__kwargs__': {'b': 3}}, ((1,), {'b': 3})],
+        [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1, 'b': 42})],
     ],
     ids=repr,
 )
@@ -681,9 +694,9 @@ def test_build_non_default_follows():
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1, 2), None), ((1, 2), {})],
-        [((1,), {'b': '4', 'c': 'a'}), ((1,), {'b': 4, 'c': 'a'})],
-        [((1, 2), {'x': 'abc'}), ((1, 2), {'x': 'abc'})],
+        [{'__args__': (1, 2), '__kwargs__': None}, ((1, 2), {})],
+        [{'__args__': (1,), '__kwargs__': {'b': '4', 'c': 'a'}}, ((1,), {'b': 4, 'c': 'a'})],
+        [{'__args__': (1, 2), '__kwargs__': {'x': 'abc'}}, ((1, 2), {'x': 'abc'})],
     ],
     ids=repr,
 )
@@ -708,9 +721,33 @@ def test_kwargs(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1,), None), ((1,), {})],
-        [(None, {'Foo': 1}), ((), {'a': 1})],
-        [(None, {'a': 1}), Err('a\n  Missing required keyword argument [kind=missing_keyword_argument,')],
+        [{'__args__': [1, 2]}, ((), {'__args__': [1, 2]})],
+        [{'__kwargs__': {'x': 'abc'}}, ((), {'__kwargs__': {'x': 'abc'}})],
+        [
+            {'__args__': [1, 2], '__kwargs__': {'x': 'abc'}, 'more': 'hello'},
+            ((), {'__args__': [1, 2], '__kwargs__': {'x': 'abc'}, 'more': 'hello'}),
+        ],
+    ],
+    ids=repr,
+)
+def test_var_kwargs(py_and_json: PyAndJson, input_value, expected):
+    v = py_and_json({'type': 'arguments', 'arguments_schema': [], 'var_kwargs_schema': {'type': 'any'}})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_test(input_value)
+    else:
+        assert v.validate_test(input_value) == expected
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        [{'__args__': (1,), '__kwargs__': None}, ((1,), {})],
+        [{'__args__': None, '__kwargs__': {'Foo': 1}}, ((), {'a': 1})],
+        [
+            {'__args__': None, '__kwargs__': {'a': 1}},
+            Err('a\n  Missing required keyword argument [kind=missing_keyword_argument,'),
+        ],
     ],
     ids=repr,
 )
@@ -733,11 +770,17 @@ def test_alias(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [((1,), None), ((1,), {})],
-        [(None, {'Foo': 1}), ((), {'a': 1})],
-        [(None, {'a': 1}), ((), {'a': 1})],
-        [(None, {'a': 1, 'b': 2}), Err('b\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
-        [(None, {'a': 1, 'Foo': 2}), Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
+        [{'__args__': (1,), '__kwargs__': None}, ((1,), {})],
+        [{'__args__': None, '__kwargs__': {'Foo': 1}}, ((), {'a': 1})],
+        [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1})],
+        [
+            {'__args__': None, '__kwargs__': {'a': 1, 'b': 2}},
+            Err('b\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+        ],
+        [
+            {'__args__': None, '__kwargs__': {'a': 1, 'Foo': 2}},
+            Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+        ],
     ],
     ids=repr,
 )
@@ -801,7 +844,7 @@ def validate(function):
 
     @wraps(function)
     def wrapper(*args, **kwargs):
-        validated_args, validated_kwargs = validator.validate_python((args, kwargs))
+        validated_args, validated_kwargs = validator.validate_python({'__args__': args, '__kwargs__': kwargs})
         return function(*validated_args, **validated_kwargs)
 
     return wrapper
@@ -849,7 +892,7 @@ def test_function_types():
             'kind': 'missing_keyword_argument',
             'loc': ['c'],
             'message': 'Missing required keyword argument',
-            'input_value': ((1, 'b'), {}),
+            'input_value': {'__args__': (1, 'b'), '__kwargs__': {}},
         },
     ]
 
@@ -894,7 +937,7 @@ def create_function(validate):
             'kind': 'missing_positional_argument',
             'loc': [1],
             'message': 'Missing required positional argument',
-            'input_value': (('1',), {'b': 2, 'c': 3}),
+            'input_value': {'__args__': ('1',), '__kwargs__': {'b': 2, 'c': 3}},
         },
         {
             'kind': 'unexpected_keyword_argument',

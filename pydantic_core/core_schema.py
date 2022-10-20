@@ -1138,6 +1138,8 @@ ErrorKind = Literal[
     'union_tag_invalid',
     'union_tag_not_found',
     'arguments_type',
+    'positional_arguments_type',
+    'keyword_arguments_type',
     'unexpected_keyword_argument',
     'missing_keyword_argument',
     'unexpected_positional_argument',
