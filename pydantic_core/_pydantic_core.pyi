@@ -11,12 +11,14 @@ else:
 
 __all__ = (
     '__version__',
+    'build_profile',
     'SchemaValidator',
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',
     'PydanticKindError',
     'PydanticOmit',
+    'list_all_errors',
 )
 __version__: str
 build_profile: str

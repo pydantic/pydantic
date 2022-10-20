@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-use crate::errors::{ErrorKind, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{ErrorKind, InputValue, LocItem, ValError, ValLineError, ValResult};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
@@ -56,24 +56,44 @@ impl<'a> Input<'a> for JsonInput {
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
         match self {
-            JsonInput::Object(kwargs) => Ok(JsonArgs::new(None, Some(kwargs)).into()),
-            JsonInput::Array(array) => {
-                if array.len() != 2 {
-                    Err(ValError::new(ErrorKind::ArgumentsType, self))
-                } else {
-                    let args = match unsafe { array.get_unchecked(0) } {
-                        JsonInput::Null => None,
-                        JsonInput::Array(args) => Some(args.as_slice()),
-                        _ => return Err(ValError::new(ErrorKind::ArgumentsType, self)),
-                    };
-                    let kwargs = match unsafe { array.get_unchecked(1) } {
-                        JsonInput::Null => None,
-                        JsonInput::Object(kwargs) => Some(kwargs),
-                        _ => return Err(ValError::new(ErrorKind::ArgumentsType, self)),
-                    };
-                    Ok(JsonArgs::new(args, kwargs).into())
+            JsonInput::Object(object) => {
+                if let Some(args) = object.get("__args__") {
+                    if let Some(kwargs) = object.get("__kwargs__") {
+                        // we only try this logic if there are only these two items in the dict
+                        if object.len() == 2 {
+                            let args = match args {
+                                JsonInput::Null => Ok(None),
+                                JsonInput::Array(args) => Ok(Some(args.as_slice())),
+                                _ => Err(ValLineError::new_with_loc(
+                                    ErrorKind::PositionalArgumentsType,
+                                    args,
+                                    "__args__",
+                                )),
+                            };
+                            let kwargs = match kwargs {
+                                JsonInput::Null => Ok(None),
+                                JsonInput::Object(kwargs) => Ok(Some(kwargs)),
+                                _ => Err(ValLineError::new_with_loc(
+                                    ErrorKind::KeywordArgumentsType,
+                                    kwargs,
+                                    "__kwargs__",
+                                )),
+                            };
+
+                            return match (args, kwargs) {
+                                (Ok(args), Ok(kwargs)) => Ok(JsonArgs::new(args, kwargs).into()),
+                                (Err(args_error), Err(kwargs_error)) => {
+                                    return Err(ValError::LineErrors(vec![args_error, kwargs_error]))
+                                }
+                                (Err(error), _) => Err(ValError::LineErrors(vec![error])),
+                                (_, Err(error)) => Err(ValError::LineErrors(vec![error])),
+                            };
+                        }
+                    }
                 }
+                Ok(JsonArgs::new(None, Some(object)).into())
             }
+            JsonInput::Array(array) => Ok(JsonArgs::new(Some(array), None).into()),
             _ => Err(ValError::new(ErrorKind::ArgumentsType, self)),
         }
     }
