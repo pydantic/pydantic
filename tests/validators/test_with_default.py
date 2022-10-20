@@ -49,9 +49,9 @@ def test_arguments():
             ],
         }
     )
-    assert v.validate_python(((), {'a': 2})) == ((), {'a': 2})
-    assert v.validate_python(((2,), {})) == ((2,), {})
-    assert v.validate_python(((), {})) == ((), {'a': 1})
+    assert v.validate_python({'a': 2}) == ((), {'a': 2})
+    assert v.validate_python({'__args__': (2,), '__kwargs__': {}}) == ((2,), {})
+    assert v.validate_python(()) == ((), {'a': 1})
 
 
 def test_arguments_omit():

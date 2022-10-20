@@ -301,8 +301,12 @@ pub enum ErrorKind {
     },
     // ---------------------
     // argument errors
-    #[strum(message = "Arguments must be a tuple of (positional arguments, keyword arguments) or a plain dict")]
+    #[strum(message = "Arguments must be a tuple, list or a dictionary")]
     ArgumentsType,
+    #[strum(message = "Positional arguments must be a list or tuple")]
+    PositionalArgumentsType,
+    #[strum(message = "Keyword arguments must be a dictionary")]
+    KeywordArgumentsType,
     #[strum(message = "Unexpected keyword argument")]
     UnexpectedKeywordArgument,
     #[strum(message = "Missing required keyword argument")]
