@@ -28,12 +28,10 @@ from typing import (
 )
 from uuid import UUID
 
-from typing_extensions import Annotated, Literal, get_args
+from typing_extensions import Annotated, Literal, get_args, get_origin
 
 from ._internal._typing_extra import (
     all_literal_values,
-    get_origin,
-    get_sub_types,
     is_callable_type,
     is_literal_type,
     is_namedtuple,
@@ -675,7 +673,10 @@ def field_singleton_sub_fields_schema(
             for discriminator_value, sub_field in field.sub_fields_mapping.items():
                 # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
                 if origin_is_union(get_origin(sub_field.type_)):
-                    sub_models = get_sub_types(sub_field.type_)
+                    # this all needs rewriting to use the pydantic-core schema,
+                    # I'm just leaving something here to keep flake8 and mypy happy
+                    # sub_models = get_sub_types(sub_field.type_)
+                    sub_models = sub_field.type_
                     discriminator_models_refs[discriminator_value] = {
                         model_name_map[sub_model]: get_schema_ref(
                             model_name_map[sub_model], ref_prefix, ref_template, False

@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic_core import core_schema
 
+from ._repr import Representation
+
 
 class PydanticMetadata:
     """
@@ -17,7 +19,7 @@ class PydanticMetadata:
     __slots__ = ()
 
 
-class CustomMetadata(PydanticMetadata):
+class CustomMetadata(Representation, PydanticMetadata):
     def __init__(self, **metadata: Any):
         self.__dict__ = metadata
 

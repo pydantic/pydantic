@@ -11,7 +11,7 @@ def test_assert_raises_validation_error():
         a: str
 
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v, **kwargs):
             assert v == 'a', 'invalid a'
             return v
 
@@ -20,7 +20,15 @@ def test_assert_raises_validation_error():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
 
-    expected_errors = [{'loc': ('a',), 'msg': 'invalid a', 'type': 'assertion_error'}]
+    expected_errors = [
+        {
+            'kind': 'assertion_error',
+            'loc': ['a'],
+            'message': 'Assertion failed, invalid a',
+            'input_value': 'snap',
+            'context': {'error': 'invalid a'},
+        }
+    ]
     actual_errors = exc_info.value.errors()
     if expected_errors != actual_errors:
         pytest.fail(f'Actual errors: {actual_errors}\nExpected errors: {expected_errors}')

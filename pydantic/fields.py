@@ -1,13 +1,14 @@
 from __future__ import annotations as _annotations
 
 import typing
+from copy import copy
 from typing import Any
 
 import annotated_types
 import typing_extensions
 
 from . import types
-from ._internal import _fields, _repr, _utils
+from ._internal import _fields, _repr, _typing_extra, _utils
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
@@ -67,8 +68,8 @@ class FieldInfo(_repr.Representation):
         'le': annotated_types.Le,
         'multiple_of': annotated_types.MultipleOf,
         'strict': types.Strict,
-        'min_length': None,
-        'max_length': None,
+        'min_length': annotated_types.MinLen,
+        'max_length': annotated_types.MaxLen,
         'pattern': None,
         'allow_inf_nan': None,
         'min_items': None,
@@ -105,6 +106,12 @@ class FieldInfo(_repr.Representation):
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
+        """
+        Create `FieldInfo` with the `Field` function:
+        >>> import pydantic
+        >>> class MyModel(pydantic.BaseModel):
+        >>>     foo: int = pydantic.Field(4, ...)  # <-- like this
+        """
         if 'annotation' in kwargs:
             raise TypeError('"annotation" is not permitted as a Field keyword argument')
         return cls(default=default, **kwargs)
@@ -112,28 +119,81 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def from_annotation(cls, annotation: type[Any]) -> 'FieldInfo':
         """
-        Create a FieldInfo from a bare annotation - e.g. with no default value.
+        Create `FieldInfo` from a bare annotation, e.g.:
+        >>> import pydantic
+        >>> class MyModel(pydantic.BaseModel):
+        >>>     foo: int  # <-- like this
+
+        We also account for the case where the annotation can be an instance of `Annotated` and where
+        one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
+        >>> import pydantic, annotated_types, typing
+        >>> class MyModel(pydantic.BaseModel):
+        >>>     foo: typing.Annotated[int, annotated_types.Gt(42)]
+        >>>     bar: typing.Annotated[int, Field(gt=42)]
         """
+        if _typing_extra.is_annotated(annotation):
+            first_arg, *extra_args = typing_extensions.get_args(annotation)
+            field_info = cls._find_field_info_arg(extra_args)
+            if field_info:
+                new_field_info = copy(field_info)
+                new_field_info.annotation = first_arg
+                new_field_info.constraints += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                return new_field_info
+
         return cls(annotation=annotation)
 
     @classmethod
     def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> 'FieldInfo':
+        """
+        Create `FieldInfo` from an annotation with a default value, e.g.:
+        >>> import pydantic, annotated_types, typing
+        >>> class MyModel(pydantic.BaseModel):
+        >>>     foo: int = 4
+        >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4
+        >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4
+        """
         if isinstance(default, cls):
             default.annotation, annotation_constraints = cls._extract_constraints(annotation)
             default.constraints += annotation_constraints
             return default
         else:
+            if _typing_extra.is_annotated(annotation):
+                first_arg, *extra_args = typing_extensions.get_args(annotation)
+                field_info = cls._find_field_info_arg(extra_args)
+                if field_info is not None:
+                    if not field_info.is_required():
+                        raise TypeError('Default may not be specified twice on the same field')
+                    new_field_info = copy(field_info)
+                    new_field_info.default = default
+                    new_field_info.annotation = first_arg
+                    new_field_info.constraints += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                    return new_field_info
+
             return cls(annotation=annotation, default=default)
 
     @classmethod
     def _extract_constraints(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
+        """
+        Try to extract constraints from an annotation if it's using `Annotated`.
+
+        Returns a tuple of (annotation_type, constraints).
+        """
         if annotation is not None:
-            origin = typing_extensions.get_origin(annotation)
-            if _utils.lenient_issubclass(origin, typing_extensions.Annotated):
-                args = typing_extensions.get_args(annotation)
-                return args[0], list(args[1:])
+            if _typing_extra.is_annotated(annotation):
+                first_arg, *extra_args = typing_extensions.get_args(annotation)
+                if cls._find_field_info_arg(extra_args):
+                    raise TypeError('Field may not be used twice on the same field')
+                return first_arg, list(extra_args)
 
         return annotation, []
+
+    @staticmethod
+    def _find_field_info_arg(args: Any) -> FieldInfo | None:
+        """
+        Find an instance of `FieldInfo` if it's in args, expected to be called with all but the first argument of
+        `Annotated`.
+        """
+        return next((a for a in args if isinstance(a, FieldInfo)), None)
 
     @classmethod
     def _collect_constraints(cls, kwargs: dict[str, Any]) -> list[Any]:

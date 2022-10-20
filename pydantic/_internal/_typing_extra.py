@@ -9,7 +9,7 @@ import typing
 from collections.abc import Callable
 from typing import Any
 
-from typing_extensions import Annotated, Final, Literal, Required as TypedDictRequired, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, get_args, get_origin
 
 __all__ = (
     'NoneType',
@@ -17,19 +17,16 @@ __all__ = (
     'is_callable_type',
     'is_literal_type',
     'all_literal_values',
+    'is_annotated',
     'is_namedtuple',
-    'is_typeddict',
-    'is_typeddict_special',
     'is_new_type',
     'is_classvar',
     'is_finalvar',
     'WithArgsTypes',
-    'get_sub_types',
     'typing_base',
     'origin_is_union',
     'NotRequired',
     'Required',
-    'evaluate_forwardref',
     'get_type_hints',
 )
 
@@ -51,17 +48,6 @@ if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Required
 else:
     from typing import NotRequired, Required
-
-
-if sys.version_info < (3, 9):
-
-    def evaluate_forwardref(type_: typing.ForwardRef, globalns: Any, localns: Any = None) -> Any:
-        return type_._evaluate(globalns, localns or None)
-
-else:
-
-    def evaluate_forwardref(type_: typing.ForwardRef, globalns: Any, localns: Any = None) -> Any:
-        return type_._evaluate(globalns, localns or None, set())  # type: ignore[call-arg]
 
 
 if sys.version_info < (3, 10):
@@ -142,6 +128,13 @@ def all_literal_values(type_: type[Any]) -> tuple[Any, ...]:
     return tuple(x for value in values for x in all_literal_values(value))
 
 
+def is_annotated(ann_type: Any) -> bool:
+    from ._utils import lenient_issubclass
+
+    origin = get_origin(ann_type)
+    return origin is not None and lenient_issubclass(origin, Annotated)
+
+
 def is_namedtuple(type_: type[Any]) -> bool:
     """
     Check if a given class is a named tuple.
@@ -150,27 +143,6 @@ def is_namedtuple(type_: type[Any]) -> bool:
     from ._utils import lenient_issubclass
 
     return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
-
-
-def is_typeddict(type_: type[Any]) -> bool:
-    """
-    Check if a given class is a typed dict (from `typing` or `typing_extensions`)
-    In 3.10, there will be a public method (https://docs.python.org/3.10/library/typing.html#typing.is_typeddict)
-    """
-    from pydantic._internal._utils import lenient_issubclass
-
-    return lenient_issubclass(type_, dict) and hasattr(type_, '__total__')
-
-
-def _check_typeddict_special(type_: Any) -> bool:
-    return type_ is TypedDictRequired or type_ is NotRequired
-
-
-def is_typeddict_special(type_: Any) -> bool:
-    """
-    Check if type is a TypedDict special form (Required or NotRequired).
-    """
-    return _check_typeddict_special(type_) or _check_typeddict_special(get_origin(type_))
 
 
 test_new_type = typing.NewType('test_new_type', str)
@@ -216,20 +188,6 @@ def _check_finalvar(v: type[Any] | None) -> bool:
 
 def is_finalvar(ann_type: type[Any]) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
-
-
-def get_sub_types(tp: Any) -> list[Any]:
-    """
-    Return all the types that are allowed by type `tp`
-    `tp` can be a `Union` of allowed types or an `Annotated` type
-    """
-    origin = get_origin(tp)
-    if origin is Annotated:
-        return get_sub_types(get_args(tp)[0])
-    elif origin_is_union(origin):
-        return [x for t in get_args(tp) for x in get_sub_types(t)]
-    else:
-        return [tp]
 
 
 if sys.version_info >= (3, 10):  # noqa C901

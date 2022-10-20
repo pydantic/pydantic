@@ -20,7 +20,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from typing_extensions import Annotated, Final, Literal
+from typing_extensions import Final, Literal
 
 from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, Required, SecretStr, ValidationError, constr
 
@@ -1760,42 +1760,30 @@ def test_new_union_origin():
     # }
 
 
-def test_annotated_class():
-    class PydanticModel(BaseModel):
-        foo: str = '123'
+@pytest.mark.xfail(reason='implement final')
+@pytest.mark.parametrize(
+    'ann',
+    [Final, Final[int]],
+    ids=['no-arg', 'with-arg'],
+)
+@pytest.mark.parametrize(
+    'value',
+    [None, Field(...)],
+    ids=['none', 'field'],
+)
+def test_final_field_decl_without_default_val(ann, value):
+    class Model(BaseModel):
+        a: ann
 
-    PydanticAlias = Annotated[PydanticModel, 'bar baz']
+        if value is not None:
+            a = value
 
-    pa = PydanticAlias()
-    assert isinstance(pa, PydanticModel)
-    pa.__doc__ = 'qwe'
-    assert repr(pa) == "PydanticModel(foo='123')"
-    assert pa.__doc__ == 'qwe'
+    Model.update_forward_refs(ann=ann)
 
+    assert 'a' not in Model.__class_vars__
+    assert 'a' in Model.__fields__
 
-# @pytest.mark.parametrize(
-#     'ann',
-#     [Final, Final[int]],
-#     ids=['no-arg', 'with-arg'],
-# )
-# @pytest.mark.parametrize(
-#     'value',
-#     [None, Field(...)],
-#     ids=['none', 'field'],
-# )
-# def test_final_field_decl_withou_default_val(ann, value):
-#     class Model(BaseModel):
-#         a: ann
-#
-#         if value is not None:
-#             a = value
-#
-#     Model.update_forward_refs(ann=ann)
-#
-#     assert 'a' not in Model.__class_vars__
-#     assert 'a' in Model.__fields__
-#
-#     assert Model.__fields__['a'].final
+    assert Model.__fields__['a'].final
 
 
 @pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')

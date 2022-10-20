@@ -11,14 +11,14 @@ from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import core_schema
-from typing_extensions import Annotated, get_args, get_origin, is_typeddict
+from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
 from ..fields import FieldInfo, Undefined
 from . import _fields, _typing_extra
+from ._validation_functions import ValidationFunctions, Validator
 
 if TYPE_CHECKING:
     from ..config import BaseConfig
-    from ._validation_functions import ValidationFunctions, Validator
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -28,7 +28,7 @@ def model_fields_schema(
 ) -> core_schema.CoreSchema:
     schema_generator = GenerateSchema(arbitrary_types)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-        {k: generate_field_schema(k, v, validator_functions, schema_generator) for k, v in fields.items()},
+        {k: schema_generator.generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
         ref=ref,
         return_fields_set=True,
     )
@@ -76,6 +76,8 @@ class GenerateSchema:
             return self._literal_schema(obj)
         elif is_typeddict(obj):
             return self._type_dict_schema(obj)
+        elif _typing_extra.is_namedtuple(obj):
+            return self._namedtuple_schema(obj)
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.7
             return self.generate_schema(obj.__supertype__)
@@ -145,6 +147,26 @@ class GenerateSchema:
                 f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}).'
             )
 
+    def generate_field_schema(
+        self, name: str, field: FieldInfo, validator_functions: ValidationFunctions, *, required: bool = True
+    ) -> core_schema.TypedDictField:
+        """
+        Prepare a TypedDictField to represent a model or typeddict field.
+        """
+        assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+        schema = self.generate_schema(field.annotation)
+        schema = apply_annotations(schema, field.constraints)
+
+        if not field.is_required():
+            required = False
+            schema = wrap_default(field, schema)
+
+        schema = apply_validators(schema, validator_functions.get_field_validators(name))
+        field_schema = core_schema.typed_dict_field(schema, required=required)
+        if field.alias is not None:
+            field_schema['alias'] = field.alias
+        return field_schema
+
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """
         Generate schema for a Union.
@@ -171,9 +193,9 @@ class GenerateSchema:
         """
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
-        args = get_args(annotated_type)
-        schema = self.generate_schema(args[0])
-        return apply_annotations(schema, args[1:])
+        first_arg, *other_args = get_args(annotated_type)
+        schema = self.generate_schema(first_arg)
+        return apply_annotations(schema, other_args)
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -183,41 +205,73 @@ class GenerateSchema:
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         return core_schema.literal_schema(*expected)
 
-    def _type_dict_schema(self, typed_dict: Any) -> core_schema.TypedDictSchema:
+    def _type_dict_schema(self, typed_dict_cls: Any) -> core_schema.TypedDictSchema:
         """
         Generate schema for a TypedDict.
         """
-        required_keys: typing.Set[str] = getattr(typed_dict, '__required_keys__', set())
+        try:
+            required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
+        except AttributeError:
+            raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.')
+
         fields: typing.Dict[str, core_schema.TypedDictField] = {}
+        validation_functions = ValidationFunctions(())
 
-        for field_name, field_type in typed_dict.__annotations__.items():
+        for field_name, annotation in _typing_extra.get_type_hints(typed_dict_cls, include_extras=True).items():
             required = field_name in required_keys
-            schema = None
-            if type(field_type) == typing.ForwardRef:
-                fr_arg = field_type.__forward_arg__
-                fr_arg, matched = re.subn(r'NotRequired\[(.+)]', r'\1', fr_arg)
-                if matched:
-                    required = False
 
-                fr_arg, matched = re.subn(r'Required\[(.+)]', r'\1', fr_arg)
-                if matched:
-                    required = True
+            if get_origin(annotation) == _typing_extra.Required:
+                required = True
+                annotation = get_args(annotation)[0]
+            elif get_origin(annotation) == _typing_extra.NotRequired:
+                required = False
+                annotation = get_args(annotation)[0]
 
-                field_type = _typing_extra.evaluate_forwardref(field_type)  # type: ignore
-
-            if schema is None:
-                if get_origin(field_type) == _typing_extra.Required:
-                    required = True
-                    field_type = field_type.__args__[0]
-                if get_origin(field_type) == _typing_extra.NotRequired:
-                    required = False
-                    field_type = field_type.__args__[0]
-
-                schema = self.generate_schema(field_type)
-
-            fields[field_name] = {'schema': schema, 'required': required}
+            field_info = FieldInfo.from_annotation(annotation)
+            fields[field_name] = self.generate_field_schema(
+                field_name, field_info, validation_functions, required=required
+            )
 
         return core_schema.typed_dict_schema(fields, extra_behavior='forbid')
+
+    def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
+        """
+        Generate schema for a NamedTuple.
+        """
+        annotations: dict[str, Any] = _typing_extra.get_type_hints(namedtuple_cls, include_extras=True)
+        if not annotations:
+            # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
+            annotations = {k: Any for k in namedtuple_cls._fields}
+
+        arguments_schema = core_schema.ArgumentsSchema(
+            type='arguments',
+            arguments_schema=[
+                self._generate_parameter_schema(field_name, annotation)
+                for field_name, annotation in annotations.items()
+            ],
+        )
+        return core_schema.call_schema(arguments_schema, namedtuple_cls)
+
+    def _generate_parameter_schema(
+        self,
+        name: str,
+        annotation: type[Any],
+        mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
+    ) -> core_schema.ArgumentsParameter:
+        """
+        Prepare a ArgumentsParameter to represent a field in a namedtuple, dataclass or function signature.
+        """
+        field = FieldInfo.from_annotation(annotation)
+        assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+        schema = self.generate_schema(field.annotation)
+        schema = apply_annotations(schema, field.constraints)
+
+        parameter_schema = core_schema.arguments_parameter(name, schema)
+        if mode is not None:
+            parameter_schema['mode'] = mode
+        if field.alias is not None:
+            parameter_schema['alias'] = field.alias
+        return parameter_schema
 
     def _generic_collection_schema(self, type_: Any) -> core_schema.CoreSchema:
         """
@@ -409,31 +463,6 @@ class GenerateSchema:
         return None
 
 
-def generate_field_schema(
-    name: str, field: FieldInfo, validator_functions: ValidationFunctions, schema_generator: GenerateSchema
-) -> core_schema.TypedDictField:
-    """
-    Prepare a TypedDictField to represent a model or typeddict field.
-    """
-    assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-    schema = schema_generator.generate_schema(field.annotation)
-    schema = apply_annotations(schema, field.constraints)
-
-    required = False
-    if field.default_factory:
-        schema = core_schema.with_default_schema(schema, default_factory=field.default_factory)
-    elif field.default is Undefined:
-        required = True
-    else:
-        schema = core_schema.with_default_schema(schema, default=field.default)
-
-    schema = apply_validators(schema, validator_functions.get_field_validators(name))
-    field_schema = core_schema.typed_dict_field(schema, required=required)
-    if field.alias is not None:
-        field_schema['alias'] = field.alias
-    return field_schema
-
-
 def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]) -> core_schema.CoreSchema:
     """
     Apply validators to a schema.
@@ -455,9 +484,11 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     return schema
 
 
-def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterable[Any]) -> core_schema.CoreSchema:
+def apply_annotations(  # noqa: C901
+    schema: core_schema.CoreSchema, annotations: typing.Iterable[Any]
+) -> core_schema.CoreSchema:
     """
-    Apply arguments to `Annotated` to a schema.
+    Apply arguments from `Annotated` to a schema.
     """
     for c in annotations:
         if c is None:
@@ -476,12 +507,17 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
             # GroupedMetadata yields constraints
             schema = apply_annotations(schema, c)
             continue
+        elif isinstance(c, FieldInfo):
+            schema = apply_annotations(schema, c.constraints)
+            # TODO setting a default here needs to be tested
+            schema = wrap_default(c, schema)
+            continue
 
         if isinstance(c, _fields.CustomMetadata):
             constraints_dict = c.__dict__
         elif isinstance(c, (BaseMetadata, _fields.PydanticMetadata)):
             constraints_dict = dataclasses.asdict(c)
-        elif issubclass(c, _fields.PydanticMetadata):
+        elif isinstance(c, type) and issubclass(c, _fields.PydanticMetadata):
             constraints_dict = {k: v for k, v in vars(c).items() if not k.startswith('_')}
         else:
             raise PydanticSchemaGenerationError(
@@ -494,7 +530,12 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
         if constraints_dict:
             extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
             if extra is None:
-                schema.update(constraints_dict)  # type: ignore[typeddict-item]
+                if schema['type'] == 'nullable':
+                    # for nullable schemas, constraints are automatically applied to the inner schema
+                    schema['schema'].update(constraints_dict)
+                else:
+                    # TODO need to do the same for lists, tuples and more
+                    schema.update(constraints_dict)  # type: ignore[typeddict-item]
             else:
                 if isinstance(extra, dict):
                     update_schema_function = extra['__pydantic_update_schema__']
@@ -508,7 +549,17 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
 
 
 class PydanticSchemaGenerationError(TypeError):
+    # TODO move to public module
     pass
+
+
+def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    if field_info.default_factory:
+        return core_schema.with_default_schema(schema, default_factory=field_info.default_factory)
+    elif field_info.default is not Undefined:
+        return core_schema.with_default_schema(schema, default=field_info.default)
+    else:
+        return schema
 
 
 def get_first_arg(type_: Any) -> Any:

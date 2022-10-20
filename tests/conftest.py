@@ -21,18 +21,18 @@ passing_files = {
     'test_networks.py',
     'test_networks_ipaddress.py',
     'test_color.py',
-    'test_types.py',
     'test_datetime.py',
-    'test_types_payment_card_number.py',
     'test_main.py',
     'test_utils.py',
     'test_typing.py',
+    'test_annotated.py',
+    'test_assert_in_validators.py',
 }
 
 
 def pytest_collection_modifyitems(items):
     for item in items:
-        if item.parent.name not in passing_files:
+        if not item.parent.name.startswith('test_types') and item.parent.name not in passing_files:
             item.add_marker('xfail')
 
 

@@ -81,7 +81,6 @@ try:
 except ImportError:
     email_validator = None
 
-
 # TODO add back tests for Iterator
 
 
@@ -3571,7 +3570,7 @@ def test_union_compound_types():
     ]
 
 
-def test_smart_union_compouned_types_edge_case():
+def test_smart_union_compounded_types_edge_case():
     class Model(BaseModel):
         x: Union[List[str], List[int]]
 

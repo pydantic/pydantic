@@ -2,7 +2,6 @@
 from pydantic_core import ValidationError
 
 from . import dataclasses
-from .annotated_types import create_model_from_namedtuple, create_model_from_typeddict
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .errors import *
@@ -19,9 +18,6 @@ __version__ = VERSION
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
-    # annotated types utils
-    'create_model_from_namedtuple',
-    'create_model_from_typeddict',
     # dataclasses
     'dataclasses',
     # class_validators

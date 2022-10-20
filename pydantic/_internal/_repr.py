@@ -35,7 +35,7 @@ class Representation:
     # we don't want to use a type annotation here as it can break get_type_hints
     __slots__ = tuple()  # type: typing.Collection[str]
 
-    def __repr_args__(self) -> 'ReprArgs':
+    def __repr_args__(self) -> ReprArgs:
         """
         Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
 
@@ -43,7 +43,10 @@ class Representation:
         * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
         * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
         """
-        attrs = ((s, getattr(self, s)) for s in self.__slots__)
+        attrs_names = self.__slots__
+        if not attrs_names and hasattr(self, '__dict__'):
+            attrs_names = self.__dict__.keys()
+        attrs = ((s, getattr(self, s)) for s in attrs_names)
         return [(a, v) for a, v in attrs if v is not None]
 
     def __repr_name__(self) -> str:
@@ -95,6 +98,8 @@ def display_as_type(obj: Any) -> str:
         return obj.__name__
     elif obj is ...:
         return '...'
+    elif isinstance(obj, Representation):
+        return repr(obj)
 
     if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
         obj = obj.__class__
