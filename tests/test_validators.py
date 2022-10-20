@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
+from pydantic import BaseModel, Extra, Field, PydanticUserError, ValidationError, errors, validator
 from pydantic.validator_functions import root_validator
 
 
@@ -277,7 +277,7 @@ def test_classmethod():
 
 
 def test_duplicates():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -299,7 +299,7 @@ def test_duplicates():
 
 
 def test_use_bare():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -312,7 +312,7 @@ def test_use_bare():
 
 
 def test_use_no_fields():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -422,7 +422,7 @@ def test_wildcard_validator_error():
 
 
 def test_invalid_field():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -677,9 +677,9 @@ def test_validator_always_post_optional():
 def test_validator_bad_fields_throws_configerror():
     """
     Attempts to create a validator with fields set as a list of strings,
-    rather than just multiple string args. Expects ConfigError to be raised.
+    rather than just multiple string args. Expects PydanticUserError to be raised.
     """
-    with pytest.raises(ConfigError, match='validator fields should be passed as separate string args.'):
+    with pytest.raises(PydanticUserError, match='validator fields should be passed as separate string args.'):
 
         class Model(BaseModel):
             a: str
@@ -835,7 +835,7 @@ def test_root_validator_pre():
 
 
 def test_root_validator_repeat():
-    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+    with pytest.raises(errors.PydanticUserError, match='duplicate validator function'):
 
         class Model(BaseModel):
             a: int = 1
@@ -850,7 +850,7 @@ def test_root_validator_repeat():
 
 
 def test_root_validator_repeat2():
-    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+    with pytest.raises(errors.PydanticUserError, match='duplicate validator function'):
 
         class Model(BaseModel):
             a: int = 1
@@ -866,7 +866,7 @@ def test_root_validator_repeat2():
 
 def test_root_validator_self():
     with pytest.raises(
-        errors.ConfigError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
+        errors.PydanticUserError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
     ):
 
         class Model(BaseModel):
@@ -878,7 +878,7 @@ def test_root_validator_self():
 
 
 def test_root_validator_extra():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: int = 1
@@ -999,7 +999,7 @@ def reset_tracked_validators():
 def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_validators):
     duplication_count = int(not allow_1) + int(not allow_2) + int(include_root and not allow_3)
     if duplication_count > 1:
-        with pytest.raises(ConfigError) as exc_info:
+        with pytest.raises(PydanticUserError) as exc_info:
             declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
         assert str(exc_info.value).startswith('duplicate validator function')
     else:

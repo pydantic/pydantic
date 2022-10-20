@@ -13,7 +13,8 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ..fields import FieldInfo, Undefined
+from ..errors import PydanticSchemaGenerationError
+from ..fields import FieldInfo
 from . import _fields, _typing_extra
 from ._validation_functions import ValidationFunctions, Validator
 
@@ -548,15 +549,10 @@ def apply_annotations(  # noqa: C901
     return schema
 
 
-class PydanticSchemaGenerationError(TypeError):
-    # TODO move to public module
-    pass
-
-
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     if field_info.default_factory:
         return core_schema.with_default_schema(schema, default_factory=field_info.default_factory)
-    elif field_info.default is not Undefined:
+    elif field_info.default is not _fields.Undefined:
         return core_schema.with_default_schema(schema, default=field_info.default)
     else:
         return schema

@@ -6,7 +6,7 @@ from typing import Any, Callable, overload
 from typing_extensions import Literal
 
 from ._internal import _validation_functions
-from .errors import ConfigError
+from .errors import PydanticUserError
 
 
 def validator(
@@ -25,14 +25,14 @@ def validator(
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
     if not fields:
-        raise ConfigError('validator with no fields specified')
+        raise PydanticUserError('validator with no fields specified')
     elif isinstance(fields[0], FunctionType):
-        raise ConfigError(
+        raise PydanticUserError(
             "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
     elif not all(isinstance(field, str) for field in fields):
-        raise ConfigError(
+        raise PydanticUserError(
             "validator fields should be passed as separate string args. "  # noqa: Q000
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
         )

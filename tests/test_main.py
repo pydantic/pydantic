@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 import pytest
 from typing_extensions import Final, Literal
 
-from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, Required, SecretStr, ValidationError, constr
+from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
 
 
 def test_success():
@@ -357,7 +357,7 @@ def test_field_order():
 def test_required():
     # same as below but defined here so class definition occurs inside the test
     class Model(BaseModel):
-        a: float = Required
+        a: float
         b: int = 10
 
     m = Model(a=10.2)

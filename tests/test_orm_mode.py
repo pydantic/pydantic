@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError, root_validator
+from pydantic import BaseModel, PydanticUserError, ValidationError, root_validator
 
 
 def test_getdict():
@@ -134,7 +134,7 @@ def test_not_orm_mode():
         name: str
         species: str
 
-    with pytest.raises(ConfigError):
+    with pytest.raises(PydanticUserError):
         Pet.from_orm(None)
 
 

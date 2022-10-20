@@ -9,34 +9,10 @@ import typing_extensions
 
 from . import types
 from ._internal import _fields, _repr, _typing_extra, _utils
+from ._internal._fields import Undefined
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
-
-Required: Any = Ellipsis
-
-
-class _UndefinedType:
-    """
-    Singleton class to represent an undefined value.
-
-    Has to be defined here, not in _internal for pickling to work properly.
-    """
-
-    def __repr__(self) -> str:
-        return 'PydanticUndefined'
-
-    def __copy__(self) -> '_UndefinedType':
-        return self
-
-    def __reduce__(self) -> str:
-        return 'Undefined'
-
-    def __deepcopy__(self, _: Any) -> '_UndefinedType':
-        return self
-
-
-Undefined = _UndefinedType()
 
 
 class FieldInfo(_repr.Representation):
@@ -83,7 +59,7 @@ class FieldInfo(_repr.Representation):
         self.annotation, annotation_constraints = self._extract_constraints(kwargs.pop('annotation', None))
 
         default = kwargs.pop('default', Undefined)
-        if default is Required:
+        if default is Ellipsis:
             self.default = Undefined
         else:
             self.default = default

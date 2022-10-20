@@ -1058,7 +1058,7 @@ def test_invalid_validator():
         def has_wrong_arguments(cls, value, bar):
             pass
 
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class InvalidValidatorModel(BaseModel):
             x: InvalidValidator = ...
@@ -1067,7 +1067,7 @@ def test_invalid_validator():
 
 
 def test_unable_to_infer():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class InvalidDefinitionModel(BaseModel):
             x = None

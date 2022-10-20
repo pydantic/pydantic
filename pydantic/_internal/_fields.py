@@ -11,6 +11,29 @@ from pydantic_core import core_schema
 from ._repr import Representation
 
 
+class _UndefinedType:
+    """
+    Singleton class to represent an undefined value.
+
+    Has to be defined here, not in _internal for pickling to work properly.
+    """
+
+    def __repr__(self) -> str:
+        return 'PydanticUndefined'
+
+    def __copy__(self) -> '_UndefinedType':
+        return self
+
+    def __reduce__(self) -> str:
+        return 'Undefined'
+
+    def __deepcopy__(self, _: Any) -> '_UndefinedType':
+        return self
+
+
+Undefined = _UndefinedType()
+
+
 class PydanticMetadata:
     """
     Base class for annotation markers like `Strict`.

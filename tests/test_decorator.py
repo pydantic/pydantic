@@ -10,7 +10,7 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
-from pydantic.errors import ConfigError
+from pydantic.errors import PydanticUserError
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -225,7 +225,8 @@ def test_args_name():
 
 def test_v_args():
     with pytest.raises(
-        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+        PydanticUserError,
+        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
     ):
 
         @validate_arguments
@@ -233,7 +234,8 @@ def test_v_args():
             pass
 
     with pytest.raises(
-        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+        PydanticUserError,
+        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
     ):
 
         @validate_arguments
@@ -241,7 +243,8 @@ def test_v_args():
             pass
 
     with pytest.raises(
-        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+        PydanticUserError,
+        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
     ):
 
         @validate_arguments
@@ -249,7 +252,8 @@ def test_v_args():
             pass
 
     with pytest.raises(
-        ConfigError, match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted'
+        PydanticUserError,
+        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
     ):
 
         @validate_arguments
@@ -356,7 +360,9 @@ def test_config_title_cls():
 
 
 def test_config_fields():
-    with pytest.raises(ConfigError, match='Setting the "fields" and "alias_generator" property on custom Config for @'):
+    with pytest.raises(
+        PydanticUserError, match='Setting the "fields" and "alias_generator" property on custom Config for @'
+    ):
 
         @validate_arguments(config=dict(fields={'b': 'bang'}))
         def foo(a: int, b: int):

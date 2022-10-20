@@ -6,7 +6,7 @@ from __future__ import annotations as _annotations
 import warnings
 from typing import TYPE_CHECKING, Any, Callable
 
-from ..errors import ConfigError
+from ..errors import PydanticUserError
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
@@ -106,7 +106,7 @@ class ValidationFunctions:
         unused_validators = [name for name in unused_validator_keys if self._validators[name].check_fields]
         if unused_validators:
             fn = ', '.join(unused_validators)
-            raise ConfigError(
+            raise PydanticUserError(
                 f"Validators defined with incorrect fields: {fn} "  # noqa: Q000
                 f"(use check_fields=False if you're inheriting from the model and intended this)"
             )

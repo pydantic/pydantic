@@ -1,3 +1,4 @@
+import sys
 from typing import List
 
 import pytest
@@ -5,7 +6,7 @@ from annotated_types import Gt, Lt
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
-from pydantic._internal._generate_schema import PydanticSchemaGenerationError
+from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import Undefined
 
 NO_VALUE = object()
@@ -162,6 +163,7 @@ def test_config_field_info():
     }
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
 def test_annotated_alias() -> None:
     # https://github.com/pydantic/pydantic/issues/2971
 

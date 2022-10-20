@@ -12,9 +12,10 @@ from typing import Any
 import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
+from ._internal._fields import Undefined
 from .config import BaseConfig, Extra, build_config, inherit_config
-from .errors import ConfigError, DictError
-from .fields import Field, FieldInfo, ModelPrivateAttr, Undefined
+from .errors import PydanticUserError
+from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .schema import default_ref_template, model_schema
 
@@ -350,47 +351,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     @classmethod
-    def __get_validators__(cls) -> CallableGenerator:
-        yield cls.validate
-
-    @classmethod
-    def validate(cls: type[Model], value: Any) -> 'Model':
-        if isinstance(value, cls):
-            copy_on_model_validation = cls.__config__.copy_on_model_validation
-            # whether to deep or shallow copy the model on validation, None means do not copy
-            deep_copy: bool | None = None
-            if copy_on_model_validation not in {'deep', 'shallow', 'none'}:
-                # Warn about deprecated behavior
-                warnings.warn(
-                    "`copy_on_model_validation` should be a string: 'deep', 'shallow' or 'none'", DeprecationWarning
-                )
-                if copy_on_model_validation:
-                    deep_copy = False
-
-            if copy_on_model_validation == 'shallow':
-                # shallow copy
-                deep_copy = False
-            elif copy_on_model_validation == 'deep':
-                # deep copy
-                deep_copy = True
-
-            if deep_copy is None:
-                return value
-            else:
-                return value._copy_and_set_values(value.__dict__, value.__fields_set__, deep=deep_copy)
-
-        if isinstance(value, dict):
-            return cls(**value)
-        elif cls.__config__.orm_mode:
-            return cls.from_orm(value)
-        else:
-            try:
-                value_as_dict = dict(value)
-            except (TypeError, ValueError) as e:
-                raise DictError() from e
-            return cls(**value_as_dict)
-
-    @classmethod
     @typing.no_type_check
     def _get_value(
         cls,
@@ -641,7 +601,7 @@ def create_model(
 
     if __base__ is not None:
         if __config__ is not None:
-            raise ConfigError('to avoid confusion __config__ and __base__ cannot be used together')
+            raise PydanticUserError('to avoid confusion __config__ and __base__ cannot be used together')
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
@@ -659,7 +619,7 @@ def create_model(
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:
-                raise ConfigError(
+                raise PydanticUserError(
                     'field definitions should either be a tuple of (<type>, <default>) or just a '
                     'default value, unfortunately this means tuples as '
                     'default values are not allowed'

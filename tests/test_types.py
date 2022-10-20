@@ -30,7 +30,7 @@ from uuid import UUID
 import annotated_types
 import pytest
 from dirty_equals import AnyThing, HasRepr
-from pydantic_core._pydantic_core import SchemaError
+from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
 from typing_extensions import Annotated, Literal, TypedDict
 
 from pydantic import (
@@ -71,7 +71,6 @@ from pydantic import (
     conlist,
     conset,
     constr,
-    errors,
     validator,
 )
 from pydantic.types import ImportString, SecretField, Strict
@@ -3302,7 +3301,7 @@ def test_bytesize_raises():
         Model(size='1Gi')
 
     m = Model(size='1MB')
-    with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
+    with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('bad_unit')
 
 

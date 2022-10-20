@@ -3,7 +3,7 @@ from typing import Dict, ForwardRef, List, Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigError, ValidationError
+from pydantic import BaseModel, PydanticUserError, ValidationError
 
 
 def test_postponed_annotations(create_module):
@@ -177,7 +177,7 @@ def test_missing_update_forward_refs(create_module):
             a: int = 123
             b: Foo = None
 
-    with pytest.raises(ConfigError) as exc_info:
+    with pytest.raises(PydanticUserError) as exc_info:
         module.Foo(b=123)
     assert str(exc_info.value).startswith('field "b" not yet prepared so type is still a ForwardRef')
 
@@ -555,7 +555,7 @@ def test_discriminated_union_forward_ref(create_module):
         class Dog(BaseModel):
             type: Literal['dog']
 
-    with pytest.raises(ConfigError, match='you might need to call Pet.update_forward_refs()'):
+    with pytest.raises(PydanticUserError, match='you might need to call Pet.update_forward_refs()'):
         module.Pet.parse_obj({'type': 'pika'})
 
     module.Pet.update_forward_refs()

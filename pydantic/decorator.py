@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, 
 
 from ._internal import _typing_extra, _utils
 from .config import Extra
-from .errors import ConfigError
+from .errors import PydanticUserError
 from .main import BaseModel, create_model
 from .validator_functions import validator
 
@@ -63,7 +63,7 @@ class ValidatedFunction:
         parameters: Mapping[str, Parameter] = signature(function).parameters
 
         if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME, V_DUPLICATE_KWARGS}:
-            raise ConfigError(
+            raise PydanticUserError(
                 f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}", "{V_POSITIONAL_ONLY_NAME}" and "{V_DUPLICATE_KWARGS}" '
                 f'are not permitted as argument names when using the "{validate_arguments.__name__}" decorator'
             )
@@ -217,7 +217,7 @@ class ValidatedFunction:
                 CustomConfig = config  # noqa: F811
 
         if hasattr(CustomConfig, 'fields') or hasattr(CustomConfig, 'alias_generator'):
-            raise ConfigError(
+            raise PydanticUserError(
                 'Setting the "fields" and "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.'
             )

@@ -4,7 +4,7 @@ from typing import NamedTuple, Tuple
 import pytest
 
 from pydantic import BaseModel, PositiveInt, ValidationError
-from pydantic._internal._generate_schema import PydanticSchemaGenerationError
+from pydantic.errors import PydanticSchemaGenerationError
 
 
 def test_namedtuple_simple():
@@ -137,7 +137,7 @@ def test_namedtuple_postponed_annotation():
     class Model(BaseModel):
         t: Tup
 
-    # The effect of issue #2760 is that this call raises a `ConfigError` even though the type declared on `Tup.v`
+    # The effect of issue #2760 is that this call raises a `PydanticUserError` even though the type declared on `Tup.v`
     # references a binding in this module's global scope.
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': [-1]})

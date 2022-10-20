@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel
-from pydantic.errors import ConfigError
+from pydantic.errors import PydanticUserError
 
 
 def this_is_broken():
@@ -11,7 +11,7 @@ def this_is_broken():
 
     try:
         Model(a='https://example.com')
-    except ConfigError as e:
+    except PydanticUserError as e:
         print(e)
 
     try:

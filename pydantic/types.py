@@ -28,7 +28,6 @@ import annotated_types
 from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
 from typing_extensions import Annotated, Literal
 
-from . import errors
 from ._internal import _fields, _validators
 
 __all__ = [
@@ -700,7 +699,7 @@ class ByteSize(int):
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:
-            raise errors.InvalidByteSizeUnit(unit=unit)
+            raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 
         return self / unit_div
 

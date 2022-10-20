@@ -59,12 +59,12 @@ def test_invalid_name():
 
 
 def test_field_wrong_tuple():
-    with pytest.raises(errors.ConfigError):
+    with pytest.raises(errors.PydanticUserError):
         create_model('FooModel', foo=(1, 2, 3))
 
 
 def test_config_and_base():
-    with pytest.raises(errors.ConfigError):
+    with pytest.raises(errors.PydanticUserError):
         create_model('FooModel', __config__=BaseModel.Config, __base__=BaseModel)
 
 

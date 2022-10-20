@@ -53,9 +53,9 @@ from typing_extensions import dataclass_transform
 
 from pydantic._internal._utils import ClassAttribute
 
+from ._internal import _fields
 from .config import BaseConfig, ConfigDict, Extra, get_config
-from .errors import DataclassTypeError
-from .fields import Field, FieldInfo, Required, Undefined
+from .fields import Field, FieldInfo
 from .main import create_model
 
 if TYPE_CHECKING:
@@ -355,7 +355,8 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
         elif isinstance(v, dict):
             return cls(**v)
         else:
-            raise DataclassTypeError(class_name=cls.__name__)
+            raise Exception('todo')
+            # raise DataclassTypeError(class_name=cls.__name__)
 
 
 def create_pydantic_model_from_dataclass(
@@ -367,7 +368,7 @@ def create_pydantic_model_from_dataclass(
 
     field_definitions: Dict[str, Any] = {}
     for field in dataclasses.fields(dc_cls):
-        default: Any = Undefined
+        default: Any = _fields.Undefined
         default_factory: Optional['NoArgAnyCallable'] = None
         field_info: FieldInfo
 
@@ -376,7 +377,7 @@ def create_pydantic_model_from_dataclass(
         elif field.default_factory is not dataclasses.MISSING:
             default_factory = field.default_factory
         else:
-            default = Required
+            default = ...
 
         if isinstance(default, FieldInfo):
             field_info = default
