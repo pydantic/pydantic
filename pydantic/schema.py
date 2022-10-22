@@ -490,7 +490,7 @@ def field_type_schema(
             # Dict keys have a regex pattern
             # items_schema might be a schema or empty dict, add it either way
             f_schema['patternProperties'] = {regex.pattern: items_schema}
-        elif items_schema:
+        if items_schema:
             # The dict values are not simply Any, so they need a schema
             f_schema['additionalProperties'] = items_schema
     elif field.shape == SHAPE_TUPLE or (field.shape == SHAPE_GENERIC and not issubclass(field.type_, BaseModel)):
