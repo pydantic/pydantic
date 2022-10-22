@@ -1654,7 +1654,13 @@ def test_schema_dict_constr():
         'title': 'Foo',
         'type': 'object',
         'properties': {
-            'a': {'type': 'object', 'title': 'A', 'default': {}, 'patternProperties': {regex_str: {'type': 'string'}}}
+            'a': {
+                'type': 'object',
+                'title': 'A',
+                'default': {},
+                'additionalProperties': {'type': 'string'},
+                'patternProperties': {regex_str: {'type': 'string'}},
+            }
         },
     }
 
