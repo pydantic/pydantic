@@ -80,7 +80,7 @@ impl BuildValidator for ListValidator {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, build_context)?;
         let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, inner_name);
+        let name = format!("{}[{inner_name}]", Self::EXPECTED_TYPE);
         Ok(Self {
             strict: crate::build_tools::is_strict(schema, config)?,
             allow_any_iter: schema.get_as(pyo3::intern!(py, "allow_any_iter"))?.unwrap_or(false),

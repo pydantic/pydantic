@@ -135,7 +135,7 @@ impl SchemaError {
         match error {
             ValError::LineErrors(line_errors) => {
                 let details = pretty_line_errors(py, line_errors);
-                SchemaError::new_err(format!("Invalid Schema:\n{}", details))
+                SchemaError::new_err(format!("Invalid Schema:\n{details}"))
             }
             ValError::InternalErr(py_err) => py_err,
             ValError::Omit => unreachable!(),
@@ -151,7 +151,7 @@ impl SchemaError {
     }
 
     fn __repr__(&self) -> String {
-        format!("{:?}", self)
+        format!("{self:?}")
     }
 
     fn __str__(&self) -> String {

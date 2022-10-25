@@ -68,7 +68,7 @@ impl<'a> Input<'a> for PyAny {
         } else {
             match repr_string(self) {
                 Ok(s) => s.into(),
-                Err(_) => format!("{:?}", self).into(),
+                Err(_) => format!("{self:?}").into(),
             }
         }
     }

@@ -17,8 +17,8 @@ pub enum LocItem {
 impl fmt::Display for LocItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::S(s) => write!(f, "{}", s),
-            Self::I(i) => write!(f, "{}", i),
+            Self::S(s) => write!(f, "{s}"),
+            Self::I(i) => write!(f, "{i}"),
         }
     }
 }

@@ -85,8 +85,8 @@ impl PydanticCustomError {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let msg = self.message(py)?;
         match { self.context.as_ref() } {
-            Some(ctx) => Ok(format!("{} [kind={}, context={}]", msg, self.kind, ctx.as_ref(py))),
-            None => Ok(format!("{} [kind={}, context=None]", msg, self.kind)),
+            Some(ctx) => Ok(format!("{msg} [kind={}, context={}]", self.kind, ctx.as_ref(py))),
+            None => Ok(format!("{msg} [kind={}, context=None]", self.kind)),
         }
     }
 }
@@ -138,8 +138,8 @@ impl PydanticKindError {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let msg = self.message(py)?;
         match { self.context(py)?.as_ref() } {
-            Some(ctx) => Ok(format!("{} [kind={}, context={}]", msg, self.kind(), ctx.as_ref(py))),
-            None => Ok(format!("{} [kind={}, context=None]", msg, self.kind())),
+            Some(ctx) => Ok(format!("{msg} [kind={}, context={}]", self.kind(), ctx.as_ref(py))),
+            None => Ok(format!("{msg} [kind={}, context=None]", self.kind())),
         }
     }
 }

@@ -45,7 +45,7 @@ impl BuildValidator for IsInstanceValidator {
                 Err(_) => class.repr()?.extract()?,
             },
         };
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, class_repr);
+        let name = format!("{}[{class_repr}]", Self::EXPECTED_TYPE);
         let json_types = match schema.get_as::<&PySet>(intern!(py, "json_types"))? {
             Some(s) => JsonType::combine(s)?,
             None => 0,

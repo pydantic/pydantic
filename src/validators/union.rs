@@ -46,7 +46,7 @@ impl BuildValidator for UnionValidator {
             choices,
             custom_error: CustomError::build(schema)?,
             strict: is_strict(schema, config)?,
-            name: format!("{}[{}]", Self::EXPECTED_TYPE, descr),
+            name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
         }
         .into())
     }
@@ -217,10 +217,10 @@ impl BuildValidator for TaggedUnionValidator {
             let validator = build_validator(value, config, build_context)?;
             if first {
                 first = false;
-                write!(tags_repr, "'{}'", tag).unwrap();
+                write!(tags_repr, "'{tag}'").unwrap();
                 descr.push_str(validator.get_name());
             } else {
-                write!(tags_repr, ", '{}'", tag).unwrap();
+                write!(tags_repr, ", '{tag}'").unwrap();
                 // no spaces in get_name() output to make loc easy to read
                 write!(descr, ",{}", validator.get_name()).unwrap();
             }
@@ -238,7 +238,7 @@ impl BuildValidator for TaggedUnionValidator {
             custom_error: CustomError::build(schema)?,
             tags_repr,
             discriminator_repr,
-            name: format!("{}[{}]", Self::EXPECTED_TYPE, descr),
+            name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
         }
         .into())
     }

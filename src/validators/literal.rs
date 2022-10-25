@@ -58,8 +58,8 @@ pub struct LiteralSingleStringValidator {
 
 impl LiteralSingleStringValidator {
     fn new(expected: String) -> Self {
-        let expected_repr = format!("'{}'", expected);
-        let name = format!("literal[{}]", expected_repr);
+        let expected_repr = format!("'{expected}'");
+        let name = format!("literal[{expected_repr}]");
         Self {
             expected,
             expected_repr,
@@ -105,7 +105,7 @@ impl LiteralSingleIntValidator {
     fn new(expected: i64) -> Self {
         Self {
             expected,
-            name: format!("literal[{}]", expected),
+            name: format!("literal[{expected}]"),
         }
     }
 }
@@ -150,7 +150,7 @@ impl LiteralMultipleStringsValidator {
         let mut repr_args = Vec::new();
         for item in expected_list.iter() {
             if let Ok(str) = item.extract() {
-                repr_args.push(format!("'{}'", str));
+                repr_args.push(format!("'{str}'"));
                 expected.insert(str);
             } else {
                 return None;
@@ -335,7 +335,7 @@ fn expected_repr_name(mut repr_args: Vec<String>) -> (String, String) {
     let repr = if repr_args.is_empty() {
         last_repr
     } else {
-        format!("{} or {}", repr_args.join(", "), last_repr)
+        format!("{} or {last_repr}", repr_args.join(", "))
     };
     (repr, name)
 }

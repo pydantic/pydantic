@@ -45,7 +45,7 @@ impl ValidationError {
         let plural = if count == 1 { "" } else { "s" };
         let title: &str = self.title.extract(py).unwrap();
         let line_errors = pretty_py_line_errors(py, self.line_errors.iter());
-        format!("{} validation error{} for {}\n{}", count, plural, title, line_errors)
+        format!("{count} validation error{plural} for {title}\n{line_errors}")
     }
 
     pub fn omit_error() -> PyErr {
@@ -117,7 +117,7 @@ pub fn pretty_py_line_errors<'a>(py: Python, line_errors_iter: impl Iterator<Ite
     line_errors_iter
         .map(|i| i.pretty(py))
         .collect::<Result<Vec<_>, _>>()
-        .unwrap_or_else(|err| vec![format!("[error formatting line errors: {}]", err)])
+        .unwrap_or_else(|err| vec![format!("[error formatting line errors: {err}]")])
         .join("\n")
 }
 
@@ -173,9 +173,9 @@ impl PyLineError {
 
         let message = match self.kind.render_message(py) {
             Ok(message) => message,
-            Err(err) => format!("(error rendering message: {})", err),
+            Err(err) => format!("(error rendering message: {err})"),
         };
-        write!(output, "  {} [kind={}", message, self.kind.kind())?;
+        write!(output, "  {message} [kind={}", self.kind.kind())?;
 
         let input_value = self.input_value.as_ref(py);
         let input_str = match repr_string(input_value) {
@@ -185,7 +185,7 @@ impl PyLineError {
         truncate_input_value!(output, input_str);
 
         if let Ok(type_) = input_value.get_type().name() {
-            write!(output, ", input_type={}", type_)?;
+            write!(output, ", input_type={type_}")?;
         }
         output.push(']');
         Ok(output)

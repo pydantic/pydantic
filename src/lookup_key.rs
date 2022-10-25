@@ -25,8 +25,8 @@ pub enum LookupKey {
 impl fmt::Display for LookupKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Simple(key, _) => write!(f, "'{}'", key),
-            Self::Choice(key1, key2, _, _) => write!(f, "'{}' | '{}'", key1, key2),
+            Self::Simple(key, _) => write!(f, "'{key}'"),
+            Self::Choice(key1, key2, _, _) => write!(f, "'{key1}' | '{key2}'"),
             Self::PathChoices(paths) => write!(
                 f,
                 "{}",
@@ -213,8 +213,8 @@ pub enum PathItem {
 impl fmt::Display for PathItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::S(key, _) => write!(f, "'{}'", key),
-            Self::I(key) => write!(f, "{}", key),
+            Self::S(key, _) => write!(f, "'{key}'"),
+            Self::I(key) => write!(f, "{key}"),
         }
     }
 }
