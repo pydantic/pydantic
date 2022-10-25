@@ -26,15 +26,15 @@ include = [
 ]
 
 [dependencies]
-pyo3 = '0.17.1'
-regex = '1.5.5'
-strum = { version = '0.24', features = ['derive'] }
-strum_macros = '0.24'
-serde_json = {version = '1.0.79', features = ['preserve_order']}
+pyo3 = '0.17.2'
+regex = '1.6.0'
+strum = { version = '0.24.1', features = ['derive'] }
+strum_macros = '0.24.3'
+serde_json = {version = '1.0.87', features = ['preserve_order']}
 enum_dispatch = '0.3.8'
-serde = '1.0.137'
-indexmap = '1.8.1'
-mimalloc = { version = '0.1.29', default-features = false, optional = true }
+serde = '1.0.147'
+indexmap = '1.9.1'
+mimalloc = { version = '0.1.30', default-features = false, optional = true }
 speedate = '0.7.0'
 ahash = '0.8.0'
 nohash-hasher = '0.2.0'
@@ -61,4 +61,4 @@ panic = 'abort'
 [build-dependencies]
 version_check = '0.9.4'
 # used where logic has to be version/distrobution specific, e.g. pypy
-pyo3-build-config = '0.17.1'
+pyo3-build-config = '0.17.2'
