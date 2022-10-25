@@ -31,7 +31,7 @@ impl BuildValidator for IsSubclassValidator {
             Some(s) => s,
             None => class.name()?.to_string(),
         };
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, class_repr);
+        let name = format!("{}[{class_repr}]", Self::EXPECTED_TYPE);
         Ok(Self {
             class: class.into(),
             class_repr,

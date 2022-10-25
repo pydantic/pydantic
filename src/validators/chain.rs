@@ -44,7 +44,7 @@ impl BuildValidator for ChainValidator {
 
                 Ok(Self {
                     steps,
-                    name: format!("{}[{}]", Self::EXPECTED_TYPE, descr),
+                    name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
                 }
                 .into())
             }

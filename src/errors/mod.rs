@@ -20,12 +20,12 @@ pub fn py_err_string(py: Python, err: PyErr) -> String {
                 let str_cow = py_str.to_string_lossy();
                 let str = str_cow.as_ref();
                 if !str.is_empty() {
-                    format!("{}: {}", type_name, str)
+                    format!("{type_name}: {str}")
                 } else {
                     type_name.to_string()
                 }
             }
-            Err(_) => format!("{}: <exception str() failed>", type_name),
+            Err(_) => format!("{type_name}: <exception str() failed>"),
         },
         Err(_) => "Unknown Error".to_string(),
     }
