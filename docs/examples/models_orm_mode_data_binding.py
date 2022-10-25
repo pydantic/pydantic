@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Any, Optional
-from pydantic._internal.utils import GetterDict
+from pydantic.utils import GetterDict
 from xml.etree.ElementTree import fromstring
 
 

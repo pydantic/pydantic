@@ -1,4 +1,6 @@
 """
+THIS IS A MESS AND NEEDS TO BE REWRITTEN, SORRY ZAC.
+
 Register Hypothesis strategies for Pydantic custom types.
 
 This enables fully-automatic generation of test data for most Pydantic classes.
@@ -35,7 +37,8 @@ import hypothesis.strategies as st
 import pydantic
 import pydantic.color
 import pydantic.types
-from pydantic._internal._utils import lenient_issubclass
+
+from ._internal._utils import lenient_issubclass
 
 # FilePath and DirectoryPath are explicitly unsupported, as we'd have to create
 # them on-disk, and that's unsafe in general without being told *where* to do so.

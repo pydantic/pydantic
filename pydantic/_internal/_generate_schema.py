@@ -27,6 +27,10 @@ __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 def model_fields_schema(
     ref: str, fields: dict[str, FieldInfo], validator_functions: ValidationFunctions, arbitrary_types: bool
 ) -> core_schema.CoreSchema:
+    """
+    Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
+    since this is typed_dict schema which is used to create the model,
+    """
     schema_generator = GenerateSchema(arbitrary_types)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {k: schema_generator.generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
@@ -38,6 +42,9 @@ def model_fields_schema(
 
 
 def generate_config(config: type[BaseConfig]) -> core_schema.CoreConfig:
+    """
+    Create a pydantic-core config from a pydantic config.
+    """
     return core_schema.CoreConfig(
         typed_dict_extra_behavior=config.extra.value,
         allow_inf_nan=config.allow_inf_nan,

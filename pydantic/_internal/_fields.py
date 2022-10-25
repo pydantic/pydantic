@@ -14,8 +14,6 @@ from ._repr import Representation
 class _UndefinedType:
     """
     Singleton class to represent an undefined value.
-
-    Has to be defined here, not in _internal for pickling to work properly.
     """
 
     def __repr__(self) -> str:
@@ -54,15 +52,19 @@ class SchemaRef(PydanticMetadata):
 
     __slots__ = '_name', '__pydantic_validation_schema__'
 
-    def __init__(self, name: str, core_schema: core_schema.CoreSchema):
+    def __init__(self, name: str, schema: core_schema.CoreSchema):
         self._name = name
-        self.__pydantic_validation_schema__ = core_schema
+        self.__pydantic_validation_schema__ = schema
 
     def __repr__(self) -> str:
         return f'SchemaRef({self._name!r}, {self.__pydantic_validation_schema__})'
 
 
 class CustomValidator(ABC):
+    """
+    Used to define functional validators which can be updated with constraints.
+    """
+
     @abstractmethod
     def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **constraints: Any) -> None:
         raise NotImplementedError()
@@ -72,6 +74,10 @@ class CustomValidator(ABC):
         raise NotImplementedError()
 
     def _update_attrs(self, constraints: dict[str, Any], attrs: set[str] | None = None) -> None:
+        """
+        Utility for updating attributes/slots and raising an error if they doesn't exist, to be used by
+        implementations of `CustomValidator`.
+        """
         attrs = attrs or set(self.__slots__)  # type: ignore[attr-defined]
         for k, v in constraints.items():
             if k not in attrs:

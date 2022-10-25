@@ -1822,3 +1822,28 @@ def test_field_by_default_is_not_final():
         a: int
 
     assert not Model.__fields__['a'].final
+
+
+def test_post_init():
+    calls = []
+
+    class SubModel(BaseModel):
+        a: int
+        b: int
+
+        def model_post_init(self, **kwargs) -> None:
+            assert self.dict() == {'a': 3, 'b': 4}
+            calls.append('submodel_post_init')
+
+    class Model(BaseModel):
+        c: int
+        d: int
+        sub: SubModel
+
+        def model_post_init(self, **kwargs) -> None:
+            assert self.dict() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+            calls.append('model_post_init')
+
+    m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
+    assert m.dict() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+    assert calls == ['submodel_post_init', 'model_post_init']

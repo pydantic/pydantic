@@ -14,7 +14,7 @@ from typing_extensions import Annotated
 
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
-from ._fields import SchemaRef
+from ._fields import SchemaRef, Undefined
 from ._generate_schema import generate_config, model_fields_schema
 from ._utils import ClassAttribute, is_valid_identifier
 from ._validation_functions import ValidationFunctions
@@ -25,13 +25,24 @@ if typing.TYPE_CHECKING:
     from ..config import BaseConfig
     from ..main import BaseModel
 
-__all__ = 'inspect_namespace', 'complete_model_class'
+__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class'
 
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod)
+object_setattr = object.__setattr__
 
 
-def inspect_namespace(namespace: dict[str, Any]) -> None:
+def init_private_attributes(self_: Any, **_kwargs: Any) -> None:
+    """
+    This method is bound to model classes to initialise private attributes.
+    """
+    for name, private_attr in self_.__private_attributes__.items():
+        default = private_attr.get_default()
+        if default is not Undefined:
+            object_setattr(self_, name, default)
+
+
+def inspect_namespace(namespace: dict[str, Any]) -> dict[str, ModelPrivateAttr]:
     """
     iterate over the namespace and:
     * gather private attributes
@@ -39,18 +50,25 @@ def inspect_namespace(namespace: dict[str, Any]) -> None:
     """
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
-    for var_name, value in namespace.items():
+    for var_name, value in list(namespace.items()):
         if isinstance(value, ModelPrivateAttr):
-            if not single_underscore(var_name):
+            if var_name.startswith('__'):
+                raise NameError(
+                    f'Private attributes "{var_name}" must not have dunder names; '
+                    'Use a single underscore prefix instead.'
+                )
+            elif not single_underscore(var_name):
                 raise NameError(
                     f'Private attributes "{var_name}" must not be a valid field name; '
                     f'Use sunder or dunder names, e. g. "_{var_name}"'
                 )
             private_attributes[var_name] = value
+            del namespace[var_name]
         elif not single_underscore(var_name):
             continue
         elif var_name.startswith('_'):
             private_attributes[var_name] = PrivateAttr(default=value)
+            del namespace[var_name]
         elif var_name not in raw_annotations and not isinstance(value, IGNORED_TYPES):
             warnings.warn(
                 f'All fields must include a type annotation; '
@@ -58,12 +76,11 @@ def inspect_namespace(namespace: dict[str, Any]) -> None:
                 DeprecationWarning,
             )
 
-    namespace['__private_attributes__'] = private_attributes
-    if private_attributes:
-        for k in private_attributes:
-            del namespace[k]
-        slots: set[str] = set(namespace.get('__slots__', ()))
-        namespace['__slots__'] = slots | private_attributes.keys()
+    for ann_name in raw_annotations:
+        if single_underscore(ann_name) and ann_name not in private_attributes:
+            private_attributes[ann_name] = PrivateAttr()
+
+    return private_attributes
 
 
 def single_underscore(name: str) -> bool:
@@ -124,7 +141,10 @@ def complete_model_class(
 
     cls.__fields__ = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
-    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(cls, inner_schema, config=core_config)
+    model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
+        cls, inner_schema, config=core_config, call_after_init=model_post_init
+    )
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))

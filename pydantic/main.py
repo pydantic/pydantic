@@ -1,3 +1,6 @@
+"""
+Logic for creating models, could perhaps be renamed to `models.py`.
+"""
 from __future__ import annotations as _annotations
 
 import typing
@@ -27,19 +30,12 @@ if typing.TYPE_CHECKING:
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any]
-    CallableGenerator = typing.Generator[typing.Callable[..., Any], None, None]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
-    DictStrAny = dict[str, Any]
     Model = typing.TypeVar('Model', bound='BaseModel')
 
-__all__ = (
-    'BaseModel',
-    'create_model',
-)
+__all__ = 'BaseModel', 'create_model'
 
-_T = typing.TypeVar('_T')
-
-
+_object_setattr = _model_construction.object_setattr
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
 # (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
@@ -56,7 +52,25 @@ class ModelMetaclass(ABCMeta):
                 namespace['Config'] = new_model_config
             namespace['__config__'] = __config__
 
-            _model_construction.inspect_namespace(namespace)
+            namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
+            if private_attributes:
+                slots: set[str] = set(namespace.get('__slots__', ()))
+                namespace['__slots__'] = slots | private_attributes.keys()
+
+                if 'model_post_init' in namespace:
+                    # if there are private_attributes and a model_post_init function, we wrap them both
+                    # in a single function
+                    namespace['_init_private_attributes'] = _model_construction.init_private_attributes
+
+                    def __pydantic_post_init__(self_: Any, **kwargs: Any) -> None:
+                        self_._init_private_attributes()
+                        self_.model_post_init(**kwargs)
+
+                    namespace['__pydantic_post_init__'] = __pydantic_post_init__
+                else:
+                    namespace['__pydantic_post_init__'] = _model_construction.init_private_attributes
+            elif 'model_post_init' in namespace:
+                namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
             validator_functions = _validation_functions.ValidationFunctions(bases)
 
@@ -92,9 +106,6 @@ class ModelMetaclass(ABCMeta):
         return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
 
 
-object_setattr = object.__setattr__
-
-
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     if typing.TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
@@ -120,24 +131,31 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         Raises ValidationError if the input data cannot be parsed to form a valid model.
 
-        Uses something other than `self` the first arg to allow "self" as a field name
+        Uses something other than `self` for the first arg to allow "self" as a field name.
+
+        `__tracebackhide__` tells pytest and some other tools to omit the function from tracebacks
         """
-        # __tracebackhide__ tells pytest and some other tools to omit the function from tracebacks
         __tracebackhide__ = True
         values, fields_set = __pydantic_self__.__pydantic_validator__.validate_python(data)
-        object_setattr(__pydantic_self__, '__dict__', values)
-        object_setattr(__pydantic_self__, '__fields_set__', fields_set)
-        __pydantic_self__._init_private_attributes()
+        _object_setattr(__pydantic_self__, '__dict__', values)
+        _object_setattr(__pydantic_self__, '__fields_set__', fields_set)
+        if hasattr(__pydantic_self__, '__pydantic_post_init__'):
+            __pydantic_self__.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
+
+    if typing.TYPE_CHECKING:
+        # model_after_init is called after at the end of `__init__` if it's defined
+        def model_post_init(self, **kwargs: Any) -> None:
+            pass
 
     @typing.no_type_check
     def __setattr__(self, name, value):
         if name.startswith('_'):
-            object_setattr(self, name, value)
+            _object_setattr(self, name, value)
         elif self.__config__.frozen:
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
         elif self.__config__.validate_assignment:
             values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
-            object_setattr(self, '__dict__', values)
+            _object_setattr(self, '__dict__', values)
             self.__fields_set__ |= fields_set
         elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
             # TODO - matching error
@@ -155,16 +173,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
-        object_setattr(self, '__dict__', state['__dict__'])
-        object_setattr(self, '__fields_set__', state['__fields_set__'])
+        _object_setattr(self, '__dict__', state['__dict__'])
+        _object_setattr(self, '__fields_set__', state['__fields_set__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
-            object_setattr(self, name, value)
-
-    def _init_private_attributes(self) -> None:
-        for name, private_attr in self.__private_attributes__.items():
-            default = private_attr.get_default()
-            if default is not Undefined:
-                object_setattr(self, name, default)
+            _object_setattr(self, name, value)
 
     def dict(
         self,
@@ -247,9 +259,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def parse_obj(cls: type[Model], obj: Any) -> Model:
         values, fields_set = cls.__pydantic_validator__.validate_python(obj)
         m = cls.__new__(cls)
-        object_setattr(m, '__dict__', values)
-        object_setattr(m, '__fields_set__', fields_set)
-        m._init_private_attributes()
+        _object_setattr(m, '__dict__', values)
+        _object_setattr(m, '__fields_set__', fields_set)
+        if hasattr(cls, '__pydantic_post_init__'):
+            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
         return m
 
     @classmethod
@@ -274,11 +287,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             elif not field.is_required():
                 fields_values[name] = field.get_default()
         fields_values.update(values)
-        object_setattr(m, '__dict__', fields_values)
+        _object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
-        object_setattr(m, '__fields_set__', _fields_set)
-        m._init_private_attributes()
+        _object_setattr(m, '__fields_set__', _fields_set)
+        if hasattr(m, '__pydantic_post_init__'):
+            m.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
         return m
 
     def _copy_and_set_values(self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
@@ -288,14 +302,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         cls = self.__class__
         m = cls.__new__(cls)
-        object_setattr(m, '__dict__', values)
-        object_setattr(m, '__fields_set__', fields_set)
+        _object_setattr(m, '__dict__', values)
+        _object_setattr(m, '__fields_set__', fields_set)
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
                 if deep:
                     value = deepcopy(value)
-                object_setattr(m, name, value)
+                _object_setattr(m, name, value)
 
         return m
 
@@ -547,7 +561,7 @@ def create_model(
     __config__: type[BaseConfig] | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, 'AnyClassMethod'] = None,
+    __validators__: dict[str, AnyClassMethod] = None,
     __cls_kwargs__: dict[str, Any] = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -561,7 +575,7 @@ def create_model(
     __config__: type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: dict[str, 'AnyClassMethod'] = None,
+    __validators__: dict[str, AnyClassMethod] = None,
     __cls_kwargs__: dict[str, Any] = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -574,7 +588,7 @@ def create_model(
     __config__: type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
-    __validators__: dict[str, 'AnyClassMethod'] = None,
+    __validators__: dict[str, AnyClassMethod] = None,
     __cls_kwargs__: dict[str, Any] = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,

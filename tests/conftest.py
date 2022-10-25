@@ -27,6 +27,7 @@ passing_files = {
     'test_typing.py',
     'test_annotated.py',
     'test_assert_in_validators.py',
+    'test_private_attributes.py',
 }
 
 
