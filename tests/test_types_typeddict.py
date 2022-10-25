@@ -15,17 +15,28 @@ from .conftest import Err
 
 
 @pytest.fixture(
-    name='TypedDict',
+    name='TypedDictAll',
     params=[
         pytest.param(typing, id='typing.TypedDict'),
         pytest.param(typing_extensions, id='t_e.TypedDict'),
     ],
 )
-def fixture_typed_dict(request):
+def fixture_typed_dict_all(request):
     try:
         return request.param.TypedDict
     except AttributeError:
         pytest.skip(f'TypedDict is not available from {request.param}')
+
+
+@pytest.fixture(name='TypedDict')
+def fixture_typed_dict(TypedDictAll):
+    class TestTypedDict(TypedDictAll):
+        foo: str
+
+    if hasattr(TestTypedDict, '__required_keys__'):
+        return TypedDictAll
+    else:
+        pytest.skip('TypedDict does not include __required_keys__')
 
 
 @pytest.fixture(
@@ -40,6 +51,21 @@ def fixture_req_no_req(request):
         return request.param.Required, request.param.NotRequired
     except AttributeError:
         pytest.skip(f'Required and NotRequired are not available from {request.param}')
+
+
+def test_typeddict_all(TypedDictAll):
+    class MyDict(TypedDictAll):
+        foo: str
+
+    try:
+
+        class M(BaseModel):
+            d: MyDict
+
+    except TypeError as e:
+        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
+    else:
+        assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
 
 def test_typeddict_annotated_simple(TypedDict, req_no_req):
@@ -85,14 +111,8 @@ def test_typeddict(TypedDict):
         c: int
         d: str
 
-    try:
-
-        class Model(BaseModel):
-            td: TD
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
-        return
+    class Model(BaseModel):
+        td: TD
 
     m = Model(td={'a': '3', 'b': b'1', 'c': 4, 'd': 'qwe'})
     assert m.td == {'a': 3, 'b': 1, 'c': 4, 'd': 'qwe'}
@@ -110,14 +130,8 @@ def test_typeddict_non_total(TypedDict):
         name: str
         year: int
 
-    try:
-
-        class Model(BaseModel):
-            movie: FullMovie
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
-        return
+    class Model(BaseModel):
+        movie: FullMovie
 
     with pytest.raises(ValidationError) as exc_info:
         Model(movie={'year': '2002'})
@@ -144,14 +158,8 @@ def test_partial_new_typeddict(TypedDict):
     class User(OptionalUser):
         id: int
 
-    try:
-
-        class Model(BaseModel):
-            user: User
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
-        return
+    class Model(BaseModel):
+        user: User
 
     assert Model(user={'id': 1, 'name': 'foobar'}).user == {'id': 1, 'name': 'foobar'}
     assert Model(user={'id': 1}).user == {'id': 1}
@@ -162,17 +170,11 @@ def test_typeddict_extra(TypedDict):
         name: str
         age: int
 
-    try:
+    class Model(BaseModel):
+        u: User
 
-        class Model(BaseModel):
-            u: User
-
-            class Config:
-                extra = 'forbid'
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
-        return
+        class Config:
+            extra = 'forbid'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(u={'name': 'pika', 'age': 7, 'rank': 1})
@@ -220,14 +222,8 @@ def test_typeddict_postponed_annotation(TypedDict):
     class DataTD(TypedDict):
         v: 'PositiveInt'
 
-    try:
-
-        class Model(BaseModel):
-            t: DataTD
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
-        return
+    class Model(BaseModel):
+        t: DataTD
 
     with pytest.raises(ValidationError):
         Model.parse_obj({'t': {'v': -1}})
@@ -336,14 +332,8 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
         b: Annotated[Optional[int], Field(42)]
         c: Annotated[Optional[int], Field(description='Test')]
 
-    try:
-
-        class Model(BaseModel):
-            data_td: DataTD
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`'
-        return
+    class Model(BaseModel):
+        data_td: DataTD
 
     assert Model.schema() == {
         'title': 'Model',
@@ -383,41 +373,11 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
         b: Annotated[Optional[int], Field(42)]
         c: Annotated[Optional[int], Field(description='Test', lt=4)]
 
-    try:
-
-        class Model(BaseModel):
-            d: DataTD
-
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
-        return
+    class Model(BaseModel):
+        d: DataTD
 
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message_escaped()):
             Model(d=input_value)
     else:
         assert Model(d=input_value).d == expected
-
-
-# @pytest.mark.skipif(not StandardTypedDict, reason='no std lib TypedDict')
-# def test_legacy_typeddict_required_keys():
-#     class DataTD(StandardTypedDict):
-#         a: Optional[int]
-#         b: Annotated[Optional[int], Field(42)]
-#         c: Annotated[Optional[int], Field(description='Test', lt=4)]
-#
-#     if hasattr(DataTD, '__required_keys__'):
-#         pytest.skip('__required_keys__ available')
-#
-#     with pytest.raises(TypeError, match='Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`'):
-#         class Model(BaseModel):
-#             d: DataTD
-
-
-# @pytest.mark.skipif(not LegacyRequiredTypedDict, reason='python 3.11+ used')
-# def test_legacy_typeddict_no_required_not_required():
-#     class TD(LegacyRequiredTypedDict):
-#         a: int
-#
-#     class Model(BaseModel):
-#         t: TD
