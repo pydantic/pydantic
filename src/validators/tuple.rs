@@ -47,7 +47,7 @@ impl TupleVariableValidator {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, build_context)?;
         let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
-        let name = format!("tuple[{}, ...]", inner_name);
+        let name = format!("tuple[{inner_name}, ...]");
         Ok(Self {
             strict: crate::build_tools::is_strict(schema, config)?,
             item_validator,
@@ -135,7 +135,7 @@ impl TuplePositionalValidator {
                 Some(v) => Some(Box::new(build_validator(v, config, build_context)?)),
                 None => None,
             },
-            name: format!("tuple[{}]", descr),
+            name: format!("tuple[{descr}]"),
         }
         .into())
     }

@@ -38,7 +38,7 @@ impl BuildValidator for CallValidator {
         };
         let function: &PyAny = schema.get_as_req(intern!(py, "function"))?;
         let function_name: &str = function.getattr(intern!(py, "__name__"))?.extract()?;
-        let name = format!("{}[{}]", Self::EXPECTED_TYPE, function_name);
+        let name = format!("{}[{function_name}]", Self::EXPECTED_TYPE);
 
         Ok(Self {
             function: function.to_object(py),

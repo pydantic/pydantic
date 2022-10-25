@@ -638,9 +638,9 @@ impl FromPyObject<'_> for Number {
 impl fmt::Display for Number {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Float(s) => write!(f, "{}", s),
-            Self::Int(i) => write!(f, "{}", i),
-            Self::String(s) => write!(f, "{}", s),
+            Self::Float(s) => write!(f, "{s}"),
+            Self::Int(i) => write!(f, "{i}"),
+            Self::String(s) => write!(f, "{s}"),
         }
     }
 }

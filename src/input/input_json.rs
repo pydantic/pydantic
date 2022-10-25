@@ -25,7 +25,7 @@ impl<'a> Input<'a> for JsonInput {
         match self {
             JsonInput::Int(i) => LocItem::I(*i as usize),
             JsonInput::String(s) => s.as_str().into(),
-            v => format!("{:?}", v).into(),
+            v => format!("{v:?}").into(),
         }
     }
 

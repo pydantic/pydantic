@@ -89,7 +89,7 @@ fn list_int_python_isinstance(bench: &mut Bencher) {
         let (validator, input) = list_int_input(py);
         let input = black_box(input.as_ref(py));
         let v = validator.isinstance_python(py, input, None, None).unwrap();
-        assert_eq!(v, true);
+        assert!(v);
 
         bench.iter(|| {
             let v = validator.isinstance_python(py, input, None, None).unwrap();
@@ -177,7 +177,7 @@ fn list_error_python_isinstance(bench: &mut Bencher) {
         let r = validator
             .isinstance_python(py, black_box(input.as_ref(py)), None, None)
             .unwrap();
-        assert_eq!(r, false);
+        assert!(!r);
 
         let input = black_box(input.as_ref(py));
         bench.iter(|| {
@@ -235,7 +235,7 @@ fn dict_json(bench: &mut Bencher) {
         let code = format!(
             "{{{}}}",
             (0..100_u8)
-                .map(|i| format!(r#""{}": {}"#, as_str(i), i))
+                .map(|i| format!(r#""{}": {i}"#, as_str(i)))
                 .collect::<Vec<String>>()
                 .join(", ")
         );
@@ -255,7 +255,7 @@ fn dict_python(bench: &mut Bencher) {
         let code = format!(
             "{{{}}}",
             (0..100_u8)
-                .map(|i| format!(r#""{}{}": {}"#, as_char(i / 26), as_char(i), i))
+                .map(|i| format!(r#""{}{}": {i}"#, as_char(i / 26), as_char(i)))
                 .collect::<Vec<String>>()
                 .join(", ")
         );
@@ -283,7 +283,7 @@ fn dict_value_error(bench: &mut Bencher) {
         let code = format!(
             "{{{}}}",
             (0..100_u8)
-                .map(|i| format!(r#""{}": {}"#, as_str(i), i))
+                .map(|i| format!(r#""{}": {i}"#, as_str(i)))
                 .collect::<Vec<String>>()
                 .join(", ")
         );
@@ -404,7 +404,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
 
         let code = "{'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 'xx'}}}";
 
-        let input = py.eval(&code, None, None).unwrap();
+        let input = py.eval(code, None, None).unwrap();
         let input = black_box(input);
 
         match validator.validate_python(py, input, None, None) {
