@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from pydantic_core import PydanticCustomError, PydanticKindError, PydanticOmit, SchemaValidator, ValidationError
+from pydantic_core import PydanticCustomError, PydanticKnownError, PydanticOmit, SchemaValidator, ValidationError
 from pydantic_core._pydantic_core import list_all_errors
 
 from .conftest import PyAndJson
@@ -14,11 +14,11 @@ def test_pydantic_value_error():
     )
     assert e.message() == 'this is a custom error {missed} X 42 []'
     assert e.message_template == 'this is a custom error {missed} {foo} {bar} {spam}'
-    assert e.kind == 'my_error'
+    assert e.type == 'my_error'
     assert e.context == {'foo': 'X', 'bar': 42, 'spam': []}
     assert str(e) == 'this is a custom error {missed} X 42 []'
     assert repr(e) == (
-        "this is a custom error {missed} X 42 [] [kind=my_error, context={'foo': 'X', 'bar': 42, 'spam': []}]"
+        "this is a custom error {missed} X 42 [] [type=my_error, context={'foo': 'X', 'bar': 42, 'spam': []}]"
     )
 
 
@@ -26,10 +26,10 @@ def test_pydantic_value_error_none():
     e = PydanticCustomError('my_error', 'this is a custom error {missed}')
     assert e.message() == 'this is a custom error {missed}'
     assert e.message_template == 'this is a custom error {missed}'
-    assert e.kind == 'my_error'
+    assert e.type == 'my_error'
     assert e.context is None
     assert str(e) == 'this is a custom error {missed}'
-    assert repr(e) == 'this is a custom error {missed} [kind=my_error, context=None]'
+    assert repr(e) == 'this is a custom error {missed} [type=my_error, context=None]'
 
 
 def test_pydantic_value_error_usage():
@@ -43,11 +43,11 @@ def test_pydantic_value_error_usage():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'my_error',
-            'loc': [],
-            'message': 'this is a custom error FOOBAR 42',
-            'input_value': 42,
-            'context': {'foo': 'FOOBAR', 'bar': 42},
+            'type': 'my_error',
+            'loc': (),
+            'msg': 'this is a custom error FOOBAR 42',
+            'input': 42,
+            'ctx': {'foo': 'FOOBAR', 'bar': 42},
         }
     ]
 
@@ -64,7 +64,7 @@ def test_pydantic_value_error_invalid_dict():
     assert str(exc_info.value) == (
         '1 validation error for function-plain[my_function()]\n'
         "  (error rendering message: TypeError: 'tuple' object cannot be converted to 'PyString') "
-        '[kind=my_error, input_value=42, input_type=int]'
+        '[type=my_error, input_value=42, input_type=int]'
     )
     with pytest.raises(TypeError, match="'tuple' object cannot be converted to 'PyString'"):
         exc_info.value.errors()
@@ -123,18 +123,18 @@ def test_validator_instance_after():
     assert v.validate_python(b'is bytes') == 'is bytes 43'
 
 
-def test_pydantic_error_kind():
-    e = PydanticKindError('json_invalid', {'error': 'Test'})
+def test_pydantic_error_type():
+    e = PydanticKnownError('json_invalid', {'error': 'Test'})
     assert e.message() == 'Invalid JSON: Test'
-    assert e.kind == 'json_invalid'
+    assert e.type == 'json_invalid'
     assert e.context == {'error': 'Test'}
     assert str(e) == 'Invalid JSON: Test'
-    assert repr(e) == "Invalid JSON: Test [kind=json_invalid, context={'error': 'Test'}]"
+    assert repr(e) == "Invalid JSON: Test [type=json_invalid, context={'error': 'Test'}]"
 
 
-def test_pydantic_error_kind_raise_no_ctx():
+def test_pydantic_error_type_raise_no_ctx():
     def f(input_value, **kwargs):
-        raise PydanticKindError('finite_number')
+        raise PydanticKnownError('finite_number')
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
 
@@ -142,13 +142,13 @@ def test_pydantic_error_kind_raise_no_ctx():
         v.validate_python(4)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'finite_number', 'loc': [], 'message': 'Input should be a finite number', 'input_value': 4}
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 4}
     ]
 
 
-def test_pydantic_error_kind_raise_ctx():
+def test_pydantic_error_type_raise_ctx():
     def f(input_value, **kwargs):
-        raise PydanticKindError('greater_than', {'gt': 42})
+        raise PydanticKnownError('greater_than', {'gt': 42})
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
 
@@ -156,13 +156,7 @@ def test_pydantic_error_kind_raise_ctx():
         v.validate_python(4)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'kind': 'greater_than',
-            'loc': [],
-            'message': 'Input should be greater than 42',
-            'input_value': 4,
-            'context': {'gt': 42.0},
-        }
+        {'type': 'greater_than', 'loc': (), 'msg': 'Input should be greater than 42', 'input': 4, 'ctx': {'gt': 42.0}}
     ]
 
 
@@ -264,24 +258,24 @@ all_errors = [
 ]
 
 
-@pytest.mark.parametrize('kind, message, context', all_errors)
-def test_error_kind(kind, message, context):
-    e = PydanticKindError(kind, context)
+@pytest.mark.parametrize('error_type, message, context', all_errors)
+def test_error_type(error_type, message, context):
+    e = PydanticKnownError(error_type, context)
     assert e.message() == message
-    assert e.kind == kind
+    assert e.type == error_type
     assert e.context == context
 
 
 def test_all_errors_covered():
-    listed_kinds = set(kind for kind, *_ in all_errors)
-    actual_kinds = {e['kind'] for e in list_all_errors()}
-    assert actual_kinds == listed_kinds
+    listed_types = set(error_type for error_type, *_ in all_errors)
+    actual_types = {e['type'] for e in list_all_errors()}
+    assert actual_types == listed_types
 
 
 def test_error_decimal():
-    e = PydanticKindError('greater_than', {'gt': Decimal('42.1')})
+    e = PydanticKnownError('greater_than', {'gt': Decimal('42.1')})
     assert e.message() == 'Input should be greater than 42.1'
-    assert e.kind == 'greater_than'
+    assert e.type == 'greater_than'
     assert e.context == {'gt': 42.1}
 
 
@@ -289,7 +283,7 @@ def test_custom_error_decimal():
     e = PydanticCustomError('my_error', 'this is a custom error {foobar}', {'foobar': Decimal('42.010')})
     assert e.message() == 'this is a custom error 42.010'
     assert e.message_template == 'this is a custom error {foobar}'
-    assert e.kind == 'my_error'
+    assert e.type == 'my_error'
     assert e.context == {'foobar': Decimal('42.010')}
 
 
@@ -323,11 +317,11 @@ def test_omit_exc_repr():
     assert str(PydanticOmit()) == 'PydanticOmit()'
 
 
-def test_kind_error_error():
+def test_type_error_error():
     with pytest.raises(TypeError, match="^GreaterThan: 'gt' context value must be a Number$"):
-        PydanticKindError('greater_than', {'gt': []})
+        PydanticKnownError('greater_than', {'gt': []})
 
 
 def test_does_not_require_context():
     with pytest.raises(TypeError, match="^'json_type' errors do not require context$"):
-        PydanticKindError('json_type', {'gt': 123})
+        PydanticKnownError('json_type', {'gt': 123})

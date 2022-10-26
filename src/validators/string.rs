@@ -4,7 +4,7 @@ use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
 use crate::build_tools::{is_strict, py_error_type, schema_or_config, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -83,18 +83,18 @@ impl Validator for StrConstrainedValidator {
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
                 // return py_err!("{} is shorter than {}", str, min_length);
-                return Err(ValError::new(ErrorKind::StringTooShort { min_length }, input));
+                return Err(ValError::new(ErrorType::StringTooShort { min_length }, input));
             }
         }
         if let Some(max_length) = self.max_length {
             if str.len() > max_length {
-                return Err(ValError::new(ErrorKind::StringTooLong { max_length }, input));
+                return Err(ValError::new(ErrorType::StringTooLong { max_length }, input));
             }
         }
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(str) {
                 return Err(ValError::new(
-                    ErrorKind::StringPatternMismatch {
+                    ErrorType::StringPatternMismatch {
                         pattern: pattern.to_string(),
                     },
                     input,

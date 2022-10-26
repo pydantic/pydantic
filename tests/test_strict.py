@@ -15,7 +15,7 @@ from .conftest import Err, PyAndJson
         (None, 123, 123),
         (None, '123', 123),
         (True, 123, 123),
-        (True, '123', Err('Input should be a valid integer [kind=int_type')),
+        (True, '123', Err('Input should be a valid integer [type=int_type')),
     ],
 )
 def test_int_strict_argument(py_and_json: PyAndJson, strict, input_value, expected):

@@ -736,16 +736,10 @@ def nullable_schema(
     return dict_not_none(type='nullable', schema=schema, strict=strict, ref=ref, extra=extra)
 
 
-class CustomError(TypedDict, total=False):
-    kind: Required[str]
-    message: str
-    context: Dict[str, Union[str, int]]
-
-
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
     choices: Required[List[CoreSchema]]
-    custom_error_kind: str
+    custom_error_type: str
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
     strict: bool
@@ -755,7 +749,7 @@ class UnionSchema(TypedDict, total=False):
 
 def union_schema(
     *choices: CoreSchema,
-    custom_error_kind: str | None = None,
+    custom_error_type: str | None = None,
     custom_error_message: str | None = None,
     custom_error_context: dict[str, str | int] | None = None,
     strict: bool | None = None,
@@ -765,7 +759,7 @@ def union_schema(
     return dict_not_none(
         type='union',
         choices=choices,
-        custom_error_kind=custom_error_kind,
+        custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
         strict=strict,
@@ -780,7 +774,7 @@ class TaggedUnionSchema(TypedDict, total=False):
     discriminator: Required[
         Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
     ]
-    custom_error_kind: str
+    custom_error_type: str
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
     strict: bool
@@ -792,7 +786,7 @@ def tagged_union_schema(
     choices: Dict[str, CoreSchema],
     discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | None],
     *,
-    custom_error_kind: str | None = None,
+    custom_error_type: str | None = None,
     custom_error_message: str | None = None,
     custom_error_context: dict[str, int | str | float] | None = None,
     strict: bool | None = None,
@@ -803,7 +797,7 @@ def tagged_union_schema(
         type='tagged-union',
         choices=choices,
         discriminator=discriminator,
-        custom_error_kind=custom_error_kind,
+        custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
         strict=strict,
@@ -989,7 +983,7 @@ def recursive_reference_schema(schema_ref: str) -> RecursiveReferenceSchema:
 class CustomErrorSchema(TypedDict, total=False):
     type: Required[Literal['custom_error']]
     schema: Required[CoreSchema]
-    custom_error_kind: Required[str]
+    custom_error_type: Required[str]
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
     ref: str
@@ -998,7 +992,7 @@ class CustomErrorSchema(TypedDict, total=False):
 
 def custom_error_schema(
     schema: CoreSchema,
-    custom_error_kind: str,
+    custom_error_type: str,
     *,
     custom_error_message: str | None = None,
     custom_error_context: dict[str, str | int | float] | None = None,
@@ -1008,7 +1002,7 @@ def custom_error_schema(
     return dict_not_none(
         type='custom_error',
         schema=schema,
-        custom_error_kind=custom_error_kind,
+        custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
         ref=ref,
@@ -1067,9 +1061,9 @@ CoreSchema = Union[
     JsonSchema,
 ]
 
-# used in _pydantic_core.pyi::PydanticKindError
+# used in _pydantic_core.pyi::PydanticKnownError
 # to update this, call `pytest -k test_all_errors` and copy the output
-ErrorKind = Literal[
+ErrorType = Literal[
     'json_invalid',
     'json_type',
     'recursion_loop',

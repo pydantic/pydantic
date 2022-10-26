@@ -11,5 +11,5 @@ def test_none(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test(1)
     assert exc_info.value.errors() == [
-        {'kind': 'none_required', 'loc': [], 'message': 'Input should be None/null', 'input_value': 1}
+        {'type': 'none_required', 'loc': (), 'msg': 'Input should be None/null', 'input': 1}
     ]

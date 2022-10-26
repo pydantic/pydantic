@@ -1,7 +1,8 @@
+use pyo3::once_cell::GILOnceCell;
 use std::fmt;
 
 use pyo3::prelude::*;
-use pyo3::types::PyList;
+use pyo3::types::PyTuple;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -85,11 +86,15 @@ impl Default for Location {
     }
 }
 
+static EMPTY_TUPLE: GILOnceCell<PyObject> = GILOnceCell::new();
+
 impl ToPyObject for Location {
     fn to_object(&self, py: Python<'_>) -> PyObject {
         match self {
-            Self::List(loc) => loc.iter().rev().collect::<Vec<_>>().to_object(py),
-            Self::Empty => PyList::empty(py).to_object(py),
+            Self::List(loc) => PyTuple::new(py, loc.iter().rev()).to_object(py),
+            Self::Empty => EMPTY_TUPLE
+                .get_or_init(py, || PyTuple::empty(py).to_object(py))
+                .clone_ref(py),
         }
     }
 }

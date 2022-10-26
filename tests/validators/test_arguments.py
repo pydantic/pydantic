@@ -19,14 +19,14 @@ from ..conftest import Err, PyAndJson, plain_repr
         [{'__args__': (1, 'a', True), '__kwargs__': {}}, ((1, 'a', True), {})],
         [[1, 'a', True], ((1, 'a', True), {})],
         [(1, 'a', 'true'), ((1, 'a', True), {})],
-        ['x', Err('kind=arguments_type,')],
+        ['x', Err('type=arguments_type,')],
         [
             {'__args__': (1, 'a', True), '__kwargs__': ()},
-            Err('Keyword arguments must be a dictionary [kind=keyword_arguments_type,'),
+            Err('Keyword arguments must be a dictionary [type=keyword_arguments_type,'),
         ],
         [
             {'__args__': {}, '__kwargs__': {}},
-            Err('Positional arguments must be a list or tuple [kind=positional_arguments_type,'),
+            Err('Positional arguments must be a list or tuple [type=positional_arguments_type,'),
         ],
         [
             {'__args__': [1, 'a', True], '__kwargs__': {'x': 1}},
@@ -34,10 +34,10 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '',
                 [
                     {
-                        'kind': 'unexpected_keyword_argument',
-                        'loc': ['x'],
-                        'message': 'Unexpected keyword argument',
-                        'input_value': 1,
+                        'type': 'unexpected_keyword_argument',
+                        'loc': ('x',),
+                        'msg': 'Unexpected keyword argument',
+                        'input': 1,
                     }
                 ],
             ),
@@ -48,16 +48,16 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '',
                 [
                     {
-                        'kind': 'missing_positional_argument',
-                        'loc': [1],
-                        'message': 'Missing required positional argument',
-                        'input_value': [1],
+                        'type': 'missing_positional_argument',
+                        'loc': (1,),
+                        'msg': 'Missing required positional argument',
+                        'input': [1],
                     },
                     {
-                        'kind': 'missing_positional_argument',
-                        'loc': [2],
-                        'message': 'Missing required positional argument',
-                        'input_value': [1],
+                        'type': 'missing_positional_argument',
+                        'loc': (2,),
+                        'msg': 'Missing required positional argument',
+                        'input': [1],
                     },
                 ],
             ),
@@ -68,10 +68,10 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '',
                 [
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [3],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 4,
+                        'type': 'unexpected_positional_argument',
+                        'loc': (3,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 4,
                     }
                 ],
             ),
@@ -82,16 +82,16 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '',
                 [
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [3],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 4,
+                        'type': 'unexpected_positional_argument',
+                        'loc': (3,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 4,
                     },
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [4],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 5,
+                        'type': 'unexpected_positional_argument',
+                        'loc': (4,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 5,
                     },
                 ],
             ),
@@ -102,16 +102,16 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '',
                 [
                     {
-                        'kind': 'int_parsing',
-                        'loc': [0],
-                        'message': 'Input should be a valid integer, unable to parse string as an integer',
-                        'input_value': 'x',
+                        'type': 'int_parsing',
+                        'loc': (0,),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'x',
                     },
                     {
-                        'kind': 'bool_parsing',
-                        'loc': [2],
-                        'message': 'Input should be a valid boolean, unable to interpret input',
-                        'input_value': 'wrong',
+                        'type': 'bool_parsing',
+                        'loc': (2,),
+                        'msg': 'Input should be a valid boolean, unable to interpret input',
+                        'input': 'wrong',
                     },
                 ],
             ),
@@ -122,22 +122,22 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '3 validation errors for arguments',
                 [
                     {
-                        'kind': 'missing_positional_argument',
-                        'loc': [0],
-                        'message': 'Missing required positional argument',
-                        'input_value': {'__args__': None, '__kwargs__': None},
+                        'type': 'missing_positional_argument',
+                        'loc': (0,),
+                        'msg': 'Missing required positional argument',
+                        'input': {'__args__': None, '__kwargs__': None},
                     },
                     {
-                        'kind': 'missing_positional_argument',
-                        'loc': [1],
-                        'message': 'Missing required positional argument',
-                        'input_value': {'__args__': None, '__kwargs__': None},
+                        'type': 'missing_positional_argument',
+                        'loc': (1,),
+                        'msg': 'Missing required positional argument',
+                        'input': {'__args__': None, '__kwargs__': None},
                     },
                     {
-                        'kind': 'missing_positional_argument',
-                        'loc': [2],
-                        'message': 'Missing required positional argument',
-                        'input_value': {'__args__': None, '__kwargs__': None},
+                        'type': 'missing_positional_argument',
+                        'loc': (2,),
+                        'msg': 'Missing required positional argument',
+                        'input': {'__args__': None, '__kwargs__': None},
                     },
                 ],
             ),
@@ -173,17 +173,17 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
         [{'a': 1, 'b': 'a', 'c': True}, ((), {'a': 1, 'b': 'a', 'c': True})],
         [{'__args__': None, '__kwargs__': {'a': '1', 'b': 'a', 'c': 'True'}}, ((), {'a': 1, 'b': 'a', 'c': True})],
         [{'__args__': (), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, ((), {'a': 1, 'b': 'a', 'c': True})],
-        [{'__args__': (1,), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, Err('kind=unexpected_positional_argument,')],
+        [{'__args__': (1,), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, Err('type=unexpected_positional_argument,')],
         [
             {'__args__': (), '__kwargs__': {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}},
             Err(
-                'kind=unexpected_keyword_argument,',
+                'type=unexpected_keyword_argument,',
                 [
                     {
-                        'kind': 'unexpected_keyword_argument',
-                        'loc': ['d'],
-                        'message': 'Unexpected keyword argument',
-                        'input_value': 'wrong',
+                        'type': 'unexpected_keyword_argument',
+                        'loc': ('d',),
+                        'msg': 'Unexpected keyword argument',
+                        'input': 'wrong',
                     }
                 ],
             ),
@@ -191,13 +191,13 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
         [
             {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
             Err(
-                'kind=missing_keyword_argument,',
+                'type=missing_keyword_argument,',
                 [
                     {
-                        'kind': 'missing_keyword_argument',
-                        'loc': ['c'],
-                        'message': 'Missing required keyword argument',
-                        'input_value': {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
+                        'type': 'missing_keyword_argument',
+                        'loc': ('c',),
+                        'msg': 'Missing required keyword argument',
+                        'input': {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
                     }
                 ],
             ),
@@ -208,16 +208,16 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
                 '',
                 [
                     {
-                        'kind': 'int_parsing',
-                        'loc': ['a'],
-                        'message': 'Input should be a valid integer, unable to parse string as an integer',
-                        'input_value': 'x',
+                        'type': 'int_parsing',
+                        'loc': ('a',),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'x',
                     },
                     {
-                        'kind': 'bool_parsing',
-                        'loc': ['c'],
-                        'message': 'Input should be a valid boolean, unable to interpret input',
-                        'input_value': 'wrong',
+                        'type': 'bool_parsing',
+                        'loc': ('c',),
+                        'msg': 'Input should be a valid boolean, unable to interpret input',
+                        'input': 'wrong',
                     },
                 ],
             ),
@@ -228,22 +228,22 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
                 '',
                 [
                     {
-                        'kind': 'missing_keyword_argument',
-                        'loc': ['a'],
-                        'message': 'Missing required keyword argument',
-                        'input_value': {'__args__': None, '__kwargs__': None},
+                        'type': 'missing_keyword_argument',
+                        'loc': ('a',),
+                        'msg': 'Missing required keyword argument',
+                        'input': {'__args__': None, '__kwargs__': None},
                     },
                     {
-                        'kind': 'missing_keyword_argument',
-                        'loc': ['b'],
-                        'message': 'Missing required keyword argument',
-                        'input_value': {'__args__': None, '__kwargs__': None},
+                        'type': 'missing_keyword_argument',
+                        'loc': ('b',),
+                        'msg': 'Missing required keyword argument',
+                        'input': {'__args__': None, '__kwargs__': None},
                     },
                     {
-                        'kind': 'missing_keyword_argument',
-                        'loc': ['c'],
-                        'message': 'Missing required keyword argument',
-                        'input_value': {'__args__': None, '__kwargs__': None},
+                        'type': 'missing_keyword_argument',
+                        'loc': ('c',),
+                        'msg': 'Missing required keyword argument',
+                        'input': {'__args__': None, '__kwargs__': None},
                     },
                 ],
             ),
@@ -282,13 +282,13 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
         [
             {'__args__': (1,), '__kwargs__': {'a': 11, 'b': 'bb', 'c': True}},
             Err(
-                'kind=multiple_argument_values,',
+                'type=multiple_argument_values,',
                 [
                     {
-                        'kind': 'multiple_argument_values',
-                        'loc': ['a'],
-                        'message': 'Got multiple values for argument',
-                        'input_value': 11,
+                        'type': 'multiple_argument_values',
+                        'loc': ('a',),
+                        'msg': 'Got multiple values for argument',
+                        'input': 11,
                     }
                 ],
             ),
@@ -296,19 +296,19 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
         [
             {'__args__': [1, 'bb', 'cc'], '__kwargs__': {'b': 'bb', 'c': True}},
             Err(
-                'kind=unexpected_positional_argument,',
+                'type=unexpected_positional_argument,',
                 [
                     {
-                        'kind': 'multiple_argument_values',
-                        'loc': ['b'],
-                        'message': 'Got multiple values for argument',
-                        'input_value': 'bb',
+                        'type': 'multiple_argument_values',
+                        'loc': ('b',),
+                        'msg': 'Got multiple values for argument',
+                        'input': 'bb',
                     },
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [2],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 'cc',
+                        'type': 'unexpected_positional_argument',
+                        'loc': (2,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 'cc',
                     },
                 ],
             ),
@@ -316,19 +316,19 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
         [
             {'__args__': (1, 'b1'), '__kwargs__': {'a': 11, 'b': 'b2', 'c': True}},
             Err(
-                'kind=multiple_argument_values,',
+                'type=multiple_argument_values,',
                 [
                     {
-                        'kind': 'multiple_argument_values',
-                        'loc': ['a'],
-                        'message': 'Got multiple values for argument',
-                        'input_value': 11,
+                        'type': 'multiple_argument_values',
+                        'loc': ('a',),
+                        'msg': 'Got multiple values for argument',
+                        'input': 11,
                     },
                     {
-                        'kind': 'multiple_argument_values',
-                        'loc': ['b'],
-                        'message': 'Got multiple values for argument',
-                        'input_value': 'b2',
+                        'type': 'multiple_argument_values',
+                        'loc': ('b',),
+                        'msg': 'Got multiple values for argument',
+                        'input': 'b2',
                     },
                 ],
             ),
@@ -425,7 +425,7 @@ def test_p_or_k_optional(py_and_json: PyAndJson, input_value, expected):
         [{'__args__': [], '__kwargs__': {}}, ((), {})],
         [
             {'__args__': [1, 2, 3], '__kwargs__': {'a': 1}},
-            Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+            Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
         ],
     ],
     ids=repr,
@@ -452,13 +452,13 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
         [
             ['x'],
             Err(
-                'kind=int_parsing,',
+                'type=int_parsing,',
                 [
                     {
-                        'kind': 'int_parsing',
-                        'loc': [0],
-                        'message': 'Input should be a valid integer, unable to parse string as an integer',
-                        'input_value': 'x',
+                        'type': 'int_parsing',
+                        'loc': (0,),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'x',
                     }
                 ],
             ),
@@ -466,26 +466,26 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
         [
             [1, 'x', 'y'],
             Err(
-                'kind=int_parsing,',
+                'type=int_parsing,',
                 [
                     {
-                        'kind': 'int_parsing',
-                        'loc': [1],
-                        'message': 'Input should be a valid integer, unable to parse string as an integer',
-                        'input_value': 'x',
+                        'type': 'int_parsing',
+                        'loc': (1,),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'x',
                     },
                     {
-                        'kind': 'int_parsing',
-                        'loc': [2],
-                        'message': 'Input should be a valid integer, unable to parse string as an integer',
-                        'input_value': 'y',
+                        'type': 'int_parsing',
+                        'loc': (2,),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'y',
                     },
                 ],
             ),
         ],
         [
             {'__args__': [1, 2, 3], '__kwargs__': {'a': 1}},
-            Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+            Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
         ],
     ],
     ids=repr,
@@ -519,19 +519,19 @@ def test_args_var_args_only(py_and_json: PyAndJson, input_value, expected):
         [
             {'__args__': [1, 'a', 'true', 4, 5], '__kwargs__': {'b': 'bb', 'c': 3}},
             Err(
-                'kind=unexpected_positional_argument,',
+                'type=unexpected_positional_argument,',
                 [
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [3],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 4,
+                        'type': 'unexpected_positional_argument',
+                        'loc': (3,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 4,
                     },
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [4],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 5,
+                        'type': 'unexpected_positional_argument',
+                        'loc': (4,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 5,
                     },
                 ],
             ),
@@ -568,24 +568,24 @@ def test_both(py_and_json: PyAndJson, input_value, expected):
         [{'__args__': None, '__kwargs__': None}, ((), {})],
         [{'__args__': None, '__kwargs__': {}}, ((), {})],
         [[], ((), {})],
-        [[1], Err('0\n  Unexpected positional argument [kind=unexpected_positional_argument,')],
-        [{'a': 1}, Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,')],
+        [[1], Err('0\n  Unexpected positional argument [type=unexpected_positional_argument,')],
+        [{'a': 1}, Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,')],
         [
             {'__args__': [1], '__kwargs__': {'a': 2}},
             Err(
-                '[kind=unexpected_keyword_argument,',
+                '[type=unexpected_keyword_argument,',
                 [
                     {
-                        'kind': 'unexpected_positional_argument',
-                        'loc': [0],
-                        'message': 'Unexpected positional argument',
-                        'input_value': 1,
+                        'type': 'unexpected_positional_argument',
+                        'loc': (0,),
+                        'msg': 'Unexpected positional argument',
+                        'input': 1,
                     },
                     {
-                        'kind': 'unexpected_keyword_argument',
-                        'loc': ['a'],
-                        'message': 'Unexpected keyword argument',
-                        'input_value': 2,
+                        'type': 'unexpected_keyword_argument',
+                        'loc': ('a',),
+                        'msg': 'Unexpected keyword argument',
+                        'input': 2,
                     },
                 ],
             ),
@@ -746,7 +746,7 @@ def test_var_kwargs(py_and_json: PyAndJson, input_value, expected):
         [{'__args__': None, '__kwargs__': {'Foo': 1}}, ((), {'a': 1})],
         [
             {'__args__': None, '__kwargs__': {'a': 1}},
-            Err('a\n  Missing required keyword argument [kind=missing_keyword_argument,'),
+            Err('a\n  Missing required keyword argument [type=missing_keyword_argument,'),
         ],
     ],
     ids=repr,
@@ -775,11 +775,11 @@ def test_alias(py_and_json: PyAndJson, input_value, expected):
         [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1})],
         [
             {'__args__': None, '__kwargs__': {'a': 1, 'b': 2}},
-            Err('b\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+            Err('b\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
         ],
         [
             {'__args__': None, '__kwargs__': {'a': 1, 'Foo': 2}},
-            Err('a\n  Unexpected keyword argument [kind=unexpected_keyword_argument,'),
+            Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
         ],
     ],
     ids=repr,
@@ -883,16 +883,16 @@ def test_function_types():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'b',
+            'type': 'int_parsing',
+            'loc': (1,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
         },
         {
-            'kind': 'missing_keyword_argument',
-            'loc': ['c'],
-            'message': 'Missing required keyword argument',
-            'input_value': {'__args__': (1, 'b'), '__kwargs__': {}},
+            'type': 'missing_keyword_argument',
+            'loc': ('c',),
+            'msg': 'Missing required keyword argument',
+            'input': {'__args__': (1, 'b'), '__kwargs__': {}},
         },
     ]
 
@@ -901,16 +901,16 @@ def test_function_types():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'b',
+            'type': 'int_parsing',
+            'loc': (1,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['c'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'c',
+            'type': 'int_parsing',
+            'loc': ('c',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
         },
     ]
 
@@ -934,17 +934,12 @@ def create_function(validate):
         foobar('1', b=2, c=3)
     assert exc_info.value.errors() == [
         {
-            'kind': 'missing_positional_argument',
-            'loc': [1],
-            'message': 'Missing required positional argument',
-            'input_value': {'__args__': ('1',), '__kwargs__': {'b': 2, 'c': 3}},
+            'type': 'missing_positional_argument',
+            'loc': (1,),
+            'msg': 'Missing required positional argument',
+            'input': {'__args__': ('1',), '__kwargs__': {'b': 2, 'c': 3}},
         },
-        {
-            'kind': 'unexpected_keyword_argument',
-            'loc': ['b'],
-            'message': 'Unexpected keyword argument',
-            'input_value': 2,
-        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
     ]
 
 

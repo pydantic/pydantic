@@ -42,7 +42,7 @@ macro_rules! length_check {
             let actual_length = $obj.len();
             if actual_length < min_length {
                 return Err(crate::errors::ValError::new(
-                    crate::errors::ErrorKind::TooShort {
+                    crate::errors::ErrorType::TooShort {
                         field_type: $field_type.to_string(),
                         min_length,
                         actual_length,
@@ -56,7 +56,7 @@ macro_rules! length_check {
             let actual_length = op_actual_length.unwrap_or_else(|| $obj.len());
             if actual_length > max_length {
                 return Err(crate::errors::ValError::new(
-                    crate::errors::ErrorKind::TooLong {
+                    crate::errors::ErrorType::TooLong {
                         field_type: $field_type.to_string(),
                         max_length,
                         actual_length,

@@ -2,7 +2,7 @@ import decimal
 import sys
 from typing import Any, TypedDict
 
-from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorKind
+from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired
@@ -16,7 +16,7 @@ __all__ = (
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',
-    'PydanticKindError',
+    'PydanticKnownError',
     'PydanticOmit',
     'list_all_errors',
 )
@@ -42,7 +42,7 @@ class SchemaError(Exception):
     pass
 
 class ErrorDetails(TypedDict):
-    kind: str
+    type: str
     loc: 'list[int | str]'
     message: str
     input_value: Any
@@ -55,33 +55,33 @@ class ValidationError(ValueError):
     def errors(self, include_context: bool = True) -> 'list[ErrorDetails]': ...
 
 class PydanticCustomError(ValueError):
-    kind: str
+    type: str
     message_template: str
     context: 'dict[str, Any] | None'
 
-    def __init__(self, kind: str, message_template: str, context: 'dict[str, Any] | None' = None) -> None: ...
+    def __init__(self, error_type: str, message_template: str, context: 'dict[str, Any] | None' = None) -> None: ...
     def message(self) -> str: ...
 
-class PydanticKindError(ValueError):
-    kind: ErrorKind
+class PydanticKnownError(ValueError):
+    type: ErrorType
     message_template: str
     context: 'dict[str, str | int | float] | None'
 
     def __init__(
-        self, kind: ErrorKind, context: 'dict[str, str | int | float | decimal.Decimal] | None' = None
+        self, error_type: ErrorType, context: 'dict[str, str | int | float | decimal.Decimal] | None' = None
     ) -> None: ...
     def message(self) -> str: ...
 
 class PydanticOmit(Exception):
     def __init__(self) -> None: ...
 
-class ErrorKindInfo(TypedDict):
-    kind: ErrorKind
+class ErrorTypeInfo(TypedDict):
+    type: ErrorType
     message_template: str
     example_message: str
     example_context: 'dict[str, str | int | float] | None'
 
-def list_all_errors() -> 'list[ErrorKindInfo]':
+def list_all_errors() -> 'list[ErrorTypeInfo]':
     """
     Get information about all built-in errors.
     """

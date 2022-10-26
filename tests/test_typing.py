@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 from datetime import date, datetime, time
 from typing import Any
 
-from pydantic_core import PydanticKindError, SchemaError, SchemaValidator
+from pydantic_core import PydanticKnownError, SchemaError, SchemaValidator
 from pydantic_core.core_schema import CoreConfig, CoreSchema, function_plain_schema
 
 
@@ -28,7 +28,7 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {
         'type': 'tagged-union',
-        'discriminator': 'kind',
+        'discriminator': 'type',
         'choices': {
             'apple': {'type': 'typed-dict', 'fields': {'pips': {'schema': {'type': 'int'}}}},
             'banana': {'type': 'typed-dict', 'fields': {'curvature': {'schema': {'type': 'float'}}}},
@@ -167,13 +167,13 @@ def test_wrong_function_signature() -> None:
         raise AssertionError('v.validate_python(1) did not raise TypeError')
 
 
-def test_kind_error():
+def test_type_error():
     try:
-        PydanticKindError('foobar')  # type: ignore
+        PydanticKnownError('foobar')  # type: ignore
     except KeyError as exc:
-        assert str(exc) == '"Invalid error kind: \'foobar\'"'
+        assert str(exc) == '"Invalid error type: \'foobar\'"'
     else:
-        raise AssertionError("PydanticKindError('foobar') did not raise KeyError")
+        raise AssertionError("PydanticKnownError('foobar') did not raise KeyError")
 
-    e = PydanticKindError('recursion_loop')
-    assert isinstance(e, PydanticKindError)
+    e = PydanticKnownError('recursion_loop')
+    assert isinstance(e, PydanticKnownError)

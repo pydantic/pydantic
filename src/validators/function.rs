@@ -5,7 +5,7 @@ use pyo3::types::{PyAny, PyDict};
 
 use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{
-    ErrorKind, LocItem, PydanticCustomError, PydanticKindError, PydanticOmit, ValError, ValResult, ValidationError,
+    ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
 use crate::questions::Question;
@@ -278,7 +278,7 @@ impl ValidatorCallable {
 }
 
 macro_rules! py_err_string {
-    ($error_value:expr, $kind_member:ident, $input:ident) => {
+    ($error_value:expr, $type_member:ident, $input:ident) => {
         match $error_value.str() {
             Ok(py_string) => match py_string.to_str() {
                 Ok(s) => {
@@ -286,7 +286,7 @@ macro_rules! py_err_string {
                         true => "Unknown error".to_string(),
                         false => s.to_string(),
                     };
-                    ValError::new(ErrorKind::$kind_member { error }, $input)
+                    ValError::new(ErrorType::$type_member { error }, $input)
                 }
                 Err(e) => ValError::InternalErr(e),
             },
@@ -301,8 +301,8 @@ pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) ->
     if err.is_instance_of::<PyValueError>(py) {
         if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticCustomError>() {
             pydantic_value_error.into_val_error(input)
-        } else if let Ok(pydantic_error_kind) = err.value(py).extract::<PydanticKindError>() {
-            pydantic_error_kind.into_val_error(input)
+        } else if let Ok(pydantic_error_type) = err.value(py).extract::<PydanticKnownError>() {
+            pydantic_error_type.into_val_error(input)
         } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
             validation_error.into_py(py)
         } else {

@@ -24,7 +24,7 @@ def test_input_types(input_value):
 
 def test_input_type_invalid():
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
-    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[kind=json_type,'):
+    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[type=json_type,'):
         v.validate_json([])
 
 
@@ -35,18 +35,18 @@ def test_null():
 def test_str():
     s = SchemaValidator({'type': 'str'})
     assert s.validate_json('"foobar"') == 'foobar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=string_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
         s.validate_json('false')
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=string_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
         s.validate_json('123')
 
 
 def test_bytes():
     s = SchemaValidator({'type': 'bytes'})
     assert s.validate_json('"foobar"') == b'foobar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[kind=bytes_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type,'):
         s.validate_json('false')
-    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[kind=bytes_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type,'):
         s.validate_json('123')
 
 
@@ -57,8 +57,8 @@ def test_bytes():
         ('"123"', 123),
         ('123.0', 123),
         ('"123.0"', 123),
-        ('123.4', Err('Input should be a valid integer, got a number with a fractional part [kind=int_from_float,')),
-        ('"string"', Err('Input should be a valid integer, unable to parse string as an integer [kind=int_parsing,')),
+        ('123.4', Err('Input should be a valid integer, got a number with a fractional part [type=int_from_float,')),
+        ('"string"', Err('Input should be a valid integer, unable to parse string as an integer [type=int_parsing,')),
     ],
 )
 def test_int(input_value, expected):
@@ -79,7 +79,7 @@ def test_int(input_value, expected):
         ('"123.4"', 123.4),
         ('"123.0"', 123.0),
         ('"123"', 123.0),
-        ('"string"', Err('Input should be a valid number, unable to parse string as an number [kind=float_parsing,')),
+        ('"string"', Err('Input should be a valid number, unable to parse string as an number [type=float_parsing,')),
     ],
 )
 def test_float(input_value, expected):
@@ -126,10 +126,10 @@ def test_error_loc():
         v.validate_json('{"field_a": [1, 2, "wrong"]}')
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['field_a', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'wrong',
+            'type': 'int_parsing',
+            'loc': ('field_a', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
         }
     ]
 
@@ -151,21 +151,21 @@ def test_json_invalid():
         v.validate_json('"foobar')
     assert exc_info.value.errors() == [
         {
-            'kind': 'json_invalid',
-            'loc': [],
-            'message': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
-            'input_value': '"foobar',
-            'context': {'error': 'EOF while parsing a string at line 1 column 7'},
+            'type': 'json_invalid',
+            'loc': (),
+            'msg': 'Invalid JSON: EOF while parsing a string at line 1 column 7',
+            'input': '"foobar',
+            'ctx': {'error': 'EOF while parsing a string at line 1 column 7'},
         }
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('[1,\n2,\n3,]')
     assert exc_info.value.errors() == [
         {
-            'kind': 'json_invalid',
-            'loc': [],
-            'message': 'Invalid JSON: trailing comma at line 3 column 3',
-            'input_value': '[1,\n2,\n3,]',
-            'context': {'error': 'trailing comma at line 3 column 3'},
+            'type': 'json_invalid',
+            'loc': (),
+            'msg': 'Invalid JSON: trailing comma at line 3 column 3',
+            'input': '[1,\n2,\n3,]',
+            'ctx': {'error': 'trailing comma at line 3 column 3'},
         }
     ]

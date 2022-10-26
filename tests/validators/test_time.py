@@ -17,11 +17,11 @@ from ..conftest import Err, PyAndJson
         pytest.param(time(12, 13, 14, 123), time(12, 13, 14, 123), id='time-micro'),
         pytest.param('12:13:14', time(12, 13, 14), id='str'),
         pytest.param(b'12:13:14', time(12, 13, 14), id='bytes'),
-        pytest.param((1,), Err('Input should be a valid time [kind=time_type'), id='tuple'),
-        pytest.param(date(2022, 6, 8), Err('Input should be a valid time [kind=time_type'), id='date'),
-        pytest.param(datetime(2022, 6, 8), Err('Input should be a valid time [kind=time_type'), id='datetime'),
+        pytest.param((1,), Err('Input should be a valid time [type=time_type'), id='tuple'),
+        pytest.param(date(2022, 6, 8), Err('Input should be a valid time [type=time_type'), id='date'),
+        pytest.param(datetime(2022, 6, 8), Err('Input should be a valid time [type=time_type'), id='datetime'),
         pytest.param(123, time(0, 2, 3), id='int'),
-        pytest.param(float('nan'), Err('valid time format, NaN values not permitted [kind=time_parsing,'), id='nan'),
+        pytest.param(float('nan'), Err('valid time format, NaN values not permitted [type=time_parsing,'), id='nan'),
         pytest.param(float('inf'), Err('valid time format, numeric times may not exceed 86,399 seconds'), id='inf'),
         pytest.param(float('-inf'), Err('valid time format, time in seconds should be positive'), id='-inf'),
         pytest.param(Decimal('123'), time(0, 2, 3), id='decimal'),
@@ -51,7 +51,7 @@ def test_time(input_value, expected):
             '12:13:14.1234561',
             Err(
                 'Input should be in a valid time format, '
-                'second fraction value is more than 6 digits long [kind=time_parsing'
+                'second fraction value is more than 6 digits long [type=time_parsing'
             ),
             id='str-micro-7dig',
         ),
@@ -62,7 +62,7 @@ def test_time(input_value, expected):
         pytest.param(
             86400,
             Err(
-                'Input should be in a valid time format, numeric times may not exceed 86,399 seconds [kind=time_parsing'
+                'Input should be in a valid time format, numeric times may not exceed 86,399 seconds [type=time_parsing'
             ),
             id='too-high',
         ),
@@ -72,7 +72,7 @@ def test_time(input_value, expected):
         pytest.param(2**32, Err('numeric times may not exceed 86,399 seconds'), id='too-high-2**32'),
         pytest.param(2**64, Err('numeric times may not exceed 86,399 seconds'), id='too-high-2**64'),
         pytest.param(2**100, Err('numeric times may not exceed 86,399 seconds'), id='too-high-2**100'),
-        pytest.param(True, Err('Input should be a valid time [kind=time_type'), id='bool'),
+        pytest.param(True, Err('Input should be a valid time [type=time_type'), id='bool'),
     ],
 )
 def test_time_json(py_and_json: PyAndJson, input_value, expected):
@@ -89,12 +89,12 @@ def test_time_json(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         (time(12, 13, 14, 15), time(12, 13, 14, 15)),
-        ('12:13:14', Err('Input should be a valid time [kind=time_type')),
-        (b'12:13:14', Err('Input should be a valid time [kind=time_type')),
-        (1654646400, Err('Input should be a valid time [kind=time_type')),
-        (True, Err('Input should be a valid time [kind=time_type')),
-        (date(2022, 6, 8), Err('Input should be a valid time [kind=time_type')),
-        (datetime(2022, 6, 8), Err('Input should be a valid time [kind=time_type')),
+        ('12:13:14', Err('Input should be a valid time [type=time_type')),
+        (b'12:13:14', Err('Input should be a valid time [type=time_type')),
+        (1654646400, Err('Input should be a valid time [type=time_type')),
+        (True, Err('Input should be a valid time [type=time_type')),
+        (date(2022, 6, 8), Err('Input should be a valid time [type=time_type')),
+        (datetime(2022, 6, 8), Err('Input should be a valid time [type=time_type')),
     ],
 )
 def test_time_strict(input_value, expected):
@@ -111,8 +111,8 @@ def test_time_strict(input_value, expected):
     'input_value,expected',
     [
         ('"12:13:14"', time(12, 13, 14)),
-        ('"foobar"', Err('Input should be in a valid time format, invalid character in hour [kind=time_parsing,')),
-        ('123', Err('Input should be a valid time [kind=time_type')),
+        ('"foobar"', Err('Input should be in a valid time format, invalid character in hour [type=time_parsing,')),
+        ('123', Err('Input should be a valid time [type=time_type')),
     ],
 )
 def test_time_strict_json(input_value, expected):
@@ -152,7 +152,7 @@ def test_time_kwargs(kwargs: Dict[str, Any], input_value, expected):
         assert len(errors) == 1
         if len(kwargs) == 1:
             key = list(kwargs.keys())[0]
-            assert key in errors[0]['context']
+            assert key in errors[0]['ctx']
     else:
         output = v.validate_python(input_value)
         assert output == expected
@@ -165,11 +165,11 @@ def test_time_bound_ctx():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'greater_than',
-            'loc': [],
-            'message': 'Input should be greater than 12:13:14.123456',
-            'input_value': '12:13',
-            'context': {'gt': '12:13:14.123456'},
+            'type': 'greater_than',
+            'loc': (),
+            'msg': 'Input should be greater than 12:13:14.123456',
+            'input': '12:13',
+            'ctx': {'gt': '12:13:14.123456'},
         }
     ]
 

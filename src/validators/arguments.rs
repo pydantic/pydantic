@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 
 use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
@@ -182,7 +182,7 @@ impl Validator for ArgumentsValidator {
                     match (pos_value, kw_value) {
                         (Some(_), Some(kw_value)) => {
                             errors.push(ValLineError::new_with_loc(
-                                ErrorKind::MultipleArgumentValues,
+                                ErrorType::MultipleArgumentValues,
                                 kw_value,
                                 parameter.name.clone(),
                             ));
@@ -224,12 +224,12 @@ impl Validator for ArgumentsValidator {
                                 }
                             } else if parameter.kwarg_key.is_some() {
                                 errors.push(ValLineError::new_with_loc(
-                                    ErrorKind::MissingKeywordArgument,
+                                    ErrorType::MissingKeywordArgument,
                                     input,
                                     parameter.name.clone(),
                                 ));
                             } else {
-                                errors.push(ValLineError::new_with_loc(ErrorKind::MissingPositionalArgument, input, index));
+                                errors.push(ValLineError::new_with_loc(ErrorType::MissingPositionalArgument, input, index));
                             };
                         }
                     }
@@ -255,7 +255,7 @@ impl Validator for ArgumentsValidator {
                         } else {
                             for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
                                 errors.push(ValLineError::new_with_loc(
-                                    ErrorKind::UnexpectedPositionalArgument,
+                                    ErrorType::UnexpectedPositionalArgument,
                                     item,
                                     index + self.positional_params_count,
                                 ));
@@ -272,7 +272,7 @@ impl Validator for ArgumentsValidator {
                                 for err in line_errors {
                                     errors.push(
                                         err.with_outer_location(raw_key.as_loc_item())
-                                            .with_kind(ErrorKind::InvalidKey),
+                                            .with_type(ErrorType::InvalidKey),
                                     );
                                 }
                                 continue;
@@ -292,7 +292,7 @@ impl Validator for ArgumentsValidator {
                                 },
                                 None => {
                                     errors.push(ValLineError::new_with_loc(
-                                        ErrorKind::UnexpectedKeywordArgument,
+                                        ErrorType::UnexpectedKeywordArgument,
                                         value,
                                         raw_key.as_loc_item(),
                                     ));

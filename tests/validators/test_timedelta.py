@@ -23,12 +23,12 @@ from ..conftest import Err, PyAndJson
         ),
         ('P0Y0M3D2WT1H2M3.5S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
         (b'P0Y0M3D2WT1H2M3.5S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
-        ((-1,), Err('Input should be a valid timedelta [kind=time_delta_type')),
+        ((-1,), Err('Input should be a valid timedelta [type=time_delta_type')),
         (
             b'-1',
             Err(
                 'Input should be a valid timedelta, "day" identifier in duration '
-                'not correctly formatted [kind=time_delta_parsing'
+                'not correctly formatted [type=time_delta_parsing'
             ),
         ),
         (3601, timedelta(hours=1, seconds=1)),
@@ -60,8 +60,8 @@ def test_timedelta(input_value, expected):
     'input_value,expected',
     [
         ('"P0Y0M3D2WT1H2M3.5S"', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
-        ('"errordata"', Err('Input should be a valid timedelta, invalid digit in duration [kind=time_delta_parsing')),
-        ('true', Err('Input should be a valid timedelta [kind=time_delta_type')),
+        ('"errordata"', Err('Input should be a valid timedelta, invalid digit in duration [type=time_delta_parsing')),
+        ('true', Err('Input should be a valid timedelta [type=time_delta_type')),
         ('3601', timedelta(hours=1, seconds=1)),
         ('3601.123456', timedelta(hours=1, seconds=1, microseconds=123456)),
         ('-3601', timedelta(hours=-2, seconds=3599)),
@@ -88,8 +88,8 @@ def test_timedelta_json(input_value, expected):
             timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500),
             timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500),
         ),
-        ('P0Y0M3D2WT1H2M3.5S', Err('Input should be a valid timedelta [kind=time_delta_type')),
-        (b'P0Y0M3D2WT1H2M3.5S', Err('Input should be a valid timedelta [kind=time_delta_type')),
+        ('P0Y0M3D2WT1H2M3.5S', Err('Input should be a valid timedelta [type=time_delta_type')),
+        (b'P0Y0M3D2WT1H2M3.5S', Err('Input should be a valid timedelta [type=time_delta_type')),
     ],
 )
 def test_timedelta_strict(input_value, expected):
@@ -107,7 +107,7 @@ def test_timedelta_strict(input_value, expected):
     [
         ('"P0Y0M3D2WT1H2M3.5S"', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3, milliseconds=500)),
         ('"12345"', Err('Input should be a valid timedelta')),
-        ('true', Err('Input should be a valid timedelta [kind=time_delta_type')),
+        ('true', Err('Input should be a valid timedelta [type=time_delta_type')),
     ],
 )
 def test_timedelta_strict_json(input_value, expected):
@@ -139,14 +139,14 @@ def test_timedelta_strict_json(input_value, expected):
         (
             {'le': timedelta(seconds=-86400.123)},
             '-PT86400.122S',
-            Err('Input should be less than or equal to -P1DT0.123S [kind=less_than_equal'),
+            Err('Input should be less than or equal to -P1DT0.123S [type=less_than_equal'),
         ),
         ({'gt': timedelta(seconds=-86400.123)}, timedelta(seconds=-86400.122), timedelta(seconds=-86400.122)),
         ({'gt': timedelta(seconds=-86400.123)}, '-PT86400.122S', timedelta(seconds=-86400.122)),
         (
             {'gt': timedelta(seconds=-86400.123)},
             '-PT86400.124S',
-            Err('Input should be greater than -P1DT0.123S [kind=greater_than'),
+            Err('Input should be greater than -P1DT0.123S [type=greater_than'),
         ),
     ],
     ids=repr,
@@ -189,7 +189,7 @@ def test_dict_key(py_and_json: PyAndJson):
 
     with pytest.raises(
         ValidationError,
-        match=re.escape('Input should be a valid timedelta, invalid digit in duration [kind=time_delta_parsing'),
+        match=re.escape('Input should be a valid timedelta, invalid digit in duration [type=time_delta_parsing'),
     ):
         v.validate_test({'errordata': 2})
 
@@ -200,7 +200,7 @@ def test_dict_value(py_and_json: PyAndJson):
 
     with pytest.raises(
         ValidationError,
-        match=re.escape('Input should be a valid timedelta, invalid digit in duration [kind=time_delta_parsing'),
+        match=re.escape('Input should be a valid timedelta, invalid digit in duration [type=time_delta_parsing'),
     ):
         v.validate_test({4: 'errordata'})
 

@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -79,7 +79,7 @@ impl Validator for ConstrainedIntValidator {
         if let Some(multiple_of) = self.multiple_of {
             if int % multiple_of != 0 {
                 return Err(ValError::new(
-                    ErrorKind::MultipleOf {
+                    ErrorType::MultipleOf {
                         multiple_of: multiple_of.into(),
                     },
                     input,
@@ -88,22 +88,22 @@ impl Validator for ConstrainedIntValidator {
         }
         if let Some(le) = self.le {
             if int > le {
-                return Err(ValError::new(ErrorKind::LessThanEqual { le: le.into() }, input));
+                return Err(ValError::new(ErrorType::LessThanEqual { le: le.into() }, input));
             }
         }
         if let Some(lt) = self.lt {
             if int >= lt {
-                return Err(ValError::new(ErrorKind::LessThan { lt: lt.into() }, input));
+                return Err(ValError::new(ErrorType::LessThan { lt: lt.into() }, input));
             }
         }
         if let Some(ge) = self.ge {
             if int < ge {
-                return Err(ValError::new(ErrorKind::GreaterThanEqual { ge: ge.into() }, input));
+                return Err(ValError::new(ErrorType::GreaterThanEqual { ge: ge.into() }, input));
             }
         }
         if let Some(gt) = self.gt {
             if int <= gt {
-                return Err(ValError::new(ErrorKind::GreaterThan { gt: gt.into() }, input));
+                return Err(ValError::new(ErrorType::GreaterThan { gt: gt.into() }, input));
             }
         }
         Ok(int.into_py(py))
