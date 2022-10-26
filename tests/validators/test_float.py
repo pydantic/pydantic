@@ -24,8 +24,8 @@ from ..conftest import Err, PyAndJson, plain_repr
         (1e10, 1e10),
         (True, 1),
         (False, 0),
-        ('wrong', Err('Input should be a valid number, unable to parse string as an number [kind=float_parsing')),
-        ([1, 2], Err('Input should be a valid number [kind=float_type, input_value=[1, 2], input_type=list]')),
+        ('wrong', Err('Input should be a valid number, unable to parse string as an number [type=float_parsing')),
+        ([1, 2], Err('Input should be a valid number [type=float_type, input_value=[1, 2], input_type=list]')),
     ],
 )
 def test_float(py_and_json: PyAndJson, input_value, expected):
@@ -47,8 +47,8 @@ def test_float(py_and_json: PyAndJson, input_value, expected):
         (42, 42),
         (42.0, 42.0),
         (42.5, 42.5),
-        ('42', Err("Input should be a valid number [kind=float_type, input_value='42', input_type=str]")),
-        (True, Err('Input should be a valid number [kind=float_type, input_value=True, input_type=bool]')),
+        ('42', Err("Input should be a valid number [type=float_type, input_value='42', input_type=str]")),
+        (True, Err('Input should be a valid number [type=float_type, input_value=True, input_type=bool]')),
     ],
     ids=repr,
 )
@@ -74,11 +74,11 @@ def test_float_strict(py_and_json: PyAndJson, input_value, expected):
             -0.1,
             Err(
                 'Input should be greater than or equal to 0 '
-                '[kind=greater_than_equal, input_value=-0.1, input_type=float]'
+                '[type=greater_than_equal, input_value=-0.1, input_type=float]'
             ),
         ),
         ({'gt': 0}, 0.1, 0.1),
-        ({'gt': 0}, 0, Err('Input should be greater than 0 [kind=greater_than, input_value=0, input_type=int]')),
+        ({'gt': 0}, 0, Err('Input should be greater than 0 [type=greater_than, input_value=0, input_type=int]')),
         ({'le': 0}, 0, 0),
         ({'le': 0}, -1, -1),
         ({'le': 0}, 0.1, Err('Input should be less than or equal to 0')),
@@ -140,13 +140,13 @@ def test_union_float(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('5')
     assert exc_info.value.errors() == [
-        {'kind': 'float_type', 'loc': ['float'], 'message': 'Input should be a valid number', 'input_value': '5'},
+        {'type': 'float_type', 'loc': ('float',), 'msg': 'Input should be a valid number', 'input': '5'},
         {
-            'kind': 'multiple_of',
-            'loc': ['constrained-float'],
-            'message': 'Input should be a multiple of 7',
-            'input_value': '5',
-            'context': {'multiple_of': 7.0},
+            'type': 'multiple_of',
+            'loc': ('constrained-float',),
+            'msg': 'Input should be a multiple of 7',
+            'input': '5',
+            'ctx': {'multiple_of': 7.0},
         },
     ]
 
@@ -159,10 +159,10 @@ def test_union_float_simple(py_and_json: PyAndJson):
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'float_parsing',
-            'loc': ['float'],
-            'message': 'Input should be a valid number, unable to parse string as an number',
-            'input_value': 'xxx',
+            'type': 'float_parsing',
+            'loc': ('float',),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'input': 'xxx',
         }
     ]
 
@@ -214,30 +214,30 @@ def test_float_key(py_and_json: PyAndJson):
     'input_value,allow_inf_nan,expected',
     [
         ('NaN', True, FunctionCheck(math.isnan)),
-        ('NaN', False, Err("Input should be a finite number [kind=finite_number, input_value='NaN', input_type=str]")),
+        ('NaN', False, Err("Input should be a finite number [type=finite_number, input_value='NaN', input_type=str]")),
         ('+inf', True, FunctionCheck(lambda x: math.isinf(x) and x > 0)),
         (
             '+inf',
             False,
-            Err("Input should be a finite number [kind=finite_number, input_value='+inf', input_type=str]"),
+            Err("Input should be a finite number [type=finite_number, input_value='+inf', input_type=str]"),
         ),
         ('+infinity', True, FunctionCheck(lambda x: math.isinf(x) and x > 0)),
         (
             '+infinity',
             False,
-            Err("Input should be a finite number [kind=finite_number, input_value='+infinity', input_type=str]"),
+            Err("Input should be a finite number [type=finite_number, input_value='+infinity', input_type=str]"),
         ),
         ('-inf', True, FunctionCheck(lambda x: math.isinf(x) and x < 0)),
         (
             '-inf',
             False,
-            Err("Input should be a finite number [kind=finite_number, input_value='-inf', input_type=str]"),
+            Err("Input should be a finite number [type=finite_number, input_value='-inf', input_type=str]"),
         ),
         ('-infinity', True, FunctionCheck(lambda x: math.isinf(x) and x < 0)),
         (
             '-infinity',
             False,
-            Err("Input should be a finite number [kind=finite_number, input_value='-infinity', input_type=str]"),
+            Err("Input should be a finite number [type=finite_number, input_value='-infinity', input_type=str]"),
         ),
         ('0.7', True, 0.7),
         ('0.7', False, 0.7),
@@ -246,7 +246,7 @@ def test_float_key(py_and_json: PyAndJson):
             True,
             Err(
                 'Input should be a valid number, unable to parse string as an number '
-                "[kind=float_parsing, input_value='pika', input_type=str]"
+                "[type=float_parsing, input_value='pika', input_type=str]"
             ),
         ),
         (
@@ -254,7 +254,7 @@ def test_float_key(py_and_json: PyAndJson):
             False,
             Err(
                 'Input should be a valid number, unable to parse string as an number '
-                "[kind=float_parsing, input_value='pika', input_type=str]"
+                "[type=float_parsing, input_value='pika', input_type=str]"
             ),
         ),
     ],
@@ -276,7 +276,7 @@ def test_non_finite_json_values(py_and_json: PyAndJson, input_value, allow_inf_n
         (
             float('nan'),
             False,
-            Err('Input should be a finite number [kind=finite_number, input_value=nan, input_type=float]'),
+            Err('Input should be a finite number [type=finite_number, input_value=nan, input_type=float]'),
         ),
     ],
 )
@@ -296,17 +296,17 @@ def test_non_finite_float_values(strict, input_value, allow_inf_nan, expected):
         (
             float('+inf'),
             False,
-            Err('Input should be a finite number [kind=finite_number, input_value=inf, input_type=float]'),
+            Err('Input should be a finite number [type=finite_number, input_value=inf, input_type=float]'),
         ),
         (
             float('-inf'),
             True,
-            Err('Input should be greater than 0 [kind=greater_than, input_value=-inf, input_type=float]'),
+            Err('Input should be greater than 0 [type=greater_than, input_value=-inf, input_type=float]'),
         ),
         (
             float('-inf'),
             False,
-            Err('Input should be a finite number [kind=finite_number, input_value=-inf, input_type=float]'),
+            Err('Input should be a finite number [type=finite_number, input_value=-inf, input_type=float]'),
         ),
     ],
 )

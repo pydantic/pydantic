@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 use strum::EnumMessage;
 
 use crate::build_tools::{is_strict, py_err, py_error_type, SchemaDict};
-use crate::errors::{py_err_string, ErrorKind, ValError, ValResult};
+use crate::errors::{py_err_string, ErrorType, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -52,7 +52,7 @@ impl Validator for DateTimeValidator {
                 Ok(dt) => dt,
                 Err(err) => {
                     let error = py_err_string(py, err);
-                    return Err(ValError::new(ErrorKind::DatetimeObjectInvalid { error }, input));
+                    return Err(ValError::new(ErrorType::DatetimeObjectInvalid { error }, input));
                 }
             };
             macro_rules! check_constraint {
@@ -60,7 +60,7 @@ impl Validator for DateTimeValidator {
                     if let Some(constraint) = &constraints.$constraint {
                         if !speedate_dt.$constraint(constraint) {
                             return Err(ValError::new(
-                                ErrorKind::$error {
+                                ErrorType::$error {
                                     $constraint: constraint.to_string().into(),
                                 },
                                 input,
@@ -84,11 +84,11 @@ impl Validator for DateTimeValidator {
                 if let Some(c) = speedate_dt.partial_cmp(&now) {
                     let dt_compliant = now_constraint.op.compare(c);
                     if !dt_compliant {
-                        let kind = match now_constraint.op {
-                            NowOp::Past => ErrorKind::DatetimePast,
-                            NowOp::Future => ErrorKind::DatetimeFuture,
+                        let error_type = match now_constraint.op {
+                            NowOp::Past => ErrorType::DatetimePast,
+                            NowOp::Future => ErrorType::DatetimeFuture,
                         };
-                        return Err(ValError::new(kind, input));
+                        return Err(ValError::new(error_type, input));
                     }
                 }
             }

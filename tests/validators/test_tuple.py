@@ -19,14 +19,14 @@ from ..conftest import Err, PyAndJson, infinite_generator
             'variable',
             {'type': 'int'},
             1,
-            Err('Input should be a valid tuple [kind=tuple_type, input_value=1, input_type=int]'),
+            Err('Input should be a valid tuple [type=tuple_type, input_value=1, input_type=int]'),
         ),
         ('positional', [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}], [1, 2, '3'], (1, 2, 3)),
         (
             'positional',
             [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
             5,
-            Err('Input should be a valid tuple [kind=tuple_type, input_value=5, input_type=int]'),
+            Err('Input should be a valid tuple [type=tuple_type, input_value=5, input_type=int]'),
         ),
     ],
     ids=repr,
@@ -72,10 +72,10 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
         v.validate_python(wrong_coll_type([1, 2, '33']))
     assert exc_info.value.errors() == [
         {
-            'kind': 'tuple_type',
-            'loc': [],
-            'message': 'Input should be a valid tuple',
-            'input_value': wrong_coll_type([1, 2, '33']),
+            'type': 'tuple_type',
+            'loc': (),
+            'msg': 'Input should be a valid tuple',
+            'input': wrong_coll_type([1, 2, '33']),
         }
     ]
 
@@ -85,22 +85,22 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
     [
         ({}, (1, 2, 3, 4), (1, 2, 3, 4)),
         ({'min_length': 3}, (1, 2, 3, 4), (1, 2, 3, 4)),
-        ({'min_length': 3}, (1, 2), Err('Tuple should have at least 3 items after validation, not 2 [kind=too_short,')),
+        ({'min_length': 3}, (1, 2), Err('Tuple should have at least 3 items after validation, not 2 [type=too_short,')),
         ({'max_length': 4}, (1, 2, 3, 4), (1, 2, 3, 4)),
         (
             {'max_length': 3},
             (1, 2, 3, 4),
-            Err('Tuple should have at most 3 items after validation, not 4 [kind=too_long,'),
+            Err('Tuple should have at most 3 items after validation, not 4 [type=too_long,'),
         ),
         (
             {'max_length': 3},
             [1, 2, 3, 4],
-            Err('Tuple should have at most 3 items after validation, not 4 [kind=too_long,'),
+            Err('Tuple should have at most 3 items after validation, not 4 [type=too_long,'),
         ),
         (
             {'max_length': 3},
             infinite_generator(),
-            Err('Tuple should have at most 3 items after validation, not 4 [kind=too_long,'),
+            Err('Tuple should have at most 3 items after validation, not 4 [type=too_long,'),
         ),
     ],
     ids=repr,
@@ -137,9 +137,9 @@ def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
                 platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
             ),
         ),
-        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid tuple [kind=tuple_type,')),
-        ({1, 2, '3'}, Err('Input should be a valid tuple [kind=tuple_type,')),
-        (frozenset([1, 2, '3']), Err('Input should be a valid tuple [kind=tuple_type,')),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid tuple [type=tuple_type,')),
+        ({1, 2, '3'}, Err('Input should be a valid tuple [type=tuple_type,')),
+        (frozenset([1, 2, '3']), Err('Input should be a valid tuple [type=tuple_type,')),
     ],
     ids=repr,
 )
@@ -179,10 +179,10 @@ def test_tuple_var_len_errors(input_value, index):
         assert v.validate_python(input_value)
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [index],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'wrong',
+            'type': 'int_parsing',
+            'loc': (index,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
         }
     ]
 
@@ -207,10 +207,10 @@ def test_tuple_fix_len_errors(input_value, items, index):
         assert v.validate_python(input_value)
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [index],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'wrong',
+            'type': 'int_parsing',
+            'loc': (index,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
         }
     ]
 
@@ -227,15 +227,13 @@ def test_multiple_missing(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1])
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': [1], 'message': 'Field required', 'input_value': [1]},
-        {'kind': 'missing', 'loc': [2], 'message': 'Field required', 'input_value': [1]},
-        {'kind': 'missing', 'loc': [3], 'message': 'Field required', 'input_value': [1]},
+        {'type': 'missing', 'loc': (1,), 'msg': 'Field required', 'input': [1]},
+        {'type': 'missing', 'loc': (2,), 'msg': 'Field required', 'input': [1]},
+        {'type': 'missing', 'loc': (3,), 'msg': 'Field required', 'input': [1]},
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1, 2, 3])
-    assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': [3], 'message': 'Field required', 'input_value': [1, 2, 3]}
-    ]
+    assert exc_info.value.errors() == [{'type': 'missing', 'loc': (3,), 'msg': 'Field required', 'input': [1, 2, 3]}]
 
 
 def test_extra_arguments(py_and_json: PyAndJson):
@@ -246,11 +244,11 @@ def test_extra_arguments(py_and_json: PyAndJson):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': [],
-            'message': 'Tuple should have at most 2 items after validation, not 4',
-            'input_value': [1, 2, 3, 4],
-            'context': {'field_type': 'Tuple', 'max_length': 2, 'actual_length': 4},
+            'type': 'too_long',
+            'loc': (),
+            'msg': 'Tuple should have at most 2 items after validation, not 4',
+            'input': [1, 2, 3, 4],
+            'ctx': {'field_type': 'Tuple', 'max_length': 2, 'actual_length': 4},
         }
     ]
 
@@ -259,7 +257,7 @@ def test_positional_empty(py_and_json: PyAndJson):
     v = py_and_json({'type': 'tuple', 'mode': 'positional', 'items_schema': []})
     assert v.validate_test([]) == ()
     assert v.validate_python(()) == ()
-    with pytest.raises(ValidationError, match='kind=too_long,'):
+    with pytest.raises(ValidationError, match='type=too_long,'):
         v.validate_test([1])
 
 
@@ -290,17 +288,17 @@ def test_union_tuple_list(input_value, expected):
                 errors=[
                     {
                         # first of all, not a tuple of ints ..
-                        'kind': 'tuple_type',
-                        'loc': ['tuple[int, ...]'],
-                        'message': 'Input should be a valid tuple',
-                        'input_value': [5],
+                        'type': 'tuple_type',
+                        'loc': ('tuple[int, ...]',),
+                        'msg': 'Input should be a valid tuple',
+                        'input': [5],
                     },
                     # .. and not a tuple of strings, either
                     {
-                        'kind': 'tuple_type',
-                        'loc': ['tuple[str, ...]'],
-                        'message': 'Input should be a valid tuple',
-                        'input_value': [5],
+                        'type': 'tuple_type',
+                        'loc': ('tuple[str, ...]',),
+                        'msg': 'Input should be a valid tuple',
+                        'input': [5],
                     },
                 ],
             ),
@@ -338,16 +336,16 @@ def test_union_tuple_var_len(input_value, expected):
                 '2 validation errors for union',
                 errors=[
                     {
-                        'kind': 'tuple_type',
-                        'loc': ['tuple[int, int, int]'],
-                        'message': 'Input should be a valid tuple',
-                        'input_value': [5, '1', 1],
+                        'type': 'tuple_type',
+                        'loc': ('tuple[int, int, int]',),
+                        'msg': 'Input should be a valid tuple',
+                        'input': [5, '1', 1],
                     },
                     {
-                        'kind': 'tuple_type',
-                        'loc': ['tuple[str, str, str]'],
-                        'message': 'Input should be a valid tuple',
-                        'input_value': [5, '1', 1],
+                        'type': 'tuple_type',
+                        'loc': ('tuple[str, str, str]',),
+                        'msg': 'Input should be a valid tuple',
+                        'input': [5, '1', 1],
                     },
                 ],
             ),
@@ -389,7 +387,7 @@ def test_tuple_fix_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1])
 
-    assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [1], 'message': 'Field required', 'input_value': [1]}]
+    assert exc_info.value.errors() == [{'type': 'missing', 'loc': (1,), 'msg': 'Field required', 'input': [1]}]
 
 
 @pytest.mark.parametrize(
@@ -400,13 +398,7 @@ def test_tuple_fix_error():
         ((1, 'a', 'b'), (1, 'a', 'b')),
         ([1, 'a', 'b', 'c', 'd'], (1, 'a', 'b', 'c', 'd')),
         (deque([1, 'a', 'b', 'c', 'd']), (1, 'a', 'b', 'c', 'd')),
-        (
-            [1],
-            Err(
-                'kind=missing',
-                errors=[{'kind': 'missing', 'loc': [1], 'message': 'Field required', 'input_value': [1]}],
-            ),
-        ),
+        ([1], Err('type=missing', errors=[{'type': 'missing', 'loc': (1,), 'msg': 'Field required', 'input': [1]}])),
     ],
 )
 def test_tuple_fix_extra(input_value, expected, cache):
@@ -437,7 +429,7 @@ def test_tuple_fix_extra_any():
     assert v.validate_python([b'1', 2, b'3']) == ('1', 2, b'3')
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([])
-    assert exc_info.value.errors() == [{'kind': 'missing', 'loc': [0], 'message': 'Field required', 'input_value': []}]
+    assert exc_info.value.errors() == [{'type': 'missing', 'loc': (0,), 'msg': 'Field required', 'input': []}]
 
 
 def test_generator_error():
@@ -451,7 +443,7 @@ def test_generator_error():
     v = SchemaValidator({'type': 'tuple', 'items_schema': {'type': 'int'}})
     assert v.validate_python(gen(False)) == (1, 2, 3)
 
-    msg = r'Error iterating over object, error: RuntimeError: error \[kind=iteration_error,'
+    msg = r'Error iterating over object, error: RuntimeError: error \[type=iteration_error,'
     with pytest.raises(ValidationError, match=msg):
         v.validate_python(gen(True))
 
@@ -486,7 +478,7 @@ def test_frozenset_from_dict_items(input_value, items_schema, expected):
     'input_value,expected',
     [
         ([1, 2, 3, 4], (1, 2, 3, 4)),
-        ([1, 2, 3, 4, 5], Err('Tuple should have at most 4 items after validation, not 5 [kind=too_long,')),
+        ([1, 2, 3, 4, 5], Err('Tuple should have at most 4 items after validation, not 5 [type=too_long,')),
         ([1, 2, 3, 'x', 4], (1, 2, 3, 4)),
     ],
 )

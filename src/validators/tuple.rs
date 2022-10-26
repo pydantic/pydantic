@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -174,7 +174,7 @@ impl Validator for TuplePositionalValidator {
                             if let Some(value) = get_default(py, &validator)? {
                                 output.push(value.as_ref().clone_ref(py));
                             } else {
-                                errors.push(ValLineError::new_with_loc(ErrorKind::Missing, input, index));
+                                errors.push(ValLineError::new_with_loc(ErrorType::Missing, input, index));
                             }
                         }
                     }
@@ -197,7 +197,7 @@ impl Validator for TuplePositionalValidator {
                         }
                         None => {
                             errors.push(ValLineError::new(
-                                ErrorKind::TooLong {
+                                ErrorType::TooLong {
                                     field_type: "Tuple".to_string(),
                                     max_length: expected_length,
                                     actual_length: collection.generic_len()?,

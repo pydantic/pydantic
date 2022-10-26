@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, schema_or_config_same, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -52,7 +52,7 @@ impl Validator for FloatValidator {
     ) -> ValResult<'data, PyObject> {
         let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
         if !self.allow_inf_nan && !float.is_finite() {
-            return Err(ValError::new(ErrorKind::FiniteNumber, input));
+            return Err(ValError::new(ErrorType::FiniteNumber, input));
         }
         Ok(float.into_py(py))
     }
@@ -84,14 +84,14 @@ impl Validator for ConstrainedFloatValidator {
     ) -> ValResult<'data, PyObject> {
         let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
         if !self.allow_inf_nan && !float.is_finite() {
-            return Err(ValError::new(ErrorKind::FiniteNumber, input));
+            return Err(ValError::new(ErrorType::FiniteNumber, input));
         }
         if let Some(multiple_of) = self.multiple_of {
             let rem = float % multiple_of;
             let threshold = float / 1e9;
             if rem.abs() > threshold && (rem - multiple_of).abs() > threshold {
                 return Err(ValError::new(
-                    ErrorKind::MultipleOf {
+                    ErrorType::MultipleOf {
                         multiple_of: multiple_of.into(),
                     },
                     input,
@@ -100,22 +100,22 @@ impl Validator for ConstrainedFloatValidator {
         }
         if let Some(le) = self.le {
             if float > le {
-                return Err(ValError::new(ErrorKind::LessThanEqual { le: le.into() }, input));
+                return Err(ValError::new(ErrorType::LessThanEqual { le: le.into() }, input));
             }
         }
         if let Some(lt) = self.lt {
             if float >= lt {
-                return Err(ValError::new(ErrorKind::LessThan { lt: lt.into() }, input));
+                return Err(ValError::new(ErrorType::LessThan { lt: lt.into() }, input));
             }
         }
         if let Some(ge) = self.ge {
             if float < ge {
-                return Err(ValError::new(ErrorKind::GreaterThanEqual { ge: ge.into() }, input));
+                return Err(ValError::new(ErrorType::GreaterThanEqual { ge: ge.into() }, input));
             }
         }
         if let Some(gt) = self.gt {
             if float <= gt {
-                return Err(ValError::new(ErrorKind::GreaterThan { gt: gt.into() }, input));
+                return Err(ValError::new(ErrorType::GreaterThan { gt: gt.into() }, input));
             }
         }
         Ok(float.into_py(py))

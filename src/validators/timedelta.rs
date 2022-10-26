@@ -4,7 +4,7 @@ use pyo3::types::{PyDelta, PyDict, PyString};
 use speedate::Duration;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{EitherTimedelta, Input};
 use crate::recursion_guard::RecursionGuard;
 
@@ -71,7 +71,7 @@ impl Validator for TimeDeltaValidator {
                     if let Some(constraint) = &constraints.$constraint {
                         if !raw_timedelta.$constraint(constraint) {
                             return Err(ValError::new(
-                                ErrorKind::$error {
+                                ErrorType::$error {
                                     $constraint: constraint.to_string().into(),
                                 },
                                 input,

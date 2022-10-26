@@ -14,12 +14,12 @@ from ..conftest import Err, PyAndJson
         ([1, 2, '3'], [1, 2, 3]),
         ({1: 2, 3: 4}, [1, 3]),
         ('123', [1, 2, 3]),
-        (5, Err('Input should be iterable [kind=iterable_type, input_value=5, input_type=int]')),
+        (5, Err('Input should be iterable [type=iterable_type, input_value=5, input_type=int]')),
         (
             [1, 'wrong'],
             Err(
                 'Input should be a valid integer, unable to parse string as an integer '
-                "[kind=int_parsing, input_value='wrong', input_type=str]"
+                "[type=int_parsing, input_value='wrong', input_type=str]"
             ),
         ),
     ],
@@ -42,7 +42,7 @@ def test_generator_json_int(py_and_json: PyAndJson, input_value, expected):
         ([1, 2, '3'], [1, 2, '3']),
         ({'1': 2, '3': 4}, ['1', '3']),
         ('123', ['1', '2', '3']),
-        (5, Err('Input should be iterable [kind=iterable_type, input_value=5, input_type=int]')),
+        (5, Err('Input should be iterable [type=iterable_type, input_value=5, input_type=int]')),
         ([1, 'wrong'], [1, 'wrong']),
     ],
     ids=repr,
@@ -69,10 +69,10 @@ def test_error_index(py_and_json: PyAndJson):
     assert str(exc_info.value).startswith('1 validation error for ValidatorIterator\n')
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'wrong',
+            'type': 'int_parsing',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
         }
     ]
     gen = v.validate_test([1, 2, 3, 'wrong', 4])
@@ -88,10 +88,10 @@ def test_error_index(py_and_json: PyAndJson):
     assert gen.index == 4
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [3],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'wrong',
+            'type': 'int_parsing',
+            'loc': (3,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
         }
     ]
     assert next(gen) == 4
@@ -107,10 +107,10 @@ def test_too_long(py_and_json: PyAndJson):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': [],
-            'message': 'Generator should have at most 2 items after validation, not 3',
-            'input_value': [1, 2, 3],
-            'context': {'field_type': 'Generator', 'max_length': 2, 'actual_length': 3},
+            'type': 'too_long',
+            'loc': (),
+            'msg': 'Generator should have at most 2 items after validation, not 3',
+            'input': [1, 2, 3],
+            'ctx': {'field_type': 'Generator', 'max_length': 2, 'actual_length': 3},
         }
     ]

@@ -135,11 +135,11 @@ def args(*args, **kwargs):
         ],
         [
             core_schema.union_schema,
-            args({'type': 'int'}, {'type': 'str'}, custom_error_kind='foobar', custom_error_message='This is Foobar'),
+            args({'type': 'int'}, {'type': 'str'}, custom_error_type='foobar', custom_error_message='This is Foobar'),
             {
                 'type': 'union',
                 'choices': ({'type': 'int'}, {'type': 'str'}),
-                'custom_error_kind': 'foobar',
+                'custom_error_type': 'foobar',
                 'custom_error_message': 'This is Foobar',
             },
         ],
@@ -206,7 +206,7 @@ def args(*args, **kwargs):
             {
                 'type': 'custom_error',
                 'schema': {'type': 'int'},
-                'custom_error_kind': 'foobar',
+                'custom_error_type': 'foobar',
                 'custom_error_message': 'Hello',
             },
         ],
@@ -226,14 +226,15 @@ def test_schema_functions(function, args_kwargs, expected_schema):
 
 
 def test_invalid_custom_error():
-    s = core_schema.union_schema({'type': 'int'}, {'type': 'str'}, custom_error_kind='foobar')
+    s = core_schema.union_schema({'type': 'int'}, {'type': 'str'}, custom_error_type='foobar')
     with pytest.raises(SchemaError, match=r"KeyError: 'custom_error_message'"):
         SchemaValidator(s)
 
 
-def test_invalid_custom_error_kind():
+def test_invalid_custom_error_type():
     s = core_schema.union_schema(
-        {'type': 'int'}, {'type': 'str'}, custom_error_kind='finite_number', custom_error_message='x'
+        {'type': 'int'}, {'type': 'str'}, custom_error_type='finite_number', custom_error_message='x'
     )
-    with pytest.raises(SchemaError, match='custom_error.message should not be provided if kind matches a known error'):
+    msg = "custom_error.message should not be provided if 'custom_error_type' matches a known error"
+    with pytest.raises(SchemaError, match=msg):
         SchemaValidator(s)

@@ -64,8 +64,8 @@ def test_strict():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'field_a': 123, 'field_b': '123'})
     assert exc_info.value.errors() == [
-        {'kind': 'string_type', 'loc': ['field_a'], 'message': 'Input should be a valid string', 'input_value': 123},
-        {'kind': 'int_type', 'loc': ['field_b'], 'message': 'Input should be a valid integer', 'input_value': '123'},
+        {'type': 'string_type', 'loc': ('field_a',), 'msg': 'Input should be a valid string', 'input': 123},
+        {'type': 'int_type', 'loc': ('field_b',), 'msg': 'Input should be a valid integer', 'input': '123'},
     ]
 
 
@@ -102,7 +102,7 @@ def test_missing_error():
         == """\
 1 validation error for typed-dict
 field_b
-  Field required [kind=missing, input_value={'field_a': b'abc'}, input_type=dict]"""
+  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]"""
     )
 
 
@@ -111,21 +111,21 @@ field_b
     [
         ({}, {'a': '123'}, {'a': 123}),
         ({}, Map(a=123), {'a': 123}),
-        ({}, {b'a': '123'}, Err('Field required [kind=missing,')),
+        ({}, {b'a': '123'}, Err('Field required [type=missing,')),
         ({}, {'a': '123', 'c': 4}, {'a': 123}),
         ({'typed_dict_extra_behavior': 'allow'}, {'a': '123', 'c': 4}, {'a': 123, 'c': 4}),
         (
             {'typed_dict_extra_behavior': 'allow'},
             {'a': '123', b'c': 4},
-            Err('Keys should be strings [kind=invalid_key,'),
+            Err('Keys should be strings [type=invalid_key,'),
         ),
-        ({'strict': True}, Map(a=123), Err('Input should be a valid dictionary [kind=dict_type,')),
+        ({'strict': True}, Map(a=123), Err('Input should be a valid dictionary [type=dict_type,')),
         ({}, {'a': '123', 'b': '4.7'}, {'a': 123, 'b': 4.7}),
         ({}, {'a': '123', 'b': 'nan'}, {'a': 123, 'b': FunctionCheck(math.isnan)}),
         (
             {'allow_inf_nan': False},
             {'a': '123', 'b': 'nan'},
-            Err('Input should be a finite number [kind=finite_number,'),
+            Err('Input should be a finite number [type=finite_number,'),
         ),
     ],
     ids=repr,
@@ -176,7 +176,7 @@ def test_forbid_extra():
         v.validate_python({'field_a': 'abc', 'field_b': 1})
 
     assert exc_info.value.errors() == [
-        {'kind': 'extra_forbidden', 'loc': ['field_b'], 'message': 'Extra inputs are not permitted', 'input_value': 1}
+        {'type': 'extra_forbidden', 'loc': ('field_b',), 'msg': 'Extra inputs are not permitted', 'input': 1}
     ]
 
 
@@ -216,10 +216,10 @@ def test_allow_extra_validate():
         v.validate_python({'field_a': 'test', 'other_value': 12.5})
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_from_float',
-            'loc': ['other_value'],
-            'message': 'Input should be a valid integer, got a number with a fractional part',
-            'input_value': 12.5,
+            'type': 'int_from_float',
+            'loc': ('other_value',),
+            'msg': 'Input should be a valid integer, got a number with a fractional part',
+            'input': 12.5,
         }
     ]
 
@@ -270,7 +270,7 @@ def test_validate_assignment_strict_field():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment('field_a', b'abc', {'field_a': 'test'})
     assert exc_info.value.errors() == [
-        {'input_value': b'abc', 'kind': 'string_type', 'loc': ['field_a'], 'message': 'Input should be a valid string'}
+        {'input': b'abc', 'type': 'string_type', 'loc': ('field_a',), 'msg': 'Input should be a valid string'}
     ]
 
 
@@ -326,12 +326,7 @@ def test_validate_assignment_ignore_extra():
         v.validate_assignment('other_field', 456, {'field_a': 'test'})
 
     assert exc_info.value.errors() == [
-        {
-            'kind': 'extra_forbidden',
-            'loc': ['other_field'],
-            'message': 'Extra inputs are not permitted',
-            'input_value': 456,
-        }
+        {'type': 'extra_forbidden', 'loc': ('other_field',), 'msg': 'Extra inputs are not permitted', 'input': 456}
     ]
 
 
@@ -361,10 +356,10 @@ def test_validate_assignment_allow_extra_validate():
         assert v.validate_assignment('other_field', 'xyz', {'field_a': 'test'})
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['other_field'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'xyz',
+            'type': 'int_parsing',
+            'loc': ('other_field',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'xyz',
         }
     ]
 
@@ -383,7 +378,7 @@ def test_validate_assignment_with_strict():
         v.validate_assignment('y', '124', r, True)
 
     assert exc_info.value.errors() == [
-        {'kind': 'int_type', 'loc': ['y'], 'message': 'Input should be a valid integer', 'input_value': '124'}
+        {'type': 'int_type', 'loc': ('y',), 'msg': 'Input should be a valid integer', 'input': '124'}
     ]
 
 
@@ -396,10 +391,10 @@ def test_json_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['field_a', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'wrong',
+            'type': 'int_parsing',
+            'loc': ('field_a', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
         }
     ]
 
@@ -421,7 +416,7 @@ def test_fields_required_by_default():
         assert v.validate_python({'x': 'pika'})
 
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['y'], 'message': 'Field required', 'input_value': {'x': 'pika'}}
+        {'type': 'missing', 'loc': ('y',), 'msg': 'Field required', 'input': {'x': 'pika'}}
     ]
 
 
@@ -473,7 +468,7 @@ def test_all_optional_fields():
         assert v.validate_python({'x': 123})
 
     assert exc_info.value.errors() == [
-        {'kind': 'string_type', 'loc': ['x'], 'message': 'Input should be a valid string', 'input_value': 123}
+        {'type': 'string_type', 'loc': ('x',), 'msg': 'Input should be a valid string', 'input': 123}
     ]
 
 
@@ -497,7 +492,7 @@ def test_all_optional_fields_with_required_fields():
         assert v.validate_python({'y': 'chu'}) == ({'y': 'chu'}, {'y'})
 
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['x'], 'message': 'Field required', 'input_value': {'y': 'chu'}}
+        {'type': 'missing', 'loc': ('x',), 'msg': 'Field required', 'input': {'y': 'chu'}}
     ]
 
 
@@ -517,9 +512,9 @@ def test_field_required_and_default():
 def test_alias(py_and_json: PyAndJson):
     v = py_and_json({'type': 'typed-dict', 'fields': {'field_a': {'alias': 'FieldA', 'schema': {'type': 'int'}}}})
     assert v.validate_test({'FieldA': '123'}) == {'field_a': 123}
-    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[kind=missing,'):
+    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[type=missing,'):
         assert v.validate_test({'foobar': '123'})
-    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[kind=missing,'):
+    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[type=missing,'):
         assert v.validate_test({'field_a': '123'})
 
 
@@ -548,7 +543,7 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, {'field_a'})
     assert v.validate_test({'field_a': '123'}) == ({'field_a': 123}, {'field_a'})
     assert v.validate_test({'FieldA': '1', 'field_a': '2'}) == ({'field_a': 1}, {'field_a'})
-    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[kind=missing,'):
+    with pytest.raises(ValidationError, match=r'field_a\n +Field required \[type=missing,'):
         assert v.validate_test({'foobar': '123'})
 
 
@@ -556,10 +551,10 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     'input_value,expected',
     [
         ({'foo': {'bar': '123'}}, {'field_a': 123}),
-        ({'x': '123'}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'foo': '123'}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'foo': [1, 2, 3]}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'foo': {'bat': '123'}}, Err(r'field_a\n +Field required \[kind=missing,')),
+        ({'x': '123'}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'foo': '123'}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'foo': [1, 2, 3]}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'foo': {'bat': '123'}}, Err(r'field_a\n +Field required \[type=missing,')),
     ],
     ids=repr,
 )
@@ -581,11 +576,11 @@ def test_alias_path(py_and_json: PyAndJson, input_value, expected):
         ({'foo': (1, 2, 3, 4)}, ({'field_a': 4}, {'field_a'})),
         ({'spam': 5}, ({'field_a': 5}, {'field_a'})),
         ({'spam': 1, 'foo': {'bar': {'bat': 2}}}, ({'field_a': 2}, {'field_a'})),
-        ({'foo': {'x': 2}}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'x': '123'}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'x': {2: 33}}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'foo': '01234'}, Err(r'field_a\n +Field required \[kind=missing,')),
-        ({'foo': [1]}, Err(r'field_a\n +Field required \[kind=missing,')),
+        ({'foo': {'x': 2}}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'x': '123'}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'x': {2: 33}}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'foo': '01234'}, Err(r'field_a\n +Field required \[type=missing,')),
+        ({'foo': [1]}, Err(r'field_a\n +Field required \[type=missing,')),
     ],
     ids=repr,
 )
@@ -668,7 +663,7 @@ def test_alias_build_error(alias_schema, error):
 def test_empty_model():
     v = SchemaValidator({'type': 'typed-dict', 'fields': {}, 'return_fields_set': True})
     assert v.validate_python({}) == ({}, set())
-    with pytest.raises(ValidationError, match=re.escape('Input should be a valid dictionary [kind=dict_type,')):
+    with pytest.raises(ValidationError, match=re.escape('Input should be a valid dictionary [type=dict_type,')):
         v.validate_python('x')
 
 
@@ -717,10 +712,10 @@ def test_model_deep():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['field_b', 'field_d', 'field_f'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'xx',
+            'type': 'int_parsing',
+            'loc': ('field_b', 'field_d', 'field_f'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'xx',
         }
     ]
 
@@ -751,13 +746,13 @@ class MyDataclass:
         (dict(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
         (Map(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
         # using type gives `__module__ == 'builtins'`
-        (type('Testing', (), {}), Err('[kind=dict_attributes_type,')),
+        (type('Testing', (), {}), Err('[type=dict_attributes_type,')),
         (
             '123',
-            Err('Input should be a valid dictionary or instance to extract fields from [kind=dict_attributes_type,'),
+            Err('Input should be a valid dictionary or instance to extract fields from [type=dict_attributes_type,'),
         ),
-        ([(1, 2)], Err('kind=dict_attributes_type,')),
-        (((1, 2),), Err('kind=dict_attributes_type,')),
+        ([(1, 2)], Err('type=dict_attributes_type,')),
+        (((1, 2),), Err('type=dict_attributes_type,')),
     ],
     ids=repr,
 )
@@ -800,10 +795,10 @@ def test_from_attributes_type_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'dict_attributes_type',
-            'loc': [],
-            'message': 'Input should be a valid dictionary or instance to extract fields from',
-            'input_value': '123',
+            'type': 'dict_attributes_type',
+            'loc': (),
+            'msg': 'Input should be a valid dictionary or instance to extract fields from',
+            'input': '123',
         }
     ]
 
@@ -845,10 +840,10 @@ def test_from_attributes_missing():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'missing',
-            'loc': ['c'],
-            'message': 'Field required',
-            'input_value': HasRepr(IsStr(regex='.+Foobar object at.+')),
+            'type': 'missing',
+            'loc': ('c',),
+            'msg': 'Field required',
+            'input': HasRepr(IsStr(regex='.+Foobar object at.+')),
         }
     ]
 
@@ -875,11 +870,11 @@ def test_from_attributes_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'get_attribute_error',
-            'loc': ['b'],
-            'message': 'Error extracting attribute: RuntimeError: intentional error',
-            'input_value': HasRepr(IsStr(regex='.+Foobar object at.+')),
-            'context': {'error': 'RuntimeError: intentional error'},
+            'type': 'get_attribute_error',
+            'loc': ('b',),
+            'msg': 'Error extracting attribute: RuntimeError: intentional error',
+            'input': HasRepr(IsStr(regex='.+Foobar object at.+')),
+            'ctx': {'error': 'RuntimeError: intentional error'},
         }
     ]
 
@@ -982,11 +977,11 @@ def test_from_attributes_error_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'get_attribute_error',
-            'loc': ['x'],
-            'message': IsStr(regex=r'Error extracting attribute: \S+\.<locals>\.BadError: <exception str\(\) failed>'),
-            'input_value': HasRepr(IsStr(regex='.+Foobar object at.+')),
-            'context': {'error': IsStr(regex=r'\S+\.<locals>\.BadError: <exception str\(\) failed>')},
+            'type': 'get_attribute_error',
+            'loc': ('x',),
+            'msg': IsStr(regex=r'Error extracting attribute: \S+\.<locals>\.BadError: <exception str\(\) failed>'),
+            'input': HasRepr(IsStr(regex='.+Foobar object at.+')),
+            'ctx': {'error': IsStr(regex=r'\S+\.<locals>\.BadError: <exception str\(\) failed>')},
         }
     ]
 
@@ -1000,11 +995,11 @@ def test_from_attributes_error_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'get_attribute_error',
-            'loc': ['x'],
-            'message': 'Error extracting attribute: RuntimeError',
-            'input_value': HasRepr(IsStr(regex='.+UnInitError object at.+')),
-            'context': {'error': 'RuntimeError'},
+            'type': 'get_attribute_error',
+            'loc': ('x',),
+            'msg': 'Error extracting attribute: RuntimeError',
+            'input': HasRepr(IsStr(regex='.+UnInitError object at.+')),
+            'ctx': {'error': 'RuntimeError'},
         }
     ]
 
@@ -1019,10 +1014,10 @@ def test_from_attributes_error_error():
         (Cls(foo=(1, 2, 3, 4)), {'my_field': 4}),
         (Cls(spam=5), {'my_field': 5}),
         (Cls(spam=1, foo=Cls(bar=Cls(bat=2))), {'my_field': 2}),
-        (Cls(x='123'), Err(r'my_field\n +Field required \[kind=missing,')),
-        (Cls(x={2: 33}), Err(r'my_field\n +Field required \[kind=missing,')),
-        (Cls(foo='01234'), Err(r'my_field\n +Field required \[kind=missing,')),
-        (Cls(foo=[1]), Err(r'my_field\n +Field required \[kind=missing,')),
+        (Cls(x='123'), Err(r'my_field\n +Field required \[type=missing,')),
+        (Cls(x={2: 33}), Err(r'my_field\n +Field required \[type=missing,')),
+        (Cls(foo='01234'), Err(r'my_field\n +Field required \[type=missing,')),
+        (Cls(foo=[1]), Err(r'my_field\n +Field required \[type=missing,')),
         (Cls, Err(r'Input should be a valid dictionary')),
     ],
     ids=repr,
@@ -1062,11 +1057,11 @@ def test_from_attributes_path_error():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'get_attribute_error',
-            'loc': ['my_field'],
-            'message': 'Error extracting attribute: RuntimeError: intentional error',
-            'input_value': HasRepr(IsStr(regex='.+PropertyError object at.+')),
-            'context': {'error': 'RuntimeError: intentional error'},
+            'type': 'get_attribute_error',
+            'loc': ('my_field',),
+            'msg': 'Error extracting attribute: RuntimeError: intentional error',
+            'input': HasRepr(IsStr(regex='.+PropertyError object at.+')),
+            'ctx': {'error': 'RuntimeError: intentional error'},
         }
     ]
 
@@ -1088,10 +1083,10 @@ def test_alias_extra(py_and_json: PyAndJson):
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['field_a'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': '...',
+            'type': 'int_parsing',
+            'loc': ('field_a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': '...',
         }
     ]
 
@@ -1222,7 +1217,7 @@ class TestOnError:
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
         assert exc_info.value.errors() == [
-            {'input_value': ['foo'], 'kind': 'string_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
+            {'input': ['foo'], 'type': 'string_type', 'loc': ('x',), 'msg': 'Input should be a valid string'}
         ]
 
     def test_on_error_raise_explicit(self, py_and_json: PyAndJson):
@@ -1236,7 +1231,7 @@ class TestOnError:
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
         assert exc_info.value.errors() == [
-            {'input_value': ['foo'], 'kind': 'string_type', 'loc': ['x'], 'message': 'Input should be a valid string'}
+            {'input': ['foo'], 'type': 'string_type', 'loc': ('x',), 'msg': 'Input should be a valid string'}
         ]
 
     def test_on_error_omit(self, py_and_json: PyAndJson):
@@ -1365,5 +1360,5 @@ def test_frozen_field():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment('is_developer', False, r2)
     assert exc_info.value.errors() == [
-        {'kind': 'frozen', 'loc': ['is_developer'], 'message': 'Field is frozen', 'input_value': False}
+        {'type': 'frozen', 'loc': ('is_developer',), 'msg': 'Field is frozen', 'input': False}
     ]

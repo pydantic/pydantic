@@ -179,18 +179,18 @@ def test_sub_model_merge():
         v.validate_python({'f': 'tests', 'sub_model': {'f': ''}})
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_long',
-            'loc': ['f'],
-            'message': 'String should have at most 4 characters',
-            'input_value': 'tests',
-            'context': {'max_length': 4},
+            'type': 'string_too_long',
+            'loc': ('f',),
+            'msg': 'String should have at most 4 characters',
+            'input': 'tests',
+            'ctx': {'max_length': 4},
         },
         {
-            'kind': 'string_too_short',
-            'loc': ['sub_model', 'f'],
-            'message': 'String should have at least 1 characters',
-            'input_value': '',
-            'context': {'min_length': 1},
+            'type': 'string_too_short',
+            'loc': ('sub_model', 'f'),
+            'msg': 'String should have at least 1 characters',
+            'input': '',
+            'ctx': {'min_length': 1},
         },
     ]
 
@@ -209,14 +209,14 @@ def test_sub_model_merge():
             {'allow_inf_nan': False},
             {'type': 'float'},
             {'x': 'nan'},
-            Err('Input should be a finite number [kind=finite_number,'),
+            Err('Input should be a finite number [type=finite_number,'),
         ),
         # field `allow_inf_nan` (if set) should have priority over global config
         (
             {'allow_inf_nan': True},
             {'type': 'float', 'allow_inf_nan': False},
             {'x': 'nan'},
-            Err('Input should be a finite number [kind=finite_number,'),
+            Err('Input should be a finite number [type=finite_number,'),
         ),
         (
             {'allow_inf_nan': False},

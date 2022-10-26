@@ -8,7 +8,7 @@ use pyo3::types::{PyDict, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
 use crate::build_tools::{py_err, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -90,7 +90,7 @@ impl Validator for NewClassValidator {
             }
         } else if extra.strict.unwrap_or(self.strict) {
             Err(ValError::new(
-                ErrorKind::ModelClassType {
+                ErrorType::ModelClassType {
                     class_name: self.get_name().to_string(),
                 },
                 input,

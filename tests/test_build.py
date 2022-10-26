@@ -35,7 +35,7 @@ def test_schema_wrong_type():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(1)
     assert exc_info.value.args[0] == (
-        'Invalid Schema:\n  Input should be a valid dictionary [kind=dict_type, input_value=1, input_type=int]'
+        'Invalid Schema:\n  Input should be a valid dictionary [type=dict_type, input_value=1, input_type=int]'
     )
 
 

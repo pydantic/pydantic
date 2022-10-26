@@ -9,9 +9,9 @@ use pyo3::types::PyDict;
 use crate::build_tools::py_error_type;
 use crate::input::repr_string;
 
-use super::kinds::ErrorKind;
 use super::line_error::ValLineError;
 use super::location::Location;
+use super::types::ErrorType;
 use super::ValError;
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
@@ -126,7 +126,7 @@ pub fn pretty_py_line_errors<'a>(py: Python, line_errors_iter: impl Iterator<Ite
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyLineError {
-    kind: ErrorKind,
+    error_type: ErrorType,
     location: Location,
     input_value: PyObject,
 }
@@ -134,7 +134,7 @@ pub struct PyLineError {
 impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
     fn into_py(self, py: Python<'_>) -> PyLineError {
         PyLineError {
-            kind: self.kind,
+            error_type: self.error_type,
             location: self.location,
             input_value: self.input_value.to_object(py),
         }
@@ -145,7 +145,7 @@ impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
 impl<'a> IntoPy<ValLineError<'a>> for PyLineError {
     fn into_py(self, _py: Python) -> ValLineError<'a> {
         ValLineError {
-            kind: self.kind,
+            error_type: self.error_type,
             location: self.location,
             input_value: self.input_value.into(),
         }
@@ -155,13 +155,13 @@ impl<'a> IntoPy<ValLineError<'a>> for PyLineError {
 impl PyLineError {
     pub fn as_dict(&self, py: Python, include_context: Option<bool>) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
-        dict.set_item("kind", self.kind.kind())?;
+        dict.set_item("type", self.error_type.type_string())?;
         dict.set_item("loc", self.location.to_object(py))?;
-        dict.set_item("message", self.kind.render_message(py)?)?;
-        dict.set_item("input_value", &self.input_value)?;
+        dict.set_item("msg", self.error_type.render_message(py)?)?;
+        dict.set_item("input", &self.input_value)?;
         if include_context.unwrap_or(true) {
-            if let Some(context) = self.kind.py_dict(py)? {
-                dict.set_item("context", context)?;
+            if let Some(context) = self.error_type.py_dict(py)? {
+                dict.set_item("ctx", context)?;
             }
         }
         Ok(dict.into_py(py))
@@ -171,11 +171,11 @@ impl PyLineError {
         let mut output = String::with_capacity(200);
         write!(output, "{}", self.location)?;
 
-        let message = match self.kind.render_message(py) {
+        let message = match self.error_type.render_message(py) {
             Ok(message) => message,
             Err(err) => format!("(error rendering message: {err})"),
         };
-        write!(output, "  {message} [kind={}", self.kind.kind())?;
+        write!(output, "  {message} [type={}", self.error_type.type_string())?;
 
         let input_value = self.input_value.as_ref(py);
         let input_str = match repr_string(input_value) {

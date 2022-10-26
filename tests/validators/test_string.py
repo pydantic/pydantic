@@ -13,11 +13,11 @@ from ..conftest import Err, PyAndJson, plain_repr
     'input_value,expected',
     [
         ('foobar', 'foobar'),
-        (123, Err('Input should be a valid string [kind=string_type, input_value=123, input_type=int]')),
-        (123.456, Err('Input should be a valid string [kind=string_type, input_value=123.456, input_type=float]')),
-        (False, Err('Input should be a valid string [kind=string_type')),
-        (True, Err('Input should be a valid string [kind=string_type')),
-        ([], Err('Input should be a valid string [kind=string_type, input_value=[], input_type=list]')),
+        (123, Err('Input should be a valid string [type=string_type, input_value=123, input_type=int]')),
+        (123.456, Err('Input should be a valid string [type=string_type, input_value=123.456, input_type=float]')),
+        (False, Err('Input should be a valid string [type=string_type')),
+        (True, Err('Input should be a valid string [type=string_type')),
+        ([], Err('Input should be a valid string [type=string_type, input_value=[], input_type=list]')),
     ],
 )
 def test_str(py_and_json: PyAndJson, input_value, expected):
@@ -38,18 +38,18 @@ def test_str(py_and_json: PyAndJson, input_value, expected):
         (bytearray(b'foobar'), 'foobar'),
         (
             b'\x81',
-            Err('Input should be a valid string, unable to parse raw data as a unicode string [kind=string_unicode'),
+            Err('Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode'),
         ),
         (
             bytearray(b'\x81'),
-            Err('Input should be a valid string, unable to parse raw data as a unicode string [kind=string_unicode'),
+            Err('Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode'),
         ),
         # null bytes are very annoying, but we can't really block them here
         (b'\x00', '\x00'),
-        (123, Err('Input should be a valid string [kind=string_type, input_value=123, input_type=int]')),
+        (123, Err('Input should be a valid string [type=string_type, input_value=123, input_type=int]')),
         (
             Decimal('123'),
-            Err("Input should be a valid string [kind=string_type, input_value=Decimal('123'), input_type=Decimal]"),
+            Err("Input should be a valid string [type=string_type, input_value=Decimal('123'), input_type=Decimal]"),
         ),
     ],
 )
@@ -72,12 +72,12 @@ def test_str_not_json(input_value, expected):
         ({'strip_whitespace': True}, ' foobar  ', 'foobar'),
         ({'strip_whitespace': True, 'to_upper': True}, ' fooBar', 'FOOBAR'),
         ({'min_length': 5}, '12345', '12345'),
-        ({'min_length': 5}, '1234', Err('String should have at least 5 characters [kind=string_too_short')),
+        ({'min_length': 5}, '1234', Err('String should have at least 5 characters [type=string_too_short')),
         ({'max_length': 5}, '12345', '12345'),
-        ({'max_length': 5}, '123456', Err('String should have at most 5 characters [kind=string_too_long')),
+        ({'max_length': 5}, '123456', Err('String should have at most 5 characters [type=string_too_long')),
         ({'pattern': r'^\d+$'}, '12345', '12345'),
         ({'pattern': r'\d+$'}, 'foobar 123', 'foobar 123'),
-        ({'pattern': r'^\d+$'}, '12345a', Err("String should match pattern '^\\d+$' [kind=string_pattern_mismatch")),
+        ({'pattern': r'^\d+$'}, '12345a', Err("String should match pattern '^\\d+$' [type=string_pattern_mismatch")),
         # strip comes after length check
         ({'max_length': 5, 'strip_whitespace': True}, '1234  ', '1234'),
         # to_upper and strip comes after pattern check
@@ -103,7 +103,7 @@ def test_constrained_str(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_v
         (
             {'strict': True},
             123,
-            Err('Input should be a valid string [kind=string_type, input_value=123, input_type=int]'),
+            Err('Input should be a valid string [type=string_type, input_value=123, input_type=int]'),
         ),
     ],
 )
@@ -126,10 +126,10 @@ def test_unicode_error():
         v.validate_python('🐈 Hello \ud800World')
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_unicode',
-            'loc': [],
-            'message': 'Input should be a valid string, unable to parse raw data as a unicode string',
-            'input_value': '🐈 Hello \ud800World',
+            'type': 'string_unicode',
+            'loc': (),
+            'msg': 'Input should be a valid string, unable to parse raw data as a unicode string',
+            'input': '🐈 Hello \ud800World',
         }
     ]
 
@@ -174,11 +174,11 @@ def test_regex_error():
         v.validate_python('12')
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_pattern_mismatch',
-            'loc': [],
-            'message': "String should match pattern '11'",
-            'input_value': '12',
-            'context': {'pattern': '11'},
+            'type': 'string_pattern_mismatch',
+            'loc': (),
+            'msg': "String should match pattern '11'",
+            'input': '12',
+            'ctx': {'pattern': '11'},
         }
     ]
 
@@ -203,17 +203,17 @@ def fruit_enum_fixture():
 def test_strict_subclass(FruitEnum, kwargs):
     v = SchemaValidator(core_schema.string_schema(strict=True, **kwargs))
     assert v.validate_python('foobar') == 'foobar'
-    with pytest.raises(ValidationError, match='kind=string_type,'):
+    with pytest.raises(ValidationError, match='type=string_type,'):
         v.validate_python(b'foobar')
-    with pytest.raises(ValidationError, match='kind=string_sub_type,') as exc_info:
+    with pytest.raises(ValidationError, match='type=string_sub_type,') as exc_info:
         v.validate_python(FruitEnum.pear)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_sub_type',
-            'loc': [],
-            'message': 'Input should be a string, not an instance of a subclass of str',
-            'input_value': FruitEnum.pear,
+            'type': 'string_sub_type',
+            'loc': (),
+            'msg': 'Input should be a string, not an instance of a subclass of str',
+            'input': FruitEnum.pear,
         }
     ]
 

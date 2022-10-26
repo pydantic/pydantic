@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{is_strict, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -75,12 +75,12 @@ impl Validator for BytesConstrainedValidator {
 
         if let Some(min_length) = self.min_length {
             if len < min_length {
-                return Err(ValError::new(ErrorKind::BytesTooShort { min_length }, input));
+                return Err(ValError::new(ErrorType::BytesTooShort { min_length }, input));
             }
         }
         if let Some(max_length) = self.max_length {
             if len > max_length {
-                return Err(ValError::new(ErrorKind::BytesTooLong { max_length }, input));
+                return Err(ValError::new(ErrorType::BytesTooLong { max_length }, input));
             }
         }
 

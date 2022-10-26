@@ -9,7 +9,7 @@ use pyo3::PyTypeInfo;
 use ahash::AHashSet;
 
 use crate::build_tools::{is_strict, py_err, schema_or_config, schema_or_config_same, SchemaDict};
-use crate::errors::{py_err_string, ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::questions::Question;
@@ -198,7 +198,7 @@ impl Validator for TypedDictValidator {
                         Ok(v) => v,
                         Err(err) => {
                             errors.push(ValLineError::new_with_loc(
-                                ErrorKind::GetAttributeError {
+                                ErrorType::GetAttributeError {
                                     error: py_err_string(py, err),
                                 },
                                 input,
@@ -236,7 +236,7 @@ impl Validator for TypedDictValidator {
                         output_dict.set_item(&field.name_pystring, value.as_ref())?;
                     } else if field.required {
                         errors.push(ValLineError::new_with_loc(
-                            ErrorKind::Missing,
+                            ErrorType::Missing,
                             input,
                             field.name.clone(),
                         ));
@@ -255,7 +255,7 @@ impl Validator for TypedDictValidator {
                                 for err in line_errors {
                                     errors.push(
                                         err.with_outer_location(raw_key.as_loc_item())
-                                            .with_kind(ErrorKind::InvalidKey),
+                                            .with_type(ErrorType::InvalidKey),
                                     );
                                 }
                                 continue;
@@ -268,7 +268,7 @@ impl Validator for TypedDictValidator {
 
                         if self.forbid_extra {
                             errors.push(ValLineError::new_with_loc(
-                                ErrorKind::ExtraForbidden,
+                                ErrorType::ExtraForbidden,
                                 value,
                                 raw_key.as_loc_item(),
                             ));
@@ -381,7 +381,7 @@ impl TypedDictValidator {
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field) {
             if field.frozen {
-                Err(ValError::new_with_loc(ErrorKind::Frozen, input, field.name.to_string()))
+                Err(ValError::new_with_loc(ErrorType::Frozen, input, field.name.to_string()))
             } else {
                 prepare_result(field.validator.validate(py, input, extra, slots, recursion_guard))
             }
@@ -396,7 +396,7 @@ impl TypedDictValidator {
             // - with forbid this is obvious
             // - with ignore the model should never be overloaded, so an error is the clearest option
             Err(ValError::new_with_loc(
-                ErrorKind::ExtraForbidden,
+                ErrorType::ExtraForbidden,
                 input,
                 field.to_string(),
             ))

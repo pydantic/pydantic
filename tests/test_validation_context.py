@@ -80,7 +80,7 @@ def test_isinstance(py_and_json: PyAndJson):
     with pytest.raises(TypeError, match='is not iterable'):
         v.isinstance_test('foobar')
 
-    with pytest.raises(ValidationError, match=r'Value error, wrong \[kind=value_error,'):
+    with pytest.raises(ValidationError, match=r'Value error, wrong \[type=value_error,'):
         v.validate_test('foobar', None, {'error'})
 
     assert v.isinstance_test('foobar', None, {}) is True

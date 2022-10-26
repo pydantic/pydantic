@@ -7,7 +7,7 @@ use pyo3::types::{PyDict, PyList, PyString};
 use ahash::AHashSet;
 
 use crate::build_tools::{py_err, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::{NoHashSet, RecursionGuard};
 
@@ -82,7 +82,7 @@ impl Validator for LiteralSingleStringValidator {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
-                ErrorKind::LiteralError {
+                ErrorType::LiteralError {
                     expected: self.expected_repr.clone(),
                 },
                 input,
@@ -124,7 +124,7 @@ impl Validator for LiteralSingleIntValidator {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
-                ErrorKind::LiteralError {
+                ErrorType::LiteralError {
                     expected: self.expected.to_string(),
                 },
                 input,
@@ -179,7 +179,7 @@ impl Validator for LiteralMultipleStringsValidator {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
-                ErrorKind::LiteralError {
+                ErrorType::LiteralError {
                     expected: self.expected_repr.clone(),
                 },
                 input,
@@ -234,7 +234,7 @@ impl Validator for LiteralMultipleIntsValidator {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
-                ErrorKind::LiteralError {
+                ErrorType::LiteralError {
                     expected: self.expected_repr.clone(),
                 },
                 input,
@@ -316,7 +316,7 @@ impl Validator for LiteralGeneralValidator {
         }
 
         Err(ValError::new(
-            ErrorKind::LiteralError {
+            ErrorType::LiteralError {
                 expected: self.expected_repr.clone(),
             },
             input,

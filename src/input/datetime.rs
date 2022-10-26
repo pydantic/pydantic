@@ -5,7 +5,7 @@ use speedate::{Date, DateTime, Duration, ParseError, Time};
 use std::borrow::Cow;
 use strum::EnumMessage;
 
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 
 use super::Input;
 
@@ -257,7 +257,7 @@ pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
     match Date::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::DateParsing {
+            ErrorType::DateParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
@@ -269,7 +269,7 @@ pub fn bytes_as_time<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
     match Time::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::TimeParsing {
+            ErrorType::TimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
@@ -281,7 +281,7 @@ pub fn bytes_as_datetime<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> 
     match DateTime::parse_bytes(bytes) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::DatetimeParsing {
+            ErrorType::DatetimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
@@ -297,7 +297,7 @@ pub fn int_as_datetime<'a>(
     match DateTime::from_timestamp(timestamp, timestamp_microseconds) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::DatetimeParsing {
+            ErrorType::DatetimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
@@ -306,10 +306,10 @@ pub fn int_as_datetime<'a>(
 }
 
 macro_rules! nan_check {
-    ($input:ident, $float_value:ident, $error_kind:ident) => {
+    ($input:ident, $float_value:ident, $error_type:ident) => {
         if $float_value.is_nan() {
             return Err(ValError::new(
-                ErrorKind::$error_kind {
+                ErrorType::$error_type {
                     error: Cow::Borrowed("NaN values not permitted"),
                 },
                 $input,
@@ -352,7 +352,7 @@ pub fn int_as_time<'a>(
     let time_timestamp: u32 = match timestamp {
         t if t < 0_i64 => {
             return Err(ValError::new(
-                ErrorKind::TimeParsing {
+                ErrorType::TimeParsing {
                     error: Cow::Borrowed("time in seconds should be positive"),
                 },
                 input,
@@ -366,7 +366,7 @@ pub fn int_as_time<'a>(
     match Time::from_timestamp(time_timestamp, timestamp_microseconds) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
-            ErrorKind::TimeParsing {
+            ErrorType::TimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
             },
             input,
@@ -383,7 +383,7 @@ pub fn float_as_time<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult
 
 fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError<'a> {
     ValError::new(
-        ErrorKind::TimeDeltaParsing {
+        ErrorType::TimeDeltaParsing {
             error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
         },
         input,

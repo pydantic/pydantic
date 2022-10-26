@@ -101,9 +101,9 @@ class TestModelClass:
         with pytest.raises(ValidationError) as exc_info:
             schema_validator.validate_python({'a': 2})
         assert exc_info.value.errors() == [
-            {'kind': 'missing', 'loc': ['ModelA', 'b'], 'message': 'Field required', 'input_value': {'a': 2}},
-            {'kind': 'missing', 'loc': ['ModelB', 'c'], 'message': 'Field required', 'input_value': {'a': 2}},
-            {'kind': 'missing', 'loc': ['ModelB', 'd'], 'message': 'Field required', 'input_value': {'a': 2}},
+            {'type': 'missing', 'loc': ('ModelA', 'b'), 'msg': 'Field required', 'input': {'a': 2}},
+            {'type': 'missing', 'loc': ('ModelB', 'c'), 'msg': 'Field required', 'input': {'a': 2}},
+            {'type': 'missing', 'loc': ('ModelB', 'd'), 'msg': 'Field required', 'input': {'a': 2}},
         ]
 
 
@@ -180,12 +180,12 @@ def test_nullable_via_union():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('hello')
     assert exc_info.value.errors() == [
-        {'kind': 'none_required', 'loc': ['none'], 'message': 'Input should be None/null', 'input_value': 'hello'},
+        {'type': 'none_required', 'loc': ('none',), 'msg': 'Input should be None/null', 'input': 'hello'},
         {
-            'kind': 'int_parsing',
-            'loc': ['int'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'hello',
+            'type': 'int_parsing',
+            'loc': ('int',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'hello',
         },
     ]
 
@@ -207,16 +207,16 @@ def test_union_list_bool_int():
         v.validate_python([3, 'true'])
     assert exc_info.value.errors() == [
         {
-            'kind': 'bool_parsing',
-            'loc': ['list[bool]', 0],
-            'message': 'Input should be a valid boolean, unable to interpret input',
-            'input_value': 3,
+            'type': 'bool_parsing',
+            'loc': ('list[bool]', 0),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'input': 3,
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['list[int]', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'true',
+            'type': 'int_parsing',
+            'loc': ('list[int]', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'true',
         },
     ]
 
@@ -228,7 +228,7 @@ def test_no_choices():
     assert exc_info.value.args[0] == (
         'Invalid Schema:\n'
         'union -> choices\n'
-        "  Field required [kind=missing, input_value={'type': 'union'}, input_type=dict]"
+        "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]"
     )
 
 
@@ -241,8 +241,8 @@ def test_strict_union():
         v.validate_python('123')
 
     assert exc_info.value.errors() == [
-        {'kind': 'bool_type', 'loc': ['bool'], 'message': 'Input should be a valid boolean', 'input_value': '123'},
-        {'kind': 'int_type', 'loc': ['int'], 'message': 'Input should be a valid integer', 'input_value': '123'},
+        {'type': 'bool_type', 'loc': ('bool',), 'msg': 'Input should be a valid boolean', 'input': '123'},
+        {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': '123'},
     ]
 
 
@@ -251,7 +251,7 @@ def test_custom_error():
         {
             'type': 'union',
             'choices': [{'type': 'str'}, {'type': 'bytes'}],
-            'custom_error_kind': 'my_error',
+            'custom_error_type': 'my_error',
             'custom_error_message': 'Input should be a string or bytes',
         }
     )
@@ -261,13 +261,13 @@ def test_custom_error():
         v.validate_python(123)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'my_error', 'loc': [], 'message': 'Input should be a string or bytes', 'input_value': 123}
+        {'type': 'my_error', 'loc': (), 'msg': 'Input should be a string or bytes', 'input': 123}
     ]
 
 
-def test_custom_error_kind():
+def test_custom_error_type():
     v = SchemaValidator(
-        {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'custom_error_kind': 'string_type'}
+        {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'bytes'}], 'custom_error_type': 'string_type'}
     )
     assert v.validate_python('hello') == 'hello'
     assert v.validate_python(b'hello') == b'hello'
@@ -275,16 +275,16 @@ def test_custom_error_kind():
         v.validate_python(123)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'string_type', 'loc': [], 'message': 'Input should be a valid string', 'input_value': 123}
+        {'type': 'string_type', 'loc': (), 'msg': 'Input should be a valid string', 'input': 123}
     ]
 
 
-def test_custom_error_kind_context():
+def test_custom_error_type_context():
     v = SchemaValidator(
         {
             'type': 'union',
             'choices': [{'type': 'str'}, {'type': 'bytes'}],
-            'custom_error_kind': 'less_than',
+            'custom_error_type': 'less_than',
             'custom_error_context': {'lt': 42},
         }
     )
@@ -294,11 +294,5 @@ def test_custom_error_kind_context():
         v.validate_python(123)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'kind': 'less_than',
-            'loc': [],
-            'message': 'Input should be less than 42',
-            'input_value': 123,
-            'context': {'lt': 42.0},
-        }
+        {'type': 'less_than', 'loc': (), 'msg': 'Input should be less than 42', 'input': 123, 'ctx': {'lt': 42.0}}
     ]

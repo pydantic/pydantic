@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
@@ -60,10 +60,10 @@ impl Validator for RecursiveRefValidator {
         if let Some(id) = input.identity() {
             if recursion_guard.contains_or_insert(id) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                Err(ValError::new(ErrorKind::RecursionLoop, input))
+                Err(ValError::new(ErrorType::RecursionLoop, input))
             } else {
                 if recursion_guard.incr_depth() > BACKUP_GUARD_LIMIT {
-                    return Err(ValError::new(ErrorKind::RecursionLoop, input));
+                    return Err(ValError::new(ErrorType::RecursionLoop, input));
                 }
                 let output = validate(self.validator_id, py, input, extra, slots, recursion_guard);
                 recursion_guard.remove(&id);

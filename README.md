@@ -64,7 +64,7 @@ except ValidationError as e:
     1 validation error for model
     age
       Input should be greater than or equal to 18
-      [kind=greater_than_equal, context={ge: 18}, input_value=11, input_type=int]
+      [type=greater_than_equal, context={ge: 18}, input_value=11, input_type=int]
     """
 ```
 
