@@ -6,7 +6,7 @@ Do a little skipping about with types to demonstrate its usage.
 import os
 from datetime import date, datetime, timedelta
 from pathlib import Path, PurePath
-from typing import Any, Dict, ForwardRef, Generic, List, TypeVar
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from typing_extensions import TypedDict
@@ -54,9 +54,9 @@ class Flags(BaseModel):
 class Model(BaseModel):
     age: int
     first_name: str = 'John'
-    last_name: str | None = None
-    signup_ts: datetime | None = None
-    list_of_ints: list[int]
+    last_name: Optional[str] = None
+    signup_ts: Optional[datetime] = None
+    list_of_ints: List[int]
 
     @validator('age')
     def check_age(cls, value: int) -> int:
@@ -172,8 +172,8 @@ FooRef = ForwardRef('Foo')
 
 
 class MyConf(BaseModel):
-    str_pyobject: ImportString[type[date]] = Field('datetime.date')
-    callable_pyobject: ImportString[type[date]] = Field(date)
+    str_pyobject: ImportString[Type[date]] = Field('datetime.date')
+    callable_pyobject: ImportString[Type[date]] = Field(date)
 
 
 conf = MyConf()

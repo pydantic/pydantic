@@ -11,7 +11,7 @@ from pydantic.types import Json
 class Model(BaseModel):
     age: int
     first_name = 'John'
-    last_name: str | None = None
+    last_name: Optional[str] = None
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
     json_list_of_ints: Json[List[int]]
