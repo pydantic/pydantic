@@ -5,6 +5,8 @@ import pytest
 
 from pydantic import BaseModel, PydanticUserError, ValidationError, root_validator
 
+pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
+
 
 def test_getdict():
     class TestCls:

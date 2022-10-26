@@ -123,7 +123,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __fields_set__: set[str] = set()
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
-            'Pydantic models should in inherit from BaseModel, BaseModel cannot be initialised directly'
+            'Pydantic models should in inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
     Config = BaseConfig

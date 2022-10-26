@@ -12,6 +12,7 @@ from pydantic import BaseModel, Extra, Field, ValidationError, validate_argument
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import PydanticUserError
 
+pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
 

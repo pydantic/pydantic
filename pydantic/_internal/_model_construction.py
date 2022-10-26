@@ -244,6 +244,10 @@ def generate_model_signature(
     use_var_kw = False
 
     for param in islice(present_params, 1, None):  # skip self arg
+        # inspect does "clever" things to show annotations as strings because we have
+        # `from __future__ import annotations` in main, we don't want that
+        if param.annotation == 'Any':
+            param = param.replace(annotation=Any)
         if param.kind is param.VAR_KEYWORD:
             var_kw = param
             continue
@@ -265,7 +269,7 @@ def generate_model_signature(
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {} if field.is_required() else {'default': field.get_default()}
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.annotation, **kwargs
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
 
     if config.extra is Extra.allow:

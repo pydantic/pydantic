@@ -1,9 +1,12 @@
+import sys
 from inspect import Parameter, Signature, signature
 from typing import Any, Iterable, Optional, Union
 
+import pytest
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Extra, Field, create_model
+from pydantic._internal._typing_extra import is_annotated
 
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
@@ -21,7 +24,7 @@ def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
 def test_model_signature():
     class Model(BaseModel):
         a: float = Field(..., title='A')
-        b = Field(10)
+        b: int = Field(10)
 
     sig = signature(Model)
     assert sig != signature(BaseModel)
@@ -67,6 +70,7 @@ def test_custom_init_signature_with_no_var_kw():
     assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
 
+@pytest.mark.xfail(reason='TODO create_model')
 def test_invalid_identifiers_signature():
     model = create_model(
         'Model', **{'123 invalid identifier!': Field(123, alias='valid_identifier'), '!': Field(0, alias='yeah')}
@@ -161,20 +165,24 @@ def test_optional_field():
     )
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
 def test_annotated_field():
+    from annotated_types import Gt
+
     class Model(BaseModel):
-        foo: Annotated[int, 'foo'] = 1
+        foo: Annotated[int, Gt(1)] = 1
 
-    assert signature(Model) == Signature(
-        [Parameter('foo', Parameter.KEYWORD_ONLY, default=1, annotation=Annotated[int, 'foo'])], return_annotation=None
-    )
+    sig = signature(Model)
+    assert str(sig) == '(*, foo: typing.Annotated[int, Gt(gt=1)] = 1) -> None'
+    # check that the `Annotated` we created is a valid `Annotated`
+    assert is_annotated(sig.parameters['foo'].annotation)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
 def test_annotated_optional_field():
-    class Model(BaseModel):
-        foo: Annotated[Optional[int], 'foo'] = None
+    from annotated_types import Gt
 
-    assert signature(Model) == Signature(
-        [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Annotated[Optional[int], 'foo'])],
-        return_annotation=None,
-    )
+    class Model(BaseModel):
+        foo: Annotated[Optional[int], Gt(1)] = None
+
+    assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'

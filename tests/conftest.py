@@ -11,33 +11,6 @@ from typing import Any, Optional
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
-passing_files = {
-    'test_abc.py',
-    'test_callable.py',
-    'test_recursion.py',
-    'test_rich_repr.py',
-    'test_structural_pattern_matching.py',
-    'test_version.py',
-    'test_networks.py',
-    'test_networks_ipaddress.py',
-    'test_color.py',
-    'test_datetime.py',
-    'test_main.py',
-    'test_utils.py',
-    'test_typing.py',
-    'test_annotated.py',
-    'test_assert_in_validators.py',
-    'test_private_attributes.py',
-    'test_mypy.py',
-    'test_forward_ref.py',
-}
-
-
-def pytest_collection_modifyitems(items):
-    for item in items:
-        if not item.parent.name.startswith('test_types') and item.parent.name not in passing_files:
-            item.add_marker('xfail')
-
 
 def _extract_source_code_from_function(function):
     if function.__code__.co_argcount:

@@ -23,6 +23,8 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
+pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
+
 
 def test_generic_name():
     data_type = TypeVar('data_type')
