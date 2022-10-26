@@ -247,7 +247,7 @@ if TYPE_CHECKING:
     ImportString = Annotated[AnyType, ...]
 else:
 
-    class ImportString(_fields.PydanticMetadata):
+    class ImportString:
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
@@ -295,7 +295,7 @@ def condecimal(
 
 
 @_dataclasses.dataclass
-class UuidVersion(_fields.PydanticMetadata):
+class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
@@ -322,7 +322,7 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 
 
 @_dataclasses.dataclass
-class PathType(_fields.PydanticMetadata):
+class PathType:
     path_type: Literal['file', 'dir', 'new']
 
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
@@ -376,7 +376,7 @@ if TYPE_CHECKING:
 
 else:
 
-    class Json(_fields.PydanticMetadata):
+    class Json:
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
@@ -711,7 +711,7 @@ if TYPE_CHECKING:
     FutureDate = Annotated[date, ...]
 else:
 
-    class PastDate(_fields.PydanticMetadata):
+    class PastDate:
         @classmethod
         def __get_pydantic_validation_schema__(
             cls, schema: core_schema.CoreSchema | None = None
@@ -727,7 +727,7 @@ else:
         def __repr__(self) -> str:
             return 'PastDate'
 
-    class FutureDate(_fields.PydanticMetadata):
+    class FutureDate:
         @classmethod
         def __get_pydantic_validation_schema__(
             cls, schema: core_schema.CoreSchema | None = None
