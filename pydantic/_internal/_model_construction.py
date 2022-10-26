@@ -94,9 +94,11 @@ def deferred_model_get_pydantic_validation_schema(
     cls: type[BaseModel], types_namespace: dict[str, Any] | None, **_kwargs: Any
 ) -> core_schema.CoreSchema:
     """
-    Bound used on model as `__get_pydantic_validation_schema__` if not all type hints are available.
+    Used on model as `__get_pydantic_validation_schema__` if not all type hints are available.
 
-    This method trys to rebuild the model schema and return `__pydantic_validation_schema__`.
+    This method generates the schema for the model and also sets `__fields__`, but it does NOT build
+    the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
+    models.
     """
     inner_schema, fields = build_inner_schema(
         cls,
@@ -106,7 +108,8 @@ def deferred_model_get_pydantic_validation_schema(
         types_namespace,
     )
 
-    core_config = generate_config(cls.__config__)
+    core_config = generate_config(cls)
+    # we have to set __fields__ as otherwise `repr` on the model will fail
     cls.__fields__ = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     return core_schema.new_class_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
@@ -147,7 +150,7 @@ def complete_model_class(
 
     validator_functions.check_for_unused()
 
-    core_config = generate_config(cls.__config__)
+    core_config = generate_config(cls)
     cls.__fields__ = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None

@@ -19,7 +19,7 @@ from . import _fields, _typing_extra
 from ._validation_functions import ValidationFunctions, Validator
 
 if TYPE_CHECKING:
-    from ..config import BaseConfig
+    from ..main import BaseModel
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -45,11 +45,13 @@ def model_fields_schema(
     return schema
 
 
-def generate_config(config: type[BaseConfig]) -> core_schema.CoreConfig:
+def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
     """
     Create a pydantic-core config from a pydantic config.
     """
+    config = cls.__config__
     return core_schema.CoreConfig(
+        title=config.title or cls.__name__,
         typed_dict_extra_behavior=config.extra.value,
         allow_inf_nan=config.allow_inf_nan,
         populate_by_name=config.allow_population_by_field_name,

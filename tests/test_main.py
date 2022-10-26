@@ -47,6 +47,11 @@ def test_ultra_simple_missing():
     assert exc_info.value.errors() == [
         {'loc': ['a'], 'message': 'Field required', 'kind': 'missing', 'input_value': {}}
     ]
+    assert str(exc_info.value) == (
+        '1 validation error for UltraSimpleModel\n'
+        'a\n'
+        '  Field required [kind=missing, input_value={}, input_type=dict]'
+    )
 
 
 def test_ultra_simple_failed():
