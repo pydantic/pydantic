@@ -12,7 +12,7 @@ use pyo3::types::{
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
-use crate::errors::{py_err_string, ErrorKind, InputValue, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
@@ -124,10 +124,11 @@ impl<'a> Input<'a> for PyAny {
                         } else if args.is_none() {
                             Ok(None)
                         } else if let Ok(list) = args.cast_as::<PyList>() {
+                            // remove `collect` when we have https://github.com/PyO3/pyo3/pull/2676
                             Ok(Some(PyTuple::new(self.py(), list.iter().collect::<Vec<_>>())))
                         } else {
                             Err(ValLineError::new_with_loc(
-                                ErrorKind::PositionalArgumentsType,
+                                ErrorType::PositionalArgumentsType,
                                 args,
                                 "__args__",
                             ))
@@ -139,7 +140,7 @@ impl<'a> Input<'a> for PyAny {
                             Ok(None)
                         } else {
                             Err(ValLineError::new_with_loc(
-                                ErrorKind::KeywordArgumentsType,
+                                ErrorType::KeywordArgumentsType,
                                 kwargs,
                                 "__kwargs__",
                             ))
@@ -160,10 +161,11 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(PyArgs::new(Some(tuple), None).into())
         } else if let Ok(list) = self.cast_as::<PyList>() {
+            // remove `collect` when we have https://github.com/PyO3/pyo3/pull/2676
             let tuple = PyTuple::new(self.py(), list.iter().collect::<Vec<_>>());
             Ok(PyArgs::new(Some(tuple), None).into())
         } else {
-            Err(ValError::new(ErrorKind::ArgumentsType, self))
+            Err(ValError::new(ErrorType::ArgumentsType, self))
         }
     }
 
@@ -176,7 +178,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
             serde_json::from_slice(unsafe { py_byte_array.as_bytes() }).map_err(|e| map_json_err(self, e))
         } else {
-            Err(ValError::new(ErrorKind::JsonType, self))
+            Err(ValError::new(ErrorType::JsonType, self))
         }
     }
 
@@ -185,10 +187,10 @@ impl<'a> Input<'a> for PyAny {
             if is_builtin_str(py_str) {
                 Ok(py_str.into())
             } else {
-                Err(ValError::new(ErrorKind::StringSubType, self))
+                Err(ValError::new(ErrorType::StringSubType, self))
             }
         } else {
-            Err(ValError::new(ErrorKind::StringType, self))
+            Err(ValError::new(ErrorType::StringType, self))
         }
     }
 
@@ -204,17 +206,17 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(bytes) = self.cast_as::<PyBytes>() {
             let str = match from_utf8(bytes.as_bytes()) {
                 Ok(s) => s,
-                Err(_) => return Err(ValError::new(ErrorKind::StringUnicode, self)),
+                Err(_) => return Err(ValError::new(ErrorType::StringUnicode, self)),
             };
             Ok(str.into())
         } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
             let str = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
                 Ok(s) => s,
-                Err(_) => return Err(ValError::new(ErrorKind::StringUnicode, self)),
+                Err(_) => return Err(ValError::new(ErrorType::StringUnicode, self)),
             };
             Ok(str.into())
         } else {
-            Err(ValError::new(ErrorKind::StringType, self))
+            Err(ValError::new(ErrorType::StringType, self))
         }
     }
 
@@ -222,7 +224,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             Ok(py_bytes.into())
         } else {
-            Err(ValError::new(ErrorKind::BytesType, self))
+            Err(ValError::new(ErrorType::BytesType, self))
         }
     }
 
@@ -235,7 +237,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
             Ok(py_byte_array.to_vec().into())
         } else {
-            Err(ValError::new(ErrorKind::BytesType, self))
+            Err(ValError::new(ErrorType::BytesType, self))
         }
     }
 
@@ -243,70 +245,70 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
         } else {
-            Err(ValError::new(ErrorKind::BoolType, self))
+            Err(ValError::new(ErrorType::BoolType, self))
         }
     }
 
     fn lax_bool(&self) -> ValResult<bool> {
         if let Ok(bool) = self.extract::<bool>() {
             Ok(bool)
-        } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::BoolParsing)? {
+        } else if let Some(cow_str) = maybe_as_string(self, ErrorType::BoolParsing)? {
             str_as_bool(self, &cow_str)
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_bool(self, int)
         } else if let Ok(float) = self.extract::<f64>() {
             match float_as_int(self, float) {
                 Ok(int) => int_as_bool(self, int),
-                _ => Err(ValError::new(ErrorKind::BoolType, self)),
+                _ => Err(ValError::new(ErrorType::BoolType, self)),
             }
         } else {
-            Err(ValError::new(ErrorKind::BoolType, self))
+            Err(ValError::new(ErrorType::BoolType, self))
         }
     }
 
     fn strict_int(&self) -> ValResult<i64> {
         // bool check has to come before int check as bools would be cast to ints below
         if self.extract::<bool>().is_ok() {
-            Err(ValError::new(ErrorKind::IntType, self))
+            Err(ValError::new(ErrorType::IntType, self))
         } else if let Ok(int) = self.extract::<i64>() {
             Ok(int)
         } else {
-            Err(ValError::new(ErrorKind::IntType, self))
+            Err(ValError::new(ErrorType::IntType, self))
         }
     }
 
     fn lax_int(&self) -> ValResult<i64> {
         if let Ok(int) = self.extract::<i64>() {
             Ok(int)
-        } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::IntParsing)? {
+        } else if let Some(cow_str) = maybe_as_string(self, ErrorType::IntParsing)? {
             str_as_int(self, &cow_str)
         } else if let Ok(float) = self.lax_float() {
             float_as_int(self, float)
         } else {
-            Err(ValError::new(ErrorKind::IntType, self))
+            Err(ValError::new(ErrorType::IntType, self))
         }
     }
 
     fn strict_float(&self) -> ValResult<f64> {
         if self.extract::<bool>().is_ok() {
-            Err(ValError::new(ErrorKind::FloatType, self))
+            Err(ValError::new(ErrorType::FloatType, self))
         } else if let Ok(float) = self.extract::<f64>() {
             Ok(float)
         } else {
-            Err(ValError::new(ErrorKind::FloatType, self))
+            Err(ValError::new(ErrorType::FloatType, self))
         }
     }
 
     fn lax_float(&self) -> ValResult<f64> {
         if let Ok(float) = self.extract::<f64>() {
             Ok(float)
-        } else if let Some(cow_str) = maybe_as_string(self, ErrorKind::FloatParsing)? {
+        } else if let Some(cow_str) = maybe_as_string(self, ErrorType::FloatParsing)? {
             match cow_str.as_ref().parse::<f64>() {
                 Ok(i) => Ok(i),
-                Err(_) => Err(ValError::new(ErrorKind::FloatParsing, self)),
+                Err(_) => Err(ValError::new(ErrorType::FloatParsing, self)),
             }
         } else {
-            Err(ValError::new(ErrorKind::FloatType, self))
+            Err(ValError::new(ErrorType::FloatType, self))
         }
     }
 
@@ -314,7 +316,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
         } else {
-            Err(ValError::new(ErrorKind::DictType, self))
+            Err(ValError::new(ErrorType::DictType, self))
         }
     }
 
@@ -324,7 +326,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(generic_mapping) = mapping_as_dict(self) {
             generic_mapping
         } else {
-            Err(ValError::new(ErrorKind::DictType, self))
+            Err(ValError::new(ErrorType::DictType, self))
         }
     }
 
@@ -344,7 +346,7 @@ impl<'a> Input<'a> for PyAny {
                 Ok(self.into())
             } else {
                 // note the error here gives a hint about from_attributes
-                Err(ValError::new(ErrorKind::DictAttributesType, self))
+                Err(ValError::new(ErrorType::DictAttributesType, self))
             }
         } else {
             // otherwise we just call back to lax_dict if from_mapping is allowed, not there error in this
@@ -357,7 +359,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(list) = self.cast_as::<PyList>() {
             Ok(list.into())
         } else {
-            Err(ValError::new(ErrorKind::ListType, self))
+            Err(ValError::new(ErrorType::ListType, self))
         }
     }
 
@@ -374,7 +376,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyList, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::ListType, self))
+            Err(ValError::new(ErrorType::ListType, self))
         }
     }
 
@@ -389,7 +391,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyList, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::ListType, self))
+            Err(ValError::new(ErrorType::ListType, self))
         }
     }
 
@@ -397,7 +399,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(tuple) = self.cast_as::<PyTuple>() {
             Ok(tuple.into())
         } else {
-            Err(ValError::new(ErrorKind::TupleType, self))
+            Err(ValError::new(ErrorType::TupleType, self))
         }
     }
 
@@ -412,7 +414,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::TupleType, self))
+            Err(ValError::new(ErrorType::TupleType, self))
         }
     }
 
@@ -425,7 +427,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::TupleType, self))
+            Err(ValError::new(ErrorType::TupleType, self))
         }
     }
 
@@ -433,7 +435,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(set) = self.cast_as::<PySet>() {
             Ok(set.into())
         } else {
-            Err(ValError::new(ErrorKind::SetType, self))
+            Err(ValError::new(ErrorType::SetType, self))
         }
     }
 
@@ -452,7 +454,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::SetType, self))
+            Err(ValError::new(ErrorType::SetType, self))
         }
     }
 
@@ -469,7 +471,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::SetType, self))
+            Err(ValError::new(ErrorType::SetType, self))
         }
     }
 
@@ -477,7 +479,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(set) = self.cast_as::<PyFrozenSet>() {
             Ok(set.into())
         } else {
-            Err(ValError::new(ErrorKind::FrozenSetType, self))
+            Err(ValError::new(ErrorType::FrozenSetType, self))
         }
     }
 
@@ -496,7 +498,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::FrozenSetType, self))
+            Err(ValError::new(ErrorType::FrozenSetType, self))
         }
     }
 
@@ -513,7 +515,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
-            Err(ValError::new(ErrorKind::FrozenSetType, self))
+            Err(ValError::new(ErrorType::FrozenSetType, self))
         }
     }
 
@@ -521,18 +523,18 @@ impl<'a> Input<'a> for PyAny {
         if self.iter().is_ok() {
             Ok(self.into())
         } else {
-            Err(ValError::new(ErrorKind::IterableType, self))
+            Err(ValError::new(ErrorType::IterableType, self))
         }
     }
 
     fn strict_date(&self) -> ValResult<EitherDate> {
         if self.cast_as::<PyDateTime>().is_ok() {
             // have to check if it's a datetime first, otherwise the line below converts to a date
-            Err(ValError::new(ErrorKind::DateType, self))
+            Err(ValError::new(ErrorType::DateType, self))
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date.into())
         } else {
-            Err(ValError::new(ErrorKind::DateType, self))
+            Err(ValError::new(ErrorType::DateType, self))
         }
     }
 
@@ -540,7 +542,7 @@ impl<'a> Input<'a> for PyAny {
         if self.cast_as::<PyDateTime>().is_ok() {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             // even if we later try coercion from a datetime, we don't want to return a datetime now
-            Err(ValError::new(ErrorKind::DateType, self))
+            Err(ValError::new(ErrorType::DateType, self))
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date.into())
         } else if let Ok(py_str) = self.cast_as::<PyString>() {
@@ -549,7 +551,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_date(self, py_bytes.as_bytes())
         } else {
-            Err(ValError::new(ErrorKind::DateType, self))
+            Err(ValError::new(ErrorType::DateType, self))
         }
     }
 
@@ -557,7 +559,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(time) = self.cast_as::<PyTime>() {
             Ok(time.into())
         } else {
-            Err(ValError::new(ErrorKind::TimeType, self))
+            Err(ValError::new(ErrorType::TimeType, self))
         }
     }
 
@@ -570,13 +572,13 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_time(self, py_bytes.as_bytes())
         } else if self.cast_as::<PyBool>().is_ok() {
-            Err(ValError::new(ErrorKind::TimeType, self))
+            Err(ValError::new(ErrorType::TimeType, self))
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_time(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_time(self, float)
         } else {
-            Err(ValError::new(ErrorKind::TimeType, self))
+            Err(ValError::new(ErrorType::TimeType, self))
         }
     }
 
@@ -584,7 +586,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(dt) = self.cast_as::<PyDateTime>() {
             Ok(dt.into())
         } else {
-            Err(ValError::new(ErrorKind::DatetimeType, self))
+            Err(ValError::new(ErrorType::DatetimeType, self))
         }
     }
 
@@ -597,7 +599,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(py_bytes) = self.cast_as::<PyBytes>() {
             bytes_as_datetime(self, py_bytes.as_bytes())
         } else if self.cast_as::<PyBool>().is_ok() {
-            Err(ValError::new(ErrorKind::DatetimeType, self))
+            Err(ValError::new(ErrorType::DatetimeType, self))
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_datetime(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
@@ -605,7 +607,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(date) = self.cast_as::<PyDate>() {
             Ok(date_as_datetime(date)?)
         } else {
-            Err(ValError::new(ErrorKind::DatetimeType, self))
+            Err(ValError::new(ErrorType::DatetimeType, self))
         }
     }
 
@@ -613,7 +615,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(dt) = self.cast_as::<PyDelta>() {
             Ok(dt.into())
         } else {
-            Err(ValError::new(ErrorKind::TimeDeltaType, self))
+            Err(ValError::new(ErrorType::TimeDeltaType, self))
         }
     }
 
@@ -630,7 +632,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(float) = self.extract::<f64>() {
             Ok(float_as_duration(self, float)?.into())
         } else {
-            Err(ValError::new(ErrorKind::TimeDeltaType, self))
+            Err(ValError::new(ErrorType::TimeDeltaType, self))
         }
     }
 }
@@ -658,7 +660,7 @@ fn mapping_as_dict(obj: &PyAny) -> Option<ValResult<GenericMapping>> {
     match result_dict {
         Ok(dict) => Some(Ok(dict.into())),
         Err(err) => Some(Err(ValError::new(
-            ErrorKind::DictFromMapping {
+            ErrorType::DictFromMapping {
                 error: py_err_string(obj.py(), err),
             },
             obj,
@@ -694,7 +696,7 @@ fn from_attributes_applicable(obj: &PyAny) -> bool {
 }
 
 /// Utility for extracting a string from a PyAny, if possible.
-fn maybe_as_string(v: &PyAny, unicode_error: ErrorKind) -> ValResult<Option<Cow<str>>> {
+fn maybe_as_string(v: &PyAny, unicode_error: ErrorType) -> ValResult<Option<Cow<str>>> {
     if let Ok(py_string) = v.cast_as::<PyString>() {
         let str = py_string_str(py_string)?;
         Ok(Some(Cow::Borrowed(str)))

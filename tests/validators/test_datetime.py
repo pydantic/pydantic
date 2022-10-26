@@ -20,15 +20,15 @@ from ..conftest import Err, PyAndJson
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         (b'2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         (b'2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
-        ((1,), Err('Input should be a valid datetime [kind=datetime_type')),
-        (time(1, 2, 3), Err('Input should be a valid datetime [kind=datetime_type')),
+        ((1,), Err('Input should be a valid datetime [type=datetime_type')),
+        (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
         (Decimal('1654646400'), datetime(2022, 6, 8)),
         (Decimal('1654646400.123456'), datetime(2022, 6, 8, 0, 0, 0, 123456)),
         (Decimal('1654646400.1234564'), datetime(2022, 6, 8, 0, 0, 0, 123456)),
         (Decimal('1654646400.1234568'), datetime(2022, 6, 8, 0, 0, 0, 123457)),
         (253_402_300_800_000, Err('should be a valid datetime, dates after 9999 are not supported as unix timestamps')),
         (-20_000_000_000, Err('should be a valid datetime, dates before 1600 are not supported as unix timestamps')),
-        (float('nan'), Err('Input should be a valid datetime, NaN values not permitted [kind=datetime_parsing,')),
+        (float('nan'), Err('Input should be a valid datetime, NaN values not permitted [type=datetime_parsing,')),
         (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
         (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
     ],
@@ -48,12 +48,12 @@ def test_datetime(input_value, expected):
     'input_value,expected',
     [
         (datetime(2022, 6, 8, 12, 13, 14), datetime(2022, 6, 8, 12, 13, 14)),
-        (date(2022, 6, 8), Err('Input should be a valid datetime [kind=datetime_type')),
-        ('2022-06-08T12:13:14', Err('Input should be a valid datetime [kind=datetime_type')),
-        (b'2022-06-08T12:13:14', Err('Input should be a valid datetime [kind=datetime_type')),
-        (time(1, 2, 3), Err('Input should be a valid datetime [kind=datetime_type')),
-        (1654646400, Err('Input should be a valid datetime [kind=datetime_type')),
-        (Decimal('1654646400'), Err('Input should be a valid datetime [kind=datetime_type')),
+        (date(2022, 6, 8), Err('Input should be a valid datetime [type=datetime_type')),
+        ('2022-06-08T12:13:14', Err('Input should be a valid datetime [type=datetime_type')),
+        (b'2022-06-08T12:13:14', Err('Input should be a valid datetime [type=datetime_type')),
+        (time(1, 2, 3), Err('Input should be a valid datetime [type=datetime_type')),
+        (1654646400, Err('Input should be a valid datetime [type=datetime_type')),
+        (Decimal('1654646400'), Err('Input should be a valid datetime [type=datetime_type')),
     ],
 )
 def test_datetime_strict(input_value, expected):
@@ -91,7 +91,7 @@ def test_keep_tz_bound():
     assert output.tzinfo.dst(datetime(2022, 6, 1)) == timedelta(hours=1)
     assert output.tzinfo.dst(datetime(2022, 1, 1)) == timedelta(0)
 
-    with pytest.raises(ValidationError, match=r'Input should be greater than 2022-01-01T00:00:00 \[kind=greater_than'):
+    with pytest.raises(ValidationError, match=r'Input should be greater than 2022-01-01T00:00:00 \[type=greater_than'):
         v.validate_python(tz.localize(datetime(2021, 6, 14)))
 
 
@@ -112,11 +112,11 @@ def test_keep_tz_bound():
         (1655205632.331557, datetime(2022, 6, 14, 11, 20, 32, microsecond=331557)),
         (
             '2022-06-08T12:13:14+24:00',
-            Err('Input should be a valid datetime, timezone offset must be less than 24 hours [kind=datetime_parsing,'),
+            Err('Input should be a valid datetime, timezone offset must be less than 24 hours [type=datetime_parsing,'),
         ),
-        (True, Err('Input should be a valid datetime [kind=datetime_type')),
-        (None, Err('Input should be a valid datetime [kind=datetime_type')),
-        ([1, 2, 3], Err('Input should be a valid datetime [kind=datetime_type')),
+        (True, Err('Input should be a valid datetime [type=datetime_type')),
+        (None, Err('Input should be a valid datetime [type=datetime_type')),
+        ([1, 2, 3], Err('Input should be a valid datetime [type=datetime_type')),
     ],
 )
 def test_datetime_json(py_and_json: PyAndJson, input_value, expected):
@@ -134,9 +134,9 @@ def test_datetime_json(py_and_json: PyAndJson, input_value, expected):
     [
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
-        (123, Err('Input should be a valid datetime [kind=datetime_type')),
-        (123.4, Err('Input should be a valid datetime [kind=datetime_type')),
-        (True, Err('Input should be a valid datetime [kind=datetime_type')),
+        (123, Err('Input should be a valid datetime [type=datetime_type')),
+        (123.4, Err('Input should be a valid datetime [type=datetime_type')),
+        (True, Err('Input should be a valid datetime [type=datetime_type')),
     ],
 )
 def test_datetime_strict_json(input_value, expected):
@@ -181,7 +181,7 @@ def test_tz_comparison():
     assert v == datetime(2022, 1, 1, 16, 0, 0, tzinfo=timezone(timedelta(hours=1)))
 
     # but not gt
-    with pytest.raises(ValidationError, match=r'Input should be greater than 2022-01-01T15:00:00Z \[kind=greater_than'):
+    with pytest.raises(ValidationError, match=r'Input should be greater than 2022-01-01T15:00:00Z \[type=greater_than'):
         SchemaValidator({'type': 'datetime', 'gt': uk_3pm}).validate_python('2022-01-01T16:00:00+01:00')
 
 
@@ -225,11 +225,11 @@ def test_custom_invalid_tz():
 
     assert excinfo.value.errors() == [
         {
-            'kind': 'datetime_object_invalid',
-            'loc': [],
-            'message': f'Invalid datetime object, got {error_message}',
-            'input_value': dt,
-            'context': {'error': error_message},
+            'type': 'datetime_object_invalid',
+            'loc': (),
+            'msg': f'Invalid datetime object, got {error_message}',
+            'input': dt,
+            'ctx': {'error': error_message},
         }
     ]
 
@@ -271,8 +271,8 @@ def test_invalid_constraint():
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
         (1655205632, datetime(2022, 6, 14, 11, 20, 32)),
-        ('2068-06-08T12:13:14', Err('Datetime should be in the past [kind=datetime_past,')),
-        (3105730800, Err('Datetime should be in the past [kind=datetime_past,')),
+        ('2068-06-08T12:13:14', Err('Datetime should be in the past [type=datetime_past,')),
+        (3105730800, Err('Datetime should be in the past [type=datetime_past,')),
     ],
 )
 def test_datetime_past(py_and_json: PyAndJson, input_value, expected):
@@ -314,8 +314,8 @@ def test_datetime_past_timezone():
         ('2068-06-08T12:13:14', datetime(2068, 6, 8, 12, 13, 14)),
         ('2068-06-08T12:13:14Z', datetime(2068, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
         (3105730800, datetime(2068, 5, 31, 23, 0)),
-        ('2022-06-08T12:13:14', Err('Datetime should be in the future [kind=datetime_future,')),
-        (1655205632, Err('Datetime should be in the future [kind=datetime_future,')),
+        ('2022-06-08T12:13:14', Err('Datetime should be in the future [type=datetime_future,')),
+        (1655205632, Err('Datetime should be in the future [type=datetime_future,')),
     ],
 )
 def test_datetime_future(py_and_json: PyAndJson, input_value, expected):
@@ -364,5 +364,5 @@ def test_mock_utc_offset_8_hours(mocker):
 
 
 def test_offset_too_large():
-    with pytest.raises(SchemaError, match=r'Input should be greater than -86400 \[kind=greater_than,'):
+    with pytest.raises(SchemaError, match=r'Input should be greater than -86400 \[type=greater_than,'):
         SchemaValidator(core_schema.datetime_schema(now_op='past', now_utc_offset=-24 * 3600))

@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::{py_err, SchemaDict};
-use crate::errors::{ErrorKind, PydanticCustomError, PydanticKindError, ValError, ValResult};
+use crate::errors::{ErrorType, PydanticCustomError, PydanticKnownError, ValError, ValResult};
 use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -13,29 +13,29 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 #[derive(Debug, Clone)]
 pub enum CustomError {
     Custom(PydanticCustomError),
-    Kind(PydanticKindError),
+    KnownError(PydanticKnownError),
 }
 
 impl CustomError {
     pub fn build(schema: &PyDict) -> PyResult<Option<Self>> {
         let py = schema.py();
-        let kind: String = match schema.get_as(intern!(py, "custom_error_kind"))? {
-            Some(kind) => kind,
+        let error_type: String = match schema.get_as(intern!(py, "custom_error_type"))? {
+            Some(error_type) => error_type,
             None => return Ok(None),
         };
         let context: Option<&PyDict> = schema.get_as(intern!(py, "custom_error_context"))?;
 
-        if ErrorKind::valid_kind(py, &kind) {
+        if ErrorType::valid_type(py, &error_type) {
             if schema.contains(intern!(py, "custom_error_message"))? {
-                py_err!("custom_error_message should not be provided if kind matches a known error")
+                py_err!("custom_error_message should not be provided if 'custom_error_type' matches a known error")
             } else {
-                let error = PydanticKindError::py_new(py, &kind, context)?;
-                Ok(Some(Self::Kind(error)))
+                let error = PydanticKnownError::py_new(py, &error_type, context)?;
+                Ok(Some(Self::KnownError(error)))
             }
         } else {
             let error = PydanticCustomError::py_new(
                 py,
-                kind,
+                error_type,
                 schema.get_as_req::<String>(intern!(py, "custom_error_message"))?,
                 context,
             );
@@ -45,7 +45,7 @@ impl CustomError {
 
     pub fn as_val_error<'a>(&self, input: &'a impl Input<'a>) -> ValError<'a> {
         match self {
-            CustomError::Kind(ref kind_error) => kind_error.clone().into_val_error(input),
+            CustomError::KnownError(ref known_error) => known_error.clone().into_val_error(input),
             CustomError::Custom(ref custom_error) => custom_error.clone().into_val_error(input),
         }
     }

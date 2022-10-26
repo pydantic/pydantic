@@ -8,7 +8,7 @@ use pyo3::types::{PyDict, PyList, PyString};
 use ahash::AHashMap;
 
 use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::questions::Question;
@@ -378,7 +378,7 @@ impl TaggedUnionValidator {
             match self.custom_error {
                 Some(ref custom_error) => Err(custom_error.as_val_error(input)),
                 None => Err(ValError::new(
-                    ErrorKind::UnionTagInvalid {
+                    ErrorType::UnionTagInvalid {
                         discriminator: self.discriminator_repr.clone(),
                         tag: tag.to_string(),
                         expected_tags: self.tags_repr.clone(),
@@ -393,7 +393,7 @@ impl TaggedUnionValidator {
         match self.custom_error {
             Some(ref custom_error) => custom_error.as_val_error(input),
             None => ValError::new(
-                ErrorKind::UnionTagNotFound {
+                ErrorType::UnionTagNotFound {
                     discriminator: self.discriminator_repr.clone(),
                 },
                 input,

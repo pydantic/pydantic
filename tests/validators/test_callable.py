@@ -26,7 +26,7 @@ def test_callable():
         v.validate_python(42)
 
     assert exc_info.value.errors() == [
-        {'kind': 'callable_type', 'loc': [], 'message': 'Input should be callable', 'input_value': 42}
+        {'type': 'callable_type', 'loc': (), 'msg': 'Input should be callable', 'input': 42}
     ]
 
 

@@ -23,16 +23,16 @@ from ..conftest import Err, PyAndJson, plain_repr
         (int(1e10), int(1e10)),
         pytest.param(
             12.5,
-            Err('Input should be a valid integer, got a number with a fractional part [kind=int_from_float'),
+            Err('Input should be a valid integer, got a number with a fractional part [type=int_from_float'),
             id='float-remainder',
         ),
         pytest.param(
             'wrong',
-            Err('Input should be a valid integer, unable to parse string as an integer [kind=int_parsing'),
+            Err('Input should be a valid integer, unable to parse string as an integer [type=int_parsing'),
             id='string',
         ),
-        pytest.param(None, Err('Input should be a valid integer [kind=int_type'), id='list'),
-        pytest.param([1, 2], Err('Input should be a valid integer [kind=int_type'), id='list'),
+        pytest.param(None, Err('Input should be a valid integer [type=int_type'), id='list'),
+        pytest.param([1, 2], Err('Input should be a valid integer [type=int_type'), id='list'),
     ],
 )
 def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
@@ -55,13 +55,13 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
             Decimal('1.001'),
             Err(
                 'Input should be a valid integer, got a number with a fractional part '
-                "[kind=int_from_float, input_value=Decimal('1.001'), input_type=Decimal]"
+                "[type=int_from_float, input_value=Decimal('1.001'), input_type=Decimal]"
             ),
             id='decimal-remainder',
         ),
         pytest.param(
             (1, 2),
-            Err('Input should be a valid integer [kind=int_type, input_value=(1, 2), input_type=tuple]'),
+            Err('Input should be a valid integer [type=int_type, input_value=(1, 2), input_type=tuple]'),
             id='tuple',
         ),
     ],
@@ -85,19 +85,19 @@ def test_int(input_value, expected):
         (42, 42),
         pytest.param(
             42.0,
-            Err('Input should be a valid integer [kind=int_type, input_value=42.0, input_type=float]'),
+            Err('Input should be a valid integer [type=int_type, input_value=42.0, input_type=float]'),
             id='float-exact',
         ),
         pytest.param(
             42.5,
-            Err('Input should be a valid integer [kind=int_type, input_value=42.5, input_type=float]'),
+            Err('Input should be a valid integer [type=int_type, input_value=42.5, input_type=float]'),
             id='float-remainder',
         ),
         pytest.param(
-            '42', Err("Input should be a valid integer [kind=int_type, input_value='42', input_type=str]"), id='string'
+            '42', Err("Input should be a valid integer [type=int_type, input_value='42', input_type=str]"), id='string'
         ),
         pytest.param(
-            True, Err('Input should be a valid integer [kind=int_type, input_value=True, input_type=bool]'), id='bool'
+            True, Err('Input should be a valid integer [type=int_type, input_value=True, input_type=bool]'), id='bool'
         ),
     ],
 )
@@ -121,11 +121,11 @@ def test_int_strict(py_and_json: PyAndJson, input_value, expected):
             -1,
             Err(
                 'Input should be greater than or equal to 0 '
-                '[kind=greater_than_equal, input_value=-1, input_type=int]'
+                '[type=greater_than_equal, input_value=-1, input_type=int]'
             ),
         ),
         ({'gt': 0}, 1, 1),
-        ({'gt': 0}, 0, Err('Input should be greater than 0 [kind=greater_than, input_value=0, input_type=int]')),
+        ({'gt': 0}, 0, Err('Input should be greater than 0 [type=greater_than, input_value=0, input_type=int]')),
         ({'le': 0}, 0, 0),
         ({'le': 0}, -1, -1),
         ({'le': 0}, 1, Err('Input should be less than or equal to 0')),
@@ -144,8 +144,8 @@ def test_int_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value,
 
         errors = exc_info.value.errors()
         assert len(errors) == 1
-        if 'context' in errors[0]:
-            assert errors[0]['context'] == kwargs
+        if 'ctx' in errors[0]:
+            assert errors[0]['ctx'] == kwargs
     else:
         output = v.validate_test(input_value)
         assert output == expected
@@ -160,13 +160,13 @@ def test_union_int(py_and_json: PyAndJson):
         v.validate_test('5')
 
     assert exc_info.value.errors() == [
-        {'kind': 'int_type', 'loc': ['int'], 'message': 'Input should be a valid integer', 'input_value': '5'},
+        {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': '5'},
         {
-            'kind': 'multiple_of',
-            'loc': ['constrained-int'],
-            'message': 'Input should be a multiple of 7',
-            'input_value': '5',
-            'context': {'multiple_of': 7},
+            'type': 'multiple_of',
+            'loc': ('constrained-int',),
+            'msg': 'Input should be a multiple of 7',
+            'input': '5',
+            'ctx': {'multiple_of': 7},
         },
     ]
 
@@ -179,10 +179,10 @@ def test_union_int_simple(py_and_json: PyAndJson):
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['int'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'xxx',
+            'type': 'int_parsing',
+            'loc': ('int',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'xxx',
         }
     ]
 
@@ -203,12 +203,12 @@ def test_long_int(py_and_json: PyAndJson):
         v.validate_test('1' * 400)
 
     assert exc_info.value.errors() == [
-        {'kind': 'finite_number', 'loc': [], 'message': 'Input should be a finite number', 'input_value': '1' * 400}
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': '1' * 400}
     ]
     assert repr(exc_info.value) == (
         '1 validation error for int\n'
         '  Input should be a finite number '
-        '[kind=finite_number, '
+        '[type=finite_number, '
         "input_value='111111111111111111111111...11111111111111111111111', input_type=str]"
     )
 

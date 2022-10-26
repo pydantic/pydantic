@@ -382,11 +382,11 @@ def test_model_class_strict():
         v.validate_python({'field_a': 'test', 'field_b': 12})
     assert exc_info.value.errors() == [
         {
-            'kind': 'model_class_type',
-            'loc': [],
-            'message': 'Input should be an instance of MyModel',
-            'input_value': {'field_a': 'test', 'field_b': 12},
-            'context': {'class_name': 'MyModel'},
+            'type': 'model_class_type',
+            'loc': (),
+            'msg': 'Input should be an instance of MyModel',
+            'input': {'field_a': 'test', 'field_b': 12},
+            'ctx': {'class_name': 'MyModel'},
         }
     ]
     assert str(exc_info.value).startswith('1 validation error for MyModel\n')
@@ -446,10 +446,10 @@ def test_revalidate():
         v.validate_python(m4)
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['field_b'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'not int',
+            'type': 'int_parsing',
+            'loc': ('field_b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not int',
         }
     ]
 
@@ -559,11 +559,11 @@ def test_call_after_init_validation_error():
         v.validate_python({'field_a': 'test'}, None, {'error': 1})
     assert exc_info.value.errors() == [
         {
-            'kind': 'value_error',
-            'loc': [],
-            'message': 'Value error, this is broken: test',
-            'input_value': {'field_a': 'test'},
-            'context': {'error': 'this is broken: test'},
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, this is broken: test',
+            'input': {'field_a': 'test'},
+            'ctx': {'error': 'this is broken: test'},
         }
     ]
 

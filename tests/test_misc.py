@@ -48,10 +48,10 @@ def test_validation_error():
         == exc_info.value.errors(include_context=False)
         == [
             {
-                'kind': 'int_from_float',
-                'loc': [],
-                'message': 'Input should be a valid integer, got a number with a fractional part',
-                'input_value': 1.5,
+                'type': 'int_from_float',
+                'loc': (),
+                'msg': 'Input should be a valid integer, got a number with a fractional part',
+                'input': 1.5,
             }
         ]
     )
@@ -67,20 +67,20 @@ def test_validation_error_include_context():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': [],
-            'message': 'List should have at most 2 items after validation, not 3',
-            'input_value': [1, 2, 3],
-            'context': {'field_type': 'List', 'max_length': 2, 'actual_length': 3},
+            'type': 'too_long',
+            'loc': (),
+            'msg': 'List should have at most 2 items after validation, not 3',
+            'input': [1, 2, 3],
+            'ctx': {'field_type': 'List', 'max_length': 2, 'actual_length': 3},
         }
     ]
     # insert_assert(exc_info.value.errors(include_context=False))
     assert exc_info.value.errors(include_context=False) == [
         {
-            'kind': 'too_long',
-            'loc': [],
-            'message': 'List should have at most 2 items after validation, not 3',
-            'input_value': [1, 2, 3],
+            'type': 'too_long',
+            'loc': (),
+            'msg': 'List should have at most 2 items after validation, not 3',
+            'input': [1, 2, 3],
         }
     ]
 
@@ -118,26 +118,26 @@ def test_validation_error_multiple():
     assert exc_info.value.error_count() == 2
     assert exc_info.value.errors() == [
         {
-            'kind': 'float_parsing',
-            'loc': ['x'],
-            'message': 'Input should be a valid number, unable to parse string as an number',
-            'input_value': 'x' * 60,
+            'type': 'float_parsing',
+            'loc': ('x',),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'input': 'x' * 60,
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['y'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'y',
+            'type': 'int_parsing',
+            'loc': ('y',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
         },
     ]
     assert repr(exc_info.value) == (
         '2 validation errors for MyModel\n'
         'x\n'
         '  Input should be a valid number, unable to parse string as an number '
-        "[kind=float_parsing, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
+        "[type=float_parsing, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
         'y\n'
         '  Input should be a valid integer, unable to parse string as an integer '
-        "[kind=int_parsing, input_value='y', input_type=str]"
+        "[type=int_parsing, input_value='y', input_type=str]"
     )
 
 
@@ -152,29 +152,29 @@ def test_readme(import_execute):
 def test_all_errors():
     errors = list_all_errors()
     # print(f'{len(errors)=}')
-    assert len(errors) == len(set(e['kind'] for e in errors)), 'error kinds are not unique'
+    assert len(errors) == len(set(e['type'] for e in errors)), 'error types are not unique'
     assert errors[:3] == [
         {
-            'kind': 'json_invalid',
+            'type': 'json_invalid',
             'message_template': 'Invalid JSON: {error}',
             'example_message': 'Invalid JSON: ',
             'example_context': {'error': ''},
         },
         {
-            'kind': 'json_type',
+            'type': 'json_type',
             'message_template': 'JSON input should be str, bytes or bytearray',
             'example_message': 'JSON input should be str, bytes or bytearray',
             'example_context': None,
         },
         {
-            'kind': 'recursion_loop',
+            'type': 'recursion_loop',
             'message_template': 'Recursion error - cyclic reference detected',
             'example_message': 'Recursion error - cyclic reference detected',
             'example_context': None,
         },
     ]
-    kinds = [e['kind'] for e in errors]
-    if kinds != list(core_schema.ErrorKind.__args__):
-        literal = ''.join(f'\n    {e!r},' for e in kinds)
-        print(f'python code:\n\nErrorKind = Literal[{literal}\n]')
-        pytest.fail('core_schema.ErrorKind needs to be updated')
+    error_types = [e['type'] for e in errors]
+    if error_types != list(core_schema.ErrorType.__args__):
+        literal = ''.join(f'\n    {e!r},' for e in error_types)
+        print(f'python code:\n\nErrorType = Literal[{literal}\n]')
+        pytest.fail('core_schema.ErrorType needs to be updated')

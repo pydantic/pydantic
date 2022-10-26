@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 
-use crate::errors::{ErrorKind, InputValue, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
@@ -65,7 +65,7 @@ impl<'a> Input<'a> for JsonInput {
                                 JsonInput::Null => Ok(None),
                                 JsonInput::Array(args) => Ok(Some(args.as_slice())),
                                 _ => Err(ValLineError::new_with_loc(
-                                    ErrorKind::PositionalArgumentsType,
+                                    ErrorType::PositionalArgumentsType,
                                     args,
                                     "__args__",
                                 )),
@@ -74,7 +74,7 @@ impl<'a> Input<'a> for JsonInput {
                                 JsonInput::Null => Ok(None),
                                 JsonInput::Object(kwargs) => Ok(Some(kwargs)),
                                 _ => Err(ValLineError::new_with_loc(
-                                    ErrorKind::KeywordArgumentsType,
+                                    ErrorType::KeywordArgumentsType,
                                     kwargs,
                                     "__kwargs__",
                                 )),
@@ -94,34 +94,34 @@ impl<'a> Input<'a> for JsonInput {
                 Ok(JsonArgs::new(None, Some(object)).into())
             }
             JsonInput::Array(array) => Ok(JsonArgs::new(Some(array), None).into()),
-            _ => Err(ValError::new(ErrorKind::ArgumentsType, self)),
+            _ => Err(ValError::new(ErrorType::ArgumentsType, self)),
         }
     }
 
     fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
         match self {
             JsonInput::String(s) => serde_json::from_str(s.as_str()).map_err(|e| map_json_err(self, e)),
-            _ => Err(ValError::new(ErrorKind::JsonType, self)),
+            _ => Err(ValError::new(ErrorType::JsonType, self)),
         }
     }
 
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
-            _ => Err(ValError::new(ErrorKind::StringType, self)),
+            _ => Err(ValError::new(ErrorType::StringType, self)),
         }
     }
     fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_str().into()),
-            _ => Err(ValError::new(ErrorKind::StringType, self)),
+            _ => Err(ValError::new(ErrorType::StringType, self)),
         }
     }
 
     fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_bytes().into()),
-            _ => Err(ValError::new(ErrorKind::BytesType, self)),
+            _ => Err(ValError::new(ErrorType::BytesType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
@@ -132,7 +132,7 @@ impl<'a> Input<'a> for JsonInput {
     fn strict_bool(&self) -> ValResult<bool> {
         match self {
             JsonInput::Bool(b) => Ok(*b),
-            _ => Err(ValError::new(ErrorKind::BoolType, self)),
+            _ => Err(ValError::new(ErrorType::BoolType, self)),
         }
     }
     fn lax_bool(&self) -> ValResult<bool> {
@@ -142,16 +142,16 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Int(int) => int_as_bool(self, *int),
             JsonInput::Float(float) => match float_as_int(self, *float) {
                 Ok(int) => int_as_bool(self, int),
-                _ => Err(ValError::new(ErrorKind::BoolType, self)),
+                _ => Err(ValError::new(ErrorType::BoolType, self)),
             },
-            _ => Err(ValError::new(ErrorKind::BoolType, self)),
+            _ => Err(ValError::new(ErrorType::BoolType, self)),
         }
     }
 
     fn strict_int(&self) -> ValResult<i64> {
         match self {
             JsonInput::Int(i) => Ok(*i),
-            _ => Err(ValError::new(ErrorKind::IntType, self)),
+            _ => Err(ValError::new(ErrorType::IntType, self)),
         }
     }
     fn lax_int(&self) -> ValResult<i64> {
@@ -163,7 +163,7 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Int(i) => Ok(*i),
             JsonInput::Float(f) => float_as_int(self, *f),
             JsonInput::String(str) => str_as_int(self, str),
-            _ => Err(ValError::new(ErrorKind::IntType, self)),
+            _ => Err(ValError::new(ErrorType::IntType, self)),
         }
     }
 
@@ -171,7 +171,7 @@ impl<'a> Input<'a> for JsonInput {
         match self {
             JsonInput::Float(f) => Ok(*f),
             JsonInput::Int(i) => Ok(*i as f64),
-            _ => Err(ValError::new(ErrorKind::FloatType, self)),
+            _ => Err(ValError::new(ErrorType::FloatType, self)),
         }
     }
     fn lax_float(&self) -> ValResult<f64> {
@@ -184,16 +184,16 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Int(i) => Ok(*i as f64),
             JsonInput::String(str) => match str.parse::<f64>() {
                 Ok(i) => Ok(i),
-                Err(_) => Err(ValError::new(ErrorKind::FloatParsing, self)),
+                Err(_) => Err(ValError::new(ErrorType::FloatParsing, self)),
             },
-            _ => Err(ValError::new(ErrorKind::FloatType, self)),
+            _ => Err(ValError::new(ErrorType::FloatType, self)),
         }
     }
 
     fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
         match self {
             JsonInput::Object(dict) => Ok(dict.into()),
-            _ => Err(ValError::new(ErrorKind::DictType, self)),
+            _ => Err(ValError::new(ErrorType::DictType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
@@ -204,7 +204,7 @@ impl<'a> Input<'a> for JsonInput {
     fn validate_list(&'a self, _strict: bool, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
         match self {
             JsonInput::Array(a) => Ok(a.into()),
-            _ => Err(ValError::new(ErrorKind::ListType, self)),
+            _ => Err(ValError::new(ErrorType::ListType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
@@ -216,7 +216,7 @@ impl<'a> Input<'a> for JsonInput {
         // just as in set's case, List has to be allowed
         match self {
             JsonInput::Array(a) => Ok(a.into()),
-            _ => Err(ValError::new(ErrorKind::TupleType, self)),
+            _ => Err(ValError::new(ErrorType::TupleType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
@@ -228,7 +228,7 @@ impl<'a> Input<'a> for JsonInput {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
-            _ => Err(ValError::new(ErrorKind::SetType, self)),
+            _ => Err(ValError::new(ErrorType::SetType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
@@ -240,7 +240,7 @@ impl<'a> Input<'a> for JsonInput {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
             JsonInput::Array(a) => Ok(a.into()),
-            _ => Err(ValError::new(ErrorKind::FrozenSetType, self)),
+            _ => Err(ValError::new(ErrorType::FrozenSetType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
@@ -257,14 +257,14 @@ impl<'a> Input<'a> for JsonInput {
                 let keys: Vec<JsonInput> = object.keys().map(|k| JsonInput::String(k.clone())).collect();
                 Ok(keys.into())
             }
-            _ => Err(ValError::new(ErrorKind::IterableType, self)),
+            _ => Err(ValError::new(ErrorType::IterableType, self)),
         }
     }
 
     fn validate_date(&self, _strict: bool) -> ValResult<EitherDate> {
         match self {
             JsonInput::String(v) => bytes_as_date(self, v.as_bytes()),
-            _ => Err(ValError::new(ErrorKind::DateType, self)),
+            _ => Err(ValError::new(ErrorType::DateType, self)),
         }
     }
     // NO custom `lax_date` implementation, if strict_date fails, the validator will fallback to lax_datetime
@@ -277,7 +277,7 @@ impl<'a> Input<'a> for JsonInput {
     fn strict_time(&self) -> ValResult<EitherTime> {
         match self {
             JsonInput::String(v) => bytes_as_time(self, v.as_bytes()),
-            _ => Err(ValError::new(ErrorKind::TimeType, self)),
+            _ => Err(ValError::new(ErrorType::TimeType, self)),
         }
     }
     fn lax_time(&self) -> ValResult<EitherTime> {
@@ -285,14 +285,14 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::String(v) => bytes_as_time(self, v.as_bytes()),
             JsonInput::Int(v) => int_as_time(self, *v, 0),
             JsonInput::Float(v) => float_as_time(self, *v),
-            _ => Err(ValError::new(ErrorKind::TimeType, self)),
+            _ => Err(ValError::new(ErrorType::TimeType, self)),
         }
     }
 
     fn strict_datetime(&self) -> ValResult<EitherDateTime> {
         match self {
             JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes()),
-            _ => Err(ValError::new(ErrorKind::DatetimeType, self)),
+            _ => Err(ValError::new(ErrorType::DatetimeType, self)),
         }
     }
     fn lax_datetime(&self) -> ValResult<EitherDateTime> {
@@ -300,14 +300,14 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes()),
             JsonInput::Int(v) => int_as_datetime(self, *v, 0),
             JsonInput::Float(v) => float_as_datetime(self, *v),
-            _ => Err(ValError::new(ErrorKind::DatetimeType, self)),
+            _ => Err(ValError::new(ErrorType::DatetimeType, self)),
         }
     }
 
     fn strict_timedelta(&self) -> ValResult<EitherTimedelta> {
         match self {
             JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
-            _ => Err(ValError::new(ErrorKind::TimeDeltaType, self)),
+            _ => Err(ValError::new(ErrorType::TimeDeltaType, self)),
         }
     }
     fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
@@ -315,7 +315,7 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
             JsonInput::Int(v) => Ok(int_as_duration(self, *v)?.into()),
             JsonInput::Float(v) => Ok(float_as_duration(self, *v)?.into()),
-            _ => Err(ValError::new(ErrorKind::TimeDeltaType, self)),
+            _ => Err(ValError::new(ErrorType::TimeDeltaType, self)),
         }
     }
 }
@@ -349,7 +349,7 @@ impl<'a> Input<'a> for String {
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
-        Err(ValError::new(ErrorKind::ArgumentsType, self))
+        Err(ValError::new(ErrorType::ArgumentsType, self))
     }
 
     fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
@@ -372,36 +372,36 @@ impl<'a> Input<'a> for String {
     }
 
     fn strict_bool(&self) -> ValResult<bool> {
-        Err(ValError::new(ErrorKind::BoolType, self))
+        Err(ValError::new(ErrorType::BoolType, self))
     }
     fn lax_bool(&self) -> ValResult<bool> {
         str_as_bool(self, self)
     }
 
     fn strict_int(&self) -> ValResult<i64> {
-        Err(ValError::new(ErrorKind::IntType, self))
+        Err(ValError::new(ErrorType::IntType, self))
     }
     fn lax_int(&self) -> ValResult<i64> {
         match self.parse() {
             Ok(i) => Ok(i),
-            Err(_) => Err(ValError::new(ErrorKind::IntParsing, self)),
+            Err(_) => Err(ValError::new(ErrorType::IntParsing, self)),
         }
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_float(&self) -> ValResult<f64> {
-        Err(ValError::new(ErrorKind::FloatType, self))
+        Err(ValError::new(ErrorType::FloatType, self))
     }
     fn lax_float(&self) -> ValResult<f64> {
         match self.parse() {
             Ok(i) => Ok(i),
-            Err(_) => Err(ValError::new(ErrorKind::FloatParsing, self)),
+            Err(_) => Err(ValError::new(ErrorType::FloatParsing, self)),
         }
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
-        Err(ValError::new(ErrorKind::DictType, self))
+        Err(ValError::new(ErrorType::DictType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
@@ -410,7 +410,7 @@ impl<'a> Input<'a> for String {
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_list(&'a self, _strict: bool, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
-        Err(ValError::new(ErrorKind::ListType, self))
+        Err(ValError::new(ErrorType::ListType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
@@ -419,7 +419,7 @@ impl<'a> Input<'a> for String {
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
-        Err(ValError::new(ErrorKind::TupleType, self))
+        Err(ValError::new(ErrorType::TupleType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
@@ -428,7 +428,7 @@ impl<'a> Input<'a> for String {
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_set(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
-        Err(ValError::new(ErrorKind::SetType, self))
+        Err(ValError::new(ErrorType::SetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
@@ -437,7 +437,7 @@ impl<'a> Input<'a> for String {
 
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
-        Err(ValError::new(ErrorKind::FrozenSetType, self))
+        Err(ValError::new(ErrorType::FrozenSetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {

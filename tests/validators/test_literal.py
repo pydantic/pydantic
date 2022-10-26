@@ -16,14 +16,14 @@ from ..conftest import Err, PyAndJson, plain_repr
             [1],
             2,
             Err(
-                'Input should be 1 [kind=literal_error, input_value=2, input_type=int]',
+                'Input should be 1 [type=literal_error, input_value=2, input_type=int]',
                 [
                     {
-                        'kind': 'literal_error',
-                        'loc': [],
-                        'message': 'Input should be 1',
-                        'input_value': 2,
-                        'context': {'expected': '1'},
+                        'type': 'literal_error',
+                        'loc': (),
+                        'msg': 'Input should be 1',
+                        'input': 2,
+                        'ctx': {'expected': '1'},
                     }
                 ],
             ),
@@ -34,14 +34,14 @@ from ..conftest import Err, PyAndJson, plain_repr
             ['foo'],
             'bar',
             Err(
-                "Input should be 'foo' [kind=literal_error, input_value='bar', input_type=str]",
+                "Input should be 'foo' [type=literal_error, input_value='bar', input_type=str]",
                 [
                     {
-                        'kind': 'literal_error',
-                        'loc': [],
-                        'message': "Input should be 'foo'",
-                        'input_value': 'bar',
-                        'context': {'expected': "'foo'"},
+                        'type': 'literal_error',
+                        'loc': (),
+                        'msg': "Input should be 'foo'",
+                        'input': 'bar',
+                        'ctx': {'expected': "'foo'"},
                     }
                 ],
             ),
@@ -52,7 +52,7 @@ from ..conftest import Err, PyAndJson, plain_repr
         pytest.param(
             [1, 2],
             3,
-            Err('Input should be 1 or 2 [kind=literal_error, input_value=3, input_type=int]'),
+            Err('Input should be 1 or 2 [type=literal_error, input_value=3, input_type=int]'),
             id='wrong-multiple-int',
         ),
         ([1, 2, 3, 4], 4, 4),
@@ -60,14 +60,14 @@ from ..conftest import Err, PyAndJson, plain_repr
             [1, 2, 3, 4],
             5,
             Err(
-                'Input should be 1, 2, 3 or 4 [kind=literal_error, input_value=5, input_type=int]',
+                'Input should be 1, 2, 3 or 4 [type=literal_error, input_value=5, input_type=int]',
                 [
                     {
-                        'kind': 'literal_error',
-                        'loc': [],
-                        'message': 'Input should be 1, 2, 3 or 4',
-                        'input_value': 5,
-                        'context': {'expected': '1, 2, 3 or 4'},
+                        'type': 'literal_error',
+                        'loc': (),
+                        'msg': 'Input should be 1, 2, 3 or 4',
+                        'input': 5,
+                        'ctx': {'expected': '1, 2, 3 or 4'},
                     }
                 ],
             ),
@@ -77,7 +77,7 @@ from ..conftest import Err, PyAndJson, plain_repr
         pytest.param(
             ['a', 'b'],
             'c',
-            Err("Input should be 'a' or 'b' [kind=literal_error, input_value=\'c\', input_type=str]"),
+            Err("Input should be 'a' or 'b' [type=literal_error, input_value=\'c\', input_type=str]"),
             id='wrong-multiple-str',
         ),
         ([1, '1'], 1, 1),
@@ -86,14 +86,14 @@ from ..conftest import Err, PyAndJson, plain_repr
             [1, '1'],
             '2',
             Err(
-                "Input should be 1 or '1' [kind=literal_error, input_value='2', input_type=str]",
+                "Input should be 1 or '1' [type=literal_error, input_value='2', input_type=str]",
                 [
                     {
-                        'kind': 'literal_error',
-                        'loc': [],
-                        'message': "Input should be 1 or '1'",
-                        'input_value': '2',
-                        'context': {'expected': "1 or '1'"},
+                        'type': 'literal_error',
+                        'loc': (),
+                        'msg': "Input should be 1 or '1'",
+                        'input': '2',
+                        'ctx': {'expected': "1 or '1'"},
                     }
                 ],
             ),
@@ -122,7 +122,7 @@ def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value
         pytest.param(
             [1, b'whatever'],
             3,
-            Err("Input should be 1 or b'whatever' [kind=literal_error, input_value=3, input_type=int]"),
+            Err("Input should be 1 or b'whatever' [type=literal_error, input_value=3, input_type=int]"),
             id='wrong-general',
         ),
         ([b'bite'], b'bite', b'bite'),
@@ -130,14 +130,14 @@ def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value
             [b'bite'],
             'spoon',
             Err(
-                "Input should be b'bite' [kind=literal_error, input_value='spoon', input_type=str]",
+                "Input should be b'bite' [type=literal_error, input_value='spoon', input_type=str]",
                 [
                     {
-                        'kind': 'literal_error',
-                        'loc': [],
-                        'message': "Input should be 1 or '1'",
-                        'input_value': '2',
-                        'context': {'expected': "1 or '1'"},
+                        'type': 'literal_error',
+                        'loc': (),
+                        'msg': "Input should be 1 or '1'",
+                        'input': '2',
+                        'ctx': {'expected': "1 or '1'"},
                     }
                 ],
             ),
@@ -180,17 +180,17 @@ def test_union():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_error',
-            'loc': ["literal['a','b']"],
-            'message': "Input should be 'a' or 'b'",
-            'input_value': 'c',
-            'context': {'expected': "'a' or 'b'"},
+            'type': 'literal_error',
+            'loc': ("literal['a','b']",),
+            'msg': "Input should be 'a' or 'b'",
+            'input': 'c',
+            'ctx': {'expected': "'a' or 'b'"},
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['int'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'c',
+            'type': 'int_parsing',
+            'loc': ('int',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
         },
     ]
 
@@ -206,10 +206,10 @@ def test_enum():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_error',
-            'loc': [],
-            'message': "Input should be <FooEnum.foo: 'foo_value'>",
-            'input_value': 'foo_value',
-            'context': {'expected': "<FooEnum.foo: 'foo_value'>"},
+            'type': 'literal_error',
+            'loc': (),
+            'msg': "Input should be <FooEnum.foo: 'foo_value'>",
+            'input': 'foo_value',
+            'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
     ]

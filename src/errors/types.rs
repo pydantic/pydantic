@@ -16,13 +16,13 @@ use super::PydanticCustomError;
 #[pyfunction]
 pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
     let mut errors: Vec<&PyDict> = Vec::with_capacity(100);
-    for error_kind in ErrorKind::iter() {
-        if !matches!(error_kind, ErrorKind::CustomError { .. }) {
+    for error_type in ErrorType::iter() {
+        if !matches!(error_type, ErrorType::CustomError { .. }) {
             let d = PyDict::new(py);
-            d.set_item("kind", error_kind.to_string())?;
-            d.set_item("message_template", error_kind.message_template())?;
-            d.set_item("example_message", error_kind.render_message(py)?)?;
-            d.set_item("example_context", error_kind.py_dict(py)?)?;
+            d.set_item("type", error_type.to_string())?;
+            d.set_item("message_template", error_type.message_template())?;
+            d.set_item("example_message", error_type.render_message(py)?)?;
+            d.set_item("example_context", error_type.py_dict(py)?)?;
             errors.push(d);
         }
     }
@@ -36,7 +36,7 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
 /// * you need to add an entry to the `py_dict` enum to generate `ctx` for error messages
 #[derive(Clone, Debug, Display, EnumMessage, EnumIter)]
 #[strum(serialize_all = "snake_case")]
-pub enum ErrorKind {
+pub enum ErrorType {
     #[strum(message = "Invalid JSON: {error}")]
     JsonInvalid {
         error: String,
@@ -320,9 +320,9 @@ pub enum ErrorKind {
 }
 
 macro_rules! render {
-    ($error_kind:ident, $($value:ident),* $(,)?) => {
+    ($error_type:ident, $($value:ident),* $(,)?) => {
         Ok(
-            $error_kind.message_template()
+            $error_type.message_template()
             $(
                 .replace(concat!("{", stringify!($value), "}"), $value)
             )*
@@ -331,9 +331,9 @@ macro_rules! render {
 }
 
 macro_rules! to_string_render {
-    ($error_kind:ident, $($value:ident),* $(,)?) => {
+    ($error_type:ident, $($value:ident),* $(,)?) => {
         Ok(
-            $error_kind.message_template()
+            $error_type.message_template()
             $(
                 .replace(concat!("{", stringify!($value), "}"), &$value.to_string())
             )*
@@ -356,25 +356,25 @@ fn do_nothing<T>(v: T) -> T {
 }
 
 macro_rules! extract_context {
-    ($kind:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {
-        extract_context!(do_nothing, $kind, $context, $($key: $type_,)*)
+    ($type:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {
+        extract_context!(do_nothing, $type, $context, $($key: $type_,)*)
     };
-    ($function:path, $kind:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {{
+    ($function:path, $type:ident, $context:ident, $($key:ident: $type_:ty),* $(,)?) => {{
         let context = match $context {
             Some(context) => context,
             None => {
                 let context_parts = [$(format!("{}: {}", stringify!($key), stringify!($type_)),)*];
-                return py_err!(PyTypeError; "{} requires context: {{{}}}", stringify!($kind), context_parts.join(", "));
+                return py_err!(PyTypeError; "{} requires context: {{{}}}", stringify!($type), context_parts.join(", "));
             }
         };
-        Ok(Self::$kind{
+        Ok(Self::$type{
             $(
                 $key: $function(
                     context
                     .get_item(stringify!($key))
-                    .ok_or(py_error_type!(PyTypeError; "{}: '{}' required in context", stringify!($kind), stringify!($key)))?
+                    .ok_or(py_error_type!(PyTypeError; "{}: '{}' required in context", stringify!($type), stringify!($key)))?
                     .extract::<$type_>()
-                    .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", stringify!($kind), stringify!($key), stringify!($type_)))?
+                    .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", stringify!($type), stringify!($key), stringify!($type_)))?
                 ),
             )*
         })
@@ -389,18 +389,18 @@ fn plural_s(value: &usize) -> &'static str {
     }
 }
 
-static ERROR_KIND_LOOKUP: GILOnceCell<AHashMap<String, ErrorKind>> = GILOnceCell::new();
+static ERROR_TYPE_LOOKUP: GILOnceCell<AHashMap<String, ErrorType>> = GILOnceCell::new();
 
-impl ErrorKind {
-    /// create an new ErrorKind from python, no_coverage since coverage doesn't work properly here due to the macro
+impl ErrorType {
+    /// create an new ErrorType from python, no_coverage since coverage doesn't work properly here due to the macro
     #[cfg_attr(has_no_coverage, no_coverage)]
     pub fn new(py: Python, value: &str, ctx: Option<&PyDict>) -> PyResult<Self> {
-        let lookup = ERROR_KIND_LOOKUP.get_or_init(py, Self::build_lookup);
-        let error_kind = match lookup.get(value) {
-            Some(error_kind) => error_kind.clone(),
-            None => return py_err!(PyKeyError; "Invalid error kind: '{}'", value),
+        let lookup = ERROR_TYPE_LOOKUP.get_or_init(py, Self::build_lookup);
+        let error_type = match lookup.get(value) {
+            Some(error_type) => error_type.clone(),
+            None => return py_err!(PyKeyError; "Invalid error type: '{}'", value),
         };
-        match error_kind {
+        match error_type {
             Self::JsonInvalid { .. } => extract_context!(JsonInvalid, ctx, error: String),
             Self::GetAttributeError { .. } => extract_context!(GetAttributeError, ctx, error: String),
             Self::ModelClassType { .. } => extract_context!(ModelClassType, ctx, class_name: String),
@@ -453,34 +453,34 @@ impl ErrorKind {
                 if ctx.is_some() {
                     py_err!(PyTypeError; "'{}' errors do not require context", value)
                 } else {
-                    Ok(error_kind)
+                    Ok(error_type)
                 }
             }
         }
     }
 
-    pub fn valid_kind(py: Python, kind: &str) -> bool {
-        let lookup = ERROR_KIND_LOOKUP.get_or_init(py, Self::build_lookup);
-        lookup.contains_key(kind)
+    pub fn valid_type(py: Python, error_type: &str) -> bool {
+        let lookup = ERROR_TYPE_LOOKUP.get_or_init(py, Self::build_lookup);
+        lookup.contains_key(error_type)
     }
 
     fn build_lookup() -> AHashMap<String, Self> {
         let mut lookup = AHashMap::new();
-        for error_kind in Self::iter() {
-            if !matches!(error_kind, Self::CustomError { .. }) {
-                lookup.insert(error_kind.to_string(), error_kind);
+        for error_type in Self::iter() {
+            if !matches!(error_type, Self::CustomError { .. }) {
+                lookup.insert(error_type.to_string(), error_type);
             }
         }
         lookup
     }
 
     pub fn message_template(&self) -> &'static str {
-        self.get_message().expect("ErrorKind with no strum message")
+        self.get_message().expect("ErrorType with no strum message")
     }
 
-    pub fn kind(&self) -> String {
+    pub fn type_string(&self) -> String {
         match self {
-            Self::CustomError { value_error } => value_error.kind(),
+            Self::CustomError { value_error } => value_error.error_type(),
             _ => self.to_string(),
         }
     }

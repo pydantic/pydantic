@@ -1030,3 +1030,29 @@ def test_isinstance_json(benchmark):
     def t():
         validator.isinstance_json('"foo"')
         validator.isinstance_json('123')
+
+
+@pytest.mark.benchmark(group='error')
+def test_int_error(benchmark):
+    validator = SchemaValidator(core_schema.int_schema())
+    try:
+        validator.validate_python('bar')
+    except ValidationError as e:
+        # insert_assert(e.errors())
+        assert e.errors() == [
+            {
+                'type': 'int_parsing',
+                'loc': (),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'bar',
+            }
+        ]
+    else:
+        raise AssertionError('ValidationError not raised')
+
+    @benchmark
+    def t():
+        try:
+            validator.validate_python('foobar', strict=True)
+        except ValidationError as e:
+            e.errors()

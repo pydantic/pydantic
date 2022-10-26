@@ -87,7 +87,7 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
                 platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
             ),
         ),
-        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid frozenset [type=frozen_set_type,')),
         ((x for x in [1, 2, '3']), frozenset({1, 2, 3})),
         ({'abc'}, Err('0\n  Input should be a valid integer')),
         ({1, 2, 'wrong'}, Err('Input should be a valid integer')),
@@ -123,13 +123,13 @@ def test_frozenset_multiple_errors():
         v.validate_python(['a', (1, 2), []])
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'a',
+            'type': 'int_parsing',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         },
-        {'kind': 'int_type', 'loc': [1], 'message': 'Input should be a valid integer', 'input_value': (1, 2)},
-        {'kind': 'int_type', 'loc': [2], 'message': 'Input should be a valid integer', 'input_value': []},
+        {'type': 'int_type', 'loc': (1,), 'msg': 'Input should be a valid integer', 'input': (1, 2)},
+        {'type': 'int_type', 'loc': (2,), 'msg': 'Input should be a valid integer', 'input': []},
     ]
 
 
@@ -145,23 +145,23 @@ def generate_repeats():
         ({'strict': True}, frozenset(), frozenset()),
         ({'strict': True}, frozenset([1, 2, 3]), {1, 2, 3}),
         ({'strict': True}, {1, 2, 3}, Err('Input should be a valid frozenset')),
-        ({'strict': True}, [1, 2, 3, 2, 3], Err('Input should be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, [], Err('Input should be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, (), Err('Input should be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, (1, 2, 3), Err('Input should be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, {1, 2, 3}, Err('Input should be a valid frozenset [kind=frozen_set_type,')),
-        ({'strict': True}, 'abc', Err('Input should be a valid frozenset [kind=frozen_set_type,')),
+        ({'strict': True}, [1, 2, 3, 2, 3], Err('Input should be a valid frozenset [type=frozen_set_type,')),
+        ({'strict': True}, [], Err('Input should be a valid frozenset [type=frozen_set_type,')),
+        ({'strict': True}, (), Err('Input should be a valid frozenset [type=frozen_set_type,')),
+        ({'strict': True}, (1, 2, 3), Err('Input should be a valid frozenset [type=frozen_set_type,')),
+        ({'strict': True}, {1, 2, 3}, Err('Input should be a valid frozenset [type=frozen_set_type,')),
+        ({'strict': True}, 'abc', Err('Input should be a valid frozenset [type=frozen_set_type,')),
         ({'min_length': 3}, {1, 2, 3}, {1, 2, 3}),
         (
             {'min_length': 3},
             {1, 2},
-            Err('Frozenset should have at least 3 items after validation, not 2 [kind=too_short,'),
+            Err('Frozenset should have at least 3 items after validation, not 2 [type=too_short,'),
         ),
         ({'max_length': 3}, {1, 2, 3}, {1, 2, 3}),
         (
             {'max_length': 3},
             {1, 2, 3, 4},
-            Err('Frozenset should have at most 3 items after validation, not 4 [kind=too_long,'),
+            Err('Frozenset should have at most 3 items after validation, not 4 [type=too_long,'),
         ),
         # length check after set creation
         ({'max_length': 3}, [1, 1, 2, 2, 3, 3], {1, 2, 3}),
@@ -170,12 +170,12 @@ def generate_repeats():
         (
             {'max_length': 3},
             infinite_generator(),
-            Err('Frozenset should have at most 30 items after validation, not 31 [kind=too_long,'),
+            Err('Frozenset should have at most 30 items after validation, not 31 [type=too_long,'),
         ),
         (
             {'max_length': 3, 'generator_max_length': 3},
             infinite_generator(),
-            Err('Frozenset should have at most 3 items after validation, not 4 [kind=too_long,'),
+            Err('Frozenset should have at most 3 items after validation, not 4 [type=too_long,'),
         ),
     ],
 )
@@ -211,17 +211,17 @@ def test_union_frozenset_list(input_value, expected):
                 '2 validation errors for union',
                 errors=[
                     {
-                        'kind': 'int_type',
-                        'loc': ['frozenset[int]', 1],
-                        'message': 'Input should be a valid integer',
-                        'input_value': 'a',
+                        'type': 'int_type',
+                        'loc': ('frozenset[int]', 1),
+                        'msg': 'Input should be a valid integer',
+                        'input': 'a',
                     },
                     # second because validation on the string choice comes second
                     {
-                        'kind': 'string_type',
-                        'loc': ['frozenset[str]', 0],
-                        'message': 'Input should be a valid string',
-                        'input_value': 1,
+                        'type': 'string_type',
+                        'loc': ('frozenset[str]', 0),
+                        'msg': 'Input should be a valid string',
+                        'input': 1,
                     },
                 ],
             ),
@@ -280,7 +280,7 @@ def test_generator_error():
     assert r == {1, 2, 3}
     assert isinstance(r, frozenset)
 
-    msg = r'Error iterating over object, error: RuntimeError: my error \[kind=iteration_error,'
+    msg = r'Error iterating over object, error: RuntimeError: my error \[type=iteration_error,'
     with pytest.raises(ValidationError, match=msg):
         v.validate_python(gen(True))
 

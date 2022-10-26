@@ -24,14 +24,14 @@ from ..conftest import Err, PyAndJson, plain_repr
             'cheese',
             Err(
                 'Input should be a valid boolean, '
-                "unable to interpret input [kind=bool_parsing, input_value='cheese', input_type=str]"
+                "unable to interpret input [type=bool_parsing, input_value='cheese', input_type=str]"
             ),
         ),
-        (2, Err('Input should be a valid boolean, unable to interpret input [kind=bool_parsing, input_value=2')),
-        ([], Err('Input should be a valid boolean [kind=bool_type, input_value=[], input_type=list]')),
-        (1.1, Err('Input should be a valid boolean [kind=bool_type, input_value=1.1, input_type=float]')),
-        (2, Err('unable to interpret input [kind=bool_parsing, input_value=2, input_type=int]')),
-        (2.0, Err('unable to interpret input [kind=bool_parsing, input_value=2.0, input_type=float]')),
+        (2, Err('Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value=2')),
+        ([], Err('Input should be a valid boolean [type=bool_type, input_value=[], input_type=list]')),
+        (1.1, Err('Input should be a valid boolean [type=bool_type, input_value=1.1, input_type=float]')),
+        (2, Err('unable to interpret input [type=bool_parsing, input_value=2, input_type=int]')),
+        (2.0, Err('unable to interpret input [type=bool_parsing, input_value=2.0, input_type=float]')),
     ],
 )
 def test_bool(py_and_json: PyAndJson, input_value, expected):
@@ -48,7 +48,7 @@ def test_bool(py_and_json: PyAndJson, input_value, expected):
 def test_bool_strict(py_and_json: PyAndJson):
     v = py_and_json({'type': 'bool', 'strict': True})
     assert v.validate_test(True) is True
-    error_message = "Input should be a valid boolean [kind=bool_type, input_value='true', input_type=str]"
+    error_message = "Input should be a valid boolean [type=bool_type, input_value='true', input_type=str]"
     with pytest.raises(ValidationError, match=re.escape(error_message)):
         v.validate_test('true')
 
@@ -62,14 +62,14 @@ def test_bool_error():
     assert str(exc_info.value) == (
         '1 validation error for bool\n'
         '  Input should be a valid boolean, '
-        "unable to interpret input [kind=bool_parsing, input_value='wrong', input_type=str]"
+        "unable to interpret input [type=bool_parsing, input_value='wrong', input_type=str]"
     )
     assert exc_info.value.errors() == [
         {
-            'kind': 'bool_parsing',
-            'loc': [],
-            'message': 'Input should be a valid boolean, unable to interpret input',
-            'input_value': 'wrong',
+            'type': 'bool_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'input': 'wrong',
         }
     ]
 

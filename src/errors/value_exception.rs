@@ -4,7 +4,7 @@ use pyo3::types::{PyDict, PyString};
 
 use crate::input::Input;
 
-use super::{ErrorKind, ValError};
+use super::{ErrorType, ValError};
 
 #[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
@@ -29,7 +29,7 @@ impl PydanticOmit {
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone, Default)]
 pub struct PydanticCustomError {
-    kind: String,
+    error_type: String,
     message_template: String,
     context: Option<Py<PyDict>>,
 }
@@ -37,17 +37,17 @@ pub struct PydanticCustomError {
 #[pymethods]
 impl PydanticCustomError {
     #[new]
-    pub fn py_new(py: Python, kind: String, message_template: String, context: Option<&PyDict>) -> Self {
+    pub fn py_new(py: Python, error_type: String, message_template: String, context: Option<&PyDict>) -> Self {
         Self {
-            kind,
+            error_type,
             message_template,
             context: context.map(|c| c.into_py(py)),
         }
     }
 
-    #[getter]
-    pub fn kind(&self) -> String {
-        self.kind.clone()
+    #[getter(type)]
+    pub fn error_type(&self) -> String {
+        self.error_type.clone()
     }
 
     #[getter]
@@ -85,50 +85,50 @@ impl PydanticCustomError {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let msg = self.message(py)?;
         match { self.context.as_ref() } {
-            Some(ctx) => Ok(format!("{msg} [kind={}, context={}]", self.kind, ctx.as_ref(py))),
-            None => Ok(format!("{msg} [kind={}, context=None]", self.kind)),
+            Some(ctx) => Ok(format!("{msg} [type={}, context={}]", self.error_type, ctx.as_ref(py))),
+            None => Ok(format!("{msg} [type={}, context=None]", self.error_type)),
         }
     }
 }
 
 impl PydanticCustomError {
     pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
-        let kind = ErrorKind::CustomError { value_error: self };
-        ValError::new(kind, input)
+        let error_type = ErrorType::CustomError { value_error: self };
+        ValError::new(error_type, input)
     }
 }
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
-pub struct PydanticKindError {
-    kind: ErrorKind,
+pub struct PydanticKnownError {
+    error_type: ErrorType,
 }
 
 #[pymethods]
-impl PydanticKindError {
+impl PydanticKnownError {
     #[new]
-    pub fn py_new(py: Python, kind: &str, context: Option<&PyDict>) -> PyResult<Self> {
-        let kind = ErrorKind::new(py, kind, context)?;
-        Ok(Self { kind })
+    pub fn py_new(py: Python, error_type: &str, context: Option<&PyDict>) -> PyResult<Self> {
+        let error_type = ErrorType::new(py, error_type, context)?;
+        Ok(Self { error_type })
     }
 
-    #[getter]
-    pub fn kind(&self) -> String {
-        self.kind.to_string()
+    #[getter(type)]
+    pub fn error_type(&self) -> String {
+        self.error_type.to_string()
     }
 
     #[getter]
     pub fn message_template(&self) -> &'static str {
-        self.kind.message_template()
+        self.error_type.message_template()
     }
 
     #[getter]
     pub fn context(&self, py: Python) -> PyResult<Option<Py<PyDict>>> {
-        self.kind.py_dict(py)
+        self.error_type.py_dict(py)
     }
 
     pub fn message(&self, py: Python) -> PyResult<String> {
-        self.kind.render_message(py)
+        self.error_type.render_message(py)
     }
 
     fn __str__(&self, py: Python) -> PyResult<String> {
@@ -138,14 +138,18 @@ impl PydanticKindError {
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let msg = self.message(py)?;
         match { self.context(py)?.as_ref() } {
-            Some(ctx) => Ok(format!("{msg} [kind={}, context={}]", self.kind(), ctx.as_ref(py))),
-            None => Ok(format!("{msg} [kind={}, context=None]", self.kind())),
+            Some(ctx) => Ok(format!(
+                "{msg} [type={}, context={}]",
+                self.error_type(),
+                ctx.as_ref(py)
+            )),
+            None => Ok(format!("{msg} [type={}, context=None]", self.error_type())),
         }
     }
 }
 
-impl PydanticKindError {
+impl PydanticKnownError {
     pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
-        ValError::new(self.kind, input)
+        ValError::new(self.error_type, input)
     }
 }

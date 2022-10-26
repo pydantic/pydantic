@@ -17,19 +17,19 @@ from ..conftest import Err, PyAndJson, plain_repr
         (
             '{1: 2}',
             Err(
-                'Invalid JSON: key must be a string at line 1 column 2 [kind=json_invalid,',
+                'Invalid JSON: key must be a string at line 1 column 2 [type=json_invalid,',
                 [
                     {
-                        'kind': 'json_invalid',
-                        'loc': [],
-                        'message': 'Invalid JSON: key must be a string at line 1 column 2',
-                        'input_value': '{1: 2}',
-                        'context': {'error': 'key must be a string at line 1 column 2'},
+                        'type': 'json_invalid',
+                        'loc': (),
+                        'msg': 'Invalid JSON: key must be a string at line 1 column 2',
+                        'input': '{1: 2}',
+                        'ctx': {'error': 'key must be a string at line 1 column 2'},
                     }
                 ],
             ),
         ),
-        (44, Err('JSON input should be str, bytes or bytearray [kind=json_type, input_value=44, input_type=int')),
+        (44, Err('JSON input should be str, bytes or bytearray [type=json_type, input_value=44, input_type=int')),
     ],
 )
 def test_any(py_and_json: PyAndJson, input_value, expected):
@@ -55,21 +55,21 @@ def test_any(py_and_json: PyAndJson, input_value, expected):
             'xx',
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
-                "[kind=json_invalid, input_value='xx', input_type=str"
+                "[type=json_invalid, input_value='xx', input_type=str"
             ),
         ),
         (
             b'xx',
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
-                "[kind=json_invalid, input_value=b'xx', input_type=bytes"
+                "[type=json_invalid, input_value=b'xx', input_type=bytes"
             ),
         ),
         (
             bytearray(b'xx'),
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
-                "[kind=json_invalid, input_value=bytearray(b'xx'), input_type=bytearray"
+                "[type=json_invalid, input_value=bytearray(b'xx'), input_type=bytearray"
             ),
         ),
     ],
@@ -88,18 +88,18 @@ def test_any_python(input_value, expected):
     [
         ('[1]', [1]),
         ('[1, 2, 3, "4"]', [1, 2, 3, 4]),
-        ('44', Err('Input should be a valid list/array [kind=list_type, input_value=44, input_type=int')),
-        ('"x"', Err("Input should be a valid list/array [kind=list_type, input_value='x', input_type=str")),
+        ('44', Err('Input should be a valid list/array [type=list_type, input_value=44, input_type=int')),
+        ('"x"', Err("Input should be a valid list/array [type=list_type, input_value='x', input_type=str")),
         (
             '[1, 2, 3, "err"]',
             Err(
-                'Input should be a valid integer, unable to parse string as an integer [kind=int_parsing,',
+                'Input should be a valid integer, unable to parse string as an integer [type=int_parsing,',
                 [
                     {
-                        'kind': 'int_parsing',
-                        'loc': [3],
-                        'message': 'Input should be a valid integer, unable to parse string as an integer',
-                        'input_value': 'err',
+                        'type': 'int_parsing',
+                        'loc': (3,),
+                        'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                        'input': 'err',
                     }
                 ],
             ),
@@ -132,11 +132,11 @@ def test_dict_key(py_and_json: PyAndJson):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'json_invalid',
-            'loc': ['x', '[key]'],
-            'message': 'Invalid JSON: expected value at line 1 column 1',
-            'input_value': 'x',
-            'context': {'error': 'expected value at line 1 column 1'},
+            'type': 'json_invalid',
+            'loc': ('x', '[key]'),
+            'msg': 'Invalid JSON: expected value at line 1 column 1',
+            'input': 'x',
+            'ctx': {'error': 'expected value at line 1 column 1'},
         }
     ]
 
@@ -173,14 +173,9 @@ def test_ask():
         v.validate_python('{"field_c": "wrong"}')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['field_a'], 'message': 'Field required', 'input_value': {'field_c': 'wrong'}},
-        {'kind': 'missing', 'loc': ['field_b'], 'message': 'Field required', 'input_value': {'field_c': 'wrong'}},
-        {
-            'kind': 'extra_forbidden',
-            'loc': ['field_c'],
-            'message': 'Extra inputs are not permitted',
-            'input_value': 'wrong',
-        },
+        {'type': 'missing', 'loc': ('field_a',), 'msg': 'Field required', 'input': {'field_c': 'wrong'}},
+        {'type': 'missing', 'loc': ('field_b',), 'msg': 'Field required', 'input': {'field_c': 'wrong'}},
+        {'type': 'extra_forbidden', 'loc': ('field_c',), 'msg': 'Extra inputs are not permitted', 'input': 'wrong'},
     ]
 
 

@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
-use crate::errors::{ErrorKind, LocItem, ValError, ValResult};
+use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{GenericIterator, Input};
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -111,7 +111,7 @@ impl ValidatorIterator {
                             if let Some(max_length) = max_length {
                                 if index >= max_length {
                                     let val_error = ValError::new(
-                                        ErrorKind::TooLong {
+                                        ErrorType::TooLong {
                                             field_type: "Generator".to_string(),
                                             max_length,
                                             actual_length: index + 1,

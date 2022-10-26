@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
 
-use crate::errors::{py_err_string, ErrorKind, InputValue, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
@@ -72,7 +72,7 @@ fn validate_iter_to_vec<'a, 's>(
 macro_rules! any_next_error {
     ($py:expr, $err:ident, $input:ident, $index:ident) => {
         ValError::new_with_loc(
-            ErrorKind::IterationError {
+            ErrorType::IterationError {
                 error: py_err_string($py, $err),
             },
             $input,
@@ -86,7 +86,7 @@ macro_rules! generator_too_long {
         if let Some(max_length) = $max_length {
             if $index > max_length {
                 return Err(ValError::new(
-                    ErrorKind::TooLong {
+                    ErrorType::TooLong {
                         field_type: $field_type.to_string(),
                         max_length,
                         actual_length: $index,
@@ -413,7 +413,7 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
 pub fn py_string_str(py_str: &PyString) -> ValResult<&str> {
     py_str
         .to_str()
-        .map_err(|_| ValError::new_custom_input(ErrorKind::StringUnicode, InputValue::PyAny(py_str as &PyAny)))
+        .map_err(|_| ValError::new_custom_input(ErrorType::StringUnicode, InputValue::PyAny(py_str as &PyAny)))
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]

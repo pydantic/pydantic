@@ -50,10 +50,10 @@ def test_chain_error():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'abc',
+            'type': 'int_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'abc',
         }
     ]
 

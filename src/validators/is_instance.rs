@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyType};
 
 use crate::build_tools::{py_err, SchemaDict};
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, JsonType};
 use crate::recursion_guard::RecursionGuard;
 
@@ -82,7 +82,7 @@ impl Validator for IsInstanceValidator {
                 Ok(input.to_object(py))
             }
             false => Err(ValError::new(
-                ErrorKind::IsInstanceOf {
+                ErrorType::IsInstanceOf {
                     class: self.class_repr.clone(),
                 },
                 input,

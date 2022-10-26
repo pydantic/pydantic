@@ -4,8 +4,8 @@ use pyo3::PyDowncastError;
 
 use crate::input::{Input, JsonInput};
 
-use super::kinds::ErrorKind;
 use super::location::{LocItem, Location};
+use super::types::ErrorType;
 use super::validation_exception::{pretty_py_line_errors, PyLineError};
 
 pub type ValResult<'a, T> = Result<T, ValError<'a>>;
@@ -36,16 +36,16 @@ impl<'a> From<Vec<ValLineError<'a>>> for ValError<'a> {
 }
 
 impl<'a> ValError<'a> {
-    pub fn new(kind: ErrorKind, input: &'a impl Input<'a>) -> ValError<'a> {
-        Self::LineErrors(vec![ValLineError::new(kind, input)])
+    pub fn new(error_type: ErrorType, input: &'a impl Input<'a>) -> ValError<'a> {
+        Self::LineErrors(vec![ValLineError::new(error_type, input)])
     }
 
-    pub fn new_with_loc(kind: ErrorKind, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValError<'a> {
-        Self::LineErrors(vec![ValLineError::new_with_loc(kind, input, loc)])
+    pub fn new_with_loc(error_type: ErrorType, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValError<'a> {
+        Self::LineErrors(vec![ValLineError::new_with_loc(error_type, input, loc)])
     }
 
-    pub fn new_custom_input(kind: ErrorKind, input_value: InputValue<'a>) -> ValError<'a> {
-        Self::LineErrors(vec![ValLineError::new_custom_input(kind, input_value)])
+    pub fn new_custom_input(error_type: ErrorType, input_value: InputValue<'a>) -> ValError<'a> {
+        Self::LineErrors(vec![ValLineError::new_custom_input(error_type, input_value)])
     }
 
     /// helper function to call with_outer on line items if applicable
@@ -81,32 +81,32 @@ pub fn pretty_line_errors(py: Python, line_errors: Vec<ValLineError>) -> String 
 /// I don't like the name `ValLineError`, but it's the best I could come up with (for now).
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValLineError<'a> {
-    pub kind: ErrorKind,
+    pub error_type: ErrorType,
     // location is reversed so that adding an "outer" location item is pushing, it's reversed before showing to the user
     pub location: Location,
     pub input_value: InputValue<'a>,
 }
 
 impl<'a> ValLineError<'a> {
-    pub fn new(kind: ErrorKind, input: &'a impl Input<'a>) -> ValLineError<'a> {
+    pub fn new(error_type: ErrorType, input: &'a impl Input<'a>) -> ValLineError<'a> {
         Self {
-            kind,
+            error_type,
             input_value: input.as_error_value(),
             location: Location::default(),
         }
     }
 
-    pub fn new_with_loc(kind: ErrorKind, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValLineError<'a> {
+    pub fn new_with_loc(error_type: ErrorType, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValLineError<'a> {
         Self {
-            kind,
+            error_type,
             input_value: input.as_error_value(),
             location: Location::new_some(loc.into()),
         }
     }
 
-    pub fn new_custom_input(kind: ErrorKind, input_value: InputValue<'a>) -> ValLineError<'a> {
+    pub fn new_custom_input(error_type: ErrorType, input_value: InputValue<'a>) -> ValLineError<'a> {
         Self {
-            kind,
+            error_type,
             input_value,
             location: Location::default(),
         }
@@ -119,16 +119,16 @@ impl<'a> ValLineError<'a> {
         self
     }
 
-    // change the kind on a error in place
-    pub fn with_kind(mut self, kind: ErrorKind) -> Self {
-        self.kind = kind;
+    // change the error_type on a error in place
+    pub fn with_type(mut self, error_type: ErrorType) -> Self {
+        self.error_type = error_type;
         self
     }
 
     /// a bit like clone but change the lifetime to match py, used by ValError.duplicate above
     pub fn duplicate<'py>(&'a self, py: Python<'py>) -> ValLineError<'py> {
         ValLineError {
-            kind: self.kind.clone(),
+            error_type: self.error_type.clone(),
             input_value: InputValue::<'py>::from(self.input_value.to_object(py)),
             location: self.location.clone(),
         }

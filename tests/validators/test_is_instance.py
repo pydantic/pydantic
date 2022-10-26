@@ -34,17 +34,17 @@ def test_is_instance():
 
     assert exc_info.value.errors() == [
         {
-            'kind': 'is_instance_of',
-            'loc': [],
-            'message': 'Input should be an instance of Foo',
-            'input_value': s,
-            'context': {'class': 'Foo'},
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of Foo',
+            'input': s,
+            'ctx': {'class': 'Foo'},
         }
     ]
-    with pytest.raises(ValidationError, match='kind=is_instance_of'):
+    with pytest.raises(ValidationError, match='type=is_instance_of'):
         v.validate_python(Foo)
 
-    with pytest.raises(ValidationError, match='kind=is_instance_of'):
+    with pytest.raises(ValidationError, match='type=is_instance_of'):
         v.validate_json('"foo"')
 
 
@@ -90,7 +90,7 @@ def test_instancecheck():
     v = SchemaValidator({'type': 'is-instance', 'cls': HasIsInstance})
     assert v.validate_python('true') == 'true'
 
-    with pytest.raises(ValidationError, match='kind=is_instance_of'):
+    with pytest.raises(ValidationError, match='type=is_instance_of'):
         v.validate_python('other')
 
     with pytest.raises(TypeError, match='intentional error'):
@@ -194,9 +194,9 @@ def test_json_function():
     assert output == deque([1, 2, 3])
     output = v.validate_json('[1, 2, 3]')
     assert output == deque([1, 2, 3])
-    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[kind=is_instance_of,'):
+    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[type=is_instance_of,'):
         v.validate_python([1, 2, 3])
-    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[kind=is_instance_of,'):
+    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[type=is_instance_of,'):
         v.validate_json('{"1": 2}')
 
 
@@ -205,7 +205,7 @@ def test_is_instance_sequence():
     assert v.isinstance_python(1) is False
     assert v.isinstance_python([1]) is True
 
-    with pytest.raises(ValidationError, match=r'Input should be an instance of typing.Sequence \[kind=is_instance_of,'):
+    with pytest.raises(ValidationError, match=r'Input should be an instance of typing.Sequence \[type=is_instance_of,'):
         v.validate_python(1)
 
 
@@ -221,5 +221,5 @@ def test_is_instance_tuple():
 def test_class_repr():
     v = SchemaValidator(core_schema.is_instance_schema(int, cls_repr='Foobar'))
     assert v.validate_python(1) == 1
-    with pytest.raises(ValidationError, match=r'Input should be an instance of Foobar \[kind=is_instance_of,'):
+    with pytest.raises(ValidationError, match=r'Input should be an instance of Foobar \[type=is_instance_of,'):
         v.validate_python('1')

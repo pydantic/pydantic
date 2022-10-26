@@ -1,10 +1,10 @@
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 
 use super::Input;
 
 pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> ValError<'a> {
     ValError::new(
-        ErrorKind::JsonInvalid {
+        ErrorType::JsonInvalid {
             error: error.to_string(),
         },
         input,
@@ -30,7 +30,7 @@ pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bo
     {
         Ok(true)
     } else {
-        Err(ValError::new(ErrorKind::BoolParsing, input))
+        Err(ValError::new(ErrorType::BoolParsing, input))
     }
 }
 
@@ -41,7 +41,7 @@ pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, boo
     } else if int == 1 {
         Ok(true)
     } else {
-        Err(ValError::new(ErrorKind::BoolParsing, input))
+        Err(ValError::new(ErrorType::BoolParsing, input))
     }
 }
 
@@ -52,15 +52,15 @@ pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<
     } else if let Ok(f) = str.parse::<f64>() {
         float_as_int(input, f)
     } else {
-        Err(ValError::new(ErrorKind::IntParsing, input))
+        Err(ValError::new(ErrorType::IntParsing, input))
     }
 }
 
 pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<'a, i64> {
     if float == f64::INFINITY || float == f64::NEG_INFINITY || float.is_nan() {
-        Err(ValError::new(ErrorKind::FiniteNumber, input))
+        Err(ValError::new(ErrorType::FiniteNumber, input))
     } else if float % 1.0 != 0.0 {
-        Err(ValError::new(ErrorKind::IntFromFloat, input))
+        Err(ValError::new(ErrorType::IntFromFloat, input))
     } else {
         Ok(float as i64)
     }

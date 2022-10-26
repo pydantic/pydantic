@@ -14,10 +14,10 @@ def test_custom_error(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('foobar')
     # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [{'kind': 'foobar', 'loc': [], 'message': 'Hello there', 'input_value': 'foobar'}]
+    assert exc_info.value.errors() == [{'type': 'foobar', 'loc': (), 'msg': 'Hello there', 'input': 'foobar'}]
 
 
-def test_custom_error_kind(py_and_json: PyAndJson):
+def test_custom_error_type(py_and_json: PyAndJson):
     v = py_and_json(core_schema.custom_error_schema(core_schema.int_schema(), 'recursion_loop'))
     assert v.validate_test(1) == 1
 
@@ -25,22 +25,18 @@ def test_custom_error_kind(py_and_json: PyAndJson):
         v.validate_test('X')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'kind': 'recursion_loop',
-            'loc': [],
-            'message': 'Recursion error - cyclic reference detected',
-            'input_value': 'X',
-        }
+        {'type': 'recursion_loop', 'loc': (), 'msg': 'Recursion error - cyclic reference detected', 'input': 'X'}
     ]
 
 
 def test_custom_error_error():
-    with pytest.raises(SchemaError, match=r'custom_error_kind\s+Field required \[kind=missing'):
+    with pytest.raises(SchemaError, match=r'custom_error_type\s+Field required \[type=missing'):
         SchemaValidator({'type': 'custom_error', 'schema': {'type': 'int'}})
 
 
 def test_custom_error_invalid():
-    with pytest.raises(SchemaError, match='custom_error_message should not be provided if kind matches a known error'):
+    msg = "custom_error_message should not be provided if 'custom_error_type' matches a known error"
+    with pytest.raises(SchemaError, match=msg):
         SchemaValidator(
             core_schema.custom_error_schema(core_schema.int_schema(), 'recursion_loop', custom_error_message='xxx')
         )
@@ -59,7 +55,7 @@ def test_ask():
             'cls': MyModel,
             'schema': {
                 'type': 'custom_error',
-                'custom_error_kind': 'foobar',
+                'custom_error_type': 'foobar',
                 'custom_error_message': 'Hello there',
                 'schema': {
                     'type': 'typed-dict',
@@ -79,5 +75,5 @@ def test_ask():
         v.validate_python({'field_a': 'test'})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'foobar', 'loc': [], 'message': 'Hello there', 'input_value': {'field_a': 'test'}}
+        {'type': 'foobar', 'loc': (), 'msg': 'Hello there', 'input': {'field_a': 'test'}}
     ]

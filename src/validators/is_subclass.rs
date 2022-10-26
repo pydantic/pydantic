@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
 
 use crate::build_tools::SchemaDict;
-use crate::errors::{ErrorKind, ValError, ValResult};
+use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
@@ -53,7 +53,7 @@ impl Validator for IsSubclassValidator {
         match input.input_is_subclass(self.class.as_ref(py))? {
             true => Ok(input.to_object(py)),
             false => Err(ValError::new(
-                ErrorKind::IsSubclassOf {
+                ErrorType::IsSubclassOf {
                     class: self.class_repr.clone(),
                 },
                 input,
