@@ -163,7 +163,7 @@ class GenerateSchema:
         """
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.constraints)
+        schema = apply_metadata(schema, field.metadata)
 
         if not field.is_required():
             required = False
@@ -203,7 +203,7 @@ class GenerateSchema:
         """
         first_arg, *other_args = get_args(annotated_type)
         schema = self.generate_schema(first_arg)
-        return apply_annotations(schema, other_args)
+        return apply_metadata(schema, other_args)
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -272,7 +272,7 @@ class GenerateSchema:
         field = FieldInfo.from_annotation(annotation)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.constraints)
+        schema = apply_metadata(schema, field.metadata)
 
         parameter_schema = core_schema.arguments_parameter(name, schema)
         if mode is not None:
@@ -492,67 +492,71 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     return schema
 
 
-def apply_annotations(  # noqa: C901
+def apply_metadata(  # noqa: C901
     schema: core_schema.CoreSchema, annotations: typing.Iterable[Any]
 ) -> core_schema.CoreSchema:
     """
-    Apply arguments from `Annotated` to a schema.
+    Apply arguments from `Annotated` or from `FieldInfo` to a schema.
     """
-    for c in annotations:
-        if c is None:
+    for metadata in annotations:
+        if metadata is None:
             continue
 
-        c_get_schema = getattr(c, '__get_pydantic_validation_schema__', None)
-        if c_get_schema is not None:
-            schema = c_get_schema(schema)
-            continue
-        c_schema = getattr(c, '__pydantic_validation_schema__', None)
+        c_schema = getattr(metadata, '__pydantic_validation_schema__', None)
         if c_schema is not None:
             schema = c_schema
             continue
-
-        if isinstance(c, GroupedMetadata):
-            # GroupedMetadata yields constraints
-            schema = apply_annotations(schema, c)
+        c_get_schema = getattr(metadata, '__get_pydantic_validation_schema__', None)
+        if c_get_schema is not None:
+            schema = c_get_schema(schema)
             continue
-        elif isinstance(c, FieldInfo):
-            schema = apply_annotations(schema, c.constraints)
+
+        if isinstance(metadata, GroupedMetadata):
+            # GroupedMetadata yields `BaseMetadata`s
+            schema = apply_metadata(schema, metadata)
+            continue
+        elif isinstance(metadata, FieldInfo):
+            schema = apply_metadata(schema, metadata.metadata)
             # TODO setting a default here needs to be tested
-            schema = wrap_default(c, schema)
+            schema = wrap_default(metadata, schema)
             continue
 
-        if isinstance(c, _fields.CustomMetadata):
-            constraints_dict = c.__dict__
-        elif isinstance(c, (BaseMetadata, _fields.PydanticMetadata)):
-            constraints_dict = dataclasses.asdict(c)
-        elif isinstance(c, type) and issubclass(c, _fields.PydanticMetadata):
-            constraints_dict = {k: v for k, v in vars(c).items() if not k.startswith('_')}
+        if isinstance(metadata, _fields.PydanticGeneralMetadata):
+            metadata_dict = metadata.__dict__
+        elif isinstance(metadata, (BaseMetadata, _fields.PydanticMetadata)):
+            metadata_dict = dataclasses.asdict(metadata)
+        elif isinstance(metadata, type) and issubclass(metadata, _fields.PydanticMetadata):
+            # also support PydanticMetadata classes being used without initialisation,
+            # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
+            metadata_dict = {k: v for k, v in vars(metadata).items() if not k.startswith('_')}
         else:
             raise PydanticSchemaGenerationError(
-                'Constraints must be subclasses of annotated_types.BaseMetadata or PydanticMetadata '
+                'Metadata must be instances of annotated_types.BaseMetadata or PydanticMetadata '
                 'or a subclass of PydanticMetadata'
             )
 
-        # TODO we need a way to remove constraints which this line currently prevents
-        constraints_dict = {k: v for k, v in constraints_dict.items() if v is not None}
-        if constraints_dict:
-            extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
-            if extra is None:
-                if schema['type'] == 'nullable':
-                    # for nullable schemas, constraints are automatically applied to the inner schema
-                    schema['schema'].update(constraints_dict)
-                else:
-                    # TODO need to do the same for lists, tuples and more
-                    schema.update(constraints_dict)  # type: ignore[typeddict-item]
-            else:
-                if isinstance(extra, dict):
-                    update_schema_function = extra['__pydantic_update_schema__']
-                else:
-                    update_schema_function = extra.__pydantic_update_schema__
+        # TODO we need a way to remove metadata which this line currently prevents
+        metadata_dict = {k: v for k, v in metadata_dict.items() if v is not None}
+        if not metadata_dict:
+            continue
 
-                new_schema = update_schema_function(schema, **constraints_dict)
-                if new_schema is not None:
-                    schema = new_schema
+        extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
+        if extra is None:
+            if schema['type'] == 'nullable':
+                # for nullable schemas, metadata is automatically applied to the inner schema
+                # TODO need to do the same for lists, tuples and more
+                schema['schema'].update(metadata_dict)
+            else:
+                schema.update(metadata_dict)  # type: ignore[typeddict-item]
+        else:
+            if isinstance(extra, dict):
+                update_schema_function = extra['__pydantic_update_schema__']
+            else:
+                update_schema_function = extra.__pydantic_update_schema__
+
+            new_schema = update_schema_function(schema, **metadata_dict)
+            if new_schema is not None:
+                schema = new_schema
     return schema
 
 

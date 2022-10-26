@@ -186,7 +186,7 @@ def constr(
         str,
         Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
-        _fields.CustomMetadata(
+        _fields.PydanticGeneralMetadata(
             strip_whitespace=strip_whitespace,
             to_upper=to_upper,
             to_lower=to_lower,
@@ -286,7 +286,7 @@ def condecimal(
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
         annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
-        _fields.CustomMetadata(max_digits=max_digits, decimal_places=decimal_places),
+        _fields.PydanticGeneralMetadata(max_digits=max_digits, decimal_places=decimal_places),
         AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
 

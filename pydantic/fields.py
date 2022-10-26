@@ -30,14 +30,15 @@ class FieldInfo(_repr.Representation):
         'description',
         'exclude',
         'include',
-        'constraints',
+        'metadata',
         'repr',
         'discriminator',
         'extra',
     )
 
-    # used to convert kwargs to constraints, None has a special meaning
-    constraints_lookup: dict[str, typing.Callable[[Any], Any] | None] = {
+    # used to convert kwargs to metadata/constraints,
+    # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
+    metadata_lookup: dict[str, typing.Callable[[Any], Any] | None] = {
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
         'lt': annotated_types.Lt,
@@ -56,7 +57,7 @@ class FieldInfo(_repr.Representation):
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        self.annotation, annotation_constraints = self._extract_constraints(kwargs.pop('annotation', None))
+        self.annotation, annotation_metadata = self._extract_metadata(kwargs.pop('annotation', None))
 
         default = kwargs.pop('default', Undefined)
         if default is Ellipsis:
@@ -75,7 +76,7 @@ class FieldInfo(_repr.Representation):
         self.description = kwargs.pop('description', None)
         self.exclude = kwargs.pop('exclude', None)
         self.include = kwargs.pop('include', None)
-        self.constraints = self._collect_constraints(kwargs) + annotation_constraints
+        self.metadata = self._collect_metadata(kwargs) + annotation_metadata
         self.discriminator = kwargs.pop('discriminator', None)
         self.repr = kwargs.pop('repr', True)
         self.extra = kwargs
@@ -113,7 +114,7 @@ class FieldInfo(_repr.Representation):
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
-                new_field_info.constraints += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                 return new_field_info
 
         return cls(annotation=annotation)
@@ -129,8 +130,8 @@ class FieldInfo(_repr.Representation):
         >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4
         """
         if isinstance(default, cls):
-            default.annotation, annotation_constraints = cls._extract_constraints(annotation)
-            default.constraints += annotation_constraints
+            default.annotation, annotation_metadata = cls._extract_metadata(annotation)
+            default.metadata += annotation_metadata
             return default
         else:
             if _typing_extra.is_annotated(annotation):
@@ -142,17 +143,17 @@ class FieldInfo(_repr.Representation):
                     new_field_info = copy(field_info)
                     new_field_info.default = default
                     new_field_info.annotation = first_arg
-                    new_field_info.constraints += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                    new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                     return new_field_info
 
             return cls(annotation=annotation, default=default)
 
     @classmethod
-    def _extract_constraints(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
+    def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         """
-        Try to extract constraints from an annotation if it's using `Annotated`.
+        Try to extract metadata/constraints from an annotation if it's using `Annotated`.
 
-        Returns a tuple of (annotation_type, constraints).
+        Returns a tuple of `(annotation_type, annotation_metadata)`.
         """
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
@@ -172,29 +173,29 @@ class FieldInfo(_repr.Representation):
         return next((a for a in args if isinstance(a, FieldInfo)), None)
 
     @classmethod
-    def _collect_constraints(cls, kwargs: dict[str, Any]) -> list[Any]:
+    def _collect_metadata(cls, kwargs: dict[str, Any]) -> list[Any]:
         """
         Collect annotations from kwargs, the return type is actually `annotated_types.BaseMetadata | PydanticMetadata`
         but it gets combined with `list[Any]` from `Annotated[T, ...]`, hence types.
         """
 
-        constraints: list[Any] = []
-        generic_constraints = {}
+        metadata: list[Any] = []
+        general_metadata = {}
         for key, value in list(kwargs.items()):
             try:
-                marker = cls.constraints_lookup[key]
+                marker = cls.metadata_lookup[key]
             except KeyError:
                 continue
 
             del kwargs[key]
             if value is not None:
                 if marker is None:
-                    generic_constraints[key] = value
+                    general_metadata[key] = value
                 else:
-                    constraints.append(marker(value))
-        if generic_constraints:
-            constraints.append(_fields.CustomMetadata(**generic_constraints))
-        return constraints
+                    metadata.append(marker(value))
+        if general_metadata:
+            metadata.append(_fields.PydanticGeneralMetadata(**general_metadata))
+        return metadata
 
     def get_default(self) -> Any:
         # we don't want to call default_factory as it may have side-effects, so we default to None as the
@@ -211,7 +212,7 @@ class FieldInfo(_repr.Representation):
         for s in self.__slots__:
             if s == 'annotation':
                 continue
-            elif s == 'constraints' and not self.constraints:
+            elif s == 'metadata' and not self.metadata:
                 continue
             elif s == 'repr' and self.repr is True:
                 continue

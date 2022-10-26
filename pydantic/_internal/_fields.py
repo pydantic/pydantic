@@ -40,7 +40,7 @@ class PydanticMetadata:
     __slots__ = ()
 
 
-class CustomMetadata(Representation, PydanticMetadata):
+class PydanticGeneralMetadata(Representation, PydanticMetadata):
     def __init__(self, **metadata: Any):
         self.__dict__ = metadata
 

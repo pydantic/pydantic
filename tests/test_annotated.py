@@ -18,52 +18,52 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Gt(0)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Field(gt=0)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
             Field(default_factory=lambda: 5, gt=0),
-            'FieldInfo(annotation=int, required=False, default_factory=<lambda>, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=False, default_factory=<lambda>, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, constraints=[Gt(gt=0), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
             NO_VALUE,
-            'FieldInfo(annotation=int, required=True, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
             Field(),
-            'FieldInfo(annotation=int, required=True, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
             Field(gt=0),
-            'FieldInfo(annotation=int, required=True, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
             Undefined,
-            'FieldInfo(annotation=int, required=True, constraints=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Field(gt=0), Lt(2)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, constraints=[Gt(gt=0), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
     ],
 )
@@ -99,7 +99,7 @@ def test_annotated(hint_fn, value, expected_repr):
         (
             lambda: Annotated[int, 0],
             5,
-            pytest.raises(PydanticSchemaGenerationError, match=r'Constraints must be subclasses of annotated_types\.'),
+            pytest.raises(PydanticSchemaGenerationError, match=r'Metadata must be instances of annotated_types\.'),
         ),
     ],
 )
@@ -181,12 +181,12 @@ def test_annotated_alias() -> None:
 
     fields_repr = {k: repr(v) for k, v in MyModel.__fields__.items()}
     assert fields_repr == {
-        'a': "FieldInfo(annotation=str, required=False, default='abc', constraints=[MaxLen(max_length=3)])",
-        'b': 'FieldInfo(annotation=str, required=True, constraints=[MaxLen(max_length=3)])',
+        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[MaxLen(max_length=3)])",
+        'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'e': (
-            'FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, constraints=[MaxLe'
+            'FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLe'
             "n(max_length=3)])]], required=True, description='foo')"
         ),
     }
