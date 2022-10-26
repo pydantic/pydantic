@@ -25,13 +25,17 @@ __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
 
 def model_fields_schema(
-    ref: str, fields: dict[str, FieldInfo], validator_functions: ValidationFunctions, arbitrary_types: bool
+    ref: str,
+    fields: dict[str, FieldInfo],
+    validator_functions: ValidationFunctions,
+    arbitrary_types: bool,
+    types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
     """
     Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
     since this is typed_dict schema which is used to create the model,
     """
-    schema_generator = GenerateSchema(arbitrary_types)
+    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {k: schema_generator.generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
         ref=ref,
@@ -56,12 +60,13 @@ def generate_config(config: type[BaseConfig]) -> core_schema.CoreConfig:
 
 
 class GenerateSchema:
-    __slots__ = ('arbitrary_types',)
+    __slots__ = 'arbitrary_types', 'types_namespace'
 
-    def __init__(self, arbitrary_types: bool):
+    def __init__(self, arbitrary_types: bool, types_namespace: dict[str, Any] | None):
         self.arbitrary_types = arbitrary_types
+        self.types_namespace = types_namespace
 
-    def generate_schema(self, obj: type[Any] | str | dict[str, Any]) -> core_schema.CoreSchema:  # noqa: C901
+    def generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """
         Recursively generate a pydantic-core schema for any supported python type.
         """
@@ -70,6 +75,20 @@ class GenerateSchema:
         elif isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
+
+        schema_property = getattr(obj, '__pydantic_validation_schema__', None)
+        if schema_property is not None:
+            return schema_property
+
+        get_schema = getattr(obj, '__get_pydantic_validation_schema__', None)
+        if get_schema is not None:
+            return get_schema(types_namespace=self.types_namespace)
+
+        if obj is _fields.SelfType:
+            # returned value doesn't do anything here since SchemaRef should always be used as an annotated argument
+            # which replaces the schema returned here, we return `SelfType` to make debugging easier if
+            # this schema is not overwritten
+            return obj
         elif obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
             return {'type': obj.__name__}  # type: ignore[return-value,misc]
         elif obj is Any or obj is object:
@@ -99,14 +118,6 @@ class GenerateSchema:
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
             return std_schema
-
-        schema_property = getattr(obj, '__pydantic_validation_schema__', None)
-        if schema_property is not None:
-            return schema_property
-
-        get_schema = getattr(obj, '__get_pydantic_validation_schema__', None)
-        if get_schema is not None:
-            return get_schema()
 
         origin = get_origin(obj)
         if origin is None:
@@ -502,13 +513,13 @@ def apply_metadata(  # noqa: C901
         if metadata is None:
             continue
 
-        c_schema = getattr(metadata, '__pydantic_validation_schema__', None)
-        if c_schema is not None:
-            schema = c_schema
+        metadata_schema = getattr(metadata, '__pydantic_validation_schema__', None)
+        if metadata_schema is not None:
+            schema = metadata_schema
             continue
-        c_get_schema = getattr(metadata, '__get_pydantic_validation_schema__', None)
-        if c_get_schema is not None:
-            schema = c_get_schema(schema)
+        metadata_get_schema = getattr(metadata, '__get_pydantic_validation_schema__', None)
+        if metadata_get_schema is not None:
+            schema = metadata_get_schema(schema)
             continue
 
         if isinstance(metadata, GroupedMetadata):

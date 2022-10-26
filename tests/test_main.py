@@ -1778,7 +1778,7 @@ def test_final_field_decl_without_default_val(ann, value):
         if value is not None:
             a = value
 
-    Model.update_forward_refs(ann=ann)
+    Model.model_rebuild(ann=ann)
 
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.__fields__
@@ -1796,7 +1796,7 @@ def test_final_field_decl_with_default_val(ann):
     class Model(BaseModel):
         a: ann = 10
 
-    Model.update_forward_refs(ann=ann)
+    Model.model_rebuild(ann=ann)
 
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.__fields__

@@ -234,7 +234,7 @@ class AnyUrl(str):
         _utils.update_not_none(field_schema, minLength=cls.min_length, maxLength=cls.max_length, format='uri')
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         return core_schema.FunctionSchema(
             type='function',
             mode='after',
@@ -568,7 +568,7 @@ else:
     class EmailStr:
         @classmethod
         def __get_pydantic_validation_schema__(
-            cls, schema: core_schema.CoreSchema | None = None
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             import_email_validator()
             if schema is None:
@@ -601,7 +601,7 @@ class NameEmail(_repr.Representation):
         field_schema.update(type='string', format='name-email')
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         import_email_validator()
         return core_schema.function_after_schema(
             core_schema.union_schema(
@@ -642,7 +642,7 @@ class IPvAnyAddress:
         field_schema.update(type='string', format='ipvanyaddress')
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
@@ -669,7 +669,7 @@ class IPvAnyInterface:
         field_schema.update(type='string', format='ipvanyinterface')
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
@@ -698,7 +698,7 @@ class IPvAnyNetwork:
         field_schema.update(type='string', format='ipvanynetwork')
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod

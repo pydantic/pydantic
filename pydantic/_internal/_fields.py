@@ -32,7 +32,7 @@ class _UndefinedType:
 Undefined = _UndefinedType()
 
 
-class PydanticMetadata:
+class PydanticMetadata(Representation):
     """
     Base class for annotation markers like `Strict`.
     """
@@ -40,24 +40,26 @@ class PydanticMetadata:
     __slots__ = ()
 
 
-class PydanticGeneralMetadata(Representation, PydanticMetadata):
+class PydanticGeneralMetadata(PydanticMetadata):
     def __init__(self, **metadata: Any):
         self.__dict__ = metadata
 
 
-class SchemaRef(PydanticMetadata):
+class SelfType:
+    """
+    No-op marker class for `self` type reference.
+    """
+
+
+class SchemaRef(Representation):
     """
     Holds a reference to another schema.
     """
 
-    __slots__ = '_name', '__pydantic_validation_schema__'
+    __slots__ = ('__pydantic_validation_schema__',)
 
-    def __init__(self, name: str, schema: core_schema.CoreSchema):
-        self._name = name
+    def __init__(self, schema: core_schema.CoreSchema):
         self.__pydantic_validation_schema__ = schema
-
-    def __repr__(self) -> str:
-        return f'SchemaRef({self._name!r}, {self.__pydantic_validation_schema__})'
 
 
 class CustomValidator(ABC):

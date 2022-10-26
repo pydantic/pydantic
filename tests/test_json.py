@@ -303,7 +303,7 @@ def test_json_nested_encode_models():
                 'User': lambda v: v.SSN,
             }
 
-    User.update_forward_refs()
+    User.model_rebuild()
 
     iphone = Phone(manufacturer='Apple', number=18002752273)
     galaxy = Phone(manufacturer='Samsung', number=18007267864)

@@ -73,6 +73,7 @@ class ModelMetaclass(ABCMeta):
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
             validator_functions = _validation_functions.ValidationFunctions(bases)
+            namespace['__pydantic_validator_functions__'] = validator_functions
 
             for name, value in namespace.items():
                 validator_functions.extract_validator(name, value)
@@ -91,7 +92,7 @@ class ModelMetaclass(ABCMeta):
                 namespace['__hash__'] = hash_func
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
-            _model_construction.complete_model_class(cls, cls_name, validator_functions, bases)
+            _model_construction.complete_model_class(cls, cls_name, validator_functions, bases, raise_errors=False)
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
@@ -111,7 +112,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # populated by the metaclass, defined here to help IDEs only
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
-        __validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
+        __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
         __fields__: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x
@@ -120,6 +121,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
+    else:
+        __pydantic_validator__ = _model_construction.MockValidator(
+            'Pydantic models should in inherit from BaseModel, BaseModel cannot be initialised directly'
+        )
 
     Config = BaseConfig
     __slots__ = '__dict__', '__fields_set__'
@@ -437,11 +442,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
-    def update_forward_refs(cls, **localns: Any) -> None:
+    def model_rebuild(cls, *, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None) -> bool:
         """
-        Try to update ForwardRefs on fields based on this Model and localns.
+        Try to (Re)constructing the model schema.
         """
-        raise RuntimeError('TODO, also rename to model_rebuild')
+        return _model_construction.complete_model_class(
+            cls,
+            cls.__name__,
+            cls.__pydantic_validator_functions__,
+            cls.__bases__,
+            raise_errors=raise_errors,
+            types_namespace=types_namespace,
+        )
 
     def __iter__(self) -> 'TupleGenerator':
         """

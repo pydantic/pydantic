@@ -1064,7 +1064,7 @@ def test_generic_recursive_models(create_module):
         class Model2(GenericModel, Generic[T]):
             ref: Union[T, Model1[T]]
 
-        Model1.update_forward_refs()
+        Model1.model_rebuild()
 
     Model1 = module.Model1
     Model2 = module.Model2

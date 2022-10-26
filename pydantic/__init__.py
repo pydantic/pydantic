@@ -60,6 +60,7 @@ __all__ = [
     'schema_of',
     'schema_json_of',
     # types
+    'Strict',
     'StrictStr',
     'conbytes',
     'conlist',

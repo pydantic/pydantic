@@ -189,7 +189,7 @@ class Color(_repr.Representation):
         return 1 if self._rgba.alpha is None else self._rgba.alpha
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
         return core_schema.FunctionPlainSchema(type='function', mode='plain', function=cls._validate)
 
     @classmethod

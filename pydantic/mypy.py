@@ -282,7 +282,7 @@ class PydanticModelTransformer:
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname == 'pydantic.class_validators.validator'
+                    and first_dec.callee.fullname == 'pydantic.validator_functions.validator'
                 ):
                     sym.node.func.is_class = True
 

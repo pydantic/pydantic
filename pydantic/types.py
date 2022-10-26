@@ -31,6 +31,7 @@ from typing_extensions import Annotated, Literal
 from ._internal import _fields, _validators
 
 __all__ = [
+    'Strict',
     'StrictStr',
     'conbytes',
     'conlist',
@@ -254,7 +255,7 @@ else:
 
         @classmethod
         def __get_pydantic_validation_schema__(
-            cls, schema: core_schema.CoreSchema | None = None
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
@@ -301,7 +302,9 @@ class UuidVersion:
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
-    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.FunctionSchema:
+    def __get_pydantic_validation_schema__(
+        self, schema: core_schema.CoreSchema, **_kwargs: Any
+    ) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(schema, cast(core_schema.ValidatorFunction, self.validate))
 
     def validate(self, value: UUID, **_kwargs: Any) -> UUID:
@@ -328,7 +331,9 @@ class PathType:
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(format='file-path')
 
-    def __get_pydantic_validation_schema__(self, schema: core_schema.CoreSchema) -> core_schema.FunctionSchema:
+    def __get_pydantic_validation_schema__(
+        self, schema: core_schema.CoreSchema, **_kwargs: Any
+    ) -> core_schema.FunctionSchema:
         function_lookup = {
             'file': cast(core_schema.ValidatorFunction, self.validate_file),
             'dir': cast(core_schema.ValidatorFunction, self.validate_directory),
@@ -383,7 +388,7 @@ else:
 
         @classmethod
         def __get_pydantic_validation_schema__(
-            cls, schema: core_schema.CoreSchema | None = None
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.JsonSchema:
             return core_schema.json_schema(schema)
 
@@ -410,7 +415,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         validator = SecretFieldValidator(cls)
         return core_schema.function_after_schema(
             core_schema.union_schema(
@@ -548,7 +553,7 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(
             core_schema.string_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
@@ -650,7 +655,7 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_validation_schema__(cls) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
         # TODO better schema
         return core_schema.function_plain_schema(cls.validate)
 
@@ -714,7 +719,7 @@ else:
     class PastDate:
         @classmethod
         def __get_pydantic_validation_schema__(
-            cls, schema: core_schema.CoreSchema | None = None
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if schema is None:
                 # used directly as a type
@@ -730,7 +735,7 @@ else:
     class FutureDate:
         @classmethod
         def __get_pydantic_validation_schema__(
-            cls, schema: core_schema.CoreSchema | None = None
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if schema is None:
                 # used directly as a type

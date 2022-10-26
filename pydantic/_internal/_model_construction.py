@@ -3,18 +3,21 @@ Private logic for creating models.
 """
 from __future__ import annotations as _annotations
 
+import re
 import sys
 import typing
 import warnings
+from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated
 
+from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
-from ._fields import SchemaRef, Undefined
+from ._fields import SchemaRef, SelfType, Undefined
 from ._generate_schema import generate_config, model_fields_schema
 from ._utils import ClassAttribute, is_valid_identifier
 from ._validation_functions import ValidationFunctions
@@ -87,19 +90,85 @@ def single_underscore(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
+def deferred_model_get_pydantic_validation_schema(
+    cls: type[BaseModel], types_namespace: dict[str, Any] | None, **_kwargs: Any
+) -> core_schema.CoreSchema:
+    """
+    Bound used on model as `__get_pydantic_validation_schema__` if not all type hints are available.
+
+    This method trys to rebuild the model schema and return `__pydantic_validation_schema__`.
+    """
+    inner_schema, fields = build_inner_schema(
+        cls,
+        cls.__name__,
+        cls.__pydantic_validator_functions__,
+        cls.__bases__,
+        types_namespace,
+    )
+
+    core_config = generate_config(cls.__config__)
+    cls.__fields__ = fields
+    model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    return core_schema.new_class_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
+
+
 def complete_model_class(
-    cls: type[BaseModel], name: str, validator_functions: ValidationFunctions, bases: tuple[type[Any], ...]
-) -> None:
+    cls: type[BaseModel],
+    name: str,
+    validator_functions: ValidationFunctions,
+    bases: tuple[type[Any], ...],
+    *,
+    raise_errors: bool = True,
+    types_namespace: dict[str, Any] | None = None,
+) -> bool:
     """
     Collect bound validator functions, build the model validation schema and set the model signature.
+
+    Returns `True` if the model is successfully completed, else `False`.
 
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
     validator_functions.set_bound_functions(cls)
 
+    try:
+        inner_schema, fields = build_inner_schema(cls, name, validator_functions, bases, types_namespace)
+    except PydanticUndefinedAnnotation as e:
+        if raise_errors:
+            raise
+        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
+            f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
+        )
+        # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
+        cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
+            deferred_model_get_pydantic_validation_schema, cls
+        )
+        return False
+
+    validator_functions.check_for_unused()
+
+    core_config = generate_config(cls.__config__)
+    cls.__fields__ = fields
+    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
+        cls, inner_schema, config=core_config, call_after_init=model_post_init
+    )
+
+    # set __signature__ attr only for model class, but not for its instances
+    cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))
+    return True
+
+
+def build_inner_schema(  # noqa: C901
+    cls: type[BaseModel],
+    name: str,
+    validator_functions: ValidationFunctions,
+    bases: tuple[type[Any], ...],
+    types_namespace: dict[str, Any] | None = None,
+) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
     module_name = getattr(cls, '__module__', None)
-    base_globals: dict[str, Any] | None = None
+    global_ns: dict[str, Any] | None = None
     if module_name:
         try:
             module = sys.modules[module_name]
@@ -107,14 +176,30 @@ def complete_model_class(
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
         else:
-            base_globals = module.__dict__
+            if types_namespace:
+                global_ns = {**module.__dict__, **types_namespace}
+            else:
+                global_ns = module.__dict__
 
-    fields: dict[str, FieldInfo] = {}
-    core_config = generate_config(cls.__config__)
     model_ref = f'{module_name}.{name}'
     self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
-    localns = {name: Annotated[Any, SchemaRef('SelfType', self_schema)]}
-    for ann_name, ann_type in _typing_extra.get_type_hints(cls, base_globals, localns, include_extras=True).items():
+    local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+    try:
+        type_hints = _typing_extra.get_type_hints(cls, global_ns, local_ns, include_extras=True)
+    except NameError as e:
+        try:
+            name = e.name
+        except AttributeError:
+            m = re.search(r".*'(.+?)'", str(e))
+            if m:
+                name = m.group(1)
+            else:
+                # should never happen
+                raise
+        raise PydanticUndefinedAnnotation(name) from e
+
+    fields: dict[str, FieldInfo] = {}
+    for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
 
@@ -136,18 +221,10 @@ def complete_model_class(
             # 2. To avoid false positives in the NameError check above
             delattr(cls, ann_name)
 
-    inner_schema = model_fields_schema(model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed)
-    validator_functions.check_for_unused()
-
-    cls.__fields__ = fields
-    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
-    model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
-        cls, inner_schema, config=core_config, call_after_init=model_post_init
+    schema = model_fields_schema(
+        model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed, local_ns
     )
-
-    # set __signature__ attr only for model class, but not for its instances
-    cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))
+    return schema, fields
 
 
 def generate_model_signature(
@@ -214,3 +291,20 @@ def generate_model_signature(
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
+
+
+class MockValidator:
+    """
+    Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed.
+    """
+
+    __slots__ = ('_error_message',)
+
+    def __init__(self, error_message: str) -> None:
+        self._error_message = error_message
+
+    def __getattr__(self, item: str) -> None:
+        __tracebackhide__ = True
+        # raise an AttributeError if `item` doesn't exist
+        getattr(SchemaValidator, item)
+        raise PydanticUserError(self._error_message)

@@ -1,7 +1,8 @@
 import sys
-from typing import Dict, ForwardRef, List, Optional, Tuple
+from typing import Optional, Tuple
 
 import pytest
+from dirty_equals import IsStr
 
 from pydantic import BaseModel, PydanticUserError, ValidationError
 
@@ -21,7 +22,7 @@ class Model(BaseModel):
     assert m.dict() == {'a': 123}
 
 
-def test_postponed_annotations_auto_update_forward_refs(create_module):
+def test_postponed_annotations_auto_model_rebuild(create_module):
     module = create_module(
         # language=Python
         """
@@ -32,25 +33,39 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.__fields__['a'].annotation.__class__.__name__ == 'SelfType'
+    assert module.Model.__fields__['a'].annotation.__name__ == 'SelfType'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
-    module = create_module(
-        # language=Python
-        """
-from pydantic import BaseModel
+    @create_module
+    def module():
+        from pydantic import BaseModel
 
-class Foo(BaseModel):
-    a: 'Bar'
+        class Foo(BaseModel):
+            a: 'Bar' = None
 
-class Bar(BaseModel):
-    b: 'Foo'
-"""
+        class Bar(BaseModel):
+            b: 'Foo'
+
+    assert repr(module.Bar.__fields__['b']) == 'FieldInfo(annotation=Foo, required=True)'
+
+    # Bar should be complet and ready to use
+    b = module.Bar(b={'a': {'b': {}}})
+    assert b == {'b': {'a': {'b': {'a': None}}}}
+
+    # __field__ is complete on Foo
+    assert repr(module.Foo.__fields__['a']).startswith(
+        'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_validation_schema__'
     )
+    # but Foo is not ready to use
+    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined, you should define `Bar`,'):
+        module.Foo(a={'b': {'a': {}}})
 
-    assert module.Foo.__fields__['a'].type_ == ForwardRef('Bar')
-    assert module.Bar.__fields__['b'].type_ is module.Foo
+    assert module.Foo.model_rebuild() is True
+
+    # now Foo is ready to use
+    f = module.Foo(a={'b': {'a': {'b': {}}}})
+    assert f == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
 def test_forward_ref_one_of_fields_not_defined(create_module):
@@ -62,8 +77,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             foo: 'Foo'
             bar: 'Bar'  # noqa: F821
 
-    assert module.Foo.__fields__['bar'].type_ == ForwardRef('Bar')
-    assert module.Foo.__fields__['foo'].type_ is module.Foo
+    assert hasattr(module.Foo, '__fields__') is False
 
 
 def test_basic_forward_ref(create_module):
@@ -79,7 +93,7 @@ def test_basic_forward_ref(create_module):
         FooRef = ForwardRef('Foo')
 
         class Bar(BaseModel):
-            b: Optional[FooRef]
+            b: Optional[FooRef] = None
 
     assert module.Bar().dict() == {'b': None}
     assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
@@ -92,13 +106,11 @@ def test_self_forward_ref_module(create_module):
 
         from pydantic import BaseModel
 
-        Foo = ForwardRef('Foo')
+        FooRef = ForwardRef('Foo')
 
         class Foo(BaseModel):
             a: int = 123
-            b: 'Foo' = None
-
-        Foo.update_forward_refs()
+            b: FooRef = None
 
     assert module.Foo().dict() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
@@ -117,8 +129,6 @@ def test_self_forward_ref_collection(create_module):
             c: 'List[Foo]' = []
             d: 'Dict[str, Foo]' = {}
 
-        Foo.update_forward_refs()
-
     assert module.Foo().dict() == {'a': 123, 'b': None, 'c': [], 'd': {}}
     assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).dict() == {
         'a': 123,
@@ -129,17 +139,21 @@ def test_self_forward_ref_collection(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('c', 0, 'b'), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}
+        {'kind': 'dict_type', 'loc': ['c', 0, 'b'], 'message': 'Input should be a valid dictionary', 'input_value': 234}
     ]
 
-    assert module.Foo.__fields__['a'].type_ is int
-    assert module.Foo.__fields__['b'].type_ is module.Foo
-    assert module.Foo.__fields__['b'].outer_type_ is module.Foo
-    assert module.Foo.__fields__['c'].type_ is module.Foo
-    assert module.Foo.__fields__['c'].outer_type_ == List[module.Foo]
-    assert module.Foo.__fields__['d'].type_ is module.Foo
-    assert module.Foo.__fields__['d'].outer_type_ == Dict[str, module.Foo]
+    assert repr(module.Foo.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
+    assert repr(module.Foo.__fields__['b']) == IsStr(
+        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo\'\}\}\)\]\)'
+    )
+    if sys.version_info < (3, 10):
+        return
+    assert repr(module.Foo.__fields__['c']) == IsStr(regex=r'FieldInfo\(annotation=List\[Annotated\[SelfType.+')
+    assert repr(module.Foo.__fields__['d']) == IsStr(
+        regex=r'FieldInfo\(annotation=Dict\[str, Annotated\[SelfType, SchemaRef.*'
+    )
 
 
 def test_self_forward_ref_local(create_module):
@@ -156,7 +170,6 @@ def test_self_forward_ref_local(create_module):
                 a: int = 123
                 b: Foo = None
 
-            Foo.update_forward_refs()
             return Foo
 
     Foo = module.main()
@@ -164,24 +177,7 @@ def test_self_forward_ref_local(create_module):
     assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-def test_missing_update_forward_refs(create_module):
-    @create_module
-    def module():
-        from typing import ForwardRef
-
-        from pydantic import BaseModel
-
-        Foo = ForwardRef('Foo')
-
-        class Foo(BaseModel):
-            a: int = 123
-            b: Foo = None
-
-    with pytest.raises(PydanticUserError) as exc_info:
-        module.Foo(b=123)
-    assert str(exc_info.value).startswith('field "b" not yet prepared so type is still a ForwardRef')
-
-
+@pytest.mark.xfail(reason='TODO dataclasses')
 def test_forward_ref_dataclass(create_module):
     @create_module
     def module():
@@ -196,6 +192,7 @@ def test_forward_ref_dataclass(create_module):
     assert m.url == 'http://example.com'
 
 
+@pytest.mark.xfail(reason='TODO dataclasses')
 def test_forward_ref_dataclass_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -230,8 +227,6 @@ def test_forward_ref_sub_types(create_module):
             left: TreeType
             right: TreeType
 
-        Node.update_forward_refs()
-
     Node = module.Node
     Leaf = module.Leaf
     data = {'value': 3, 'left': {'a': 'foo'}, 'right': {'value': 5, 'left': {'a': 'bar'}, 'right': {'a': 'buzz'}}}
@@ -258,8 +253,6 @@ def test_forward_ref_nested_sub_types(create_module):
             left: TreeType
             right: TreeType
 
-        Node.update_forward_refs()
-
     Node = module.Node
     Leaf = module.Leaf
     data = {
@@ -273,6 +266,7 @@ def test_forward_ref_nested_sub_types(create_module):
     assert isinstance(node.right[0], Node)
 
 
+@pytest.mark.xfail(reason='TODO schema')
 def test_self_reference_json_schema(create_module):
     @create_module
     def module():
@@ -283,8 +277,6 @@ def test_self_reference_json_schema(create_module):
         class Account(BaseModel):
             name: str
             subaccounts: List['Account'] = []
-
-        Account.update_forward_refs()
 
     Account = module.Account
     assert Account.schema() == {
@@ -308,6 +300,7 @@ def test_self_reference_json_schema(create_module):
     }
 
 
+@pytest.mark.xfail(reason='TODO schema')
 def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -319,8 +312,6 @@ from pydantic import BaseModel
 class Account(BaseModel):
   name: str
   subaccounts: List[Account] = []
-
-Account.update_forward_refs()
     """
     )
     Account = module.Account
@@ -345,6 +336,7 @@ Account.update_forward_refs()
     }
 
 
+@pytest.mark.xfail(reason='TODO schema')
 def test_circular_reference_json_schema(create_module):
     @create_module
     def module():
@@ -359,9 +351,6 @@ def test_circular_reference_json_schema(create_module):
             name: str
             owner: 'Owner'
             subaccounts: List['Account'] = []
-
-        Account.update_forward_refs()
-        Owner.update_forward_refs()
 
     Account = module.Account
     assert Account.schema() == {
@@ -392,6 +381,7 @@ def test_circular_reference_json_schema(create_module):
     }
 
 
+@pytest.mark.xfail(reason='TODO schema')
 def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -408,8 +398,6 @@ class Account(BaseModel):
   owner: Owner
   subaccounts: List[Account] = []
 
-Account.update_forward_refs()
-Owner.update_forward_refs()
     """
     )
     Account = module.Account
@@ -447,14 +435,13 @@ def test_forward_ref_with_field(create_module):
         from typing import ForwardRef, List
 
         import pytest
+        from pydantic_core import SchemaError
 
         from pydantic import BaseModel, Field
 
         Foo = ForwardRef('Foo')
 
-        with pytest.raises(
-            ValueError, match='On field "c" the following field constraints are set but not enforced: gt.'
-        ):
+        with pytest.raises(SchemaError, match=r'Extra inputs are not permitted \[kind=extra_forbidden,'):
 
             class Foo(BaseModel):
                 c: List[Foo] = Field(..., gt=0)
@@ -471,7 +458,7 @@ from typing import List, Optional
 
 class Spec(BaseModel):
     spec_fields: List[str] = Field(..., alias="fields")
-    filter: Optional[str]
+    filter: Optional[str] = None
     sort: Optional[str]
 
 
@@ -482,10 +469,10 @@ class PSpec(Spec):
 class GSpec(Spec):
     p: Optional[PSpec]
 
-PSpec.update_forward_refs()
+# PSpec.model_rebuild()
 
 class Filter(BaseModel):
-    g: Optional[GSpec]
+    g: Optional[GSpec] = None
     p: Optional[PSpec]
     """
     )
@@ -493,6 +480,7 @@ class Filter(BaseModel):
     assert isinstance(Filter(p={'sort': 'some_field:asc', 'fields': []}), Filter)
 
 
+@pytest.mark.xfail(reason='TODO create_model')
 def test_forward_ref_with_create_model(create_module):
     @create_module
     def module():
@@ -505,6 +493,7 @@ def test_forward_ref_with_create_model(create_module):
         assert instance.sub.dict() == {'foo': 'bar'}
 
 
+@pytest.mark.xfail(reason='TODO dataclasses')
 def test_resolve_forward_ref_dataclass(create_module):
     module = create_module(
         # language=Python
@@ -514,7 +503,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from pydantic import BaseModel
-from pydantic._internal.typing_extra import Literal
+from typing_extensions import Literal
 
 @dataclass
 class Base:
@@ -537,6 +526,7 @@ def test_nested_forward_ref():
     assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
+@pytest.mark.xfail(reason='TODO discriminator')
 def test_discriminated_union_forward_ref(create_module):
     @create_module
     def module():
@@ -555,10 +545,10 @@ def test_discriminated_union_forward_ref(create_module):
         class Dog(BaseModel):
             type: Literal['dog']
 
-    with pytest.raises(PydanticUserError, match='you might need to call Pet.update_forward_refs()'):
+    with pytest.raises(PydanticUserError, match='`Pet` is not fully defined, you should define `Cat`'):
         module.Pet.parse_obj({'type': 'pika'})
 
-    module.Pet.update_forward_refs()
+    module.Pet.model_rebuild()
 
     with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
         module.Pet.parse_obj({'type': 'pika'})
@@ -584,6 +574,7 @@ def test_discriminated_union_forward_ref(create_module):
     }
 
 
+@pytest.mark.xfail(reason='TODO class_vars')
 def test_class_var_as_string(create_module):
     module = create_module(
         # language=Python
@@ -600,6 +591,7 @@ class Model(BaseModel):
     assert module.Model.__class_vars__ == {'a'}
 
 
+@pytest.mark.xfail(reason='TODO json encoding')
 def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python
@@ -633,6 +625,7 @@ class Model(BaseModel):
     assert m.json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
+@pytest.mark.xfail(reason='TODO json encoding')
 def test_json_encoder_forward_ref(create_module):
     module = create_module(
         # language=Python
@@ -661,15 +654,23 @@ skip_pep585 = pytest.mark.skipif(
 
 
 @skip_pep585
-def test_pep585_self_referencing_generics():
-    class SelfReferencing(BaseModel):
-        names: list['SelfReferencing']  # noqa: F821
+def test_pep585_self_referencing_generics(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
 
-    SelfReferencing.update_forward_refs()  # will raise an exception if the forward ref isn't resolvable
+class SelfReferencing(BaseModel):
+    names: list[SelfReferencing]  # noqa: F821
+"""
+    )
+
+    SelfReferencing = module.SelfReferencing
     # test the class
-    assert SelfReferencing.__fields__['names'].type_ is SelfReferencing
-    # NOTE: outer_type_ is not converted
-    assert SelfReferencing.__fields__['names'].outer_type_ == list['SelfReferencing']
+    assert repr(SelfReferencing.__fields__['names']) == IsStr(
+        regex=r'FieldInfo\(annotation=list\[Annotated\[SelfType, SchemaRef.+, required=True\)'
+    )
     # test that object creation works
     obj = SelfReferencing(names=[SelfReferencing(names=[])])
     assert obj.names == [SelfReferencing(names=[])]
@@ -679,22 +680,28 @@ def test_pep585_self_referencing_generics():
 def test_pep585_recursive_generics(create_module):
     @create_module
     def module():
+        from typing import ForwardRef
+
         from pydantic import BaseModel
+
+        HeroRef = ForwardRef('Hero')
 
         class Team(BaseModel):
             name: str
-            heroes: list['Hero']  # noqa: F821
+            heroes: list[HeroRef]  # noqa: F821
 
         class Hero(BaseModel):
             name: str
             teams: list[Team]
 
-        Team.update_forward_refs()
+        Team.model_rebuild()
 
-    assert module.Team.__fields__['heroes'].type_ is module.Hero
-    assert module.Hero.__fields__['teams'].type_ is module.Team
+    assert repr(module.Team.__fields__['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
+    assert repr(module.Hero.__fields__['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
-    module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
+    h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
+    # insert_assert(h.dict())
+    assert h.dict() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')

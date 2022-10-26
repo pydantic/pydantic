@@ -2591,7 +2591,7 @@ def test_complex_nested_generic():
         def resolve(self) -> 'Model':  # noqa
             ...
 
-    Model.update_forward_refs()
+    Model.model_rebuild()
 
     assert Model.schema() == {
         'definitions': {

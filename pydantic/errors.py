@@ -9,5 +9,11 @@ class PydanticUserError(TypeError):
     """
 
 
+class PydanticUndefinedAnnotation(NameError):
+    """
+    Error occurs when annotations are not yet defined
+    """
+
+
 class PydanticSchemaGenerationError(PydanticUserError):
     pass

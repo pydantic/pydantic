@@ -113,4 +113,4 @@ def display_as_type(obj: Any) -> str:
     elif isinstance(obj, type):
         return obj.__qualname__
     else:
-        return repr(obj).replace('typing.', '')
+        return repr(obj).replace('typing.', '').replace('typing_extensions.', '')
