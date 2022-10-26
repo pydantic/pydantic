@@ -660,6 +660,36 @@ def test_alias_build_error(alias_schema, error):
         SchemaValidator({'type': 'typed-dict', 'fields': {'field_a': {'schema': {'type': 'int'}, **alias_schema}}})
 
 
+def test_alias_error_loc():
+    v = SchemaValidator(
+        {'type': 'typed-dict', 'fields': {'field_a': {'schema': {'type': 'int'}, 'alias': [['bar'], ['foo']]}}}
+    )
+    assert v.validate_python({'foo': 42}) == {'field_a': 42}
+    assert v.validate_python({'bar': 42}) == {'field_a': 42}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'foo': 'not_int'})
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('field_a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_int',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'bar': 'not_int'})
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('field_a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not_int',
+        }
+    ]
+
+
 def test_empty_model():
     v = SchemaValidator({'type': 'typed-dict', 'fields': {}, 'return_fields_set': True})
     assert v.validate_python({}) == ({}, set())
