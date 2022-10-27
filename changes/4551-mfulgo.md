@@ -1,1 +1,1 @@
-Fix GenericModel with Callable param raising a TypeError
+Fix `GenericModel` with `Callable` param raising a `TypeError`
