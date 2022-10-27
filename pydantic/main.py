@@ -129,6 +129,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     Config = BaseConfig
     __slots__ = '__dict__', '__fields_set__'
     __doc__ = ''  # Null out the Representation docstring
+    __pydantic_model_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         """
@@ -442,18 +443,23 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return v
 
     @classmethod
-    def model_rebuild(cls, *, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None) -> bool:
+    def model_rebuild(
+        cls, *, force: bool = False, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None
+    ) -> bool | None:
         """
         Try to (Re)constructing the model schema.
         """
-        return _model_construction.complete_model_class(
-            cls,
-            cls.__name__,
-            cls.__pydantic_validator_functions__,
-            cls.__bases__,
-            raise_errors=raise_errors,
-            types_namespace=types_namespace,
-        )
+        if not force and cls.__pydantic_model_complete__:
+            return None
+        else:
+            return _model_construction.complete_model_class(
+                cls,
+                cls.__name__,
+                cls.__pydantic_validator_functions__,
+                cls.__bases__,
+                raise_errors=raise_errors,
+                types_namespace=types_namespace,
+            )
 
     def __iter__(self) -> 'TupleGenerator':
         """

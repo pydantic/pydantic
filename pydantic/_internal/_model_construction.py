@@ -157,6 +157,7 @@ def complete_model_class(
     cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
         cls, inner_schema, config=core_config, call_after_init=model_post_init
     )
+    cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))

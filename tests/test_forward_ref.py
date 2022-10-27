@@ -47,6 +47,8 @@ def test_forward_ref_auto_update_no_model(create_module):
         class Bar(BaseModel):
             b: 'Foo'
 
+    assert module.Foo.__pydantic_model_complete__ is False
+    assert module.Bar.__pydantic_model_complete__ is True
     assert repr(module.Bar.__fields__['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
     # Bar should be complet and ready to use
@@ -62,6 +64,7 @@ def test_forward_ref_auto_update_no_model(create_module):
         module.Foo(a={'b': {'a': {}}})
 
     assert module.Foo.model_rebuild() is True
+    assert module.Foo.__pydantic_model_complete__ is True
 
     # now Foo is ready to use
     f = module.Foo(a={'b': {'a': {'b': {}}}})
@@ -737,3 +740,12 @@ class Foobar(BaseModel):
     assert f.dict() == {'x': 1, 'y': {'x': 2, 'y': None}}
     assert f.__fields_set__ == {'x', 'y'}
     assert f.y.__fields_set__ == {'x'}
+
+
+def test_force_rebuild():
+    class Foobar(BaseModel):
+        b: int
+
+    assert Foobar.__pydantic_model_complete__ is True
+    assert Foobar.model_rebuild() is None
+    assert Foobar.model_rebuild(force=True) is True
