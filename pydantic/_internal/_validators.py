@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
+from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 
 from . import _fields
 
@@ -64,13 +64,13 @@ def sequence_validator(
             return ''.join(v_list)
         except TypeError:
             # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticKindError('string_type')
+            raise PydanticKnownError('string_type')
     elif issubclass(value_type, bytes):
         try:
             return b''.join(v_list)
         except TypeError:
             # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticKindError('bytes_type')
+            raise PydanticKnownError('bytes_type')
     elif issubclass(value_type, range):
         # return the list as we probably can't re-create the range
         return v_list
@@ -154,7 +154,7 @@ class DecimalValidator(_fields.CustomValidator):
         if not self.allow_inf_nan or self.check_digits:
             _, digit_tuple, exponent = value.as_tuple()
             if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
-                raise PydanticKindError('finite_number')
+                raise PydanticKnownError('finite_number')
 
             if self.check_digits:
                 if exponent >= 0:
@@ -207,14 +207,14 @@ class DecimalValidator(_fields.CustomValidator):
                 )
 
         if self.gt is not None and not value > self.gt:
-            raise PydanticKindError('greater_than', {'gt': self.gt})
+            raise PydanticKnownError('greater_than', {'gt': self.gt})
         elif self.ge is not None and not value >= self.ge:
-            raise PydanticKindError('greater_than_equal', {'ge': self.ge})
+            raise PydanticKnownError('greater_than_equal', {'ge': self.ge})
 
         if self.lt is not None and not value < self.lt:
-            raise PydanticKindError('less_than', {'lt': self.lt})
+            raise PydanticKnownError('less_than', {'lt': self.lt})
         if self.le is not None and not value <= self.le:
-            raise PydanticKindError('less_than_equal', {'le': self.le})
+            raise PydanticKnownError('less_than_equal', {'le': self.le})
 
         return value
 

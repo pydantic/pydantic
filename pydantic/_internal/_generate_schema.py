@@ -404,7 +404,7 @@ class GenerateSchema:
     def _type_schema(self) -> core_schema.CoreSchema:
         return core_schema.custom_error_schema(
             core_schema.is_instance_schema(type),
-            custom_error_kind='is_type',
+            custom_error_type='is_type',
             custom_error_message='Input should be a type',
         )
 

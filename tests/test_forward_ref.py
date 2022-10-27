@@ -141,7 +141,7 @@ def test_self_forward_ref_collection(create_module):
         module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'dict_type', 'loc': ['c', 0, 'b'], 'message': 'Input should be a valid dictionary', 'input_value': 234}
+        {'type': 'dict_type', 'loc': ('c', 0, 'b'), 'msg': 'Input should be a valid dictionary', 'input': 234}
     ]
 
     assert repr(module.Foo.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
@@ -441,7 +441,7 @@ def test_forward_ref_with_field(create_module):
 
         Foo = ForwardRef('Foo')
 
-        with pytest.raises(SchemaError, match=r'Extra inputs are not permitted \[kind=extra_forbidden,'):
+        with pytest.raises(SchemaError, match=r'Extra inputs are not permitted \[type=extra_forbidden,'):
 
             class Foo(BaseModel):
                 c: List[Foo] = Field(..., gt=0)
@@ -718,3 +718,22 @@ class WithClassVar(BaseModel):
     Instances: ClassVar[dict[str, WithClassVar]] = {}
 """
     )
+
+
+def test_recursive_model(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from typing import Optional
+from pydantic import BaseModel
+
+class Foobar(BaseModel):
+    x: int
+    y: Optional[Foobar] = None
+"""
+    )
+    f = module.Foobar(x=1, y={'x': 2})
+    assert f.dict() == {'x': 1, 'y': {'x': 2, 'y': None}}
+    assert f.__fields_set__ == {'x', 'y'}
+    assert f.y.__fields_set__ == {'x'}

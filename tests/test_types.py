@@ -106,7 +106,7 @@ def test_strict_raw_type():
         v: Annotated[str, Strict]
 
     assert Model(v='foo').v == 'foo'
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[kind=string_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
         Model(v=b'fo')
 
 
@@ -116,11 +116,11 @@ def test_constrained_bytes_too_long(ConBytesModel):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'bytes_too_long',
-            'loc': ['v'],
-            'message': 'Data should have at most 10 bytes',
-            'input_value': b'this is too long',
-            'context': {'max_length': 10},
+            'type': 'bytes_too_long',
+            'loc': ('v',),
+            'msg': 'Data should have at most 10 bytes',
+            'input': b'this is too long',
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -198,11 +198,11 @@ def test_constrained_list_too_long():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': ['v'],
-            'message': 'List should have at most 10 items after validation, not 11',
-            'input_value': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-            'context': {'field_type': 'List', 'max_length': 10, 'actual_length': 11},
+            'type': 'too_long',
+            'loc': ('v',),
+            'msg': 'List should have at most 10 items after validation, not 11',
+            'input': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            'ctx': {'field_type': 'List', 'max_length': 10, 'actual_length': 11},
         }
     ]
 
@@ -216,11 +216,11 @@ def test_constrained_list_too_short():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['v'],
-            'message': 'List should have at least 1 item after validation, not 0',
-            'input_value': [],
-            'context': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('v',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
         }
     ]
 
@@ -238,18 +238,18 @@ def test_constrained_list_optional():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['req'],
-            'message': 'List should have at least 1 item after validation, not 0',
-            'input_value': [],
-            'context': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('req',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
         },
         {
-            'kind': 'too_short',
-            'loc': ['opt'],
-            'message': 'List should have at least 1 item after validation, not 0',
-            'input_value': [],
-            'context': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('opt',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
         },
     ]
 
@@ -271,11 +271,11 @@ def test_constrained_list_constraints():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['v'],
-            'message': 'List should have at least 7 items after validation, not 6',
-            'input_value': [0, 1, 2, 3, 4, 5],
-            'context': {'field_type': 'List', 'min_length': 7, 'actual_length': 6},
+            'type': 'too_short',
+            'loc': ('v',),
+            'msg': 'List should have at least 7 items after validation, not 6',
+            'input': [0, 1, 2, 3, 4, 5],
+            'ctx': {'field_type': 'List', 'min_length': 7, 'actual_length': 6},
         }
     ]
 
@@ -284,11 +284,11 @@ def test_constrained_list_constraints():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': ['v'],
-            'message': 'List should have at most 11 items after validation, not 12',
-            'input_value': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
-            'context': {'field_type': 'List', 'max_length': 11, 'actual_length': 12},
+            'type': 'too_long',
+            'loc': ('v',),
+            'msg': 'List should have at most 11 items after validation, not 12',
+            'input': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            'ctx': {'field_type': 'List', 'max_length': 11, 'actual_length': 12},
         }
     ]
 
@@ -296,7 +296,7 @@ def test_constrained_list_constraints():
         ConListModelBoth(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'list_type', 'loc': ['v'], 'message': 'Input should be a valid list/array', 'input_value': 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
     ]
 
 
@@ -309,22 +309,22 @@ def test_constrained_list_item_type_fails():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['v', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'a',
+            'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['v', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'b',
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['v', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'c',
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
         },
     ]
 
@@ -336,11 +336,11 @@ def test_conlist():
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
-    msg = r'List should have at least 2 items after validation, not 1 \[kind=too_short,'
+    msg = r'List should have at least 2 items after validation, not 1 \[type=too_short,'
     with pytest.raises(ValidationError, match=msg):
         Model(foo=[1])
 
-    msg = r'List should have at most 4 items after validation, not 5 \[kind=too_long,'
+    msg = r'List should have at most 4 items after validation, not 5 \[type=too_long,'
     with pytest.raises(ValidationError, match=msg):
         Model(foo=list(range(5)))
 
@@ -349,16 +349,16 @@ def test_conlist():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['foo', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'x',
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['foo', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'y',
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
         },
     ]
 
@@ -366,7 +366,7 @@ def test_conlist():
         Model(foo=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'list_type', 'loc': ['foo'], 'message': 'Input should be a valid list/array', 'input_value': 1}
+        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list/array', 'input': 1}
     ]
 
 
@@ -413,11 +413,11 @@ def test_constrained_set_too_long():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': ['v'],
-            'message': 'Set should have at most 10 items after validation, not 11',
-            'input_value': {'4', '3', '10', '9', '5', '6', '1', '8', '0', '7', '2'},
-            'context': {'field_type': 'Set', 'max_length': 10, 'actual_length': 11},
+            'type': 'too_long',
+            'loc': ('v',),
+            'msg': 'Set should have at most 10 items after validation, not 11',
+            'input': {'4', '3', '10', '9', '5', '6', '1', '8', '0', '7', '2'},
+            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': 11},
         }
     ]
 
@@ -431,11 +431,11 @@ def test_constrained_set_too_short():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['v'],
-            'message': 'Set should have at least 1 item after validation, not 0',
-            'input_value': [],
-            'context': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('v',),
+            'msg': 'Set should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
         }
     ]
 
@@ -453,18 +453,18 @@ def test_constrained_set_optional():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['req'],
-            'message': 'Set should have at least 1 item after validation, not 0',
-            'input_value': set(),
-            'context': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('req',),
+            'msg': 'Set should have at least 1 item after validation, not 0',
+            'input': set(),
+            'ctx': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
         },
         {
-            'kind': 'too_short',
-            'loc': ['opt'],
-            'message': 'Set should have at least 1 item after validation, not 0',
-            'input_value': set(),
-            'context': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('opt',),
+            'msg': 'Set should have at least 1 item after validation, not 0',
+            'input': set(),
+            'ctx': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
         },
     ]
 
@@ -486,11 +486,11 @@ def test_constrained_set_constraints():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['v'],
-            'message': 'Set should have at least 7 items after validation, not 6',
-            'input_value': {0, 1, 2, 3, 4, 5},
-            'context': {'field_type': 'Set', 'min_length': 7, 'actual_length': 6},
+            'type': 'too_short',
+            'loc': ('v',),
+            'msg': 'Set should have at least 7 items after validation, not 6',
+            'input': {0, 1, 2, 3, 4, 5},
+            'ctx': {'field_type': 'Set', 'min_length': 7, 'actual_length': 6},
         }
     ]
 
@@ -499,11 +499,11 @@ def test_constrained_set_constraints():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_long',
-            'loc': ['v'],
-            'message': 'Set should have at most 11 items after validation, not 12',
-            'input_value': {0, 8, 1, 9, 2, 10, 3, 7, 11, 4, 6, 5},
-            'context': {'field_type': 'Set', 'max_length': 11, 'actual_length': 12},
+            'type': 'too_long',
+            'loc': ('v',),
+            'msg': 'Set should have at most 11 items after validation, not 12',
+            'input': {0, 8, 1, 9, 2, 10, 3, 7, 11, 4, 6, 5},
+            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': 12},
         }
     ]
 
@@ -511,7 +511,7 @@ def test_constrained_set_constraints():
         ConSetModelBoth(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'set_type', 'loc': ['v'], 'message': 'Input should be a valid set', 'input_value': 1}
+        {'type': 'set_type', 'loc': ('v',), 'msg': 'Input should be a valid set', 'input': 1}
     ]
 
 
@@ -524,22 +524,22 @@ def test_constrained_set_item_type_fails():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['v', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'a',
+            'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['v', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'b',
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['v', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'c',
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
         },
     ]
 
@@ -564,16 +564,16 @@ def test_conset():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['foo', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'x',
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['foo', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'y',
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
         },
     ]
 
@@ -581,7 +581,7 @@ def test_conset():
         Model(foo=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'set_type', 'loc': ['foo'], 'message': 'Input should be a valid set', 'input_value': 1}
+        {'type': 'set_type', 'loc': ('foo',), 'msg': 'Input should be a valid set', 'input': 1}
     ]
 
 
@@ -616,16 +616,16 @@ def test_confrozenset():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['foo', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'x',
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['foo', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'y',
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
         },
     ]
 
@@ -633,7 +633,7 @@ def test_confrozenset():
         Model(foo=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'frozen_set_type', 'loc': ['foo'], 'message': 'Input should be a valid frozenset', 'input_value': 1}
+        {'type': 'frozen_set_type', 'loc': ('foo',), 'msg': 'Input should be a valid frozenset', 'input': 1}
     ]
 
 
@@ -658,18 +658,18 @@ def test_constrained_frozenset_optional():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'too_short',
-            'loc': ['req'],
-            'message': 'Frozenset should have at least 1 item after validation, not 0',
-            'input_value': frozenset(),
-            'context': {'field_type': 'Frozenset', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('req',),
+            'msg': 'Frozenset should have at least 1 item after validation, not 0',
+            'input': frozenset(),
+            'ctx': {'field_type': 'Frozenset', 'min_length': 1, 'actual_length': 0},
         },
         {
-            'kind': 'too_short',
-            'loc': ['opt'],
-            'message': 'Frozenset should have at least 1 item after validation, not 0',
-            'input_value': frozenset(),
-            'context': {'field_type': 'Frozenset', 'min_length': 1, 'actual_length': 0},
+            'type': 'too_short',
+            'loc': ('opt',),
+            'msg': 'Frozenset should have at least 1 item after validation, not 0',
+            'input': frozenset(),
+            'ctx': {'field_type': 'Frozenset', 'min_length': 1, 'actual_length': 0},
         },
     ]
 
@@ -700,11 +700,11 @@ def test_constrained_str_too_long(ConStringModel):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_long',
-            'loc': ['v'],
-            'message': 'String should have at most 10 characters',
-            'input_value': 'this is too long',
-            'context': {'max_length': 10},
+            'type': 'string_too_long',
+            'loc': ('v',),
+            'msg': 'String should have at most 10 characters',
+            'input': 'this is too long',
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -750,11 +750,11 @@ def test_constrained_str_max_length_0():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_long',
-            'loc': ['v'],
-            'message': 'String should have at most 0 characters',
-            'input_value': 'qwe',
-            'context': {'max_length': 0},
+            'type': 'string_too_long',
+            'loc': ('v',),
+            'msg': 'String should have at most 0 characters',
+            'input': 'qwe',
+            'ctx': {'max_length': 0},
         }
     ]
 
@@ -781,11 +781,11 @@ def test_string_import_callable(annotation):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'import_error',
-            'loc': ['callable'],
-            'message': 'Invalid python path: "foobar" doesn\'t look like a module path',
-            'input_value': 'foobar',
-            'context': {'error': '"foobar" doesn\'t look like a module path'},
+            'type': 'import_error',
+            'loc': ('callable',),
+            'msg': 'Invalid python path: "foobar" doesn\'t look like a module path',
+            'input': 'foobar',
+            'ctx': {'error': '"foobar" doesn\'t look like a module path'},
         }
     ]
 
@@ -794,11 +794,11 @@ def test_string_import_callable(annotation):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'import_error',
-            'loc': ['callable'],
-            'message': 'Invalid python path: Module "os" does not define a "missing" attribute',
-            'input_value': 'os.missing',
-            'context': {'error': 'Module "os" does not define a "missing" attribute'},
+            'type': 'import_error',
+            'loc': ('callable',),
+            'msg': 'Invalid python path: Module "os" does not define a "missing" attribute',
+            'input': 'os.missing',
+            'ctx': {'error': 'Module "os" does not define a "missing" attribute'},
         }
     ]
 
@@ -806,14 +806,14 @@ def test_string_import_callable(annotation):
         PyObjectModel(callable='os.path')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'callable_type', 'loc': ['callable'], 'message': 'Input should be callable', 'input_value': os.path}
+        {'type': 'callable_type', 'loc': ('callable',), 'msg': 'Input should be callable', 'input': os.path}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         PyObjectModel(callable=[1, 2, 3])
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'callable_type', 'loc': ['callable'], 'message': 'Input should be callable', 'input_value': [1, 2, 3]}
+        {'type': 'callable_type', 'loc': ('callable',), 'msg': 'Input should be callable', 'input': [1, 2, 3]}
     ]
 
 
@@ -838,7 +838,7 @@ def test_string_import_constraints(annotation):
         thing: annotation
 
     assert PyObjectModel(thing='math.pi').dict() == {'thing': pytest.approx(3.141592654)}
-    with pytest.raises(ValidationError, match='kind=greater_than_equal'):
+    with pytest.raises(ValidationError, match='type=greater_than_equal'):
         PyObjectModel(thing='math.e')
 
 
@@ -989,11 +989,11 @@ def test_string_too_long(StrModel):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_long',
-            'loc': ['str_check'],
-            'message': 'String should have at most 10 characters',
-            'input_value': 'x' * 150,
-            'context': {'max_length': 10},
+            'type': 'string_too_long',
+            'loc': ('str_check',),
+            'msg': 'String should have at most 10 characters',
+            'input': 'x' * 150,
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -1004,11 +1004,11 @@ def test_string_too_short(StrModel):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_short',
-            'loc': ['str_check'],
-            'message': 'String should have at least 5 characters',
-            'input_value': 'x',
-            'context': {'min_length': 5},
+            'type': 'string_too_short',
+            'loc': ('str_check',),
+            'msg': 'String should have at least 5 characters',
+            'input': 'x',
+            'ctx': {'min_length': 5},
         }
     ]
 
@@ -1038,32 +1038,32 @@ def test_datetime_errors(DatetimeModel):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'datetime_parsing',
-            'loc': ['dt'],
-            'message': 'Input should be a valid datetime, month value is outside expected range of 1-12',
-            'input_value': '2017-13-05T19:47:07',
-            'context': {'error': 'month value is outside expected range of 1-12'},
+            'type': 'datetime_parsing',
+            'loc': ('dt',),
+            'msg': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'input': '2017-13-05T19:47:07',
+            'ctx': {'error': 'month value is outside expected range of 1-12'},
         },
         {
-            'kind': 'date_from_datetime_parsing',
-            'loc': ['date_'],
-            'message': 'Input should be a valid date or datetime, invalid character in year',
-            'input_value': 'XX1494012000',
-            'context': {'error': 'invalid character in year'},
+            'type': 'date_from_datetime_parsing',
+            'loc': ('date_',),
+            'msg': 'Input should be a valid date or datetime, invalid character in year',
+            'input': 'XX1494012000',
+            'ctx': {'error': 'invalid character in year'},
         },
         {
-            'kind': 'time_parsing',
-            'loc': ['time_'],
-            'message': 'Input should be in a valid time format, hour value is outside expected range of 0-23',
-            'input_value': '25:20:30.400',
-            'context': {'error': 'hour value is outside expected range of 0-23'},
+            'type': 'time_parsing',
+            'loc': ('time_',),
+            'msg': 'Input should be in a valid time format, hour value is outside expected range of 0-23',
+            'input': '25:20:30.400',
+            'ctx': {'error': 'hour value is outside expected range of 0-23'},
         },
         {
-            'kind': 'time_delta_parsing',
-            'loc': ['duration'],
-            'message': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
-            'input_value': '15:30.0001broken',
-            'context': {'error': 'unexpected extra characters at the end of the input'},
+            'type': 'time_delta_parsing',
+            'loc': ('duration',),
+            'msg': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
+            'input': '15:30.0001broken',
+            'ctx': {'error': 'unexpected extra characters at the end of the input'},
         },
     ]
 
@@ -1100,11 +1100,11 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_error',
-            'loc': ['tool'],
-            'message': 'Input should be 1 or 2',
-            'input_value': 3,
-            'context': {'expected': '1 or 2'},
+            'type': 'literal_error',
+            'loc': ('tool',),
+            'msg': 'Input should be 1 or 2',
+            'input': 3,
+            'ctx': {'expected': '1 or 2'},
         }
     ]
 
@@ -1176,38 +1176,38 @@ def test_string_fails():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_pattern_mismatch',
-            'loc': ['str_regex'],
-            'message': "String should match pattern '^xxx\\d{3}$'",
-            'input_value': 'xxx123xxx',
-            'context': {'pattern': '^xxx\\d{3}$'},
+            'type': 'string_pattern_mismatch',
+            'loc': ('str_regex',),
+            'msg': "String should match pattern '^xxx\\d{3}$'",
+            'input': 'xxx123xxx',
+            'ctx': {'pattern': '^xxx\\d{3}$'},
         },
         {
-            'kind': 'string_too_short',
-            'loc': ['str_min_length'],
-            'message': 'String should have at least 5 characters',
-            'input_value': '1234',
-            'context': {'min_length': 5},
+            'type': 'string_too_short',
+            'loc': ('str_min_length',),
+            'msg': 'String should have at least 5 characters',
+            'input': '1234',
+            'ctx': {'min_length': 5},
         },
         {
-            'kind': 'value_error',
-            'loc': ['str_email'],
-            'message': (
+            'type': 'value_error',
+            'loc': ('str_email',),
+            'msg': (
                 'value is not a valid email address: The email address contains invalid '
                 'characters before the @-sign: LESS-THAN SIGN.'
             ),
-            'input_value': 'foobar<@example.com',
-            'context': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
+            'input': 'foobar<@example.com',
+            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
         },
         {
-            'kind': 'value_error',
-            'loc': ['name_email'],
-            'message': (
+            'type': 'value_error',
+            'loc': ('name_email',),
+            'msg': (
                 'value is not a valid email address: The email address contains invalid characters '
                 'before the @-sign: SPACE.'
             ),
-            'input_value': 'foobar @example.com',
-            'context': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
+            'input': 'foobar @example.com',
+            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
         },
     ]
 
@@ -1238,10 +1238,10 @@ def test_dict():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'dict_type',
-            'loc': ['v'],
-            'message': 'Input should be a valid dictionary',
-            'input_value': [(1, 2), (3, 4)],
+            'type': 'dict_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid dictionary',
+            'input': [(1, 2), (3, 4)],
         }
     ]
 
@@ -1249,7 +1249,7 @@ def test_dict():
         Model(v=[1, 2, 3])
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'dict_type', 'loc': ['v'], 'message': 'Input should be a valid dictionary', 'input_value': [1, 2, 3]}
+        {'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': [1, 2, 3]}
     ]
 
 
@@ -1279,10 +1279,10 @@ def test_list_fails(value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'list_type',
-            'loc': ['v'],
-            'message': 'Input should be a valid list/array',
-            'input_value': value,
+            'type': 'list_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid list/array',
+            'input': value,
         }
     ]
 
@@ -1298,7 +1298,7 @@ def test_ordered_dict():
         Model(v=[1, 2, 3])
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'dict_type', 'loc': ['v'], 'message': 'Input should be a valid dictionary', 'input_value': [1, 2, 3]}
+        {'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': [1, 2, 3]}
     ]
 
 
@@ -1327,7 +1327,7 @@ def test_tuple_fails(value):
         Model(v=value)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'tuple_type', 'loc': ['v'], 'message': 'Input should be a valid tuple', 'input_value': value}
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': value}
     ]
 
 
@@ -1355,10 +1355,10 @@ def test_tuple_variable_len_success(value, cls, result):
             str,
             [
                 {
-                    'kind': 'string_type',
-                    'loc': ['v', 2],
-                    'message': 'Input should be a valid string',
-                    'input_value': [1, 2],
+                    'type': 'string_type',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid string',
+                    'input': [1, 2],
                 }
             ],
         ),
@@ -1367,16 +1367,16 @@ def test_tuple_variable_len_success(value, cls, result):
             str,
             [
                 {
-                    'kind': 'string_type',
-                    'loc': ['v', 2],
-                    'message': 'Input should be a valid string',
-                    'input_value': [1, 2],
+                    'type': 'string_type',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid string',
+                    'input': [1, 2],
                 },
                 {
-                    'kind': 'string_type',
-                    'loc': ['v', 4],
-                    'message': 'Input should be a valid string',
-                    'input_value': [3, 4],
+                    'type': 'string_type',
+                    'loc': ('v', 4),
+                    'msg': 'Input should be a valid string',
+                    'input': [3, 4],
                 },
             ],
         ),
@@ -1416,7 +1416,7 @@ def test_set_fails(value):
         Model(v=value)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'set_type', 'loc': ['v'], 'message': 'Input should be a valid set', 'input_value': value}
+        {'type': 'set_type', 'loc': ('v',), 'msg': 'Input should be a valid set', 'input': value}
     ]
 
 
@@ -1428,7 +1428,7 @@ def test_list_type_fails():
         Model(v='123')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'list_type', 'loc': ['v'], 'message': 'Input should be a valid list/array', 'input_value': '123'}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': '123'}
     ]
 
 
@@ -1440,7 +1440,7 @@ def test_set_type_fails():
         Model(v='123')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'set_type', 'loc': ['v'], 'message': 'Input should be a valid set', 'input_value': '123'}
+        {'type': 'set_type', 'loc': ('v',), 'msg': 'Input should be a valid set', 'input': '123'}
     ]
 
 
@@ -1499,10 +1499,10 @@ def test_infinite_iterable_int():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': [0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'f',
+            'type': 'int_parsing',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'f',
         }
     ]
 
@@ -1529,7 +1529,7 @@ def test_iterable_any(type_annotation):
         Model(it=3)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be iterable', 'input_value': 3}
+        {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
     ]
 
 
@@ -1541,7 +1541,7 @@ def test_invalid_iterable():
         Model(it=3)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'iterable_type', 'loc': ['it'], 'message': 'Input should be iterable', 'input_value': 3}
+        {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
     ]
 
 
@@ -1569,10 +1569,10 @@ def test_infinite_iterable_validate_first():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['it', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'f',
+            'type': 'int_parsing',
+            'loc': ('it', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'f',
         }
     ]
 
@@ -1587,11 +1587,11 @@ def test_sequence_generator_fails():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'is_instance_of',
-            'loc': ['v'],
-            'message': 'Input should be an instance of Sequence',
-            'input_value': gen,
-            'context': {'class': 'Sequence'},
+            'type': 'is_instance_of',
+            'loc': ('v',),
+            'msg': 'Input should be an instance of Sequence',
+            'input': gen,
+            'ctx': {'class': 'Sequence'},
         }
     ]
 
@@ -1604,10 +1604,10 @@ def test_sequence_generator_fails():
             [1, 'a', 3],
             [
                 {
-                    'kind': 'int_parsing',
-                    'loc': ['v', 1],
-                    'message': 'Input should be a valid integer, unable to parse string as an integer',
-                    'input_value': 'a',
+                    'type': 'int_parsing',
+                    'loc': ('v', 1),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'a',
                 },
             ],
         ),
@@ -1616,10 +1616,10 @@ def test_sequence_generator_fails():
             (1, 2, 'a'),
             [
                 {
-                    'kind': 'int_parsing',
-                    'loc': ['v', 2],
-                    'message': 'Input should be a valid integer, unable to parse string as an integer',
-                    'input_value': 'a',
+                    'type': 'int_parsing',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'a',
                 },
             ],
         ),
@@ -1628,10 +1628,10 @@ def test_sequence_generator_fails():
             ('a', 2.2, 3.3),
             [
                 {
-                    'kind': 'float_parsing',
-                    'loc': ['v', 0],
-                    'message': 'Input should be a valid number, unable to parse string as an number',
-                    'input_value': 'a',
+                    'type': 'float_parsing',
+                    'loc': ('v', 0),
+                    'msg': 'Input should be a valid number, unable to parse string as an number',
+                    'input': 'a',
                 },
             ],
         ),
@@ -1640,10 +1640,10 @@ def test_sequence_generator_fails():
             (1.1, 2.2, 'a'),
             [
                 {
-                    'kind': 'float_parsing',
-                    'loc': ['v', 2],
-                    'message': 'Input should be a valid number, unable to parse string as an number',
-                    'input_value': 'a',
+                    'type': 'float_parsing',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid number, unable to parse string as an number',
+                    'input': 'a',
                 },
             ],
         ),
@@ -1652,15 +1652,15 @@ def test_sequence_generator_fails():
             {1.0, 2.0, 3.0},
             [
                 {
-                    'kind': 'is_instance_of',
-                    'loc': ['v'],
-                    'message': 'Input should be an instance of Sequence',
-                    'input_value': {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of Sequence',
+                    'input': {
                         1.0,
                         2.0,
                         3.0,
                     },
-                    'context': {
+                    'ctx': {
                         'class': 'Sequence',
                     },
                 },
@@ -1671,10 +1671,10 @@ def test_sequence_generator_fails():
             [{1, 2}, {2, 3}, {'d'}],
             [
                 {
-                    'kind': 'int_parsing',
-                    'loc': ['v', 2, 0],
-                    'message': 'Input should be a valid integer, unable to parse string as an integer',
-                    'input_value': 'd',
+                    'type': 'int_parsing',
+                    'loc': ('v', 2, 0),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'd',
                 }
             ],
         ),
@@ -1683,10 +1683,10 @@ def test_sequence_generator_fails():
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             [
                 {
-                    'kind': 'int_parsing',
-                    'loc': ['v', 1, 0],
-                    'message': 'Input should be a valid integer, unable to parse string as an integer',
-                    'input_value': 'a',
+                    'type': 'int_parsing',
+                    'loc': ('v', 1, 0),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'a',
                 }
             ],
         ),
@@ -1695,10 +1695,10 @@ def test_sequence_generator_fails():
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             [
                 {
-                    'kind': 'list_type',
-                    'loc': ['v', 0],
-                    'message': 'Input should be a valid list/array',
-                    'input_value': {'a': 1, 'b': 2},
+                    'type': 'list_type',
+                    'loc': ('v', 0),
+                    'msg': 'Input should be a valid list/array',
+                    'input': {'a': 1, 'b': 2},
                 }
             ],
         ),
@@ -1732,53 +1732,53 @@ def test_int_validation():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'greater_than',
-            'loc': ['a'],
-            'message': 'Input should be greater than 0',
-            'input_value': -5,
-            'context': {'gt': 0},
+            'type': 'greater_than',
+            'loc': ('a',),
+            'msg': 'Input should be greater than 0',
+            'input': -5,
+            'ctx': {'gt': 0},
         },
         {
-            'kind': 'less_than',
-            'loc': ['b'],
-            'message': 'Input should be less than 0',
-            'input_value': 5,
-            'context': {'lt': 0},
+            'type': 'less_than',
+            'loc': ('b',),
+            'msg': 'Input should be less than 0',
+            'input': 5,
+            'ctx': {'lt': 0},
         },
         {
-            'kind': 'greater_than_equal',
-            'loc': ['c'],
-            'message': 'Input should be greater than or equal to 0',
-            'input_value': -5,
-            'context': {'ge': 0},
+            'type': 'greater_than_equal',
+            'loc': ('c',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -5,
+            'ctx': {'ge': 0},
         },
         {
-            'kind': 'less_than_equal',
-            'loc': ['d'],
-            'message': 'Input should be less than or equal to 0',
-            'input_value': 5,
-            'context': {'le': 0},
+            'type': 'less_than_equal',
+            'loc': ('d',),
+            'msg': 'Input should be less than or equal to 0',
+            'input': 5,
+            'ctx': {'le': 0},
         },
         {
-            'kind': 'greater_than',
-            'loc': ['e'],
-            'message': 'Input should be greater than 4',
-            'input_value': -5,
-            'context': {'gt': 4},
+            'type': 'greater_than',
+            'loc': ('e',),
+            'msg': 'Input should be greater than 4',
+            'input': -5,
+            'ctx': {'gt': 4},
         },
         {
-            'kind': 'less_than_equal',
-            'loc': ['f'],
-            'message': 'Input should be less than or equal to 10',
-            'input_value': 11,
-            'context': {'le': 10},
+            'type': 'less_than_equal',
+            'loc': ('f',),
+            'msg': 'Input should be less than or equal to 10',
+            'input': 11,
+            'ctx': {'le': 10},
         },
         {
-            'kind': 'multiple_of',
-            'loc': ['g'],
-            'message': 'Input should be a multiple of 5',
-            'input_value': 42,
-            'context': {'multiple_of': 5},
+            'type': 'multiple_of',
+            'loc': ('g',),
+            'msg': 'Input should be a multiple of 5',
+            'input': 42,
+            'ctx': {'multiple_of': 5},
         },
     ]
 
@@ -1805,73 +1805,73 @@ def test_float_validation():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'greater_than',
-            'loc': ['a'],
-            'message': 'Input should be greater than 0',
-            'input_value': -5.1,
-            'context': {
+            'type': 'greater_than',
+            'loc': ('a',),
+            'msg': 'Input should be greater than 0',
+            'input': -5.1,
+            'ctx': {
                 'gt': 0.0,
             },
         },
         {
-            'kind': 'less_than',
-            'loc': ['b'],
-            'message': 'Input should be less than 0',
-            'input_value': 5.2,
-            'context': {
+            'type': 'less_than',
+            'loc': ('b',),
+            'msg': 'Input should be less than 0',
+            'input': 5.2,
+            'ctx': {
                 'lt': 0.0,
             },
         },
         {
-            'kind': 'greater_than_equal',
-            'loc': ['c'],
-            'message': 'Input should be greater than or equal to 0',
-            'input_value': -5.1,
-            'context': {
+            'type': 'greater_than_equal',
+            'loc': ('c',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -5.1,
+            'ctx': {
                 'ge': 0.0,
             },
         },
         {
-            'kind': 'less_than_equal',
-            'loc': ['d'],
-            'message': 'Input should be less than or equal to 0',
-            'input_value': 5.1,
-            'context': {
+            'type': 'less_than_equal',
+            'loc': ('d',),
+            'msg': 'Input should be less than or equal to 0',
+            'input': 5.1,
+            'ctx': {
                 'le': 0.0,
             },
         },
         {
-            'kind': 'greater_than',
-            'loc': ['e'],
-            'message': 'Input should be greater than 4',
-            'input_value': -5.3,
-            'context': {
+            'type': 'greater_than',
+            'loc': ('e',),
+            'msg': 'Input should be greater than 4',
+            'input': -5.3,
+            'ctx': {
                 'gt': 4.0,
             },
         },
         {
-            'kind': 'less_than_equal',
-            'loc': ['f'],
-            'message': 'Input should be less than or equal to 9.9',
-            'input_value': 9.91,
-            'context': {
+            'type': 'less_than_equal',
+            'loc': ('f',),
+            'msg': 'Input should be less than or equal to 9.9',
+            'input': 9.91,
+            'ctx': {
                 'le': 9.9,
             },
         },
         {
-            'kind': 'multiple_of',
-            'loc': ['g'],
-            'message': 'Input should be a multiple of 0.5',
-            'input_value': 4.2,
-            'context': {
+            'type': 'multiple_of',
+            'loc': ('g',),
+            'msg': 'Input should be a multiple of 0.5',
+            'input': 4.2,
+            'ctx': {
                 'multiple_of': 0.5,
             },
         },
         {
-            'kind': 'finite_number',
-            'loc': ['h'],
-            'message': 'Input should be a finite number',
-            'input_value': HasRepr('nan'),
+            'type': 'finite_number',
+            'loc': ('h',),
+            'msg': 'Input should be a finite number',
+            'input': HasRepr('nan'),
         },
     ]
 
@@ -1896,10 +1896,10 @@ def test_finite_float_validation_error(value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'finite_number',
-            'loc': ['a'],
-            'message': 'Input should be a finite number',
-            'input_value': HasRepr(repr(value)),
+            'type': 'finite_number',
+            'loc': ('a',),
+            'msg': 'Input should be a finite number',
+            'input': HasRepr(repr(value)),
         }
     ]
 
@@ -1917,10 +1917,10 @@ def test_finite_float_config():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'finite_number',
-            'loc': ['a'],
-            'message': 'Input should be a finite number',
-            'input_value': HasRepr('nan'),
+            'type': 'finite_number',
+            'loc': ('a',),
+            'msg': 'Input should be a finite number',
+            'input': HasRepr('nan'),
         }
     ]
 
@@ -1949,9 +1949,9 @@ def test_strict_bytes_max_length():
 
     assert Model(u=b'foo').u == b'foo'
 
-    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[kind=bytes_type'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type'):
         Model(u=123)
-    with pytest.raises(ValidationError, match=r'Data should have at most 5 bytes \[kind=bytes_too_long,'):
+    with pytest.raises(ValidationError, match=r'Data should have at most 5 bytes \[type=bytes_too_long,'):
         Model(u=b'1234567')
 
 
@@ -1965,7 +1965,7 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    msg = r'Input should be a string, not an instance of a subclass of str \[kind=string_sub_type,'
+    msg = r'Input should be a string, not an instance of a subclass of str \[type=string_sub_type,'
     with pytest.raises(ValidationError, match=msg):
         Model(v=FruitEnum.banana)
 
@@ -1985,7 +1985,7 @@ def test_strict_str_max_length():
     with pytest.raises(ValidationError, match='Input should be a valid string'):
         Model(u=123)
 
-    with pytest.raises(ValidationError, match=r'String should have at most 5 characters \[kind=string_too_long,'):
+    with pytest.raises(ValidationError, match=r'String should have at most 5 characters \[type=string_too_long,'):
         Model(u='1234567')
 
 
@@ -2012,10 +2012,10 @@ def test_strict_int():
 
     assert Model(v=123456).v == 123456
 
-    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[kind=int_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v='123456')
 
-    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[kind=int_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
 
 
@@ -2026,7 +2026,7 @@ def test_strict_float():
     assert Model(v=3.14159).v == 3.14159
     assert Model(v=123456).v == 123456
 
-    with pytest.raises(ValidationError, match=r'Input should be a valid number \[kind=float_type,'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
         Model(v='3.14159')
 
 
@@ -2038,7 +2038,7 @@ def test_bool_unhashable_fails():
         Model(v={})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'bool_type', 'loc': ['v'], 'message': 'Input should be a valid boolean', 'input_value': {}}
+        {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]
 
 
@@ -2051,10 +2051,10 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'uuid_type',
-            'loc': ['v'],
-            'message': 'Input should be a valid UUID, string, or bytes',
-            'input_value': 'ebcdab58-6eb8-46fb-a190-d07a3',
+            'type': 'uuid_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid UUID, string, or bytes',
+            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
         }
     ]
 
@@ -2082,32 +2082,32 @@ def test_uuid_validation():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'uuid_version',
-            'loc': ['a'],
-            'message': 'uuid version 1 expected',
-            'input_value': d,
-            'context': {'required_version': 1},
+            'type': 'uuid_version',
+            'loc': ('a',),
+            'msg': 'uuid version 1 expected',
+            'input': d,
+            'ctx': {'required_version': 1},
         },
         {
-            'kind': 'uuid_version',
-            'loc': ['b'],
-            'message': 'uuid version 3 expected',
-            'input_value': c,
-            'context': {'required_version': 3},
+            'type': 'uuid_version',
+            'loc': ('b',),
+            'msg': 'uuid version 3 expected',
+            'input': c,
+            'ctx': {'required_version': 3},
         },
         {
-            'kind': 'uuid_version',
-            'loc': ['c'],
-            'message': 'uuid version 4 expected',
-            'input_value': b,
-            'context': {'required_version': 4},
+            'type': 'uuid_version',
+            'loc': ('c',),
+            'msg': 'uuid version 4 expected',
+            'input': b,
+            'ctx': {'required_version': 4},
         },
         {
-            'kind': 'uuid_version',
-            'loc': ['d'],
-            'message': 'uuid version 5 expected',
-            'input_value': a,
-            'context': {'required_version': 5},
+            'type': 'uuid_version',
+            'loc': ('d',),
+            'msg': 'uuid version 5 expected',
+            'input': a,
+            'ctx': {'required_version': 5},
         },
     ]
 
@@ -2178,11 +2178,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('42'),
             [
                 {
-                    'kind': 'greater_than',
-                    'loc': ['foo'],
-                    'message': 'Input should be greater than 42.24',
-                    'input_value': Decimal('42'),
-                    'context': {'gt': 42.24},
+                    'type': 'greater_than',
+                    'loc': ('foo',),
+                    'msg': 'Input should be greater than 42.24',
+                    'input': Decimal('42'),
+                    'ctx': {'gt': 42.24},
                 }
             ],
         ),
@@ -2192,11 +2192,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('43'),
             [
                 {
-                    'kind': 'less_than',
-                    'loc': ['foo'],
-                    'message': 'Input should be less than 42.24',
-                    'input_value': Decimal('43'),
-                    'context': {
+                    'type': 'less_than',
+                    'loc': ('foo',),
+                    'msg': 'Input should be less than 42.24',
+                    'input': Decimal('43'),
+                    'ctx': {
                         'lt': 42.24,
                     },
                 },
@@ -2209,11 +2209,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('42'),
             [
                 {
-                    'kind': 'greater_than_equal',
-                    'loc': ['foo'],
-                    'message': 'Input should be greater than or equal to 42.24',
-                    'input_value': Decimal('42'),
-                    'context': {
+                    'type': 'greater_than_equal',
+                    'loc': ('foo',),
+                    'msg': 'Input should be greater than or equal to 42.24',
+                    'input': Decimal('42'),
+                    'ctx': {
                         'ge': 42.24,
                     },
                 }
@@ -2226,11 +2226,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('43'),
             [
                 {
-                    'kind': 'less_than_equal',
-                    'loc': ['foo'],
-                    'message': 'Input should be less than or equal to 42.24',
-                    'input_value': Decimal('43'),
-                    'context': {
+                    'type': 'less_than_equal',
+                    'loc': ('foo',),
+                    'msg': 'Input should be less than or equal to 42.24',
+                    'input': Decimal('43'),
+                    'ctx': {
                         'le': 42.24,
                     },
                 }
@@ -2242,11 +2242,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('0.99'),
             [
                 {
-                    'kind': 'decimal_max_places',
-                    'loc': ['foo'],
-                    'message': 'ensure that there are no more than 1 decimal places',
-                    'input_value': Decimal('0.99'),
-                    'context': {
+                    'type': 'decimal_max_places',
+                    'loc': ('foo',),
+                    'msg': 'ensure that there are no more than 1 decimal places',
+                    'input': Decimal('0.99'),
+                    'ctx': {
                         'decimal_places': 1,
                     },
                 }
@@ -2257,11 +2257,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('999'),
             [
                 {
-                    'loc': ['foo'],
-                    'message': 'ensure that there are no more than 2 digits before the decimal point',
-                    'kind': 'decimal_whole_digits',
-                    'input_value': Decimal('999'),
-                    'context': {'whole_digits': 2},
+                    'loc': ('foo',),
+                    'msg': 'ensure that there are no more than 2 digits before the decimal point',
+                    'type': 'decimal_whole_digits',
+                    'input': Decimal('999'),
+                    'ctx': {'whole_digits': 2},
                 }
             ],
         ),
@@ -2273,11 +2273,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('7424742403889818000000'),
             [
                 {
-                    'kind': 'decimal_max_digits',
-                    'loc': ['foo'],
-                    'message': 'ensure that there are no more than 20 digits in total',
-                    'input_value': Decimal('7424742403889818000000'),
-                    'context': {
+                    'type': 'decimal_max_digits',
+                    'loc': ('foo',),
+                    'msg': 'ensure that there are no more than 20 digits in total',
+                    'input': Decimal('7424742403889818000000'),
+                    'ctx': {
                         'max_digits': 20,
                     },
                 },
@@ -2289,11 +2289,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('7304E-3'),
             [
                 {
-                    'kind': 'decimal_max_places',
-                    'loc': ['foo'],
-                    'message': 'ensure that there are no more than 2 decimal places',
-                    'input_value': Decimal('7.304'),
-                    'context': {'decimal_places': 2},
+                    'type': 'decimal_max_places',
+                    'loc': ('foo',),
+                    'msg': 'ensure that there are no more than 2 decimal places',
+                    'input': Decimal('7.304'),
+                    'ctx': {'decimal_places': 2},
                 }
             ],
         ),
@@ -2303,11 +2303,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('70E-6'),
             [
                 {
-                    'loc': ['foo'],
-                    'message': 'ensure that there are no more than 5 digits in total',
-                    'kind': 'decimal_max_digits',
-                    'input_value': Decimal('0.000070'),
-                    'context': {'max_digits': 5},
+                    'loc': ('foo',),
+                    'msg': 'ensure that there are no more than 5 digits in total',
+                    'type': 'decimal_max_digits',
+                    'input': Decimal('0.000070'),
+                    'ctx': {'max_digits': 5},
                 }
             ],
         ),
@@ -2317,10 +2317,10 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
                 value,
                 [
                     {
-                        'loc': ['foo'],
-                        'message': 'Input should be a finite number',
-                        'kind': 'finite_number',
-                        'input_value': value,
+                        'loc': ('foo',),
+                        'msg': 'Input should be a finite number',
+                        'type': 'finite_number',
+                        'input': value,
                     }
                 ],
             )
@@ -2332,10 +2332,10 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
                 Decimal(value),
                 [
                     {
-                        'loc': ['foo'],
-                        'message': 'Input should be a finite number',
-                        'kind': 'finite_number',
-                        'input_value': AnyThing(),
+                        'loc': ('foo',),
+                        'msg': 'Input should be a finite number',
+                        'type': 'finite_number',
+                        'input': AnyThing(),
                     }
                 ],
             )
@@ -2346,11 +2346,11 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             Decimal('42'),
             [
                 {
-                    'kind': 'decimal_multiple_of',
-                    'loc': ['foo'],
-                    'message': 'Input should be a multiple of 5',
-                    'input_value': Decimal('42'),
-                    'context': {
+                    'type': 'decimal_multiple_of',
+                    'loc': ('foo',),
+                    'msg': 'Input should be a multiple of 5',
+                    'input': Decimal('42'),
+                    'ctx': {
                         'multiple_of': Decimal('5'),
                     },
                 }
@@ -2434,7 +2434,7 @@ def test_path_validation_fails():
         Model(foo=123)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'path_type', 'loc': ['foo'], 'message': 'Input is not a valid path', 'input_value': 123}
+        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
     ]
 
 
@@ -2458,10 +2458,10 @@ def test_file_path_validation_fails(value):
         Model(foo=value)
     assert exc_info.value.errors() == [
         {
-            'kind': 'path_not_file',
-            'loc': ['foo'],
-            'message': 'Path does not point to a file',
-            'input_value': value,
+            'type': 'path_not_file',
+            'loc': ('foo',),
+            'msg': 'Path does not point to a file',
+            'input': value,
         }
     ]
 
@@ -2485,10 +2485,10 @@ def test_directory_path_validation_fails(value):
         Model(foo=value)
     assert exc_info.value.errors() == [
         {
-            'kind': 'path_not_directory',
-            'loc': ['foo'],
-            'message': 'Path does not point to a directory',
-            'input_value': value,
+            'type': 'path_not_directory',
+            'loc': ('foo',),
+            'msg': 'Path does not point to a directory',
+            'input': value,
         }
     ]
 
@@ -2504,11 +2504,11 @@ def test_number_gt():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'greater_than',
-            'loc': ['a'],
-            'message': 'Input should be greater than -1',
-            'input_value': -1,
-            'context': {'gt': -1},
+            'type': 'greater_than',
+            'loc': ('a',),
+            'msg': 'Input should be greater than -1',
+            'input': -1,
+            'ctx': {'gt': -1},
         }
     ]
 
@@ -2524,11 +2524,11 @@ def test_number_ge():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'greater_than_equal',
-            'loc': ['a'],
-            'message': 'Input should be greater than or equal to 0',
-            'input_value': -1,
-            'context': {'ge': 0},
+            'type': 'greater_than_equal',
+            'loc': ('a',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -1,
+            'ctx': {'ge': 0},
         }
     ]
 
@@ -2544,11 +2544,11 @@ def test_number_lt():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'less_than',
-            'loc': ['a'],
-            'message': 'Input should be less than 5',
-            'input_value': 5,
-            'context': {'lt': 5},
+            'type': 'less_than',
+            'loc': ('a',),
+            'msg': 'Input should be less than 5',
+            'input': 5,
+            'ctx': {'lt': 5},
         }
     ]
 
@@ -2564,11 +2564,11 @@ def test_number_le():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'less_than_equal',
-            'loc': ['a'],
-            'message': 'Input should be less than or equal to 5',
-            'input_value': 6,
-            'context': {'le': 5},
+            'type': 'less_than_equal',
+            'loc': ('a',),
+            'msg': 'Input should be less than or equal to 5',
+            'input': 6,
+            'ctx': {'le': 5},
         }
     ]
 
@@ -2591,11 +2591,11 @@ def test_number_multiple_of_int_invalid(value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'multiple_of',
-            'loc': ['a'],
-            'message': 'Input should be a multiple of 5',
-            'input_value': value,
-            'context': {'multiple_of': 5},
+            'type': 'multiple_of',
+            'loc': ('a',),
+            'msg': 'Input should be a multiple of 5',
+            'input': value,
+            'ctx': {'multiple_of': 5},
         }
     ]
 
@@ -2618,11 +2618,11 @@ def test_number_multiple_of_float_invalid(value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'multiple_of',
-            'loc': ['a'],
-            'message': 'Input should be a multiple of 0.1',
-            'input_value': value,
-            'context': {'multiple_of': 0.1},
+            'type': 'multiple_of',
+            'loc': ('a',),
+            'msg': 'Input should be a multiple of 0.1',
+            'input': value,
+            'ctx': {'multiple_of': 0.1},
         }
     ]
 
@@ -2656,22 +2656,22 @@ def test_new_type_fails():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['a'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'foo',
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foo',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['b'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'bar',
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'bar',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['c', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'foo',
+            'type': 'int_parsing',
+            'loc': ('c', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foo',
         },
     ]
 
@@ -2705,11 +2705,11 @@ def test_invalid_simple_json(gen_type):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'json_invalid',
-            'loc': ['json_obj'],
-            'message': 'Invalid JSON: key must be a string at line 1 column 2',
-            'input_value': '{a: 1, b: [2, 3]}',
-            'context': {'error': 'key must be a string at line 1 column 2'},
+            'type': 'json_invalid',
+            'loc': ('json_obj',),
+            'msg': 'Invalid JSON: key must be a string at line 1 column 2',
+            'input': '{a: 1, b: [2, 3]}',
+            'ctx': {'error': 'key must be a string at line 1 column 2'},
         }
     ]
 
@@ -2738,11 +2738,11 @@ def test_valid_detailed_json():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'json_invalid',
-            'loc': ['json_obj'],
-            'message': 'Invalid JSON: expected value at line 1 column 1',
-            'input_value': '(1, 2, 3)',
-            'context': {'error': 'expected value at line 1 column 1'},
+            'type': 'json_invalid',
+            'loc': ('json_obj',),
+            'msg': 'Invalid JSON: expected value at line 1 column 1',
+            'input': '(1, 2, 3)',
+            'ctx': {'error': 'expected value at line 1 column 1'},
         }
     ]
 
@@ -2776,7 +2776,7 @@ def test_invalid_model_json():
 
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['json_obj', 'b'], 'message': 'Field required', 'input_value': {'a': 1, 'c': [2, 3]}}
+        {'type': 'missing', 'loc': ('json_obj', 'b'), 'msg': 'Field required', 'input': {'a': 1, 'c': [2, 3]}}
     ]
 
 
@@ -2790,22 +2790,22 @@ def test_invalid_detailed_json_type_error():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['json_obj', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'a',
+            'type': 'int_parsing',
+            'loc': ('json_obj', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['json_obj', 1],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'b',
+            'type': 'int_parsing',
+            'loc': ('json_obj', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['json_obj', 2],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'c',
+            'type': 'int_parsing',
+            'loc': ('json_obj', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
         },
     ]
 
@@ -2820,10 +2820,10 @@ def test_json_not_str():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'json_type',
-            'loc': ['json_obj'],
-            'message': 'JSON input should be str, bytes or bytearray',
-            'input_value': 12,
+            'type': 'json_type',
+            'loc': ('json_obj',),
+            'msg': 'JSON input should be str, bytes or bytearray',
+            'input': 12,
         }
     ]
 
@@ -2867,10 +2867,10 @@ def test_json_optional_complex():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['json_obj', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'i should fail',
+            'type': 'int_parsing',
+            'loc': ('json_obj', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'i should fail',
         }
     ]
 
@@ -2880,9 +2880,9 @@ def test_json_required():
         json_obj: Json
 
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[kind=json_type,'):
+    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[type=json_type,'):
         JsonRequired(json_obj=None)
-    with pytest.raises(ValidationError, match=r'Field required \[kind=missing,'):
+    with pytest.raises(ValidationError, match=r'Field required \[type=missing,'):
         JsonRequired()
 
 
@@ -2920,10 +2920,10 @@ def test_pattern_error(pattern_type):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'pattern_regex',
-            'loc': ['pattern'],
-            'message': 'Input should be a valid regular expression',
-            'input_value': '[xx',
+            'type': 'pattern_regex',
+            'loc': ('pattern',),
+            'msg': 'Input should be a valid regular expression',
+            'input': '[xx',
         }
     ]
 
@@ -2984,10 +2984,10 @@ def test_secretstr_error():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_type',
-            'loc': ['password'],
-            'message': 'Input should be a valid string',
-            'input_value': [6, 23, 'abc'],
+            'type': 'string_type',
+            'loc': ('password',),
+            'msg': 'Input should be a valid string',
+            'input': [6, 23, 'abc'],
         }
     ]
 
@@ -3002,11 +3002,11 @@ def test_secret_str_min_max_length():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_short',
-            'loc': ['password'],
-            'message': 'String should have at least 6 characters',
-            'input_value': '',
-            'context': {'min_length': 6},
+            'type': 'string_too_short',
+            'loc': ('password',),
+            'msg': 'String should have at least 6 characters',
+            'input': '',
+            'ctx': {'min_length': 6},
         }
     ]
 
@@ -3016,11 +3016,11 @@ def test_secret_str_min_max_length():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_long',
-            'loc': ['password'],
-            'message': 'String should have at most 10 characters',
-            'input_value': '11111111111111111111',
-            'context': {'max_length': 10},
+            'type': 'string_too_long',
+            'loc': ('password',),
+            'msg': 'String should have at most 10 characters',
+            'input': '11111111111111111111',
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -3087,10 +3087,10 @@ def test_secretbytes_error():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'bytes_type',
-            'loc': ['password'],
-            'message': 'Input should be a valid bytes',
-            'input_value': [6, 23, 'abc'],
+            'type': 'bytes_type',
+            'loc': ('password',),
+            'msg': 'Input should be a valid bytes',
+            'input': [6, 23, 'abc'],
         }
     ]
 
@@ -3105,11 +3105,11 @@ def test_secret_bytes_min_max_length():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'bytes_too_short',
-            'loc': ['password'],
-            'message': 'Data should have at least 6 bytes',
-            'input_value': b'',
-            'context': {'min_length': 6},
+            'type': 'bytes_too_short',
+            'loc': ('password',),
+            'msg': 'Data should have at least 6 bytes',
+            'input': b'',
+            'ctx': {'min_length': 6},
         }
     ]
 
@@ -3119,11 +3119,11 @@ def test_secret_bytes_min_max_length():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'bytes_too_long',
-            'loc': ['password'],
-            'message': 'Data should have at most 10 bytes',
-            'input_value': b'11111111111111111111',
-            'context': {'max_length': 10},
+            'type': 'bytes_too_long',
+            'loc': ('password',),
+            'msg': 'Data should have at most 10 bytes',
+            'input': b'11111111111111111111',
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -3152,18 +3152,18 @@ def test_generic_without_params_error():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'list_type',
-            'loc': ['generic_list'],
-            'message': 'Input should be a valid list/array',
-            'input_value': 0,
+            'type': 'list_type',
+            'loc': ('generic_list',),
+            'msg': 'Input should be a valid list/array',
+            'input': 0,
         },
         {
-            'kind': 'dict_type',
-            'loc': ['generic_dict'],
-            'message': 'Input should be a valid dictionary',
-            'input_value': 0,
+            'type': 'dict_type',
+            'loc': ('generic_dict',),
+            'msg': 'Input should be a valid dictionary',
+            'input': 0,
         },
-        {'kind': 'tuple_type', 'loc': ['generic_tuple'], 'message': 'Input should be a valid tuple', 'input_value': 0},
+        {'type': 'tuple_type', 'loc': ('generic_tuple',), 'msg': 'Input should be a valid tuple', 'input': 0},
     ]
 
 
@@ -3177,11 +3177,11 @@ def test_literal_single():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_error',
-            'loc': ['a'],
-            'message': "Input should be 'a'",
-            'input_value': 'b',
-            'context': {'expected': "'a'"},
+            'type': 'literal_error',
+            'loc': ('a',),
+            'msg': "Input should be 'a'",
+            'input': 'b',
+            'ctx': {'expected': "'a'"},
         }
     ]
 
@@ -3197,11 +3197,11 @@ def test_literal_multiple():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_error',
-            'loc': ['a_or_b'],
-            'message': "Input should be 'a' or 'b'",
-            'input_value': 'c',
-            'context': {'expected': "'a' or 'b'"},
+            'type': 'literal_error',
+            'loc': ('a_or_b',),
+            'msg': "Input should be 'a' or 'b'",
+            'input': 'c',
+            'ctx': {'expected': "'a' or 'b'"},
         }
     ]
 
@@ -3340,60 +3340,60 @@ def test_deque_generic_success(cls, value, result):
             float,
             {1, 2, 3},
             {
-                'kind': 'list_type',
-                'loc': ['v'],
-                'message': 'Input should be a valid list/array',
-                'input_value': {1, 2, 3},
+                'type': 'list_type',
+                'loc': ('v',),
+                'msg': 'Input should be a valid list/array',
+                'input': {1, 2, 3},
             },
         ),
         (
             float,
             frozenset((1, 2, 3)),
             {
-                'kind': 'list_type',
-                'loc': ['v'],
-                'message': 'Input should be a valid list/array',
-                'input_value': frozenset((1, 2, 3)),
+                'type': 'list_type',
+                'loc': ('v',),
+                'msg': 'Input should be a valid list/array',
+                'input': frozenset((1, 2, 3)),
             },
         ),
         (
             int,
             [1, 'a', 3],
             {
-                'kind': 'int_parsing',
-                'loc': ['v', 1],
-                'message': 'Input should be a valid integer, unable to parse string as an integer',
-                'input_value': 'a',
+                'type': 'int_parsing',
+                'loc': ('v', 1),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'a',
             },
         ),
         (
             int,
             (1, 2, 'a'),
             {
-                'kind': 'int_parsing',
-                'loc': ['v', 2],
-                'message': 'Input should be a valid integer, unable to parse string as an integer',
-                'input_value': 'a',
+                'type': 'int_parsing',
+                'loc': ('v', 2),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'a',
             },
         ),
         (
             Tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             {
-                'kind': 'int_parsing',
-                'loc': ['v', 1, 0],
-                'message': 'Input should be a valid integer, unable to parse string as an integer',
-                'input_value': 'a',
+                'type': 'int_parsing',
+                'loc': ('v', 1, 0),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'a',
             },
         ),
         (
             List[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             {
-                'kind': 'list_type',
-                'loc': ['v', 0],
-                'message': 'Input should be a valid list/array',
-                'input_value': {
+                'type': 'list_type',
+                'loc': ('v', 0),
+                'msg': 'Input should be a valid list/array',
+                'input': {
                     'a': 1,
                     'b': 2,
                 },
@@ -3474,21 +3474,21 @@ def test_none(value_type):
         )
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'none_required', 'loc': ['my_none'], 'message': 'Input should be None/null', 'input_value': 'qwe'},
-        {'kind': 'none_required', 'loc': ['my_none_list', 0], 'message': 'Input should be None/null', 'input_value': 1},
+        {'type': 'none_required', 'loc': ('my_none',), 'msg': 'Input should be None/null', 'input': 'qwe'},
+        {'type': 'none_required', 'loc': ('my_none_list', 0), 'msg': 'Input should be None/null', 'input': 1},
         {
-            'kind': 'none_required',
-            'loc': ['my_none_list', 2],
-            'message': 'Input should be None/null',
-            'input_value': 'qwe',
+            'type': 'none_required',
+            'loc': ('my_none_list', 2),
+            'msg': 'Input should be None/null',
+            'input': 'qwe',
         },
         {
-            'kind': 'none_required',
-            'loc': ['my_none_dict', 'a'],
-            'message': 'Input should be None/null',
-            'input_value': 1,
+            'type': 'none_required',
+            'loc': ('my_none_dict', 'a'),
+            'msg': 'Input should be None/null',
+            'input': 1,
         },
-        {'kind': 'none_required', 'loc': ['my_json_none'], 'message': 'Input should be None/null', 'input_value': 'a'},
+        {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None/null', 'input': 'a'},
     ]
 
 
@@ -3549,22 +3549,22 @@ def test_union_compound_types():
     # insert_assert(e.value.errors())
     assert e.value.errors() == [
         {
-            'kind': 'string_type',
-            'loc': ['values', 'function-wrap[mapping_validator(), dict[str,str]]', 'x'],
-            'message': 'Input should be a valid string',
-            'input_value': {'a': 'b'},
+            'type': 'string_type',
+            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,str]]', 'x'),
+            'msg': 'Input should be a valid string',
+            'input': {'a': 'b'},
         },
         {
-            'kind': 'list_type',
-            'loc': ['values', 'list[str]'],
-            'message': 'Input should be a valid list/array',
-            'input_value': {'x': {'a': 'b'}},
+            'type': 'list_type',
+            'loc': ('values', 'list[str]'),
+            'msg': 'Input should be a valid list/array',
+            'input': {'x': {'a': 'b'}},
         },
         {
-            'kind': 'list_type',
-            'loc': ['values', 'function-wrap[mapping_validator(), dict[str,list[str]]]', 'x'],
-            'message': 'Input should be a valid list/array',
-            'input_value': {'a': 'b'},
+            'type': 'list_type',
+            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,list[str]]]', 'x'),
+            'msg': 'Input should be a valid list/array',
+            'input': {'a': 'b'},
         },
     ]
 

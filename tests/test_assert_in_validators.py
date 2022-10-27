@@ -22,11 +22,11 @@ def test_assert_raises_validation_error():
 
     expected_errors = [
         {
-            'kind': 'assertion_error',
-            'loc': ['a'],
-            'message': 'Assertion failed, invalid a',
-            'input_value': 'snap',
-            'context': {'error': 'invalid a'},
+            'type': 'assertion_error',
+            'loc': ('a',),
+            'msg': 'Assertion failed, invalid a',
+            'input': 'snap',
+            'ctx': {'error': 'invalid a'},
         }
     ]
     actual_errors = exc_info.value.errors()

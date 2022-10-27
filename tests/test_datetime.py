@@ -37,7 +37,7 @@ def date_model_fixture():
         ('x20120423', Err('Input should be a valid date or datetime, input is too short')),
         ('2012-04-56', Err('Input should be a valid date or datetime, day value is outside expected range')),
         (19_999_958_400, date(2603, 10, 11)),  # just before watershed
-        (20000044800, Err('kind=date_from_datetime_inexact,')),  # just after watershed
+        (20000044800, Err('type=date_from_datetime_inexact,')),  # just after watershed
         (1_549_238_400, date(2019, 2, 4)),  # nowish in s
         (1_549_238_400_000, date(2019, 2, 4)),  # nowish in ms
         (1_549_238_400_000_000, Err('Input should be a valid date or datetime, dates after 9999')),  # nowish in μs
@@ -79,9 +79,9 @@ def time_model_fixture():
         (3600.5, time(1, 0, 0, 500000)),
         (86400 - 1, time(23, 59, 59)),
         # Invalid inputs
-        ('4:8:16', Err('Input should be in a valid time format, invalid character in hour [kind=time_parsing,')),
+        ('4:8:16', Err('Input should be in a valid time format, invalid character in hour [type=time_parsing,')),
         (86400, Err('Input should be in a valid time format, numeric times may not exceed 86,399 seconds')),
-        ('xxx', Err('Input should be in a valid time format, input is too short [kind=time_parsing,')),
+        ('xxx', Err('Input should be in a valid time format, input is too short [type=time_parsing,')),
         ('091500', Err('Input should be in a valid time format, invalid time separator, expected `:`')),
         (b'091500', Err('Input should be in a valid time format, invalid time separator, expected `:`')),
         ('09:15:90', Err('Input should be in a valid time format, second value is outside expected range of 0-59')),
@@ -267,7 +267,7 @@ def test_model_type_errors(field, value, error_message):
         Model(**{field: value})
     assert len(exc_info.value.errors()) == 1
     error = exc_info.value.errors()[0]
-    assert error['message'] == error_message
+    assert error['msg'] == error_message
 
 
 @pytest.mark.parametrize('field', ['dt', 'd', 't', 'dt'])
@@ -294,18 +294,18 @@ def test_nan():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'datetime_parsing',
-            'loc': ['dt'],
-            'message': 'Input should be a valid datetime, NaN values not permitted',
-            'input_value': HasRepr('nan'),
-            'context': {'error': 'NaN values not permitted'},
+            'type': 'datetime_parsing',
+            'loc': ('dt',),
+            'msg': 'Input should be a valid datetime, NaN values not permitted',
+            'input': HasRepr('nan'),
+            'ctx': {'error': 'NaN values not permitted'},
         },
         {
-            'kind': 'date_from_datetime_parsing',
-            'loc': ['d'],
-            'message': 'Input should be a valid date or datetime, NaN values not permitted',
-            'input_value': HasRepr('nan'),
-            'context': {'error': 'NaN values not permitted'},
+            'type': 'date_from_datetime_parsing',
+            'loc': ('d',),
+            'msg': 'Input should be a valid date or datetime, NaN values not permitted',
+            'input': HasRepr('nan'),
+            'ctx': {'error': 'NaN values not permitted'},
         },
     ]
 
@@ -364,10 +364,10 @@ def test_past_date_validation_fails(value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'date_past',
-            'loc': ['foo'],
-            'message': 'Date should be in the past',
-            'input_value': value,
+            'type': 'date_past',
+            'loc': ('foo',),
+            'msg': 'Date should be in the past',
+            'input': value,
         }
     ]
 
@@ -403,9 +403,9 @@ def test_future_date_validation_fails(value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'date_future',
-            'loc': ['foo'],
-            'message': 'Date should be in the future',
-            'input_value': value,
+            'type': 'date_future',
+            'loc': ('foo',),
+            'msg': 'Date should be in the future',
+            'input': value,
         }
     ]

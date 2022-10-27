@@ -43,10 +43,10 @@ def test_namedtuple():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['event', 'arguments', 0],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'qwe',
+            'type': 'int_parsing',
+            'loc': ('event', 'arguments', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'qwe',
         }
     ]
 
@@ -118,10 +118,10 @@ def test_namedtuple_right_length():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'unexpected_positional_argument',
-            'loc': ['p', 'arguments', 2],
-            'message': 'Unexpected positional argument',
-            'input_value': 3,
+            'type': 'unexpected_positional_argument',
+            'loc': ('p', 'arguments', 2),
+            'msg': 'Unexpected positional argument',
+            'input': 3,
         }
     ]
 

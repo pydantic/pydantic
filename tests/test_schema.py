@@ -1880,8 +1880,8 @@ def test_literal_enum():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'kind': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
-        'required': ['kind'],
+        'properties': {'type': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
+        'required': ['type'],
     }
 
 

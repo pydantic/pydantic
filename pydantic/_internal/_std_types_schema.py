@@ -99,7 +99,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
             ),
             _validators.uuid_validator,
         ),
-        custom_error_kind='uuid_type',
+        custom_error_type='uuid_type',
         custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
     )
@@ -114,7 +114,7 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
             core_schema.string_schema(),
             _validators.path_validator,
         ),
-        custom_error_kind='path_type',
+        custom_error_type='path_type',
         custom_error_message='Input is not a valid path',
         strict=True,
     )

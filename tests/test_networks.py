@@ -151,9 +151,9 @@ def test_any_url_invalid(value, err_kind, err_msg, err_ctx):
     assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
     error = exc_info.value.errors()[0]
     # debug(error)
-    assert error['kind'] == err_kind, value
-    assert error['message'] == err_msg, value
-    assert error.get('context') == err_ctx, value
+    assert error['type'] == err_kind, value
+    assert error['msg'] == err_msg, value
+    assert error.get('ctx') == err_ctx, value
 
 
 def validate_url(s):
@@ -324,9 +324,9 @@ def test_http_url_invalid(value, err_kind, err_msg, err_ctx):
         Model(v=value)
     assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
     error = exc_info.value.errors()[0]
-    assert error['kind'] == err_kind, value
-    assert error['message'] == err_msg, value
-    assert error.get('context') == err_ctx, value
+    assert error['type'] == err_kind, value
+    assert error['msg'] == err_msg, value
+    assert error.get('ctx') == err_ctx, value
 
 
 @pytest.mark.parametrize(
@@ -442,56 +442,56 @@ def test_postgres_dsns(dsn):
         (
             'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
             {
-                'kind': 'url.host',
-                'loc': ['a'],
-                'message': 'URL host invalid',
-                'input_value': 'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
             },
         ),
         (
             'postgres://user:pass@host1.db.net,/app',
             {
-                'kind': 'url.host',
-                'loc': ['a'],
-                'message': 'URL host invalid',
-                'input_value': 'postgres://user:pass@host1.db.net,/app',
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user:pass@host1.db.net,/app',
             },
         ),
         (
             'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
             {
-                'kind': 'url.host',
-                'loc': ['a'],
-                'message': 'URL host invalid',
-                'input_value': 'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
             },
         ),
         (
             'postgres://localhost:5432/app',
             {
-                'kind': 'url.userinfo',
-                'loc': ['a'],
-                'message': 'userinfo required in URL but missing',
-                'input_value': 'postgres://localhost:5432/app',
+                'type': 'url.userinfo',
+                'loc': ('a',),
+                'msg': 'userinfo required in URL but missing',
+                'input': 'postgres://localhost:5432/app',
             },
         ),
         (
             'postgres://user@/foo/bar:5432/app',
             {
-                'kind': 'url.host',
-                'loc': ['a'],
-                'message': 'URL host invalid',
-                'input_value': 'postgres://user@/foo/bar:5432/app',
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user@/foo/bar:5432/app',
             },
         ),
         (
             'http://example.org',
             {
-                'kind': 'url.scheme',
-                'loc': ['a'],
-                'message': 'URL scheme not permitted',
-                'input_value': 'http://example.org',
-                'context': {'allowed_schemes': ', '.join(sorted(PostgresDsn.allowed_schemes))},
+                'type': 'url.scheme',
+                'loc': ('a',),
+                'msg': 'URL scheme not permitted',
+                'input': 'http://example.org',
+                'ctx': {'allowed_schemes': ', '.join(sorted(PostgresDsn.allowed_schemes))},
             },
         ),
     ),
@@ -550,7 +550,7 @@ def test_cockroach_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='cockroachdb://localhost:5432/app')
@@ -577,7 +577,7 @@ def test_amqp_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     # Password is not required for AMQP protocol
     m = Model(a='amqp://localhost:1234/app')
@@ -611,7 +611,7 @@ def test_redis_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     # Password is not required for Redis protocol
     m = Model(a='redis://localhost:1234/app')
@@ -640,7 +640,7 @@ def test_mongodb_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     # Password is not required for MongoDB protocol
     m = Model(a='mongodb://localhost:1234/app')
@@ -670,7 +670,7 @@ def test_kafka_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['kind'] == 'url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     m = Model(a='kafka://kafka3:9093')
     assert m.a.user is None

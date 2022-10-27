@@ -25,7 +25,7 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import PydanticCustomError, PydanticKindError, core_schema
+from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal
 
 from ._internal import _fields, _validators
@@ -422,7 +422,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 core_schema.is_instance_schema(cls),
                 cls._pre_core_schema(),
                 strict=True,
-                custom_error_kind=cls._error_kind,
+                custom_error_type=cls._error_kind,
             ),
             validator,
             extra=validator,
@@ -479,11 +479,11 @@ class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
 
     def __call__(self, __value: SecretField[SecretType] | SecretType, **_kwargs: Any) -> Any:
         if self.min_length is not None and len(__value) < self.min_length:
-            short_kind: core_schema.ErrorKind = f'{self.error_prefix}_too_short'  # type: ignore[assignment]
-            raise PydanticKindError(short_kind, {'min_length': self.min_length})
+            short_kind: core_schema.ErrorType = f'{self.error_prefix}_too_short'  # type: ignore[assignment]
+            raise PydanticKnownError(short_kind, {'min_length': self.min_length})
         if self.max_length is not None and len(__value) > self.max_length:
-            long_kind: core_schema.ErrorKind = f'{self.error_prefix}_too_long'  # type: ignore[assignment]
-            raise PydanticKindError(long_kind, {'max_length': self.max_length})
+            long_kind: core_schema.ErrorType = f'{self.error_prefix}_too_long'  # type: ignore[assignment]
+            raise PydanticKnownError(long_kind, {'max_length': self.max_length})
 
         if isinstance(__value, self.field_type):
             return __value

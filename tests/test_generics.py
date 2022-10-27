@@ -300,7 +300,7 @@ def test_generic():
     assert repr(success1) == "Result[Data, Error](data=[Data(number=1, text='a')], error=None, positive_number=1)"
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
-    assert success2.dict() == {'data': None, 'error': {'message': 'error'}, 'positive_number': 1}
+    assert success2.dict() == {'data': None, 'error': {'msg': 'error'}, 'positive_number': 1}
     assert repr(success2) == "Result[Data, Error](data=None, error=Error(message='error'), positive_number=1)"
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
@@ -1243,7 +1243,7 @@ def test_parse_generic_json():
     assert isinstance(record.message, Payload)
 
     schema = record.schema()
-    assert schema['properties'] == {'message': {'$ref': '#/definitions/Payload'}}
+    assert schema['properties'] == {'msg': {'$ref': '#/definitions/Payload'}}
     assert schema['definitions']['Payload'] == {
         'title': 'Payload',
         'type': 'object',

@@ -200,11 +200,10 @@ else:
     """
     fr_has_is_class = True
 
-    def ForwardRefWrapper(
-        arg: Any, is_argument: bool = True, module: Any = None, *, is_class: bool = False
-    ) -> typing.ForwardRef:
+    def ForwardRefWrapper(arg: Any, is_argument: bool = True, *, is_class: bool = False) -> typing.ForwardRef:
         """
         Wrapper for ForwardRef that accounts for the `is_class` argument missing in older versions.
+        The `module` argument is omitted as it breaks <3.9 and isn't used in the calls below.
 
         See https://github.com/python/cpython/pull/28560 for some background
 
@@ -213,13 +212,13 @@ else:
         global fr_has_is_class
 
         if not fr_has_is_class:
-            return typing.ForwardRef(arg, is_argument, module)
+            return typing.ForwardRef(arg, is_argument)
 
         try:
-            return typing.ForwardRef(arg, is_argument, module, is_class=is_class)
+            return typing.ForwardRef(arg, is_argument, is_class=is_class)
         except TypeError:
             fr_has_is_class = False
-            return typing.ForwardRef(arg, is_argument, module)
+            return typing.ForwardRef(arg, is_argument)
 
     @typing.no_type_check
     def get_type_hints(
@@ -232,7 +231,7 @@ else:
         Taken verbatim from python 3.10.8 unchanged, except:
         * type annotations of the function definition above.
         * prefixing `typing.` where appropriate
-        * Use `ForwardRefWrapper` instead of `ForwardRef`
+        * Use `ForwardRefWrapper` instead of `typing.ForwardRef`
 
         https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
 

@@ -81,10 +81,10 @@ def test_typeddict_annotated_simple(TypedDict, req_no_req):
 
     assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
     assert M(d=dict(foo='baz', bar='8', spam='44.4')).d == {'foo': 'baz', 'bar': 8, 'spam': 44.4}
-    with pytest.raises(ValidationError, match=r'd -> bar\s+Field required \[kind=missing,'):
+    with pytest.raises(ValidationError, match=r'd -> bar\s+Field required \[type=missing,'):
         M(d=dict(foo='baz'))
 
-    with pytest.raises(ValidationError, match=r'd -> bar\s+Input should be less than 10 \[kind=less_than,'):
+    with pytest.raises(ValidationError, match=r'd -> bar\s+Input should be less than 10 \[type=less_than,'):
         M(d=dict(foo='baz', bar='11'))
 
 
@@ -100,7 +100,7 @@ def test_typeddict_total_false(TypedDict, req_no_req):
 
     assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
-    with pytest.raises(ValidationError, match=r'd -> foo\s+Field required \[kind=missing,'):
+    with pytest.raises(ValidationError, match=r'd -> foo\s+Field required \[type=missing,'):
         M(d={})
 
 
@@ -121,7 +121,7 @@ def test_typeddict(TypedDict):
         Model(td={'a': [1], 'b': 2, 'c': 3, 'd': 'qwe'})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'int_type', 'loc': ['td', 'a'], 'message': 'Input should be a valid integer', 'input_value': [1]}
+        {'type': 'int_type', 'loc': ('td', 'a'), 'msg': 'Input should be a valid integer', 'input': [1]}
     ]
 
 
@@ -137,7 +137,7 @@ def test_typeddict_non_total(TypedDict):
         Model(movie={'year': '2002'})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['movie', 'name'], 'message': 'Field required', 'input_value': {'year': '2002'}}
+        {'type': 'missing', 'loc': ('movie', 'name'), 'msg': 'Field required', 'input': {'year': '2002'}}
     ]
 
     class PartialMovie(TypedDict, total=False):
@@ -180,7 +180,7 @@ def test_typeddict_extra(TypedDict):
         Model(u={'name': 'pika', 'age': 7, 'rank': 1})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'extra_forbidden', 'loc': ['u', 'rank'], 'message': 'Extra inputs are not permitted', 'input_value': 1}
+        {'type': 'extra_forbidden', 'loc': ('u', 'rank'), 'msg': 'Extra inputs are not permitted', 'input': 1}
     ]
 
 

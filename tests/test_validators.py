@@ -1278,9 +1278,9 @@ def test_validating_assignment_pre_root_validator_fail():
         m.current_value = '100'
     assert exc_info.value.errors() == [
         {
-            'loc': ['__root__'],
-            'message': 'values cannot be a string',
-            'kind': 'value_error',
+            'loc': ('__root__',),
+            'msg': 'values cannot be a string',
+            'type': 'value_error',
         }
     ]
 
@@ -1320,11 +1320,11 @@ def test_validating_assignment_post_root_validator_fail():
     with pytest.raises(ValidationError) as exc_info:
         m.current_value = 1000
     assert exc_info.value.errors() == [
-        {'loc': ['__root__'], 'message': 'current_value cannot be greater than max_value', 'kind': 'value_error'},
+        {'loc': ('__root__',), 'msg': 'current_value cannot be greater than max_value', 'type': 'value_error'},
         {
-            'loc': ['__root__'],
-            'message': 'current_value cannot be greater than 500',
-            'kind': 'value_error',
+            'loc': ('__root__',),
+            'msg': 'current_value cannot be greater than 500',
+            'type': 'value_error',
         },
     ]
 

@@ -101,10 +101,10 @@ def test_ipaddress_fails(value):
         Model(ip=value)
     assert exc_info.value.error_count() == 1
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_any_address',
-        'loc': ['ip'],
-        'message': 'value is not a valid IPv4 or IPv6 address',
-        'input_value': value,
+        'type': 'ip_any_address',
+        'loc': ('ip',),
+        'msg': 'value is not a valid IPv4 or IPv6 address',
+        'input': value,
     }
 
 
@@ -117,10 +117,10 @@ def test_ipv4address_fails(value):
         Model(ipv4=value)
     assert exc_info.value.error_count() == 1
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_v4_address',
-        'loc': ['ipv4'],
-        'message': 'Input is not a valid IPv4 address',
-        'input_value': value,
+        'type': 'ip_v4_address',
+        'loc': ('ipv4',),
+        'msg': 'Input is not a valid IPv4 address',
+        'input': value,
     }
 
 
@@ -134,10 +134,10 @@ def test_ipv6address_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_v6_address',
-        'loc': ['ipv6'],
-        'message': 'Input is not a valid IPv6 address',
-        'input_value': value,
+        'type': 'ip_v6_address',
+        'loc': ('ipv6',),
+        'msg': 'Input is not a valid IPv6 address',
+        'input': value,
     }
 
 
@@ -208,10 +208,10 @@ def test_ipnetwork_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_any_network',
-        'loc': ['ip'],
-        'message': 'value is not a valid IPv4 or IPv6 network',
-        'input_value': value,
+        'type': 'ip_any_network',
+        'loc': ('ip',),
+        'msg': 'value is not a valid IPv4 or IPv6 network',
+        'input': value,
     }
 
 
@@ -225,10 +225,10 @@ def test_ip_v4_network_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_v4_network',
-        'loc': ['ip'],
-        'message': 'Input is not a valid IPv4 network',
-        'input_value': value,
+        'type': 'ip_v4_network',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv4 network',
+        'input': value,
     }
 
 
@@ -243,10 +243,10 @@ def test_ip_v6_network_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_v6_network',
-        'loc': ['ip'],
-        'message': 'Input is not a valid IPv6 network',
-        'input_value': value,
+        'type': 'ip_v6_network',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv6 network',
+        'input': value,
     }
 
 
@@ -341,10 +341,10 @@ def test_ipinterface_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_any_interface',
-        'loc': ['ip'],
-        'message': 'value is not a valid IPv4 or IPv6 interface',
-        'input_value': value,
+        'type': 'ip_any_interface',
+        'loc': ('ip',),
+        'msg': 'value is not a valid IPv4 or IPv6 interface',
+        'input': value,
     }
 
 
@@ -359,10 +359,10 @@ def test_ip_v4_interface_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_v4_interface',
-        'loc': ['ip'],
-        'message': 'Input is not a valid IPv4 interface',
-        'input_value': value,
+        'type': 'ip_v4_interface',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv4 interface',
+        'input': value,
     }
 
 
@@ -377,8 +377,8 @@ def test_ip_v6_interface_fails(value):
     assert exc_info.value.error_count() == 1
     # insert_assert(exc_info.value.errors()[0])
     assert exc_info.value.errors()[0] == {
-        'kind': 'ip_v6_interface',
-        'loc': ['ip'],
-        'message': 'Input is not a valid IPv6 interface',
-        'input_value': value,
+        'type': 'ip_v6_interface',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv6 interface',
+        'input': value,
     }

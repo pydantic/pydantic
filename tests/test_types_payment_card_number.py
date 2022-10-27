@@ -95,7 +95,7 @@ def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool
     else:
         with pytest.raises(PydanticCustomError) as exc_info:
             PaymentCardNumber.validate_brand(card_number)
-        assert exc_info.value.kind == 'payment_card_number_brand'
+        assert exc_info.value.type == 'payment_card_number_brand'
 
 
 @pytest.mark.parametrize(
@@ -120,12 +120,12 @@ def test_valid(PaymentCard):
 @pytest.mark.parametrize(
     'card_number, error_message',
     [
-        (None, 'kind=string_type'),
-        ('1' * 11, 'kind=string_too_short,'),
-        ('1' * 20, 'kind=string_too_long,'),
-        ('h' * 16, 'kind=payment_card_number_digits'),
-        (LUHN_INVALID, 'kind=payment_card_number_luhn,'),
-        (LEN_INVALID, 'kind=payment_card_number_brand,'),
+        (None, 'type=string_type'),
+        ('1' * 11, 'type=string_too_short,'),
+        ('1' * 20, 'type=string_too_long,'),
+        ('h' * 16, 'type=payment_card_number_digits'),
+        (LUHN_INVALID, 'type=payment_card_number_luhn,'),
+        (LEN_INVALID, 'type=payment_card_number_brand,'),
     ],
 )
 def test_error_types(card_number: Any, error_message: str, PaymentCard):

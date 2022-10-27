@@ -117,12 +117,12 @@ def test_annotated_model_exceptions(hint_fn, value, exc_handler):
         (
             lambda: int,
             Undefined,
-            pytest.raises(ValueError, match=r'Field required \[kind=missing,'),
+            pytest.raises(ValueError, match=r'Field required \[type=missing,'),
         ),
         (
             lambda: Annotated[int, Field()],
             Undefined,
-            pytest.raises(ValueError, match=r'Field required \[kind=missing,'),
+            pytest.raises(ValueError, match=r'Field required \[type=missing,'),
         ),
     ],
 )

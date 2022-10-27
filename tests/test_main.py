@@ -44,13 +44,11 @@ class UltraSimpleModel(BaseModel):
 def test_ultra_simple_missing():
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
-    assert exc_info.value.errors() == [
-        {'loc': ['a'], 'message': 'Field required', 'kind': 'missing', 'input_value': {}}
-    ]
+    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'Field required', 'type': 'missing', 'input': {}}]
     assert str(exc_info.value) == (
         '1 validation error for UltraSimpleModel\n'
         'a\n'
-        '  Field required [kind=missing, input_value={}, input_type=dict]'
+        '  Field required [type=missing, input_value={}, input_type=dict]'
     )
 
 
@@ -59,16 +57,16 @@ def test_ultra_simple_failed():
         UltraSimpleModel(a='x', b='x')
     assert exc_info.value.errors() == [
         {
-            'kind': 'float_parsing',
-            'loc': ['a'],
-            'message': 'Input should be a valid number, unable to parse string as an number',
-            'input_value': 'x',
+            'type': 'float_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'input': 'x',
         },
         {
-            'kind': 'int_parsing',
-            'loc': ['b'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'x',
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
     ]
 
@@ -138,16 +136,16 @@ def test_nullable_strings_fails(NoneCheckModel):
         )
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_type',
-            'loc': ['required_str_value'],
-            'message': 'Input should be a valid string',
-            'input_value': None,
+            'type': 'string_type',
+            'loc': ('required_str_value',),
+            'msg': 'Input should be a valid string',
+            'input': None,
         },
         {
-            'kind': 'bytes_type',
-            'loc': ['required_bytes_value'],
-            'message': 'Input should be a valid bytes',
-            'input_value': None,
+            'type': 'bytes_type',
+            'loc': ('required_bytes_value',),
+            'msg': 'Input should be a valid bytes',
+            'input': None,
         },
     ]
 
@@ -184,10 +182,10 @@ def test_not_required():
         Model(a=None)
     assert exc_info.value.errors() == [
         {
-            'kind': 'float_type',
-            'loc': ['a'],
-            'message': 'Input should be a valid number',
-            'input_value': None,
+            'type': 'float_type',
+            'loc': ('a',),
+            'msg': 'Input should be a valid number',
+            'input': None,
         },
     ]
 
@@ -234,16 +232,16 @@ def test_forbidden_extra_fails():
         ForbiddenExtra(foo='ok', bar='wrong', spam='xx')
     assert exc_info.value.errors() == [
         {
-            'kind': 'extra_forbidden',
-            'loc': ['bar'],
-            'message': 'Extra inputs are not permitted',
-            'input_value': 'wrong',
+            'type': 'extra_forbidden',
+            'loc': ('bar',),
+            'msg': 'Extra inputs are not permitted',
+            'input': 'wrong',
         },
         {
-            'kind': 'extra_forbidden',
-            'loc': ['spam'],
-            'message': 'Extra inputs are not permitted',
-            'input_value': 'xx',
+            'type': 'extra_forbidden',
+            'loc': ('spam',),
+            'msg': 'Extra inputs are not permitted',
+            'input': 'xx',
         },
     ]
 
@@ -370,9 +368,7 @@ def test_required():
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['a'], 'message': 'Field required', 'input_value': {}}
-    ]
+    assert exc_info.value.errors() == [{'type': 'missing', 'loc': ('a',), 'msg': 'Field required', 'input': {}}]
 
 
 def test_mutability():
@@ -517,10 +513,10 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         p.a = 'b'
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['a'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'b',
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
         },
     ]
 
@@ -528,11 +524,11 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         p.b = ''
     assert exc_info.value.errors() == [
         {
-            'kind': 'string_too_short',
-            'loc': ['b'],
-            'message': 'String should have at least 1 characters',
-            'input_value': '',
-            'context': {'min_length': 1},
+            'type': 'string_too_short',
+            'loc': ('b',),
+            'msg': 'String should have at least 1 characters',
+            'input': '',
+            'ctx': {'min_length': 1},
         }
     ]
 
@@ -572,11 +568,11 @@ def test_literal_enum_values():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'literal_error',
-            'loc': ['baz'],
-            'message': "Input should be <FooEnum.foo: 'foo_value'>",
-            'input_value': FooEnum.bar,
-            'context': {'expected': "<FooEnum.foo: 'foo_value'>"},
+            'type': 'literal_error',
+            'loc': ('baz',),
+            'msg': "Input should be <FooEnum.foo: 'foo_value'>",
+            'input': FooEnum.bar,
+            'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
     ]
 
@@ -646,11 +642,11 @@ def test_arbitrary_type_allowed_validation_fails():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'is_instance_of',
-            'loc': ['t'],
-            'message': 'Input should be an instance of ArbitraryType',
-            'input_value': input_value,
-            'context': {'class': 'ArbitraryType'},
+            'type': 'is_instance_of',
+            'loc': ('t',),
+            'msg': 'Input should be an instance of ArbitraryType',
+            'input': input_value,
+            'ctx': {'class': 'ArbitraryType'},
         }
     ]
 
@@ -692,11 +688,11 @@ def test_type_type_validation_fails(TypeTypeModel, input_value):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'is_subclass_of',
-            'loc': ['t'],
-            'message': 'Input should be a subclass of ArbitraryType',
-            'input_value': input_value,
-            'context': {'class': 'ArbitraryType'},
+            'type': 'is_subclass_of',
+            'loc': ('t',),
+            'msg': 'Input should be a subclass of ArbitraryType',
+            'input': input_value,
+            'ctx': {'class': 'ArbitraryType'},
         }
     ]
 
@@ -722,10 +718,10 @@ def test_bare_type_type_validation_fails(bare_type):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'is_type',
-            'loc': ['t'],
-            'message': 'Input should be a type',
-            'input_value': arbitrary_type,
+            'type': 'is_type',
+            'loc': ('t',),
+            'msg': 'Input should be a type',
+            'input': arbitrary_type,
         }
     ]
 
@@ -1465,7 +1461,7 @@ def test_default_factory_validate_children():
 
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'kind': 'missing', 'loc': ['children', 1, 'x'], 'message': 'Field required', 'input_value': {'y': 2}}
+        {'type': 'missing', 'loc': ('children', 1, 'x'), 'msg': 'Field required', 'input': {'y': 2}}
     ]
 
 
@@ -1692,10 +1688,10 @@ def test_typing_counter_value_validation():
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'kind': 'int_parsing',
-            'loc': ['x', 'a'],
-            'message': 'Input should be a valid integer, unable to parse string as an integer',
-            'input_value': 'a',
+            'type': 'int_parsing',
+            'loc': ('x', 'a'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         }
     ]
 
@@ -1759,8 +1755,8 @@ def test_new_union_origin():
     assert Model(x='pika').x == 'pika'
     # assert Model.schema() == {
     #     'title': 'Model',
-    #     'kind': 'object',
-    #     'properties': {'x': {'title': 'X', 'anyOf': [{'kind': 'integer'}, {'kind': 'string'}]}},
+    #     'type': 'object',
+    #     'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
     #     'required': ['x'],
     # }
 
