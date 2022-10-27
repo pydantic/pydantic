@@ -775,25 +775,21 @@ def nested():
 
 
 def test_nested_more_annotation(create_module):
-    module = create_module(
-        # language=Python
-        """
-from __future__ import annotations
-from pydantic import BaseModel
+    @create_module
+    def module():
+        from pydantic import BaseModel
 
-def nested():
-    class Foo(BaseModel):
-        a: int
+        def nested():
+            class Foo(BaseModel):
+                a: int
 
-    def more_nested():
-        class Bar(BaseModel):
-            b: Foo
+            def more_nested():
+                class Bar(BaseModel):
+                    b: 'Foo'
 
-        return Bar
+                return Bar
 
-    return more_nested()
-"""
-    )
+            return more_nested()
 
     bar_model = module.nested()
     # this does not work because Foo is in a parent scope
