@@ -194,6 +194,32 @@ if sys.version_info >= (3, 10):  # noqa C901
     get_type_hints = typing.get_type_hints
 
 else:
+    """
+    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
+    the implementation in CPython 3.10.8.
+    """
+    fr_has_is_class = True
+
+    def ForwardRefWrapper(
+        arg: Any, is_argument: bool = True, module: Any = None, *, is_class: bool = False
+    ) -> typing.ForwardRef:
+        """
+        Wrapper for ForwardRef that accounts for the `is_class` argument missing in older versions.
+
+        See https://github.com/python/cpython/pull/28560 for some background
+
+        Implemented as EAFP with memory.
+        """
+        global fr_has_is_class
+
+        if not fr_has_is_class:
+            return typing.ForwardRef(arg, is_argument, module)
+
+        try:
+            return typing.ForwardRef(arg, is_argument, module, is_class=is_class)
+        except TypeError:
+            fr_has_is_class = False
+            return typing.ForwardRef(arg, is_argument, module)
 
     @typing.no_type_check
     def get_type_hints(
@@ -206,7 +232,7 @@ else:
         Taken verbatim from python 3.10.8 unchanged, except:
         * type annotations of the function definition above.
         * prefixing `typing.` where appropriate
-        * Change `ForwardRef` usage to remove `is_class` kwarg, see https://github.com/python/cpython/pull/28560
+        * Use `ForwardRefWrapper` instead of `ForwardRef`
 
         https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
 
@@ -272,9 +298,8 @@ else:
                         value = type(None)
                     if isinstance(value, str):
 
-                        # { CHANGED IN PYDANTIC: `is_class=True` removed
-                        value = typing.ForwardRef(value, is_argument=False)
-                        # } END OF CHANGE IN PYDANTIC
+                        # CHANGED IN PYDANTIC, using ForwardRefWrapper
+                        value = ForwardRefWrapper(value, is_argument=False, is_class=True)
 
                     value = typing._eval_type(value, base_globals, base_locals)
                     hints[name] = value
@@ -309,14 +334,12 @@ else:
                 # class-level forward refs were handled above, this must be either
                 # a module-level annotation or a function argument annotation
 
-                # { CHANGED IN PYDANTIC: `is_class=False` removed
-                value = typing.ForwardRef(
+                # CHANGED IN PYDANTIC, using ForwardRefWrapper
+                value = ForwardRefWrapper(
                     value,
                     is_argument=not isinstance(obj, types.ModuleType),
-                    # is_class=False,
+                    is_class=False,
                 )
-                # } END OF CHANGE IN PYDANTIC
-
             value = typing._eval_type(value, globalns, localns)
             if name in defaults and defaults[name] is None:
                 value = typing.Optional[value]

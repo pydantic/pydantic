@@ -704,7 +704,6 @@ def test_pep585_recursive_generics(create_module):
     assert h.dict() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
-@pytest.mark.xfail(reason='TODO create_model')
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
 def test_class_var_forward_ref(create_module):
     # see #3679
