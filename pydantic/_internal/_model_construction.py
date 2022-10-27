@@ -28,7 +28,13 @@ if typing.TYPE_CHECKING:
     from ..config import BaseConfig
     from ..main import BaseModel
 
-__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class'
+__all__ = (
+    'object_setattr',
+    'init_private_attributes',
+    'inspect_namespace',
+    'complete_model_class',
+    'parent_frame_namespace',
+)
 
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod)
@@ -162,6 +168,27 @@ def complete_model_class(
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))
     return True
+
+
+def parent_frame_namespace(parent_index: int = 2) -> dict[str, Any] | None:
+    """
+    WARNING: it matters exactly where this is called. By default this function will build a namespace from the parent
+    of where it's called.
+
+    We allow use of items in parent namespace to get around this issue with `get_type_hints` only looking in the
+    global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
+    and suggestion at the end of the next comment.
+
+    WARNING: this only looks in the parent namespace, not other parents since (AFAIK) there's no easy and reliable
+    way to collect a dict of exactly what's in scope. Using `f_back` would work sometimes but would be very
+    wrong and confusing in many other cases.
+    """
+    frame = sys._getframe(parent_index)
+    # if f_back is None, it's the global module namespace and we don't need to include it here
+    if frame.f_back is None:
+        return None
+    else:
+        return frame.f_locals
 
 
 def build_inner_schema(  # noqa: C901

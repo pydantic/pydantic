@@ -749,3 +749,98 @@ def test_force_rebuild():
     assert Foobar.__pydantic_model_complete__ is True
     assert Foobar.model_rebuild() is None
     assert Foobar.model_rebuild(force=True) is True
+
+
+def test_nested_annotation(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+def nested():
+    class Foo(BaseModel):
+        a: int
+
+    class Bar(BaseModel):
+        b: Foo
+
+    return Bar
+"""
+    )
+
+    bar_model = module.nested()
+    assert bar_model.__pydantic_model_complete__ is True
+    assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}
+
+
+def test_nested_more_annotation(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+def nested():
+    class Foo(BaseModel):
+        a: int
+
+    def more_nested():
+        class Bar(BaseModel):
+            b: Foo
+
+        return Bar
+
+    return more_nested()
+"""
+    )
+
+    bar_model = module.nested()
+    # this does not work because Foo is in a parent scope
+    assert bar_model.__pydantic_model_complete__ is False
+
+
+def test_nested_annotation_priority(create_module):
+    @create_module
+    def module():
+        from annotated_types import Gt
+        from typing_extensions import Annotated
+
+        from pydantic import BaseModel
+
+        Foobar = Annotated[int, Gt(0)]  # noqa: F841
+
+        def nested():
+            Foobar = Annotated[int, Gt(10)]
+
+            class Bar(BaseModel):
+                b: 'Foobar'
+
+            return Bar
+
+    bar_model = module.nested()
+    assert bar_model.__fields__['b'].metadata[0].gt == 10
+    assert bar_model(b=11).dict() == {'b': 11}
+    with pytest.raises(ValidationError, match=r'Input should be greater than 10 \[type=greater_than,'):
+        bar_model(b=1)
+
+
+def test_nested_model_rebuild(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel
+
+        def nested():
+            class Bar(BaseModel):
+                b: 'Foo'
+
+            class Foo(BaseModel):
+                a: int
+
+            assert Bar.__pydantic_model_complete__ is False
+            Bar.model_rebuild()
+            return Bar
+
+    bar_model = module.nested()
+    assert bar_model.__pydantic_model_complete__ is True
+    assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}

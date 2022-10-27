@@ -92,7 +92,15 @@ class ModelMetaclass(ABCMeta):
                 namespace['__hash__'] = hash_func
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
-            _model_construction.complete_model_class(cls, cls_name, validator_functions, bases, raise_errors=False)
+
+            _model_construction.complete_model_class(
+                cls,
+                cls_name,
+                validator_functions,
+                bases,
+                types_namespace=_model_construction.parent_frame_namespace(),
+                raise_errors=False,
+            )
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
@@ -452,6 +460,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not force and cls.__pydantic_model_complete__:
             return None
         else:
+            parents_namespace = _model_construction.parent_frame_namespace()
+            if types_namespace and parents_namespace:
+                types_namespace = {**parents_namespace, **types_namespace}
+            elif parents_namespace:
+                types_namespace = parents_namespace
+
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
