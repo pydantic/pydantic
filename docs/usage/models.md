@@ -33,7 +33,7 @@ default value, and so a type annotation is not required (however note [this](#fi
 order when some fields do not have type annotations).
 ```py
 user = User(id='123')
-user_x = User(id='123.45')
+user_x = User(id=123.45)
 ```
 `user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
 if no `ValidationError` is raised, you know the resulting model instance is valid.
