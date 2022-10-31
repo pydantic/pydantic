@@ -598,6 +598,7 @@ For URI/URL validation the following types are available:
   - `postgresql`
   - `postgresql+asyncpg`
   - `postgresql+pg8000`
+  - `postgresql+psycopg`
   - `postgresql+psycopg2`
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
