@@ -39,10 +39,9 @@ jobs:
       - run: pip install -r tests/requirements.txt
         if: steps.cache-py.outputs.cache-hit != 'true'
 
-      - name: install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
+      - run: rm rust-toolchain
+      - name: install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
 
       - name: cache rust
         uses: Swatinem/rust-cache@v1

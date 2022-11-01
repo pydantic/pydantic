@@ -35,146 +35,136 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: install rust nightly
-      if: matrix.rust-toolchain == 'nightly'
-      uses: actions-rs/toolchain@v1
-      with:
-        # use the default version from the "rust-toolchain" file in case rust is pinned there
-        profile: minimal
+      - run: rm rust-toolchain
 
-    - name: install rust stable
-      if: matrix.rust-toolchain != 'nightly'
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.rust-toolchain }}
-        override: true
+      - name: install rust ${{ matrix.rust-toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-toolchain }}
 
-    - id: cache-rust
-      name: cache rust
-      uses: Swatinem/rust-cache@v2
-      with:
-        key: v3
+      - id: cache-rust
+        name: cache rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: v3
 
-    - run: cargo install rustfilt coverage-prepare
-      if: steps.cache-rust.outputs.cache-hit != 'true'
+      - run: cargo install rustfilt coverage-prepare
+        if: steps.cache-rust.outputs.cache-hit != 'true'
 
-    - run: rustup component add llvm-tools-preview
+      - run: rustup component add llvm-tools-preview
 
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - id: cache-py
-      name: cache python
-      uses: actions/cache@v2
-      with:
-        path: ${{ env.pythonLocation }}
-        key: >
-          py
-          ${{ runner.os }}
-          ${{ env.pythonLocation }}
-          ${{ hashFiles('tests/requirements.txt') }}
-          ${{ hashFiles('pyproject.toml') }}
+      - id: cache-py
+        name: cache python
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}
+          key: >
+            py
+            ${{ runner.os }}
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements.txt') }}
+            ${{ hashFiles('pyproject.toml') }}
 
-    - run: pip install -r tests/requirements.txt
-      if: steps.cache-py.outputs.cache-hit != 'true'
+      - run: pip install -r tests/requirements.txt
+        if: steps.cache-py.outputs.cache-hit != 'true'
 
-    - run: pip install -e .
-      env:
-        RUST_BACKTRACE: 1
-        RUSTFLAGS: '-C instrument-coverage'
+      - run: pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+          RUSTFLAGS: '-C instrument-coverage'
 
-    - run: pip freeze
+      - run: pip freeze
 
-    - run: make test
-      env:
-        BENCHMARK_VS_PYDANTIC: 1
+      - run: make test
+        env:
+          BENCHMARK_VS_PYDANTIC: 1
 
-    - run: ls -lha
-    - run: coverage xml
+      - run: ls -lha
+      - run: coverage xml
 
-    - run: coverage-prepare lcov pydantic_core/*.so
+      - run: coverage-prepare lcov pydantic_core/*.so
 
-    - uses: codecov/codecov-action@v3
-      if: matrix.rust-toolchain == 'nightly'
-      with:
-        env_vars: PYTHON
+      - uses: codecov/codecov-action@v3
+        if: matrix.rust-toolchain == 'nightly'
+        with:
+          env_vars: PYTHON
 
   lint:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: install rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        override: true
-        components: rustfmt, clippy
+      - run: rm rust-toolchain
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
-    - name: cache rust
-      uses: Swatinem/rust-cache@v1
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    # used to lint js code
-    - uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      # used to lint js code
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - uses: actions/cache@v2
-      id: cache-py
-      name: cache python
-      with:
-        path: ${{ env.pythonLocation }}
-        key: >
-          py
-          ${{ env.pythonLocation }}
-          ${{ hashFiles('tests/requirements-linting.txt') }}
-          ${{ hashFiles('pyproject.toml') }}
+      - uses: actions/cache@v2
+        id: cache-py
+        name: cache python
+        with:
+          path: ${{ env.pythonLocation }}
+          key: >
+            py
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements-linting.txt') }}
+            ${{ hashFiles('pyproject.toml') }}
 
-    - run: pip install -r tests/requirements-linting.txt
-      if: steps.cache-py.outputs.cache-hit != 'true'
+      - run: pip install -r tests/requirements-linting.txt
+        if: steps.cache-py.outputs.cache-hit != 'true'
 
-    - run: pip install .
-      if: steps.cache-py.outputs.cache-hit != 'true'
+      - run: pip install .
+        if: steps.cache-py.outputs.cache-hit != 'true'
 
-    - run: pip freeze
+      - run: pip freeze
 
-    - run: make lint
-    - run: make pyright
+      - run: make lint
+      - run: make pyright
 
-    - run: npm install
-    - run: npm run lint
+      - run: npm install
+      - run: npm run lint
 
   bench:
     # run the rust benchmarks
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: install rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
+      - run: rm rust-toolchain
+      - name: install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
 
-    - name: cache rust
-      uses: Swatinem/rust-cache@v1
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - run: pip install typing_extensions
-    - run: make rust-benchmark
+      - run: pip install typing_extensions
+      - run: make rust-benchmark
 
   build-wasm-emscripten:
     runs-on: ubuntu-latest
@@ -187,14 +177,14 @@ jobs:
         with:
           python-version: '3.10'
 
-      - uses: actions-rs/toolchain@v1
+      - name: install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          profile: minimal
           components: rust-src
-          target: wasm32-unknown-emscripten
+          targets: wasm32-unknown-emscripten
 
       - name: cache rust
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - uses: mymindstorm/setup-emsdk@v11
         with:

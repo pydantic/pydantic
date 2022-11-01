@@ -282,7 +282,7 @@ impl<'a> Input<'a> for PyAny {
             Ok(int)
         } else if let Some(cow_str) = maybe_as_string(self, ErrorType::IntParsing)? {
             str_as_int(self, &cow_str)
-        } else if let Ok(float) = self.lax_float() {
+        } else if let Ok(float) = self.extract::<f64>() {
             float_as_int(self, float)
         } else {
             Err(ValError::new(ErrorType::IntType, self))
