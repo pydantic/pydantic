@@ -83,7 +83,7 @@ The aim is to remain 10x faster than current pydantic for common use cases.
 
 ## Getting Started
 
-While pydantic-core is not yet released and not design for direct use, you can still try it.
+While pydantic-core is not yet released and not designed for direct use, you can still try it.
 
 You'll need rust stable [installed](https://rustup.rs/), or rust nightly if you want to generate accurate coverage.
 
