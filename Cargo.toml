@@ -1,64 +1,64 @@
 [package]
-name = 'pydantic-core'
-version = '0.6.0'
-edition = '2021'
-license = 'MIT'
-homepage = 'https://github.com/pydantic/pydantic-core'
-repository = 'https://github.com/pydantic/pydantic-core.git'
-readme = 'README.md'
+name = "pydantic-core"
+version = "0.6.0"
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/pydantic/pydantic-core"
+repository = "https://github.com/pydantic/pydantic-core.git"
+readme = "README.md"
 include = [
-    '/pyproject.toml',
-    '/README.md',
-    '/LICENSE',
-    '/Makefile',
-    '/build.rs',
-    '/generate_self_schema.py',
-    '/rust-toolchain',
-    '/src',
-    '!/src/self_schema.py',
-    '/pydantic_core',
-    '/tests',
-    '/.cargo',
-    '!__pycache__',
-    '!tests/.hypothesis',
-    '!tests/.pytest_cache',
-    '!*.so',
+    "/pyproject.toml",
+    "/README.md",
+    "/LICENSE",
+    "/Makefile",
+    "/build.rs",
+    "/generate_self_schema.py",
+    "/rust-toolchain",
+    "/src",
+    "!/src/self_schema.py",
+    "/pydantic_core",
+    "/tests",
+    "/.cargo",
+    "!__pycache__",
+    "!tests/.hypothesis",
+    "!tests/.pytest_cache",
+    "!*.so",
 ]
 
 [dependencies]
-pyo3 = '0.17.2'
-regex = '1.6.0'
-strum = { version = '0.24.1', features = ['derive'] }
-strum_macros = '0.24.3'
-serde_json = {version = '1.0.87', features = ['preserve_order']}
-enum_dispatch = '0.3.8'
-serde = '1.0.147'
-indexmap = '1.9.1'
-mimalloc = { version = '0.1.30', default-features = false, optional = true }
-speedate = '0.7.0'
-ahash = '0.8.0'
-nohash-hasher = '0.2.0'
+pyo3 = "0.17.2"
+regex = "1.6.0"
+strum = { version = "0.24.1", features = ["derive"] }
+strum_macros = "0.24.3"
+serde_json = {version = "1.0.87", features = ["preserve_order"]}
+enum_dispatch = "0.3.8"
+serde = "1.0.147"
+indexmap = "1.9.1"
+mimalloc = { version = "0.1.30", default-features = false, optional = true }
+speedate = "0.7.0"
+ahash = "0.8.0"
+nohash-hasher = "0.2.0"
 
 [lib]
-name = '_pydantic_core'
-crate-type = ['cdylib', 'rlib']
+name = "_pydantic_core"
+crate-type = ["cdylib", "rlib"]
 
 [features]
 # must be disabled for cargo bench
-extension-module = ['pyo3/extension-module']
+extension-module = ["pyo3/extension-module"]
 # required for cargo bench
-auto-initialize = ['pyo3/auto-initialize']
-default = ['mimalloc', 'extension-module']
+auto-initialize = ["pyo3/auto-initialize"]
+default = ["mimalloc", "extension-module"]
 
 [package.metadata.maturin]
-name = 'pydantic_core._pydantic_core'
+name = "pydantic_core._pydantic_core"
 
 [profile.release]
-lto = 'fat'
+lto = "fat"
 codegen-units = 1
-panic = 'abort'
+panic = "abort"
 
 [build-dependencies]
-version_check = '0.9.4'
+version_check = "0.9.4"
 # used where logic has to be version/distrobution specific, e.g. pypy
-pyo3-build-config = '0.17.2'
+pyo3-build-config = "0.17.2"

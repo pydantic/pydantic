@@ -243,11 +243,7 @@ impl Validator for TypedDictValidator {
                     }
                 }
 
-                if self.check_extra {
-                    let used_keys = match used_keys {
-                        Some(v) => v,
-                        None => unreachable!(),
-                    };
+                if let Some(ref mut used_keys) = used_keys {
                     for (raw_key, value) in $dict.$iter_method() {
                         let either_str = match raw_key.strict_str() {
                             Ok(k) => k,
