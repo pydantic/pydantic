@@ -2,9 +2,9 @@ from collections import namedtuple
 from typing import Any
 
 import pytest
+from pydantic_core._pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError
-from pydantic.errors import InvalidLengthForBrand, LuhnValidationError, NotDigitError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
 VALID_AMEX = '370000000000002'
@@ -22,14 +22,18 @@ PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
 PCN.__len__ = lambda v: len(v.card_number)
 
 
-class PaymentCard(BaseModel):
-    card_number: PaymentCardNumber
+@pytest.fixture(scope='session', name='PaymentCard')
+def payment_card_model_fixture():
+    class PaymentCard(BaseModel):
+        card_number: PaymentCardNumber
+
+    return PaymentCard
 
 
 def test_validate_digits():
     digits = '12345'
-    assert PaymentCardNumber.validate_digits(digits) == digits
-    with pytest.raises(NotDigitError):
+    assert PaymentCardNumber.validate_digits(digits) is None
+    with pytest.raises(PydanticCustomError, match='Card number is not all digits'):
         PaymentCardNumber.validate_digits('hello')
 
 
@@ -68,7 +72,7 @@ def test_validate_luhn_check_digit(card_number: str, valid: bool):
     if valid:
         assert PaymentCardNumber.validate_luhn_check_digit(card_number) == card_number
     else:
-        with pytest.raises(LuhnValidationError):
+        with pytest.raises(PydanticCustomError, match='Card number is not luhn valid'):
             PaymentCardNumber.validate_luhn_check_digit(card_number)
 
 
@@ -82,16 +86,16 @@ def test_validate_luhn_check_digit(card_number: str, valid: bool):
         (VALID_AMEX, PaymentCardBrand.amex, True),
         (VALID_OTHER, PaymentCardBrand.other, True),
         (LEN_INVALID, PaymentCardBrand.visa, False),
-        (VALID_AMEX, PaymentCardBrand.mastercard, False),
     ],
 )
 def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool):
-    pcn = PCN(card_number, brand)
+    # pcn = PCN(card_number, brand)
     if valid:
-        assert PaymentCardNumber.validate_length_for_brand(pcn) == pcn
+        assert PaymentCardNumber.validate_brand(card_number) == brand
     else:
-        with pytest.raises(InvalidLengthForBrand):
-            PaymentCardNumber.validate_length_for_brand(pcn)
+        with pytest.raises(PydanticCustomError) as exc_info:
+            PaymentCardNumber.validate_brand(card_number)
+        assert exc_info.value.type == 'payment_card_number_brand'
 
 
 @pytest.mark.parametrize(
@@ -104,10 +108,10 @@ def test_length_for_brand(card_number: str, brand: PaymentCardBrand, valid: bool
     ],
 )
 def test_get_brand(card_number: str, brand: PaymentCardBrand):
-    assert PaymentCardNumber._get_brand(card_number) == brand
+    assert PaymentCardNumber.validate_brand(card_number) == brand
 
 
-def test_valid():
+def test_valid(PaymentCard):
     card = PaymentCard(card_number=VALID_VISA_16)
     assert str(card.card_number) == VALID_VISA_16
     assert card.card_number.masked == '405000******0001'
@@ -116,18 +120,17 @@ def test_valid():
 @pytest.mark.parametrize(
     'card_number, error_message',
     [
-        (None, 'type_error.none.not_allowed'),
-        ('1' * 11, 'value_error.any_str.min_length'),
-        ('1' * 20, 'value_error.any_str.max_length'),
-        ('h' * 16, 'value_error.payment_card_number.digits'),
-        (LUHN_INVALID, 'value_error.payment_card_number.luhn_check'),
-        (LEN_INVALID, 'value_error.payment_card_number.invalid_length_for_brand'),
+        (None, 'type=string_type'),
+        ('1' * 11, 'type=string_too_short,'),
+        ('1' * 20, 'type=string_too_long,'),
+        ('h' * 16, 'type=payment_card_number_digits'),
+        (LUHN_INVALID, 'type=payment_card_number_luhn,'),
+        (LEN_INVALID, 'type=payment_card_number_brand,'),
     ],
 )
-def test_error_types(card_number: Any, error_message: str):
-    with pytest.raises(ValidationError, match=error_message) as exc_info:
+def test_error_types(card_number: Any, error_message: str, PaymentCard):
+    with pytest.raises(ValidationError, match=error_message):
         PaymentCard(card_number=card_number)
-    assert exc_info.value.json().startswith('[')
 
 
 def test_payment_card_brand():

@@ -1,22 +1,15 @@
-import json
 from functools import lru_cache
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Type, TypeVar, Union
 
-from .parse import Protocol, load_file, load_str_bytes
-from .types import StrBytes
-from .typing import display_as_type
+from ._internal import _repr
 
-__all__ = ('parse_file_as', 'parse_obj_as', 'parse_raw_as', 'schema_of', 'schema_json_of')
+__all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 
-if TYPE_CHECKING:
-    from .typing import DictStrAny
-
 
 def _generate_parsing_type_name(type_: Any) -> str:
-    return f'ParsingModel[{display_as_type(type_)}]'
+    return f'ParsingModel[{_repr.display_as_type(type_)}]'
 
 
 @lru_cache(maxsize=2048)
@@ -38,51 +31,7 @@ def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] =
     return model_type(__root__=obj).__root__
 
 
-def parse_file_as(
-    type_: Type[T],
-    path: Union[str, Path],
-    *,
-    content_type: str = None,
-    encoding: str = 'utf8',
-    proto: Protocol = None,
-    allow_pickle: bool = False,
-    json_loads: Callable[[str], Any] = json.loads,
-    type_name: Optional[NameFactory] = None,
-) -> T:
-    obj = load_file(
-        path,
-        proto=proto,
-        content_type=content_type,
-        encoding=encoding,
-        allow_pickle=allow_pickle,
-        json_loads=json_loads,
-    )
-    return parse_obj_as(type_, obj, type_name=type_name)
-
-
-def parse_raw_as(
-    type_: Type[T],
-    b: StrBytes,
-    *,
-    content_type: str = None,
-    encoding: str = 'utf8',
-    proto: Protocol = None,
-    allow_pickle: bool = False,
-    json_loads: Callable[[str], Any] = json.loads,
-    type_name: Optional[NameFactory] = None,
-) -> T:
-    obj = load_str_bytes(
-        b,
-        proto=proto,
-        content_type=content_type,
-        encoding=encoding,
-        allow_pickle=allow_pickle,
-        json_loads=json_loads,
-    )
-    return parse_obj_as(type_, obj, type_name=type_name)
-
-
-def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'DictStrAny':
+def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'dict[str, Any]':
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema(**schema_kwargs)
 

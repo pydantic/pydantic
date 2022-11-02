@@ -44,7 +44,7 @@ from mypy.plugin import (
     SemanticAnalyzerPluginInterface,
 )
 from mypy.plugins import dataclasses
-from mypy.semanal import set_callable_name  # type: ignore
+from mypy.semanal import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
     AnyType,
@@ -62,8 +62,6 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 from mypy.version import __version__ as mypy_version
-
-from pydantic.utils import is_valid_field
 
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]
@@ -284,7 +282,7 @@ class PydanticModelTransformer:
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname == 'pydantic.class_validators.validator'
+                    and first_dec.callee.fullname == 'pydantic.validator_functions.validator'
                 ):
                     sym.node.func.is_class = True
 
@@ -333,7 +331,7 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
+            if not isinstance(lhs, NameExpr) or lhs.name.startswith('_'):
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:

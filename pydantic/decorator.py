@@ -1,17 +1,16 @@
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
-from . import validator
+from ._internal import _typing_extra, _utils
 from .config import Extra
-from .errors import ConfigError
+from .errors import PydanticUserError
 from .main import BaseModel, create_model
-from .typing import get_all_type_hints
-from .utils import to_camel
+from .validator_functions import validator
 
 __all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
-    from .typing import AnyCallable
+    AnyCallable = Callable[..., Any]
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
     ConfigType = Union[None, Type[Any], Dict[str, Any]]
@@ -64,7 +63,7 @@ class ValidatedFunction:
         parameters: Mapping[str, Parameter] = signature(function).parameters
 
         if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME, V_DUPLICATE_KWARGS}:
-            raise ConfigError(
+            raise PydanticUserError(
                 f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}", "{V_POSITIONAL_ONLY_NAME}" and "{V_DUPLICATE_KWARGS}" '
                 f'are not permitted as argument names when using the "{validate_arguments.__name__}" decorator'
             )
@@ -75,7 +74,7 @@ class ValidatedFunction:
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
-        type_hints = get_all_type_hints(function)
+        type_hints = _typing_extra.get_type_hints(function, include_extras=True)
         takes_args = False
         takes_kwargs = False
         fields: Dict[str, Tuple[Any, Any]] = {}
@@ -218,7 +217,7 @@ class ValidatedFunction:
                 CustomConfig = config  # noqa: F811
 
         if hasattr(CustomConfig, 'fields') or hasattr(CustomConfig, 'alias_generator'):
-            raise ConfigError(
+            raise PydanticUserError(
                 'Setting the "fields" and "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.'
             )
@@ -261,4 +260,4 @@ class ValidatedFunction:
             class Config(CustomConfig):
                 extra = getattr(CustomConfig, 'extra', Extra.forbid)
 
-        self.model = create_model(to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
+        self.model = create_model(_utils.to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)

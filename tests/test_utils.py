@@ -3,25 +3,16 @@ import os
 import pickle
 import sys
 from copy import copy, deepcopy
-from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
+from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConstrainedList, conlist
-from pydantic.color import Color
-from pydantic.dataclasses import dataclass
-from pydantic.fields import Undefined
-from pydantic.typing import (
-    all_literal_values,
-    display_as_type,
-    get_args,
-    get_origin,
-    is_new_type,
-    new_type_supertype,
-    resolve_annotations,
-)
-from pydantic.utils import (
+from pydantic import BaseModel
+from pydantic._internal import _repr
+from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
+from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
     LimitedDict,
@@ -29,13 +20,15 @@ from pydantic.utils import (
     all_identical,
     deep_update,
     get_model,
-    import_string,
     lenient_issubclass,
-    path_type,
     smart_deepcopy,
     to_lower_camel,
     unique_list,
 )
+from pydantic._internal._validators import import_string
+from pydantic.color import Color
+from pydantic.dataclasses import dataclass
+from pydantic.fields import Undefined
 
 try:
     import devtools
@@ -48,27 +41,70 @@ def test_import_module():
 
 
 def test_import_module_invalid():
-    with pytest.raises(ImportError) as exc_info:
+    with pytest.raises(PydanticCustomError, match='Invalid python path: "xx" doesn\'t look like a module path'):
         import_string('xx')
-    assert exc_info.value.args[0] == '"xx" doesn\'t look like a module path'
 
 
 def test_import_no_attr():
-    with pytest.raises(ImportError) as exc_info:
+    with pytest.raises(PydanticCustomError, match='Module "os" does not define a "foobar" attribute'):
         import_string('os.foobar')
-    assert exc_info.value.args[0] == 'Module "os" does not define a "foobar" attribute'
+
+
+def foobar(a, b, c=4):
+    pass
+
+
+T = TypeVar('T')
+
+
+class LoggedVar(Generic[T]):
+    def get(self) -> T:
+        ...
 
 
 @pytest.mark.parametrize(
-    'value,expected', ((str, 'str'), ('string', 'str'), (Union[str, int], 'Union[str, int]'), (list, 'list'))
+    'value,expected',
+    [
+        (str, 'str'),
+        ('foobar', 'str'),
+        (Union[str, int], 'Union[str, int]'),
+        (list, 'list'),
+        (List, 'List'),
+        ([1, 2, 3], 'list'),
+        (List[Dict[str, int]], 'List[Dict[str, int]]'),
+        (Tuple[str, int, float], 'Tuple[str, int, float]'),
+        (Tuple[str, ...], 'Tuple[str, ...]'),
+        (Union[int, List[str], Tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
+        (foobar, 'foobar'),
+        (LoggedVar, 'LoggedVar'),
+        (LoggedVar(), 'LoggedVar'),
+    ],
 )
 def test_display_as_type(value, expected):
-    assert display_as_type(value) == expected
+    assert _repr.display_as_type(value) == expected
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason='generic aliases are not available in python < 3.9')
-def test_display_as_type_generic_alias():
-    assert display_as_type(list[[Union[str, int]]]) == 'list[[Union[str, int]]]'
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python 3.10 or higher')
+@pytest.mark.parametrize(
+    'value_gen,expected',
+    [
+        (lambda: str, 'str'),
+        (lambda: 'string', 'str'),
+        (lambda: str | int, 'Union[str, int]'),
+        (lambda: list, 'list'),
+        (lambda: List, 'List'),
+        (lambda: list[int], 'list[int]'),
+        (lambda: List[int], 'List[int]'),
+        (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
+        (lambda: list[Union[str, int]], 'list[Union[str, int]]'),
+        (lambda: list[str | int], 'list[Union[str, int]]'),
+        (lambda: LoggedVar[int], 'LoggedVar[int]'),
+        (lambda: LoggedVar[Dict[int, str]], 'LoggedVar[Dict[int, str]]'),
+    ],
+)
+def test_display_as_type_310(value_gen, expected):
+    value = value_gen()
+    assert _repr.display_as_type(value) == expected
 
 
 def test_lenient_issubclass():
@@ -205,17 +241,10 @@ def test_is_new_type():
     assert not is_new_type(str)
 
 
-def test_new_type_supertype():
-    new_type = NewType('new_type', str)
-    new_new_type = NewType('new_new_type', new_type)
-    assert new_type_supertype(new_type) == str
-    assert new_type_supertype(new_new_type) == str
-
-
 def test_pretty():
     class MyTestModel(BaseModel):
-        a = 1
-        b = [1, 2, 3]
+        a: int = 1
+        b: List[int] = [1, 2, 3]
 
     m = MyTestModel()
     assert m.__repr_name__() == 'MyTestModel'
@@ -259,31 +288,10 @@ def test_pretty_color():
 @pytest.mark.skipif(not devtools, reason='devtools not installed')
 def test_devtools_output():
     class MyTestModel(BaseModel):
-        a = 1
-        b = [1, 2, 3]
+        a: int = 1
+        b: List[int] = [1, 2, 3]
 
     assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'
-
-
-@pytest.mark.skipif(not devtools, reason='devtools not installed')
-def test_devtools_output_validation_error():
-    class Model(BaseModel):
-        a: int
-
-    with pytest.raises(ValueError) as exc_info:
-        Model()
-    assert devtools.pformat(exc_info.value) == (
-        'ValidationError(\n'
-        "    model='Model',\n"
-        '    errors=[\n'
-        '        {\n'
-        "            'loc': ('a',),\n"
-        "            'msg': 'field required',\n"
-        "            'type': 'value_error.missing',\n"
-        '        },\n'
-        '    ],\n'
-        ')'
-    )
 
 
 @pytest.mark.parametrize(
@@ -335,6 +343,7 @@ def test_undefined_copy():
     assert deepcopy(Undefined) is Undefined
 
 
+@pytest.mark.xfail(reason='not implemented')
 def test_get_model():
     class A(BaseModel):
         a: str
@@ -380,32 +389,6 @@ def test_all_literal_values():
     assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
 
 
-def test_path_type(tmp_path):
-    assert path_type(tmp_path) == 'directory'
-    file = tmp_path / 'foobar.txt'
-    file.write_text('hello')
-    assert path_type(file) == 'file'
-
-
-def test_path_type_unknown(tmp_path):
-    p = type(
-        'FakePath',
-        (),
-        {
-            'exists': lambda: True,
-            'is_dir': lambda: False,
-            'is_file': lambda: False,
-            'is_mount': lambda: False,
-            'is_symlink': lambda: False,
-            'is_block_device': lambda: False,
-            'is_char_device': lambda: False,
-            'is_fifo': lambda: False,
-            'is_socket': lambda: False,
-        },
-    )
-    assert path_type(p) == 'unknown'
-
-
 @pytest.mark.parametrize(
     'obj',
     (1, 1.0, '1', b'1', int, None, test_all_literal_values, len, test_all_literal_values.__code__, lambda: ..., ...),
@@ -413,13 +396,13 @@ def test_path_type_unknown(tmp_path):
 def test_smart_deepcopy_immutable_non_sequence(obj, mocker):
     # make sure deepcopy is not used
     # (other option will be to use obj.copy(), but this will produce error as none of given objects have this method)
-    mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)
+    mocker.patch('pydantic._internal._utils.deepcopy', side_effect=RuntimeError)
     assert smart_deepcopy(obj) is deepcopy(obj) is obj
 
 
 @pytest.mark.parametrize('empty_collection', (collection() for collection in BUILTIN_COLLECTIONS))
 def test_smart_deepcopy_empty_collection(empty_collection, mocker):
-    mocker.patch('pydantic.utils.deepcopy', side_effect=RuntimeError)  # make sure deepcopy is not used
+    mocker.patch('pydantic._internal._utils.deepcopy', side_effect=RuntimeError)  # make sure deepcopy is not used
     if not isinstance(empty_collection, (tuple, frozenset)):  # empty tuple or frozenset are always the same object
         assert smart_deepcopy(empty_collection) is not empty_collection
 
@@ -429,7 +412,7 @@ def test_smart_deepcopy_empty_collection(empty_collection, mocker):
 )
 def test_smart_deepcopy_collection(collection, mocker):
     expected_value = object()
-    mocker.patch('pydantic.utils.deepcopy', return_value=expected_value)
+    mocker.patch('pydantic._internal._utils.deepcopy', return_value=expected_value)
     assert smart_deepcopy(collection) is expected_value
 
 
@@ -462,33 +445,6 @@ def test_get_origin(input_value, output_value):
     if input_value is None:
         pytest.skip('Skipping undefined hint for this python version')
     assert get_origin(input_value) is output_value
-
-
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='get_args is only consistent for python >= 3.8')
-@pytest.mark.parametrize(
-    'input_value,output_value',
-    [
-        (conlist(str), (str,)),
-        (ConstrainedList, ()),
-        (List[str], (str,)),
-        (Dict[str, int], (str, int)),
-        (int, ()),
-        (Union[int, Union[T, int], str][int], (int, str)),
-        (Union[int, Tuple[T, int]][str], (int, Tuple[str, int])),
-        (Callable[[], T][int], ([], int)),
-        (Annotated[int, 10] if Annotated else None, (int, 10)),
-    ],
-)
-def test_get_args(input_value, output_value):
-    if input_value is None:
-        pytest.skip('Skipping undefined hint for this python version')
-    assert get_args(input_value) == output_value
-
-
-def test_resolve_annotations_no_module():
-    # TODO: is there a better test for this, can this case really happen?
-    fr = ForwardRef('Foo')
-    assert resolve_annotations({'Foo': ForwardRef('Foo')}, None) == {'Foo': fr}
 
 
 def test_all_identical():

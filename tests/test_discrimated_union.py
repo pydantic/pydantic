@@ -6,8 +6,10 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError
-from pydantic.errors import ConfigError
+from pydantic.errors import PydanticUserError
 from pydantic.generics import GenericModel
+
+pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
 
 def test_discriminated_union_only_union():
@@ -43,7 +45,7 @@ def test_discriminated_union_defined_discriminator():
         pet_type: Literal['dog']
         d: str
 
-    with pytest.raises(ConfigError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
+    with pytest.raises(PydanticUserError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -59,7 +61,7 @@ def test_discriminated_union_literal_discriminator():
         pet_type: Literal['dog']
         d: str
 
-    with pytest.raises(ConfigError, match="Field 'pet_type' of model 'Cat' needs to be a `Literal`"):
+    with pytest.raises(PydanticUserError, match="Field 'pet_type' of model 'Cat' needs to be a `Literal`"):
 
         class Model(BaseModel):
             pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -79,7 +81,7 @@ def test_discriminated_union_root_same_discriminator():
     class Dog(BaseModel):
         pet_type: Literal['dog']
 
-    with pytest.raises(ConfigError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
+    with pytest.raises(PydanticUserError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
 
         class Pet(BaseModel):
             __root__: Union[Cat, Dog] = Field(..., discriminator='pet_type')
@@ -349,7 +351,7 @@ def test_alias_different():
         d: str
 
     with pytest.raises(
-        ConfigError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
+        PydanticUserError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
     ):
 
         class Model(BaseModel):

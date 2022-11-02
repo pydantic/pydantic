@@ -28,57 +28,21 @@ from typing import (
 )
 from uuid import UUID
 
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, get_args, get_origin
 
-from .fields import (
-    MAPPING_LIKE_SHAPES,
-    SHAPE_DEQUE,
-    SHAPE_FROZENSET,
-    SHAPE_GENERIC,
-    SHAPE_ITERABLE,
-    SHAPE_LIST,
-    SHAPE_SEQUENCE,
-    SHAPE_SET,
-    SHAPE_SINGLETON,
-    SHAPE_TUPLE,
-    SHAPE_TUPLE_ELLIPSIS,
-    FieldInfo,
-    ModelField,
-)
-from .json import pydantic_encoder
-from .networks import AnyUrl, EmailStr
-from .types import (
-    ConstrainedDecimal,
-    ConstrainedFloat,
-    ConstrainedFrozenSet,
-    ConstrainedInt,
-    ConstrainedList,
-    ConstrainedSet,
-    SecretBytes,
-    SecretStr,
-    StrictBytes,
-    StrictStr,
-    conbytes,
-    condecimal,
-    confloat,
-    confrozenset,
-    conint,
-    conlist,
-    conset,
-    constr,
-)
-from .typing import (
+from ._internal._typing_extra import (
     all_literal_values,
-    get_args,
-    get_origin,
-    get_sub_types,
     is_callable_type,
     is_literal_type,
     is_namedtuple,
     is_none_type,
-    is_union,
+    origin_is_union,
 )
-from .utils import ROOT_KEY, get_model, lenient_issubclass
+from ._internal._utils import ROOT_KEY, get_model, lenient_issubclass
+from .fields import FieldInfo
+from .json import pydantic_encoder
+from .networks import AnyUrl, EmailStr
+from .types import SecretBytes, SecretStr, StrictBytes, StrictStr, conbytes, condecimal, confloat, conint, constr
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -89,6 +53,7 @@ default_ref_template = '#/definitions/{model}'
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
+ModelField = Any
 
 
 def _apply_modify_schema(
@@ -449,15 +414,7 @@ def field_type_schema(
     definitions = {}
     nested_models: Set[str] = set()
     f_schema: Dict[str, Any]
-    if field.shape in {
-        SHAPE_LIST,
-        SHAPE_TUPLE_ELLIPSIS,
-        SHAPE_SEQUENCE,
-        SHAPE_SET,
-        SHAPE_FROZENSET,
-        SHAPE_ITERABLE,
-        SHAPE_DEQUE,
-    }:
+    if field.shape in {'SHAPES_TODO'}:
         items_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -469,10 +426,10 @@ def field_type_schema(
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
         f_schema = {'type': 'array', 'items': items_schema}
-        if field.shape in {SHAPE_SET, SHAPE_FROZENSET}:
+        if field.shape in {'SHAPE_SET', 'SHAPE_FROZENSET'}:
             f_schema['uniqueItems'] = True
 
-    elif field.shape in MAPPING_LIKE_SHAPES:
+    elif field.shape in {'MAPPING_LIKE_SHAPES'}:
         f_schema = {'type': 'object'}
         key_field = cast(ModelField, field.key_field)
         regex = getattr(key_field.type_, 'regex', None)
@@ -493,7 +450,7 @@ def field_type_schema(
         elif items_schema:
             # The dict values are not simply Any, so they need a schema
             f_schema['additionalProperties'] = items_schema
-    elif field.shape == SHAPE_TUPLE or (field.shape == SHAPE_GENERIC and not issubclass(field.type_, BaseModel)):
+    elif field.shape == 'SHAPE_TUPLE' or (field.shape == 'SHAPE_GENERIC' and not issubclass(field.type_, BaseModel)):
         sub_schema = []
         sub_fields = cast(List[ModelField], field.sub_fields)
         for sf in sub_fields:
@@ -510,7 +467,7 @@ def field_type_schema(
             sub_schema.append(sf_schema)
 
         sub_fields_len = len(sub_fields)
-        if field.shape == SHAPE_GENERIC:
+        if field.shape == 'SHAPE_GENERIC':
             all_of_schemas = sub_schema[0] if sub_fields_len == 1 else {'type': 'array', 'items': sub_schema}
             f_schema = {'allOf': [all_of_schemas]}
         else:
@@ -522,7 +479,7 @@ def field_type_schema(
             if sub_fields_len >= 1:
                 f_schema['items'] = sub_schema
     else:
-        assert field.shape in {SHAPE_SINGLETON, SHAPE_GENERIC}, field.shape
+        assert field.shape in {'SHAPE_SINGLETON', 'SHAPE_GENERIC'}, field.shape
         f_schema, f_definitions, f_nested_models = field_singleton_schema(
             field,
             by_alias=by_alias,
@@ -537,7 +494,7 @@ def field_type_schema(
 
     # check field type to avoid repeated calls to the same __modify_schema__ method
     if field.type_ != field.outer_type_:
-        if field.shape == SHAPE_GENERIC:
+        if field.shape == 'SHAPE_GENERIC':
             field_type = field.type_
         else:
             field_type = field.outer_type_
@@ -633,11 +590,11 @@ def model_type_schema(
         nested_models.update(f_nested_models)
         if by_alias:
             properties[f.alias] = f_schema
-            if f.required:
+            if f.is_required():
                 required.append(f.alias)
         else:
             properties[k] = f_schema
-            if f.required:
+            if f.is_required():
                 required.append(k)
     if ROOT_KEY in properties:
         out_schema = properties[ROOT_KEY]
@@ -715,8 +672,11 @@ def field_singleton_sub_fields_schema(
 
             for discriminator_value, sub_field in field.sub_fields_mapping.items():
                 # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
-                if is_union(get_origin(sub_field.type_)):
-                    sub_models = get_sub_types(sub_field.type_)
+                if origin_is_union(get_origin(sub_field.type_)):
+                    # this all needs rewriting to use the pydantic-core schema,
+                    # I'm just leaving something here to keep flake8 and mypy happy
+                    # sub_models = get_sub_types(sub_field.type_)
+                    sub_models = sub_field.type_
                     discriminator_models_refs[discriminator_value] = {
                         model_name_map[sub_model]: get_schema_ref(
                             model_name_map[sub_model], ref_prefix, ref_template, False
@@ -958,7 +918,7 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 
     return ModelField(
         name=field.name,
-        type_=Union[tuple(distinct_literals)],  # type: ignore
+        type_=Union[tuple(distinct_literals)],
         class_validators=field.class_validators,
         model_config=field.model_config,
         default=field.default,
@@ -985,7 +945,7 @@ def encode_default(dft: Any) -> Any:
         return pydantic_encoder(dft)
 
 
-_map_types_constraint: Dict[Any, Callable[..., type]] = {int: conint, float: confloat, Decimal: condecimal}
+_map_types_constraint: Dict[Any, Any] = {int: conint, float: confloat, Decimal: condecimal}
 
 
 def get_annotation_from_field_info(
@@ -1031,7 +991,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)
-            or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
+            # or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
         ):
             return type_
         origin = get_origin(type_)
@@ -1043,29 +1003,29 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
 
             if origin is Annotated:
                 return go(args[0])
-            if is_union(origin):
+            if origin_is_union(origin):
                 return Union[tuple(go(a) for a in args)]  # type: ignore
 
-            if issubclass(origin, List) and (
-                field_info.min_items is not None
-                or field_info.max_items is not None
-                or field_info.unique_items is not None
-            ):
-                used_constraints.update({'min_items', 'max_items', 'unique_items'})
-                return conlist(
-                    go(args[0]),
-                    min_items=field_info.min_items,
-                    max_items=field_info.max_items,
-                    unique_items=field_info.unique_items,
-                )
+            # if issubclass(origin, List) and (
+            #     field_info.min_items is not None
+            #     or field_info.max_items is not None
+            #     or field_info.unique_items is not None
+            # ):
+            #     used_constraints.update({'min_items', 'max_items', 'unique_items'})
+            #     return conlist(
+            #         go(args[0]),
+            #         min_items=field_info.min_items,
+            #         max_items=field_info.max_items,
+            #         unique_items=field_info.unique_items,
+            #     )
 
-            if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
-
-            if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items is not None):
-                used_constraints.update({'min_items', 'max_items'})
-                return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            # if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
+            #     used_constraints.update({'min_items', 'max_items'})
+            #     return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
+            #
+            # if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items isnotNone):
+            #     used_constraints.update({'min_items', 'max_items'})
+            #     return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
 
             for t in (Tuple, List, Set, FrozenSet, Sequence):
                 if issubclass(origin, t):  # type: ignore
@@ -1104,12 +1064,12 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             elif issubclass(type_, numeric_types) and not issubclass(
                 type_,
                 (
-                    ConstrainedInt,
-                    ConstrainedFloat,
-                    ConstrainedDecimal,
-                    ConstrainedList,
-                    ConstrainedSet,
-                    ConstrainedFrozenSet,
+                    # ConstrainedInt,
+                    # ConstrainedFloat,
+                    # ConstrainedDecimal,
+                    # ConstrainedList,
+                    # ConstrainedSet,
+                    # ConstrainedFrozenSet,
                     bool,
                 ),
             ):

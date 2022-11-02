@@ -7,8 +7,10 @@ from typing import Dict, List, Optional, Tuple, Union
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigError, Extra, Field, ValidationError, errors, validator
-from pydantic.class_validators import make_generic_validator, root_validator
+from pydantic import BaseModel, Extra, Field, PydanticUserError, ValidationError, errors, validator
+from pydantic.validator_functions import root_validator
+
+pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
 
 def test_simple():
@@ -149,32 +151,36 @@ def test_validate_pre_error():
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
 
 
-class ValidateAssignmentModel(BaseModel):
-    a: int = 4
-    b: str = ...
-    c: int = 0
+@pytest.fixture(scope='session', name='ValidateAssignmentModel')
+def validate_assignment_model_fixture():
+    class ValidateAssignmentModel(BaseModel):
+        a: int = 4
+        b: str = ...
+        c: int = 0
 
-    @validator('b')
-    def b_length(cls, v, values, **kwargs):
-        if 'a' in values and len(v) < values['a']:
-            raise ValueError('b too short')
-        return v
+        @validator('b')
+        def b_length(cls, v, values, **kwargs):
+            if 'a' in values and len(v) < values['a']:
+                raise ValueError('b too short')
+            return v
 
-    @validator('c')
-    def double_c(cls, v):
-        return v * 2
+        @validator('c')
+        def double_c(cls, v):
+            return v * 2
 
-    class Config:
-        validate_assignment = True
-        extra = Extra.allow
+        class Config:
+            validate_assignment = True
+            extra = Extra.allow
+
+    return ValidateAssignmentModel
 
 
-def test_validating_assignment_ok():
+def test_validating_assignment_ok(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello')
     assert p.b == 'hello'
 
 
-def test_validating_assignment_fail():
+def test_validating_assignment_fail(ValidateAssignmentModel):
     with pytest.raises(ValidationError):
         ValidateAssignmentModel(a=10, b='hello')
 
@@ -183,7 +189,7 @@ def test_validating_assignment_fail():
         p.b = 'x'
 
 
-def test_validating_assignment_value_change():
+def test_validating_assignment_value_change(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', c=2)
     assert p.c == 4
 
@@ -193,7 +199,7 @@ def test_validating_assignment_value_change():
     assert p.c == 6
 
 
-def test_validating_assignment_extra():
+def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
 
@@ -204,7 +210,7 @@ def test_validating_assignment_extra():
     assert p.extra_field == 'bye'
 
 
-def test_validating_assignment_dict():
+def test_validating_assignment_dict(ValidateAssignmentModel):
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
     assert exc_info.value.errors() == [
@@ -273,7 +279,7 @@ def test_classmethod():
 
 
 def test_duplicates():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -295,7 +301,7 @@ def test_duplicates():
 
 
 def test_use_bare():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -308,7 +314,7 @@ def test_use_bare():
 
 
 def test_use_no_fields():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -418,7 +424,7 @@ def test_wildcard_validator_error():
 
 
 def test_invalid_field():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: str
@@ -673,9 +679,9 @@ def test_validator_always_post_optional():
 def test_validator_bad_fields_throws_configerror():
     """
     Attempts to create a validator with fields set as a list of strings,
-    rather than just multiple string args. Expects ConfigError to be raised.
+    rather than just multiple string args. Expects PydanticUserError to be raised.
     """
-    with pytest.raises(ConfigError, match='validator fields should be passed as separate string args.'):
+    with pytest.raises(PydanticUserError, match='validator fields should be passed as separate string args.'):
 
         class Model(BaseModel):
             a: str
@@ -720,84 +726,6 @@ def test_pre_called_once():
 
     assert Model(a=['1', '2', '3']).a == (1, 2, 3)
     assert check_calls == 1
-
-
-@pytest.mark.parametrize(
-    'fields,result',
-    [
-        (['val'], '_v_'),
-        (['foobar'], '_v_'),
-        (['val', 'field'], '_v_,_field_'),
-        (['val', 'config'], '_v_,_config_'),
-        (['val', 'values'], '_v_,_values_'),
-        (['val', 'field', 'config'], '_v_,_field_,_config_'),
-        (['val', 'field', 'values'], '_v_,_field_,_values_'),
-        (['val', 'config', 'values'], '_v_,_config_,_values_'),
-        (['val', 'field', 'values', 'config'], '_v_,_field_,_values_,_config_'),
-        (['cls', 'val'], '_cls_,_v_'),
-        (['cls', 'foobar'], '_cls_,_v_'),
-        (['cls', 'val', 'field'], '_cls_,_v_,_field_'),
-        (['cls', 'val', 'config'], '_cls_,_v_,_config_'),
-        (['cls', 'val', 'values'], '_cls_,_v_,_values_'),
-        (['cls', 'val', 'field', 'config'], '_cls_,_v_,_field_,_config_'),
-        (['cls', 'val', 'field', 'values'], '_cls_,_v_,_field_,_values_'),
-        (['cls', 'val', 'config', 'values'], '_cls_,_v_,_config_,_values_'),
-        (['cls', 'val', 'field', 'values', 'config'], '_cls_,_v_,_field_,_values_,_config_'),
-    ],
-)
-def test_make_generic_validator(fields, result):
-    exec(f"""def testing_function({', '.join(fields)}): return {' + "," + '.join(fields)}""")
-    func = locals()['testing_function']
-    validator = make_generic_validator(func)
-    assert validator.__qualname__ == 'testing_function'
-    assert validator.__name__ == 'testing_function'
-    # args: cls, v, values, field, config
-    assert validator('_cls_', '_v_', '_values_', '_field_', '_config_') == result
-
-
-def test_make_generic_validator_kwargs():
-    def test_validator(v, **kwargs):
-        return ', '.join(f'{k}: {v}' for k, v in kwargs.items())
-
-    validator = make_generic_validator(test_validator)
-    assert validator.__name__ == 'test_validator'
-    assert validator('_cls_', '_v_', '_vs_', '_f_', '_c_') == 'values: _vs_, field: _f_, config: _c_'
-
-
-def test_make_generic_validator_invalid():
-    def test_validator(v, foobar):
-        return foobar
-
-    with pytest.raises(ConfigError) as exc_info:
-        make_generic_validator(test_validator)
-    assert ': (v, foobar), should be: (value, values, config, field)' in str(exc_info.value)
-
-
-def test_make_generic_validator_cls_kwargs():
-    def test_validator(cls, v, **kwargs):
-        return ', '.join(f'{k}: {v}' for k, v in kwargs.items())
-
-    validator = make_generic_validator(test_validator)
-    assert validator.__name__ == 'test_validator'
-    assert validator('_cls_', '_v_', '_vs_', '_f_', '_c_') == 'values: _vs_, field: _f_, config: _c_'
-
-
-def test_make_generic_validator_cls_invalid():
-    def test_validator(cls, v, foobar):
-        return foobar
-
-    with pytest.raises(ConfigError) as exc_info:
-        make_generic_validator(test_validator)
-    assert ': (cls, v, foobar), should be: (cls, value, values, config, field)' in str(exc_info.value)
-
-
-def test_make_generic_validator_self():
-    def test_validator(self, v):
-        return v
-
-    with pytest.raises(ConfigError) as exc_info:
-        make_generic_validator(test_validator)
-    assert ': (self, v), "self" not permitted as first argument, should be: (cls, value' in str(exc_info.value)
 
 
 def test_assert_raises_validation_error():
@@ -909,7 +837,7 @@ def test_root_validator_pre():
 
 
 def test_root_validator_repeat():
-    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+    with pytest.raises(errors.PydanticUserError, match='duplicate validator function'):
 
         class Model(BaseModel):
             a: int = 1
@@ -924,7 +852,7 @@ def test_root_validator_repeat():
 
 
 def test_root_validator_repeat2():
-    with pytest.raises(errors.ConfigError, match='duplicate validator function'):
+    with pytest.raises(errors.PydanticUserError, match='duplicate validator function'):
 
         class Model(BaseModel):
             a: int = 1
@@ -940,7 +868,7 @@ def test_root_validator_repeat2():
 
 def test_root_validator_self():
     with pytest.raises(
-        errors.ConfigError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
+        errors.PydanticUserError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
     ):
 
         class Model(BaseModel):
@@ -952,7 +880,7 @@ def test_root_validator_self():
 
 
 def test_root_validator_extra():
-    with pytest.raises(errors.ConfigError) as exc_info:
+    with pytest.raises(errors.PydanticUserError) as exc_info:
 
         class Model(BaseModel):
             a: int = 1
@@ -1061,7 +989,7 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
 
 @pytest.fixture
 def reset_tracked_validators():
-    from pydantic.class_validators import _FUNCS
+    from pydantic.validator_functions import _FUNCS
 
     original_tracked_validators = set(_FUNCS)
     yield
@@ -1073,7 +1001,7 @@ def reset_tracked_validators():
 def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_validators):
     duplication_count = int(not allow_1) + int(not allow_2) + int(include_root and not allow_3)
     if duplication_count > 1:
-        with pytest.raises(ConfigError) as exc_info:
+        with pytest.raises(PydanticUserError) as exc_info:
             declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
         assert str(exc_info.value).startswith('duplicate validator function')
     else:
@@ -1329,3 +1257,95 @@ def test_overridden_root_validators(mocker):
 
     B(x='pika')
     assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
+
+
+def test_validating_assignment_pre_root_validator_fail():
+    class Model(BaseModel):
+        current_value: float = Field(..., alias='current')
+        max_value: float
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator(pre=True)
+        def values_are_not_string(cls, values):
+            if any(isinstance(x, str) for x in values.values()):
+                raise ValueError('values cannot be a string')
+            return values
+
+    m = Model(current=100, max_value=200)
+    with pytest.raises(ValidationError) as exc_info:
+        m.current_value = '100'
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('__root__',),
+            'msg': 'values cannot be a string',
+            'type': 'value_error',
+        }
+    ]
+
+
+def test_validating_assignment_post_root_validator_fail():
+    class Model(BaseModel):
+        current_value: float = Field(..., alias='current')
+        max_value: float
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def current_lessequal_max(cls, values):
+            current_value = values.get('current_value')
+            max_value = values.get('max_value')
+            if current_value > max_value:
+                raise ValueError('current_value cannot be greater than max_value')
+            return values
+
+        @root_validator(skip_on_failure=True)
+        def current_lessequal_300(cls, values):
+            current_value = values.get('current_value')
+            if current_value > 300:
+                raise ValueError('current_value cannot be greater than 300')
+            return values
+
+        @root_validator
+        def current_lessequal_500(cls, values):
+            current_value = values.get('current_value')
+            if current_value > 500:
+                raise ValueError('current_value cannot be greater than 500')
+            return values
+
+    m = Model(current=100, max_value=200)
+    m.current_value = '100'
+    with pytest.raises(ValidationError) as exc_info:
+        m.current_value = 1000
+    assert exc_info.value.errors() == [
+        {'loc': ('__root__',), 'msg': 'current_value cannot be greater than max_value', 'type': 'value_error'},
+        {
+            'loc': ('__root__',),
+            'msg': 'current_value cannot be greater than 500',
+            'type': 'value_error',
+        },
+    ]
+
+
+def test_root_validator_many_values_change():
+    """It should run root_validator on assignment and update ALL concerned fields"""
+
+    class Rectangle(BaseModel):
+        width: float
+        height: float
+        area: float = None
+
+        class Config:
+            validate_assignment = True
+
+        @root_validator
+        def set_area(cls, values):
+            values['area'] = values['width'] * values['height']
+            return values
+
+    r = Rectangle(width=1, height=1)
+    assert r.area == 1
+    r.height = 5
+    assert r.area == 5

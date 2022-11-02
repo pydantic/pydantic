@@ -6,6 +6,8 @@ import pytest
 from pydantic import ValidationError, root_validator, validator
 from pydantic.dataclasses import dataclass
 
+pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
+
 
 def test_simple():
     @dataclass

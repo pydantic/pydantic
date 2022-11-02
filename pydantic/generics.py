@@ -17,27 +17,31 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Annotated
+import typing_extensions
 
-from .class_validators import gather_all_validators
-from .fields import DeferredType
+from ._internal import _repr, _typing_extra, _utils
 from .main import BaseModel, create_model
-from .types import JsonWrapper
-from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .utils import LimitedDict, all_identical, lenient_issubclass
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
-_generic_types_cache: LimitedDict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = LimitedDict()
+_generic_types_cache: _utils.LimitedDict[Tuple[Type[Any], Any, Tuple[Any, ...]], Type[BaseModel]] = _utils.LimitedDict()
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
-_assigned_parameters: LimitedDict[Type[Any], Parametrization] = LimitedDict()
+_assigned_parameters: _utils.LimitedDict[Type[Any], Parametrization] = _utils.LimitedDict()
+
+
+class DeferredType:
+    """
+    TODO remove
+    """
+
+    pass
 
 
 class GenericModel(BaseModel):
@@ -64,7 +68,7 @@ class GenericModel(BaseModel):
         """
 
         def _cache_key(_params: Any) -> Tuple[Type[GenericModelT], Any, Tuple[Any, ...]]:
-            return cls, _params, get_args(_params)
+            return cls, _params, typing_extensions.get_args(_params)
 
         cached = _generic_types_cache.get(_cache_key(params))
         if cached is not None:
@@ -81,17 +85,18 @@ class GenericModel(BaseModel):
         check_parameters_count(cls, params)
         # Build map from generic typevars to passed params
         typevars_map: Dict[TypeVarType, Type[Any]] = dict(zip(cls.__parameters__, params))
-        if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
+        if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             return cls  # if arguments are equal to parameters it's the same object
 
         # Create new model with original model as parent inserting fields with DeferredType.
         model_name = cls.__concrete_name__(params)
-        validators = gather_all_validators(cls)
+        raise RuntimeError('TODO gather_all_validators')
+        # validators = gather_all_validators(cls)
 
-        type_hints = get_all_type_hints(cls).items()
-        instance_type_hints = {k: v for k, v in type_hints if get_origin(v) is not ClassVar}
+        type_hints = _typing_extra.get_type_hints(cls, include_extras=True).items()
+        instance_type_hints = {k: v for k, v in type_hints if typing_extensions.get_origin(v) is not ClassVar}
 
-        fields = {k: (DeferredType(), cls.__fields__[k].field_info) for k in instance_type_hints if k in cls.__fields__}
+        fields = {k: (DeferredType(), cls.__fields__[k]) for k in instance_type_hints if k in cls.__fields__}
 
         model_module, called_globally = get_caller_frame_info()
         created_model = cast(
@@ -101,7 +106,7 @@ class GenericModel(BaseModel):
                 __module__=model_module or cls.__module__,
                 __base__=(cls,) + tuple(cls.__parameterized_bases__(typevars_map)),
                 __config__=None,
-                __validators__=validators,
+                # __validators__=validators,
                 __cls_kwargs__=None,
                 **fields,
             ),
@@ -154,7 +159,7 @@ class GenericModel(BaseModel):
 
         This method can be overridden to achieve a custom naming scheme for GenericModels.
         """
-        param_names = [display_as_type(param) for param in params]
+        param_names = [_repr.display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 
@@ -238,25 +243,25 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     if not type_map:
         return type_
 
-    type_args = get_args(type_)
-    origin_type = get_origin(type_)
+    type_args = typing_extensions.get_args(type_)
+    origin_type = typing_extensions.get_origin(type_)
 
-    if origin_type is Annotated:
+    if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
-        return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
+        return typing_extensions.Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
     if type_args:
         resolved_type_args = tuple(replace_types(arg, type_map) for arg in type_args)
-        if all_identical(type_args, resolved_type_args):
+        if _utils.all_identical(type_args, resolved_type_args):
             # If all arguments are the same, there is no need to modify the
             # type or create a new object at all
             return type_
         if (
             origin_type is not None
-            and isinstance(type_, typing_base)
-            and not isinstance(origin_type, typing_base)
+            and isinstance(type_, _typing_extra.typing_base)
+            and not isinstance(origin_type, _typing_extra.typing_base)
             and getattr(type_, '_name', None) is not None
         ):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
@@ -268,10 +273,10 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases
-    if not origin_type and lenient_issubclass(type_, GenericModel) and not type_.__concrete__:
+    if not origin_type and _utils.lenient_issubclass(type_, GenericModel) and not type_.__concrete__:
         type_args = type_.__parameters__
         resolved_type_args = tuple(replace_types(t, type_map) for t in type_args)
-        if all_identical(type_args, resolved_type_args):
+        if _utils.all_identical(type_args, resolved_type_args):
             return type_
         return type_[resolved_type_args]
 
@@ -279,15 +284,15 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     # `typing.Callable[[int, str], int]` is an example for this.
     if isinstance(type_, (List, list)):
         resolved_list = list(replace_types(element, type_map) for element in type_)
-        if all_identical(type_, resolved_list):
+        if _utils.all_identical(type_, resolved_list):
             return type_
         return resolved_list
 
-    # For JsonWrapperValue, need to handle its inner type to allow correct parsing
-    # of generic Json arguments like Json[T]
-    if not origin_type and lenient_issubclass(type_, JsonWrapper):
-        type_.inner_type = replace_types(type_.inner_type, type_map)
-        return type_
+    # # For JsonWrapperValue, need to handle its inner type to allow correct parsing
+    # # of generic Json arguments like Json[T]
+    # if not origin_type and _utils.lenient_issubclass(type_, JsonWrapper):
+    #     type_.inner_type = replace_types(type_.inner_type, type_map)
+    #     return type_
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
@@ -309,13 +314,17 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found."""
     if isinstance(v, TypeVar):
         yield v
-    elif hasattr(v, '__parameters__') and not get_origin(v) and lenient_issubclass(v, GenericModel):
+    elif (
+        hasattr(v, '__parameters__')
+        and not typing_extensions.get_origin(v)
+        and _utils.lenient_issubclass(v, GenericModel)
+    ):
         yield from v.__parameters__
     elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
     else:
-        args = get_args(v)
+        args = typing_extensions.get_args(v)
         for arg in args:
             yield from iter_contained_typevars(arg)
 
@@ -350,15 +359,13 @@ def _prepare_model_fields(
 
     for key, field in created_model.__fields__.items():
         if key not in fields:
-            assert field.type_.__class__ is not DeferredType
+            assert field.annotation.__class__ is not DeferredType
             # https://github.com/nedbat/coveragepy/issues/198
             continue  # pragma: no cover
 
-        assert field.type_.__class__ is DeferredType, field.type_.__class__
+        assert field.annotation.__class__ is DeferredType, field.annotation.__class__
 
         field_type_hint = instance_type_hints[key]
         concrete_type = replace_types(field_type_hint, typevars_map)
-        field.type_ = concrete_type
-        field.outer_type_ = concrete_type
-        field.prepare()
+        field.annotation = concrete_type
         created_model.__annotations__[key] = concrete_type

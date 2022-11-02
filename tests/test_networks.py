@@ -1,4 +1,5 @@
 import pytest
+from pydantic_core import PydanticCustomError
 
 from pydantic import (
     AmqpDsn,
@@ -6,8 +7,6 @@ from pydantic import (
     AnyUrl,
     BaseModel,
     CockroachDsn,
-    EmailError,
-    EmailStr,
     FileUrl,
     HttpUrl,
     KafkaDsn,
@@ -95,56 +94,56 @@ def test_any_url_success(value):
 
 
 @pytest.mark.parametrize(
-    'value,err_type,err_msg,err_ctx',
+    'value,err_kind,err_msg,err_ctx',
     [
-        ('http:///example.com/', 'value_error.url.host', 'URL host invalid', None),
-        ('https:///example.com/', 'value_error.url.host', 'URL host invalid', None),
-        ('http://.example.com:8000/foo', 'value_error.url.host', 'URL host invalid', None),
-        ('https://example.org\\', 'value_error.url.host', 'URL host invalid', None),
-        ('https://exampl$e.org', 'value_error.url.host', 'URL host invalid', None),
-        ('http://??', 'value_error.url.host', 'URL host invalid', None),
-        ('http://.', 'value_error.url.host', 'URL host invalid', None),
-        ('http://..', 'value_error.url.host', 'URL host invalid', None),
+        ('http:///example.com/', 'url.host', 'URL host invalid', None),
+        ('https:///example.com/', 'url.host', 'URL host invalid', None),
+        ('http://.example.com:8000/foo', 'url.host', 'URL host invalid', None),
+        ('https://example.org\\', 'url.host', 'URL host invalid', None),
+        ('https://exampl$e.org', 'url.host', 'URL host invalid', None),
+        ('http://??', 'url.host', 'URL host invalid', None),
+        ('http://.', 'url.host', 'URL host invalid', None),
+        ('http://..', 'url.host', 'URL host invalid', None),
         (
             'https://example.org more',
-            'value_error.url.extra',
+            'url.extra',
             "URL invalid, extra characters found after valid URL: ' more'",
-            {'extra': ' more'},
+            {'extra': "' more'"},
         ),
-        ('$https://example.org', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        ('../icons/logo.gif', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        ('abc', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        ('..', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        ('/', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        ('+http://example.com/', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        ('ht*tp://example.com/', 'value_error.url.scheme', 'invalid or missing URL scheme', None),
-        (' ', 'value_error.any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
-        ('', 'value_error.any_str.min_length', 'ensure this value has at least 1 characters', {'limit_value': 1}),
-        (None, 'type_error.none.not_allowed', 'none is not an allowed value', None),
+        ('$https://example.org', 'url.scheme', 'invalid or missing URL scheme', None),
+        ('../icons/logo.gif', 'url.scheme', 'invalid or missing URL scheme', None),
+        ('abc', 'url.scheme', 'invalid or missing URL scheme', None),
+        ('..', 'url.scheme', 'invalid or missing URL scheme', None),
+        ('/', 'url.scheme', 'invalid or missing URL scheme', None),
+        ('+http://example.com/', 'url.scheme', 'invalid or missing URL scheme', None),
+        ('ht*tp://example.com/', 'url.scheme', 'invalid or missing URL scheme', None),
+        (' ', 'string_too_short', 'String should have at least 1 characters', {'min_length': 1}),
+        ('', 'string_too_short', 'String should have at least 1 characters', {'min_length': 1}),
+        (None, 'string_type', 'Input should be a valid string', None),
         (
             'http://2001:db8::ff00:42:8329',
-            'value_error.url.extra',
+            'url.extra',
             "URL invalid, extra characters found after valid URL: ':db8::ff00:42:8329'",
-            {'extra': ':db8::ff00:42:8329'},
+            {'extra': "':db8::ff00:42:8329'"},
         ),
-        ('http://[192.168.1.1]:8329', 'value_error.url.host', 'URL host invalid', None),
-        ('http://example.com:99999', 'value_error.url.port', 'URL port invalid, port cannot exceed 65535', None),
+        ('http://[192.168.1.1]:8329', 'url.host', 'URL host invalid', None),
+        ('http://example.com:99999', 'url.port', 'URL port invalid, port cannot exceed 65535', None),
         (
             'http://example##',
-            'value_error.url.extra',
+            'url.extra',
             "URL invalid, extra characters found after valid URL: '#'",
-            {'extra': '#'},
+            {'extra': "'#'"},
         ),
         (
             'http://example/##',
-            'value_error.url.extra',
+            'url.extra',
             "URL invalid, extra characters found after valid URL: '#'",
-            {'extra': '#'},
+            {'extra': "'#'"},
         ),
-        ('file:///foo/bar', 'value_error.url.host', 'URL host invalid', None),
+        ('file:///foo/bar', 'url.host', 'URL host invalid', None),
     ],
 )
-def test_any_url_invalid(value, err_type, err_msg, err_ctx):
+def test_any_url_invalid(value, err_kind, err_msg, err_ctx):
     class Model(BaseModel):
         v: AnyUrl
 
@@ -153,7 +152,7 @@ def test_any_url_invalid(value, err_type, err_msg, err_ctx):
     assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
     error = exc_info.value.errors()[0]
     # debug(error)
-    assert error['type'] == err_type, value
+    assert error['type'] == err_kind, value
     assert error['msg'] == err_msg, value
     assert error.get('ctx') == err_ctx, value
 
@@ -298,27 +297,27 @@ def test_http_url_success(value):
 
 
 @pytest.mark.parametrize(
-    'value,err_type,err_msg,err_ctx',
+    'value,err_kind,err_msg,err_ctx',
     [
         (
             'ftp://example.com/',
-            'value_error.url.scheme',
+            'url.scheme',
             'URL scheme not permitted',
-            {'allowed_schemes': {'https', 'http'}},
+            {'allowed_schemes': 'http, https'},
         ),
-        ('http://foobar/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
-        ('http://localhost/', 'value_error.url.host', 'URL host invalid, top level domain required', None),
-        ('https://example.123', 'value_error.url.host', 'URL host invalid, top level domain required', None),
-        ('https://example.ab123', 'value_error.url.host', 'URL host invalid, top level domain required', None),
+        ('http://foobar/', 'url.host', 'URL host invalid, top level domain required', None),
+        ('http://localhost/', 'url.host', 'URL host invalid, top level domain required', None),
+        ('https://example.123', 'url.host', 'URL host invalid, top level domain required', None),
+        ('https://example.ab123', 'url.host', 'URL host invalid, top level domain required', None),
         (
             'x' * 2084,
-            'value_error.any_str.max_length',
-            'ensure this value has at most 2083 characters',
-            {'limit_value': 2083},
+            'string_too_long',
+            'String should have at most 2083 characters',
+            {'max_length': 2083},
         ),
     ],
 )
-def test_http_url_invalid(value, err_type, err_msg, err_ctx):
+def test_http_url_invalid(value, err_kind, err_msg, err_ctx):
     class Model(BaseModel):
         v: HttpUrl
 
@@ -326,7 +325,7 @@ def test_http_url_invalid(value, err_type, err_msg, err_ctx):
         Model(v=value)
     assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
     error = exc_info.value.errors()[0]
-    assert error['type'] == err_type, value
+    assert error['type'] == err_kind, value
     assert error['msg'] == err_msg, value
     assert error.get('ctx') == err_ctx, value
 
@@ -443,31 +442,57 @@ def test_postgres_dsns(dsn):
     (
         (
             'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+            {
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user:pass@host1.db.net:4321,/foo/bar:5432/app',
+            },
         ),
         (
             'postgres://user:pass@host1.db.net,/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+            {
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user:pass@host1.db.net,/app',
+            },
         ),
         (
             'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+            {
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user:pass@/foo/bar:5432,host1.db.net:4321/app',
+            },
         ),
         (
             'postgres://localhost:5432/app',
-            {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'},
+            {
+                'type': 'url.userinfo',
+                'loc': ('a',),
+                'msg': 'userinfo required in URL but missing',
+                'input': 'postgres://localhost:5432/app',
+            },
         ),
         (
             'postgres://user@/foo/bar:5432/app',
-            {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'},
+            {
+                'type': 'url.host',
+                'loc': ('a',),
+                'msg': 'URL host invalid',
+                'input': 'postgres://user@/foo/bar:5432/app',
+            },
         ),
         (
             'http://example.org',
             {
+                'type': 'url.scheme',
                 'loc': ('a',),
                 'msg': 'URL scheme not permitted',
-                'type': 'value_error.url.scheme',
-                'ctx': {'allowed_schemes': PostgresDsn.allowed_schemes},
+                'input': 'http://example.org',
+                'ctx': {'allowed_schemes': ', '.join(sorted(PostgresDsn.allowed_schemes))},
             },
         ),
     ),
@@ -526,18 +551,17 @@ def test_cockroach_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
-    assert exc_info.value.json().startswith('[')
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='cockroachdb://localhost:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'userinfo required in URL but missing', 'type': 'value_error.url.userinfo'}
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a='cockroachdb://user@/foo/bar:5432/app')
-    error = exc_info.value.errors()[0]
-    assert error == {'loc': ('a',), 'msg': 'URL host invalid', 'type': 'value_error.url.host'}
+    # error = exc_info.value.errors()[0]
+    # insert_assert(error)
+    #
+    # with pytest.raises(ValidationError) as exc_info:
+    #     Model(a='cockroachdb://user@/foo/bar:5432/app')
+    # error = exc_info.value.errors()[0]
+    # insert_assert(error)
 
 
 def test_amqp_dsns():
@@ -554,7 +578,7 @@ def test_amqp_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     # Password is not required for AMQP protocol
     m = Model(a='amqp://localhost:1234/app')
@@ -588,7 +612,7 @@ def test_redis_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     # Password is not required for Redis protocol
     m = Model(a='redis://localhost:1234/app')
@@ -617,7 +641,7 @@ def test_mongodb_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     # Password is not required for MongoDB protocol
     m = Model(a='mongodb://localhost:1234/app')
@@ -647,7 +671,7 @@ def test_kafka_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'value_error.url.scheme'
+    assert exc_info.value.errors()[0]['type'] == 'url.scheme'
 
     m = Model(a='kafka://kafka3:9093')
     assert m.a.user is None
@@ -728,12 +752,6 @@ def test_son():
 
     m = Model(v='http://foo@example.net')
     assert m.json() == '{"v": "http://foo@example.net"}'
-    assert m.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'v': {'title': 'V', 'minLength': 1, 'maxLength': 2083, 'type': 'string', 'format': 'uri'}},
-        'required': ['v'],
-    }
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -805,7 +823,7 @@ def test_address_valid(value, name, email):
     ],
 )
 def test_address_invalid(value, reason):
-    with pytest.raises(EmailError, match=f'value is not a valid email address: {reason or ""}'):
+    with pytest.raises(PydanticCustomError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 
 
@@ -813,15 +831,6 @@ def test_address_invalid(value, reason):
 def test_email_validator_not_installed():
     with pytest.raises(ImportError):
         validate_email('s@muelcolvin.com')
-
-
-@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
-def test_email_str():
-    class Model(BaseModel):
-        v: EmailStr
-
-    assert Model(v=EmailStr('foo@example.org')).v == 'foo@example.org'
-    assert Model(v='foo@example.org').v == 'foo@example.org'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

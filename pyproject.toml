@@ -49,7 +49,11 @@ classifiers = [
     'Topic :: Internet',
 ]
 requires-python = '>=3.7'
-dependencies = [ 'typing-extensions>=4.1.0' ]
+dependencies = [
+    'typing-extensions>=4.1.0',
+    'pydantic-core>=0.6.0',
+    'annotated-types>=0.4.0',
+]
 optional-dependencies = { email = ['email-validator>=1.0.3'] }
 dynamic = ['version', 'readme']
 
@@ -80,9 +84,10 @@ substitutions = [
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
+xfail_strict = true
 filterwarnings = [
     'error',
-    'ignore:path is deprecated.*:DeprecationWarning:certifi',
+    'ignore:path is deprecated.*:DeprecationWarning:',
 ]
 
 # configuring https://github.com/pydantic/hooky
@@ -115,7 +120,6 @@ precision = 2
 exclude_lines = [
     'pragma: no cover',
     'raise NotImplementedError',
-    'raise NotImplemented',
     'if TYPE_CHECKING:',
     '@overload',
 ]
@@ -143,6 +147,8 @@ force_grid_wrap = 0
 combine_as_imports = true
 
 [tool.mypy]
+# temporarily ignore some files
+exclude = 'pydantic/(schema|_hypothesis_plugin)\.py'
 python_version = '3.10'
 show_error_codes = true
 follow_imports = 'silent'
@@ -157,8 +163,6 @@ disallow_subclassing_any = true
 disallow_incomplete_defs = true
 disallow_untyped_decorators = true
 disallow_untyped_calls = true
-
-# for strict mypy: (this is the tricky one :-))
 disallow_untyped_defs = true
 
 # remaining arguments from `mypy --strict` which cause errors

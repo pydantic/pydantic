@@ -2,7 +2,6 @@ import itertools
 import math
 import os
 import re
-import sys
 import uuid
 from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
@@ -11,11 +10,11 @@ from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
     Any,
+    Callable,
     Deque,
     Dict,
     FrozenSet,
     Iterable,
-    Iterator,
     List,
     MutableSet,
     NewType,
@@ -28,8 +27,11 @@ from typing import (
 )
 from uuid import UUID
 
+import annotated_types
 import pytest
-from typing_extensions import Literal, TypedDict
+from dirty_equals import AnyThing, HasRepr
+from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
+from typing_extensions import Annotated, Literal, TypedDict
 
 from pydantic import (
     UUID1,
@@ -38,13 +40,11 @@ from pydantic import (
     UUID5,
     BaseModel,
     ByteSize,
-    ConfigError,
     DirectoryPath,
     EmailStr,
     Field,
     FilePath,
     FiniteFloat,
-    FutureDate,
     Json,
     NameEmail,
     NegativeFloat,
@@ -53,10 +53,8 @@ from pydantic import (
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
-    PastDate,
     PositiveFloat,
     PositiveInt,
-    PyObject,
     SecretBytes,
     SecretStr,
     StrictBool,
@@ -73,78 +71,58 @@ from pydantic import (
     conlist,
     conset,
     constr,
-    create_model,
-    errors,
     validator,
 )
-from pydantic.types import SecretField
-from pydantic.typing import NoneType
+from pydantic.types import ImportString, SecretField, Strict
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
 
-
-class ConBytesModel(BaseModel):
-    v: conbytes(max_length=10) = b'foobar'
+# TODO add back tests for Iterator
 
 
-def foo():
-    return 42
+@pytest.fixture(scope='session', name='ConBytesModel')
+def con_bytes_model_fixture():
+    class ConBytesModel(BaseModel):
+        v: conbytes(max_length=10) = b'foobar'
+
+    return ConBytesModel
 
 
-def test_constrained_bytes_good():
+def test_constrained_bytes_good(ConBytesModel):
     m = ConBytesModel(v=b'short')
     assert m.v == b'short'
 
 
-def test_constrained_bytes_default():
+def test_constrained_bytes_default(ConBytesModel):
     m = ConBytesModel()
     assert m.v == b'foobar'
 
 
-def test_constrained_bytes_too_long():
+def test_strict_raw_type():
+    class Model(BaseModel):
+        v: Annotated[str, Strict]
+
+    assert Model(v='foo').v == 'foo'
+    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
+        Model(v=b'fo')
+
+
+def test_constrained_bytes_too_long(ConBytesModel):
     with pytest.raises(ValidationError) as exc_info:
         ConBytesModel(v=b'this is too long')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'bytes_too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'msg': 'Data should have at most 10 bytes',
+            'input': b'this is too long',
+            'ctx': {'max_length': 10},
         }
     ]
-
-
-@pytest.mark.parametrize(
-    'to_upper, value, result',
-    [
-        (True, b'abcd', b'ABCD'),
-        (False, b'aBcD', b'aBcD'),
-    ],
-)
-def test_constrained_bytes_upper(to_upper, value, result):
-    class Model(BaseModel):
-        v: conbytes(to_upper=to_upper)
-
-    m = Model(v=value)
-    assert m.v == result
-
-
-@pytest.mark.parametrize(
-    'to_lower, value, result',
-    [
-        (True, b'ABCD', b'abcd'),
-        (False, b'ABCD', b'ABCD'),
-    ],
-)
-def test_constrained_bytes_lower(to_lower, value, result):
-    class Model(BaseModel):
-        v: conbytes(to_lower=to_lower)
-
-    m = Model(v=value)
-    assert m.v == result
 
 
 def test_constrained_bytes_strict_true():
@@ -152,7 +130,8 @@ def test_constrained_bytes_strict_true():
         v: conbytes(strict=True)
 
     assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    with pytest.raises(ValidationError):
+        Model(v=bytearray('foobar', 'utf-8'))
 
     with pytest.raises(ValidationError):
         Model(v='foostring')
@@ -171,8 +150,12 @@ def test_constrained_bytes_strict_false():
     assert Model(v=b'foobar').v == b'foobar'
     assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
     assert Model(v='foostring').v == b'foostring'
-    assert Model(v=42).v == b'42'
-    assert Model(v=0.42).v == b'0.42'
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
 
 
 def test_constrained_bytes_strict_default():
@@ -182,8 +165,12 @@ def test_constrained_bytes_strict_default():
     assert Model(v=b'foobar').v == b'foobar'
     assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
     assert Model(v='foostring').v == b'foostring'
-    assert Model(v=42).v == b'42'
-    assert Model(v=0.42).v == b'0.42'
+
+    with pytest.raises(ValidationError):
+        Model(v=42)
+
+    with pytest.raises(ValidationError):
+        Model(v=0.42)
 
 
 def test_constrained_list_good():
@@ -204,91 +191,65 @@ def test_constrained_list_default():
 
 def test_constrained_list_too_long():
     class ConListModelMax(BaseModel):
-        v: conlist(int, max_items=10) = []
+        v: conlist(int, max_length=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelMax(v=list(str(i) for i in range(11)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 10 items',
-            'type': 'value_error.list.max_items',
-            'ctx': {'limit_value': 10},
+            'msg': 'List should have at most 10 items after validation, not 11',
+            'input': ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            'ctx': {'field_type': 'List', 'max_length': 10, 'actual_length': 11},
         }
     ]
 
 
 def test_constrained_list_too_short():
     class ConListModelMin(BaseModel):
-        v: conlist(int, min_items=1)
+        v: conlist(int, min_length=1)
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelMin(v=[])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('v',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 1},
-        }
-    ]
-
-
-def test_constrained_list_not_unique_hashable_items():
-    class ConListModelUnique(BaseModel):
-        v: conlist(int, unique_items=True)
-
-    with pytest.raises(ValidationError) as exc_info:
-        ConListModelUnique(v=[1, 1, 2, 2, 2, 3])
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('v',),
-            'msg': 'the list has duplicated items',
-            'type': 'value_error.list.unique_items',
-        }
-    ]
-
-
-def test_constrained_list_not_unique_unhashable_items():
-    class ConListModelUnique(BaseModel):
-        v: conlist(Set[int], unique_items=True)
-
-    m = ConListModelUnique(v=[{1}, {2}, {3}])
-    assert m.v == [{1}, {2}, {3}]
-
-    with pytest.raises(ValidationError) as exc_info:
-        ConListModelUnique(v=[{1}, {1}, {2}, {2}, {2}, {3}])
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('v',),
-            'msg': 'the list has duplicated items',
-            'type': 'value_error.list.unique_items',
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
         }
     ]
 
 
 def test_constrained_list_optional():
     class Model(BaseModel):
-        req: Optional[conlist(str, min_items=1)] = ...
-        opt: Optional[conlist(str, min_items=1)]
+        req: Optional[conlist(str, min_length=1)]
+        opt: Optional[conlist(str, min_length=1)] = None
 
     assert Model(req=None).dict() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=[], opt=[])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('req',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
         },
         {
+            'type': 'too_short',
             'loc': ('opt',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
         },
     ]
 
@@ -297,7 +258,7 @@ def test_constrained_list_optional():
 
 def test_constrained_list_constraints():
     class ConListModelBoth(BaseModel):
-        v: conlist(int, min_items=7, max_items=11)
+        v: conlist(int, min_length=7, max_length=11)
 
     m = ConListModelBoth(v=list(range(7)))
     assert m.v == list(range(7))
@@ -307,29 +268,36 @@ def test_constrained_list_constraints():
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelBoth(v=list(range(6)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('v',),
-            'msg': 'ensure this value has at least 7 items',
-            'type': 'value_error.list.min_items',
-            'ctx': {'limit_value': 7},
+            'msg': 'List should have at least 7 items after validation, not 6',
+            'input': [0, 1, 2, 3, 4, 5],
+            'ctx': {'field_type': 'List', 'min_length': 7, 'actual_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelBoth(v=list(range(12)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 11 items',
-            'type': 'value_error.list.max_items',
-            'ctx': {'limit_value': 11},
+            'msg': 'List should have at most 11 items after validation, not 12',
+            'input': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+            'ctx': {'field_type': 'List', 'max_length': 11, 'actual_length': 12},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModelBoth(v=1)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+    ]
 
 
 def test_constrained_list_item_type_fails():
@@ -338,63 +306,68 @@ def test_constrained_list_item_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         ConListModel(v=['a', 'b', 'c'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
+        },
     ]
 
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_items=2, max_items=4, unique_items=True)
-        bar: conlist(str, min_items=1, max_items=4, unique_items=False) = None
+        foo: List[int] = Field(..., min_length=2, max_length=4)
+        bar: conlist(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
 
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+    msg = r'List should have at least 2 items after validation, not 1 \[type=too_short,'
+    with pytest.raises(ValidationError, match=msg):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+    msg = r'List should have at most 4 items after validation, not 5 \[type=too_long,'
+    with pytest.raises(ValidationError, match=msg):
         Model(foo=list(range(5)))
-
-    with pytest.raises(ValidationError, match='the list has duplicated items'):
-        Model(foo=[1, 1, 2, 2])
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {
-                'title': 'Foo',
-                'type': 'array',
-                'items': {'type': 'integer'},
-                'minItems': 2,
-                'maxItems': 4,
-                'uniqueItems': True,
-            },
-            'bar': {
-                'title': 'Bar',
-                'type': 'array',
-                'items': {'type': 'string'},
-                'minItems': 1,
-                'maxItems': 4,
-                'uniqueItems': False,
-            },
-        },
-        'required': ['foo'],
-    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=[1, 'x', 'y'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('foo', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('foo', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list/array', 'input': 1}
+    ]
 
 
 def test_conlist_wrong_type_default():
@@ -433,58 +406,65 @@ def test_constrained_set_default_invalid():
 
 def test_constrained_set_too_long():
     class ConSetModelMax(BaseModel):
-        v: conset(int, max_items=10) = []
+        v: conset(int, max_length=10) = []
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelMax(v={str(i) for i in range(11)})
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 10 items',
-            'type': 'value_error.set.max_items',
-            'ctx': {'limit_value': 10},
+            'msg': 'Set should have at most 10 items after validation, not 11',
+            'input': {'4', '3', '10', '9', '5', '6', '1', '8', '0', '7', '2'},
+            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': 11},
         }
     ]
 
 
 def test_constrained_set_too_short():
     class ConSetModelMin(BaseModel):
-        v: conset(int, min_items=1)
+        v: conset(int, min_length=1)
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelMin(v=[])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('v',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'Set should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
         }
     ]
 
 
 def test_constrained_set_optional():
     class Model(BaseModel):
-        req: Optional[conset(str, min_items=1)] = ...
-        opt: Optional[conset(str, min_items=1)]
+        req: Optional[conset(str, min_length=1)]
+        opt: Optional[conset(str, min_length=1)] = None
 
     assert Model(req=None).dict() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=set(), opt=set())
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('req',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'Set should have at least 1 item after validation, not 0',
+            'input': set(),
+            'ctx': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
         },
         {
+            'type': 'too_short',
             'loc': ('opt',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'Set should have at least 1 item after validation, not 0',
+            'input': set(),
+            'ctx': {'field_type': 'Set', 'min_length': 1, 'actual_length': 0},
         },
     ]
 
@@ -493,7 +473,7 @@ def test_constrained_set_optional():
 
 def test_constrained_set_constraints():
     class ConSetModelBoth(BaseModel):
-        v: conset(int, min_items=7, max_items=11)
+        v: conset(int, min_length=7, max_length=11)
 
     m = ConSetModelBoth(v=set(range(7)))
     assert m.v == set(range(7))
@@ -503,29 +483,36 @@ def test_constrained_set_constraints():
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelBoth(v=set(range(6)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('v',),
-            'msg': 'ensure this value has at least 7 items',
-            'type': 'value_error.set.min_items',
-            'ctx': {'limit_value': 7},
+            'msg': 'Set should have at least 7 items after validation, not 6',
+            'input': {0, 1, 2, 3, 4, 5},
+            'ctx': {'field_type': 'Set', 'min_length': 7, 'actual_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelBoth(v=set(range(12)))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 11 items',
-            'type': 'value_error.set.max_items',
-            'ctx': {'limit_value': 11},
+            'msg': 'Set should have at most 11 items after validation, not 12',
+            'input': {0, 8, 1, 9, 2, 10, 3, 7, 11, 4, 6, 5},
+            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': 12},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModelBoth(v=1)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'set_type', 'loc': ('v',), 'msg': 'Input should be a valid set', 'input': 1}
+    ]
 
 
 def test_constrained_set_item_type_fails():
@@ -534,66 +521,73 @@ def test_constrained_set_item_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         ConSetModel(v=['a', 'b', 'c'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
+        },
     ]
 
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(..., min_items=2, max_items=4)
-        bar: conset(str, min_items=1, max_items=4) = None
+        foo: Set[int] = Field(..., min_length=2, max_length=4)
+        bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
     assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+    with pytest.raises(ValidationError, match='Set should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not 5'):
         Model(foo=list(range(5)))
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {
-                'title': 'Foo',
-                'type': 'array',
-                'items': {'type': 'integer'},
-                'uniqueItems': True,
-                'minItems': 2,
-                'maxItems': 4,
-            },
-            'bar': {
-                'title': 'Bar',
-                'type': 'array',
-                'items': {'type': 'string'},
-                'uniqueItems': True,
-                'minItems': 1,
-                'maxItems': 4,
-            },
-        },
-        'required': ['foo'],
-    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=[1, 'x', 'y'])
-    errors = exc_info.value.errors()
-    assert len(errors) == 2
-    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
+        },
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'set_type', 'loc': ('foo',), 'msg': 'Input should be a valid set', 'input': 1}
+    ]
 
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Set[int] = None
+        foo: Optional[Set[int]] = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -601,8 +595,8 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(..., min_items=2, max_items=4)
-        bar: confrozenset(str, min_items=1, max_items=4) = None
+        foo: FrozenSet[int] = Field(..., min_length=2, max_length=4)
+        bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
     assert m.dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
@@ -611,46 +605,35 @@ def test_confrozenset():
 
     assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
-    with pytest.raises(ValidationError, match='ensure this value has at least 2 items'):
+    with pytest.raises(ValidationError, match='Frozenset should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 4 items'):
+    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not 5'):
         Model(foo=list(range(5)))
-
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'foo': {
-                'title': 'Foo',
-                'type': 'array',
-                'items': {'type': 'integer'},
-                'uniqueItems': True,
-                'minItems': 2,
-                'maxItems': 4,
-            },
-            'bar': {
-                'title': 'Bar',
-                'type': 'array',
-                'items': {'type': 'string'},
-                'uniqueItems': True,
-                'minItems': 1,
-                'maxItems': 4,
-            },
-        },
-        'required': ['foo'],
-    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=[1, 'x', 'y'])
-    errors = exc_info.value.errors()
-    assert len(errors) == 2
-    assert all(error['msg'] == 'value is not a valid integer' for error in errors)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('foo', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
+        },
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=1)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('foo',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+        {'type': 'frozen_set_type', 'loc': ('foo',), 'msg': 'Input should be a valid frozenset', 'input': 1}
     ]
 
 
@@ -664,55 +647,64 @@ def test_confrozenset_not_required():
 
 def test_constrained_frozenset_optional():
     class Model(BaseModel):
-        req: Optional[confrozenset(str, min_items=1)] = ...
-        opt: Optional[confrozenset(str, min_items=1)]
+        req: Optional[confrozenset(str, min_length=1)]
+        opt: Optional[confrozenset(str, min_length=1)] = None
 
     assert Model(req=None).dict() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=frozenset(), opt=frozenset())
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'too_short',
             'loc': ('req',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.frozenset.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'Frozenset should have at least 1 item after validation, not 0',
+            'input': frozenset(),
+            'ctx': {'field_type': 'Frozenset', 'min_length': 1, 'actual_length': 0},
         },
         {
+            'type': 'too_short',
             'loc': ('opt',),
-            'msg': 'ensure this value has at least 1 items',
-            'type': 'value_error.frozenset.min_items',
-            'ctx': {'limit_value': 1},
+            'msg': 'Frozenset should have at least 1 item after validation, not 0',
+            'input': frozenset(),
+            'ctx': {'field_type': 'Frozenset', 'min_length': 1, 'actual_length': 0},
         },
     ]
 
     assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
 
 
-class ConStringModel(BaseModel):
-    v: constr(max_length=10) = 'foobar'
+@pytest.fixture(scope='session', name='ConStringModel')
+def constring_model_fixture():
+    class ConStringModel(BaseModel):
+        v: constr(max_length=10) = 'foobar'
+
+    return ConStringModel
 
 
-def test_constrained_str_good():
+def test_constrained_str_good(ConStringModel):
     m = ConStringModel(v='short')
     assert m.v == 'short'
 
 
-def test_constrained_str_default():
+def test_constrained_str_default(ConStringModel):
     m = ConStringModel()
     assert m.v == 'foobar'
 
 
-def test_constrained_str_too_long():
+def test_constrained_str_too_long(ConStringModel):
     with pytest.raises(ValidationError) as exc_info:
         ConStringModel(v='this is too long')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'msg': 'String should have at most 10 characters',
+            'input': 'this is too long',
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -755,89 +747,123 @@ def test_constrained_str_max_length_0():
     assert m.v == ''
     with pytest.raises(ValidationError) as exc_info:
         Model(v='qwe')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_long',
             'loc': ('v',),
-            'msg': 'ensure this value has at most 0 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 0},
+            'msg': 'String should have at most 0 characters',
+            'input': 'qwe',
+            'ctx': {'max_length': 0},
         }
     ]
 
 
-def test_module_import():
+@pytest.mark.parametrize(
+    'annotation',
+    [
+        ImportString[Callable[[Any], Any]],
+        Annotated[Callable[[Any], Any], ImportString],
+    ],
+)
+def test_string_import_callable(annotation):
     class PyObjectModel(BaseModel):
-        module: PyObject = 'os.path'
+        callable: annotation
 
-    m = PyObjectModel()
-    assert m.module == os.path
+    m = PyObjectModel(callable='math.cos')
+    assert m.callable == math.cos
+
+    m = PyObjectModel(callable=math.cos)
+    assert m.callable == math.cos
 
     with pytest.raises(ValidationError) as exc_info:
-        PyObjectModel(module='foobar')
+        PyObjectModel(callable='foobar')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('module',),
-            'msg': 'ensure this value contains valid import path or valid callable: '
-            '"foobar" doesn\'t look like a module path',
-            'type': 'type_error.pyobject',
-            'ctx': {'error_message': '"foobar" doesn\'t look like a module path'},
+            'type': 'import_error',
+            'loc': ('callable',),
+            'msg': 'Invalid python path: "foobar" doesn\'t look like a module path',
+            'input': 'foobar',
+            'ctx': {'error': '"foobar" doesn\'t look like a module path'},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        PyObjectModel(module='os.missing')
+        PyObjectModel(callable='os.missing')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'loc': ('module',),
-            'msg': 'ensure this value contains valid import path or valid callable: '
-            'Module "os" does not define a "missing" attribute',
-            'type': 'type_error.pyobject',
-            'ctx': {'error_message': 'Module "os" does not define a "missing" attribute'},
+            'type': 'import_error',
+            'loc': ('callable',),
+            'msg': 'Invalid python path: Module "os" does not define a "missing" attribute',
+            'input': 'os.missing',
+            'ctx': {'error': 'Module "os" does not define a "missing" attribute'},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        PyObjectModel(module=[1, 2, 3])
+        PyObjectModel(callable='os.path')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'loc': ('module',),
-            'msg': 'ensure this value contains valid import path or valid callable: '
-            'value is neither a valid import path not a valid callable',
-            'type': 'type_error.pyobject',
-            'ctx': {'error_message': 'value is neither a valid import path not a valid callable'},
-        }
+        {'type': 'callable_type', 'loc': ('callable',), 'msg': 'Input should be callable', 'input': os.path}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        PyObjectModel(callable=[1, 2, 3])
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'callable_type', 'loc': ('callable',), 'msg': 'Input should be callable', 'input': [1, 2, 3]}
     ]
 
 
-def test_pyobject_none():
+def test_string_import_any():
     class PyObjectModel(BaseModel):
-        module: PyObject = None
+        thing: ImportString
 
-    m = PyObjectModel()
-    assert m.module is None
+    assert PyObjectModel(thing='math.cos').dict() == {'thing': math.cos}
+    assert PyObjectModel(thing='os.path').dict() == {'thing': os.path}
+    assert PyObjectModel(thing=[1, 2, 3]).dict() == {'thing': [1, 2, 3]}
 
 
-def test_pyobject_callable():
+@pytest.mark.parametrize(
+    'annotation',
+    [
+        ImportString[Annotated[float, annotated_types.Ge(3), annotated_types.Le(4)]],
+        Annotated[float, annotated_types.Ge(3), annotated_types.Le(4), ImportString],
+    ],
+)
+def test_string_import_constraints(annotation):
     class PyObjectModel(BaseModel):
-        foo: PyObject = foo
+        thing: annotation
 
-    m = PyObjectModel()
-    assert m.foo is foo
-    assert m.foo() == 42
+    assert PyObjectModel(thing='math.pi').dict() == {'thing': pytest.approx(3.141592654)}
+    with pytest.raises(ValidationError, match='type=greater_than_equal'):
+        PyObjectModel(thing='math.e')
 
 
-class CheckModel(BaseModel):
-    bool_check = True
-    str_check = 's'
-    bytes_check = b's'
-    int_check = 1
-    float_check = 1.0
-    uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
-    decimal_check: Decimal = Decimal('42.24')
+def test_decimal():
+    class Model(BaseModel):
+        v: Decimal
 
-    class Config:
-        anystr_strip_whitespace = True
-        max_anystr_length = 10
+    m = Model(v='1.234')
+    assert m.v == Decimal('1.234')
+    assert isinstance(m.v, Decimal)
+    assert m.dict() == {'v': Decimal('1.234')}
+
+
+@pytest.fixture(scope='session', name='CheckModel')
+def check_model_fixture():
+    class CheckModel(BaseModel):
+        bool_check: bool = True
+        str_check: constr(strip_whitespace=True, max_length=10) = 's'
+        bytes_check: bytes = b's'
+        int_check: int = 1
+        float_check: float = 1.0
+        uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
+        decimal_check: condecimal(allow_inf_nan=False) = Decimal('42.24')
+
+    return CheckModel
 
 
 class BoolCastable:
@@ -897,22 +923,22 @@ class BoolCastable:
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
         ('str_check', b'  s  ', 's'),
-        ('str_check', 1, '1'),
+        ('str_check', 1, ValidationError),
         ('str_check', 'x' * 11, ValidationError),
         ('str_check', b'x' * 11, ValidationError),
         ('bytes_check', 's', b's'),
-        ('bytes_check', '  s  ', b's'),
+        ('bytes_check', '  s  ', b'  s  '),
         ('bytes_check', b's', b's'),
-        ('bytes_check', b'  s  ', b's'),
-        ('bytes_check', 1, b'1'),
+        ('bytes_check', 1, ValidationError),
         ('bytes_check', bytearray('xx', encoding='utf8'), b'xx'),
-        ('bytes_check', True, b'True'),
-        ('bytes_check', False, b'False'),
+        ('bytes_check', True, ValidationError),
+        ('bytes_check', False, ValidationError),
         ('bytes_check', {}, ValidationError),
-        ('bytes_check', 'x' * 11, ValidationError),
-        ('bytes_check', b'x' * 11, ValidationError),
+        ('bytes_check', 'x' * 11, b'x' * 11),
+        ('bytes_check', b'x' * 11, b'x' * 11),
         ('int_check', 1, 1),
-        ('int_check', 1.9, 1),
+        ('int_check', 1.0, 1),
+        ('int_check', 1.9, ValidationError),
         ('int_check', '1', 1),
         ('int_check', '1.9', ValidationError),
         ('int_check', b'1', 1),
@@ -933,14 +959,14 @@ class BoolCastable:
         ('uuid_check', 123, ValidationError),
         ('decimal_check', 42.24, Decimal('42.24')),
         ('decimal_check', '42.24', Decimal('42.24')),
-        ('decimal_check', b'42.24', Decimal('42.24')),
+        ('decimal_check', b'42.24', ValidationError),
         ('decimal_check', '  42.24  ', Decimal('42.24')),
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
         ('decimal_check', 'NaN', ValidationError),
     ],
 )
-def test_default_validators(field, value, result):
+def test_default_validators(field, value, result, CheckModel):
     kwargs = {field: value}
     if result == ValidationError:
         with pytest.raises(ValidationError):
@@ -949,131 +975,159 @@ def test_default_validators(field, value, result):
         assert CheckModel(**kwargs).dict()[field] == result
 
 
-class StrModel(BaseModel):
-    str_check: str
+@pytest.fixture(scope='session', name='StrModel')
+def str_model_fixture():
+    class StrModel(BaseModel):
+        str_check: Annotated[str, annotated_types.Len(5, 10)]
 
-    class Config:
-        min_anystr_length = 5
-        max_anystr_length = 10
+    return StrModel
 
 
-def test_string_too_long():
+def test_string_too_long(StrModel):
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x' * 150)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_long',
             'loc': ('str_check',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'msg': 'String should have at most 10 characters',
+            'input': 'x' * 150,
+            'ctx': {'max_length': 10},
         }
     ]
 
 
-def test_string_too_short():
+def test_string_too_short(StrModel):
     with pytest.raises(ValidationError) as exc_info:
         StrModel(str_check='x')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_short',
             'loc': ('str_check',),
-            'msg': 'ensure this value has at least 5 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 5},
+            'msg': 'String should have at least 5 characters',
+            'input': 'x',
+            'ctx': {'min_length': 5},
         }
     ]
 
 
-class DatetimeModel(BaseModel):
-    dt: datetime = ...
-    date_: date = ...
-    time_: time = ...
-    duration: timedelta = ...
+@pytest.fixture(scope='session', name='DatetimeModel')
+def datetime_model_fixture():
+    class DatetimeModel(BaseModel):
+        dt: datetime
+        date_: date
+        time_: time
+        duration: timedelta
+
+    return DatetimeModel
 
 
-def test_datetime_successful():
-    m = DatetimeModel(dt='2017-10-5T19:47:07', date_=1_494_012_000, time_='10:20:30.400', duration='15:30.0001')
+def test_datetime_successful(DatetimeModel):
+    m = DatetimeModel(dt='2017-10-05T19:47:07', date_=1493942400, time_='10:20:30.400', duration='00:15:30.0001')
     assert m.dt == datetime(2017, 10, 5, 19, 47, 7)
     assert m.date_ == date(2017, 5, 5)
     assert m.time_ == time(10, 20, 30, 400_000)
     assert m.duration == timedelta(minutes=15, seconds=30, microseconds=100)
 
 
-def test_datetime_errors():
+def test_datetime_errors(DatetimeModel):
     with pytest.raises(ValueError) as exc_info:
-        DatetimeModel(dt='2017-13-5T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001 broken')
+        DatetimeModel(dt='2017-13-05T19:47:07', date_='XX1494012000', time_='25:20:30.400', duration='15:30.0001broken')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('dt',), 'msg': 'invalid datetime format', 'type': 'value_error.datetime'},
-        {'loc': ('date_',), 'msg': 'invalid date format', 'type': 'value_error.date'},
-        {'loc': ('time_',), 'msg': 'invalid time format', 'type': 'value_error.time'},
-        {'loc': ('duration',), 'msg': 'invalid duration format', 'type': 'value_error.duration'},
+        {
+            'type': 'datetime_parsing',
+            'loc': ('dt',),
+            'msg': 'Input should be a valid datetime, month value is outside expected range of 1-12',
+            'input': '2017-13-05T19:47:07',
+            'ctx': {'error': 'month value is outside expected range of 1-12'},
+        },
+        {
+            'type': 'date_from_datetime_parsing',
+            'loc': ('date_',),
+            'msg': 'Input should be a valid date or datetime, invalid character in year',
+            'input': 'XX1494012000',
+            'ctx': {'error': 'invalid character in year'},
+        },
+        {
+            'type': 'time_parsing',
+            'loc': ('time_',),
+            'msg': 'Input should be in a valid time format, hour value is outside expected range of 0-23',
+            'input': '25:20:30.400',
+            'ctx': {'error': 'hour value is outside expected range of 0-23'},
+        },
+        {
+            'type': 'time_delta_parsing',
+            'loc': ('duration',),
+            'msg': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
+            'input': '15:30.0001broken',
+            'ctx': {'error': 'unexpected extra characters at the end of the input'},
+        },
     ]
 
 
-class FruitEnum(str, Enum):
-    pear = 'pear'
-    banana = 'banana'
+@pytest.fixture(scope='session')
+def cooking_model():
+    class FruitEnum(str, Enum):
+        pear = 'pear'
+        banana = 'banana'
+
+    class ToolEnum(IntEnum):
+        spanner = 1
+        wrench = 2
+
+    class CookingModel(BaseModel):
+        fruit: FruitEnum = FruitEnum.pear
+        tool: ToolEnum = ToolEnum.spanner
+
+    return FruitEnum, ToolEnum, CookingModel
 
 
-class ToolEnum(IntEnum):
-    spanner = 1
-    wrench = 2
-
-
-class CookingModel(BaseModel):
-    fruit: FruitEnum = FruitEnum.pear
-    tool: ToolEnum = ToolEnum.spanner
-
-
-def test_enum_successful():
+def test_enum_successful(cooking_model):
+    FruitEnum, ToolEnum, CookingModel = cooking_model
     m = CookingModel(tool=2)
     assert m.fruit == FruitEnum.pear
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
-def test_enum_fails():
+def test_enum_fails(cooking_model):
+    FruitEnum, ToolEnum, CookingModel = cooking_model
     with pytest.raises(ValueError) as exc_info:
         CookingModel(tool=3)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'literal_error',
             'loc': ('tool',),
-            'msg': 'value is not a valid enumeration member; permitted: 1, 2',
-            'type': 'type_error.enum',
-            'ctx': {'enum_values': [ToolEnum.spanner, ToolEnum.wrench]},
+            'msg': 'Input should be 1 or 2',
+            'input': 3,
+            'ctx': {'expected': '1 or 2'},
         }
     ]
-    assert len(exc_info.value.json()) == 217
 
 
-def test_int_enum_successful_for_str_int():
+def test_int_enum_successful_for_str_int(cooking_model):
+    FruitEnum, ToolEnum, CookingModel = cooking_model
     m = CookingModel(tool='2')
     assert m.tool == ToolEnum.wrench
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
 def test_enum_type():
-    """it should validate any Enum"""
+    with pytest.raises(SchemaError, match='"expected" should have length > 0'):
 
-    class Model(BaseModel):
-        my_enum: Enum
-
-    Model(my_enum=FruitEnum.banana)
-    Model(my_enum=ToolEnum.wrench)
-    with pytest.raises(ValidationError):
-        Model(my_enum='banana')
+        class Model(BaseModel):
+            my_int_enum: Enum
 
 
 def test_int_enum_type():
-    """it should validate any IntEnum"""
+    with pytest.raises(SchemaError, match='"expected" should have length > 0'):
 
-    class Model(BaseModel):
-        my_int_enum: IntEnum
-
-    Model(my_int_enum=ToolEnum.wrench)
-    with pytest.raises(ValidationError):
-        Model(my_int_enum=FruitEnum.banana)
-    with pytest.raises(ValidationError):
-        Model(my_int_enum=2)
+        class Model(BaseModel):
+            my_int_enum: IntEnum
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -1081,9 +1135,8 @@ def test_string_success():
     class MoreStringsModel(BaseModel):
         str_strip_enabled: constr(strip_whitespace=True)
         str_strip_disabled: constr(strip_whitespace=False)
-        str_regex: constr(regex=r'^xxx\d{3}$') = ...  # noqa: F722
+        str_regex: constr(pattern=r'^xxx\d{3}$') = ...  # noqa: F722
         str_min_length: constr(min_length=5) = ...
-        str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
 
@@ -1092,14 +1145,12 @@ def test_string_success():
         str_strip_disabled='   xxx123   ',
         str_regex='xxx123',
         str_min_length='12345',
-        str_curtailed='123456',
         str_email='foobar@example.com  ',
         name_email='foo bar  <foobaR@example.com>',
     )
     assert m.str_strip_enabled == 'xxx123'
     assert m.str_strip_disabled == '   xxx123   '
     assert m.str_regex == 'xxx123'
-    assert m.str_curtailed == '12345'
     assert m.str_email == 'foobar@example.com'
     assert repr(m.name_email) == "NameEmail(name='foo bar', email='foobaR@example.com')"
     assert str(m.name_email) == 'foo bar <foobaR@example.com>'
@@ -1110,9 +1161,8 @@ def test_string_success():
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_fails():
     class MoreStringsModel(BaseModel):
-        str_regex: constr(regex=r'^xxx\d{3}$') = ...  # noqa: F722
+        str_regex: constr(pattern=r'^xxx\d{3}$') = ...  # noqa: F722
         str_min_length: constr(min_length=5) = ...
-        str_curtailed: constr(curtail_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
 
@@ -1120,39 +1170,43 @@ def test_string_fails():
         MoreStringsModel(
             str_regex='xxx123xxx',
             str_min_length='1234',
-            str_curtailed='123',  # doesn't fail
             str_email='foobar<@example.com',
             name_email='foobar @example.com',
         )
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_pattern_mismatch',
             'loc': ('str_regex',),
-            'msg': 'string does not match regex "^xxx\\d{3}$"',
-            'type': 'value_error.str.regex',
+            'msg': "String should match pattern '^xxx\\d{3}$'",
+            'input': 'xxx123xxx',
             'ctx': {'pattern': '^xxx\\d{3}$'},
         },
         {
+            'type': 'string_too_short',
             'loc': ('str_min_length',),
-            'msg': 'ensure this value has at least 5 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 5},
+            'msg': 'String should have at least 5 characters',
+            'input': '1234',
+            'ctx': {'min_length': 5},
         },
         {
+            'type': 'value_error',
             'loc': ('str_email',),
             'msg': (
-                'value is not a valid email address: The email address contains invalid characters before the @-sign: '
-                'LESS-THAN SIGN.'
+                'value is not a valid email address: The email address contains invalid '
+                'characters before the @-sign: LESS-THAN SIGN.'
             ),
-            'type': 'value_error.email',
+            'input': 'foobar<@example.com',
             'ctx': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
         },
         {
+            'type': 'value_error',
             'loc': ('name_email',),
             'msg': (
-                'value is not a valid email address: '
-                'The email address contains invalid characters before the @-sign: SPACE.'
+                'value is not a valid email address: The email address contains invalid characters '
+                'before the @-sign: SPACE.'
             ),
-            'type': 'value_error.email',
+            'input': 'foobar @example.com',
             'ctx': {'reason': 'The email address contains invalid characters before the @-sign: SPACE.'},
         },
     ]
@@ -1179,11 +1233,24 @@ def test_dict():
         v: dict
 
     assert Model(v={1: 10, 2: 20}).v == {1: 10, 2: 20}
-    assert Model(v=[(1, 2), (3, 4)]).v == {1: 2, 3: 4}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=[(1, 2), (3, 4)])
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'dict_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid dictionary',
+            'input': [(1, 2), (3, 4)],
+        }
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': [1, 2, 3]}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1191,9 +1258,8 @@ def test_dict():
     (
         ([1, 2, '3'], [1, 2, '3']),
         ((1, 2, '3'), [1, 2, '3']),
-        ({1, 2, '3'}, list({1, 2, '3'})),
         ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
-        ((deque((1, 2, 3)), list(deque((1, 2, 3))))),
+        (deque([1, 2, 3]), [1, 2, 3]),
     ),
 )
 def test_list_success(value, result):
@@ -1203,14 +1269,22 @@ def test_list_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
 def test_list_fails(value):
     class Model(BaseModel):
         v: list
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'list_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid list/array',
+            'input': value,
+        }
+    ]
 
 
 def test_ordered_dict():
@@ -1218,12 +1292,14 @@ def test_ordered_dict():
         v: OrderedDict
 
     assert Model(v=OrderedDict([(1, 10), (2, 20)])).v == OrderedDict([(1, 10), (2, 20)])
-    assert Model(v={1: 10, 2: 20}).v in (OrderedDict([(1, 10), (2, 20)]), OrderedDict([(2, 20), (1, 10)]))
-    assert Model(v=[(1, 2), (3, 4)]).v == OrderedDict([(1, 2), (3, 4)])
+    assert Model(v={1: 10, 2: 20}).v == OrderedDict([(1, 10), (2, 20)])
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, 3])
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': [1, 2, 3]}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1231,7 +1307,6 @@ def test_ordered_dict():
     (
         ([1, 2, '3'], (1, 2, '3')),
         ((1, 2, '3'), (1, 2, '3')),
-        ({1, 2, '3'}, tuple({1, 2, '3'})),
         ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
     ),
@@ -1243,14 +1318,17 @@ def test_tuple_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123'))
+@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
 def test_tuple_fails(value):
     class Model(BaseModel):
         v: tuple
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': value}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1272,13 +1350,34 @@ def test_tuple_variable_len_success(value, cls, result):
 @pytest.mark.parametrize(
     'value, cls, exc',
     [
-        (('a', 'b', [1, 2], 'c'), str, [{'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'}]),
+        (
+            ('a', 'b', [1, 2], 'c'),
+            str,
+            [
+                {
+                    'type': 'string_type',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid string',
+                    'input': [1, 2],
+                }
+            ],
+        ),
         (
             ('a', 'b', [1, 2], 'c', [3, 4]),
             str,
             [
-                {'loc': ('v', 2), 'msg': 'str type expected', 'type': 'type_error.str'},
-                {'loc': ('v', 4), 'msg': 'str type expected', 'type': 'type_error.str'},
+                {
+                    'type': 'string_type',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid string',
+                    'input': [1, 2],
+                },
+                {
+                    'type': 'string_type',
+                    'loc': ('v', 4),
+                    'msg': 'Input should be a valid string',
+                    'input': [3, 4],
+                },
             ],
         ),
     ],
@@ -1315,7 +1414,10 @@ def test_set_fails(value):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'set_type', 'loc': ('v',), 'msg': 'Input should be a valid set', 'input': value}
+    ]
 
 
 def test_list_type_fails():
@@ -1324,7 +1426,10 @@ def test_list_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': '123'}
+    ]
 
 
 def test_set_type_fails():
@@ -1333,7 +1438,10 @@ def test_set_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid set', 'type': 'type_error.set'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'set_type', 'loc': ('v',), 'msg': 'Input should be a valid set', 'input': '123'}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1341,8 +1449,8 @@ def test_set_type_fails():
     (
         (int, [1, 2, 3], [1, 2, 3]),
         (int, (1, 2, 3), (1, 2, 3)),
+        (int, range(5), [0, 1, 2, 3, 4]),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
-        (float, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
     ),
@@ -1354,54 +1462,86 @@ def test_sequence_success(cls, value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize(
-    'cls, value,result',
-    (
-        (int, (i for i in range(3)), iter([0, 1, 2])),
-        (float, (float(i) for i in range(3)), iter([0.0, 1.0, 2.0])),
-        (str, (str(i) for i in range(3)), iter(['0', '1', '2'])),
-    ),
-)
-def test_sequence_generator_success(cls, value, result):
-    class Model(BaseModel):
-        v: Sequence[cls]
-
-    validated = Model(v=value).v
-    assert isinstance(validated, Iterator)
-    assert list(validated) == list(result)
+def int_iterable():
+    i = 0
+    while True:
+        i += 1
+        yield str(i)
 
 
-def test_infinite_iterable():
+def str_iterable():
+    while True:
+        yield from 'foobarbaz'
+
+
+def test_infinite_iterable_int():
     class Model(BaseModel):
         it: Iterable[int]
-        b: int
 
-    def iterable():
-        i = 0
-        while True:
-            i += 1
-            yield i
+    m = Model(it=int_iterable())
 
-    m = Model(it=iterable(), b=3)
+    assert repr(m.it) == 'ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))'
 
-    assert m.b == 3
-    assert m.it
-
+    output = []
     for i in m.it:
-        assert i
+        output.append(i)
         if i == 10:
             break
+
+    assert output == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+    m = Model(it=[1, 2, 3])
+    assert list(m.it) == [1, 2, 3]
+
+    m = Model(it=str_iterable())
+    with pytest.raises(ValidationError) as exc_info:
+        next(m.it)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'f',
+        }
+    ]
+
+
+@pytest.mark.parametrize('type_annotation', (Iterable[Any], Iterable))
+def test_iterable_any(type_annotation):
+    class Model(BaseModel):
+        it: type_annotation
+
+    m = Model(it=int_iterable())
+
+    output = []
+    for i in m.it:
+        output.append(i)
+        if int(i) == 10:
+            break
+
+    assert output == ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+
+    m = Model(it=[1, '2', b'three'])
+    assert list(m.it) == [1, '2', b'three']
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(it=3)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
+    ]
 
 
 def test_invalid_iterable():
     class Model(BaseModel):
         it: Iterable[int]
-        b: int
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(it=3, b=3)
+        Model(it=3)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('it',), 'msg': 'value is not a valid iterable', 'type': 'type_error.iterable'}
+        {'type': 'iterable_type', 'loc': ('it',), 'msg': 'Input should be iterable', 'input': 3}
     ]
 
 
@@ -1411,20 +1551,8 @@ def test_infinite_iterable_validate_first():
         b: int
 
         @validator('it')
-        def infinite_first_int(cls, it, field):
-            first_value = next(it)
-            if field.sub_fields:
-                sub_field = field.sub_fields[0]
-                v, error = sub_field.validate(first_value, {}, loc='first_value')
-                if error:
-                    raise ValidationError([error], cls)
-            return itertools.chain([first_value], it)
-
-    def int_iterable():
-        i = 0
-        while True:
-            i += 1
-            yield i
+        def infinite_first_int(cls, it, **kwargs):
+            return itertools.chain([next(it)], it)
 
     m = Model(it=int_iterable(), b=3)
 
@@ -1436,14 +1564,35 @@ def test_infinite_iterable_validate_first():
         if i == 10:
             break
 
-    def str_iterable():
-        while True:
-            yield from 'foobarbaz'
-
     with pytest.raises(ValidationError) as exc_info:
         Model(it=str_iterable(), b=3)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('it', 'first_value'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('it', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'f',
+        }
+    ]
+
+
+def test_sequence_generator_fails():
+    class Model(BaseModel):
+        v: Sequence[int]
+
+    gen = (i for i in [1, 2, 3])
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=gen)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('v',),
+            'msg': 'Input should be an instance of Sequence',
+            'input': gen,
+            'ctx': {'class': 'Sequence'},
+        }
     ]
 
 
@@ -1452,57 +1601,109 @@ def test_infinite_iterable_validate_first():
     (
         (
             int,
-            (i for i in ['a', 'b', 'c']),
+            [1, 'a', 3],
             [
-                {'loc': ('v', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-                {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-                {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+                {
+                    'type': 'int_parsing',
+                    'loc': ('v', 1),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'a',
+                },
+            ],
+        ),
+        (
+            int,
+            (1, 2, 'a'),
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'a',
+                },
             ],
         ),
         (
             float,
-            (i for i in ['a', 'b', 'c']),
+            ('a', 2.2, 3.3),
             [
-                {'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
-                {'loc': ('v', 1), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
-                {'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'},
+                {
+                    'type': 'float_parsing',
+                    'loc': ('v', 0),
+                    'msg': 'Input should be a valid number, unable to parse string as an number',
+                    'input': 'a',
+                },
             ],
         ),
-    ),
-)
-def test_sequence_generator_fails(cls, value, errors):
-    class Model(BaseModel):
-        v: Sequence[cls]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(v=value)
-    assert exc_info.value.errors() == errors
-
-
-@pytest.mark.parametrize(
-    'cls,value,errors',
-    (
-        (int, [1, 'a', 3], [{'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
-        (int, (1, 2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
-        (float, range(10), [{'loc': ('v',), 'msg': 'value is not a valid sequence', 'type': 'type_error.sequence'}]),
-        (float, ('a', 2.2, 3.3), [{'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
-        (float, (1.1, 2.2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
+        (
+            float,
+            (1.1, 2.2, 'a'),
+            [
+                {
+                    'type': 'float_parsing',
+                    'loc': ('v', 2),
+                    'msg': 'Input should be a valid number, unable to parse string as an number',
+                    'input': 'a',
+                },
+            ],
+        ),
+        (
+            float,
+            {1.0, 2.0, 3.0},
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of Sequence',
+                    'input': {
+                        1.0,
+                        2.0,
+                        3.0,
+                    },
+                    'ctx': {
+                        'class': 'Sequence',
+                    },
+                },
+            ],
+        ),
         (
             Set[int],
             [{1, 2}, {2, 3}, {'d'}],
-            [{'loc': ('v', 2, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': ('v', 2, 0),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'd',
+                }
+            ],
         ),
         (
             Tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
-            [{'loc': ('v', 1, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': ('v', 1, 0),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'a',
+                }
+            ],
         ),
         (
             List[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
-            [{'loc': ('v', 0), 'msg': 'value is not a valid list', 'type': 'type_error.list'}],
+            [
+                {
+                    'type': 'list_type',
+                    'loc': ('v', 0),
+                    'msg': 'Input should be a valid list/array',
+                    'input': {'a': 1, 'b': 2},
+                }
+            ],
         ),
     ),
+    ids=repr,
 )
 def test_sequence_fails(cls, value, errors):
     class Model(BaseModel):
@@ -1528,47 +1729,55 @@ def test_int_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5, b=5, c=-5, d=5, e=-5, f=11, g=42)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'greater_than',
             'loc': ('a',),
-            'msg': 'ensure this value is greater than 0',
-            'type': 'value_error.number.not_gt',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be greater than 0',
+            'input': -5,
+            'ctx': {'gt': 0},
         },
         {
+            'type': 'less_than',
             'loc': ('b',),
-            'msg': 'ensure this value is less than 0',
-            'type': 'value_error.number.not_lt',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be less than 0',
+            'input': 5,
+            'ctx': {'lt': 0},
         },
         {
+            'type': 'greater_than_equal',
             'loc': ('c',),
-            'msg': 'ensure this value is greater than or equal to 0',
-            'type': 'value_error.number.not_ge',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -5,
+            'ctx': {'ge': 0},
         },
         {
+            'type': 'less_than_equal',
             'loc': ('d',),
-            'msg': 'ensure this value is less than or equal to 0',
-            'type': 'value_error.number.not_le',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be less than or equal to 0',
+            'input': 5,
+            'ctx': {'le': 0},
         },
         {
+            'type': 'greater_than',
             'loc': ('e',),
-            'msg': 'ensure this value is greater than 4',
-            'type': 'value_error.number.not_gt',
-            'ctx': {'limit_value': 4},
+            'msg': 'Input should be greater than 4',
+            'input': -5,
+            'ctx': {'gt': 4},
         },
         {
+            'type': 'less_than_equal',
             'loc': ('f',),
-            'msg': 'ensure this value is less than or equal to 10',
-            'type': 'value_error.number.not_le',
-            'ctx': {'limit_value': 10},
+            'msg': 'Input should be less than or equal to 10',
+            'input': 11,
+            'ctx': {'le': 10},
         },
         {
+            'type': 'multiple_of',
             'loc': ('g',),
-            'msg': 'ensure this value is a multiple of 5',
-            'type': 'value_error.number.not_multiple',
+            'msg': 'Input should be a multiple of 5',
+            'input': 42,
             'ctx': {'multiple_of': 5},
         },
     ]
@@ -1593,53 +1802,76 @@ def test_float_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5.1, b=5.2, c=-5.1, d=5.1, e=-5.3, f=9.91, g=4.2, h=float('nan'))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'greater_than',
             'loc': ('a',),
-            'msg': 'ensure this value is greater than 0',
-            'type': 'value_error.number.not_gt',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be greater than 0',
+            'input': -5.1,
+            'ctx': {
+                'gt': 0.0,
+            },
         },
         {
+            'type': 'less_than',
             'loc': ('b',),
-            'msg': 'ensure this value is less than 0',
-            'type': 'value_error.number.not_lt',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be less than 0',
+            'input': 5.2,
+            'ctx': {
+                'lt': 0.0,
+            },
         },
         {
+            'type': 'greater_than_equal',
             'loc': ('c',),
-            'msg': 'ensure this value is greater than or equal to 0',
-            'type': 'value_error.number.not_ge',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -5.1,
+            'ctx': {
+                'ge': 0.0,
+            },
         },
         {
+            'type': 'less_than_equal',
             'loc': ('d',),
-            'msg': 'ensure this value is less than or equal to 0',
-            'type': 'value_error.number.not_le',
-            'ctx': {'limit_value': 0},
+            'msg': 'Input should be less than or equal to 0',
+            'input': 5.1,
+            'ctx': {
+                'le': 0.0,
+            },
         },
         {
+            'type': 'greater_than',
             'loc': ('e',),
-            'msg': 'ensure this value is greater than 4',
-            'type': 'value_error.number.not_gt',
-            'ctx': {'limit_value': 4},
+            'msg': 'Input should be greater than 4',
+            'input': -5.3,
+            'ctx': {
+                'gt': 4.0,
+            },
         },
         {
+            'type': 'less_than_equal',
             'loc': ('f',),
-            'msg': 'ensure this value is less than or equal to 9.9',
-            'type': 'value_error.number.not_le',
-            'ctx': {'limit_value': 9.9},
+            'msg': 'Input should be less than or equal to 9.9',
+            'input': 9.91,
+            'ctx': {
+                'le': 9.9,
+            },
         },
         {
+            'type': 'multiple_of',
             'loc': ('g',),
-            'msg': 'ensure this value is a multiple of 0.5',
-            'type': 'value_error.number.not_multiple',
-            'ctx': {'multiple_of': 0.5},
+            'msg': 'Input should be a multiple of 0.5',
+            'input': 4.2,
+            'ctx': {
+                'multiple_of': 0.5,
+            },
         },
         {
+            'type': 'finite_number',
             'loc': ('h',),
-            'msg': 'ensure this value is a finite number',
-            'type': 'value_error.number.not_finite_number',
+            'msg': 'Input should be a finite number',
+            'input': HasRepr('nan'),
         },
     ]
 
@@ -1661,12 +1893,14 @@ def test_finite_float_validation_error(value):
     assert Model(a=42).a == 42
     with pytest.raises(ValidationError) as exc_info:
         Model(a=value)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'finite_number',
             'loc': ('a',),
-            'msg': 'ensure this value is a finite number',
-            'type': 'value_error.number.not_finite_number',
-        },
+            'msg': 'Input should be a finite number',
+            'input': HasRepr(repr(value)),
+        }
     ]
 
 
@@ -1680,12 +1914,14 @@ def test_finite_float_config():
     assert Model(a=42).a == 42
     with pytest.raises(ValidationError) as exc_info:
         Model(a=float('nan'))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'finite_number',
             'loc': ('a',),
-            'msg': 'ensure this value is a finite number',
-            'type': 'value_error.number.not_finite_number',
-        },
+            'msg': 'Input should be a finite number',
+            'input': HasRepr('nan'),
+        }
     ]
 
 
@@ -1694,15 +1930,16 @@ def test_strict_bytes():
         v: StrictBytes
 
     assert Model(v=b'foobar').v == b'foobar'
-    assert Model(v=bytearray('foobar', 'utf-8')).v == b'foobar'
+    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
+        Model(v=bytearray('foobar', 'utf-8'))
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
         Model(v='foostring')
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
         Model(v=42)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='Input should be a valid bytes'):
         Model(v=0.42)
 
 
@@ -1712,54 +1949,31 @@ def test_strict_bytes_max_length():
 
     assert Model(u=b'foo').u == b'foo'
 
-    with pytest.raises(ValidationError, match='byte type expected'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid bytes \[type=bytes_type'):
         Model(u=123)
-    with pytest.raises(ValidationError, match='ensure this value has at most 5 characters'):
+    with pytest.raises(ValidationError, match=r'Data should have at most 5 bytes \[type=bytes_too_long,'):
         Model(u=b'1234567')
 
 
-def test_strict_bytes_subclass():
-    class MyStrictBytes(StrictBytes):
-        pass
-
-    class Model(BaseModel):
-        v: MyStrictBytes
-
-    a = Model(v=MyStrictBytes(b'foobar'))
-    assert isinstance(a.v, MyStrictBytes)
-    assert a.v == b'foobar'
-
-    b = Model(v=MyStrictBytes(bytearray('foobar', 'utf-8')))
-    assert isinstance(b.v, MyStrictBytes)
-    assert b.v == b'foobar'
-
-
 def test_strict_str():
+    class FruitEnum(str, Enum):
+        pear = 'pear'
+        banana = 'banana'
+
     class Model(BaseModel):
         v: StrictStr
 
     assert Model(v='foobar').v == 'foobar'
 
-    with pytest.raises(ValidationError, match='str type expected'):
+    msg = r'Input should be a string, not an instance of a subclass of str \[type=string_sub_type,'
+    with pytest.raises(ValidationError, match=msg):
         Model(v=FruitEnum.banana)
 
-    with pytest.raises(ValidationError, match='str type expected'):
+    with pytest.raises(ValidationError, match='Input should be a valid string'):
         Model(v=123)
 
-    with pytest.raises(ValidationError, match='str type expected'):
+    with pytest.raises(ValidationError, match='Input should be a valid string'):
         Model(v=b'foobar')
-
-
-def test_strict_str_subclass():
-    class MyStrictStr(StrictStr):
-        pass
-
-    class Model(BaseModel):
-        v: MyStrictStr
-
-    m = Model(v=MyStrictStr('foobar'))
-    assert isinstance(m.v, MyStrictStr)
-    assert m.v == 'foobar'
 
 
 def test_strict_str_max_length():
@@ -1768,10 +1982,10 @@ def test_strict_str_max_length():
 
     assert Model(u='foo').u == 'foo'
 
-    with pytest.raises(ValidationError, match='str type expected'):
+    with pytest.raises(ValidationError, match='Input should be a valid string'):
         Model(u=123)
 
-    with pytest.raises(ValidationError, match='ensure this value has at most 5 characters'):
+    with pytest.raises(ValidationError, match=r'String should have at most 5 characters \[type=string_too_long,'):
         Model(u='1234567')
 
 
@@ -1798,23 +2012,11 @@ def test_strict_int():
 
     assert Model(v=123456).v == 123456
 
-    with pytest.raises(ValidationError, match='value is not a valid int'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v='123456')
 
-    with pytest.raises(ValidationError, match='value is not a valid int'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
-
-
-def test_strict_int_subclass():
-    class MyStrictInt(StrictInt):
-        pass
-
-    class Model(BaseModel):
-        v: MyStrictInt
-
-    m = Model(v=MyStrictInt(123456))
-    assert isinstance(m.v, MyStrictInt)
-    assert m.v == 123456
 
 
 def test_strict_float():
@@ -1822,24 +2024,10 @@ def test_strict_float():
         v: StrictFloat
 
     assert Model(v=3.14159).v == 3.14159
+    assert Model(v=123456).v == 123456
 
-    with pytest.raises(ValidationError, match='value is not a valid float'):
+    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
         Model(v='3.14159')
-
-    with pytest.raises(ValidationError, match='value is not a valid float'):
-        Model(v=123456)
-
-
-def test_strict_float_subclass():
-    class MyStrictFloat(StrictFloat):
-        pass
-
-    class Model(BaseModel):
-        v: MyStrictFloat
-
-    m = Model(v=MyStrictFloat(3.14159))
-    assert isinstance(m.v, MyStrictFloat)
-    assert m.v == 3.14159
 
 
 def test_bool_unhashable_fails():
@@ -1848,8 +2036,9 @@ def test_bool_unhashable_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v={})
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+        {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]
 
 
@@ -1859,20 +2048,27 @@ def test_uuid_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid uuid', 'type': 'type_error.uuid'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'uuid_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid UUID, string, or bytes',
+            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
+        }
+    ]
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='Input should be a valid UUID, string, or bytes'):
         Model(v=None)
 
 
-class UUIDModel(BaseModel):
-    a: UUID1
-    b: UUID3
-    c: UUID4
-    d: UUID5
-
-
 def test_uuid_validation():
+    class UUIDModel(BaseModel):
+        a: UUID1
+        b: UUID3
+        c: UUID4
+        d: UUID5
+
     a = uuid.uuid1()
     b = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
     c = uuid.uuid4()
@@ -1883,88 +2079,94 @@ def test_uuid_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         UUIDModel(a=d, b=c, c=b, d=a)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'uuid_version',
             'loc': ('a',),
             'msg': 'uuid version 1 expected',
-            'type': 'value_error.uuid.version',
+            'input': d,
             'ctx': {'required_version': 1},
         },
         {
+            'type': 'uuid_version',
             'loc': ('b',),
             'msg': 'uuid version 3 expected',
-            'type': 'value_error.uuid.version',
+            'input': c,
             'ctx': {'required_version': 3},
         },
         {
+            'type': 'uuid_version',
             'loc': ('c',),
             'msg': 'uuid version 4 expected',
-            'type': 'value_error.uuid.version',
+            'input': b,
             'ctx': {'required_version': 4},
         },
         {
+            'type': 'uuid_version',
             'loc': ('d',),
             'msg': 'uuid version 5 expected',
-            'type': 'value_error.uuid.version',
+            'input': a,
             'ctx': {'required_version': 5},
         },
     ]
 
 
 @pytest.mark.parametrize(
-    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
+    'enabled,str_check,result_str_check',
     [
-        (True, '  123  ', b'  456  ', '123', b'456'),
-        (False, '  123  ', b'  456  ', '  123  ', b'  456  '),
+        (True, '  123  ', '123'),
+        (True, '  123\t\n', '123'),
+        (False, '  123  ', '  123  '),
     ],
 )
-def test_anystr_strip_whitespace(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
+def test_anystr_strip_whitespace(enabled, str_check, result_str_check):
     class Model(BaseModel):
         str_check: str
-        bytes_check: bytes
 
         class Config:
             anystr_strip_whitespace = enabled
 
-    m = Model(str_check=str_check, bytes_check=bytes_check)
+    m = Model(str_check=str_check)
     assert m.str_check == result_str_check
-    assert m.bytes_check == result_bytes_check
 
 
 @pytest.mark.parametrize(
-    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
-    [(True, 'ABCDefG', b'abCD1Fg', 'ABCDEFG', b'ABCD1FG'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+    'enabled,str_check,result_str_check',
+    [(True, 'ABCDefG', 'ABCDEFG'), (False, 'ABCDefG', 'ABCDefG')],
 )
-def test_anystr_upper(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
+def test_anystr_upper(enabled, str_check, result_str_check):
     class Model(BaseModel):
         str_check: str
-        bytes_check: bytes
 
         class Config:
             anystr_upper = enabled
 
-    m = Model(str_check=str_check, bytes_check=bytes_check)
+    m = Model(str_check=str_check)
 
     assert m.str_check == result_str_check
-    assert m.bytes_check == result_bytes_check
 
 
 @pytest.mark.parametrize(
-    'enabled, str_check, bytes_check, result_str_check, result_bytes_check',
-    [(True, 'ABCDefG', b'abCD1Fg', 'abcdefg', b'abcd1fg'), (False, 'ABCDefG', b'abCD1Fg', 'ABCDefG', b'abCD1Fg')],
+    'enabled,str_check,result_str_check',
+    [(True, 'ABCDefG', 'abcdefg'), (False, 'ABCDefG', 'ABCDefG')],
 )
-def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_bytes_check):
+def test_anystr_lower(enabled, str_check, result_str_check):
     class Model(BaseModel):
         str_check: str
-        bytes_check: bytes
 
         class Config:
             anystr_lower = enabled
 
-    m = Model(str_check=str_check, bytes_check=bytes_check)
+    m = Model(str_check=str_check)
 
     assert m.str_check == result_str_check
-    assert m.bytes_check == result_bytes_check
+
+
+pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
+neg_int_values = '-Inf', '-Infinity'
+nan_values = 'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN'
+non_finite_values = nan_values + pos_int_values + neg_int_values
 
 
 @pytest.mark.parametrize(
@@ -1976,10 +2178,11 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('42'),
             [
                 {
+                    'type': 'greater_than',
                     'loc': ('foo',),
-                    'msg': 'ensure this value is greater than 42.24',
-                    'type': 'value_error.number.not_gt',
-                    'ctx': {'limit_value': Decimal('42.24')},
+                    'msg': 'Input should be greater than 42.24',
+                    'input': Decimal('42'),
+                    'ctx': {'gt': 42.24},
                 }
             ],
         ),
@@ -1989,11 +2192,14 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('43'),
             [
                 {
+                    'type': 'less_than',
                     'loc': ('foo',),
-                    'msg': 'ensure this value is less than 42.24',
-                    'type': 'value_error.number.not_lt',
-                    'ctx': {'limit_value': Decimal('42.24')},
-                }
+                    'msg': 'Input should be less than 42.24',
+                    'input': Decimal('43'),
+                    'ctx': {
+                        'lt': 42.24,
+                    },
+                },
             ],
         ),
         (dict(ge=Decimal('42.24')), Decimal('43'), Decimal('43')),
@@ -2003,10 +2209,13 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('42'),
             [
                 {
+                    'type': 'greater_than_equal',
                     'loc': ('foo',),
-                    'msg': 'ensure this value is greater than or equal to 42.24',
-                    'type': 'value_error.number.not_ge',
-                    'ctx': {'limit_value': Decimal('42.24')},
+                    'msg': 'Input should be greater than or equal to 42.24',
+                    'input': Decimal('42'),
+                    'ctx': {
+                        'ge': 42.24,
+                    },
                 }
             ],
         ),
@@ -2017,10 +2226,13 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('43'),
             [
                 {
+                    'type': 'less_than_equal',
                     'loc': ('foo',),
-                    'msg': 'ensure this value is less than or equal to 42.24',
-                    'type': 'value_error.number.not_le',
-                    'ctx': {'limit_value': Decimal('42.24')},
+                    'msg': 'Input should be less than or equal to 42.24',
+                    'input': Decimal('43'),
+                    'ctx': {
+                        'le': 42.24,
+                    },
                 }
             ],
         ),
@@ -2030,10 +2242,13 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('0.99'),
             [
                 {
+                    'type': 'decimal_max_places',
                     'loc': ('foo',),
                     'msg': 'ensure that there are no more than 1 decimal places',
-                    'type': 'value_error.decimal.max_places',
-                    'ctx': {'decimal_places': 1},
+                    'input': Decimal('0.99'),
+                    'ctx': {
+                        'decimal_places': 1,
+                    },
                 }
             ],
         ),
@@ -2044,7 +2259,8 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
                 {
                     'loc': ('foo',),
                     'msg': 'ensure that there are no more than 2 digits before the decimal point',
-                    'type': 'value_error.decimal.whole_digits',
+                    'type': 'decimal_whole_digits',
+                    'input': Decimal('999'),
                     'ctx': {'whole_digits': 2},
                 }
             ],
@@ -2057,11 +2273,14 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('7424742403889818000000'),
             [
                 {
+                    'type': 'decimal_max_digits',
                     'loc': ('foo',),
                     'msg': 'ensure that there are no more than 20 digits in total',
-                    'type': 'value_error.decimal.max_digits',
-                    'ctx': {'max_digits': 20},
-                }
+                    'input': Decimal('7424742403889818000000'),
+                    'ctx': {
+                        'max_digits': 20,
+                    },
+                },
             ],
         ),
         (dict(max_digits=5, decimal_places=2), Decimal('7304E-1'), Decimal('7304E-1')),
@@ -2070,9 +2289,10 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
             Decimal('7304E-3'),
             [
                 {
+                    'type': 'decimal_max_places',
                     'loc': ('foo',),
                     'msg': 'ensure that there are no more than 2 decimal places',
-                    'type': 'value_error.decimal.max_places',
+                    'input': Decimal('7.304'),
                     'ctx': {'decimal_places': 2},
                 }
             ],
@@ -2085,79 +2305,117 @@ def test_anystr_lower(enabled, str_check, bytes_check, result_str_check, result_
                 {
                     'loc': ('foo',),
                     'msg': 'ensure that there are no more than 5 digits in total',
-                    'type': 'value_error.decimal.max_digits',
+                    'type': 'decimal_max_digits',
+                    'input': Decimal('0.000070'),
                     'ctx': {'max_digits': 5},
                 }
             ],
         ),
         *[
             (
-                dict(decimal_places=2, max_digits=10),
+                dict(decimal_places=2, max_digits=10, allow_inf_nan=False),
                 value,
-                [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
+                [
+                    {
+                        'loc': ('foo',),
+                        'msg': 'Input should be a finite number',
+                        'type': 'finite_number',
+                        'input': value,
+                    }
+                ],
             )
-            for value in (
-                'NaN',
-                '-NaN',
-                '+NaN',
-                'sNaN',
-                '-sNaN',
-                '+sNaN',
-                'Inf',
-                '-Inf',
-                '+Inf',
-                'Infinity',
-                '-Infinity',
-                '-Infinity',
-            )
+            for value in non_finite_values
         ],
         *[
             (
-                dict(decimal_places=2, max_digits=10),
+                dict(decimal_places=2, max_digits=10, allow_inf_nan=False),
                 Decimal(value),
-                [{'loc': ('foo',), 'msg': 'value is not a valid decimal', 'type': 'value_error.decimal.not_finite'}],
+                [
+                    {
+                        'loc': ('foo',),
+                        'msg': 'Input should be a finite number',
+                        'type': 'finite_number',
+                        'input': AnyThing(),
+                    }
+                ],
             )
-            for value in (
-                'NaN',
-                '-NaN',
-                '+NaN',
-                'sNaN',
-                '-sNaN',
-                '+sNaN',
-                'Inf',
-                '-Inf',
-                '+Inf',
-                'Infinity',
-                '-Infinity',
-                '-Infinity',
-            )
+            for value in non_finite_values
         ],
         (
             dict(multiple_of=Decimal('5')),
             Decimal('42'),
             [
                 {
+                    'type': 'decimal_multiple_of',
                     'loc': ('foo',),
-                    'msg': 'ensure this value is a multiple of 5',
-                    'type': 'value_error.number.not_multiple',
-                    'ctx': {'multiple_of': Decimal('5')},
+                    'msg': 'Input should be a multiple of 5',
+                    'input': Decimal('42'),
+                    'ctx': {
+                        'multiple_of': Decimal('5'),
+                    },
                 }
             ],
         ),
     ],
 )
-def test_decimal_validation(type_args, value, result):
-    modela = create_model('DecimalModel', foo=(condecimal(**type_args), ...))
-    modelb = create_model('DecimalModel', foo=(Decimal, Field(..., **type_args)))
+@pytest.mark.parametrize('mode', ['Field', 'condecimal'])
+def test_decimal_validation(mode, type_args, value, result):
+    if mode == 'Field':
 
-    for model in (modela, modelb):
-        if not isinstance(result, Decimal):
-            with pytest.raises(ValidationError) as exc_info:
-                model(foo=value)
-            assert exc_info.value.errors() == result
-            assert exc_info.value.json().startswith('[')
-        else:
-            assert model(foo=value).foo == result
+        class Model(BaseModel):
+            foo: Decimal = Field(**type_args)
+
+    else:
+
+        class Model(BaseModel):
+            foo: condecimal(**type_args)
+
+    if not isinstance(result, Decimal):
+        with pytest.raises(ValidationError) as exc_info:
+            m = Model(foo=value)
+            print(f'unexpected result: {m!r}')
+        # debug(exc_info.value.errors())
+        assert exc_info.value.errors() == result
+        # assert exc_info.value.json().startswith('[')
+    else:
+        assert Model(foo=value).foo == result
+
+
+@pytest.fixture(scope='module', name='AllowInfModel')
+def fix_allow_inf_model():
+    class Model(BaseModel):
+        v: condecimal(allow_inf_nan=True)
+
+    return Model
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    [
+        (Decimal('42'), 'unchanged'),
+        *[(v, 'is_nan') for v in nan_values],
+        *[(v, 'is_pos_inf') for v in pos_int_values],
+        *[(v, 'is_neg_inf') for v in neg_int_values],
+    ],
+)
+def test_decimal_not_finite(value, result, AllowInfModel):
+    m = AllowInfModel(v=value)
+    if result == 'unchanged':
+        assert m.v == value
+    elif result == 'is_nan':
+        assert m.v.is_nan(), m.v
+    elif result == 'is_pos_inf':
+        assert m.v.is_infinite() and m.v > 0, m.v
+    else:
+        assert result == 'is_neg_inf'
+        assert m.v.is_infinite() and m.v < 0, m.v
+
+
+def test_decimal_invalid():
+    with pytest.raises(ValueError, match='allow_inf_nan=True cannot be used with max_digits or decimal_places'):
+
+        class Model(BaseModel):
+            v: condecimal(allow_inf_nan=True, max_digits=4)
 
 
 @pytest.mark.parametrize('value,result', (('/test/path', Path('/test/path')), (Path('/test/path'), Path('/test/path'))))
@@ -2174,7 +2432,10 @@ def test_path_validation_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=123)
-    assert exc_info.value.errors() == [{'loc': ('foo',), 'msg': 'value is not a valid path', 'type': 'type_error.path'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -2188,62 +2449,21 @@ def test_file_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    (
-        (
-            'nonexistentfile',
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'file or directory at path "nonexistentfile" does not exist',
-                    'type': 'value_error.path.not_exists',
-                    'ctx': {'path': 'nonexistentfile'},
-                }
-            ],
-        ),
-        (
-            Path('nonexistentfile'),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'file or directory at path "nonexistentfile" does not exist',
-                    'type': 'value_error.path.not_exists',
-                    'ctx': {'path': 'nonexistentfile'},
-                }
-            ],
-        ),
-        (
-            'tests',
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'path "tests" does not point to a file',
-                    'type': 'value_error.path.not_a_file',
-                    'ctx': {'path': 'tests'},
-                }
-            ],
-        ),
-        (
-            Path('tests'),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'path "tests" does not point to a file',
-                    'type': 'value_error.path.not_a_file',
-                    'ctx': {'path': 'tests'},
-                }
-            ],
-        ),
-    ),
-)
-def test_file_path_validation_fails(value, errors):
+@pytest.mark.parametrize('value', ['nonexistentfile', Path('nonexistentfile'), 'tests', Path('tests')])
+def test_file_path_validation_fails(value):
     class Model(BaseModel):
         foo: FilePath
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.errors() == [
+        {
+            'type': 'path_not_file',
+            'loc': ('foo',),
+            'msg': 'Path does not point to a file',
+            'input': value,
+        }
+    ]
 
 
 @pytest.mark.parametrize('value,result', (('tests', Path('tests')), (Path('tests'), Path('tests'))))
@@ -2254,66 +2474,23 @@ def test_directory_path_validation_success(value, result):
     assert Model(foo=value).foo == result
 
 
-@pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
 @pytest.mark.parametrize(
-    'value,errors',
-    (
-        (
-            'nonexistentdirectory',
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'file or directory at path "nonexistentdirectory" does not exist',
-                    'type': 'value_error.path.not_exists',
-                    'ctx': {'path': 'nonexistentdirectory'},
-                }
-            ],
-        ),
-        (
-            Path('nonexistentdirectory'),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'file or directory at path "nonexistentdirectory" does not exist',
-                    'type': 'value_error.path.not_exists',
-                    'ctx': {'path': 'nonexistentdirectory'},
-                }
-            ],
-        ),
-        (
-            'tests/test_types.py',
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'path "tests/test_types.py" does not point to a directory',
-                    'type': 'value_error.path.not_a_directory',
-                    'ctx': {'path': 'tests/test_types.py'},
-                }
-            ],
-        ),
-        (
-            Path('tests/test_types.py'),
-            [
-                {
-                    'loc': ('foo',),
-                    'msg': 'path "tests/test_types.py" does not point to a directory',
-                    'type': 'value_error.path.not_a_directory',
-                    'ctx': {'path': 'tests/test_types.py'},
-                }
-            ],
-        ),
-    ),
+    'value', ['nonexistentdirectory', Path('nonexistentdirectory'), 'tests/test_t.py', Path('tests/test_ypestypes.py')]
 )
-def test_directory_path_validation_fails(value, errors):
+def test_directory_path_validation_fails(value):
     class Model(BaseModel):
         foo: DirectoryPath
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
-    assert exc_info.value.errors() == errors
-
-
-base_message = r'.*ensure this value is {msg} \(type=value_error.number.not_{ty}; limit_value={value}\).*'
+    assert exc_info.value.errors() == [
+        {
+            'type': 'path_not_directory',
+            'loc': ('foo',),
+            'msg': 'Path does not point to a directory',
+            'input': value,
+        }
+    ]
 
 
 def test_number_gt():
@@ -2322,9 +2499,18 @@ def test_number_gt():
 
     assert Model(a=0).dict() == {'a': 0}
 
-    message = base_message.format(msg='greater than -1', ty='gt', value=-1)
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=-1)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'greater_than',
+            'loc': ('a',),
+            'msg': 'Input should be greater than -1',
+            'input': -1,
+            'ctx': {'gt': -1},
+        }
+    ]
 
 
 def test_number_ge():
@@ -2333,9 +2519,18 @@ def test_number_ge():
 
     assert Model(a=0).dict() == {'a': 0}
 
-    message = base_message.format(msg='greater than or equal to 0', ty='ge', value=0)
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=-1)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'greater_than_equal',
+            'loc': ('a',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -1,
+            'ctx': {'ge': 0},
+        }
+    ]
 
 
 def test_number_lt():
@@ -2344,9 +2539,18 @@ def test_number_lt():
 
     assert Model(a=4).dict() == {'a': 4}
 
-    message = base_message.format(msg='less than 5', ty='lt', value=5)
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=5)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'less_than',
+            'loc': ('a',),
+            'msg': 'Input should be less than 5',
+            'input': 5,
+            'ctx': {'lt': 5},
+        }
+    ]
 
 
 def test_number_le():
@@ -2355,12 +2559,21 @@ def test_number_le():
 
     assert Model(a=5).dict() == {'a': 5}
 
-    message = base_message.format(msg='less than or equal to 5', ty='le', value=5)
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=6)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'less_than_equal',
+            'loc': ('a',),
+            'msg': 'Input should be less than or equal to 5',
+            'input': 6,
+            'ctx': {'le': 5},
+        }
+    ]
 
 
-@pytest.mark.parametrize('value', ((10), (100), (20)))
+@pytest.mark.parametrize('value', (10, 100, 20))
 def test_number_multiple_of_int_valid(value):
     class Model(BaseModel):
         a: conint(multiple_of=5)
@@ -2368,18 +2581,26 @@ def test_number_multiple_of_int_valid(value):
     assert Model(a=value).dict() == {'a': value}
 
 
-@pytest.mark.parametrize('value', ((1337), (23), (6), (14)))
+@pytest.mark.parametrize('value', [1337, 23, 6, 14])
 def test_number_multiple_of_int_invalid(value):
     class Model(BaseModel):
         a: conint(multiple_of=5)
 
-    multiple_message = base_message.replace('limit_value', 'multiple_of')
-    message = multiple_message.format(msg='a multiple of 5', ty='multiple', value=5)
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=value)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'multiple_of',
+            'loc': ('a',),
+            'msg': 'Input should be a multiple of 5',
+            'input': value,
+            'ctx': {'multiple_of': 5},
+        }
+    ]
 
 
-@pytest.mark.parametrize('value', ((0.2), (0.3), (0.4), (0.5), (1)))
+@pytest.mark.parametrize('value', [0.2, 0.3, 0.4, 0.5, 1])
 def test_number_multiple_of_float_valid(value):
     class Model(BaseModel):
         a: confloat(multiple_of=0.1)
@@ -2387,24 +2608,23 @@ def test_number_multiple_of_float_valid(value):
     assert Model(a=value).dict() == {'a': value}
 
 
-@pytest.mark.parametrize('value', ((0.07), (1.27), (1.003)))
+@pytest.mark.parametrize('value', [0.07, 1.27, 1.003])
 def test_number_multiple_of_float_invalid(value):
     class Model(BaseModel):
         a: confloat(multiple_of=0.1)
 
-    multiple_message = base_message.replace('limit_value', 'multiple_of')
-    message = multiple_message.format(msg='a multiple of 0.1', ty='multiple', value=0.1)
-    with pytest.raises(ValidationError, match=message):
+    with pytest.raises(ValidationError) as exc_info:
         Model(a=value)
-
-
-@pytest.mark.parametrize('fn', [conint, confloat, condecimal])
-def test_bounds_config_exceptions(fn):
-    with pytest.raises(ConfigError):
-        fn(gt=0, ge=0)
-
-    with pytest.raises(ConfigError):
-        fn(lt=0, le=0)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'multiple_of',
+            'loc': ('a',),
+            'msg': 'Input should be a multiple of 0.1',
+            'input': value,
+            'ctx': {'multiple_of': 0.1},
+        }
+    ]
 
 
 def test_new_type_success():
@@ -2419,7 +2639,6 @@ def test_new_type_success():
 
     m = Model(a=42, b=24, c=[1, 2, 3])
     assert m.dict() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
-    assert repr(Model.__fields__['c']) == "ModelField(name='c', type=List[int], required=True)"
 
 
 def test_new_type_fails():
@@ -2434,16 +2653,27 @@ def test_new_type_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foo', b='bar', c=['foo'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('c', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foo',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'bar',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('c', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foo',
+        },
     ]
-
-
-def test_json_any_is_json():
-    """Mypy doesn't allow plain Json, so Json[Any] must behave just as Json did."""
-    assert Json[Any] is Json
 
 
 def test_valid_simple_json():
@@ -2462,24 +2692,26 @@ def test_valid_simple_json_any():
     assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
-def test_invalid_simple_json():
+@pytest.mark.parametrize('gen_type', [lambda: Json, lambda: Json[Any]])
+def test_invalid_simple_json(gen_type):
+    t = gen_type()
+
     class JsonModel(BaseModel):
-        json_obj: Json
+        json_obj: t
 
     obj = '{a: 1, b: [2, 3]}'
     with pytest.raises(ValidationError) as exc_info:
         JsonModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
-
-
-def test_invalid_simple_json_any():
-    class JsonModel(BaseModel):
-        json_obj: Json[Any]
-
-    obj = '{a: 1, b: [2, 3]}'
-    with pytest.raises(ValidationError) as exc_info:
-        JsonModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'json_invalid',
+            'loc': ('json_obj',),
+            'msg': 'Invalid JSON: key must be a string at line 1 column 2',
+            'input': '{a: 1, b: [2, 3]}',
+            'ctx': {'error': 'key must be a string at line 1 column 2'},
+        }
+    ]
 
 
 def test_valid_simple_json_bytes():
@@ -2497,23 +2729,22 @@ def test_valid_detailed_json():
     obj = '[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
-
-def test_invalid_detailed_json_value_error():
-    class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+    obj = b'[1, 2, 3]'
+    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
 
     obj = '(1, 2, 3)'
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {'loc': ('json_obj',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}
-
-
-def test_valid_detailed_json_bytes():
-    class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
-
-    obj = b'[1, 2, 3]'
-    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'json_invalid',
+            'loc': ('json_obj',),
+            'msg': 'Invalid JSON: expected value at line 1 column 1',
+            'input': '(1, 2, 3)',
+            'ctx': {'error': 'expected value at line 1 column 1'},
+        }
+    ]
 
 
 def test_valid_model_json():
@@ -2543,8 +2774,9 @@ def test_invalid_model_json():
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('json_obj', 'b'), 'msg': 'field required', 'type': 'value_error.missing'}
+        {'type': 'missing', 'loc': ('json_obj', 'b'), 'msg': 'Field required', 'input': {'a': 1, 'c': [2, 3]}}
     ]
 
 
@@ -2555,10 +2787,26 @@ def test_invalid_detailed_json_type_error():
     obj = '["a", "b", "c"]'
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('json_obj', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('json_obj', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'type': 'int_parsing',
+            'loc': ('json_obj', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('json_obj', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'b',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('json_obj', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'c',
+        },
     ]
 
 
@@ -2569,11 +2817,15 @@ def test_json_not_str():
     obj = 12
     with pytest.raises(ValidationError) as exc_info:
         JsonDetailedModel(json_obj=obj)
-    assert exc_info.value.errors()[0] == {
-        'loc': ('json_obj',),
-        'msg': 'JSON object must be str, bytes or bytearray',
-        'type': 'type_error.json',
-    }
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'json_type',
+            'loc': ('json_obj',),
+            'msg': 'JSON input should be str, bytes or bytearray',
+            'input': 12,
+        }
+    ]
 
 
 def test_json_pre_validator():
@@ -2582,8 +2834,8 @@ def test_json_pre_validator():
     class JsonModel(BaseModel):
         json_obj: Json
 
-        @validator('json_obj', pre=True)
-        def check(cls, v):
+        @validator('json_obj', mode='before')
+        def check(cls, v, **kwargs):
             assert v == '"foobar"'
             nonlocal call_count
             call_count += 1
@@ -2612,29 +2864,26 @@ def test_json_optional_complex():
 
     with pytest.raises(ValidationError) as exc_info:
         JsonOptionalModel(json_obj='["i should fail"]')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('json_obj', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('json_obj', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'i should fail',
+        }
     ]
 
 
-def test_json_explicitly_required():
-    class JsonRequired(BaseModel):
-        json_obj: Json = ...
-
-    assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
-    assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    with pytest.raises(ValidationError) as exc_info:
-        JsonRequired()
-    assert exc_info.value.errors() == [{'loc': ('json_obj',), 'msg': 'field required', 'type': 'value_error.missing'}]
-
-
-def test_json_no_default():
+def test_json_required():
     class JsonRequired(BaseModel):
         json_obj: Json
 
-    assert JsonRequired(json_obj=None).dict() == {'json_obj': None}
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    assert JsonRequired().dict() == {'json_obj': None}
+    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[type=json_type,'):
+        JsonRequired(json_obj=None)
+    with pytest.raises(ValidationError, match=r'Field required \[type=missing,'):
+        JsonRequired()
 
 
 @pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
@@ -2653,12 +2902,12 @@ def test_pattern(pattern_type):
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
-    assert Foobar.schema() == {
-        'type': 'object',
-        'title': 'Foobar',
-        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
-        'required': ['pattern'],
-    }
+    # assert Foobar.schema() == {
+    #     'type': 'object',
+    #     'title': 'Foobar',
+    #     'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+    #     'required': ['pattern'],
+    # }
 
 
 @pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
@@ -2668,19 +2917,15 @@ def test_pattern_error(pattern_type):
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(pattern='[xx')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
+        {
+            'type': 'pattern_regex',
+            'loc': ('pattern',),
+            'msg': 'Input should be a valid regular expression',
+            'input': '[xx',
+        }
     ]
-
-
-def test_secretfield():
-    class Foobar(SecretField):
-        ...
-
-    message = "Can't instantiate abstract class Foobar with abstract methods? get_secret_value"
-
-    with pytest.raises(TypeError, match=message):
-        Foobar()
 
 
 def test_secretstr():
@@ -2704,15 +2949,6 @@ def test_secretstr():
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == '1234'
     assert f.empty_password.get_secret_value() == ''
-
-    with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
-        assert f.password.display() == '**********'
-    with pytest.warns(DeprecationWarning, match=r'`secret_str.display\(\)` is deprecated'):
-        assert f.empty_password.display() == ''
-
-    # Assert that SecretStr is equal to SecretStr if the secret is the same.
-    assert f == f.copy()
-    assert f != f.copy(update=dict(password='4321'))
 
 
 def test_secretstr_is_secret_field():
@@ -2745,34 +2981,46 @@ def test_secretstr_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
-    assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_type',
+            'loc': ('password',),
+            'msg': 'Input should be a valid string',
+            'input': [6, 23, 'abc'],
+        }
+    ]
 
 
-def test_secretstr_min_max_length():
+def test_secret_str_min_max_length():
     class Foobar(BaseModel):
         password: SecretStr = Field(min_length=6, max_length=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password='')
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_short',
             'loc': ('password',),
-            'msg': 'ensure this value has at least 6 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 6},
+            'msg': 'String should have at least 6 characters',
+            'input': '',
+            'ctx': {'min_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password='1' * 20)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_long',
             'loc': ('password',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'msg': 'String should have at most 10 characters',
+            'input': '11111111111111111111',
+            'ctx': {'max_length': 10},
         }
     ]
 
@@ -2793,19 +3041,14 @@ def test_secretbytes():
     assert f.empty_password.__class__.__name__ == 'SecretBytes'
 
     # Assert str and repr are correct.
-    assert str(f.password) == '**********'
-    assert str(f.empty_password) == ''
+    assert str(f.password) == "b'**********'"
+    assert str(f.empty_password) == "b''"
     assert repr(f.password) == "SecretBytes(b'**********')"
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == b'wearebytes'
     assert f.empty_password.get_secret_value() == b''
-
-    with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
-        assert f.password.display() == '**********'
-    with pytest.warns(DeprecationWarning, match=r'`secret_bytes.display\(\)` is deprecated'):
-        assert f.empty_password.display() == ''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
     assert f == f.copy()
@@ -2841,64 +3084,51 @@ def test_secretbytes_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=[6, 23, 'abc'])
-    assert exc_info.value.errors() == [{'loc': ('password',), 'msg': 'byte type expected', 'type': 'type_error.bytes'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'bytes_type',
+            'loc': ('password',),
+            'msg': 'Input should be a valid bytes',
+            'input': [6, 23, 'abc'],
+        }
+    ]
 
 
-def test_secretbytes_min_max_length():
+def test_secret_bytes_min_max_length():
     class Foobar(BaseModel):
         password: SecretBytes = Field(min_length=6, max_length=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=b'')
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'bytes_too_short',
             'loc': ('password',),
-            'msg': 'ensure this value has at least 6 characters',
-            'type': 'value_error.any_str.min_length',
-            'ctx': {'limit_value': 6},
+            'msg': 'Data should have at least 6 bytes',
+            'input': b'',
+            'ctx': {'min_length': 6},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(password=b'1' * 20)
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'bytes_too_long',
             'loc': ('password',),
-            'msg': 'ensure this value has at most 10 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 10},
+            'msg': 'Data should have at most 10 bytes',
+            'input': b'11111111111111111111',
+            'ctx': {'max_length': 10},
         }
     ]
 
     value = b'1' * 8
     assert Foobar(password=value).password.get_secret_value() == value
-
-
-@pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
-@pytest.mark.parametrize(
-    'field_kw,schema_kw',
-    [
-        [{}, {}],
-        [{'min_length': 6}, {'minLength': 6}],
-        [{'max_length': 10}, {'maxLength': 10}],
-        [{'min_length': 6, 'max_length': 10}, {'minLength': 6, 'maxLength': 10}],
-    ],
-    ids=['no-constrains', 'min-constraint', 'max-constraint', 'min-max-constraints'],
-)
-def test_secrets_schema(secret_cls, field_kw, schema_kw):
-    class Foobar(BaseModel):
-        password: secret_cls = Field(**field_kw)
-
-    assert Foobar.schema() == {
-        'title': 'Foobar',
-        'type': 'object',
-        'properties': {
-            'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
-        },
-        'required': ['password'],
-    }
 
 
 def test_generic_without_params():
@@ -2919,10 +3149,21 @@ def test_generic_without_params_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(generic_list=0, generic_dict=0, generic_tuple=0)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('generic_list',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
-        {'loc': ('generic_dict',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'},
-        {'loc': ('generic_tuple',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'},
+        {
+            'type': 'list_type',
+            'loc': ('generic_list',),
+            'msg': 'Input should be a valid list/array',
+            'input': 0,
+        },
+        {
+            'type': 'dict_type',
+            'loc': ('generic_dict',),
+            'msg': 'Input should be a valid dictionary',
+            'input': 0,
+        },
+        {'type': 'tuple_type', 'loc': ('generic_tuple',), 'msg': 'Input should be a valid tuple', 'input': 0},
     ]
 
 
@@ -2933,12 +3174,14 @@ def test_literal_single():
     Model(a='a')
     with pytest.raises(ValidationError) as exc_info:
         Model(a='b')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'literal_error',
             'loc': ('a',),
-            'msg': "unexpected value; permitted: 'a'",
-            'type': 'value_error.const',
-            'ctx': {'given': 'b', 'permitted': ('a',)},
+            'msg': "Input should be 'a'",
+            'input': 'b',
+            'ctx': {'expected': "'a'"},
         }
     ]
 
@@ -2951,18 +3194,20 @@ def test_literal_multiple():
     Model(a_or_b='b')
     with pytest.raises(ValidationError) as exc_info:
         Model(a_or_b='c')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
+            'type': 'literal_error',
             'loc': ('a_or_b',),
-            'msg': "unexpected value; permitted: 'a', 'b'",
-            'type': 'value_error.const',
-            'ctx': {'given': 'c', 'permitted': ('a', 'b')},
+            'msg': "Input should be 'a' or 'b'",
+            'input': 'c',
+            'ctx': {'expected': "'a' or 'b'"},
         }
     ]
 
 
 def test_unsupported_field_type():
-    with pytest.raises(TypeError, match=r'MutableSet(.*)not supported'):
+    with pytest.raises(TypeError, match=r'Unable to generate pydantic-core schema MutableSet'):
 
         class UnsupportedModel(BaseModel):
             unsupported: MutableSet[int]
@@ -3056,7 +3301,7 @@ def test_bytesize_raises():
         Model(size='1Gi')
 
     m = Model(size='1MB')
-    with pytest.raises(errors.InvalidByteSizeUnit, match='byte unit'):
+    with pytest.raises(PydanticCustomError, match='byte unit'):
         m.size.to('bad_unit')
 
 
@@ -3073,11 +3318,12 @@ def test_deque_success():
         (int, [1, 2, 3], deque([1, 2, 3])),
         (int, (1, 2, 3), deque((1, 2, 3))),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
-        (float, {1.0, 2.0, 3.0}, deque({1.0, 2.0, 3.0})),
+        (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
-        (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
+        # (float, {1.0, 2.0, 3.0}, deque([1.0, 2.0, 3.0])),
+        # (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
     ),
 )
 def test_deque_generic_success(cls, value, result):
@@ -3088,37 +3334,82 @@ def test_deque_generic_success(cls, value, result):
 
 
 @pytest.mark.parametrize(
-    'cls,value,errors',
+    'cls,value,expected_error',
     (
-        (int, [1, 'a', 3], [{'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
-        (int, (1, 2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
-        (float, range(10), [{'loc': ('v',), 'msg': 'value is not a valid sequence', 'type': 'type_error.sequence'}]),
-        (float, ('a', 2.2, 3.3), [{'loc': ('v', 0), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
-        (float, (1.1, 2.2, 'a'), [{'loc': ('v', 2), 'msg': 'value is not a valid float', 'type': 'type_error.float'}]),
         (
-            Set[int],
-            [{1, 2}, {2, 3}, {'d'}],
-            [{'loc': ('v', 2, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+            float,
+            {1, 2, 3},
+            {
+                'type': 'list_type',
+                'loc': ('v',),
+                'msg': 'Input should be a valid list/array',
+                'input': {1, 2, 3},
+            },
+        ),
+        (
+            float,
+            frozenset((1, 2, 3)),
+            {
+                'type': 'list_type',
+                'loc': ('v',),
+                'msg': 'Input should be a valid list/array',
+                'input': frozenset((1, 2, 3)),
+            },
+        ),
+        (
+            int,
+            [1, 'a', 3],
+            {
+                'type': 'int_parsing',
+                'loc': ('v', 1),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'a',
+            },
+        ),
+        (
+            int,
+            (1, 2, 'a'),
+            {
+                'type': 'int_parsing',
+                'loc': ('v', 2),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'a',
+            },
         ),
         (
             Tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
-            [{'loc': ('v', 1, 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}],
+            {
+                'type': 'int_parsing',
+                'loc': ('v', 1, 0),
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'a',
+            },
         ),
         (
             List[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
-            [{'loc': ('v', 0), 'msg': 'value is not a valid list', 'type': 'type_error.list'}],
+            {
+                'type': 'list_type',
+                'loc': ('v', 0),
+                'msg': 'Input should be a valid list/array',
+                'input': {
+                    'a': 1,
+                    'b': 2,
+                },
+            },
         ),
     ),
 )
-def test_deque_fails(cls, value, errors):
+def test_deque_fails(cls, value, expected_error):
     class Model(BaseModel):
         v: Deque[cls]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.error_count() == 1
+    # debug(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == expected_error
 
 
 def test_deque_model():
@@ -3139,10 +3430,7 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
 
 
-none_value_type_cases = None, type(None), NoneType, Literal[None]
-
-
-@pytest.mark.parametrize('value_type', none_value_type_cases)
+@pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
@@ -3157,25 +3445,25 @@ def test_none(value_type):
         my_json_none='null',
     )
 
-    assert Model.schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'my_none': {'title': 'My None', 'type': 'null'},
-            'my_none_list': {
-                'title': 'My None List',
-                'type': 'array',
-                'items': {'type': 'null'},
-            },
-            'my_none_dict': {
-                'title': 'My None Dict',
-                'type': 'object',
-                'additionalProperties': {'type': 'null'},
-            },
-            'my_json_none': {'title': 'My Json None', 'type': 'null'},
-        },
-        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
-    }
+    # assert Model.schema() == {
+    #     'title': 'Model',
+    #     'type': 'object',
+    #     'properties': {
+    #         'my_none': {'title': 'My None', 'type': 'null'},
+    #         'my_none_list': {
+    #             'title': 'My None List',
+    #             'type': 'array',
+    #             'items': {'type': 'null'},
+    #         },
+    #         'my_none_dict': {
+    #             'title': 'My None Dict',
+    #             'type': 'object',
+    #             'additionalProperties': {'type': 'null'},
+    #         },
+    #         'my_json_none': {'title': 'My Json None', 'type': 'null'},
+    #     },
+    #     'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    # }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(
@@ -3184,12 +3472,23 @@ def test_none(value_type):
             my_none_dict={'a': 1, 'b': None},
             my_json_none='"a"',
         )
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('my_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
-        {'loc': ('my_none_list', 0), 'msg': 'value is not None', 'type': 'type_error.not_none'},
-        {'loc': ('my_none_list', 2), 'msg': 'value is not None', 'type': 'type_error.not_none'},
-        {'loc': ('my_none_dict', 'a'), 'msg': 'value is not None', 'type': 'type_error.not_none'},
-        {'loc': ('my_json_none',), 'msg': 'value is not None', 'type': 'type_error.not_none'},
+        {'type': 'none_required', 'loc': ('my_none',), 'msg': 'Input should be None/null', 'input': 'qwe'},
+        {'type': 'none_required', 'loc': ('my_none_list', 0), 'msg': 'Input should be None/null', 'input': 1},
+        {
+            'type': 'none_required',
+            'loc': ('my_none_list', 2),
+            'msg': 'Input should be None/null',
+            'input': 'qwe',
+        },
+        {
+            'type': 'none_required',
+            'loc': ('my_none_dict', 'a'),
+            'msg': 'Input should be None/null',
+            'input': 1,
+        },
+        {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None/null', 'input': 'a'},
     ]
 
 
@@ -3197,35 +3496,17 @@ def test_default_union_types():
     class DefaultModel(BaseModel):
         v: Union[int, bool, str]
 
-    assert DefaultModel(v=True).dict() == {'v': 1}
-    assert DefaultModel(v=1).dict() == {'v': 1}
-    assert DefaultModel(v='1').dict() == {'v': 1}
+    # do it this way since `1 == True`
+    assert repr(DefaultModel(v=True).v) == 'True'
+    assert repr(DefaultModel(v=1).v) == '1'
+    assert repr(DefaultModel(v='1').v) == "'1'"
 
-    assert DefaultModel.schema() == {
-        'title': 'DefaultModel',
-        'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
-        'required': ['v'],
-    }
-
-
-def test_smart_union_types():
-    class SmartModel(BaseModel):
-        v: Union[int, bool, str]
-
-        class Config:
-            smart_union = True
-
-    assert SmartModel(v=1).dict() == {'v': 1}
-    assert SmartModel(v=True).dict() == {'v': True}
-    assert SmartModel(v='1').dict() == {'v': '1'}
-
-    assert SmartModel.schema() == {
-        'title': 'SmartModel',
-        'type': 'object',
-        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
-        'required': ['v'],
-    }
+    # assert DefaultModel.schema() == {
+    #     'title': 'DefaultModel',
+    #     'type': 'object',
+    #     'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+    #     'required': ['v'],
+    # }
 
 
 def test_default_union_class():
@@ -3239,92 +3520,65 @@ def test_default_union_class():
         y: Union[A, B]
 
     assert isinstance(Model(y=A(x='a')).y, A)
-    # `B` instance is coerced to `A`
-    assert isinstance(Model(y=B(x='b')).y, A)
-
-
-def test_smart_union_class():
-    class A(BaseModel):
-        x: str
-
-    class B(BaseModel):
-        x: str
-
-    class Model(BaseModel):
-        y: Union[A, B]
-
-        class Config:
-            smart_union = True
-
-    assert isinstance(Model(y=A(x='a')).y, A)
     assert isinstance(Model(y=B(x='b')).y, B)
 
 
-def test_default_union_subclass():
+def test_union_subclass():
     class MyStr(str):
         ...
 
     class Model(BaseModel):
         x: Union[int, str]
 
+    # see https://github.com/pydantic/pydantic-core/pull/294, since subclasses are no-longer allowed as valid
+    # inputs to strict-string, this doesn't work
     assert Model(x=MyStr('1')).x == 1
 
 
-def test_smart_union_subclass():
-    class MyStr(str):
-        ...
-
-    class Model(BaseModel):
-        x: Union[int, str]
-
-        class Config:
-            smart_union = True
-
-    assert Model(x=MyStr('1')).x == '1'
-
-
-def test_default_union_compound_types():
-    class Model(BaseModel):
-        values: Union[Dict[str, str], List[str]]
-
-    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
-    assert Model(values=['L1']).dict() == {'values': {'L': '1'}}  # dict(['L1']) == {'L': '1'}
-
-
-def test_smart_union_compound_types():
+def test_union_compound_types():
     class Model(BaseModel):
         values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
 
-        class Config:
-            smart_union = True
-
     assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
     assert Model(values=['L1']).dict() == {'values': ['L1']}
-    assert Model(values=('L1',)).dict() == {'values': {'L': '1'}}  # expected coercion into first dict if not a list
+    assert Model(values=('L1',)).dict() == {'values': ['L1']}
     assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
     assert Model(values={'x': ('pika',)}).dict() == {'values': {'x': ['pika']}}
     with pytest.raises(ValidationError) as e:
         Model(values={'x': {'a': 'b'}})
+    # insert_assert(e.value.errors())
     assert e.value.errors() == [
-        {'loc': ('values', 'x'), 'msg': 'str type expected', 'type': 'type_error.str'},
-        {'loc': ('values',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
-        {'loc': ('values', 'x'), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {
+            'type': 'string_type',
+            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,str]]', 'x'),
+            'msg': 'Input should be a valid string',
+            'input': {'a': 'b'},
+        },
+        {
+            'type': 'list_type',
+            'loc': ('values', 'list[str]'),
+            'msg': 'Input should be a valid list/array',
+            'input': {'x': {'a': 'b'}},
+        },
+        {
+            'type': 'list_type',
+            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,list[str]]]', 'x'),
+            'msg': 'Input should be a valid list/array',
+            'input': {'a': 'b'},
+        },
     ]
 
 
-def test_smart_union_compouned_types_edge_case():
-    """For now, `smart_union` does not support well compound types"""
-
-    class Model(BaseModel, smart_union=True):
+def test_smart_union_compounded_types_edge_case():
+    class Model(BaseModel):
         x: Union[List[str], List[int]]
 
-    # should consider [1, 2] valid and not coerce once `smart_union` is improved
-    assert Model(x=[1, 2]).x == ['1', '2']
-    # still coerce if needed
-    assert Model(x=[1, '2']).x == ['1', '2']
+    assert Model(x=[1, 2]).x == [1, 2]
+    assert Model(x=['1', '2']).x == ['1', '2']
+    assert Model(x=[1, '2']).x == [1, 2]
 
 
-def test_smart_union_typeddict():
+def test_union_typeddict():
     class Dict1(TypedDict):
         foo: str
 
@@ -3334,86 +3588,4 @@ def test_smart_union_typeddict():
     class M(BaseModel):
         d: Union[Dict2, Dict1]
 
-        class Config:
-            smart_union = True
-
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
-
-
-@pytest.mark.parametrize(
-    'value,result',
-    (
-        ('1996-01-22', date(1996, 1, 22)),
-        (date(1996, 1, 22), date(1996, 1, 22)),
-    ),
-)
-def test_past_date_validation_success(value, result):
-    class Model(BaseModel):
-        foo: PastDate
-
-    assert Model(foo=value).foo == result
-
-
-@pytest.mark.parametrize(
-    'value',
-    (
-        date.today(),
-        date.today() + timedelta(1),
-        datetime.today(),
-        datetime.today() + timedelta(1),
-        '2064-06-01',
-    ),
-)
-def test_past_date_validation_fails(value):
-    class Model(BaseModel):
-        foo: PastDate
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(foo=value)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('foo',),
-            'msg': 'date is not in the past',
-            'type': 'value_error.date.not_in_the_past',
-        }
-    ]
-
-
-@pytest.mark.parametrize(
-    'value,result',
-    (
-        (date.today() + timedelta(1), date.today() + timedelta(1)),
-        (datetime.today() + timedelta(1), date.today() + timedelta(1)),
-        ('2064-06-01', date(2064, 6, 1)),
-    ),
-)
-def test_future_date_validation_success(value, result):
-    class Model(BaseModel):
-        foo: FutureDate
-
-    assert Model(foo=value).foo == result
-
-
-@pytest.mark.parametrize(
-    'value',
-    (
-        date.today(),
-        date.today() - timedelta(1),
-        datetime.today(),
-        datetime.today() - timedelta(1),
-        '1996-01-22',
-    ),
-)
-def test_future_date_validation_fails(value):
-    class Model(BaseModel):
-        foo: FutureDate
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(foo=value)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('foo',),
-            'msg': 'date is not in the future',
-            'type': 'value_error.date.not_in_the_future',
-        }
-    ]

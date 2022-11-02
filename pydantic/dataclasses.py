@@ -51,18 +51,18 @@ from typing import (
 
 from typing_extensions import dataclass_transform
 
-from .class_validators import gather_all_validators
+from pydantic._internal._utils import ClassAttribute
+
+from ._internal import _fields
 from .config import BaseConfig, ConfigDict, Extra, get_config
-from .error_wrappers import ValidationError
-from .errors import DataclassTypeError
-from .fields import Field, FieldInfo, Required, Undefined
-from .main import create_model, validate_model
-from .utils import ClassAttribute
+from .fields import Field, FieldInfo
+from .main import create_model
 
 if TYPE_CHECKING:
     from .main import BaseModel
-    from .typing import CallableGenerator, NoArgAnyCallable
 
+    NoArgAnyCallable = Callable[[], Any]
+    CallableGenerator = Generator[Callable[..., Any], None, None]
     DataclassT = TypeVar('DataclassT', bound='Dataclass')
 
     DataclassClassOrWrapper = Union[Type['Dataclass'], 'DataclassProxy']
@@ -222,7 +222,6 @@ def dataclass(
 
         should_validate_on_init = default_validate_on_init if validate_on_init is None else validate_on_init
         _add_pydantic_validation_attributes(cls, the_config, should_validate_on_init, dc_cls_doc)
-        dc_cls.__pydantic_model__.__try_update_forward_refs__(**{cls.__name__: cls})
         return dc_cls
 
     if _cls is None:
@@ -356,7 +355,8 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
         elif isinstance(v, dict):
             return cls(**v)
         else:
-            raise DataclassTypeError(class_name=cls.__name__)
+            raise Exception('todo')
+            # raise DataclassTypeError(class_name=cls.__name__)
 
 
 def create_pydantic_model_from_dataclass(
@@ -368,7 +368,7 @@ def create_pydantic_model_from_dataclass(
 
     field_definitions: Dict[str, Any] = {}
     for field in dataclasses.fields(dc_cls):
-        default: Any = Undefined
+        default: Any = _fields.Undefined
         default_factory: Optional['NoArgAnyCallable'] = None
         field_info: FieldInfo
 
@@ -377,7 +377,7 @@ def create_pydantic_model_from_dataclass(
         elif field.default_factory is not dataclasses.MISSING:
             default_factory = field.default_factory
         else:
-            default = Required
+            default = ...
 
         if isinstance(default, FieldInfo):
             field_info = default
@@ -387,12 +387,14 @@ def create_pydantic_model_from_dataclass(
 
         field_definitions[field.name] = (field.type, field_info)
 
-    validators = gather_all_validators(dc_cls)
+    # from .validator_functions import gather_all_validators
+
+    # validators = gather_all_validators(dc_cls)
     model: Type['BaseModel'] = create_model(
         dc_cls.__name__,
         __config__=config,
         __module__=dc_cls.__module__,
-        __validators__=validators,
+        # __validators__=validators,
         __cls_kwargs__={'__resolve_forward_refs__': False},
         **field_definitions,
     )
@@ -411,22 +413,23 @@ def _dataclass_validate_values(self: 'Dataclass') -> None:
         input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
     else:
         input_data = self.__dict__
-    d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
-    if validation_error:
-        raise validation_error
-    self.__dict__.update(d)
-    object.__setattr__(self, '__pydantic_initialised__', True)
+    raise NotImplementedError(f'TODO {input_data}')
+    # d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
+    # if validation_error:
+    #     raise validation_error
+    # self.__dict__.update(d)
+    # object.__setattr__(self, '__pydantic_initialised__', True)
 
 
 def _dataclass_validate_assignment_setattr(self: 'Dataclass', name: str, value: Any) -> None:
     if self.__pydantic_initialised__:
         d = dict(self.__dict__)
         d.pop(name, None)
-        known_field = self.__pydantic_model__.__fields__.get(name, None)
-        if known_field:
-            value, error_ = known_field.validate(value, d, loc=name, cls=self.__class__)
-            if error_:
-                raise ValidationError([error_], self.__class__)
+        # known_field = self.__pydantic_model__.__fields__.get(name, None)
+        # if known_field:
+        #     value, error_ = known_field.validate(value, d, loc=name, cls=self.__class__)
+        #     if error_:
+        #         raise ValidationError([error_], self.__class__)
 
     object.__setattr__(self, name, value)
 

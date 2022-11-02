@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import validate_arguments, Field, ValidationError
-from pydantic.typing import Annotated
+from typing_extensions import Annotated
 
 
 @validate_arguments

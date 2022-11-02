@@ -4,12 +4,6 @@ import pytest
 
 from pydantic import BaseModel, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, ValidationError
 
-#
-# ipaddress.IPv4Address
-# ipaddress.IPv6Address
-# pydantic.IPvAnyAddress
-#
-
 
 @pytest.mark.parametrize(
     'value,cls',
@@ -98,103 +92,53 @@ def test_ipv6address_success(value):
     assert Model(ipv6=value).ipv6 == IPv6Address(value)
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
-        ),
-        (
-            '192.168.0.1.1.1',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
-        ),
-        (
-            -1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
-        ),
-        (
-            2**128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 address', 'type': 'value_error.ipvanyaddress'}],
-        ),
-    ],
-)
-def test_ipaddress_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1', -1, 2**128 + 1])
+def test_ipaddress_fails(value):
     class Model(BaseModel):
         ip: IPvAnyAddress
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.error_count() == 1
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_any_address',
+        'loc': ('ip',),
+        'msg': 'value is not a valid IPv4 or IPv6 address',
+        'input': value,
+    }
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
-        ),
-        (
-            '192.168.0.1.1.1',
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
-        ),
-        (-1, [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}]),
-        (
-            2**32 + 1,
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
-        ),
-        (
-            IPv6Address('::0:1:0'),
-            [{'loc': ('ipv4',), 'msg': 'value is not a valid IPv4 address', 'type': 'value_error.ipv4address'}],
-        ),
-    ],
-)
-def test_ipv4address_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1', -1, 2**32 + 1, IPv6Address('::0:1:0')])
+def test_ipv4address_fails(value):
     class Model(BaseModel):
         ipv4: IPv4Address
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ipv4=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.error_count() == 1
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_v4_address',
+        'loc': ('ipv4',),
+        'msg': 'Input is not a valid IPv4 address',
+        'input': value,
+    }
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
-        ),
-        (
-            '192.168.0.1.1.1',
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
-        ),
-        (-1, [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}]),
-        (
-            2**128 + 1,
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
-        ),
-        (
-            IPv4Address('192.168.0.1'),
-            [{'loc': ('ipv6',), 'msg': 'value is not a valid IPv6 address', 'type': 'value_error.ipv6address'}],
-        ),
-    ],
-)
-def test_ipv6address_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1', -1, 2**128 + 1, IPv4Address('192.168.0.1')])
+def test_ipv6address_fails(value):
     class Model(BaseModel):
         ipv6: IPv6Address
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ipv6=value)
-    assert exc_info.value.errors() == errors
-
-
-#
-# ipaddress.IPv4Network
-# ipaddress.IPv6Network
-# pydantic.IPvAnyNetwork
-#
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_v6_address',
+        'loc': ('ipv6',),
+        'msg': 'Input is not a valid IPv6 address',
+        'input': value,
+    }
 
 
 @pytest.mark.parametrize(
@@ -254,103 +198,56 @@ def test_ip_v6_network_success(value, cls):
     assert Model(ip=value).ip == cls(value)
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 network', 'type': 'value_error.ipvanynetwork'}],
-        ),
-        (
-            '192.168.0.1.1.1/24',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 network', 'type': 'value_error.ipvanynetwork'}],
-        ),
-        (
-            -1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 network', 'type': 'value_error.ipvanynetwork'}],
-        ),
-        (
-            2**128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 or IPv6 network', 'type': 'value_error.ipvanynetwork'}],
-        ),
-    ],
-)
-def test_ipnetwork_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1/24', -1, 2**128 + 1])
+def test_ipnetwork_fails(value):
     class Model(BaseModel):
         ip: IPvAnyNetwork = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_any_network',
+        'loc': ('ip',),
+        'msg': 'value is not a valid IPv4 or IPv6 network',
+        'input': value,
+    }
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}],
-        ),
-        (
-            '192.168.0.1.1.1/24',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}],
-        ),
-        (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}]),
-        (
-            2**128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}],
-        ),
-        (
-            '2001:db00::1/120',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 network', 'type': 'value_error.ipv4network'}],
-        ),
-    ],
-)
-def test_ip_v4_network_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1/24', -1, 2**128 + 1, '2001:db00::1/120'])
+def test_ip_v4_network_fails(value):
     class Model(BaseModel):
         ip: IPv4Network = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_v4_network',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv4 network',
+        'input': value,
+    }
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}],
-        ),
-        (
-            '192.168.0.1.1.1/24',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}],
-        ),
-        (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}]),
-        (
-            2**128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}],
-        ),
-        (
-            '192.168.0.1/24',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 network', 'type': 'value_error.ipv6network'}],
-        ),
-    ],
-)
-def test_ip_v6_network_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1/24', -1, 2**128 + 1, '192.168.0.1/24'])
+def test_ip_v6_network_fails(value):
     class Model(BaseModel):
         ip: IPv6Network = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
 
-
-#
-# ipaddress.IPv4Interface
-# ipaddress.IPv6Interface
-# pydantic.IPvAnyInterface
-#
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_v6_network',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv6 network',
+        'input': value,
+    }
 
 
 @pytest.mark.parametrize(
@@ -433,109 +330,55 @@ def test_ip_v6_interface_success(value, cls):
     assert Model(ip=value).ip == cls(value)
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [
-                {
-                    'loc': ('ip',),
-                    'msg': 'value is not a valid IPv4 or IPv6 interface',
-                    'type': 'value_error.ipvanyinterface',
-                }
-            ],
-        ),
-        (
-            '192.168.0.1.1.1/24',
-            [
-                {
-                    'loc': ('ip',),
-                    'msg': 'value is not a valid IPv4 or IPv6 interface',
-                    'type': 'value_error.ipvanyinterface',
-                }
-            ],
-        ),
-        (
-            -1,
-            [
-                {
-                    'loc': ('ip',),
-                    'msg': 'value is not a valid IPv4 or IPv6 interface',
-                    'type': 'value_error.ipvanyinterface',
-                }
-            ],
-        ),
-        (
-            2**128 + 1,
-            [
-                {
-                    'loc': ('ip',),
-                    'msg': 'value is not a valid IPv4 or IPv6 interface',
-                    'type': 'value_error.ipvanyinterface',
-                }
-            ],
-        ),
-    ],
-)
-def test_ipinterface_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1/24', -1, 2**128 + 1])
+def test_ipinterface_fails(value):
     class Model(BaseModel):
         ip: IPvAnyInterface = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
+
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_any_interface',
+        'loc': ('ip',),
+        'msg': 'value is not a valid IPv4 or IPv6 interface',
+        'input': value,
+    }
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 interface', 'type': 'value_error.ipv4interface'}],
-        ),
-        (
-            '192.168.0.1.1.1/24',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 interface', 'type': 'value_error.ipv4interface'}],
-        ),
-        (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 interface', 'type': 'value_error.ipv4interface'}]),
-        (
-            2**128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv4 interface', 'type': 'value_error.ipv4interface'}],
-        ),
-    ],
-)
-def test_ip_v4_interface_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1/24', -1, 2**128 + 1])
+def test_ip_v4_interface_fails(value):
     class Model(BaseModel):
         ip: IPv4Interface = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
+
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_v4_interface',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv4 interface',
+        'input': value,
+    }
 
 
-@pytest.mark.parametrize(
-    'value,errors',
-    [
-        (
-            'hello,world',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 interface', 'type': 'value_error.ipv6interface'}],
-        ),
-        (
-            '192.168.0.1.1.1/24',
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 interface', 'type': 'value_error.ipv6interface'}],
-        ),
-        (-1, [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 interface', 'type': 'value_error.ipv6interface'}]),
-        (
-            2**128 + 1,
-            [{'loc': ('ip',), 'msg': 'value is not a valid IPv6 interface', 'type': 'value_error.ipv6interface'}],
-        ),
-    ],
-)
-def test_ip_v6_interface_fails(value, errors):
+@pytest.mark.parametrize('value', ['hello,world', '192.168.0.1.1.1/24', -1, 2**128 + 1])
+def test_ip_v6_interface_fails(value):
     class Model(BaseModel):
         ip: IPv6Interface = None
 
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
-    assert exc_info.value.errors() == errors
+
+    assert exc_info.value.error_count() == 1
+    # insert_assert(exc_info.value.errors()[0])
+    assert exc_info.value.errors()[0] == {
+        'type': 'ip_v6_interface',
+        'loc': ('ip',),
+        'msg': 'Input is not a valid IPv6 interface',
+        'input': value,
+    }

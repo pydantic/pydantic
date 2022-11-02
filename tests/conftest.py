@@ -1,9 +1,12 @@
 import importlib
 import inspect
+import re
 import secrets
 import sys
 import textwrap
+from dataclasses import dataclass
 from types import FunctionType
+from typing import Any, Optional
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -62,3 +65,18 @@ def create_module(tmp_path, request):
         return module
 
     return run
+
+
+@dataclass
+class Err:
+    message: str
+    errors: Optional[Any] = None
+
+    def __repr__(self):
+        if self.errors:
+            return f'Err({self.message!r}, errors={self.errors!r})'
+        else:
+            return f'Err({self.message!r})'
+
+    def message_escaped(self):
+        return re.escape(self.message)
