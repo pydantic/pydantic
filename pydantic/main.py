@@ -31,7 +31,7 @@ if typing.TYPE_CHECKING:
 
     AnyClassMethod = classmethod[Any]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
-    Model = typing.TypeVar('Model', bound='BaseModel')
+    Model = typing.TypeVar("Model", bound='BaseModel')
 
 __all__ = 'BaseModel', 'create_model'
 
@@ -115,7 +115,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
         __fields__: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
-        __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x
+        __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]

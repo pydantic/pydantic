@@ -10,3 +10,4 @@ pydantic-core
 pyupgrade
 mypy
 pre-commit
+ruff

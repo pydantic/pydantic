@@ -36,3 +36,4 @@ pydantic/*.so
 /fastapi/
 /codecov.sh
 /worktrees/
+/.ruff_cache/

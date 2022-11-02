@@ -63,6 +63,8 @@ pyupgrade==2.37.3
     # via -r requirements/linting.in
 pyyaml==6.0
     # via pre-commit
+ruff==0.0.95
+    # via -r requirements/linting.in
 sortedcontainers==2.4.0
     # via hypothesis
 tokenize-rt==4.2.1

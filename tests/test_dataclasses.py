@@ -1209,11 +1209,11 @@ def test_issue_3162():
 def test_discriminated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
     class A:
-        l: Literal['a']
+        l: Literal['a']  # noqa: E741
 
     @pydantic.dataclasses.dataclass
     class B:
-        l: Literal['b']
+        l: Literal['b']  # noqa: E741
 
     @pydantic.dataclasses.dataclass
     class Top:
@@ -1360,7 +1360,7 @@ def test_post_init_allow_extra():
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
-        self_reference: 'MyDataclass'
+        self_reference: 'MyDataclass'  # noqa: F821
 
     assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
 

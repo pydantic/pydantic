@@ -109,6 +109,11 @@ per_file_ignores = [
 
 [tool.ruff]
 line-length = 120
+flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+
+[tool.ruff.per-file-ignores]
+'pydantic/__init__.py' = ['F405', 'F403']
+'tests/test_forward_ref.py' = ['F821']
 
 [tool.coverage.run]
 source = ['pydantic']

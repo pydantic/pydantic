@@ -122,7 +122,7 @@ def test_self_forward_ref_module(create_module):
 def test_self_forward_ref_collection(create_module):
     @create_module
     def module():
-        from typing import Dict, List
+        from typing import Dict, List  # noqa: F401
 
         from pydantic import BaseModel
 
