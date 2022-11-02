@@ -42,7 +42,7 @@ def mapping_validator(
 
 def construct_counter(__input_value: typing.Mapping[Any, Any], **_kwargs: Any) -> typing.Counter[Any]:
     """
-    Validator for `Mapping` types, if required `isinstance(v, Mapping)` has already been called.
+    Validator for `Counter` types, if required `isinstance(v, Counter)` has already been called.
     """
     return typing.Counter(__input_value)
 

@@ -63,7 +63,7 @@ def inspect_namespace(namespace: dict[str, Any]) -> dict[str, ModelPrivateAttr]:
             elif not single_underscore(var_name):
                 raise NameError(
                     f'Private attributes "{var_name}" must not be a valid field name; '
-                    f'Use sunder or dunder names, e. g. "_{var_name}"'
+                    f'Use sunder names, e. g. "_{var_name}"'
                 )
             private_attributes[var_name] = value
             del namespace[var_name]

@@ -52,7 +52,6 @@ class ValidationFunctions:
     def __init__(self, bases: tuple[type[Any], ...]) -> None:
         self._validators: dict[str, Validator] = {}
         self._field_validators: dict[str, list[str]] = {}
-        # these are
         self._direct_field_validators: set[str] = set()
         self._all_fields_validators: list[str] = []
         self._root_validators: list[str] = []
@@ -61,7 +60,7 @@ class ValidationFunctions:
 
     def extract_validator(self, name: str, value: Any) -> None:
         """
-        If the value is a field or root validator,  add it to the appropriate group of validators.
+        If the value is a field or root validator, add it to the appropriate group of validators.
 
         Note at this point the function is not bound to the class,
         we have to set functions later in `set_bound_functions`.

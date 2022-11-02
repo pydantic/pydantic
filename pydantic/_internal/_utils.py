@@ -438,8 +438,6 @@ else:
         Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
         Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
-
-        Annoying inheriting from `MutableMapping` breaks cython.
         """
 
         def __init__(self, size_limit: int = 1000):

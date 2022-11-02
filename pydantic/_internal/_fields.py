@@ -77,7 +77,7 @@ class CustomValidator(ABC):
 
     def _update_attrs(self, constraints: dict[str, Any], attrs: set[str] | None = None) -> None:
         """
-        Utility for updating attributes/slots and raising an error if they doesn't exist, to be used by
+        Utility for updating attributes/slots and raising an error if they don't exist, to be used by
         implementations of `CustomValidator`.
         """
         attrs = attrs or set(self.__slots__)  # type: ignore[attr-defined]

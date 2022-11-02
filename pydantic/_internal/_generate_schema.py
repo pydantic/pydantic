@@ -33,7 +33,7 @@ def model_fields_schema(
 ) -> core_schema.CoreSchema:
     """
     Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
-    since this is typed_dict schema which is used to create the model,
+    since this is typed_dict schema which is used to create the model.
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(

@@ -123,7 +123,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __fields_set__: set[str] = set()
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
-            'Pydantic models should in inherit from BaseModel, BaseModel cannot be instantiated directly'
+            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
     Config = BaseConfig
@@ -447,7 +447,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls, *, force: bool = False, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None
     ) -> bool | None:
         """
-        Try to (Re)constructing the model schema.
+        Try to (Re)construct the model schema.
         """
         if not force and cls.__pydantic_model_complete__:
             return None
