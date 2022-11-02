@@ -156,7 +156,7 @@ impl LiteralMultipleStringsValidator {
                 return None;
             }
         }
-        let (expected_repr, name) = expected_repr_name(repr_args);
+        let (expected_repr, name) = expected_repr_name(repr_args, "literal");
         Some(Self {
             expected,
             expected_repr,
@@ -211,7 +211,7 @@ impl LiteralMultipleIntsValidator {
                 return None;
             }
         }
-        let (expected_repr, name) = expected_repr_name(repr_args);
+        let (expected_repr, name) = expected_repr_name(repr_args, "literal");
         Some(Self {
             expected,
             expected_repr,
@@ -273,7 +273,7 @@ impl LiteralGeneralValidator {
                 expected_py.append(item)?;
             }
         }
-        let (expected_repr, name) = expected_repr_name(repr_args);
+        let (expected_repr, name) = expected_repr_name(repr_args, "literal");
         Ok(Self {
             expected_int,
             expected_str,
@@ -328,8 +328,8 @@ impl Validator for LiteralGeneralValidator {
     }
 }
 
-fn expected_repr_name(mut repr_args: Vec<String>) -> (String, String) {
-    let name = format!("literal[{}]", repr_args.join(","));
+pub fn expected_repr_name(mut repr_args: Vec<String>, base_name: &'static str) -> (String, String) {
+    let name = format!("{base_name}[{}]", repr_args.join(","));
     // unwrap is okay since we check the length in build at the top of this file
     let last_repr = repr_args.pop().unwrap();
     let repr = if repr_args.is_empty() {
