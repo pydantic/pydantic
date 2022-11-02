@@ -1021,6 +1021,33 @@ def json_schema(schema: CoreSchema | None = None, *, ref: str | None = None, ext
     return dict_not_none(type='json', schema=schema, ref=ref, extra=extra)
 
 
+class UrlSchema(TypedDict, total=False):
+    type: Required[Literal['url']]
+    host_required: bool  # default False
+    max_length: int
+    allowed_schemes: List[str]
+    ref: str
+    extra: Any
+
+
+def url_schema(
+    *,
+    host_required: bool | None = None,
+    max_length: int | None = None,
+    allowed_schemes: list[str] | None = None,
+    ref: str | None = None,
+    extra: Any = None,
+) -> UrlSchema:
+    return dict_not_none(
+        type='url',
+        host_required=host_required,
+        max_length=max_length,
+        allowed_schemes=allowed_schemes,
+        ref=ref,
+        extra=extra,
+    )
+
+
 CoreSchema = Union[
     AnySchema,
     NoneSchema,
@@ -1059,6 +1086,7 @@ CoreSchema = Union[
     RecursiveReferenceSchema,
     CustomErrorSchema,
     JsonSchema,
+    UrlSchema,
 ]
 
 # used in _pydantic_core.pyi::PydanticKnownError
@@ -1139,4 +1167,8 @@ ErrorType = Literal[
     'unexpected_positional_argument',
     'missing_positional_argument',
     'multiple_argument_values',
+    'url_error',
+    'url_too_long',
+    'url_schema',
+    'url_host_required',
 ]

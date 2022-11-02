@@ -1,6 +1,6 @@
 import decimal
 import sys
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
@@ -13,6 +13,7 @@ __all__ = (
     '__version__',
     'build_profile',
     'SchemaValidator',
+    'Url',
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',
@@ -37,6 +38,24 @@ class SchemaValidator:
     def validate_assignment(
         self, field: str, input: Any, data: 'dict[str, Any]', strict: 'bool | None' = None, context: Any = None
     ) -> 'dict[str, Any]': ...
+
+class Url:
+    scheme: str
+    username: 'str | None'
+    password: 'str | None'
+    host: 'str | None'
+    host_type: Literal['domain', 'punycode_domain', 'ipv4', 'ipv6', None]
+    port: 'int | None'
+    path: 'str | None'
+    query: 'str | None'
+    fragment: 'str | None'
+
+    def __init__(self, raw_url: str) -> None: ...
+    def unicode_host(self) -> 'str | None': ...
+    def query_params(self) -> 'list[tuple[str, str]]': ...
+    def unicode_string(self) -> str: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
 
 class SchemaError(Exception):
     pass

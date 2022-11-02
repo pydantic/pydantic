@@ -255,6 +255,10 @@ all_errors = [
     ('unexpected_positional_argument', 'Unexpected positional argument', None),
     ('missing_positional_argument', 'Missing required positional argument', None),
     ('multiple_argument_values', 'Got multiple values for argument', None),
+    ('url_error', 'Invalid URL, Foobar', {'error': 'Foobar'}),
+    ('url_too_long', 'URL should have at most 42 characters', {'max_length': 42}),
+    ('url_schema', 'URL schema should be "foo", "bar" or "spam"', {'expected_schemas': '"foo", "bar" or "spam"'}),
+    ('url_host_required', 'URL host required', None),
 ]
 
 
