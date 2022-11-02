@@ -4,6 +4,7 @@ from ._pydantic_core import (
     PydanticOmit,
     SchemaError,
     SchemaValidator,
+    Url,
     ValidationError,
     __version__,
 )
@@ -14,6 +15,7 @@ __all__ = (
     'CoreConfig',
     'CoreSchema',
     'SchemaValidator',
+    'Url',
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',

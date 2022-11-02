@@ -317,6 +317,22 @@ pub enum ErrorType {
     MissingPositionalArgument,
     #[strum(message = "Got multiple values for argument")]
     MultipleArgumentValues,
+    // ---------------------
+    // URL errors
+    #[strum(message = "Invalid URL, {error}")]
+    UrlError {
+        error: String,
+    },
+    #[strum(message = "URL should have at most {max_length} characters")]
+    UrlTooLong {
+        max_length: usize,
+    },
+    #[strum(message = "URL schema should be {expected_schemas}")]
+    UrlSchema {
+        expected_schemas: String,
+    },
+    #[strum(message = "URL host required")]
+    UrlHostRequired,
 }
 
 macro_rules! render {
@@ -449,6 +465,9 @@ impl ErrorType {
                 expected_tags: String
             ),
             Self::UnionTagNotFound { .. } => extract_context!(UnionTagNotFound, ctx, discriminator: String),
+            Self::UrlError { .. } => extract_context!(UrlError, ctx, error: String),
+            Self::UrlTooLong { .. } => extract_context!(UrlTooLong, ctx, max_length: usize),
+            Self::UrlSchema { .. } => extract_context!(UrlSchema, ctx, expected_schemas: String),
             _ => {
                 if ctx.is_some() {
                     py_err!(PyTypeError; "'{}' errors do not require context", value)
@@ -536,6 +555,9 @@ impl ErrorType {
                 expected_tags,
             } => render!(self, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => render!(self, discriminator),
+            Self::UrlError { error } => render!(self, error),
+            Self::UrlTooLong { max_length } => to_string_render!(self, max_length),
+            Self::UrlSchema { expected_schemas } => render!(self, expected_schemas),
             _ => Ok(self.message_template().to_string()),
         }
     }
@@ -585,6 +607,9 @@ impl ErrorType {
                 expected_tags,
             } => py_dict!(py, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => py_dict!(py, discriminator),
+            Self::UrlError { error } => py_dict!(py, error),
+            Self::UrlTooLong { max_length } => py_dict!(py, max_length),
+            Self::UrlSchema { expected_schemas } => py_dict!(py, expected_schemas),
             _ => Ok(None),
         }
     }

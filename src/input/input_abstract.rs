@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyString, PyType};
 
 use crate::errors::{InputValue, LocItem, ValResult};
+use crate::PyUrl;
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
@@ -52,6 +53,10 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
 
     fn input_is_subclass(&self, _class: &PyType) -> PyResult<bool> {
         Ok(false)
+    }
+
+    fn input_as_url(&self) -> Option<PyUrl> {
+        None
     }
 
     fn callable(&self) -> bool {

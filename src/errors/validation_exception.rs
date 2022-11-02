@@ -81,6 +81,7 @@ impl ValidationError {
     }
 
     fn errors(&self, py: Python, include_context: Option<bool>) -> PyResult<PyObject> {
+        // TODO remove `collect` when we have https://github.com/PyO3/pyo3/pull/2676
         Ok(self
             .line_errors
             .iter()
