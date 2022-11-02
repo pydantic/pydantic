@@ -114,7 +114,7 @@ class ValidationFunctions:
         """
         Inherit validators from `ValidationFunctions` instances on base classes.
 
-        Validators from the closes base should be called last, and the greatest-(grand)parent first - to roughly
+        Validators from the closest base should be called last, and the greatest-(grand)parent first - to roughly
         match their definition order in code.
         """
         for base in reversed(bases):

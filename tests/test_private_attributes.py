@@ -146,7 +146,7 @@ def test_private_attribute_intersection_with_extra_field():
 def test_private_attribute_invalid_name():
     with pytest.raises(
         NameError,
-        match='Private attributes "foo" must not be a valid field name; Use sunder or dunder names, e. g. "_foo"',
+        match='Private attributes "foo" must not be a valid field name; Use sunder names, e. g. "_foo"',
     ):
 
         class Model(BaseModel):

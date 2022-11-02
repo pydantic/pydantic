@@ -37,11 +37,12 @@ except ImportError:
 
 typing_base = _TypingBase
 
-try:
-    from typing import GenericAlias as TypingGenericAlias  # type: ignore
-except ImportError:
+
+if sys.version_info < (3, 9):
     # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
     TypingGenericAlias = ()
+else:
+    from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 
 if sys.version_info < (3, 11):
