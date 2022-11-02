@@ -1848,3 +1848,10 @@ def test_post_init():
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
     assert m.dict() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
     assert calls == ['submodel_post_init', 'model_post_init']
+
+
+def test_extra_args_to_field_type_error():
+    with pytest.raises(TypeError, match='unexpected keyword argument'):
+
+        class Model(BaseModel):
+            a: int = Field(thing=1)

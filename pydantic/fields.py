@@ -17,7 +17,8 @@ if typing.TYPE_CHECKING:
 
 class FieldInfo(_repr.Representation):
     """
-    Captures extra information about a field.
+    Hold information about a field, FieldInfo is used however a field is defined, whether or not the `Field()`
+    function below is explicitly used.
     """
 
     __slots__ = (
@@ -33,7 +34,7 @@ class FieldInfo(_repr.Representation):
         'metadata',
         'repr',
         'discriminator',
-        'extra',
+        'json_schema_extra',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -57,7 +58,7 @@ class FieldInfo(_repr.Representation):
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.pop('annotation', None))
+        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
 
         default = kwargs.pop('default', Undefined)
         if default is Ellipsis:
@@ -65,21 +66,21 @@ class FieldInfo(_repr.Representation):
         else:
             self.default = default
 
-        self.default_factory = kwargs.pop('default_factory', None)
+        self.default_factory = kwargs.get('default_factory')
 
         if self.default is not Undefined and self.default_factory is not None:
             raise ValueError('cannot specify both default and default_factory')
 
-        self.alias = kwargs.pop('alias', None)
-        self.alias_priority = kwargs.pop('alias_priority', 2 if self.alias is not None else None)
-        self.title = kwargs.pop('title', None)
-        self.description = kwargs.pop('description', None)
-        self.exclude = kwargs.pop('exclude', None)
-        self.include = kwargs.pop('include', None)
+        self.alias = kwargs.get('alias')
+        self.alias_priority = kwargs.get('alias_priority', 2 if self.alias is not None else None)
+        self.title = kwargs.get('title')
+        self.description = kwargs.get('description')
+        self.exclude = kwargs.get('exclude')
+        self.include = kwargs.get('include')
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata
-        self.discriminator = kwargs.pop('discriminator', None)
-        self.repr = kwargs.pop('repr', True)
-        self.extra = kwargs
+        self.discriminator = kwargs.get('discriminator')
+        self.repr = kwargs.get('repr', True)
+        self.json_schema_extra = kwargs.get('json_schema_extra')
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
@@ -227,7 +228,7 @@ class FieldInfo(_repr.Representation):
                 continue
             if s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
-            elif s != 'extra' or self.extra:
+            else:
                 value = getattr(self, s)
                 if value is not None and value is not Undefined:
                     yield s, value
@@ -258,7 +259,7 @@ def Field(
     pattern: str = None,
     discriminator: str = None,
     repr: bool = True,
-    **extra: Any,
+    json_schema_extra: dict[str, Any] | None = None,
 ) -> Any:
     """
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
@@ -306,7 +307,7 @@ def Field(
     :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
       The `discriminator` is the name of this common field to shorten validation and improve generated schema
     :param repr: show this field in the representation
-    :param **extra: any additional keyword arguments will be added as is to the schema
+    :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     """
     return FieldInfo.from_field(
         default,
@@ -332,7 +333,7 @@ def Field(
         pattern=pattern,
         discriminator=discriminator,
         repr=repr,
-        **extra,
+        json_schema_extra=json_schema_extra,
     )
 
 

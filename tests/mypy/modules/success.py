@@ -141,7 +141,7 @@ assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
 
 class WithField(BaseModel):
     age: int
-    first_name: str = Field('John', const=True)
+    first_name: str = Field('John', max_length=42)
 
 
 # simple decorator

@@ -1,5 +1,7 @@
 """
 Bucket of reusable internal utilities.
+
+This should be reduced as much as possible with functions only used in one place, moved to that place.
 """
 from __future__ import annotations as _annotations
 
@@ -23,10 +25,8 @@ if typing.TYPE_CHECKING:
 
 __all__ = (
     'sequence_like',
-    'validate_field_name',
     'lenient_isinstance',
     'lenient_issubclass',
-    'in_ipython',
     'is_valid_identifier',
     'deep_update',
     'update_not_none',
@@ -84,18 +84,6 @@ def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
-def validate_field_name(bases: list[type[BaseModel]], field_name: str) -> None:
-    """
-    Ensure that the field's name does not shadow an existing attribute of the model.
-    """
-    for base in bases:
-        if getattr(base, field_name, None):
-            raise NameError(
-                f'Field name "{field_name}" shadows a BaseModel attribute; '
-                f'use a different field name with "alias=\'{field_name}\'".'
-            )
-
-
 def lenient_isinstance(o: Any, class_or_tuple: type[Any] | tuple[type[Any], ...] | None) -> bool:
     try:
         return isinstance(o, class_or_tuple)  # type: ignore[arg-type]
@@ -110,18 +98,6 @@ def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:
         if isinstance(cls, _typing_extra.WithArgsTypes):
             return False
         raise  # pragma: no cover
-
-
-def in_ipython() -> bool:
-    """
-    Check whether we're in an ipython environment, including jupyter notebooks.
-    """
-    try:
-        eval('__IPYTHON__')
-    except NameError:
-        return False
-    else:  # pragma: no cover
-        return True
 
 
 def is_valid_identifier(identifier: str) -> bool:
