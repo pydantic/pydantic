@@ -1,6 +1,6 @@
 coverage==6.4.1
 dirty-equals==0.4
-hypothesis==6.48.1
+hypothesis==6.56.4
 pytest==7.1.2
 pytest-benchmark==3.4.1
 pytest-mock==3.8.1

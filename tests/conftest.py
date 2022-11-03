@@ -9,18 +9,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Type
 
+import hypothesis
 import pytest
-from hypothesis import settings
 from typing_extensions import Literal
 
 from pydantic_core import SchemaValidator
 
 __all__ = 'Err', 'PyAndJson', 'plain_repr', 'infinite_generator'
 
-hyp_max_examples = os.getenv('HYPOTHESIS_MAX_EXAMPLES')
-if hyp_max_examples:
-    settings.register_profile('custom', max_examples=int(hyp_max_examples))
-    settings.load_profile('custom')
+hypothesis.settings.register_profile('fast', max_examples=2)
+hypothesis.settings.register_profile('slow', max_examples=1_000)
+hypothesis.settings.load_profile(os.getenv('HYPOTHESIS_PROFILE', 'fast'))
 
 
 def plain_repr(obj):
