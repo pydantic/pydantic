@@ -106,7 +106,7 @@ impl PyUrl {
     }
 
     pub fn query_params(&self, py: Python) -> PyObject {
-        // TODO remove `collect` when we have https://github.com/PyO3/pyo3/pull/2676
+        // `query_pairs` is a pure iterator, so can't implement `ExactSizeIterator`, hence we need the temporary `Vec`
         self.lib_url
             .query_pairs()
             .map(|(key, value)| (key, value).into_py(py))
