@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
@@ -26,7 +26,7 @@ include = [
 ]
 
 [dependencies]
-pyo3 = "0.17.2"
+pyo3 = "0.17.3"
 regex = "1.6.0"
 strum = { version = "0.24.1", features = ["derive"] }
 strum_macros = "0.24.3"
@@ -63,5 +63,5 @@ panic = "abort"
 
 [build-dependencies]
 version_check = "0.9.4"
-# used where logic has to be version/distrobution specific, e.g. pypy
-pyo3-build-config = "0.17.2"
+# used where logic has to be version/distribution specific, e.g. pypy
+pyo3-build-config = "0.17.3"

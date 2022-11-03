@@ -2,7 +2,7 @@ use std::fmt;
 
 use indexmap::IndexMap;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PySet};
+use pyo3::types::{PyDict, PyList, PySet};
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
 
 use crate::build_tools::py_err;
@@ -68,7 +68,7 @@ impl ToPyObject for JsonInput {
             Self::Int(i) => i.into_py(py),
             Self::Float(f) => f.into_py(py),
             Self::String(s) => s.into_py(py),
-            Self::Array(v) => v.iter().map(|v| v.to_object(py)).collect::<Vec<_>>().into_py(py),
+            Self::Array(v) => PyList::new(py, v.iter().map(|v| v.to_object(py))).into_py(py),
             Self::Object(o) => {
                 let dict = PyDict::new(py);
                 for (k, v) in o.iter() {
