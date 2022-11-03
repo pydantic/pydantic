@@ -4,7 +4,7 @@ hypothesis==6.48.1
 pytest==7.1.2
 pytest-benchmark==3.4.1
 pytest-mock==3.8.1
-pytest-sugar==0.9.4
+pytest-pretty==0.0.1
 pytest-timeout==2.1.0
 pydantic==1.9.1;python_version>="3.8"
 pytz==2022.1
