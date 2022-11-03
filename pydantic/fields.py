@@ -77,6 +77,9 @@ class FieldInfo(_repr.Representation):
         self.description = kwargs.get('description')
         self.exclude = kwargs.get('exclude')
         self.include = kwargs.get('include')
+        if 'strict' in kwargs and kwargs['strict'] is None:
+            # not set, don't include in schema
+            kwargs.pop('strict')
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata
         self.discriminator = kwargs.get('discriminator')
         self.repr = kwargs.get('repr', True)
@@ -259,7 +262,7 @@ def Field(
     pattern: str = None,
     discriminator: str = None,
     repr: bool = True,
-    strict: bool = False,
+    strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
 ) -> Any:
     """
