@@ -265,7 +265,7 @@ def Field(
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
 
-    :param default: since this is replacing the field’s default, its first argument is used
+    :param default: since this is replacing the field's default, its first argument is used
       to set the default, use ellipsis (``...``) to indicate the field is required
     :param default_factory: callable that will be called when a default value is needed for this field
       If both `default` and `default_factory` are set, an error is raised.
@@ -379,7 +379,7 @@ def PrivateAttr(
 
     Private attrs are stored in model __slots__.
 
-    :param default: the attribute’s default value
+    :param default: the attribute's default value
     :param default_factory: callable that will be called when a default value is needed for this attribute
       If both `default` and `default_factory` are set, an error is raised.
     """
