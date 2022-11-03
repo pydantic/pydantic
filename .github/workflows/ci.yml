@@ -104,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11.0-rc.1']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     env:
       PYTHON: ${{ matrix.python-version }}
       OS: ubuntu
@@ -367,9 +367,32 @@ jobs:
         name: pypi_files
         path: dist
 
+  # https://github.com/marketplace/actions/alls-green#why
+  check:  # This job does nothing and is only used for the branch protection
+
+    if: always()
+
+    needs:
+      - lint
+      - docs-build
+      - test-linux-compiled
+      - test-not-compiled
+      - test-old-mypy
+      - test-fastapi
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
+
   deploy:
     name: Deploy
-    needs: build
+    needs:
+      - check
+      - build
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
