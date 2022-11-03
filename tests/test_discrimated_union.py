@@ -107,7 +107,7 @@ def test_discriminated_union_validation():
 
     class Lizard(BaseModel):
         pet_type: Literal['reptile', 'lizard']
-        l: str
+        m: str
 
     class Model(BaseModel):
         pet: Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
@@ -257,15 +257,15 @@ def test_discriminated_annotated_union():
 
 def test_discriminated_union_basemodel_instance_value():
     class A(BaseModel):
-        l: Literal['a']
+        foo: Literal['a']
 
     class B(BaseModel):
-        l: Literal['b']
+        foo: Literal['b']
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='l')
+        sub: Union[A, B] = Field(..., discriminator='foo')
 
-    t = Top(sub=A(l='a'))
+    t = Top(sub=A(foo='a'))
     assert isinstance(t, Top)
 
 
@@ -289,23 +289,23 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
 
 def test_discriminated_union_int():
     class A(BaseModel):
-        l: Literal[1]
+        m: Literal[1]
 
     class B(BaseModel):
-        l: Literal[2]
+        m: Literal[2]
 
     class Top(BaseModel):
         sub: Union[A, B] = Field(..., discriminator='l')
 
-    assert isinstance(Top.parse_obj({'sub': {'l': 2}}).sub, B)
+    assert isinstance(Top.parse_obj({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
-        Top.parse_obj({'sub': {'l': 3}})
+        Top.parse_obj({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
             'loc': ('sub',),
             'msg': "No match for discriminator 'l' and value 3 (allowed values: 1, 2)",
             'type': 'value_error.discriminated_union.invalid_discriminator',
-            'ctx': {'discriminator_key': 'l', 'discriminator_value': 3, 'allowed_values': '1, 2'},
+            'ctx': {'discriminator_key': 'm', 'discriminator_value': 3, 'allowed_values': '1, 2'},
         }
     ]
 
@@ -316,24 +316,24 @@ def test_discriminated_union_enum():
         b = 2
 
     class A(BaseModel):
-        l: Literal[EnumValue.a]
+        m: Literal[EnumValue.a]
 
     class B(BaseModel):
-        l: Literal[EnumValue.b]
+        m: Literal[EnumValue.b]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='l')
+        sub: Union[A, B] = Field(..., discriminator='m')
 
-    assert isinstance(Top.parse_obj({'sub': {'l': EnumValue.b}}).sub, B)
+    assert isinstance(Top.parse_obj({'sub': {'m': EnumValue.b}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
-        Top.parse_obj({'sub': {'l': 3}})
+        Top.parse_obj({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
             'loc': ('sub',),
-            'msg': "No match for discriminator 'l' and value 3 (allowed values: <EnumValue.a: 1>, <EnumValue.b: 2>)",
+            'msg': "No match for discriminator 'm' and value 3 (allowed values: <EnumValue.a: 1>, <EnumValue.b: 2>)",
             'type': 'value_error.discriminated_union.invalid_discriminator',
             'ctx': {
-                'discriminator_key': 'l',
+                'discriminator_key': 'm',
                 'discriminator_value': 3,
                 'allowed_values': '<EnumValue.a: 1>, <EnumValue.b: 2>',
             },

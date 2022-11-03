@@ -19,7 +19,7 @@ LEN_INVALID = '40000000000000006'
 
 # Mock PaymentCardNumber
 PCN = namedtuple('PaymentCardNumber', ['card_number', 'brand'])
-PCN.__len__ = lambda v: len(v.card_number)
+PCN.__len__ = lambda v: len(v.card_number)  # noqa: E731
 
 
 @pytest.fixture(scope='session', name='PaymentCard')

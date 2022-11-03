@@ -1061,7 +1061,7 @@ def test_generic_recursive_models(create_module):
         T = TypeVar('T')
 
         class Model1(GenericModel, Generic[T]):
-            ref: 'Model2[T]'
+            ref: 'Model2[T]'  # noqa: F821
 
         class Model2(GenericModel, Generic[T]):
             ref: Union[T, Model1[T]]

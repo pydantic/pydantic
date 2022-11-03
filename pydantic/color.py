@@ -173,7 +173,7 @@ class Color(_repr.Representation):
           True - always include alpha,
           False - always omit alpha,
         """
-        h, l, s = rgb_to_hls(self._rgba.r, self._rgba.g, self._rgba.b)
+        h, l, s = rgb_to_hls(self._rgba.r, self._rgba.g, self._rgba.b)  # noqa: E741
         if alpha is None:
             if self._rgba.alpha is None:
                 return h, s, l

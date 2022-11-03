@@ -14,9 +14,13 @@ format:
 
 .PHONY: lint
 lint:
-	flake8 $(sources)
+	ruff $(sources)
 	isort $(sources) --check-only --df
 	black $(sources) --check --diff
+
+.PHONY: lint-flake8
+lint-flake8:
+	flake8 $(sources)
 
 .PHONY: mypy
 mypy:

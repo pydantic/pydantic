@@ -40,6 +40,8 @@ jobs:
         with:
           extra_args: --all-files --verbose
 
+      - run: make lint-flake8
+
       - name: make history
         run: python3 ./changes/make_history.py
 
