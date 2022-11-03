@@ -85,6 +85,7 @@ jobs:
       - run: make test
         env:
           BENCHMARK_VS_PYDANTIC: 1
+          HYPOTHESIS_PROFILE: slow
 
       - run: ls -lha
       - run: coverage xml
