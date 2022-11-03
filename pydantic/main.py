@@ -31,7 +31,7 @@ if typing.TYPE_CHECKING:
 
     AnyClassMethod = classmethod[Any]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
-    Model = typing.TypeVar("Model", bound='BaseModel')
+    Model = typing.TypeVar('Model', bound='BaseModel')
 
 __all__ = 'BaseModel', 'create_model'
 
