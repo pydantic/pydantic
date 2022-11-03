@@ -131,3 +131,19 @@ def test_pytimedelta_as_timedelta(dt):
     total_seconds = (1 if pos == 'true' else -1) * (int(day) * 86_400 + int(sec) + int(micro) / 1_000_000)
 
     assert total_seconds == pytest.approx(dt.total_seconds())
+
+
+@pytest.fixture(scope='module')
+def url_validator():
+    return SchemaValidator({'type': 'url'})
+
+
+@given(strategies.text())
+def test_urls_text(url_validator, text):
+    try:
+        url_validator.validate_python(text)
+    except ValidationError as exc:
+        assert exc.error_count() == 1
+        error = exc.errors()[0]
+        assert error['type'] == 'url_error'
+        assert error['ctx']['error'] == 'relative URL without a base'
