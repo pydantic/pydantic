@@ -3,8 +3,10 @@ use std::fmt::Write;
 
 use crate::errors::LocItem;
 use pyo3::exceptions::PyValueError;
+use pyo3::ffi;
+use pyo3::ffi::Py_ssize_t;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 
 use crate::build_tools::py_error_type;
 use crate::input::repr_string;
@@ -80,14 +82,24 @@ impl ValidationError {
         self.line_errors.len()
     }
 
-    fn errors(&self, py: Python, include_context: Option<bool>) -> PyResult<PyObject> {
-        // TODO remove `collect` when we have https://github.com/PyO3/pyo3/pull/2676
-        Ok(self
-            .line_errors
-            .iter()
-            .map(|e| e.as_dict(py, include_context))
-            .collect::<PyResult<Vec<PyObject>>>()?
-            .into_py(py))
+    fn errors(&self, py: Python, include_context: Option<bool>) -> PyResult<Py<PyList>> {
+        // taken approximately from the pyo3, but modified to return the error during iteration
+        // https://github.com/PyO3/pyo3/blob/a3edbf4fcd595f0e234c87d4705eb600a9779130/src/types/list.rs#L27-L55
+        unsafe {
+            let ptr = ffi::PyList_New(self.line_errors.len() as Py_ssize_t);
+
+            // We create the `Py` pointer here for two reasons:
+            // - panics if the ptr is null
+            // - its Drop cleans up the list if user code or the asserts panic.
+            let list: Py<PyList> = Py::from_owned_ptr(py, ptr);
+
+            for (index, line_error) in (0_isize..).zip(&self.line_errors) {
+                let item = line_error.as_dict(py, include_context)?;
+                ffi::PyList_SET_ITEM(ptr, index, item.into_ptr());
+            }
+
+            Ok(list)
+        }
     }
 
     fn __repr__(&self, py: Python) -> String {
