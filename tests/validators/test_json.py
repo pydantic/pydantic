@@ -29,7 +29,7 @@ from ..conftest import Err, PyAndJson, plain_repr
                 ],
             ),
         ),
-        (44, Err('JSON input should be str, bytes or bytearray [type=json_type, input_value=44, input_type=int')),
+        (44, Err('JSON input should be string, bytes or bytearray [type=json_type, input_value=44, input_type=int')),
     ],
 )
 def test_any(py_and_json: PyAndJson, input_value, expected):

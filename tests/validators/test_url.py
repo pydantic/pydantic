@@ -3,7 +3,7 @@ from dirty_equals import HasRepr, IsInstance
 
 from pydantic_core import SchemaValidator, Url, ValidationError, core_schema
 
-from ..conftest import PyAndJson
+from ..conftest import Err, PyAndJson
 
 
 def test_url_ok(py_and_json: PyAndJson):
@@ -26,122 +26,175 @@ def test_url_ok(py_and_json: PyAndJson):
     assert url.host_type == 'domain'
 
 
-@pytest.mark.parametrize(
-    'url,error',
-    [
-        ('xxx', 'relative URL without a base'),
-        ('http://', 'empty host'),
-        ('https://xn---', 'invalid international domain name'),
-        ('http://example.com:65536', 'invalid port number'),
-        ('http://1...1', 'invalid IPv4 address'),
-        ('https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334[', 'invalid IPv6 address'),
-        ('https://[', 'invalid IPv6 address'),
-        ('https://example com', 'invalid domain character'),
-        ('http://exam%ple.com', 'invalid domain character'),
-        ('http:// /', 'invalid domain character'),
-        ('/more', 'relative URL without a base'),
-    ],
-)
-def test_url_error(py_and_json: PyAndJson, url, error):
-    v = py_and_json(core_schema.url_schema())
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_test(url)
-    assert exc_info.value.error_count() == 1
-    assert exc_info.value.errors()[0]['ctx']['error'] == error
+@pytest.fixture(scope='module', name='url_validator')
+def url_validator_fixture():
+    return SchemaValidator(core_schema.url_schema())
 
 
 @pytest.mark.parametrize(
-    'input_value,expected,host_type',
+    'url,expected',
     [
-        ('http://example.com', 'http://example.com/', 'domain'),
-        ('http://example.com./foobar', 'http://example.com./foobar', 'domain'),
+        (
+            'http://example.com',
+            {
+                'str()': 'http://example.com/',
+                'host_type': 'domain',
+                'host': 'example.com',
+                'unicode_host()': 'example.com',
+                'unicode_string()': 'http://example.com/',
+            },
+        ),
+        ('http://exa\nmple.com', {'str()': 'http://example.com/', 'host_type': 'domain', 'host': 'example.com'}),
+        ('xxx', Err('relative URL without a base')),
+        ('http://', Err('empty host')),
+        ('https://xn---', Err('invalid international domain name')),
+        ('http://example.com:65536', Err('invalid port number')),
+        ('http://1...1', Err('invalid IPv4 address')),
+        ('https://[2001:0db8:85a3:0000:0000:8a2e:0370:7334[', Err('invalid IPv6 address')),
+        ('https://[', Err('invalid IPv6 address')),
+        ('https://example com', Err('invalid domain character')),
+        ('http://exam%ple.com', Err('invalid domain character')),
+        ('http:// /', Err('invalid domain character')),
+        ('/more', Err('relative URL without a base')),
+        ('http://example.com./foobar', {'str()': 'http://example.com./foobar', 'host_type': 'domain'}),
         # works since we're in lax mode
-        (b'http://example.com', 'http://example.com/', 'domain'),
-        ('http:/foo', 'http://foo/', 'domain'),
-        ('http:///foo', 'http://foo/', 'domain'),
-        ('http://exam_ple.com', 'http://exam_ple.com/', 'domain'),
-        ('http://exam-ple.com', 'http://exam-ple.com/', 'domain'),
-        ('http://example-.com', 'http://example-.com/', 'domain'),
-        ('https://£££.com', 'https://xn--9aaa.com/', 'punycode_domain'),
-        ('https://foobar.£££.com', 'https://foobar.xn--9aaa.com/', 'punycode_domain'),
-        ('https://foo.£$.money.com', 'https://foo.xn--$-9ba.money.com/', 'punycode_domain'),
-        ('https://xn--9aaa.com/', 'https://xn--9aaa.com/', 'punycode_domain'),
-        ('https://münchen/', 'https://xn--mnchen-3ya/', 'punycode_domain'),
-        ('ssh://xn--9aaa.com/', 'ssh://xn--9aaa.com/', 'domain'),
-        ('ssh://münchen.com/', 'ssh://m%C3%BCnchen.com/', 'domain'),
-        ('ssh://example/', 'ssh://example/', 'domain'),
-        ('ssh://£££/', 'ssh://%C2%A3%C2%A3%C2%A3/', 'domain'),
-        ('ssh://%C2%A3%C2%A3%C2%A3/', 'ssh://%C2%A3%C2%A3%C2%A3/', 'domain'),
-        ('http://à.א̈.com', 'http://xn--0ca.xn--ssa73l.com/', 'punycode_domain'),
-        ('ftp://127.0.0.1', 'ftp://127.0.0.1/', 'ipv4'),
-        ('wss://1.1.1.1', 'wss://1.1.1.1/', 'ipv4'),
-        ('ftp://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]', 'ftp://[2001:db8:85a3::8a2e:370:7334]/', 'ipv6'),
-        ('https:/more', 'https://more/', 'domain'),
-        ('https:more', 'https://more/', 'domain'),
-        ('file:///foobar', 'file:///foobar', None),
-    ],
-)
-def test_host_types(input_value, expected, host_type):
-    v = SchemaValidator(core_schema.url_schema())
-    url: Url = v.validate_python(input_value)
-    assert isinstance(url, Url)
-    assert str(url) == expected
-    assert url.host_type == host_type
-
-
-@pytest.mark.parametrize(
-    'input_value,host,unicode_host',
-    [
-        ('http://example.com', 'example.com', 'example.com'),
-        ('http://example.com.', 'example.com.', 'example.com.'),
-        (b'http://example.com', 'example.com', 'example.com'),
-        ('http:/example.com', 'example.com', 'example.com'),
-        ('http:/foo', 'foo', 'foo'),
-        ('http://foo', 'foo', 'foo'),
-        ('http:///foo', 'foo', 'foo'),
-        ('http:////foo', 'foo', 'foo'),
-        ('http://-', '-', '-'),
-        ('http:////example.com', 'example.com', 'example.com'),
-        ('https://£££.com', 'xn--9aaa.com', '£££.com'),
-        ('https://£££.com.', 'xn--9aaa.com.', '£££.com.'),
-        ('https://xn--9aaa.com/', 'xn--9aaa.com', '£££.com'),
-        ('https://münchen/', 'xn--mnchen-3ya', 'münchen'),
-        ('http://à.א̈.com', 'xn--0ca.xn--ssa73l.com', 'à.א̈.com'),
-        ('ftp://xn--0ca.xn--ssa73l.com', 'xn--0ca.xn--ssa73l.com', 'à.א̈.com'),
-        ('https://foobar.£££.com/', 'foobar.xn--9aaa.com', 'foobar.£££.com'),
-        ('wss://1.1.1.1', '1.1.1.1', '1.1.1.1'),
+        (
+            b'http://example.com',
+            {'str()': 'http://example.com/', 'host_type': 'domain', 'unicode_host()': 'example.com'},
+        ),
+        ('http:/foo', {'str()': 'http://foo/', 'host_type': 'domain'}),
+        ('http:///foo', {'str()': 'http://foo/', 'host_type': 'domain'}),
+        ('http://exam_ple.com', {'str()': 'http://exam_ple.com/', 'host_type': 'domain'}),
+        ('http://exam-ple.com', {'str()': 'http://exam-ple.com/', 'host_type': 'domain'}),
+        ('http://example-.com', {'str()': 'http://example-.com/', 'host_type': 'domain'}),
+        ('https://£££.com', {'str()': 'https://xn--9aaa.com/', 'host_type': 'punycode_domain'}),
+        ('https://foobar.£££.com', {'str()': 'https://foobar.xn--9aaa.com/', 'host_type': 'punycode_domain'}),
+        ('https://foo.£$.money.com', {'str()': 'https://foo.xn--$-9ba.money.com/', 'host_type': 'punycode_domain'}),
+        ('https://xn--9aaa.com/', {'str()': 'https://xn--9aaa.com/', 'host_type': 'punycode_domain'}),
+        ('https://münchen/', {'str()': 'https://xn--mnchen-3ya/', 'host_type': 'punycode_domain'}),
+        ('http://à.א̈.com', {'str()': 'http://xn--0ca.xn--ssa73l.com/', 'host_type': 'punycode_domain'}),
+        ('ssh://xn--9aaa.com/', 'ssh://xn--9aaa.com/'),
+        ('ssh://münchen.com/', 'ssh://m%C3%BCnchen.com/'),
+        ('ssh://example/', 'ssh://example/'),
+        ('ssh://£££/', 'ssh://%C2%A3%C2%A3%C2%A3/'),
+        ('ssh://%C2%A3%C2%A3%C2%A3/', 'ssh://%C2%A3%C2%A3%C2%A3/'),
+        ('ftp://127.0.0.1', {'str()': 'ftp://127.0.0.1/', 'host_type': 'ipv4'}),
+        (
+            'wss://1.1.1.1',
+            {'str()': 'wss://1.1.1.1/', 'host_type': 'ipv4', 'host': '1.1.1.1', 'unicode_host()': '1.1.1.1'},
+        ),
         (
             'ftp://[2001:0db8:85a3:0000:0000:8a2e:0370:7334]',
-            '[2001:db8:85a3::8a2e:370:7334]',
-            '[2001:db8:85a3::8a2e:370:7334]',
+            {
+                'str()': 'ftp://[2001:db8:85a3::8a2e:370:7334]/',
+                'host_type': 'ipv6',
+                'host': '[2001:db8:85a3::8a2e:370:7334]',
+                'unicode_host()': '[2001:db8:85a3::8a2e:370:7334]',
+            },
         ),
-        ('file:///foobar', None, None),
+        ('https:/more', {'str()': 'https://more/', 'host': 'more'}),
+        ('https:more', {'str()': 'https://more/', 'host': 'more'}),
+        ('file:///foobar', {'str()': 'file:///foobar', 'host_type': None, 'host': None, 'unicode_host()': None}),
+        ('file:///:80', {'str()': 'file:///:80', 'host_type': None}),
+        ('file://:80', Err('invalid domain character')),
+        ('foobar://:80', Err('empty host')),
+        ('mongodb+srv://server.example.com/', 'mongodb+srv://server.example.com/'),
+        ('http://example.com.', {'host': 'example.com.', 'unicode_host()': 'example.com.'}),
+        ('http:/example.com', {'host': 'example.com', 'unicode_host()': 'example.com'}),
+        ('http:/foo', {'host': 'foo', 'unicode_host()': 'foo'}),
+        ('http://foo', {'host': 'foo', 'unicode_host()': 'foo'}),
+        ('http:///foo', {'host': 'foo', 'unicode_host()': 'foo'}),
+        ('http:////foo', {'host': 'foo', 'unicode_host()': 'foo'}),
+        ('http://-', {'host': '-', 'unicode_host()': '-'}),
+        ('http:////example.com', {'host': 'example.com', 'unicode_host()': 'example.com'}),
+        ('https://£££.com', {'host': 'xn--9aaa.com', 'unicode_host()': '£££.com'}),
+        ('https://£££.com.', {'host': 'xn--9aaa.com.', 'unicode_host()': '£££.com.'}),
+        ('https://xn--9aaa.com/', {'host': 'xn--9aaa.com', 'unicode_host()': '£££.com'}),
+        ('https://münchen/', {'host': 'xn--mnchen-3ya', 'unicode_host()': 'münchen'}),
+        ('http://à.א̈.com', {'host': 'xn--0ca.xn--ssa73l.com', 'unicode_host()': 'à.א̈.com'}),
+        ('ftp://xn--0ca.xn--ssa73l.com', {'host': 'xn--0ca.xn--ssa73l.com', 'unicode_host()': 'à.א̈.com'}),
+        ('https://foobar.£££.com/', {'host': 'foobar.xn--9aaa.com', 'unicode_host()': 'foobar.£££.com'}),
+        ('https://£££.com', {'unicode_string()': 'https://£££.com/'}),
+        ('https://xn--9aaa.com/', {'unicode_string()': 'https://£££.com/'}),
+        ('https://münchen/', {'unicode_string()': 'https://münchen/'}),
+        ('wss://1.1.1.1', {'unicode_string()': 'wss://1.1.1.1/'}),
+        ('file:///foobar', {'unicode_string()': 'file:///foobar'}),
     ],
 )
-def test_unicode_hosts(input_value, host, unicode_host):
-    v = SchemaValidator(core_schema.url_schema())
-    url: Url = v.validate_python(input_value)
-    assert isinstance(url, Url)
-    assert url.host == host
-    assert url.unicode_host() == unicode_host
+def test_url_error(url_validator, url, expected):
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError) as exc_info:
+            url_validator.validate_python(url)
+        assert exc_info.value.error_count() == 1
+        error = exc_info.value.errors()[0]
+        assert error['type'] == 'url_parsing'
+        assert error['ctx']['error'] == expected.message
+    else:
+        output_url = url_validator.validate_python(url)
+        assert isinstance(output_url, Url)
+        if isinstance(expected, str):
+            assert str(output_url) == expected
+        else:
+            assert isinstance(expected, dict)
+            output_parts = {}
+            for key in expected:
+                if key == 'str()':
+                    output_parts[key] = str(output_url)
+                elif key.endswith('()'):
+                    output_parts[key] = getattr(output_url, key[:-2])()
+                else:
+                    output_parts[key] = getattr(output_url, key)
+            assert output_parts == expected
+
+
+@pytest.fixture(scope='module', name='strict_url_validator')
+def strict_url_validator_fixture():
+    return SchemaValidator(core_schema.url_schema(), {'strict': True})
 
 
 @pytest.mark.parametrize(
-    'input_value,unicode_string',
+    'url,expected',
     [
-        ('http://example.com', 'http://example.com/'),
-        ('https://£££.com', 'https://£££.com/'),
-        ('https://xn--9aaa.com/', 'https://£££.com/'),
-        ('https://münchen/', 'https://münchen/'),
-        ('wss://1.1.1.1', 'wss://1.1.1.1/'),
-        ('file:///foobar', 'file:///foobar'),
+        ('http://example.com', {'str()': 'http://example.com/', 'host_type': 'domain', 'host': 'example.com'}),
+        ('http://exa\nmple.com', Err('tabs or newlines are ignored in URLs', 'url_syntax_violation')),
+        ('xxx', Err('relative URL without a base', 'url_parsing')),
+        ('http:/foo', Err('expected //', 'url_syntax_violation')),
+        ('http:///foo', Err('expected //', 'url_syntax_violation')),
+        ('http:////foo', Err('expected //', 'url_syntax_violation')),
+        ('http://exam_ple.com', {'str()': 'http://exam_ple.com/', 'host_type': 'domain'}),
+        ('https:/more', Err('expected //', 'url_syntax_violation')),
+        ('https:more', Err('expected //', 'url_syntax_violation')),
+        ('file:///foobar', {'str()': 'file:///foobar', 'host_type': None, 'host': None, 'unicode_host()': None}),
+        ('file://:80', Err('invalid domain character', 'url_parsing')),
+        ('file:/xx', Err('expected // after file:', 'url_syntax_violation')),
+        ('foobar://:80', Err('empty host', 'url_parsing')),
+        ('mongodb+srv://server.example.com/', 'mongodb+srv://server.example.com/'),
     ],
 )
-def test_unicode_domain(input_value, unicode_string):
-    v = SchemaValidator(core_schema.url_schema())
-    url: Url = v.validate_python(input_value)
-    assert url.unicode_string() == unicode_string
+def test_url_error_strict(strict_url_validator, url, expected):
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError) as exc_info:
+            strict_url_validator.validate_python(url)
+        assert exc_info.value.error_count() == 1
+        error = exc_info.value.errors()[0]
+        assert error['ctx']['error'] == expected.message
+        assert error['type'] == expected.errors
+    else:
+        output_url = strict_url_validator.validate_python(url)
+        assert isinstance(output_url, Url)
+        if isinstance(expected, str):
+            assert str(output_url) == expected
+        else:
+            assert isinstance(expected, dict)
+            output_parts = {}
+            for key in expected:
+                if key == 'str()':
+                    output_parts[key] = str(output_url)
+                elif key.endswith('()'):
+                    output_parts[key] = getattr(output_url, key[:-2])()
+                else:
+                    output_parts[key] = getattr(output_url, key)
+            assert output_parts == expected
 
 
 def test_host_required():
@@ -152,9 +205,8 @@ def test_host_required():
         v.validate_python('unix:/run/foo.socket')
 
 
-def test_no_host():
-    v = SchemaValidator(core_schema.url_schema())
-    url = v.validate_python('data:text/plain,Stuff')
+def test_no_host(url_validator):
+    url = url_validator.validate_python('data:text/plain,Stuff')
     assert str(url) == 'data:text/plain,Stuff'
     assert url.host is None
     assert url.scheme == 'data'
@@ -219,18 +271,16 @@ def test_allowed_schemes_errors():
     ]
 
 
-def test_url_query_repeat():
-    v = SchemaValidator(core_schema.url_schema())
-    url: Url = v.validate_python('https://example.com/foo/bar?a=1&a=2')
+def test_url_query_repeat(url_validator):
+    url: Url = url_validator.validate_python('https://example.com/foo/bar?a=1&a=2')
     assert str(url) == 'https://example.com/foo/bar?a=1&a=2'
     assert url.query_params() == [('a', '1'), ('a', '2')]
 
 
-def test_url_to_url():
-    v = SchemaValidator(core_schema.url_schema())
-    url: Url = v.validate_python('https://example.com')
+def test_url_to_url(url_validator):
+    url: Url = url_validator.validate_python('https://example.com')
     assert str(url) == 'https://example.com/'
-    url2 = v.validate_python(url)
+    url2 = url_validator.validate_python(url)
     assert str(url2) == 'https://example.com/'
     assert url is not url2
 
@@ -270,27 +320,25 @@ def test_url_to_constraint():
     ]
 
 
-def test_wrong_type_lax():
-    v = SchemaValidator(core_schema.url_schema())
-    assert str(v.validate_python('http://example.com/foobar/bar')) == 'http://example.com/foobar/bar'
-    assert str(v.validate_python(b'http://example.com/foobar/bar')) == 'http://example.com/foobar/bar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
-        v.validate_python(123)
+def test_wrong_type_lax(url_validator):
+    assert str(url_validator.validate_python('http://example.com/foobar/bar')) == 'http://example.com/foobar/bar'
+    assert str(url_validator.validate_python(b'http://example.com/foobar/bar')) == 'http://example.com/foobar/bar'
+    with pytest.raises(ValidationError, match=r'URL input should be a string or URL \[type=url_type,'):
+        url_validator.validate_python(123)
 
     # runtime strict
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
-        v.validate_python(b'http://example.com/foobar/bar', strict=True)
+    with pytest.raises(ValidationError, match=r'URL input should be a string or URL \[type=url_type,'):
+        url_validator.validate_python(b'http://example.com/foobar/bar', strict=True)
 
 
-def test_wrong_type_strict():
-    v = SchemaValidator(core_schema.url_schema(), {'strict': True})
-    url = v.validate_python('http://example.com/foobar/bar')
+def test_wrong_type_strict(strict_url_validator):
+    url = strict_url_validator.validate_python('http://example.com/foobar/bar')
     assert str(url) == 'http://example.com/foobar/bar'
-    assert str(v.validate_python(url)) == 'http://example.com/foobar/bar'
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
-        v.validate_python(b'http://example.com/foobar/bar')
-    with pytest.raises(ValidationError, match=r'Input should be a valid string \[type=string_type,'):
-        v.validate_python(123)
+    assert str(strict_url_validator.validate_python(url)) == 'http://example.com/foobar/bar'
+    with pytest.raises(ValidationError, match=r'URL input should be a string or URL \[type=url_type,'):
+        strict_url_validator.validate_python(b'http://example.com/foobar/bar')
+    with pytest.raises(ValidationError, match=r'URL input should be a string or URL \[type=url_type,'):
+        strict_url_validator.validate_python(123)
 
 
 @pytest.mark.parametrize(
@@ -302,10 +350,17 @@ def test_wrong_type_strict():
         ('https://app le:pie@example.com/foo', 'https://app%20le:pie@example.com/foo', 'app%20le', 'pie'),
     ],
 )
-def test_username(input_value, expected, username, password):
-    v = SchemaValidator(core_schema.url_schema())
-    url: Url = v.validate_python(input_value)
+def test_username(url_validator, input_value, expected, username, password):
+    url: Url = url_validator.validate_python(input_value)
     assert isinstance(url, Url)
     assert str(url) == expected
     assert url.username == username
     assert url.password == password
+
+
+def test_strict_not_strict(url_validator, strict_url_validator):
+    url = url_validator.validate_python('http:/example.com/foobar/bar')
+    assert str(url) == 'http://example.com/foobar/bar'
+
+    url2 = strict_url_validator.validate_python(url)
+    assert str(url2) == 'http://example.com/foobar/bar'
