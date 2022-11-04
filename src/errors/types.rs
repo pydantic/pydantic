@@ -41,7 +41,7 @@ pub enum ErrorType {
     JsonInvalid {
         error: String,
     },
-    #[strum(message = "JSON input should be str, bytes or bytearray")]
+    #[strum(message = "JSON input should be string, bytes or bytearray")]
     JsonType,
     // ---------------------
     // recursion error
@@ -319,9 +319,16 @@ pub enum ErrorType {
     MultipleArgumentValues,
     // ---------------------
     // URL errors
-    #[strum(message = "Invalid URL, {error}")]
-    UrlError {
+    #[strum(message = "URL input should be a string or URL")]
+    UrlType,
+    #[strum(message = "Input should be a valid URL, {error}")]
+    UrlParsing {
+        // would be great if this could be a static cow, waiting for https://github.com/servo/rust-url/issues/801
         error: String,
+    },
+    #[strum(message = "Input violated strict URL syntax rules, {error}")]
+    UrlSyntaxViolation {
+        error: Cow<'static, str>,
     },
     #[strum(message = "URL should have at most {max_length} characters")]
     UrlTooLong {
@@ -465,7 +472,8 @@ impl ErrorType {
                 expected_tags: String
             ),
             Self::UnionTagNotFound { .. } => extract_context!(UnionTagNotFound, ctx, discriminator: String),
-            Self::UrlError { .. } => extract_context!(UrlError, ctx, error: String),
+            Self::UrlParsing { .. } => extract_context!(UrlParsing, ctx, error: String),
+            Self::UrlSyntaxViolation { .. } => extract_context!(Cow::Owned, UrlSyntaxViolation, ctx, error: String),
             Self::UrlTooLong { .. } => extract_context!(UrlTooLong, ctx, max_length: usize),
             Self::UrlSchema { .. } => extract_context!(UrlSchema, ctx, expected_schemas: String),
             _ => {
@@ -555,7 +563,8 @@ impl ErrorType {
                 expected_tags,
             } => render!(self, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => render!(self, discriminator),
-            Self::UrlError { error } => render!(self, error),
+            Self::UrlParsing { error } => render!(self, error),
+            Self::UrlSyntaxViolation { error } => render!(self, error),
             Self::UrlTooLong { max_length } => to_string_render!(self, max_length),
             Self::UrlSchema { expected_schemas } => render!(self, expected_schemas),
             _ => Ok(self.message_template().to_string()),
@@ -607,7 +616,8 @@ impl ErrorType {
                 expected_tags,
             } => py_dict!(py, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => py_dict!(py, discriminator),
-            Self::UrlError { error } => py_dict!(py, error),
+            Self::UrlParsing { error } => py_dict!(py, error),
+            Self::UrlSyntaxViolation { error } => py_dict!(py, error),
             Self::UrlTooLong { max_length } => py_dict!(py, max_length),
             Self::UrlSchema { expected_schemas } => py_dict!(py, expected_schemas),
             _ => Ok(None),

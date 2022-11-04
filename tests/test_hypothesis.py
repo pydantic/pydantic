@@ -145,5 +145,5 @@ def test_urls_text(url_validator, text):
     except ValidationError as exc:
         assert exc.error_count() == 1
         error = exc.errors()[0]
-        assert error['type'] == 'url_error'
+        assert error['type'] == 'url_parsing'
         assert error['ctx']['error'] == 'relative URL without a base'

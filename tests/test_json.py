@@ -24,7 +24,7 @@ def test_input_types(input_value):
 
 def test_input_type_invalid():
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
-    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[type=json_type,'):
+    with pytest.raises(ValidationError, match=r'JSON input should be string, bytes or bytearray \[type=json_type,'):
         v.validate_json([])
 
 
