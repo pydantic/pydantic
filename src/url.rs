@@ -139,8 +139,8 @@ impl PyUrl {
         }
     }
 
-    pub fn __str__(&self) -> String {
-        self.lib_url.to_string()
+    pub fn __str__(&self) -> &str {
+        self.lib_url.as_str()
     }
 
     pub fn __repr__(&self) -> String {

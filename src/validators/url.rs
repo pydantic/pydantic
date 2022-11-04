@@ -1,8 +1,11 @@
-use ahash::AHashSet;
+use std::cell::RefCell;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
-use url::Url;
+
+use ahash::AHashSet;
+use url::{SyntaxViolation, Url};
 
 use crate::build_tools::{is_strict, py_err, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -96,20 +99,15 @@ impl UrlValidator {
         match input.validate_str(strict) {
             Ok(either_str) => {
                 let cow = either_str.as_cow()?;
-                let str = cow.as_ref();
-
-                if let Some(max_length) = self.max_length {
-                    if str.len() > max_length {
-                        return Err(ValError::new(ErrorType::UrlTooLong { max_length }, input));
-                    }
-                }
-
-                Url::parse(str).map_err(move |e| ValError::new(ErrorType::UrlError { error: e.to_string() }, input))
+                let url_str = cow.as_ref();
+                self.parse_str(url_str, input, strict)
             }
-            Err(e) => {
+            Err(_) => {
+                // we don't need to worry about whether the url was parsed in strict mode before,
+                // even if it was, any syntax errors would have been fixed by the first validation
                 let lib_url = match input.input_as_url() {
                     Some(url) => url.into_url(),
-                    None => return Err(e),
+                    None => return Err(ValError::new(ErrorType::UrlType, input)),
                 };
                 if let Some(max_length) = self.max_length {
                     if lib_url.as_str().len() > max_length {
@@ -118,6 +116,47 @@ impl UrlValidator {
                 }
                 Ok(lib_url)
             }
+        }
+    }
+
+    fn parse_str<'s, 'url, 'input>(
+        &'s self,
+        url_str: &'url str,
+        input: &'input impl Input<'input>,
+        strict: bool,
+    ) -> ValResult<'input, Url> {
+        if let Some(max_length) = self.max_length {
+            if url_str.len() > max_length {
+                return Err(ValError::new(ErrorType::UrlTooLong { max_length }, input));
+            }
+        }
+
+        // if we're in strict mode, we collect consider a syntax violation as an error
+        if strict {
+            // we could build a vec of syntax violations and return them all, but that seems like overkill
+            // and unlike other parser style validators
+            let vios: RefCell<Option<SyntaxViolation>> = RefCell::new(None);
+            let r = Url::options()
+                .syntax_violation_callback(Some(&|v| *vios.borrow_mut() = Some(v)))
+                .parse(url_str);
+
+            match r {
+                Ok(url) => {
+                    if let Some(vio) = vios.into_inner() {
+                        Err(ValError::new(
+                            ErrorType::UrlSyntaxViolation {
+                                error: vio.description().into(),
+                            },
+                            input,
+                        ))
+                    } else {
+                        Ok(url)
+                    }
+                }
+                Err(e) => Err(ValError::new(ErrorType::UrlParsing { error: e.to_string() }, input)),
+            }
+        } else {
+            Url::parse(url_str).map_err(move |e| ValError::new(ErrorType::UrlParsing { error: e.to_string() }, input))
         }
     }
 }

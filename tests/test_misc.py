@@ -162,8 +162,8 @@ def test_all_errors():
         },
         {
             'type': 'json_type',
-            'message_template': 'JSON input should be str, bytes or bytearray',
-            'example_message': 'JSON input should be str, bytes or bytearray',
+            'message_template': 'JSON input should be string, bytes or bytearray',
+            'example_message': 'JSON input should be string, bytes or bytearray',
             'example_context': None,
         },
         {
