@@ -259,6 +259,7 @@ def Field(
     pattern: str = None,
     discriminator: str = None,
     repr: bool = True,
+    strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
 ) -> Any:
     """
@@ -308,6 +309,7 @@ def Field(
       The `discriminator` is the name of this common field to shorten validation and improve generated schema
     :param repr: show this field in the representation
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
+    :param strict: enable or disable strict parsing mode
     """
     return FieldInfo.from_field(
         default,
@@ -334,6 +336,7 @@ def Field(
         discriminator=discriminator,
         repr=repr,
         json_schema_extra=json_schema_extra,
+        strict=strict,
     )
 
 
