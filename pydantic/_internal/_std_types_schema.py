@@ -15,7 +15,7 @@ from pathlib import PurePath
 from typing import Any, Callable
 from uuid import UUID
 
-from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import get_args
 
 from . import _validators
@@ -204,3 +204,13 @@ def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(_validators.ip_v6_network_validator)
+
+
+@schema_function(Url)
+def url_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.UrlSchema:
+    return {'type': 'url'}
+
+
+@schema_function(MultiHostUrl)
+def multi_host_url_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.MultiHostUrlSchema:
+    return {'type': 'multi-host-url'}

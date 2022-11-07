@@ -41,7 +41,7 @@ __all__ = [
     'AnyHttpUrl',
     'FileUrl',
     'HttpUrl',
-    'stricturl',
+    'UrlConstraints',
     'EmailStr',
     'NameEmail',
     'IPvAnyAddress',

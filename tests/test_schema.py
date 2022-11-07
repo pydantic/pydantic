@@ -36,7 +36,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
+from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
@@ -808,10 +808,10 @@ def test_str_constrained_types(field_type, expected_schema):
     'field_type,expected_schema',
     [
         (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16}),
-        (
-            stricturl(min_length=5, max_length=10),
-            {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
-        ),
+        # (
+        #     stricturl(min_length=5, max_length=10),
+        #     {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
+        # ),
     ],
 )
 def test_special_str_types(field_type, expected_schema):
