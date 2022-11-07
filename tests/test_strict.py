@@ -1,5 +1,5 @@
 import sys
-from typing import Any
+from typing import Any, Type
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -11,8 +11,12 @@ import pytest
 from pydantic import BaseModel, Field, ValidationError
 
 
-class ModelWithStrictField(BaseModel):
-    a: Annotated[int, Field(strict=True)]
+@pytest.fixture(scope='session', name='ModelWithStrictField')
+def model_with_strict_field():
+    class ModelWithStrictField(BaseModel):
+        a: Annotated[int, Field(strict=True)]
+
+    return ModelWithStrictField
 
 
 @pytest.mark.parametrize(
@@ -23,10 +27,10 @@ class ModelWithStrictField(BaseModel):
         1.0,
     ],
 )
-def test_parse_strict_mode_on_field_invalid(value: Any) -> None:
+def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: Type[BaseModel]) -> None:
     with pytest.raises(ValidationError):
         ModelWithStrictField(a=value)
 
 
-def test_parse_strict_mode_on_field_valid() -> None:
+def test_parse_strict_mode_on_field_valid(ModelWithStrictField: Type[BaseModel]) -> None:
     ModelWithStrictField(a=1)
