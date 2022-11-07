@@ -62,10 +62,10 @@ class SchemaError(Exception):
 
 class ErrorDetails(TypedDict):
     type: str
-    loc: 'list[int | str]'
-    message: str
-    input_value: Any
-    context: NotRequired['dict[str, str | int | float]']
+    loc: 'tuple[int | str, ...]'
+    msg: str
+    input: Any
+    ctx: NotRequired['dict[str, str | int | float]']
 
 class ValidationError(ValueError):
     title: str
