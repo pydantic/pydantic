@@ -18,7 +18,7 @@ mod url;
 mod validators;
 
 // required for benchmarks
-pub use self::url::PyUrl;
+pub use self::url::{PyMultiHostUrl, PyUrl};
 pub use build_tools::SchemaError;
 pub use errors::{list_all_errors, PydanticCustomError, PydanticKnownError, PydanticOmit, ValidationError};
 pub use validators::SchemaValidator;
@@ -44,6 +44,7 @@ fn _pydantic_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PydanticKnownError>()?;
     m.add_class::<PydanticOmit>()?;
     m.add_class::<self::url::PyUrl>()?;
+    m.add_class::<self::url::PyMultiHostUrl>()?;
     m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;
     Ok(())
 }

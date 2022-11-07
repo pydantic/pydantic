@@ -224,7 +224,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "ahash",
  "enum_dispatch",

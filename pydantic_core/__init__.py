@@ -1,4 +1,5 @@
 from ._pydantic_core import (
+    MultiHostUrl,
     PydanticCustomError,
     PydanticKnownError,
     PydanticOmit,
@@ -16,6 +17,7 @@ __all__ = (
     'CoreSchema',
     'SchemaValidator',
     'Url',
+    'MultiHostUrl',
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',

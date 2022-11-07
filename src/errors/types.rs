@@ -334,12 +334,10 @@ pub enum ErrorType {
     UrlTooLong {
         max_length: usize,
     },
-    #[strum(message = "URL schema should be {expected_schemas}")]
-    UrlSchema {
-        expected_schemas: String,
+    #[strum(message = "URL scheme should be {expected_schemes}")]
+    UrlScheme {
+        expected_schemes: String,
     },
-    #[strum(message = "URL host required")]
-    UrlHostRequired,
 }
 
 macro_rules! render {
@@ -475,7 +473,7 @@ impl ErrorType {
             Self::UrlParsing { .. } => extract_context!(UrlParsing, ctx, error: String),
             Self::UrlSyntaxViolation { .. } => extract_context!(Cow::Owned, UrlSyntaxViolation, ctx, error: String),
             Self::UrlTooLong { .. } => extract_context!(UrlTooLong, ctx, max_length: usize),
-            Self::UrlSchema { .. } => extract_context!(UrlSchema, ctx, expected_schemas: String),
+            Self::UrlScheme { .. } => extract_context!(UrlScheme, ctx, expected_schemes: String),
             _ => {
                 if ctx.is_some() {
                     py_err!(PyTypeError; "'{}' errors do not require context", value)
@@ -566,7 +564,7 @@ impl ErrorType {
             Self::UrlParsing { error } => render!(self, error),
             Self::UrlSyntaxViolation { error } => render!(self, error),
             Self::UrlTooLong { max_length } => to_string_render!(self, max_length),
-            Self::UrlSchema { expected_schemas } => render!(self, expected_schemas),
+            Self::UrlScheme { expected_schemes } => render!(self, expected_schemes),
             _ => Ok(self.message_template().to_string()),
         }
     }
@@ -619,7 +617,7 @@ impl ErrorType {
             Self::UrlParsing { error } => py_dict!(py, error),
             Self::UrlSyntaxViolation { error } => py_dict!(py, error),
             Self::UrlTooLong { max_length } => py_dict!(py, max_length),
-            Self::UrlSchema { expected_schemas } => py_dict!(py, expected_schemas),
+            Self::UrlScheme { expected_schemes } => py_dict!(py, expected_schemes),
             _ => Ok(None),
         }
     }

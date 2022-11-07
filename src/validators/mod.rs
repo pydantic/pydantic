@@ -386,8 +386,9 @@ pub fn build_validator<'a>(
         custom_error::CustomErrorValidator,
         // json data
         json::JsonValidator,
-        // url type
+        // url types
         url::UrlValidator,
+        url::MultiHostUrlValidator,
     )
 }
 
@@ -507,8 +508,9 @@ pub enum CombinedValidator {
     CustomError(custom_error::CustomErrorValidator),
     // json data
     Json(json::JsonValidator),
-    // url type
+    // url types
     Url(url::UrlValidator),
+    MultiHostUrl(url::MultiHostUrlValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,
