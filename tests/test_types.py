@@ -2822,7 +2822,7 @@ def test_json_not_str():
         {
             'type': 'json_type',
             'loc': ('json_obj',),
-            'msg': 'JSON input should be str, bytes or bytearray',
+            'msg': 'JSON input should be string, bytes or bytearray',
             'input': 12,
         }
     ]
@@ -2880,7 +2880,7 @@ def test_json_required():
         json_obj: Json
 
     assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
-    with pytest.raises(ValidationError, match=r'JSON input should be str, bytes or bytearray \[type=json_type,'):
+    with pytest.raises(ValidationError, match=r'JSON input should be string, bytes or bytearray \[type=json_type,'):
         JsonRequired(json_obj=None)
     with pytest.raises(ValidationError, match=r'Field required \[type=missing,'):
         JsonRequired()
