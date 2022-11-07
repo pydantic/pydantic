@@ -1023,26 +1023,77 @@ def json_schema(schema: CoreSchema | None = None, *, ref: str | None = None, ext
 
 class UrlSchema(TypedDict, total=False):
     type: Required[Literal['url']]
-    host_required: bool  # default False
     max_length: int
     allowed_schemes: List[str]
+    host_required: bool  # default False
+    default_host: str
+    default_port: int
+    default_path: str
+    strict: bool
     ref: str
     extra: Any
 
 
 def url_schema(
     *,
-    host_required: bool | None = None,
     max_length: int | None = None,
     allowed_schemes: list[str] | None = None,
+    host_required: bool | None = None,
+    default_host: str | None = None,
+    default_port: int | None = None,
+    default_path: str | None = None,
+    strict: bool | None = None,
     ref: str | None = None,
     extra: Any = None,
 ) -> UrlSchema:
     return dict_not_none(
         type='url',
-        host_required=host_required,
         max_length=max_length,
         allowed_schemes=allowed_schemes,
+        host_required=host_required,
+        default_host=default_host,
+        default_port=default_port,
+        default_path=default_path,
+        strict=strict,
+        ref=ref,
+        extra=extra,
+    )
+
+
+class MultiHostUrlSchema(TypedDict, total=False):
+    type: Required[Literal['multi-host-url']]
+    max_length: int
+    allowed_schemes: List[str]
+    host_required: bool  # default False
+    default_host: str
+    default_port: int
+    default_path: str
+    strict: bool
+    ref: str
+    extra: Any
+
+
+def multi_host_url_schema(
+    *,
+    max_length: int | None = None,
+    allowed_schemes: list[str] | None = None,
+    host_required: bool | None = None,
+    default_host: str | None = None,
+    default_port: int | None = None,
+    default_path: str | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    extra: Any = None,
+) -> MultiHostUrlSchema:
+    return dict_not_none(
+        type='multi-host-url',
+        max_length=max_length,
+        allowed_schemes=allowed_schemes,
+        host_required=host_required,
+        default_host=default_host,
+        default_port=default_port,
+        default_path=default_path,
+        strict=strict,
         ref=ref,
         extra=extra,
     )
@@ -1087,6 +1138,7 @@ CoreSchema = Union[
     CustomErrorSchema,
     JsonSchema,
     UrlSchema,
+    MultiHostUrlSchema,
 ]
 
 # used in _pydantic_core.pyi::PydanticKnownError
@@ -1171,6 +1223,5 @@ ErrorType = Literal[
     'url_parsing',
     'url_syntax_violation',
     'url_too_long',
-    'url_schema',
-    'url_host_required',
+    'url_scheme',
 ]
