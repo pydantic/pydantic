@@ -14,6 +14,7 @@ __all__ = (
     'build_profile',
     'SchemaValidator',
     'Url',
+    'MultiHostUrl',
     'SchemaError',
     'ValidationError',
     'PydanticCustomError',
@@ -44,14 +45,30 @@ class Url:
     username: 'str | None'
     password: 'str | None'
     host: 'str | None'
-    host_type: Literal['domain', 'punycode_domain', 'ipv4', 'ipv6', None]
     port: 'int | None'
     path: 'str | None'
     query: 'str | None'
     fragment: 'str | None'
 
-    def __init__(self, raw_url: str) -> None: ...
     def unicode_host(self) -> 'str | None': ...
+    def query_params(self) -> 'list[tuple[str, str]]': ...
+    def unicode_string(self) -> str: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+
+class MultiHostHost(TypedDict):
+    username: 'str | None'
+    password: 'str | None'
+    host: str
+    port: 'int | None'
+
+class MultiHostUrl:
+    scheme: str
+    path: 'str | None'
+    query: 'str | None'
+    fragment: 'str | None'
+
+    def hosts(self) -> 'list[MultiHostHost]': ...
     def query_params(self) -> 'list[tuple[str, str]]': ...
     def unicode_string(self) -> str: ...
     def __str__(self) -> str: ...
