@@ -807,7 +807,7 @@ def test_nested_annotation_priority(create_module):
         Foobar = Annotated[int, Gt(0)]  # noqa: F841
 
         def nested():
-            Foobar = Annotated[int, Gt(10)]
+            Foobar = Annotated[int, Gt(10)]  # noqa: F841
 
             class Bar(BaseModel):
                 b: 'Foobar'
