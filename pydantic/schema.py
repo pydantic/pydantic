@@ -614,11 +614,13 @@ def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None)
 
     This is similar to the `model_process_schema` function, but applies to ``Enum`` objects.
     """
+    import inspect
+
     schema_: Dict[str, Any] = {
         'title': enum.__name__,
         # Python assigns all enums a default docstring value of 'An enumeration', so
         # all enums will have a description field even if not explicitly provided.
-        'description': enum.__doc__ or 'An enumeration.',
+        'description': inspect.cleandoc(enum.__doc__ or 'An enumeration.'),
         # Add enum values and the enum field type to the schema.
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }
