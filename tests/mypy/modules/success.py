@@ -9,7 +9,8 @@ from pathlib import Path, PurePath
 from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
-from typing_extensions import TypedDict
+from pydantic_core import Url
+from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     UUID1,
@@ -35,8 +36,8 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    UrlConstraints,
     root_validator,
-    stricturl,
     validate_arguments,
     validator,
 )
@@ -238,9 +239,15 @@ validated.my_dir_path_str.absolute()
 validated.my_json['hello'].capitalize()
 validated.my_json_list[0].capitalize()
 
-stricturl(allowed_schemes={'http'})
-stricturl(allowed_schemes=frozenset({'http'}))
-stricturl(allowed_schemes=('s3', 's3n', 's3a'))
+
+class UrlModel(BaseModel):
+    x: Annotated[Url, UrlConstraints(allowed_schemes=['http'])] = Field(None)
+    y: Annotated[Url, UrlConstraints(allowed_schemes=['http'])] = Field(None)
+    z: Annotated[Url, UrlConstraints(allowed_schemes=['s3', 's3n', 's3a'])] = Field(None)
+
+
+url_model = UrlModel(x='http://example.com')
+assert url_model.x.host == 'example.com'
 
 
 class SomeDict(TypedDict):
