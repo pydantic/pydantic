@@ -2,4 +2,4 @@ coverage[toml]
 dirty-equals
 pytest
 pytest-mock
-pytest-sugar
+pytest-pretty
