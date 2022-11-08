@@ -17,7 +17,16 @@ except ImportError:
     parse_mypy_version = lambda _: (0,)  # noqa: E731
 
 
-pytestmark = pytest.mark.skipif(sys.platform != 'linux' and 'CI' in os.environ, reason='only run on linux when on CI')
+def should_skip():
+    if sys.version_info >= (3, 11):
+        # mypy doesn't full support 3.11 and tests are taking minutes
+        # TODO remove ones 3.11 is fully supported
+        return True
+    else:
+        return sys.platform != 'linux' and 'CI' in os.environ
+
+
+pytestmark = pytest.mark.skipif(should_skip(), reason='skipp on 3.11, only run on linux when on CI')
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
