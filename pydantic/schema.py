@@ -618,7 +618,7 @@ def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None)
         'title': enum.__name__,
         # Python assigns all enums a default docstring value of 'An enumeration', so
         # all enums will have a description field even if not explicitly provided.
-        'description': enum.__doc__ or 'An enumeration.',
+        'description': inspect.cleandoc(enum.__doc__) or 'An enumeration.',
         # Add enum values and the enum field type to the schema.
         'enum': [item.value for item in cast(Iterable[Enum], enum)],
     }
