@@ -459,6 +459,34 @@ def test_list_enum_schema_extras():
     }
 
 
+def test_enum_schema_cleandoc():
+    class FooBar(str, Enum):
+        """
+        This is docstring which needs to be cleaned up
+        """
+
+        foo = 'foo'
+        bar = 'bar'
+
+    class Model(BaseModel):
+        enum: FooBar
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/definitions/FooBar'}},
+        'required': ['enum'],
+        'definitions': {
+            'FooBar': {
+                'title': 'FooBar',
+                'description': 'This is docstring which needs to be cleaned up',
+                'enum': ['foo', 'bar'],
+                'type': 'string',
+            }
+        },
+    }
+
+
 def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'
