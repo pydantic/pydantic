@@ -98,7 +98,7 @@ class ModelMetaclass(ABCMeta):
                 cls_name,
                 validator_functions,
                 bases,
-                types_namespace=_model_construction.parent_frame_namespace(),
+                types_namespace=_typing_extra.parent_frame_namespace(),
                 raise_errors=False,
             )
             return cls
@@ -460,7 +460,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not force and cls.__pydantic_model_complete__:
             return None
         else:
-            parents_namespace = _model_construction.parent_frame_namespace()
+            parents_namespace = _typing_extra.parent_frame_namespace()
             if types_namespace and parents_namespace:
                 types_namespace = {**parents_namespace, **types_namespace}
             elif parents_namespace:
