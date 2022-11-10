@@ -8,6 +8,7 @@ isort
 # pydantic-core is required for mypy
 pydantic-core
 pyupgrade
-mypy
+# pinned, see #4735
+mypy==0.982
 pre-commit
 ruff
