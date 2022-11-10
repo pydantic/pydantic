@@ -58,6 +58,7 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
         str_strip_whitespace=config.anystr_strip_whitespace,
         str_to_lower=config.anystr_lower,
         str_to_upper=config.anystr_upper,
+        strict=config.strict,
     )
 
 
