@@ -59,11 +59,11 @@ pydantic-core==0.7.1
     # via -r requirements/linting.in
 pyflakes==2.5.0
     # via flake8
-pyupgrade==3.2.1
+pyupgrade==3.2.2
     # via -r requirements/linting.in
 pyyaml==6.0
     # via pre-commit
-ruff==0.0.108
+ruff==0.0.109
     # via -r requirements/linting.in
 sortedcontainers==2.4.0
     # via hypothesis
