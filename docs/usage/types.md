@@ -782,7 +782,7 @@ The value of numerous common types can be restricted using `con*` type functions
 
 {!.tmp_examples/types_constrained.md!}
 
-Where `Field` refers to the [field function](schema.md#field-customisation).
+Where `Field` refers to the [field function](schema.md#field-customization).
 
 ### Arguments to `conlist`
 The following arguments are available when using the `conlist` type function

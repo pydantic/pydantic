@@ -48,7 +48,7 @@ To demonstrate all the above parameter types:
 
 ## Using Field to describe function arguments
 
-[Field](schema.md#field-customisation) can also be used with `validate_arguments` to provide extra information about
+[Field](schema.md#field-customization) can also be used with `validate_arguments` to provide extra information about
 the field and validations. In general it should be used in a type hint with
 [Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:

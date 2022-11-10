@@ -435,7 +435,7 @@ as the value:
 
 {!.tmp_examples/models_required_fields.md!}
 
-Where `Field` refers to the [field function](schema.md#field-customisation).
+Where `Field` refers to the [field function](schema.md#field-customization).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
 with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
@@ -471,7 +471,7 @@ Example of usage:
 
 {!.tmp_examples/models_default_factory.md!}
 
-Where `Field` refers to the [field function](schema.md#field-customisation).
+Where `Field` refers to the [field function](schema.md#field-customization).
 
 !!! warning
     The `default_factory` expects the field type to be set.
