@@ -1,4 +1,2 @@
-devtools
-hypothesis
-mypy
-typed-ast;python_version<'3.8'
+-r testing-extra-base.in
+-c all.txt

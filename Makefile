@@ -99,3 +99,9 @@ publish-docs:
 	zip -r site.zip site
 	@curl -H "Content-Type: application/zip" -H "Authorization: Bearer ${NETLIFY}" \
 	      --data-binary "@site.zip" https://api.netlify.com/api/v1/sites/pydantic-docs.netlify.com/deploys
+
+.PHONY: refresh-lockfiles
+refresh-lockfiles:
+	cd requirements && \
+	pip-compile --resolver backtracking --strip-extras all.in && \
+	find . -name '*.in' ! -name '*base.in' ! -name '*all.in' -print0 | xargs -0 -n 1 pip-compile --resolver backtracking

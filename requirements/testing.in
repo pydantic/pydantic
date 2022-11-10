@@ -1,5 +1,2 @@
-coverage[toml]
-dirty-equals
-pytest
-pytest-mock
-pytest-pretty
+-r testing-base.in
+-c all.txt

@@ -1,0 +1,2 @@
+-r pyproject-min-base.in
+-c all.txt

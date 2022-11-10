@@ -1,0 +1,5 @@
+-r ./pyproject-all-base.in
+-r ./docs-base.in
+-r ./linting-base.in
+-r ./testing-base.in
+-r ./testing-extra-base.in
