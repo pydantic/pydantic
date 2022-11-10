@@ -1,16 +1,10 @@
 autoflake
 ansi2html
-devtools
-flake8
-flake8-quotes
-flake8-pyproject
-hypothesis
 markdown-include
 mdx-truly-sane-lists
 mkdocs
 mkdocs-exclude
 mkdocs-material
-pyupgrade
 orjson
 sqlalchemy
 ujson
