@@ -72,11 +72,12 @@ jobs:
           docs-build
           ${{ runner.os }}
           ${{ env.pythonLocation }}
-          ${{ hashFiles('requirements/*') }}
+          ${{ hashFiles('requirements/pyproject-all.txt') }}
+          ${{ hashFiles('requirements/docs.txt') }}
 
     - name: install
       if: steps.cache.outputs.cache-hit != 'true'
-      run: pip install -r requirements/all.txt .
+      run: pip install -r requirements/pyproject-all.txt -r requirements/docs.txt .
 
     - name: build site
       run: make docs
