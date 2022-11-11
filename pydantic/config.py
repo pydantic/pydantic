@@ -93,6 +93,8 @@ class BaseConfig:
     underscore_attrs_are_private: bool = False  # TODO remove
     allow_inf_nan: bool = True
 
+    strict: bool = False
+
     # whether inherited models as fields should be reconstructed as base model,
     # and whether such a copy should be shallow or deep
     copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'  # TODO remove???

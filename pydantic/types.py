@@ -156,9 +156,9 @@ FiniteFloat = Annotated[float, AllowInfNan(False)]
 
 def conbytes(
     *,
-    min_length: int = None,
-    max_length: int = None,
-    strict: bool = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    strict: bool | None = None,
 ) -> type[bytes]:
     return Annotated[  # type: ignore[return-value]
         bytes,

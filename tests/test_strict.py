@@ -28,9 +28,68 @@ def model_with_strict_field():
     ],
 )
 def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: Type[BaseModel]) -> None:
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictField(a=value)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('a',), 'msg': 'Input should be a valid integer', 'input': value}
+    ]
 
 
 def test_parse_strict_mode_on_field_valid(ModelWithStrictField: Type[BaseModel]) -> None:
-    ModelWithStrictField(a=1)
+    value = ModelWithStrictField(a=1)
+    assert value.dict() == {'a': 1}
+
+
+@pytest.fixture(scope='session', name='ModelWithStrictConfig')
+def model_with_strict_config_false():
+    class ModelWithStrictConfig(BaseModel):
+        a: int
+        # strict=False overrides the Config
+        b: Annotated[int, Field(strict=False)]
+        # strict=None or not including it is equivalent
+        # lets this field be overridden by the Config
+        c: Annotated[int, Field(strict=None)]
+        d: Annotated[int, Field()]
+
+        class Config:
+            strict = True
+
+    return ModelWithStrictConfig
+
+
+def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        ModelWithStrictConfig(a='1', b=2, c=3, d=4)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('a',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        ModelWithStrictConfig(a=1, b=2, c='3', d=4)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('c',), 'msg': 'Input should be a valid integer', 'input': '3'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        ModelWithStrictConfig(a=1, b=2, c=3, d='4')
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('d',), 'msg': 'Input should be a valid integer', 'input': '4'}
+    ]
+    values = [
+        ModelWithStrictConfig(a=1, b='2', c=3, d=4),
+        ModelWithStrictConfig(a=1, b=2, c=3, d=4),
+    ]
+    assert all(v.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
+
+
+def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
+    class Model(ModelWithStrictConfig):
+        class Config:
+            strict = False
+
+    values = [
+        Model(a='1', b=2, c=3, d=4),
+        Model(a=1, b=2, c='3', d=4),
+        Model(a=1, b=2, c=3, d='4'),
+        Model(a=1, b='2', c=3, d=4),
+        Model(a=1, b=2, c=3, d=4),
+    ]
+    assert all(v.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
