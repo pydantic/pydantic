@@ -54,12 +54,21 @@ def model_with_strict_config_false():
 
 
 def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a='1', b=2, c=3, d=4)
-    with pytest.raises(ValidationError):
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('a',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a=1, b=2, c='3', d=4)
-    with pytest.raises(ValidationError):
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('c',), 'msg': 'Input should be a valid integer', 'input': '3'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a=1, b=2, c=3, d='4')
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('d',), 'msg': 'Input should be a valid integer', 'input': '4'}
+    ]
     ModelWithStrictConfig(a=1, b='2', c=3, d=4)
     ModelWithStrictConfig(a=1, b=2, c=3, d=4)
 
@@ -69,8 +78,13 @@ def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: Type[Bas
         class Config:
             strict = False
 
-    Model(a='1', b=2, c=3, d=4)
-    Model(a=1, b=2, c='3', d=4)
-    Model(a=1, b=2, c=3, d='4')
-    Model(a=1, b='2', c=3, d=4)
-    Model(a=1, b=2, c=3, d=4)
+    value1 = Model(a='1', b=2, c=3, d=4)
+    assert value1.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    value2 = Model(a=1, b=2, c='3', d=4)
+    assert value2.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    value3 = Model(a=1, b=2, c=3, d='4')
+    assert value3.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    value4 = Model(a=1, b='2', c=3, d=4)
+    assert value4.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    value5 = Model(a=1, b=2, c=3, d=4)
+    assert value5.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
