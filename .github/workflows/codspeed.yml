@@ -1,0 +1,53 @@
+name: codspeed
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - uses: actions/cache@v2
+        id: cache-py
+        name: cache python
+        with:
+          path: ${{ env.pythonLocation }}
+          key: >
+            py
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements.txt') }}
+            ${{ hashFiles('pyproject.toml') }}
+
+      - run: pip install -r tests/requirements.txt
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
+      - run: rm rust-toolchain
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - run: pip install . -v
+
+      # this is required so that pytest uses the installed package
+      - run: rm tests/__init__.py
+
+      - name: Run CodSpeed benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: pytest tests/benchmarks/ --codspeed
