@@ -1,6 +1,5 @@
 black==22.3.0
-flake8==4.0.1
-flake8-quotes==3.3.1
+ruff==0.0.122
 isort[colors]==5.10.1
 pyright==1.1.246
 pycodestyle==2.8.0
