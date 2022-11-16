@@ -1,6 +1,6 @@
 import decimal
 import sys
-from typing import Any, Literal, TypedDict
+from typing import Any, TypedDict
 
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
