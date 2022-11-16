@@ -48,6 +48,11 @@ Source = 'https://github.com/pydantic/pydantic-core'
 bindings = 'pyo3'
 sdist-include = ['Cargo.lock']
 
+[tool.ruff]
+line-length = 120
+extend-select = ['Q']
+flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+
 [tool.pytest.ini_options]
 testpaths = 'tests'
 log_format = '%(name)s %(levelname)s: %(message)s'

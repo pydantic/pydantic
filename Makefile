@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := all
 isort = isort pydantic_core tests generate_self_schema.py
 black = black pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
+ruff = ruff pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 
 .PHONY: install
 install:
@@ -48,13 +49,14 @@ build-wasm:
 
 .PHONY: format
 format:
+	$(ruff) --fix
 	$(isort)
 	$(black)
 	cargo fmt
 
 .PHONY: lint-python
 lint-python:
-	flake8 --max-line-length 120 pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
+	$(ruff)
 	$(isort) --check-only --df
 	$(black) --check --diff
 

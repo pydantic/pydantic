@@ -45,7 +45,7 @@ async def main(tests_zip: str, tag_name: str):
 
 
 try:
-    await main(tests_zip, tag_name)  # noqa: F704
+    await main(tests_zip, tag_name)  # noqa: F821,F704
 except Exception:
     traceback.print_exc()
     raise
