@@ -1,10 +1,12 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyMapping};
 
 use crate::build_tools::{is_strict, SchemaDict};
 use crate::errors::{ValError, ValLineError, ValResult};
-use crate::input::{GenericMapping, Input, JsonObject};
+use crate::input::{
+    DictGenericIterator, GenericMapping, Input, JsonObject, JsonObjectGenericIterator, MappingGenericIterator,
+};
 use crate::recursion_guard::RecursionGuard;
 
 use super::any::AnyValidator;
@@ -68,6 +70,9 @@ impl Validator for DictValidator {
         let dict = input.validate_dict(extra.strict.unwrap_or(self.strict))?;
         match dict {
             GenericMapping::PyDict(py_dict) => self.validate_dict(py, input, py_dict, extra, slots, recursion_guard),
+            GenericMapping::PyMapping(mapping) => {
+                self.validate_mapping(py, input, mapping, extra, slots, recursion_guard)
+            }
             GenericMapping::PyGetAttr(_) => unreachable!(),
             GenericMapping::JsonObject(json_object) => {
                 self.validate_json_object(py, input, json_object, extra, slots, recursion_guard)
@@ -86,7 +91,7 @@ impl Validator for DictValidator {
 }
 
 macro_rules! build_validate {
-    ($name:ident, $dict_type:ty) => {
+    ($name:ident, $dict_type:ty, $iter:ty) => {
         fn $name<'s, 'data>(
             &'s self,
             py: Python<'data>,
@@ -101,8 +106,8 @@ macro_rules! build_validate {
 
             let key_validator = self.key_validator.as_ref();
             let value_validator = self.value_validator.as_ref();
-
-            for (key, value) in dict.iter() {
+            for item_result in <$iter>::new(dict)? {
+                let (key, value) = item_result?;
                 let output_key = match key_validator.validate(py, key, extra, slots, recursion_guard) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
@@ -145,6 +150,7 @@ macro_rules! build_validate {
 }
 
 impl DictValidator {
-    build_validate!(validate_dict, PyDict);
-    build_validate!(validate_json_object, JsonObject);
+    build_validate!(validate_dict, PyDict, DictGenericIterator);
+    build_validate!(validate_mapping, PyMapping, MappingGenericIterator);
+    build_validate!(validate_json_object, JsonObject, JsonObjectGenericIterator);
 }

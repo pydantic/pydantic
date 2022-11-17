@@ -273,8 +273,9 @@ impl Validator for TaggedUnionValidator {
                 }
                 let dict = input.validate_typed_dict(self.strict, self.from_attributes)?;
                 let tag = match dict {
-                    GenericMapping::PyDict(dict) => find_validator!(dict, py_get_item),
+                    GenericMapping::PyDict(dict) => find_validator!(dict, py_get_dict_item),
                     GenericMapping::PyGetAttr(obj) => find_validator!(obj, py_get_attr),
+                    GenericMapping::PyMapping(mapping) => find_validator!(mapping, py_get_mapping_item),
                     GenericMapping::JsonObject(mapping) => find_validator!(mapping, json_get),
                 }?;
                 self.find_call_validator(py, tag.as_cow()?, input, extra, slots, recursion_guard)

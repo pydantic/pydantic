@@ -151,9 +151,9 @@ pub enum ErrorType {
     // dict errors
     #[strum(message = "Input should be a valid dictionary")]
     DictType,
-    #[strum(message = "Unable to convert mapping to a dictionary, error: {error}")]
-    DictFromMapping {
-        error: String,
+    #[strum(message = "Input should be a valid mapping, error: {error}")]
+    MappingType {
+        error: Cow<'static, str>,
     },
     // ---------------------
     // list errors
@@ -448,7 +448,7 @@ impl ErrorType {
             Self::StringTooShort { .. } => extract_context!(StringTooShort, ctx, min_length: usize),
             Self::StringTooLong { .. } => extract_context!(StringTooLong, ctx, max_length: usize),
             Self::StringPatternMismatch { .. } => extract_context!(StringPatternMismatch, ctx, pattern: String),
-            Self::DictFromMapping { .. } => extract_context!(DictFromMapping, ctx, error: String),
+            Self::MappingType { .. } => extract_context!(Cow::Owned, MappingType, ctx, error: String),
             Self::BytesTooShort { .. } => extract_context!(BytesTooShort, ctx, min_length: usize),
             Self::BytesTooLong { .. } => extract_context!(BytesTooLong, ctx, max_length: usize),
             Self::ValueError { .. } => extract_context!(ValueError, ctx, error: String),
@@ -540,7 +540,7 @@ impl ErrorType {
             Self::StringTooShort { min_length } => to_string_render!(self, min_length),
             Self::StringTooLong { max_length } => to_string_render!(self, max_length),
             Self::StringPatternMismatch { pattern } => render!(self, pattern),
-            Self::DictFromMapping { error } => render!(self, error),
+            Self::MappingType { error } => render!(self, error),
             Self::BytesTooShort { min_length } => to_string_render!(self, min_length),
             Self::BytesTooLong { max_length } => to_string_render!(self, max_length),
             Self::ValueError { error } => render!(self, error),
@@ -593,7 +593,7 @@ impl ErrorType {
             Self::StringTooShort { min_length } => py_dict!(py, min_length),
             Self::StringTooLong { max_length } => py_dict!(py, max_length),
             Self::StringPatternMismatch { pattern } => py_dict!(py, pattern),
-            Self::DictFromMapping { error } => py_dict!(py, error),
+            Self::MappingType { error } => py_dict!(py, error),
             Self::BytesTooShort { min_length } => py_dict!(py, min_length),
             Self::BytesTooLong { max_length } => py_dict!(py, max_length),
             Self::ValueError { error } => py_dict!(py, error),

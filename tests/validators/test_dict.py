@@ -150,25 +150,26 @@ def test_mapping_error():
 
     assert exc_info.value.errors() == [
         {
-            'type': 'dict_from_mapping',
+            'type': 'mapping_type',
             'loc': (),
-            'msg': 'Unable to convert mapping to a dictionary, error: RuntimeError: intentional error',
+            'msg': 'Input should be a valid mapping, error: RuntimeError: intentional error',
             'input': HasRepr(IsStr(regex='.+BadMapping object at.+')),
             'ctx': {'error': 'RuntimeError: intentional error'},
         }
     ]
 
 
-def test_mapping_error_yield_1():
+@pytest.mark.parametrize('mapping_items', [[(1,)], ['foobar'], [(1, 2, 3)], 'not list'])
+def test_mapping_error_yield_1(mapping_items):
     class BadMapping(Mapping):
         def items(self):
-            return [(1,)]
+            return mapping_items
 
         def __iter__(self):
-            return iter({1: 2})
+            pytest.fail('unexpected call to __iter__')
 
         def __getitem__(self, key):
-            raise None
+            pytest.fail('unexpected call to __getitem__')
 
         def __len__(self):
             return 1
@@ -179,14 +180,11 @@ def test_mapping_error_yield_1():
 
     assert exc_info.value.errors() == [
         {
-            'type': 'dict_from_mapping',
+            'type': 'mapping_type',
             'loc': (),
-            'msg': (
-                'Unable to convert mapping to a dictionary, error: '
-                'ValueError: expected tuple of length 2, but got tuple of length 1'
-            ),
+            'msg': 'Input should be a valid mapping, error: Mapping items must be tuples of (key, value) pairs',
             'input': HasRepr(IsStr(regex='.+BadMapping object at.+')),
-            'ctx': {'error': 'ValueError: expected tuple of length 2, but got tuple of length 1'},
+            'ctx': {'error': 'Mapping items must be tuples of (key, value) pairs'},
         }
     ]
 

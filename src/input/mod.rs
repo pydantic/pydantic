@@ -14,8 +14,9 @@ pub use datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 pub use input_abstract::Input;
 pub use parse_json::{JsonInput, JsonObject, JsonType};
 pub use return_enums::{
-    py_string_str, EitherBytes, EitherString, GenericArguments, GenericCollection, GenericIterator, GenericMapping,
-    JsonArgs, PyArgs,
+    py_string_str, AttributesGenericIterator, DictGenericIterator, EitherBytes, EitherString, GenericArguments,
+    GenericCollection, GenericIterator, GenericMapping, JsonArgs, JsonObjectGenericIterator, MappingGenericIterator,
+    PyArgs,
 };
 
 pub fn repr_string(v: &PyAny) -> PyResult<String> {
