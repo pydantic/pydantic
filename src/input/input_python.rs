@@ -1,18 +1,17 @@
 use std::borrow::Cow;
 use std::str::from_utf8;
 
-use pyo3::exceptions::PyAttributeError;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping,
-    PySequence, PySet, PyString, PyTime, PyTuple, PyType,
+    PySet, PyString, PyTime, PyTuple, PyType,
 };
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
-use crate::errors::{py_err_string, ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
 use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
@@ -329,8 +328,8 @@ impl<'a> Input<'a> for PyAny {
     fn lax_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         if let Ok(dict) = self.cast_as::<PyDict>() {
             Ok(dict.into())
-        } else if let Some(generic_mapping) = mapping_as_dict(self) {
-            generic_mapping
+        } else if let Ok(mapping) = self.cast_as::<PyMapping>() {
+            Ok(mapping.into())
         } else {
             Err(ValError::new(ErrorType::DictType, self))
         }
@@ -342,9 +341,8 @@ impl<'a> Input<'a> for PyAny {
             if let Ok(dict) = self.cast_as::<PyDict>() {
                 return Ok(dict.into());
             } else if !strict {
-                // we can't do this in one set of if/else because we need to check from_mapping before doing this
-                if let Some(generic_mapping) = mapping_as_dict(self) {
-                    return generic_mapping;
+                if let Ok(mapping) = self.cast_as::<PyMapping>() {
+                    return Ok(mapping.into());
                 }
             }
 
@@ -641,47 +639,6 @@ impl<'a> Input<'a> for PyAny {
             Err(ValError::new(ErrorType::TimeDeltaType, self))
         }
     }
-}
-
-/// return None if obj is not a mapping (cast_as::<PyMapping> fails or mapping.items returns an AttributeError)
-/// otherwise try to covert the mapping to a dict and return an Some(error) if it fails
-fn mapping_as_dict(obj: &PyAny) -> Option<ValResult<GenericMapping>> {
-    let mapping: &PyMapping = match obj.cast_as() {
-        Ok(mapping) => mapping,
-        Err(_) => return None,
-    };
-    // see https://github.com/PyO3/pyo3/issues/2072 - the cast_as::<PyMapping> is not entirely accurate
-    // and returns some things which are definitely not mappings (e.g. str) as mapping,
-    // hence we also require that the object as `items` to consider it a mapping
-    let result_dict = match mapping.items() {
-        Ok(seq) => mapping_seq_as_dict(seq),
-        Err(err) => {
-            if matches!(err.get_type(obj.py()).is_subclass_of::<PyAttributeError>(), Ok(true)) {
-                return None;
-            } else {
-                Err(err)
-            }
-        }
-    };
-    match result_dict {
-        Ok(dict) => Some(Ok(dict.into())),
-        Err(err) => Some(Err(ValError::new(
-            ErrorType::DictFromMapping {
-                error: py_err_string(obj.py(), err),
-            },
-            obj,
-        ))),
-    }
-}
-
-// creating a temporary dict is slow, we could perhaps use an indexmap instead
-fn mapping_seq_as_dict(seq: &PySequence) -> PyResult<&PyDict> {
-    let dict = PyDict::new(seq.py());
-    for r in seq.iter()? {
-        let (key, value): (&PyAny, &PyAny) = r?.extract()?;
-        dict.set_item(key, value)?;
-    }
-    Ok(dict)
 }
 
 /// Best effort check of whether it's likely to make sense to inspect obj for attributes and iterate over it

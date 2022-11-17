@@ -1173,7 +1173,7 @@ ErrorType = Literal[
     'string_too_long',
     'string_pattern_mismatch',
     'dict_type',
-    'dict_from_mapping',
+    'mapping_type',
     'list_type',
     'tuple_type',
     'set_type',

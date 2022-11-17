@@ -1,7 +1,16 @@
 use std::borrow::Cow;
 
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTuple};
+use pyo3::types::iter::PyDictIterator;
+use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping, PySet, PyString, PyTuple};
+
+#[cfg(not(PyPy))]
+use pyo3::types::PyFunction;
+#[cfg(not(PyPy))]
+use pyo3::PyTypeInfo;
+
+use indexmap::map::Iter;
 
 use crate::errors::{py_err_string, ErrorType, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
@@ -233,13 +242,186 @@ impl<'a> GenericCollection<'a> {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum GenericMapping<'a> {
     PyDict(&'a PyDict),
+    PyMapping(&'a PyMapping),
     PyGetAttr(&'a PyAny),
     JsonObject(&'a JsonObject),
 }
 
 derive_from!(GenericMapping, PyDict, PyDict);
+derive_from!(GenericMapping, PyMapping, PyMapping);
 derive_from!(GenericMapping, PyGetAttr, PyAny);
 derive_from!(GenericMapping, JsonObject, JsonObject);
+
+pub struct DictGenericIterator<'py> {
+    dict_iter: PyDictIterator<'py>,
+}
+
+impl<'py> DictGenericIterator<'py> {
+    pub fn new(dict: &'py PyDict) -> ValResult<'py, Self> {
+        Ok(Self { dict_iter: dict.iter() })
+    }
+}
+
+impl<'py> Iterator for DictGenericIterator<'py> {
+    type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.dict_iter.next().map(Ok)
+    }
+    // size_hint is omitted as it isn't needed
+}
+
+pub struct MappingGenericIterator<'py> {
+    input: &'py PyAny,
+    iter: &'py PyIterator,
+}
+
+fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) -> ValError<'py> {
+    ValError::new(
+        ErrorType::MappingType {
+            error: py_err_string(py, err).into(),
+        },
+        input,
+    )
+}
+
+impl<'py> MappingGenericIterator<'py> {
+    pub fn new(mapping: &'py PyMapping) -> ValResult<'py, Self> {
+        let py = mapping.py();
+        let input: &PyAny = mapping;
+        let iter = mapping
+            .items()
+            .map_err(|e| mapping_err(e, py, input))?
+            .iter()
+            .map_err(|e| mapping_err(e, py, input))?;
+        Ok(Self { iter, input })
+    }
+}
+
+const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) pairs";
+
+impl<'py> Iterator for MappingGenericIterator<'py> {
+    type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = match self.iter.next() {
+            Some(Err(e)) => return Some(Err(mapping_err(e, self.iter.py(), self.input))),
+            Some(Ok(item)) => item,
+            None => return None,
+        };
+        let tuple: &PyTuple = match item.cast_as() {
+            Ok(tuple) => tuple,
+            Err(_) => {
+                return Some(Err(ValError::new(
+                    ErrorType::MappingType {
+                        error: MAPPING_TUPLE_ERROR.into(),
+                    },
+                    self.input,
+                )))
+            }
+        };
+        if tuple.len() != 2 {
+            return Some(Err(ValError::new(
+                ErrorType::MappingType {
+                    error: MAPPING_TUPLE_ERROR.into(),
+                },
+                self.input,
+            )));
+        };
+        #[cfg(PyPy)]
+        let key = tuple.get_item(0).unwrap();
+        #[cfg(PyPy)]
+        let value = tuple.get_item(1).unwrap();
+        #[cfg(not(PyPy))]
+        let key = unsafe { tuple.get_item_unchecked(0) };
+        #[cfg(not(PyPy))]
+        let value = unsafe { tuple.get_item_unchecked(1) };
+        Some(Ok((key, value)))
+    }
+    // size_hint is omitted as it isn't needed
+}
+
+pub struct AttributesGenericIterator<'py> {
+    object: &'py PyAny,
+    attributes: &'py PyList,
+    index: usize,
+}
+
+impl<'py> AttributesGenericIterator<'py> {
+    pub fn new(py_any: &'py PyAny) -> ValResult<'py, Self> {
+        Ok(Self {
+            object: py_any,
+            attributes: py_any.dir(),
+            index: 0,
+        })
+    }
+}
+
+impl<'py> Iterator for AttributesGenericIterator<'py> {
+    type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // loop until we find an attribute who's name does not start with underscore,
+        // or we get to the end of the list of attributes
+        while self.index < self.attributes.len() {
+            #[cfg(PyPy)]
+            let name: &PyAny = self.attributes.get_item(self.index).unwrap();
+            #[cfg(not(PyPy))]
+            let name: &PyAny = unsafe { self.attributes.get_item_unchecked(self.index) };
+            self.index += 1;
+            // from benchmarks this is 14x faster than using the python `startswith` method
+            let name_cow = match name.cast_as::<PyString>() {
+                Ok(name) => name.to_string_lossy(),
+                Err(e) => return Some(Err(e.into())),
+            };
+            if !name_cow.as_ref().starts_with('_') {
+                // getattr is most likely to fail due to an exception in a @property, skip
+                if let Ok(attr) = self.object.getattr(name_cow.as_ref()) {
+                    // we don't want bound methods to be included, is there a better way to check?
+                    // ref https://stackoverflow.com/a/18955425/949890
+                    let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
+                    // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
+                    // I think that's better than including static methods in the yielded attributes,
+                    // if someone really wants fields, they can use an explicit field, or a function to modify input
+                    #[cfg(not(PyPy))]
+                    if !is_bound && !PyFunction::is_type_of(attr) {
+                        return Some(Ok((name, attr)));
+                    }
+                    // MASSIVE HACK! PyFunction doesn't exist for PyPy,
+                    // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
+                    // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
+                    #[cfg(PyPy)]
+                    if !is_bound && attr.get_type().to_string() != "<class 'function'>" {
+                        return Some(Ok((name, attr)));
+                    }
+                }
+            }
+        }
+        None
+    }
+    // size_hint is omitted as it isn't needed
+}
+
+pub struct JsonObjectGenericIterator<'py> {
+    object_iter: Iter<'py, String, JsonInput>,
+}
+
+impl<'py> JsonObjectGenericIterator<'py> {
+    pub fn new(json_object: &'py JsonObject) -> ValResult<'py, Self> {
+        Ok(Self {
+            object_iter: json_object.iter(),
+        })
+    }
+}
+
+impl<'py> Iterator for JsonObjectGenericIterator<'py> {
+    type Item = ValResult<'py, (&'py String, &'py JsonInput)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.object_iter.next().map(Ok)
+    }
+    // size_hint is omitted as it isn't needed
+}
 
 #[derive(Debug, Clone)]
 pub enum GenericIterator {

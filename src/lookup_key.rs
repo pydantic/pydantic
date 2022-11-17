@@ -2,7 +2,7 @@ use std::fmt;
 
 use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
 use crate::build_tools::py_err;
 use crate::input::{JsonInput, JsonObject};
@@ -95,7 +95,7 @@ impl LookupKey {
         }
     }
 
-    pub fn py_get_item<'data, 's>(&'s self, dict: &'data PyDict) -> PyResult<Option<(&'s str, &'data PyAny)>> {
+    pub fn py_get_dict_item<'data, 's>(&'s self, dict: &'data PyDict) -> PyResult<Option<(&'s str, &'data PyAny)>> {
         match self {
             LookupKey::Simple(key, py_key) => match dict.get_item(py_key) {
                 Some(value) => Ok(Some((key, value))),
@@ -106,6 +106,38 @@ impl LookupKey {
                 None => match dict.get_item(py_key2) {
                     Some(value) => Ok(Some((key2, value))),
                     None => Ok(None),
+                },
+            },
+            LookupKey::PathChoices(path_choices) => {
+                for path in path_choices {
+                    // iterate over the path and plug each value into the py_any from the last step, starting with dict
+                    // this could just be a loop but should be somewhat faster with a functional design
+                    if let Some(v) = path.iter().try_fold(dict as &PyAny, |d, loc| loc.py_get_item(d)) {
+                        // Successfully found an item, return it
+                        let key = path.first().unwrap().get_key();
+                        return Ok(Some((key, v)));
+                    }
+                }
+                // got to the end of path_choices, without a match, return None
+                Ok(None)
+            }
+        }
+    }
+
+    pub fn py_get_mapping_item<'data, 's>(
+        &'s self,
+        dict: &'data PyMapping,
+    ) -> PyResult<Option<(&'s str, &'data PyAny)>> {
+        match self {
+            LookupKey::Simple(key, py_key) => match dict.get_item(py_key) {
+                Ok(value) => Ok(Some((key, value))),
+                _ => Ok(None),
+            },
+            LookupKey::Choice(key1, key2, py_key1, py_key2) => match dict.get_item(py_key1) {
+                Ok(value) => Ok(Some((key1, value))),
+                _ => match dict.get_item(py_key2) {
+                    Ok(value) => Ok(Some((key2, value))),
+                    _ => Ok(None),
                 },
             },
             LookupKey::PathChoices(path_choices) => {
