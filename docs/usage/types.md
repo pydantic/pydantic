@@ -607,9 +607,9 @@ For URI/URL validation the following types are available:
   - `cockroachdb+asyncpg`
   - `cockroachdb+psycopg2`
 - `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
-- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info) (e.g., `rediss://:pass@localhost`)
 - `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port
-  not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
+  not required from **v1.6** onwards), user info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`)
 - `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
