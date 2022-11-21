@@ -1472,3 +1472,26 @@ def test_subclass_post_init_inheritance():
             self.a *= 3
 
     assert C().a == 6  # 1 * 3 + 3
+
+
+def test_alias():
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        field1: Optional[str] = pydantic.Field(None, alias='f1')
+        field2: Optional[str] = pydantic.Field(None)
+
+    foo = Foo(f1='a', field2='b')
+    assert foo.field1 == 'a'
+
+    foo = Foo(field1='a', field2='b')
+    assert foo.field1 is None
+
+
+def test_alias_population_by_field_name():
+    @pydantic.dataclasses.dataclass(config=dict(allow_population_by_field_name=True))
+    class Foo:
+        field1: Optional[str] = pydantic.Field(None, alias='f1')
+        field2: Optional[str] = pydantic.Field(None)
+
+    foo = Foo(field1='a', field2='b')
+    assert foo.field1 == 'a'

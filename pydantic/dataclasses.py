@@ -307,6 +307,32 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
 
         @wraps(init)
         def new_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
+            # Handle kwargs passed in with an alias
+            alias_to_name = {
+                v.default.alias: k
+                for k, v in self.__dataclass_fields__.items()
+                if isinstance(v.default, FieldInfo) and v.default.alias is not None
+            }
+
+            updates, remove = {}, set()
+            # If key is an alias, update key to original field name
+            for k, v in kwargs.items():
+                # If key has an alias but the original field name is used,
+                # pass in the data only if allow_population_by_field_name == True
+                if (
+                    k in self.__dataclass_fields__
+                    and k in alias_to_name.values()
+                    and not config.allow_population_by_field_name
+                ):
+                    remove.add(k)
+                if k not in self.__dataclass_fields__ and k in alias_to_name:
+                    updates[alias_to_name[k]] = v
+
+            kwargs.update(updates)
+
+            for k in remove:
+                kwargs.pop(k)
+
             handle_extra_init(self, *args, **kwargs)
 
             if self.__class__.__pydantic_run_validation__:
@@ -411,6 +437,16 @@ def _dataclass_validate_values(self: 'Dataclass') -> None:
         input_data = {k: v for k, v in self.__dict__.items() if not isinstance(v, FieldInfo)}
     else:
         input_data = self.__dict__
+
+    # Modify keys of input_data to field aliases to be used in validate_model
+    updates = {}
+    for k, v in input_data.items():
+        key = k
+        if k in self.__pydantic_model__.__fields__:
+            key = self.__pydantic_model__.__fields__[k].alias
+        updates[key] = v
+    input_data = updates
+
     d, _, validation_error = validate_model(self.__pydantic_model__, input_data, cls=self.__class__)
     if validation_error:
         raise validation_error
