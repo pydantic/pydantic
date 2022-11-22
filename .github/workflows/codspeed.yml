@@ -49,5 +49,4 @@ jobs:
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v1
         with:
-          token: ${{ secrets.CODSPEED_TOKEN }}
           run: pytest tests/benchmarks/ --codspeed
