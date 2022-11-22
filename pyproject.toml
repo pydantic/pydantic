@@ -1,5 +1,5 @@
 [build-system]
-requires = ['maturin>=0.13,<0.14', 'typing_extensions']
+requires = ['maturin>=0.14,<0.15', 'typing_extensions']
 build-backend = 'maturin'
 
 [project]
@@ -46,7 +46,6 @@ Source = 'https://github.com/pydantic/pydantic-core'
 
 [tool.maturin]
 bindings = 'pyo3'
-sdist-include = ['Cargo.lock']
 
 [tool.ruff]
 line-length = 120
