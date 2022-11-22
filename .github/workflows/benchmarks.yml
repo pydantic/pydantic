@@ -47,6 +47,8 @@ jobs:
         uses: Swatinem/rust-cache@v1
 
       - run: pip install . -v
+        env:
+          CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
 
       # this is required so that pytest uses the installed package
       - run: rm tests/__init__.py
