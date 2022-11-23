@@ -69,7 +69,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          docs-build
+          docs-build-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('requirements/*') }}
