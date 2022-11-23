@@ -694,7 +694,10 @@ class ByteSize(int):
         num = float(self)
         for unit in units:
             if abs(num) < divisor:
-                return f'{num:0.1f}{unit}'
+                if unit == 'B':
+                    return f'{num:0.0f}{unit}'
+                else:
+                    return f'{num:0.1f}{unit}'
             num /= divisor
 
         return f'{num:0.1f}{final_unit}'
