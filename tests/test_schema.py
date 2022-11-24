@@ -1528,7 +1528,7 @@ def test_model_default():
     from pydantic import BaseModel
 
     class Inner(BaseModel):
-        a: dict[Path, str] = {Path(): ''}
+        a: Dict[Path, str] = {Path(): ''}
 
     class Outer(BaseModel):
         inner: Inner = Inner()
