@@ -1,6 +1,7 @@
 import re
 import warnings
 from collections import defaultdict
+from dataclasses import is_dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -971,7 +972,11 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 
 
 def encode_default(dft: Any) -> Any:
-    if isinstance(dft, Enum):
+    from .main import BaseModel
+
+    if isinstance(dft, BaseModel) or is_dataclass(dft):
+        dft = cast(dict[str, Any], pydantic_encoder(dft))
+    elif isinstance(dft, Enum):
         return dft.value
     elif isinstance(dft, (int, float, str)):
         return dft
@@ -979,7 +984,8 @@ def encode_default(dft: Any) -> Any:
         t = dft.__class__
         seq_args = (encode_default(v) for v in dft)
         return t(*seq_args) if is_namedtuple(t) else t(seq_args)
-    elif isinstance(dft, dict):
+
+    if isinstance(dft, dict):
         return {encode_default(k): encode_default(v) for k, v in dft.items()}
     elif dft is None:
         return None
