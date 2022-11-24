@@ -975,7 +975,7 @@ def encode_default(dft: Any) -> Any:
     from .main import BaseModel
 
     if isinstance(dft, BaseModel) or is_dataclass(dft):
-        dft = cast(dict[str, Any], pydantic_encoder(dft))
+        dft = cast('dict[str, Any]', pydantic_encoder(dft))
     elif isinstance(dft, Enum):
         return dft.value
     elif isinstance(dft, (int, float, str)):
