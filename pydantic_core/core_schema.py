@@ -817,6 +817,28 @@ def chain_schema(*steps: CoreSchema, ref: str | None = None, extra: Any = None) 
     return dict_not_none(type='chain', steps=steps, ref=ref, extra=extra)
 
 
+class LaxOrStrictSchema(TypedDict, total=False):
+    type: Required[Literal['lax-or-strict']]
+    lax_schema: Required[CoreSchema]
+    strict_schema: Required[CoreSchema]
+    strict: bool
+    ref: str
+    extra: Any
+
+
+def lax_or_strict_schema(
+    lax_schema: CoreSchema,
+    strict_schema: CoreSchema,
+    *,
+    strict: bool | None = None,
+    ref: str | None = None,
+    extra: Any = None,
+) -> LaxOrStrictSchema:
+    return dict_not_none(
+        type='lax-or-strict', lax_schema=lax_schema, strict_schema=strict_schema, strict=strict, ref=ref, extra=extra
+    )
+
+
 class TypedDictField(TypedDict, total=False):
     schema: Required[CoreSchema]
     required: bool
@@ -1130,6 +1152,7 @@ CoreSchema = Union[
     UnionSchema,
     TaggedUnionSchema,
     ChainSchema,
+    LaxOrStrictSchema,
     TypedDictSchema,
     NewClassSchema,
     ArgumentsSchema,
