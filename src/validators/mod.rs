@@ -34,6 +34,7 @@ mod int;
 mod is_instance;
 mod is_subclass;
 mod json;
+mod lax_or_strict;
 mod list;
 mod literal;
 mod new_class;
@@ -380,6 +381,8 @@ pub fn build_validator<'a>(
         with_default::WithDefaultValidator,
         // chain validators
         chain::ChainValidator,
+        // lax or strict
+        lax_or_strict::LaxOrStrictValidator,
         // generator validators
         generator::GeneratorValidator,
         // custom error
@@ -502,6 +505,8 @@ pub enum CombinedValidator {
     WithDefault(with_default::WithDefaultValidator),
     // chain validators
     Chain(chain::ChainValidator),
+    // lax or strict
+    LaxOrStrict(lax_or_strict::LaxOrStrictValidator),
     // generator validators
     Generator(generator::GeneratorValidator),
     // custom error
