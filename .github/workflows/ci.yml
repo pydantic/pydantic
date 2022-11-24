@@ -87,6 +87,10 @@ jobs:
           BENCHMARK_VS_PYDANTIC: 1
           HYPOTHESIS_PROFILE: slow
 
+      # see https://github.com/PyO3/pyo3/discussions/2781
+      - uses: mxschmitt/action-tmate@v3
+        if: failure()
+
       - run: ls -lha
       - run: coverage xml
 
