@@ -28,7 +28,7 @@ jobs:
             ${{ env.pythonLocation }}
             .mypy_cache
           key: >
-            lint
+            lint-v2
             ${{ runner.os }}
             ${{ env.pythonLocation }}
             ${{ hashFiles('tests/requirements-linting.txt') }}

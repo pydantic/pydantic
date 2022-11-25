@@ -5,12 +5,14 @@ black = black -S -l 120 --target-version py38 $(sources)
 
 .PHONY: install-linting
 install-linting:
+	pip install --upgrade setuptools
 	pip install -r tests/requirements-linting.txt
 	pre-commit install
 
 .PHONY: install-pydantic
 install-pydantic:
 	python -m pip install -U wheel pip
+	pip install --upgrade setuptools
 	pip install -r requirements.txt
 	SKIP_CYTHON=1 pip install -e .
 
