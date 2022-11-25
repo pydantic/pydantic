@@ -28,7 +28,7 @@ jobs:
             ${{ env.pythonLocation }}
             .mypy_cache
           key: >
-            lint
+            lint-v2
             ${{ runner.os }}
             ${{ env.pythonLocation }}
             ${{ hashFiles('tests/requirements-linting.txt') }}
@@ -122,7 +122,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          test-linux-compiled
+          test-linux-compiled-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -183,7 +183,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          test-not-compiled
+          test-not-compiled-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
