@@ -190,7 +190,3 @@ The callable is expected to mutate the schema dictionary *in-place*; the return 
 For example, the `title` key can be removed from the model's `properties`:
 
 {!.tmp_examples/schema_extra_callable.md!}
-
-
-
-```
