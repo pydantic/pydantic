@@ -1525,8 +1525,6 @@ def test_dict_default():
 
 def test_model_default():
     """Make sure inner model types are encoded properly"""
-    from pydantic import BaseModel
-
     class Inner(BaseModel):
         a: Dict[Path, str] = {Path(): ''}
 
