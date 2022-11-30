@@ -139,6 +139,47 @@ class TestBenchmarkSimpleModel:
         benchmark(core_validator_not_fs.validate_json, json_data)
 
 
+class TestModelLarge:
+    @pytest.fixture(scope='class')
+    def core_model_validator(self):
+        class CoreModel:
+            __slots__ = '__dict__', '__fields_set__'
+
+        return SchemaValidator(
+            {
+                'type': 'new-class',
+                'cls': CoreModel,
+                'schema': {
+                    'type': 'typed-dict',
+                    'return_fields_set': True,
+                    'extra_behavior': 'allow',
+                    'total': False,
+                    'fields': {f'field_{i}': {'schema': {'type': 'int'}} for i in range(100)},
+                },
+            }
+        )
+
+    data = {f'field_{i}': i for i in range(98)}
+    data['more'] = 'more data'
+
+    @pytest.mark.benchmark(group='large model - python')
+    def test_core_python(self, core_model_validator, benchmark):
+        m = core_model_validator.validate_python(self.data)
+        assert m.field_0 == 0
+        assert m.field_1 == 1
+        assert m.more == 'more data'
+        benchmark(core_model_validator.validate_python, self.data)
+
+    @pytest.mark.benchmark(group='large model - JSON')
+    def test_core_json_fs(self, core_model_validator, benchmark):
+        json_data = json.dumps(self.data)
+        m = core_model_validator.validate_json(json_data)
+        assert m.field_0 == 0
+        assert m.field_1 == 1
+        assert m.more == 'more data'
+        benchmark(core_model_validator.validate_json, json_data)
+
+
 bool_cases = [True, False, 0, 1, '0', '1', 'true', 'false', 'True', 'False']
 
 
