@@ -21,6 +21,8 @@ sys.exit(1)
 setup(
     name='pydantic',
     install_requires=[
-        'typing-extensions>=4.1.0'
+        'typing-extensions>=4.1.0',
+        'pydantic-core>=0.7.1',
+        'annotated-types>=0.4.0'
     ],
 )
