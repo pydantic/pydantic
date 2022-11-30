@@ -159,14 +159,15 @@ class TestModelLarge:
             }
         )
 
-    data = {f'field_{i}': i for i in range(98)}
+    data = {f'field_{97 - i}': i for i in range(98)}
     data['more'] = 'more data'
 
     @pytest.mark.benchmark(group='large model - python')
     def test_core_python(self, core_model_validator, benchmark):
         m = core_model_validator.validate_python(self.data)
-        assert m.field_0 == 0
-        assert m.field_1 == 1
+        assert m.field_0 == 97
+        assert m.field_1 == 96
+        assert m.field_97 == 0
         assert m.more == 'more data'
         benchmark(core_model_validator.validate_python, self.data)
 
@@ -174,8 +175,9 @@ class TestModelLarge:
     def test_core_json_fs(self, core_model_validator, benchmark):
         json_data = json.dumps(self.data)
         m = core_model_validator.validate_json(json_data)
-        assert m.field_0 == 0
-        assert m.field_1 == 1
+        assert m.field_0 == 97
+        assert m.field_1 == 96
+        assert m.field_97 == 0
         assert m.more == 'more data'
         benchmark(core_model_validator.validate_json, json_data)
 
