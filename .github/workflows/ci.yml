@@ -9,7 +9,7 @@ on:
   pull_request: {}
 
 jobs:
-  test:
+  test-cpython:
     name: test ${{ matrix.python-version }} rust ${{ matrix.rust-toolchain }}
     strategy:
       fail-fast: false
@@ -22,9 +22,6 @@ jobs:
           - '3.9'
           - '3.10'
           - '3.11'
-          - 'pypy3.7'
-          - 'pypy3.8'
-          - 'pypy3.9'
         include:
           - rust-toolchain: stable
             python-version: '3.10'
@@ -87,10 +84,6 @@ jobs:
           BENCHMARK_VS_PYDANTIC: 1
           HYPOTHESIS_PROFILE: slow
 
-      # see https://github.com/PyO3/pyo3/discussions/2781
-      - uses: mxschmitt/action-tmate@v3
-        if: failure()
-
       - run: ls -lha
       - run: coverage xml
 
@@ -100,6 +93,64 @@ jobs:
         if: matrix.rust-toolchain == 'nightly'
         with:
           env_vars: PYTHON
+
+  # See https://github.com/PyO3/pyo3/discussions/2781
+  # tests intermittently segfault with pypy when using `coverage run ...`, hence separate job
+  test-pypy:
+    name: test ${{ matrix.python-version }} rust stable
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - 'pypy3.7'
+          - 'pypy3.8'
+          - 'pypy3.9'
+
+    runs-on: ubuntu-latest
+
+    env:
+      PYTHON: ${{ matrix.python-version }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: rm rust-toolchain
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: pypy-v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - id: cache-py
+        name: cache python
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}
+          key: >
+            py
+            ${{ runner.os }}
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements.txt') }}
+            ${{ hashFiles('pyproject.toml') }}
+
+      - run: pip install -r tests/requirements.txt
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
+      - run: pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: pip freeze
+
+      - run: pytest
 
   lint:
     runs-on: ubuntu-latest
@@ -220,7 +271,7 @@ jobs:
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
     if: always()
-    needs: [test, lint, bench, build-wasm-emscripten]
+    needs: [test-cpython, test-pypy, lint, bench, build-wasm-emscripten]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
