@@ -261,6 +261,10 @@ pub enum ErrorType {
     DatetimePast,
     #[strum(message = "Datetime should be in the future")]
     DatetimeFuture,
+    #[strum(message = "Datetime should have timezone info")]
+    DatetimeAware,
+    #[strum(message = "Datetime should not have timezone info")]
+    DatetimeNaive,
     // ---------------------
     // timedelta errors
     #[strum(message = "Input should be a valid timedelta")]
