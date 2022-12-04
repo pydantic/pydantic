@@ -4,7 +4,7 @@ Test pydantic's compliance with mypy.
 Do a little skipping about with types to demonstrate its usage.
 """
 import os
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path, PurePath
 from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
@@ -14,6 +14,7 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     UUID1,
+    AwareDatetime,
     BaseModel,
     ConfigDict,
     DirectoryPath,
@@ -22,6 +23,7 @@ from pydantic import (
     FutureDate,
     ImportString,
     Json,
+    NaiveDatetime,
     NegativeFloat,
     NegativeInt,
     NonNegativeFloat,
@@ -222,6 +224,9 @@ class PydanticTypes(BaseModel):
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)
+    # Datetime
+    my_aware_datetime: AwareDatetime = datetime.now(tz=timezone.utc)
+    my_naive_datetime: NaiveDatetime = datetime.now()
 
     class Config:
         validate_all = True
