@@ -276,6 +276,7 @@ class DatetimeSchema(TypedDict, total=False):
     lt: datetime
     gt: datetime
     now_op: Literal['past', 'future']
+    tz_constraint: Literal['aware', 'naive']
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
     # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
     now_utc_offset: int
@@ -291,6 +292,7 @@ def datetime_schema(
     lt: datetime | None = None,
     gt: datetime | None = None,
     now_op: Literal['past', 'future'] | None = None,
+    tz_constraint: Literal['aware', 'naive'] | None = None,
     now_utc_offset: int | None = None,
     ref: str | None = None,
     extra: Any = None,
@@ -303,6 +305,7 @@ def datetime_schema(
         lt=lt,
         gt=gt,
         now_op=now_op,
+        tz_constraint=tz_constraint,
         now_utc_offset=now_utc_offset,
         ref=ref,
         extra=extra,
@@ -1226,6 +1229,8 @@ ErrorType = Literal[
     'datetime_object_invalid',
     'datetime_past',
     'datetime_future',
+    'datetime_aware',
+    'datetime_naive',
     'time_delta_type',
     'time_delta_parsing',
     'frozen_set_type',

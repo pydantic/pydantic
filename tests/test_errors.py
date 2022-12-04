@@ -235,6 +235,8 @@ all_errors = [
     ('datetime_object_invalid', 'Invalid datetime object, got foobar', {'error': 'foobar'}),
     ('datetime_past', 'Datetime should be in the past', None),
     ('datetime_future', 'Datetime should be in the future', None),
+    ('datetime_aware', 'Datetime should have timezone info', None),
+    ('datetime_naive', 'Datetime should not have timezone info', None),
     ('time_delta_type', 'Input should be a valid timedelta', None),
     ('time_delta_parsing', 'Input should be a valid timedelta, foobar', {'error': 'foobar'}),
     ('frozen_set_type', 'Input should be a valid frozenset', None),

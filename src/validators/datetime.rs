@@ -92,6 +92,12 @@ impl Validator for DateTimeValidator {
                     }
                 }
             }
+
+            match (&constraints.tz, speedate_dt.offset) {
+                (Some(TZConstraint::Aware), None) => return Err(ValError::new(ErrorType::DatetimeAware, input)),
+                (Some(TZConstraint::Naive), Some(_)) => return Err(ValError::new(ErrorType::DatetimeNaive, input)),
+                _ => (),
+            }
         }
         Ok(datetime.try_into_py(py)?)
     }
@@ -108,6 +114,7 @@ struct DateTimeConstraints {
     ge: Option<DateTime>,
     gt: Option<DateTime>,
     now: Option<NowConstraint>,
+    tz: Option<TZConstraint>,
 }
 
 impl DateTimeConstraints {
@@ -119,8 +126,9 @@ impl DateTimeConstraints {
             ge: py_datetime_as_datetime(schema, intern!(py, "ge"))?,
             gt: py_datetime_as_datetime(schema, intern!(py, "gt"))?,
             now: NowConstraint::from_py(schema)?,
+            tz: TZConstraint::from_py(schema)?,
         };
-        if c.le.is_some() || c.lt.is_some() || c.ge.is_some() || c.gt.is_some() || c.now.is_some() {
+        if c.le.is_some() || c.lt.is_some() || c.ge.is_some() || c.gt.is_some() || c.now.is_some() || c.tz.is_some() {
             Ok(Some(c))
         } else {
             Ok(None)
@@ -195,6 +203,30 @@ impl NowConstraint {
                 op: NowOp::from_str(op)?,
                 utc_offset: schema.get_as(intern!(py, "now_utc_offset"))?,
             })),
+            None => Ok(None),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum TZConstraint {
+    Aware,
+    Naive,
+}
+
+impl TZConstraint {
+    pub fn from_str(s: &str) -> PyResult<Self> {
+        match s {
+            "aware" => Ok(TZConstraint::Aware),
+            "naive" => Ok(TZConstraint::Naive),
+            _ => py_err!("Invalid tz_constraint {:?}", s),
+        }
+    }
+
+    pub fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+        let py = schema.py();
+        match schema.get_as(intern!(py, "tz_constraint"))? {
+            Some(kind) => Ok(Some(Self::from_str(kind)?)),
             None => Ok(None),
         }
     }
