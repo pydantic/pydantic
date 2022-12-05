@@ -10,7 +10,7 @@ from copy import deepcopy
 from enum import Enum
 from functools import partial
 from types import prepare_class, resolve_bases
-from typing import Any
+from typing import Any, Union, get_origin
 
 import typing_extensions
 
@@ -75,6 +75,10 @@ class ModelMetaclass(ABCMeta):
             validator_functions = _validation_functions.ValidationFunctions(bases)
             namespace['__pydantic_validator_functions__'] = validator_functions
 
+            for name, value in namespace['__annotations__'].items():
+                if isinstance(namespace.get(name), FieldInfo) and namespace[name].discriminator is not None and get_origin(value) is not Union:
+                    raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
+            
             for name, value in namespace.items():
                 validator_functions.extract_validator(name, value)
 
