@@ -25,7 +25,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    get_args,
 )
 from uuid import UUID
 
@@ -35,6 +34,7 @@ from .typing import (
     AnyCallable,
     all_literal_values,
     display_as_type,
+    get_args,
     get_class,
     is_callable_type,
     is_literal_type,
