@@ -2660,7 +2660,7 @@ def test_json_no_default():
     assert JsonRequired().dict() == {'json_obj': None}
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern, re.Pattern[str], Pattern[str]])
 def test_pattern(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
@@ -2684,13 +2684,49 @@ def test_pattern(pattern_type):
     }
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+@pytest.mark.parametrize('pattern_type', [Pattern[bytes], re.Pattern[bytes]])
+def test_pattern_bytes(pattern_type):
+    class Foobar(BaseModel):
+        pattern: pattern_type
+
+    f = Foobar(pattern=rb'^whatev.r\d$')
+    assert f.pattern.__class__.__name__ == 'Pattern'
+    # check it's really a proper pattern
+    assert f.pattern.match(b'whatever1')
+    assert not f.pattern.match(b' whatever1')
+
+    # Check that pre-compiled patterns are accepted unchanged
+    p = re.compile(rb'^whatev.r\d$')
+    f2 = Foobar(pattern=p)
+    assert f2.pattern is p
+
+    assert Foobar.schema() == {
+        'type': 'object',
+        'title': 'Foobar',
+        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+        'required': ['pattern'],
+    }
+
+
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern, re.Pattern[str], Pattern[str]])
 def test_pattern_error(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
 
     with pytest.raises(ValidationError) as exc_info:
         Foobar(pattern='[xx')
+    assert exc_info.value.errors() == [
+        {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
+    ]
+
+
+@pytest.mark.parametrize('pattern_type', [re.Pattern[bytes], Pattern[bytes]])
+def test_pattern_bytes_error(pattern_type):
+    class Foobar(BaseModel):
+        pattern: pattern_type
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foobar(pattern=b'[xx')
     assert exc_info.value.errors() == [
         {'loc': ('pattern',), 'msg': 'Invalid regular expression', 'type': 'value_error.regex_pattern'}
     ]

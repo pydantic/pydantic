@@ -6,7 +6,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from pathlib import Path
 from re import Pattern
 from types import GeneratorType
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, AnyStr, Callable, Dict, Type, Union
 from uuid import UUID
 
 from .color import Color
@@ -41,6 +41,14 @@ def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
         return float(dec_value)
 
 
+def pattern_encoder(pattern: Pattern[AnyStr]) -> str:
+    pattern_s = pattern.pattern
+    if isinstance(pattern_s, bytes):
+        return pattern_s.decode('utf-8', errors='backslashreplace')
+    else:
+        return pattern_s
+
+
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     bytes: lambda o: o.decode(),
     Color: str,
@@ -61,7 +69,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     IPv6Network: str,
     NameEmail: str,
     Path: str,
-    Pattern: lambda o: o.pattern,
+    Pattern: pattern_encoder,
     SecretBytes: str,
     SecretStr: str,
     set: list,

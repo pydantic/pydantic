@@ -1,3 +1,4 @@
+import re
 import sys
 from collections.abc import Callable
 from os import PathLike
@@ -15,6 +16,7 @@ from typing import (  # type: ignore
     Mapping,
     NewType,
     Optional,
+    Pattern,
     Sequence,
     Set,
     Tuple,
@@ -410,6 +412,10 @@ def is_callable_type(type_: Type[Any]) -> bool:
 
 def is_literal_type(type_: Type[Any]) -> bool:
     return Literal is not None and get_origin(type_) is Literal
+
+
+def is_pattern_type(type_: Type[Any]) -> bool:
+    return type_ is Pattern or type_ is re.Pattern or get_origin(type_) is Pattern or get_origin(type_) is re.Pattern
 
 
 def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:

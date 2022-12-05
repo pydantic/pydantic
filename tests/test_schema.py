@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 from datetime import date, datetime, time, timedelta
@@ -20,6 +21,7 @@ from typing import (
     NamedTuple,
     NewType,
     Optional,
+    Pattern,
     Set,
     Tuple,
     Type,
@@ -1741,6 +1743,20 @@ def test_bytes_constrained_types(field_type, expected_schema):
 
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
     base_schema['properties']['a'] = expected_schema
+
+    assert Model.schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type', [re.Pattern, Pattern, re.Pattern[str], Pattern[str], re.Pattern[bytes], Pattern[bytes]]
+)
+def test_pattern(field_type):
+    class Model(BaseModel):
+        pattern: field_type
+
+    expected_schema = {'title': 'Pattern', 'type': 'string', 'format': 'regex'}
+    base_schema = {'title': 'Model', 'type': 'object', 'properties': {'pattern': {}}, 'required': ['pattern']}
+    base_schema['properties']['pattern'] = expected_schema
 
     assert Model.schema() == base_schema
 

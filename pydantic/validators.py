@@ -25,6 +25,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
 )
 from uuid import UUID
 
@@ -39,6 +40,7 @@ from .typing import (
     is_literal_type,
     is_namedtuple,
     is_none_type,
+    is_pattern_type,
     is_typeddict,
 )
 from .utils import almost_equal_floats, lenient_issubclass, sequence_like
@@ -588,6 +590,18 @@ def pattern_validator(v: Any) -> Pattern[str]:
         raise errors.PatternError()
 
 
+def pattern_bytes_validator(v: Any) -> Pattern[bytes]:
+    if isinstance(v, Pattern):
+        return v
+
+    bytes_value = bytes_validator(v)
+
+    try:
+        return re.compile(bytes_value)
+    except re.error:
+        raise errors.PatternError()
+
+
 NamedTupleT = TypeVar('NamedTupleT', bound=NamedTuple)
 
 
@@ -709,8 +723,13 @@ def find_validators(  # noqa: C901 (ignore complexity)
     if is_none_type(type_):
         yield none_validator
         return
-    if type_ is Pattern or type_ is re.Pattern:
-        yield pattern_validator
+    if is_pattern_type(type_):
+        args: Tuple[Any, ...] = get_args(type_)
+        if args == (bytes,):
+            # Use bytes only if explicitly chose, otherwise default to str
+            yield pattern_bytes_validator
+        else:
+            yield pattern_validator
         return
     if type_ is Hashable or type_ is CollectionsHashable:
         yield hashable_validator

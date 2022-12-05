@@ -176,6 +176,20 @@ table: list[tuple[str, str, str | dict[str, Any], str, str]] = [
         '',
     ),
     (
+        'Pattern[str]',
+        'string',
+        {'format': 'regex'},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
+        'Pattern[bytes]',
+        'string',
+        {'format': 'regex'},
+        'JSON Schema Validation',
+        '',
+    ),
+    (
         'bytes',
         'string',
         {'format': 'binary'},

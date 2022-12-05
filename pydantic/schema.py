@@ -18,7 +18,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Pattern,
     Sequence,
     Set,
     Tuple,
@@ -77,6 +76,7 @@ from .typing import (
     is_literal_type,
     is_namedtuple,
     is_none_type,
+    is_pattern_type,
     is_union,
 )
 from .utils import ROOT_KEY, get_model, lenient_issubclass
@@ -781,7 +781,6 @@ field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
     (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
     (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
-    (Pattern, {'type': 'string', 'format': 'regex'}),
     (str, {'type': 'string'}),
     (bytes, {'type': 'string', 'format': 'binary'}),
     (bool, {'type': 'boolean'}),
@@ -807,8 +806,7 @@ def add_field_type_to_schema(field_type: Any, schema_: Dict[str, Any]) -> None:
     and then modifies the given `schema` with the information from that type.
     """
     for type_, t_schema in field_class_to_schema:
-        # Fallback for `typing.Pattern` and `re.Pattern` as they are not a valid class
-        if lenient_issubclass(field_type, type_) or field_type is type_ is Pattern:
+        if lenient_issubclass(field_type, type_):
             schema_.update(t_schema)
             break
 
@@ -862,6 +860,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         return {'type': 'null'}, definitions, nested_models
     if is_callable_type(field_type):
         raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
+
     f_schema: Dict[str, Any] = {}
     if field.field_info is not None and field.field_info.const:
         f_schema['const'] = field.default
@@ -907,6 +906,8 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
                 'maxItems': len(items_schemas),
             }
         )
+    elif is_pattern_type(field_type):
+        f_schema.update(type='string', format='regex')
     elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
@@ -1042,6 +1043,10 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
         ):
             return type_
+
+        if is_pattern_type(type_):
+            return type_
+
         origin = get_origin(type_)
         if origin is not None:
             args: Tuple[Any, ...] = get_args(type_)

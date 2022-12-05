@@ -128,8 +128,11 @@ with custom properties and validation.
 `typing.Callable`
 : see [Callable](#callable) below for more detail on parsing and validation
 
-`typing.Pattern`
+`typing.Pattern or typing.Pattern[str]`
 : will cause the input value to be passed to `re.compile(v)` to create a regex pattern
+
+`typing.Pattern[bytes]`
+: will cause the input value to be passed to `re.compile(v)` as bytes, to create a regex pattern to match bytes
 
 `ipaddress.IPv4Address`
 : simply uses the type itself for validation by passing the value to `IPv4Address(v)`;
@@ -620,7 +623,7 @@ For URI/URL validation the following types are available:
 
 !!! warning
     In V1.10.0 and v1.10.1 `stricturl` also took an optional `quote_plus` argument and URL components were percent
-    encoded in some cases. This feature was removed in v1.10.2, see 
+    encoded in some cases. This feature was removed in v1.10.2, see
     [#4470](https://github.com/pydantic/pydantic/pull/4470) for explanation and more details.
 
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are

@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Pattern
 from uuid import UUID
 
 import pytest
@@ -55,10 +55,39 @@ class MyEnum(Enum):
         (create_model('BarModel', a='b', c='d')(), '{"a": "b", "c": "d"}'),
         (MyEnum.foo, '"bar"'),
         (re.compile('^regex$'), '"^regex$"'),
+        (re.compile(b'^\x00regex$'), '"^\\u0000regex$"'),
     ],
 )
 def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
+
+
+@pytest.mark.parametrize(
+    'field_type,pattern,output',
+    [
+        # str patterns
+        (re.Pattern, re.compile('^hello, world$'), '^hello, world$'),
+        (re.Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
+        (Pattern, re.compile('^hello, world$'), '^hello, world$'),
+        (Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
+        # bytes patterns
+        (re.Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
+        (Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
+    ],
+)
+def test_pattern_round_trip_coding(field_type, pattern, output):
+    """
+    Ensure all types of regex patterns work, str and bytes, and that the
+    round-trip is lossless
+    """
+
+    class Obj(BaseModel):
+        pattern: field_type
+
+    obj = Obj(pattern=pattern)
+    js = json.dumps(obj, default=pydantic_encoder)
+    assert js == f'{{"pattern": "{output}"}}'
+    assert Obj.parse_raw(js) == obj
 
 
 @pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
