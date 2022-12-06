@@ -315,7 +315,9 @@ jobs:
 
       - name: publish docs
 #        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
-        run: make publish-docs
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.cloudflare_api_token }}
+          command: pages publish --project-name=pydantic-docs site
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.cloudflare_api_token }}

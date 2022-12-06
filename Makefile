@@ -105,7 +105,3 @@ docs:
 docs-serve:
 	python docs/build/main.py
 	mkdocs serve
-
-.PHONY: publish-docs
-publish-docs:
-	npx wrangler pages publish --project-name pydantic-docs site
