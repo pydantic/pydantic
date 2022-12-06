@@ -1,7 +1,7 @@
 site_name: pydantic
 site_description: Data validation using Python type hints
 strict: true
-site_url: https://pydantic-docs.helpmanual.io/
+site_url: https://docs.pydantic.dev/
 
 theme:
   name: 'material'
