@@ -473,6 +473,6 @@ def test_legacy_typeddict_no_required_not_required():
         t: TD
 
 
-def test_pattern_with_constraints():
+def test_pattern_annotated():
     class Foobar(BaseModel):
         pattern: Annotated[Pattern[str], Field(description='My Regex')]
