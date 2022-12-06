@@ -6,7 +6,7 @@ Tests for annotated types that _pydantic_ can validate like
 import json
 import sys
 from collections import namedtuple
-from typing import List, NamedTuple, Optional, Tuple
+from typing import List, NamedTuple, Optional, Pattern, Tuple
 
 import pytest
 from typing_extensions import Annotated, NotRequired, Required, TypedDict
@@ -471,3 +471,8 @@ def test_legacy_typeddict_no_required_not_required():
 
     class Model(BaseModel):
         t: TD
+
+
+def test_pattern_with_constraints():
+    class Foobar(BaseModel):
+        pattern: Annotated[Pattern[str], Field(description='My Regex')]
