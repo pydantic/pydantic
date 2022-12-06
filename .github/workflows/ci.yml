@@ -290,9 +290,9 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-      - name: check tag
-        id: check-tag
-        run: ./tests/check_tag.py
+#      - name: check tag
+#        id: check-tag
+#        run: ./tests/check_tag.py
 
       - name: build
         run: python -m build
