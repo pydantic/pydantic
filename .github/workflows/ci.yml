@@ -281,13 +281,6 @@ jobs:
         with:
           python-version: '3.10'
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - run: npm install wrangler npx
-
       - name: get docs
         uses: actions/download-artifact@v3
         with:
