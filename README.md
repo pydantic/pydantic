@@ -17,7 +17,7 @@ Data validation using Python type hints.
 **This branch relates to development of pydantic V2 which is not yet ready for release.**
 
 If you're a user of pydantic, you probably want either
-[pydantic V1.10 Documentation](https://pydantic-docs.helpmanual.io/) or,
+[pydantic V1.10 Documentation](https://docs.pydantic.dev/) or,
 [`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes).
 
 ---
@@ -27,13 +27,13 @@ Define how data should be in pure, canonical Python 3.7+; validate it with *pyda
 
 ## Help
 
-See [documentation](https://pydantic-docs.helpmanual.io/) for more details.
+See [documentation](https://docs.pydantic.dev/) for more details.
 
 ## Installation
 
 Install using `pip install -U pydantic` or `conda install pydantic -c conda-forge`.
 For more installation options to make *pydantic* even faster,
-see the [Install](https://pydantic-docs.helpmanual.io/install/) section in the documentation.
+see the [Install](https://docs.pydantic.dev/install/) section in the documentation.
 
 ## A Simple Example
 
@@ -60,7 +60,7 @@ print(user.id)
 
 For guidance on setting up a development environment and how to make a
 contribution to *pydantic*, see
-[Contributing to Pydantic](https://pydantic-docs.helpmanual.io/contributing/).
+[Contributing to Pydantic](https://docs.pydantic.dev/contributing/).
 
 ## Reporting a Security Vulnerability
 
