@@ -474,5 +474,8 @@ def test_legacy_typeddict_no_required_not_required():
 
 
 def test_pattern_annotated():
-    class Foobar(BaseModel):
-        pattern: Annotated[Pattern[str], Field(description='My Regex')]
+    # No constraints are used in Pattern types
+    with pytest.raises(ValueError, match='On field "pattern" the following field constraints are set but not enforced'):
+
+        class Foobar(BaseModel):
+            pattern: Annotated[Pattern[str], Field(allow_mutation=False)]
