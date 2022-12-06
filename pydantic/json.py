@@ -1,12 +1,12 @@
 import datetime
+import re
 from collections import deque
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from re import Pattern
 from types import GeneratorType
-from typing import Any, AnyStr, Callable, Dict, Type, Union
+from typing import Any, AnyStr, Callable, Dict, Pattern, Type, Union
 from uuid import UUID
 
 from .color import Color
@@ -69,7 +69,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     IPv6Network: str,
     NameEmail: str,
     Path: str,
-    Pattern: pattern_encoder,
+    re.Pattern: pattern_encoder,
     SecretBytes: str,
     SecretStr: str,
     set: list,
