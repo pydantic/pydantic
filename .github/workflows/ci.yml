@@ -268,8 +268,9 @@ jobs:
   deploy:
     name: Deploy
     needs:
-      - check
-    if: "success() && startsWith(github.ref, 'refs/tags/')"
+      - docs-build
+#      - check
+#    if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -279,6 +280,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - run: npm install wrangler npx
 
       - name: get docs
         uses: actions/download-artifact@v3
@@ -299,14 +307,15 @@ jobs:
       - run: ls -lh dist
       - run: twine check dist/*
 
-      - name: upload to pypi
-        run: twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+#      - name: upload to pypi
+#        run: twine upload dist/*
+#        env:
+#          TWINE_USERNAME: __token__
+#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
 
       - name: publish docs
-        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
+#        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
         run: make publish-docs
         env:
-          NETLIFY: ${{ secrets.netlify_token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.cloudflare_api_token }}
