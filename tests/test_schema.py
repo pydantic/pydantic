@@ -1747,9 +1747,12 @@ def test_bytes_constrained_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
-@pytest.mark.parametrize(
-    'field_type', [re.Pattern, Pattern, re.Pattern[str], Pattern[str], re.Pattern[bytes], Pattern[bytes]]
-)
+PATTERN_TEST_CASES = [re.Pattern, Pattern]
+if sys.version_info >= (3, 9, 0):
+    PATTERN_TEST_CASES += [re.Pattern[str], Pattern[str], re.Pattern[bytes], Pattern[bytes]]
+
+
+@pytest.mark.parametrize('field_type', PATTERN_TEST_CASES)
 def test_pattern(field_type):
     class Model(BaseModel):
         pattern: field_type

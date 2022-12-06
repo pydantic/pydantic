@@ -62,19 +62,25 @@ def test_encoding(input, output):
     assert output == json.dumps(input, default=pydantic_encoder)
 
 
-@pytest.mark.parametrize(
-    'field_type,pattern,output',
-    [
+PATTERN_TEST_CASES = [
+    # str patterns
+    (re.Pattern, re.compile('^hello, world$'), '^hello, world$'),
+    (Pattern, re.compile('^hello, world$'), '^hello, world$'),
+]
+
+if sys.version_info >= (3, 9, 0):
+    # Pattern type with type args is only available from python 3.9
+    PATTERN_TEST_CASES += [
         # str patterns
-        (re.Pattern, re.compile('^hello, world$'), '^hello, world$'),
         (re.Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
-        (Pattern, re.compile('^hello, world$'), '^hello, world$'),
         (Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
         # bytes patterns
         (re.Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
         (Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
-    ],
-)
+    ]
+
+
+@pytest.mark.parametrize('field_type,pattern,output', PATTERN_TEST_CASES)
 def test_pattern_round_trip_coding(field_type, pattern, output):
     """
     Ensure all types of regex patterns work, str and bytes, and that the

@@ -2660,7 +2660,15 @@ def test_json_no_default():
     assert JsonRequired().dict() == {'json_obj': None}
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern, re.Pattern[str], Pattern[str]])
+PATTERN_STR_TYPES = [re.Pattern, Pattern]
+PATTERN_BYTES_TYPES = []
+
+if sys.version_info >= (3, 9, 0):
+    PATTERN_STR_TYPES += [re.Pattern[str], Pattern[str]]
+    PATTERN_BYTES_TYPES += [re.Pattern[bytes], Pattern[bytes]]
+
+
+@pytest.mark.parametrize('pattern_type', PATTERN_STR_TYPES)
 def test_pattern(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
@@ -2684,7 +2692,7 @@ def test_pattern(pattern_type):
     }
 
 
-@pytest.mark.parametrize('pattern_type', [Pattern[bytes], re.Pattern[bytes]])
+@pytest.mark.parametrize('pattern_type', PATTERN_BYTES_TYPES)
 def test_pattern_bytes(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
@@ -2708,7 +2716,7 @@ def test_pattern_bytes(pattern_type):
     }
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern, re.Pattern[str], Pattern[str]])
+@pytest.mark.parametrize('pattern_type', PATTERN_STR_TYPES)
 def test_pattern_error(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
@@ -2720,7 +2728,7 @@ def test_pattern_error(pattern_type):
     ]
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern[bytes], Pattern[bytes]])
+@pytest.mark.parametrize('pattern_type', PATTERN_BYTES_TYPES)
 def test_pattern_bytes_error(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
