@@ -1747,9 +1747,10 @@ def test_bytes_constrained_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
-PATTERN_TEST_CASES = [re.Pattern, Pattern]
+PATTERN_TEST_CASES = [re.Pattern, Pattern, Pattern[str], Pattern[bytes]]
 if sys.version_info >= (3, 9, 0):
-    PATTERN_TEST_CASES += [re.Pattern[str], Pattern[str], re.Pattern[bytes], Pattern[bytes]]
+    # re.Pattern type with type args is only available from python 3.9
+    PATTERN_TEST_CASES += [re.Pattern[str], re.Pattern[bytes]]
 
 
 @pytest.mark.parametrize('field_type', PATTERN_TEST_CASES)

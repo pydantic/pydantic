@@ -66,17 +66,17 @@ PATTERN_TEST_CASES = [
     # str patterns
     (re.Pattern, re.compile('^hello, world$'), '^hello, world$'),
     (Pattern, re.compile('^hello, world$'), '^hello, world$'),
+    (Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
+    (Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
 ]
 
 if sys.version_info >= (3, 9, 0):
-    # Pattern type with type args is only available from python 3.9
+    # re.Pattern type with type args is only available from python 3.9
     PATTERN_TEST_CASES += [
         # str patterns
         (re.Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
-        (Pattern[str], re.compile('^hello, world$'), '^hello, world$'),
         # bytes patterns
         (re.Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
-        (Pattern[bytes], re.compile(b'^\x00hello, world$'), '^\\u0000hello, world$'),
     ]
 
 

@@ -2660,12 +2660,13 @@ def test_json_no_default():
     assert JsonRequired().dict() == {'json_obj': None}
 
 
-PATTERN_STR_TYPES = [re.Pattern, Pattern]
-PATTERN_BYTES_TYPES = []
+PATTERN_STR_TYPES = [re.Pattern, Pattern, Pattern[str]]
+PATTERN_BYTES_TYPES = [Pattern[bytes]]
 
 if sys.version_info >= (3, 9, 0):
-    PATTERN_STR_TYPES += [re.Pattern[str], Pattern[str]]
-    PATTERN_BYTES_TYPES += [re.Pattern[bytes], Pattern[bytes]]
+    # re.Pattern type with type args is only available from python 3.9
+    PATTERN_STR_TYPES += [re.Pattern[str]]
+    PATTERN_BYTES_TYPES += [re.Pattern[bytes]]
 
 
 @pytest.mark.parametrize('pattern_type', PATTERN_STR_TYPES)
