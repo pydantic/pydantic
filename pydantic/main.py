@@ -75,21 +75,29 @@ class ModelMetaclass(ABCMeta):
             validator_functions = _validation_functions.ValidationFunctions(bases)
             namespace['__pydantic_validator_functions__'] = validator_functions
 
+            # Errors for misuse of discriminated unions (check test_discriminated_unions)
             for name, value in namespace['__annotations__'].items():
-                if isinstance(namespace.get(name), FieldInfo) and namespace[name].discriminator is not None and get_origin(value) is not Union:
-                    raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
+                #Ensure value is intended as a discriminated union
                 if isinstance(namespace.get(name), FieldInfo) and namespace[name].discriminator is not None:
-                    # Check if nested
+                    # If the type expected is not a union or is a single value union, raise TypeError
+                    if get_origin(value) is not Union:
+                        raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
                     
+                    # Ensure discriminated value is present in all union options, if not raise error
+                    # NEEDS FURTHER DEVELOPMENT
+                    # Currently only accounts for one level of a nested loop 
+                    # (Will only check original and next level)
                     for union_type in get_args(value):
                         if isinstance(union_type, FieldInfo):
                             for nested_type in get_args(union_type):
                                 if not nested_type.__annotations__.get(union_type.discriminator):
-                                    raise PydanticUserError(f"Model '{union_type.__name__}' needs a discriminator field for key '{namespace[name].discriminator}'")
+                                    raise PydanticUserError(
+                                        f"Model '{union_type.__name__}' needs a discriminator field for key '{namespace[name].discriminator}'")
                         # if not hasattr(union_type, namespace[name].discriminator):
                         elif "__annotations__" in dir(union_type):
                             if not union_type.__annotations__.get(namespace[name].discriminator):
-                                raise PydanticUserError(f"Model '{union_type.__name__}' needs a discriminator field for key '{namespace[name].discriminator}'")
+                                raise PydanticUserError(
+                                    f"Model '{union_type.__name__}' needs a discriminator field for key '{namespace[name].discriminator}'")
             
             for name, value in namespace.items():
                 validator_functions.extract_validator(name, value)
