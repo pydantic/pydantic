@@ -12,6 +12,8 @@ from functools import partial
 from types import prepare_class, resolve_bases
 from typing import Any, Union, get_origin, get_args, Annotated
 
+from dataclasses import is_dataclass
+
 import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
