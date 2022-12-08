@@ -75,7 +75,7 @@ class ModelMetaclass(ABCMeta):
             validator_functions = _validation_functions.ValidationFunctions(bases)
             namespace['__pydantic_validator_functions__'] = validator_functions
 
-            # Errors for misuse of discriminated unions (check test_discriminated_unions)
+           # Errors for misuse of discriminated unions (check test_discriminated_unions)
             for name, value in namespace['__annotations__'].items():
                 #Ensure value is intended as a discriminated union
                 if isinstance(namespace.get(name), FieldInfo) and namespace[name].discriminator is not None:
@@ -83,12 +83,24 @@ class ModelMetaclass(ABCMeta):
                     if get_origin(value) is not Union:
                         raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
                     
+                    for arg in get_args(value):
+                        # print(get_origin(arg))
+                        if get_origin(arg) is Annotated:
+                            arg = get_args(arg)[0]
+                            # arg = get_args(arg)
+                            for nested_type in get_args(arg):
+                                if not issubclass(nested_type, BaseModel) and not is_dataclass(nested_type):
+                                    raise TypeError(f"Type '{nested_type.__name__}' is not a valid `BaseModel` or `dataclass`")
+                        elif not issubclass(arg, BaseModel) and not is_dataclass(arg):
+                            raise TypeError(f"Type '{arg.__name__}' is not a valid `BaseModel` or `dataclass`")
+                    
                     # Ensure discriminated value is present in all union options, if not raise error
                     # NEEDS FURTHER DEVELOPMENT
                     # Currently only accounts for one level of a nested loop 
                     # (Will only check original and next level)
                     for union_type in get_args(value):
-                        if isinstance(union_type, FieldInfo):
+                        if union_type is Annotated:
+                            union_type = get_args(union_type)[0]
                             for nested_type in get_args(union_type):
                                 if not nested_type.__annotations__.get(union_type.discriminator):
                                     raise PydanticUserError(
