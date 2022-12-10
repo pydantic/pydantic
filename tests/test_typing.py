@@ -69,7 +69,8 @@ def test_schema_typing() -> None:
         'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'bar': {'schema': {'type': 'str'}}}},
     }
     SchemaValidator(schema)
-    schema: CoreSchema = {
+    # waiting for https://github.com/microsoft/pyright/issues/4313 to be fixed
+    schema: CoreSchema = {  # type: ignore
         'type': 'typed-dict',
         'fields': {
             'a': {'schema': {'type': 'str'}},
