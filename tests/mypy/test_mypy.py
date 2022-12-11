@@ -159,6 +159,5 @@ def test_explicit_reexports_exist() -> None:
         ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
     ],
 )
-
 def test_parse_mypy_version(v_str: str, v_tuple: Tuple[int, ...]) -> None:
     assert parse_mypy_version(v_str) == v_tuple
