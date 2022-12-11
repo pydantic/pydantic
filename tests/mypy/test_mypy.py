@@ -3,6 +3,7 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Tuple
 
 import pytest
 
@@ -17,7 +18,7 @@ except ImportError:
     parse_mypy_version = lambda _: (0,)  # noqa: E731
 
 
-def should_skip():
+def should_skip() -> bool:
     if sys.version_info >= (3, 11):
         # mypy doesn't fully support 3.11 and tests are taking minutes, see #4738
         # mypy v0.990 is even worse, see #4735
@@ -130,7 +131,7 @@ def test_success_cases_run(module: str) -> None:
     importlib.import_module(f'tests.mypy.modules.{module}')
 
 
-def test_explicit_reexports():
+def test_explicit_reexports() -> None:
     from pydantic import __all__ as root_all
     from pydantic.main import __all__ as main
     from pydantic.networks import __all__ as networks
@@ -142,7 +143,7 @@ def test_explicit_reexports():
             assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
 
 
-def test_explicit_reexports_exist():
+def test_explicit_reexports_exist() -> None:
     import pydantic
 
     for name in pydantic.__all__:
@@ -158,5 +159,6 @@ def test_explicit_reexports_exist():
         ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
     ],
 )
-def test_parse_mypy_version(v_str, v_tuple):
+
+def test_parse_mypy_version(v_str: str, v_tuple: Tuple[int, ...]) -> None:
     assert parse_mypy_version(v_str) == v_tuple
