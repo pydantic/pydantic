@@ -210,6 +210,27 @@ def test_allow_extra_repr():
     assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
 
 
+def test_allow_extra_exclude():
+    class NestedModel(BaseModel):
+        a: int = ...
+
+        class Config:
+            extra = Extra.allow
+
+    class Model(BaseModel):
+        c: NestedModel = ...
+
+        class Config:
+            extra = Extra.allow
+
+    test_model: Model = Model(c=NestedModel(a=20, b=22), d=10)
+    assert str(test_model) == 'c=NestedModel(a=20, b=22) d=10'
+    assert test_model.json() == '{"c": {"a": 20, "b": 22}, "d": 10}'
+    assert test_model.json(exclude_extra=True) == '{"c": {"a": 20}}'
+    assert test_model.dict() == {'c': {'a': 20, 'b': 22}, 'd': 10}
+    assert test_model.dict(exclude_extra=True) == {'c': {'a': 20}}
+
+
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
         foo: str = 'whatever'
