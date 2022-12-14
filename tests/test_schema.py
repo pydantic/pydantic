@@ -78,11 +78,10 @@ try:
 except ImportError:
     email_validator = None
 
-
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 T = TypeVar('T')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_key():
     class ApplePie(BaseModel):
         """
@@ -105,6 +104,7 @@ def test_key():
     assert ApplePie.schema() == s
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_by_alias():
     class ApplePie(BaseModel):
         a: float
@@ -127,6 +127,7 @@ def test_by_alias():
     assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ref_template():
     class KeyLimePie(BaseModel):
         x: str = None
@@ -156,6 +157,7 @@ def test_ref_template():
     assert '#/definitions/KeyLimePie' not in json_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_by_alias_generator():
     class ApplePie(BaseModel):
         a: float
@@ -175,6 +177,7 @@ def test_by_alias_generator():
     assert ApplePie.schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_sub_model():
     class Foo(BaseModel):
         """hello"""
@@ -202,6 +205,7 @@ def test_sub_model():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_class():
     class Model(BaseModel):
         foo: int = Field(4, title='Foo is Great')
@@ -224,12 +228,14 @@ def test_schema_class():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_repr():
     s = Field(4, title='Foo is Great')
     assert str(s) == "default=4 title='Foo is Great' extra={}"
     assert repr(s) == "FieldInfo(default=4, title='Foo is Great', extra={})"
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_class_by_alias():
     class Model(BaseModel):
         foo: int = Field(4, alias='foofoo')
@@ -238,6 +244,7 @@ def test_schema_class_by_alias():
     assert list(Model.schema(by_alias=False)['properties'].keys()) == ['foo']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_choices():
     FooEnum = Enum('FooEnum', {'foo': 'f', 'bar': 'b'})
     BarEnum = IntEnum('BarEnum', {'foo': 1, 'bar': 2})
@@ -268,6 +275,7 @@ def test_choices():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_modify_schema():
     class SpamEnum(str, Enum):
         foo = 'f'
@@ -296,6 +304,7 @@ def test_enum_modify_schema():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_schema_custom_field():
     class FooBarEnum(str, Enum):
         foo = 'foo'
@@ -335,6 +344,7 @@ def test_enum_schema_custom_field():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_and_model_have_same_behaviour():
     class Names(str, Enum):
         rick = 'Rick'
@@ -393,6 +403,7 @@ def test_enum_and_model_have_same_behaviour():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_includes_extra_without_other_params():
     class Names(str, Enum):
         rick = 'Rick'
@@ -422,6 +433,7 @@ def test_enum_includes_extra_without_other_params():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'
@@ -449,6 +461,7 @@ def test_list_enum_schema_extras():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_schema_cleandoc():
     class FooBar(str, Enum):
         """
@@ -477,6 +490,7 @@ def test_enum_schema_cleandoc():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'
@@ -492,6 +506,7 @@ def test_json_schema():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_list_sub_model():
     class Foo(BaseModel):
         a: float
@@ -515,6 +530,7 @@ def test_list_sub_model():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional():
     class Model(BaseModel):
         a: Optional[str]
@@ -522,6 +538,7 @@ def test_optional():
     assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_any():
     class Model(BaseModel):
         a: Any
@@ -537,6 +554,7 @@ def test_any():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_set():
     class Model(BaseModel):
         a: Set[int]
@@ -555,6 +573,7 @@ def test_set():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_const_str():
     class Model(BaseModel):
         a: str = Field('some string', const=True)
@@ -566,6 +585,7 @@ def test_const_str():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_const_false():
     class Model(BaseModel):
         a: str = Field('some string', const=False)
@@ -577,6 +597,7 @@ def test_const_false():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,extra_props',
     [
@@ -610,6 +631,7 @@ def test_tuple(field_type, extra_props):
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_deque():
     class Model(BaseModel):
         a: Deque[str]
@@ -622,6 +644,7 @@ def test_deque():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_bool():
     class Model(BaseModel):
         a: bool
@@ -634,6 +657,7 @@ def test_bool():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_strict_bool():
     class Model(BaseModel):
         a: StrictBool
@@ -646,6 +670,7 @@ def test_strict_bool():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_dict():
     class Model(BaseModel):
         a: dict
@@ -658,6 +683,7 @@ def test_dict():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_list():
     class Model(BaseModel):
         a: list
@@ -674,6 +700,7 @@ class Foo(BaseModel):
     a: float
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -732,6 +759,7 @@ def test_list_union_dict(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -753,6 +781,7 @@ def test_date_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -776,6 +805,7 @@ def test_date_constrained_types(field_type, expected_schema):
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -809,6 +839,7 @@ def test_str_basic_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -832,6 +863,7 @@ def test_str_constrained_types(field_type, expected_schema):
     assert model_schema == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -852,6 +884,7 @@ def test_special_str_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 @pytest.mark.parametrize('field_type,expected_schema', [(EmailStr, 'email'), (NameEmail, 'name-email')])
 def test_email_str_types(field_type, expected_schema):
@@ -869,6 +902,7 @@ def test_email_str_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('field_type,inner_type', [(SecretBytes, 'string'), (SecretStr, 'string')])
 def test_secret_types(field_type, inner_type):
     class Model(BaseModel):
@@ -884,6 +918,7 @@ def test_secret_types(field_type, inner_type):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -912,6 +947,7 @@ def test_special_int_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -944,6 +980,7 @@ def test_special_float_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [(UUID, 'uuid'), (UUID1, 'uuid1'), (UUID3, 'uuid3'), (UUID4, 'uuid4'), (UUID5, 'uuid5')],
@@ -963,6 +1000,7 @@ def test_uuid_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema', [(FilePath, 'file-path'), (DirectoryPath, 'directory-path'), (Path, 'path')]
 )
@@ -981,6 +1019,7 @@ def test_path_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_json_type():
     class Model(BaseModel):
         a: Json
@@ -999,6 +1038,7 @@ def test_json_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipv4address_type():
     class Model(BaseModel):
         ip_address: IPv4Address
@@ -1012,6 +1052,7 @@ def test_ipv4address_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipv6address_type():
     class Model(BaseModel):
         ip_address: IPv6Address
@@ -1025,6 +1066,7 @@ def test_ipv6address_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipvanyaddress_type():
     class Model(BaseModel):
         ip_address: IPvAnyAddress
@@ -1038,6 +1080,7 @@ def test_ipvanyaddress_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipv4interface_type():
     class Model(BaseModel):
         ip_interface: IPv4Interface
@@ -1051,6 +1094,7 @@ def test_ipv4interface_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipv6interface_type():
     class Model(BaseModel):
         ip_interface: IPv6Interface
@@ -1064,6 +1108,7 @@ def test_ipv6interface_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipvanyinterface_type():
     class Model(BaseModel):
         ip_interface: IPvAnyInterface
@@ -1077,6 +1122,7 @@ def test_ipvanyinterface_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipv4network_type():
     class Model(BaseModel):
         ip_network: IPv4Network
@@ -1090,6 +1136,7 @@ def test_ipv4network_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipv6network_type():
     class Model(BaseModel):
         ip_network: IPv6Network
@@ -1103,6 +1150,7 @@ def test_ipv6network_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_ipvanynetwork_type():
     class Model(BaseModel):
         ip_network: IPvAnyNetwork
@@ -1116,6 +1164,7 @@ def test_ipvanynetwork_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'type_,default_value',
     (
@@ -1136,6 +1185,7 @@ def test_callable_type(type_, default_value):
     assert 'callback' not in model_schema['properties']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_error_non_supported_types():
     class Model(BaseModel):
         a: ImportString
@@ -1144,6 +1194,7 @@ def test_error_non_supported_types():
         Model.schema()
 
 
+@pytest.mark.xfail(reason='working on V2')
 def create_testing_submodules():
     base_path = Path(tempfile.mkdtemp())
     mod_root_path = base_path / 'pydantic_schema_test'
@@ -1165,6 +1216,7 @@ def create_testing_submodules():
     sys.path.insert(0, str(base_path))
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_flat_models_unique_models():
     create_testing_submodules()
     from pydantic_schema_test.modulea.modela import Model as ModelA
@@ -1175,6 +1227,7 @@ def test_flat_models_unique_models():
     assert flat_models == {ModelA, ModelB}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_flat_models_with_submodels():
     class Foo(BaseModel):
         a: str
@@ -1189,6 +1242,7 @@ def test_flat_models_with_submodels():
     assert flat_models == {Foo, Bar, Baz}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_flat_models_with_submodels_from_sequence():
     class Foo(BaseModel):
         a: str
@@ -1207,6 +1261,7 @@ def test_flat_models_with_submodels_from_sequence():
     assert flat_models == {Foo, Bar, Ingredient, Pizza}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_name_maps():
     create_testing_submodules()
     from pydantic_schema_test.modulea.modela import Model as ModelA
@@ -1235,6 +1290,7 @@ def test_model_name_maps():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_overrides():
     class Foo(BaseModel):
         a: str
@@ -1271,6 +1327,7 @@ def test_schema_overrides():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_overrides_w_union():
     class Foo(BaseModel):
         pass
@@ -1290,6 +1347,7 @@ def test_schema_overrides_w_union():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_from_models():
     class Foo(BaseModel):
         a: str
@@ -1364,6 +1422,7 @@ def test_schema_from_models():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'ref_prefix,ref_template',
     [
@@ -1409,6 +1468,7 @@ def test_schema_with_refs(ref_prefix, ref_template):
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_with_custom_ref_template():
     class Foo(BaseModel):
         a: str
@@ -1444,6 +1504,7 @@ def test_schema_with_custom_ref_template():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_ref_template_key_error():
     class Foo(BaseModel):
         a: str
@@ -1463,6 +1524,7 @@ def test_schema_no_definitions():
     assert model_schema == {'title': 'Schema without definitions'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_list_default():
     class UserModel(BaseModel):
         friends: List[int] = [1]
@@ -1474,6 +1536,7 @@ def test_list_default():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_str_default():
     class MyEnum(str, Enum):
         FOO = 'foo'
@@ -1484,6 +1547,7 @@ def test_enum_str_default():
     assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_int_default():
     class MyEnum(IntEnum):
         FOO = 1
@@ -1494,6 +1558,7 @@ def test_enum_int_default():
     assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
@@ -1512,6 +1577,7 @@ def test_dict_default():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_default():
     """Make sure inner model types are encoded properly"""
 
@@ -1544,6 +1610,7 @@ def test_model_default():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -1587,6 +1654,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     assert Foo.schema() == expected_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
@@ -1613,6 +1681,7 @@ def test_unenforced_constraints_schema(kwargs, type_):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
@@ -1652,6 +1721,7 @@ def test_constraints_schema_validation(kwargs, type_, value):
     assert Foo(a=value)
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
@@ -1680,6 +1750,7 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
         Foo(a=value)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_kwargs():
     class Foo(BaseModel):
         a: str = Field('foo', examples=['bar'])
@@ -1691,6 +1762,7 @@ def test_schema_kwargs():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_dict_constr():
     regex_str = r'^([a-zA-Z_][a-zA-Z0-9_]*)$'
     ConStrType = constr(regex=regex_str)
@@ -1708,6 +1780,7 @@ def test_schema_dict_constr():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -1728,6 +1801,7 @@ def test_bytes_constrained_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_dict():
     class Model(BaseModel):
         something: Optional[Dict[str, Any]]
@@ -1742,6 +1816,7 @@ def test_optional_dict():
     assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_validator():
     class Model(BaseModel):
         something: Optional[str]
@@ -1762,6 +1837,7 @@ def test_optional_validator():
     assert Model(something='hello').dict() == {'something': 'hello'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_field_with_validator():
     class Model(BaseModel):
         something: Optional[int] = None
@@ -1777,6 +1853,7 @@ def test_field_with_validator():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_unparameterized_schema_generation():
     class FooList(BaseModel):
         d: List
@@ -1816,6 +1893,7 @@ def test_unparameterized_schema_generation():
     assert foo_dict_schema == bar_dict_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_known_model_optimization():
     class Dep(BaseModel):
         number: int
@@ -1845,6 +1923,7 @@ def test_known_model_optimization():
     assert Model.schema() == expected
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root():
     class Model(BaseModel):
         __root__: str
@@ -1852,6 +1931,7 @@ def test_root():
     assert Model.schema() == {'title': 'Model', 'type': 'string'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_list():
     class Model(BaseModel):
         __root__: List[str]
@@ -1859,6 +1939,7 @@ def test_root_list():
     assert Model.schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_nested_model():
     class NestedModel(BaseModel):
         a: str
@@ -1881,6 +1962,7 @@ def test_root_nested_model():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_new_type_schema():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
@@ -1903,6 +1985,7 @@ def test_new_type_schema():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
@@ -1929,6 +2012,7 @@ def test_literal_schema():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_literal_enum():
     class MyEnum(str, Enum):
         FOO = 'foo'
@@ -1945,6 +2029,7 @@ def test_literal_enum():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_color_type():
     class Model(BaseModel):
         color: Color
@@ -1958,6 +2043,7 @@ def test_color_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra():
     class Model(BaseModel):
         a: str
@@ -1974,6 +2060,7 @@ def test_model_with_schema_extra():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable():
     class Model(BaseModel):
         name: str = None
@@ -1988,6 +2075,7 @@ def test_model_with_schema_extra_callable():
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable_no_model_class():
     class Model(BaseModel):
         name: str = None
@@ -2001,6 +2089,7 @@ def test_model_with_schema_extra_callable_no_model_class():
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable_classmethod():
     class Model(BaseModel):
         name: str = None
@@ -2017,6 +2106,7 @@ def test_model_with_schema_extra_callable_classmethod():
     assert Model.schema() == {'title': 'Model', 'type': 'foo'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable_instance_method():
     class Model(BaseModel):
         name: str = None
@@ -2030,6 +2120,7 @@ def test_model_with_schema_extra_callable_instance_method():
     assert Model.schema() == {'title': 'Model', 'type': 'override'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         a: str
@@ -2046,6 +2137,7 @@ def test_model_with_extra_forbidden():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -2110,6 +2202,7 @@ def test_enforced_constraints(annotation, kwargs, field_schema):
     assert schema['properties']['a'] == field_schema
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_real_vs_phony_constraints():
     class Model1(BaseModel):
         foo: int = Field(..., gt=123)
@@ -2140,6 +2233,7 @@ def test_real_vs_phony_constraints():
     )
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_subfield_field_info():
     class MyModel(BaseModel):
         entries: Dict[str, List[int]]
@@ -2158,6 +2252,7 @@ def test_subfield_field_info():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_dataclass():
     @dataclass
     class Model:
@@ -2182,6 +2277,7 @@ def test_dataclass():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_attributes():
     class ExampleEnum(Enum):
         """This is a test description."""
@@ -2221,6 +2317,7 @@ def test_model_process_schema_enum():
     assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
@@ -2244,6 +2341,7 @@ def test_path_modify_schema():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_frozen_set():
     class Model(BaseModel):
         a: FrozenSet[int] = frozenset({1, 2, 3})
@@ -2270,6 +2368,7 @@ def test_frozen_set():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_iterable():
     class Model(BaseModel):
         a: Iterable[int]
@@ -2282,6 +2381,7 @@ def test_iterable():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_new_type():
     new_type = NewType('NewStr', str)
 
@@ -2296,6 +2396,7 @@ def test_new_type():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_multiple_models_with_same_name(create_module):
     module = create_module(
         # language=Python
@@ -2334,6 +2435,7 @@ class NestedModel(BaseModel):
     assert model_names == expected_model_names
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_multiple_enums_with_same_name(create_module):
     module_1 = create_module(
         # language=Python
@@ -2386,6 +2488,7 @@ class MyModel(BaseModel):
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
@@ -2438,6 +2541,7 @@ def test_schema_for_generic_field():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_namedtuple_default():
     class Coordinates(NamedTuple):
         x: float
@@ -2462,6 +2566,7 @@ def test_namedtuple_default():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_advanced_generic_schema():
     T = TypeVar('T')
     K = TypeVar('K')
@@ -2572,6 +2677,7 @@ def test_advanced_generic_schema():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_generic():
     """
     Test a nested BaseModel that is also a Generic
@@ -2606,6 +2712,7 @@ def test_nested_generic():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_generic_model():
     """
     Test a nested GenericModel
@@ -2634,6 +2741,7 @@ def test_nested_generic_model():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_complex_nested_generic():
     """
     Handle a union of a generic.
@@ -2684,6 +2792,7 @@ def test_complex_nested_generic():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema_with_field_parameter():
     class RestrictedAlphabetStr(str):
         @classmethod
@@ -2705,6 +2814,7 @@ def test_schema_with_field_parameter():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -2792,6 +2902,7 @@ def test_discriminated_union():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_annotated_union():
     class BlackCatWithHeight(BaseModel):
         pet_type: Literal['cat']
@@ -2905,6 +3016,7 @@ def test_discriminated_annotated_union():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_same():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='typeOfPet')
@@ -2956,6 +3068,7 @@ def test_alias_same():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
@@ -2987,6 +3100,7 @@ def test_nested_python_dataclasses():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_in_list():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -3073,6 +3187,7 @@ def test_discriminated_union_in_list():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_extra_inheritance():
     class A(BaseModel):
         root: Optional[str]
@@ -3097,6 +3212,7 @@ def test_extra_inheritance():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_with_type_attributes():
     class Foo:
         a: float
@@ -3116,6 +3232,7 @@ def test_model_with_type_attributes():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
 @pytest.mark.parametrize(
     'field_kw,schema_kw',

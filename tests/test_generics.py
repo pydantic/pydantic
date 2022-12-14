@@ -23,9 +23,7 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
-
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_name():
     data_type = TypeVar('data_type')
 
@@ -37,7 +35,7 @@ def test_generic_name():
     assert Result[List[int]].__name__ == 'Result[List[int]]'
     assert Result[int].__name__ == 'Result[int]'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_double_parameterize_error():
     data_type = TypeVar('data_type')
 
@@ -49,7 +47,7 @@ def test_double_parameterize_error():
 
     assert str(exc_info.value) == 'Cannot parameterize a concrete instantiation of a generic model'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_value_validation():
     T = TypeVar('T')
 
@@ -83,7 +81,7 @@ def test_value_validation():
         Response[Dict[int, int]](data={1: 3, 2: 6})
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'sum too large', 'type': 'value_error'}]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_methods_are_inherited():
     class CustomGenericModel(GenericModel):
         def method(self):
@@ -98,7 +96,7 @@ def test_methods_are_inherited():
 
     assert instance.method() == 1
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_config_is_inherited():
     class CustomGenericModel(GenericModel):
         class Config:
@@ -116,7 +114,7 @@ def test_config_is_inherited():
 
     assert str(exc_info.value) == '"Model[int]" is immutable and does not support item assignment'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_default_argument():
     T = TypeVar('T')
 
@@ -127,7 +125,7 @@ def test_default_argument():
     result = Result[int](data=1)
     assert result.other is True
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_default_argument_for_typevar():
     T = TypeVar('T')
 
@@ -143,7 +141,7 @@ def test_default_argument_for_typevar():
     result = Result[int](data=1)
     assert result.data == 1
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_classvar():
     T = TypeVar('T')
 
@@ -156,7 +154,7 @@ def test_classvar():
     assert Result[int](data=1).other == 1
     assert 'other' not in Result.__fields__
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_non_annotated_field():
     T = TypeVar('T')
 
@@ -205,7 +203,7 @@ def test_subclass_can_be_genericized():
 
     Result[T]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -222,7 +220,7 @@ def test_parameter_count():
         Model[int]
     assert str(exc_info.value) == 'Too few parameters for Model; actual 1, expected 2'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_cover_cache():
     cache_size = len(_generic_types_cache)
     T = TypeVar('T')
@@ -235,7 +233,7 @@ def test_cover_cache():
     Model[int]  # uses the cache
     assert len(_generic_types_cache) == cache_size + 2
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_config():
     data_type = TypeVar('data_type')
 
@@ -250,7 +248,7 @@ def test_generic_config():
     with pytest.raises(TypeError):
         result.data = 2
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_enum_generic():
     T = TypeVar('T')
 
@@ -264,7 +262,7 @@ def test_enum_generic():
     Model[MyEnum](enum=MyEnum.x)
     Model[MyEnum](enum=2)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic():
     data_type = TypeVar('data_type')
     error_type = TypeVar('error_type')
@@ -318,7 +316,7 @@ def test_generic():
         {'loc': ('error',), 'msg': 'Must not provide both data and error', 'type': 'value_error'}
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_alongside_concrete_generics():
     from pydantic.generics import GenericModel
 
@@ -332,7 +330,7 @@ def test_alongside_concrete_generics():
     assert model.item == 1
     assert model.metadata == {}
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_complex_nesting():
     from pydantic.generics import GenericModel
 
@@ -345,7 +343,7 @@ def test_complex_nesting():
     model = MyModel[str](item=item)
     assert model.item == item
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_required_value():
     T = TypeVar('T')
 
@@ -356,7 +354,7 @@ def test_required_value():
         MyModel[int]()
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_value():
     T = TypeVar('T')
 
@@ -366,7 +364,7 @@ def test_optional_value():
     model = MyModel[int]()
     assert model.dict() == {'a': 1}
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_schema():
     T = TypeVar('T')
 
@@ -376,7 +374,7 @@ def test_custom_schema():
     schema = MyModel[int].schema()
     assert schema['properties']['a'].get('description') == 'Custom'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_child_schema():
     T = TypeVar('T')
 
@@ -394,7 +392,7 @@ def test_child_schema():
         'required': ['a'],
     }
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_naming():
     T = TypeVar('T')
 
@@ -410,7 +408,7 @@ def test_custom_generic_naming():
     assert repr(MyModel[int](value=1)) == 'OptionalIntWrapper(value=1)'
     assert repr(MyModel[str](value=None)) == 'OptionalStrWrapper(value=None)'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_nested():
     AT = TypeVar('AT')
 
@@ -441,7 +439,7 @@ def test_nested():
         {'loc': ('i', 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_partial_specification():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -460,7 +458,7 @@ def test_partial_specification():
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_partial_specification_with_inner_typevar():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -479,7 +477,7 @@ def test_partial_specification_with_inner_typevar():
     assert nested_resolved.a == ['123']
     assert nested_resolved.b == [456]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_partial_specification_name():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -493,7 +491,7 @@ def test_partial_specification_name():
     concrete_model = partial_model[str]
     assert concrete_model.__name__ == 'Model[int, BT][str]'
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_partial_specification_instantiation():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -513,7 +511,7 @@ def test_partial_specification_instantiation():
         {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_partial_specification_instantiation_bounded():
     AT = TypeVar('AT')
     BT = TypeVar('BT', bound=int)
@@ -537,7 +535,7 @@ def test_partial_specification_instantiation_bounded():
         {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_typevar_parametrization():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -556,7 +554,7 @@ def test_typevar_parametrization():
         {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_multiple_specification():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -576,7 +574,7 @@ def test_multiple_specification():
         {'loc': ('b',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'},
     ]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_subclass_of_concrete_generic():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -597,7 +595,7 @@ def test_generic_subclass_of_concrete_generic():
 
     ConcreteSub(data=2, extra=3)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
     # objects with <locals> in their __qualname__  (e. g. defined in function)
@@ -625,7 +623,7 @@ def test_generic_model_pickle(create_module):
         assert loaded.value.b == original.value.b == 10
         assert loaded == original
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_model_from_function_pickle_fail(create_module):
     @create_module
     def module():
@@ -653,7 +651,7 @@ def test_generic_model_from_function_pickle_fail(create_module):
         with pytest.raises(pickle.PicklingError):
             pickle.dumps(original)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
 
     # match identity checker otherwise we never get to the redefinition check
@@ -689,7 +687,7 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
         assert globals()['MyGeneric[Model]_'] is second_concrete
         assert globals()['MyGeneric[Model]__'] is third_concrete
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_model_caching_detect_order_of_union_args_basic(create_module):
     # Basic variant of https://github.com/pydantic/pydantic/issues/4474
     @create_module
@@ -780,7 +778,7 @@ def test_get_caller_frame_info_when_sys_getframe_undefined():
     finally:  # just to make sure we always setting original attribute back
         sys._getframe = getframe
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_iter_contained_typevars():
     T = TypeVar('T')
     T2 = TypeVar('T2')
@@ -793,7 +791,7 @@ def test_iter_contained_typevars():
     assert list(iter_contained_typevars(Optional[List[Union[str, Model[int]]]])) == []
     assert list(iter_contained_typevars(Optional[List[Union[str, Model[T], Callable[[T2, T], str]]]])) == [T, T2, T]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_identity_parameterization():
     T = TypeVar('T')
     T2 = TypeVar('T2')
@@ -805,7 +803,7 @@ def test_nested_identity_parameterization():
     assert Model[T] is Model
     assert Model[T2] is not Model
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_replace_types():
     T = TypeVar('T')
 
@@ -828,7 +826,7 @@ def test_replace_types():
         # example)
         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_replace_types_with_user_defined_generic_type_field():
     """Test that using user defined generic types as generic model fields are handled correctly."""
 
@@ -859,7 +857,7 @@ def test_replace_types_identity_on_unchanged():
     type_ = List[Union[str, Callable[[list], Optional[str]], U]]
     assert replace_types(type_, {T: int}) is type_
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -890,7 +888,7 @@ def test_deep_generic():
     assert InnerModel.__concrete__ is False
     assert inner_model.__concrete__ is True
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_generic_with_inner_typevar():
     T = TypeVar('T')
 
@@ -907,7 +905,7 @@ def test_deep_generic_with_inner_typevar():
         InnerModel[int](a=['wrong'])
     assert InnerModel[int](a=['1']).a == [1]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_generic_with_referenced_generic():
     T = TypeVar('T')
     R = TypeVar('R')
@@ -928,7 +926,7 @@ def test_deep_generic_with_referenced_generic():
         InnerModel[int](a={'a': 'wrong'})
     assert InnerModel[int](a={'a': 1}).a.a == 1
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_generic_with_referenced_inner_generic():
     T = TypeVar('T')
 
@@ -951,7 +949,7 @@ def test_deep_generic_with_referenced_inner_generic():
     assert InnerModel[int].__fields__['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
     assert (InnerModel[int].__fields__['a'].sub_fields[0].sub_fields[0].outer_type_.__fields__['a'].outer_type_) == int
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_generic_with_multiple_typevars():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -968,7 +966,7 @@ def test_deep_generic_with_multiple_typevars():
 
     assert ConcreteInnerModel(data=['1'], extra='2').dict() == {'data': [1.0], 'extra': 2}
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_generic_with_multiple_inheritance():
     K = TypeVar('K')
     V = TypeVar('V')
@@ -995,7 +993,7 @@ def test_deep_generic_with_multiple_inheritance():
         'extra': 5,
     }
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_with_referenced_generic_type_1():
     T = TypeVar('T')
 
@@ -1009,7 +1007,7 @@ def test_generic_with_referenced_generic_type_1():
 
     ReferenceModel[int]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_with_referenced_nested_typevar():
     T = TypeVar('T')
 
@@ -1024,7 +1022,7 @@ def test_generic_with_referenced_nested_typevar():
 
     ReferenceModel[int]
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_with_callable():
     T = TypeVar('T')
 
@@ -1035,7 +1033,7 @@ def test_generic_with_callable():
     Model[str].__concrete__ is True
     Model.__concrete__ is False
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_with_partial_callable():
     T = TypeVar('T')
     U = TypeVar('U')
@@ -1050,7 +1048,7 @@ def test_generic_with_partial_callable():
     Model[str, U].__parameters__ == [U]
     Model[str, int].__concrete__ is False
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_recursive_models(create_module):
     @create_module
     def module():
@@ -1073,7 +1071,7 @@ def test_generic_recursive_models(create_module):
     result = Model1[str].parse_obj(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
     assert result == Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_enum():
     T = TypeVar('T')
 
@@ -1090,7 +1088,7 @@ def test_generic_enum():
     m = MyModel.parse_obj({'my_gen': {'some_field': 'A'}})
     assert m.my_gen.some_field is SomeStringEnum.A
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_literal():
     FieldType = TypeVar('FieldType')
     ValueType = TypeVar('ValueType')
@@ -1102,7 +1100,7 @@ def test_generic_literal():
     m = GModel[Fields, str](field={'foo': 'x'})
     assert m.dict() == {'field': {'foo': 'x'}}
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_enums():
     T = TypeVar('T')
 
@@ -1121,7 +1119,7 @@ def test_generic_enums():
 
     assert set(Model.schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_with_user_defined_generic_field():
     T = TypeVar('T')
 
@@ -1138,7 +1136,7 @@ def test_generic_with_user_defined_generic_field():
     with pytest.raises(ValidationError):
         model = Model[int](field=['a'])
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_annotated():
     T = TypeVar('T')
 
@@ -1147,7 +1145,7 @@ def test_generic_annotated():
 
     SomeGenericModel[str](the_alias='qwe')
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_subclass():
     T = TypeVar('T')
 
@@ -1162,7 +1160,7 @@ def test_generic_subclass():
     assert issubclass(B[int], A[int])
     assert not issubclass(B[int], A[str])
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_subclass_with_partial_application():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1178,7 +1176,7 @@ def test_generic_subclass_with_partial_application():
     assert not issubclass(PartiallyAppliedB[int], A[str])
     assert not issubclass(PartiallyAppliedB[str], A[int])
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_multilevel_generic_binding():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1193,7 +1191,7 @@ def test_multilevel_generic_binding():
     assert issubclass(B[int], A[str, int])
     assert not issubclass(B[str], A[str, int])
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_generic_subclass_with_extra_type():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1209,7 +1207,7 @@ def test_generic_subclass_with_extra_type():
     assert issubclass(B[str, int], A[int])
     assert not issubclass(B[int, str], A[int])
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_multi_inheritance_generic_binding():
     T = TypeVar('T')
 
@@ -1228,7 +1226,7 @@ def test_multi_inheritance_generic_binding():
     assert issubclass(C[float], A[int])
     assert not issubclass(C[float], A[str])
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_parse_generic_json():
     T = TypeVar('T')
 

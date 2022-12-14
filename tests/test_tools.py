@@ -6,14 +6,14 @@ from pydantic import BaseModel, ValidationError
 from pydantic.dataclasses import dataclass
 from pydantic.tools import parse_obj_as, schema_json_of, schema_of
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
 def test_parse_obj(obj, type_, parsed):
     assert parse_obj_as(type_, obj) == parsed
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_as_model():
     class Model(BaseModel):
         x: int
@@ -24,6 +24,7 @@ def test_parse_obj_as_model():
     assert parse_obj_as(Model, model_inputs) == Model(**model_inputs)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_preserves_subclasses():
     class ModelA(BaseModel):
         a: Mapping[int, str]
@@ -37,6 +38,7 @@ def test_parse_obj_preserves_subclasses():
     assert parsed == [model_b]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
@@ -46,6 +48,7 @@ def test_parse_obj_fails():
     assert exc_info.value.model.__name__ == 'ParsingModel[int]'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_parsing_model_naming():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
@@ -60,6 +63,7 @@ def test_parsing_model_naming():
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_parse_as_dataclass():
     @dataclass
     class PydanticDataclass:
@@ -69,11 +73,13 @@ def test_parse_as_dataclass():
     assert parse_obj_as(PydanticDataclass, inputs) == PydanticDataclass(1)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_parse_mapping_as():
     inputs = {'1': '2'}
     assert parse_obj_as(Dict[int, int], inputs) == {1: 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_schema():
     assert schema_of(Union[int, str], title='IntOrStr') == {
         'title': 'IntOrStr',

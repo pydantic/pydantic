@@ -10,9 +10,8 @@ from typing_extensions import Literal
 from pydantic import BaseModel, Extra, Field, PydanticUserError, ValidationError, errors, validator
 from pydantic.validator_functions import root_validator
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_simple():
     class Model(BaseModel):
         a: str
@@ -30,6 +29,7 @@ def test_simple():
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_int_validation():
     class Model(BaseModel):
         a: int
@@ -45,6 +45,7 @@ def test_int_validation():
     assert Model(a=4.5).a == 4
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
 def test_int_overflow_validation(value):
     class Model(BaseModel):
@@ -57,6 +58,7 @@ def test_int_overflow_validation(value):
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_frozenset_validation():
     class Model(BaseModel):
         a: frozenset
@@ -72,6 +74,7 @@ def test_frozenset_validation():
     assert Model(a=(6,)).a == frozenset({6})
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_deque_validation():
     class Model(BaseModel):
         a: deque
@@ -85,6 +88,7 @@ def test_deque_validation():
     assert Model(a=(6,)).a == deque([6])
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_whole():
     class Model(BaseModel):
         a: List[int]
@@ -102,6 +106,7 @@ def test_validate_whole():
     assert Model(a=[1, 2]).a == [1, 2, 123, 456]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_kwargs():
     class Model(BaseModel):
         b: int
@@ -114,6 +119,7 @@ def test_validate_kwargs():
     assert Model(a=[1, 2], b=6).a == [7, 8]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_pre_error():
     calls = []
 
@@ -175,11 +181,13 @@ def validate_assignment_model_fixture():
     return ValidateAssignmentModel
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_ok(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello')
     assert p.b == 'hello'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_fail(ValidateAssignmentModel):
     with pytest.raises(ValidationError):
         ValidateAssignmentModel(a=10, b='hello')
@@ -189,6 +197,7 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         p.b = 'x'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_value_change(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', c=2)
     assert p.c == 4
@@ -199,6 +208,7 @@ def test_validating_assignment_value_change(ValidateAssignmentModel):
     assert p.c == 6
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
@@ -210,6 +220,7 @@ def test_validating_assignment_extra(ValidateAssignmentModel):
     assert p.extra_field == 'bye'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_dict(ValidateAssignmentModel):
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
@@ -218,6 +229,7 @@ def test_validating_assignment_dict(ValidateAssignmentModel):
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_values_dict():
     class ModelOne(BaseModel):
         a: int
@@ -242,6 +254,7 @@ def test_validating_assignment_values_dict():
     assert model.b == 4
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_multiple():
     # also test TypeError
     class Model(BaseModel):
@@ -264,6 +277,7 @@ def test_validate_multiple():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_classmethod():
     class Model(BaseModel):
         a: str
@@ -278,6 +292,7 @@ def test_classmethod():
     m.check_a('x')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_duplicates():
     with pytest.raises(errors.PydanticUserError) as exc_info:
 
@@ -326,6 +341,7 @@ def test_use_no_fields():
     assert 'validator with no fields specified' in str(exc_info.value)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_always():
     check_calls = 0
 
@@ -344,6 +360,7 @@ def test_validate_always():
     assert check_calls == 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_always_on_inheritance():
     check_calls = 0
 
@@ -363,6 +380,7 @@ def test_validate_always_on_inheritance():
     assert check_calls == 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_not_always():
     check_calls = 0
 
@@ -381,6 +399,7 @@ def test_validate_not_always():
     assert check_calls == 1
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_wildcard_validators():
     calls = []
 
@@ -402,6 +421,7 @@ def test_wildcard_validators():
     assert calls == [('check_a', 'abc', 'a'), ('check_all', 'abc', 'a'), ('check_all', 123, 'b')]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_wildcard_validator_error():
     class Model(BaseModel):
         a: str
@@ -423,6 +443,7 @@ def test_wildcard_validator_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_invalid_field():
     with pytest.raises(errors.PydanticUserError) as exc_info:
 
@@ -439,6 +460,7 @@ def test_invalid_field():
     )
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_child():
     class Parent(BaseModel):
         a: str
@@ -456,6 +478,7 @@ def test_validate_child():
         Child(a='snap')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_child_extra():
     class Parent(BaseModel):
         a: str
@@ -477,6 +500,7 @@ def test_validate_child_extra():
         Child(a='snap')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_child_all():
     class Parent(BaseModel):
         a: str
@@ -494,6 +518,7 @@ def test_validate_child_all():
         Child(a='snap')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent():
     class Parent(BaseModel):
         a: str
@@ -515,6 +540,7 @@ def test_validate_parent():
         Child(a='snap')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent_all():
     class Parent(BaseModel):
         a: str
@@ -536,6 +562,7 @@ def test_validate_parent_all():
         Child(a='snap')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_keep():
     class Parent(BaseModel):
         a: int
@@ -550,6 +577,7 @@ def test_inheritance_keep():
     assert Child(a=0).a == 1
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_replace():
     class Parent(BaseModel):
         a: int
@@ -566,6 +594,7 @@ def test_inheritance_replace():
     assert Child(a=0).a == 5
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_new():
     class Parent(BaseModel):
         a: int
@@ -582,6 +611,7 @@ def test_inheritance_new():
     assert Child(a=0).a == 6
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validation_each_item():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -593,6 +623,7 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validation_each_item_one_sublevel():
     class Model(BaseModel):
         foobar: List[Tuple[int, int]]
@@ -606,6 +637,7 @@ def test_validation_each_item_one_sublevel():
     assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -617,6 +649,7 @@ def test_key_validation():
     assert Model(foobar={1: 1}).foobar == {2: 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validator_always_optional():
     check_calls = 0
 
@@ -635,6 +668,7 @@ def test_validator_always_optional():
     assert check_calls == 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validator_always_pre():
     check_calls = 0
 
@@ -652,6 +686,7 @@ def test_validator_always_pre():
     assert check_calls == 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
@@ -664,6 +699,7 @@ def test_validator_always_post():
     assert Model().a == 'default value'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
@@ -692,6 +728,7 @@ def test_validator_bad_fields_throws_configerror():
                 return v
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_datetime_validator():
     check_calls = 0
 
@@ -712,6 +749,7 @@ def test_datetime_validator():
     assert check_calls == 3
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_pre_called_once():
     check_calls = 0
 
@@ -728,6 +766,7 @@ def test_pre_called_once():
     assert check_calls == 1
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_assert_raises_validation_error():
     class Model(BaseModel):
         a: str
@@ -747,6 +786,7 @@ def test_assert_raises_validation_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_whole():
     with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
 
@@ -758,6 +798,7 @@ def test_whole():
                 return v
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator():
     root_val_values = []
 
@@ -809,6 +850,7 @@ def test_root_validator():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_pre():
     root_val_values = []
 
@@ -836,6 +878,7 @@ def test_root_validator_pre():
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'foobar', 'type': 'value_error'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_repeat():
     with pytest.raises(errors.PydanticUserError, match='duplicate validator function'):
 
@@ -851,6 +894,7 @@ def test_root_validator_repeat():
                 return values
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_repeat2():
     with pytest.raises(errors.PydanticUserError, match='duplicate validator function'):
 
@@ -866,6 +910,7 @@ def test_root_validator_repeat2():
                 return values
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_self():
     with pytest.raises(
         errors.PydanticUserError, match=r'Invalid signature for root validator root_validator: \(self, values\)'
@@ -879,6 +924,7 @@ def test_root_validator_self():
                 return values
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_extra():
     with pytest.raises(errors.PydanticUserError) as exc_info:
 
@@ -894,6 +940,7 @@ def test_root_validator_extra():
     )
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_types():
     root_val_values = None
 
@@ -915,6 +962,7 @@ def test_root_validator_types():
     assert root_val_values == (Model, {'a': 1, 'b': 'bar', 'c': 'wobble'})
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_inheritance():
     calls = []
 
@@ -940,6 +988,7 @@ def test_root_validator_inheritance():
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_returns_none_exception():
     class Model(BaseModel):
         a: int = 1
@@ -952,10 +1001,12 @@ def test_root_validator_returns_none_exception():
         Model()
 
 
+@pytest.mark.xfail(reason='working on V2')
 def reusable_validator(num):
     return num * 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_reuse_global_validators():
     class Model(BaseModel):
         x: int
@@ -967,6 +1018,7 @@ def test_reuse_global_validators():
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
     class Model(BaseModel):
         a: str
@@ -997,6 +1049,7 @@ def reset_tracked_validators():
     _FUNCS.update(original_tracked_validators)
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('include_root,allow_1,allow_2,allow_3', product(*[[True, False]] * 4))
 def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_validators):
     duplication_count = int(not allow_1) + int(not allow_2) + int(include_root and not allow_3)
@@ -1008,6 +1061,7 @@ def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_vali
         declare_with_reused_validators(include_root, allow_1, allow_2, allow_3)
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', product(*[[True, False]] * 2))
 def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod, reset_tracked_validators):
     root_val_values = []
@@ -1048,6 +1102,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
     assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}, {'b': 'barbar'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_skip_on_failure():
     a_called = False
 
@@ -1077,6 +1132,7 @@ def test_root_validator_skip_on_failure():
     assert not b_called
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_assignment_validator_cls():
     validator_calls = 0
 
@@ -1098,6 +1154,7 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1116,6 +1173,7 @@ def test_literal_validator():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
@@ -1137,6 +1195,7 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
@@ -1158,6 +1217,7 @@ def test_nested_literal_validator():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
         x: Union[Literal[42], Literal['pika']] = Field(allow_mutation=False)
@@ -1167,6 +1227,7 @@ def test_union_literal_with_constraints():
         m.x += 1
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker):
     check_values = mocker.MagicMock()
 
@@ -1204,6 +1265,7 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker)
     assert list(dict(model).items()) == [('foo', 'new_foo_value'), ('bar', 'new_bar_value'), ('baz', 'baz_value')]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_exceptions_in_field_validators_restore_original_field_value():
     class Model(BaseModel):
         foo: str
@@ -1223,6 +1285,7 @@ def test_exceptions_in_field_validators_restore_original_field_value():
     assert model.foo == 'foo'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_overridden_root_validators(mocker):
     validate_stub = mocker.stub(name='validate')
 
@@ -1259,6 +1322,7 @@ def test_overridden_root_validators(mocker):
     assert validate_stub.call_args_list == [mocker.call('B', 'pre'), mocker.call('B', 'post')]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1285,6 +1349,7 @@ def test_validating_assignment_pre_root_validator_fail():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_post_root_validator_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1329,6 +1394,7 @@ def test_validating_assignment_post_root_validator_fail():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator_many_values_change():
     """It should run root_validator on assignment and update ALL concerned fields"""
 

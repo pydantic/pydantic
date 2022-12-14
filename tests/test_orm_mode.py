@@ -5,9 +5,8 @@ import pytest
 
 from pydantic import BaseModel, PydanticUserError, ValidationError, root_validator
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_getdict():
     class TestCls:
         a = 1
@@ -50,6 +49,7 @@ def test_getdict():
     assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_orm_mode_root():
     class PokemonCls:
         def __init__(self, *, en_name: str, jp_name: str):
@@ -91,6 +91,7 @@ def test_orm_mode_root():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_orm_mode():
     class PetCls:
         def __init__(self, *, name: str, species: str):
@@ -131,6 +132,7 @@ def test_orm_mode():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_not_orm_mode():
     class Pet(BaseModel):
         name: str
@@ -140,6 +142,7 @@ def test_not_orm_mode():
         Pet.from_orm(None)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_object_with_getattr():
     class FooGetAttr:
         def __getattr__(self, key: str):
@@ -171,6 +174,7 @@ def test_object_with_getattr():
         ModelInvalid.from_orm(foo)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_properties():
     class XyProperty:
         x = 4
@@ -191,6 +195,7 @@ def test_properties():
     assert model.y == 5
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_extra_allow():
     class TestCls:
         x = 1
@@ -207,6 +212,7 @@ def test_extra_allow():
     assert model.dict() == {'x': 1}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_extra_forbid():
     class TestCls:
         x = 1
@@ -223,6 +229,7 @@ def test_extra_forbid():
     assert model.dict() == {'x': 1}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator():
     validator_value = None
 
@@ -250,6 +257,7 @@ def test_root_validator():
     assert validator_value == {'x': 1, 'y': 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_getter_dict():
     class TestCls:
         x = 1
@@ -271,6 +279,7 @@ def test_custom_getter_dict():
     assert model.dict() == {'x': 42, 'y': 24}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_recursive_parsing():
     class Getter:  # GetterDict
         # try to read the modified property name
@@ -305,6 +314,7 @@ def test_recursive_parsing():
     assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_orm():
     class User(BaseModel):
         first_name: str

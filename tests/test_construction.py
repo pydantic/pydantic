@@ -6,8 +6,6 @@ import pytest
 from pydantic import BaseModel, Field, PrivateAttr
 from pydantic.fields import Undefined
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
-
 
 class Model(BaseModel):
     a: float
@@ -95,6 +93,7 @@ def model_two_fixture():
     return ModelTwo
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_deep_copy(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m.__foo__ = {'new value'}
@@ -110,6 +109,7 @@ def test_deep_copy(ModelTwo):
     assert m.__foo__ is not m2.__foo__
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(exclude={'b'})
@@ -126,6 +126,7 @@ def test_copy_exclude(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_include(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a'})
@@ -137,6 +138,7 @@ def test_copy_include(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_include_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
@@ -145,6 +147,7 @@ def test_copy_include_exclude(ModelTwo):
     assert set(m2.dict().keys()) == {'a', 'b'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -168,6 +171,7 @@ def test_copy_advanced_exclude():
     assert m2.dict() == {'f': {'c': 'foo'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_advanced_include():
     class SubSubModel(BaseModel):
         a: str
@@ -191,6 +195,7 @@ def test_copy_advanced_include():
     assert m2.dict() == {'e': 'e', 'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_advanced_include_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -209,6 +214,7 @@ def test_copy_advanced_include_exclude():
     assert m2.dict() == {'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_update(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(update={'a': 'different'})
@@ -220,6 +226,7 @@ def test_copy_update(ModelTwo):
     assert m != m2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_update_unset():
     class Foo(BaseModel):
         foo: Optional[str]
@@ -228,6 +235,7 @@ def test_copy_update_unset():
     assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_set_fields(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
@@ -249,6 +257,7 @@ def test_simple_pickle():
     assert m.__fields__ == m2.__fields__
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_recursive_pickle(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = pickle.loads(pickle.dumps(m))
@@ -260,6 +269,7 @@ def test_recursive_pickle(ModelTwo):
     assert m.__foo__ == m2.__foo__
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_pickle_undefined(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = pickle.loads(pickle.dumps(m))
@@ -270,6 +280,7 @@ def test_pickle_undefined(ModelTwo):
     assert not hasattr(m3, '__foo__')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_undefined(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = m.copy()
@@ -280,6 +291,7 @@ def test_copy_undefined(ModelTwo):
     assert not hasattr(m3, '__foo__')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_immutable_copy_with_allow_mutation():
     class Model(BaseModel):
         a: int
@@ -321,6 +333,7 @@ def test_pickle_fields_set():
     assert m2.dict(exclude_unset=True) == {'a': 24}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_copy_update_exclude():
     class SubModel(BaseModel):
         a: str
@@ -357,6 +370,7 @@ def test_shallow_copy_modify():
     assert y.deep['deep_thing'] == [1, 2, 3]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_construct_default_factory():
     class Model(BaseModel):
         foo: List[int] = Field(default_factory=list)
