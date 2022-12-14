@@ -14,6 +14,7 @@ from .networks import NameEmail
 from .types import SecretBytes, SecretStr
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
+JSONSCHEMA_COMPATIBILITY = 'http://json-schema.org/draft-07/schema#'
 
 
 def isoformat(o: Union[datetime.date, datetime.time]) -> str:

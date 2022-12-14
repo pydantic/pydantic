@@ -575,7 +575,9 @@ def model_process_schema(
     model = cast(Type['BaseModel'], model)
     s = {'title': model.__config__.title or model.__name__}
     doc = getdoc(model)
-    if doc:
+    if model.__config__.description:
+        s['description'] = model.__config__.description
+    elif doc:
         s['description'] = doc
     known_models.add(model)
     m_schema, m_definitions, nested_models = model_type_schema(

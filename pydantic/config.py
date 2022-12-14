@@ -78,6 +78,8 @@ else:
 
 class BaseConfig:
     title: Optional[str] = None
+    description: Optional[str] = None
+    uri: Optional[str] = None
     anystr_lower: bool = False
     anystr_upper: bool = False
     anystr_strip_whitespace: bool = False

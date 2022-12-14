@@ -40,7 +40,7 @@ from .fields import (
     Undefined,
     is_finalvar_with_default_val,
 )
-from .json import custom_pydantic_encoder, pydantic_encoder
+from .json import JSONSCHEMA_COMPATIBILITY, custom_pydantic_encoder, pydantic_encoder
 from .parse import Protocol, load_file, load_str_bytes
 from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
@@ -667,13 +667,22 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def schema_json(
-        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, flavor: str = None, **dumps_kwargs: Any
     ) -> str:
         from .json import pydantic_encoder
 
-        return cls.__config__.json_dumps(
-            cls.schema(by_alias=by_alias, ref_template=ref_template), default=pydantic_encoder, **dumps_kwargs
-        )
+        schema = cls.schema(by_alias=by_alias, ref_template=ref_template)
+
+        if flavor:
+            if flavor.lower() == 'jsonschema':
+                headers = {'$schema': JSONSCHEMA_COMPATIBILITY}
+                if cls.__config__.uri:
+                    headers['$id'] = cls.__config__.uri
+                    schema = {**headers, **schema}
+            else:
+                raise NotImplementedError('JSON output flavor "%s" is not yet implemented.' % flavor)
+
+        return cls.__config__.json_dumps(schema, default=pydantic_encoder, **dumps_kwargs)
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':

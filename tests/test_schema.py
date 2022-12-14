@@ -36,6 +36,7 @@ from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import ModelField
 from pydantic.generics import GenericModel
+from pydantic.json import JSONSCHEMA_COMPATIBILITY
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail, stricturl
 from pydantic.schema import (
     get_flat_models_from_model,
@@ -489,11 +490,51 @@ def test_enum_schema_cleandoc():
 
 def test_json_schema():
     class Model(BaseModel):
+        """
+        Inline Class description
+        """
+
         a = b'foobar'
         b = Decimal('12.34')
 
     assert json.loads(Model.schema_json(indent=2)) == {
         'title': 'Model',
+        'description': 'Inline Class description',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
+            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+        },
+    }
+
+    class ConfiguredModel(BaseModel):
+        """
+        Inline Class description - this should be overridden by the Config.description field.
+        """
+
+        class Config:
+            title = 'Configured Model Type'
+            uri = 'https://json.schemastore.org/made-up-format.json'
+            description = 'Configured Description'
+
+        a = b'foobar'
+        b = Decimal('12.34')
+
+    assert json.loads(ConfiguredModel.schema_json(indent=2)) == {
+        'title': 'Configured Model Type',
+        'description': 'Configured Description',
+        'type': 'object',
+        'properties': {
+            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
+            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+        },
+    }
+
+    assert json.loads(ConfiguredModel.schema_json(flavor='jsonschema', indent=2)) == {
+        '$id': 'https://json.schemastore.org/made-up-format.json',
+        '$schema': JSONSCHEMA_COMPATIBILITY,
+        'title': 'Configured Model Type',
+        'description': 'Configured Description',
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
