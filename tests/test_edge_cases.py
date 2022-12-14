@@ -946,6 +946,7 @@ def test_valid_string_types(value, expected):
 
     assert Model(v=value).v == expected
 
+
 @pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'value,errors',
@@ -1656,6 +1657,7 @@ def test_optional_validator():
     assert Model(something='hello').dict() == {'something': 'hello'}
     assert val_calls == [None, 'hello']
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_required_optional():
     class Model(BaseModel):
@@ -1682,6 +1684,7 @@ def test_required_optional():
         {'loc': ('nullable1',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
         {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_required_any():
@@ -1721,6 +1724,7 @@ def test_required_any():
         'nullable1': 1,
         'nullable2': 'two',
     }
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_validators():
@@ -1780,6 +1784,7 @@ def test_custom_generic_validators():
     assert m.gen2.t1 == 1
     assert m.gen2.t2 == 2
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_arbitrary_allowed():
     T1 = TypeVar('T1')
@@ -1819,6 +1824,7 @@ def test_custom_generic_arbitrary_allowed():
     assert m.gen.t1 == 'bar'
     assert m.gen.t2 is True
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_disallowed():
     T1 = TypeVar('T1')
@@ -1835,6 +1841,7 @@ def test_custom_generic_disallowed():
         class Model(BaseModel):
             a: str
             gen: MyGen[str, bool]
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_hashable_required():
@@ -1895,6 +1902,7 @@ def test_default_factory_called_once():
         {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
     ]
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_default_factory_validator_child():
     class Parent(BaseModel):
@@ -1910,6 +1918,7 @@ def test_default_factory_validator_child():
         pass
 
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_resolve_annotations_module_missing(tmp_path):
@@ -1938,6 +1947,7 @@ def test_iter_coverage():
 
     assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info():
     class Foo(BaseModel):
@@ -1948,6 +1958,7 @@ def test_config_field_info():
 
     assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_alias():
     class Foo(BaseModel):
@@ -1957,6 +1968,7 @@ def test_config_field_info_alias():
             fields = {'a': {'alias': 'b'}}
 
     assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_merge():
@@ -1969,6 +1981,7 @@ def test_config_field_info_merge():
     assert Foo.schema(by_alias=True)['properties'] == {
         'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
     }
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_allow_mutation():
@@ -2027,6 +2040,7 @@ def test_bytes_subclass():
     m = MyModel(my_bytes=BytesSubclass(b'foobar'))
     assert m.my_bytes.__class__ == BytesSubclass
 
+
 @pytest.mark.xfail(reason='working on V2')
 def test_int_subclass():
     class MyModel(BaseModel):
@@ -2053,6 +2067,7 @@ def test_model_issubclass():
         __fields__ = True
 
     assert not issubclass(Custom, BaseModel)
+
 
 @pytest.mark.xfail(reason='working on V2')
 def test_long_int():

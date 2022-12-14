@@ -23,6 +23,7 @@ class MyEnum(Enum):
     foo = 'bar'
     snap = 'crackle'
 
+
 @pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'gen_input,output',
