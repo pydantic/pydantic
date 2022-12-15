@@ -3252,9 +3252,9 @@ def test_frozenset_field_not_convertible():
 @pytest.mark.parametrize(
     'input_value,output,human_bin,human_dec',
     (
-        ('1', 1, '1.0B', '1.0B'),
-        ('1.0', 1, '1.0B', '1.0B'),
-        ('1b', 1, '1.0B', '1.0B'),
+        ('1', 1, '1B', '1B'),
+        ('1.0', 1, '1B', '1B'),
+        ('1b', 1, '1B', '1B'),
         ('1.5 KB', int(1.5e3), '1.5KiB', '1.5KB'),
         ('1.5 K', int(1.5e3), '1.5KiB', '1.5KB'),
         ('1.5 MB', int(1.5e6), '1.4MiB', '1.5MB'),
