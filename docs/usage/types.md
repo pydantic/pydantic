@@ -490,7 +490,7 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 `CockroachDsn`
 : a cockroachdb DSN style URL; see [URLs](#urls)
 
-`RabbitMqDsn`
+`AmqpDsn`
 : an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
 
 `RedisDsn`
