@@ -40,11 +40,12 @@ PYTHON_CODE_MD_TMPL = """
     ```
 """.strip()
 JSON_OUTPUT_MD_TMPL = """
+
 Outputs:
 ```json
 {output}
 ```
-""".strip()
+"""
 
 
 def to_string(value: Any) -> str:
