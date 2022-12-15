@@ -639,7 +639,7 @@ The word "parse" will no longer be used except when talking about JSON parsing, 
 
 Since the core structure of validators has changed from "a list of validators to call one after another" to
 "a tree of validators which call each other", the
-[`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
+[`__get_validators__`](https://docs.pydantic.dev/usage/types/#classes-with-__get_validators__)
 way of defining custom field types no longer makes sense.
 
 Instead, we'll look for the attribute `__pydantic_validation_schema__` which must be a
@@ -745,7 +745,7 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
    specific need to keep the type, you can use wrap validators or custom type validation as described above
 6. integers are represented in rust code as `i64`, meaning if you want to use ints where `abs(v) > 2^63 − 1`
    (9,223,372,036,854,775,807), you'll need to use a [wrap validator](#validator-function-improvements) and your own logic
-7. [Settings Management](https://pydantic-docs.helpmanual.io/usage/settings/) ??? - I definitely don't want to
+7. [Settings Management](https://docs.pydantic.dev/usage/settings/) ??? - I definitely don't want to
    remove the functionality, but it's something of a historical curiosity that it lives within pydantic,
    perhaps it should move to a separate package, perhaps installable alongside pydantic with
    `pip install pydantic[settings]`?

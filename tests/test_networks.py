@@ -227,9 +227,9 @@ def test_at_in_path():
 
 
 def test_fragment_without_query():
-    url = validate_url('https://pydantic-docs.helpmanual.io/usage/types/#constrained-types')
+    url = validate_url('https://docs.pydantic.dev/usage/types/#constrained-types')
     assert url.scheme == 'https'
-    assert url.host == 'pydantic-docs.helpmanual.io'
+    assert url.host == 'docs.pydantic.dev'
     assert url.path == '/usage/types/'
     assert url.query is None
     assert url.fragment == 'constrained-types'

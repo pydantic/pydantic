@@ -22,8 +22,10 @@ jobs:
           fetch-depth: 0
 
       - name: Cherry pick into 1.10.X-fixes
-        uses: carloscastrojumo/github-cherry-pick-action@v1.0.3
+        uses: carloscastrojumo/github-cherry-pick-action@v1.0.4
         with:
           branch: 1.10.X-fixes
           labels: from-cherry-pick
           token: ${{ secrets.GITHUB_TOKEN }}
+          title: '[cherry-pick] {old_title}'
+          body: 'Cherry picking #{old_pull_request_id} onto this branch'

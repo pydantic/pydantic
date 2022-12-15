@@ -66,6 +66,12 @@ Development of *pydantic* is made possible by the following sponsors:
       <span>SendCloud</span>
     </a>
   </div>
+  <div>
+    <a rel="sponsored" target="_blank" href="https://jina.ai">
+      <img src="./sponsor_logos/jina-ai.png" alt="Jina AI" />
+      <span>Jina AI</span>
+    </a>
+  </div>
 </div>
 
 And many more who kindly sponsor Samuel Colvin on [GitHub Sponsors](https://github.com/sponsors/samuelcolvin#sponsors).
