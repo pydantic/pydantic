@@ -271,7 +271,6 @@ def test_set_name(base):
         assert a._some_func == 2
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 def test_create_model_with_slots():
     field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
     with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
