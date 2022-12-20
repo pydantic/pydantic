@@ -127,7 +127,7 @@ with the following means (see [#4093](https://github.com/pydantic/pydantic/pull/
   or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
 
 **`allow_inf_nan`**
-: whether to allows infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
+: whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
   set to `False` for compatibility with `JSON`,
   see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
 
