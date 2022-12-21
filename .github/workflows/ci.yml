@@ -388,6 +388,35 @@ jobs:
         with:
           jobs: ${{ toJSON(needs) }}
 
+  inspect-pypi-assets:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+      - name: list dist files
+        run: |
+         ls -lh dist/
+         echo "`ls dist | wc -l` files"
+
+      - name: extract and list sdist file
+        run: |
+         mkdir sdist-files
+         tar -xvf dist/*.tar.gz -C sdist-files
+         tree -a sdist-files
+
+      - name: extract and list wheel file
+        run: |
+         ls dist/*cp310-manylinux*x86_64.whl | head -n 1
+         python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
+
   deploy:
     name: Deploy
     needs:
