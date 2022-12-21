@@ -36,6 +36,7 @@ except ImportError:
         'postgres://just-user@localhost:5432/app',
         'postgresql+asyncpg://user:pass@localhost:5432/app',
         'postgresql+pg8000://user:pass@localhost:5432/app',
+        'postgresql+psycopg://postgres:postgres@localhost:5432/hatch',
         'postgresql+psycopg2://postgres:postgres@localhost:5432/hatch',
         'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
         'postgresql+py-postgresql://user:pass@localhost:5432/app',
@@ -262,9 +263,9 @@ def test_at_in_path():
 
 
 def test_fragment_without_query():
-    url = validate_url('https://pydantic-docs.helpmanual.io/usage/types/#constrained-types')
+    url = validate_url('https://docs.pydantic.dev/usage/types/#constrained-types')
     assert url.scheme == 'https'
-    assert url.host == 'pydantic-docs.helpmanual.io'
+    assert url.host == 'docs.pydantic.dev'
     assert url.path == '/usage/types/'
     assert url.query is None
     assert url.fragment == 'constrained-types'

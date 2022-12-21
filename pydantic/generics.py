@@ -64,7 +64,11 @@ class GenericModel(BaseModel):
         """
 
         def _cache_key(_params: Any) -> Tuple[Type[GenericModelT], Any, Tuple[Any, ...]]:
-            return cls, _params, get_args(_params)
+            args = get_args(_params)
+            # python returns a list for Callables, which is not hashable
+            if len(args) == 2 and isinstance(args[0], list):
+                args = (tuple(args[0]), args[1])
+            return cls, _params, args
 
         cached = _generic_types_cache.get(_cache_key(params))
         if cached is not None:
