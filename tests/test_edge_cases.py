@@ -10,9 +10,8 @@ import pytest
 from pydantic import BaseModel, Extra, ValidationError, constr, errors, validator
 from pydantic.fields import Field
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_str_bytes():
     class Model(BaseModel):
         v: Union[str, bytes] = ...
@@ -31,6 +30,7 @@ def test_str_bytes():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_str_bytes_none():
     class Model(BaseModel):
         v: Union[None, str, bytes] = ...
@@ -45,6 +45,7 @@ def test_str_bytes_none():
     assert m.v is None
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_union_int_str():
     class Model(BaseModel):
         v: Union[int, str] = ...
@@ -69,6 +70,7 @@ def test_union_int_str():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_union_int_any():
     class Model(BaseModel):
         v: Union[int, Any]
@@ -86,6 +88,7 @@ def test_union_int_any():
     assert m.v is None
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_union_priority():
     class ModelOne(BaseModel):
         v: Union[int, str] = ...
@@ -97,6 +100,7 @@ def test_union_priority():
     assert ModelTwo(v='123').v == '123'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_typed_list():
     class Model(BaseModel):
         v: List[int] = ...
@@ -116,6 +120,7 @@ def test_typed_list():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_typed_set():
     class Model(BaseModel):
         v: Set[int] = ...
@@ -137,6 +142,7 @@ def test_dict_dict():
     assert Model(v={'foo': 1}).dict() == {'v': {'foo': 1}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_none_list():
     class Model(BaseModel):
         v = [None]
@@ -148,6 +154,7 @@ def test_none_list():
     }
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'value,result',
     [
@@ -163,6 +170,7 @@ def test_typed_dict(value, result):
     assert Model(v=value).v == result
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'value,errors',
     [
@@ -180,6 +188,7 @@ def test_typed_dict_error(value, errors):
     assert exc_info.value.errors() == errors
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_dict_key_error():
     class Model(BaseModel):
         v: Dict[int, int] = ...
@@ -193,6 +202,7 @@ def test_dict_key_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_tuple():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
@@ -201,6 +211,7 @@ def test_tuple():
     assert m.v == (1, 2.2, True)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_tuple_more():
     class Model(BaseModel):
         empty_tuple: Tuple[()]
@@ -222,6 +233,7 @@ def test_tuple_more():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'dict_cls,frozenset_cls,list_cls,set_cls,tuple_cls,type_cls',
     [
@@ -311,6 +323,7 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_tuple_length_error():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
@@ -334,6 +347,7 @@ def test_tuple_length_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_tuple_invalid():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
@@ -343,6 +357,7 @@ def test_tuple_invalid():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_tuple_value_error():
     class Model(BaseModel):
         v: Tuple[int, float, Decimal]
@@ -356,6 +371,7 @@ def test_tuple_value_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_recursive_list():
     class SubModel(BaseModel):
         name: str = ...
@@ -378,6 +394,7 @@ def test_recursive_list():
     assert exc_info.value.errors() == [{'loc': ('v', 0), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_recursive_list_error():
     class SubModel(BaseModel):
         name: str = ...
@@ -393,6 +410,7 @@ def test_recursive_list_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_list_unions():
     class Model(BaseModel):
         v: List[Union[int, str]] = ...
@@ -407,6 +425,7 @@ def test_list_unions():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_recursive_lists():
     class Model(BaseModel):
         v: List[List[Union[int, float]]] = ...
@@ -444,6 +463,7 @@ def test_any_dict():
     assert Model(v={2: [1, 2, 3]}).dict() == {'v': {2: [1, 2, 3]}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_success_values_include():
     class Model(BaseModel):
         a: int = 1
@@ -457,6 +477,7 @@ def test_success_values_include():
     assert m.dict(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_include_exclude_unset():
     class Model(BaseModel):
         a: int
@@ -481,6 +502,7 @@ def test_include_exclude_unset():
     assert m.dict(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset=True) == {'b': 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_include_exclude_defaults():
     class Model(BaseModel):
         a: int
@@ -531,6 +553,7 @@ def test_skip_defaults_deprecated():
         assert m.json(skip_defaults=False) == m.json(exclude_unset=False)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -553,6 +576,7 @@ def test_advanced_exclude():
     assert m.dict(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_advanced_exclude_by_alias():
     class SubSubModel(BaseModel):
         a: str
@@ -581,6 +605,7 @@ def test_advanced_exclude_by_alias():
     assert m.dict(exclude=excludes, by_alias=True) == {'f_alias': {'c_alias': 'foo'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_advanced_value_include():
     class SubSubModel(BaseModel):
         a: str
@@ -601,6 +626,7 @@ def test_advanced_value_include():
     assert m.dict(include={'f': {'d': {0: ..., -1: {'b'}}}}) == {'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_advanced_value_exclude_include():
     class SubSubModel(BaseModel):
         a: str
@@ -861,6 +887,7 @@ def test_inheritance():
     assert Bar().dict() == {'x': 12.3, 'a': 123.0}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_subclass_default():
     class MyStr(str):
         pass
@@ -882,6 +909,7 @@ def test_inheritance_subclass_default():
     assert Sub.__fields__['y'].type_ == MyStr
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_invalid_type():
     with pytest.raises(RuntimeError) as exc_info:
 
@@ -896,6 +924,7 @@ class CustomStr(str):
         return 7
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'value,expected',
     [
@@ -918,6 +947,7 @@ def test_valid_string_types(value, expected):
     assert Model(v=value).v == expected
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'value,errors',
     [
@@ -934,6 +964,7 @@ def test_invalid_string_types(value, errors):
     assert exc_info.value.errors() == errors
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_config():
     class Parent(BaseModel):
         a: int
@@ -948,6 +979,7 @@ def test_inheritance_config():
     assert repr(m) == "Child(a=1, b='s')"
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_partial_inheritance_config():
     class Parent(BaseModel):
         a: int
@@ -965,6 +997,7 @@ def test_partial_inheritance_config():
     assert repr(m) == "Child(a=1, b='s')"
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_annotation_inheritance():
     class A(BaseModel):
         integer: int = 1
@@ -995,6 +1028,7 @@ def test_annotation_inheritance():
     )
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_string_none():
     class Model(BaseModel):
         a: constr(min_length=20, max_length=1000) = ...
@@ -1041,6 +1075,7 @@ def test_string_none():
 #     assert e.errors() == [{'loc': ('foo',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_required():
     class Model(BaseModel):
         bar: Optional[int]
@@ -1050,6 +1085,7 @@ def test_optional_required():
     assert Model(bar=None).dict() == {'bar': None}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_invalid_validator():
     class InvalidValidator:
         @classmethod
@@ -1068,6 +1104,7 @@ def test_invalid_validator():
     assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_unable_to_infer():
     with pytest.raises(errors.PydanticUserError) as exc_info:
 
@@ -1077,6 +1114,7 @@ def test_unable_to_infer():
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_multiple_errors():
     class Model(BaseModel):
         a: Union[None, int, float, Decimal]
@@ -1093,6 +1131,7 @@ def test_multiple_errors():
     assert Model(a=None).a is None
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_all():
     class Model(BaseModel):
         a: int
@@ -1129,6 +1168,7 @@ def test_illegal_extra_value():
                 extra = 'foo'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
         class Config:
@@ -1183,6 +1223,7 @@ def test_submodel_different_type():
         Spam(c=Bar(b='123'))
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_self():
     class Model(BaseModel):
         self: str
@@ -1209,6 +1250,7 @@ def test_self_recursive():
     assert m.dict() == {'sm': {'self': 123}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_nested_init():
     class NestedModel(BaseModel):
         self: str
@@ -1240,6 +1282,7 @@ def test_init_inspection():
     Foobar(x=1)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_type_on_annotation():
     class FooBar:
         pass
@@ -1258,6 +1301,7 @@ def test_type_on_annotation():
     assert Model.__fields__.keys() == {'b', 'c', 'e', 'f', 'g', 'h', 'i'}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_assign_type():
     class Parent:
         def echo(self):
@@ -1289,6 +1333,7 @@ def test_assign_type():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
@@ -1307,6 +1352,7 @@ def test_optional_subfields():
     assert Model(a=12).a == 12
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_not_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
@@ -1330,6 +1376,7 @@ def test_not_optional_subfields():
     assert Model(a=12).a == 12
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_field_constraints():
     class MyModel(BaseModel):
         my_int: Optional[int] = Field(..., ge=3)
@@ -1346,6 +1393,7 @@ def test_optional_field_constraints():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_field_str_shape():
     class Model(BaseModel):
         a: List[int]
@@ -1371,6 +1419,7 @@ class DisplayGen(Generic[T1, T2]):
         yield validator
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'type_,expected',
     [
@@ -1405,6 +1454,7 @@ def test_any_none():
     assert dict(m) == {'foo': None}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_type_var_any():
     Foobar = TypeVar('Foobar')
 
@@ -1417,6 +1467,7 @@ def test_type_var_any():
     assert MyModel(foo=123).foo == 123
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_type_var_constraint():
     Foobar = TypeVar('Foobar', int, str)
 
@@ -1437,6 +1488,7 @@ def test_type_var_constraint():
     assert MyModel(foo=123).foo == 123
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_type_var_bound():
     Foobar = TypeVar('Foobar', bound=int)
 
@@ -1480,6 +1532,7 @@ def test_dict_any():
     assert m.foo == {'x': 'a', 'y': None}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_modify_fields():
     class Foo(BaseModel):
         foo: List[List[int]]
@@ -1551,6 +1604,7 @@ def test_exclude_none_with_extra():
     assert m.dict() == {'a': 'a', 'b': 'b', 'c': None}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_str_method_inheritance():
     import pydantic
 
@@ -1568,6 +1622,7 @@ def test_str_method_inheritance():
     assert str(Bar()) == '7'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_repr_method_inheritance():
     import pydantic
 
@@ -1585,6 +1640,7 @@ def test_repr_method_inheritance():
     assert repr(Bar()) == '7'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_optional_validator():
     val_calls = []
 
@@ -1602,6 +1658,7 @@ def test_optional_validator():
     assert val_calls == [None, 'hello']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_required_optional():
     class Model(BaseModel):
         nullable1: Optional[int] = ...
@@ -1629,6 +1686,7 @@ def test_required_optional():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_required_any():
     class Model(BaseModel):
         optional1: Any
@@ -1668,6 +1726,7 @@ def test_required_any():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_validators():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1726,6 +1785,7 @@ def test_custom_generic_validators():
     assert m.gen2.t2 == 2
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_arbitrary_allowed():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1765,6 +1825,7 @@ def test_custom_generic_arbitrary_allowed():
     assert m.gen.t2 is True
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_disallowed():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1782,6 +1843,7 @@ def test_custom_generic_disallowed():
             gen: MyGen[str, bool]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_hashable_required():
     class Model(BaseModel):
         v: Hashable
@@ -1797,6 +1859,7 @@ def test_hashable_required():
     assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('default', [1, None])
 def test_hashable_optional(default):
     class Model(BaseModel):
@@ -1806,6 +1869,7 @@ def test_hashable_optional(default):
     Model()
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_default_factory_called_once():
     """It should never call `default_factory` more than once even when `validate_all` is set"""
 
@@ -1839,6 +1903,7 @@ def test_default_factory_called_once():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_default_factory_validator_child():
     class Parent(BaseModel):
         foo: List[str] = Field(default_factory=list)
@@ -1855,6 +1920,7 @@ def test_default_factory_validator_child():
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_resolve_annotations_module_missing(tmp_path):
     # see https://github.com/pydantic/pydantic/issues/2363
     file_path = tmp_path / 'module_to_load.py'
@@ -1882,6 +1948,7 @@ def test_iter_coverage():
     assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_field_info():
     class Foo(BaseModel):
         a: str = Field(...)
@@ -1892,6 +1959,7 @@ def test_config_field_info():
     assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_alias():
     class Foo(BaseModel):
         a: str = Field(...)
@@ -1902,6 +1970,7 @@ def test_config_field_info_alias():
     assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_merge():
     class Foo(BaseModel):
         a: str = Field(..., foo='Foo')
@@ -1914,6 +1983,7 @@ def test_config_field_info_merge():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_allow_mutation():
     class Foo(BaseModel):
         a: str = Field(...)
@@ -1971,6 +2041,7 @@ def test_bytes_subclass():
     assert m.my_bytes.__class__ == BytesSubclass
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_int_subclass():
     class MyModel(BaseModel):
         my_int: int
@@ -1998,6 +2069,7 @@ def test_model_issubclass():
     assert not issubclass(Custom, BaseModel)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_long_int():
     """
     see https://github.com/pydantic/pydantic/issues/1477 and in turn, https://github.com/python/cpython/issues/95778

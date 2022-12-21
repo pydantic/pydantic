@@ -6,9 +6,8 @@ from pydantic import BaseModel, Extra, Field, ValidationError, create_model, err
 from pydantic.fields import ModelPrivateAttr
 from pydantic.generics import GenericModel
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=123)
     assert issubclass(model, BaseModel)
@@ -20,6 +19,7 @@ def test_create_model():
     assert model.__module__ == 'pydantic.main'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_create_model_usage():
     model = create_model('FooModel', foo=(str, ...), bar=123)
     m = model(foo='hello')
@@ -70,6 +70,7 @@ def test_config_and_base():
         create_model('FooModel', __config__=BaseModel.Config, __base__=BaseModel)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance():
     class BarModel(BaseModel):
         x = 1
@@ -81,6 +82,7 @@ def test_inheritance():
     assert m.dict() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_config():
     class Config:
         fields = {'foo': 'api-foo-field'}
@@ -92,6 +94,7 @@ def test_custom_config():
         model(foo=654)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_config_inherits():
     class Config(BaseModel.Config):
         fields = {'foo': 'api-foo-field'}
@@ -113,6 +116,7 @@ def test_custom_config_extras():
         model(bar=654)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators():
     class BarModel(BaseModel):
         @validator('a', check_fields=False)
@@ -128,6 +132,7 @@ def test_inheritance_validators():
         model(a='something else')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators_always():
     class BarModel(BaseModel):
         @validator('a', check_fields=False, always=True)
@@ -144,6 +149,7 @@ def test_inheritance_validators_always():
         model(a='something else')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators_all():
     class BarModel(BaseModel):
         @validator('*')
@@ -154,6 +160,7 @@ def test_inheritance_validators_all():
     assert model(a=2, b=6).dict() == {'a': 4, 'b': 12}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
@@ -165,6 +172,7 @@ def test_funky_name():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_repeat_base_usage():
     class Model(BaseModel):
         a: str
@@ -202,6 +210,7 @@ def test_dynamic_and_static():
         assert A.__fields__[field_name].default == DynamicA.__fields__[field_name].default
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_create_model():
     class Config:
         fields = {'a': {'description': 'descr'}}
@@ -213,6 +222,7 @@ def test_config_field_info_create_model():
     assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_generics_model():
     T = TypeVar('T')
 
@@ -227,6 +237,7 @@ def test_generics_model():
     assert result.__config__.orm_mode is True
 
 
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
 def test_set_name(base):
     calls = []

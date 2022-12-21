@@ -18,14 +18,13 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
-
 
 class MyEnum(Enum):
     foo = 'bar'
     snap = 'crackle'
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'gen_input,output',
     [
@@ -80,6 +79,7 @@ def test_path_encoding(tmpdir):
     assert json.dumps(model, default=pydantic_encoder) == expected
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_model_encoding():
     class ModelA(BaseModel):
         x: int
@@ -97,6 +97,7 @@ def test_model_encoding():
     assert m.json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_subclass_encoding():
     class SubDate(datetime.datetime):
         pass
@@ -110,6 +111,7 @@ def test_subclass_encoding():
     assert m.json() == '{"a": "2032-01-01T01:01:00", "b": "2020-02-29T12:30:00"}'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_subclass_custom_encoding():
     class SubDate(datetime.datetime):
         pass
@@ -195,6 +197,7 @@ def test_custom_iso_timedelta():
 #     assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_json_encoder_simple_inheritance():
     class Parent(BaseModel):
         dt: datetime.datetime = datetime.datetime.now()
@@ -210,6 +213,7 @@ def test_json_encoder_simple_inheritance():
     assert Child().json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_json_encoder_inheritance_override():
     class Parent(BaseModel):
         dt: datetime.datetime = datetime.datetime.now()
@@ -243,6 +247,7 @@ def test_encode_dataclass():
     assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_encode_pydantic_dataclass():
     @pydantic_dataclass
     class Foo:
@@ -253,6 +258,7 @@ def test_encode_pydantic_dataclass():
     assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_encode_custom_root():
     class Model(BaseModel):
         __root__: List[str]
@@ -260,6 +266,7 @@ def test_encode_custom_root():
     assert Model(__root__=['a', 'b']).json() == '["a", "b"]'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_custom_decode_encode():
     load_calls, dump_calls = 0, 0
 
@@ -286,6 +293,7 @@ def test_custom_decode_encode():
     assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_json_nested_encode_models():
     class Phone(BaseModel):
         manufacturer: str
@@ -368,6 +376,7 @@ def test_custom_encode_error():
         Foo(x=MyExoticType()).json(encoder=custom_encoder)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_recursive():
     class Model(BaseModel):
         value: Optional[str]

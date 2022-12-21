@@ -6,9 +6,8 @@ import pytest
 from pydantic import ValidationError, root_validator, validator
 from pydantic.dataclasses import dataclass
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_simple():
     @dataclass
     class MyDataclass:
@@ -21,6 +20,7 @@ def test_simple():
     assert MyDataclass(a='this is foobar good').a == 'this is foobar good changed'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_pre():
     @dataclass
     class MyDataclass:
@@ -39,6 +39,7 @@ def test_validate_pre():
     assert MyDataclass(a=[1, 2]).a == [1, 2, 123, 456]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_multiple():
     # also test TypeError
     @dataclass
@@ -62,6 +63,7 @@ def test_validate_multiple():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_classmethod():
     @dataclass
     class MyDataclass:
@@ -77,6 +79,7 @@ def test_classmethod():
     m.check_a('x')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent():
     @dataclass
     class Parent:
@@ -94,6 +97,7 @@ def test_validate_parent():
     assert Child(a='this is foobar good').a == 'this is foobar good changed'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_replace():
     @dataclass
     class Parent:
@@ -112,6 +116,7 @@ def test_inheritance_replace():
     assert Child(a=0).a == 5
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_root_validator():
     root_val_values = []
 

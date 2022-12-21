@@ -7,9 +7,8 @@ import pytest
 from pydantic import BaseConfig, BaseModel, Extra, ValidationError
 from pydantic.fields import Field
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 
-
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_generator():
     def to_camel(string: str):
         return ''.join(x.capitalize() for x in string.split('_'))
@@ -28,6 +27,7 @@ def test_alias_generator():
     assert v.dict(by_alias=True) == data
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_with_field_schema():
     def to_upper_case(string: str):
         return string.upper()
@@ -47,6 +47,7 @@ def test_alias_generator_with_field_schema():
     assert m.dict(by_alias=True) == data
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_wrong_type_error():
     def return_bytes(string):
         return b'not a string'
@@ -62,6 +63,7 @@ def test_alias_generator_wrong_type_error():
     assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_infer_alias():
     class Model(BaseModel):
         a = 'foobar'
@@ -75,6 +77,7 @@ def test_infer_alias():
     )
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_error():
     class Model(BaseModel):
         a = 123
@@ -91,6 +94,7 @@ def test_alias_error():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_annotation_config():
     class Model(BaseModel):
         b: float
@@ -105,6 +109,7 @@ def test_annotation_config():
     assert Model(foobar='123').b == 123.0
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_camel_case():
     class Model(BaseModel):
         one_thing: int
@@ -124,6 +129,7 @@ def test_alias_camel_case():
     assert v == {'one_thing': 123, 'another_thing': 321}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_get_field_info_inherit():
     class ModelOne(BaseModel):
         class Config(BaseConfig):
@@ -146,6 +152,7 @@ def test_get_field_info_inherit():
     assert v == {'one_thing': 123, 'another_thing': 321, 'third_thing': 1}
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_pop_by_field_name():
     class Model(BaseModel):
         last_updated_by: Optional[str] = None
@@ -164,6 +171,7 @@ def test_pop_by_field_name():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_child_precedence():
     class Parent(BaseModel):
         x: int
@@ -181,6 +189,7 @@ def test_alias_child_precedence():
     assert Child.__fields__['x'].alias == 'x2'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_parent():
     class Parent(BaseModel):
         x: int
@@ -204,6 +213,7 @@ def test_alias_generator_parent():
     assert Child.__fields__['x'].alias == 'x2'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_on_parent():
     class Parent(BaseModel):
         x: bool = Field(..., alias='a_b_c')
@@ -225,6 +235,7 @@ def test_alias_generator_on_parent():
     assert Child.__fields__['z'].alias == 'Z'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_on_child():
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc')
@@ -243,6 +254,7 @@ def test_alias_generator_on_child():
     assert [f.alias for f in Child.__fields__.values()] == ['abc', 'Y', 'Z']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_low_priority_alias():
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc', alias_priority=1)
@@ -261,6 +273,7 @@ def test_low_priority_alias():
     assert [f.alias for f in Child.__fields__.values()] == ['X', 'Y', 'Z']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_low_priority_alias_config():
     class Parent(BaseModel):
         x: bool
@@ -282,6 +295,7 @@ def test_low_priority_alias_config():
     assert [f.alias for f in Child.__fields__.values()] == ['X', 'Y', 'Z']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_field_vs_config():
     class Model(BaseModel):
         x: str = Field(..., alias='x_on_field')
@@ -294,6 +308,7 @@ def test_field_vs_config():
     assert [f.alias for f in Model.__fields__.values()] == ['x_on_field', 'y_on_config', 'z']
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_alias_priority():
     class Parent(BaseModel):
         a: str = Field(..., alias='a_field_parent')
@@ -340,6 +355,7 @@ def test_alias_priority():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_empty_string_alias():
     class Model(BaseModel):
         empty_string_key: int = Field(alias='')

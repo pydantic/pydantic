@@ -12,10 +12,10 @@ from pydantic import BaseModel, Extra, Field, ValidationError, validate_argument
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import PydanticUserError
 
-pytestmark = pytest.mark.xfail(reason='working on V2', strict=False)
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_args():
     @validate_arguments
     def foo(a: int, b: int):
@@ -70,6 +70,7 @@ def test_args():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_wrap():
     @validate_arguments
     def foo_bar(a: int, b: int):
@@ -91,6 +92,7 @@ def test_wrap():
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_kwargs():
     @validate_arguments
     def foo(*, a: int, b: int):
@@ -116,6 +118,7 @@ def test_kwargs():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 def test_untyped():
     @validate_arguments
     def foo(a, b, c='x', *, d='y'):
@@ -125,6 +128,7 @@ def test_untyped():
     assert foo(1, {'x': 2}, c='3', d='4') == "1, {'x': 2}, 3, 4"
 
 
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize('validated', (True, False))
 def test_var_args_kwargs(validated):
     def foo(a, b, *args, d=3, **kwargs):
@@ -143,6 +147,7 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_field_can_provide_factory() -> None:
     @validate_arguments
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
@@ -153,6 +158,7 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_annotated_field_can_provide_factory() -> None:
     @validate_arguments
     def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
@@ -162,6 +168,7 @@ def test_annotated_field_can_provide_factory() -> None:
     assert foo2(1) == 100
 
 
+@pytest.mark.xfail(reason='working on V2')
 @skip_pre_38
 def test_positional_only(create_module):
     module = create_module(
@@ -197,6 +204,7 @@ def foo(a, b, /, c=None):
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_args_name():
     @validate_arguments
     def foo(args: int, kwargs: int):
@@ -262,6 +270,7 @@ def test_v_args():
             pass
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_async():
     @validate_arguments
     async def foo(a, b):
@@ -277,6 +286,7 @@ def test_async():
     assert exc_info.value.errors() == [{'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_string_annotation():
     @validate_arguments
     def foo(a: 'List[int]', b: 'Path'):
@@ -292,6 +302,7 @@ def test_string_annotation():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_item_method():
     class X:
         def __init__(self, v):
@@ -315,6 +326,7 @@ def test_item_method():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_class_method():
     class X:
         @classmethod
@@ -336,6 +348,7 @@ def test_class_method():
     ]
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_title():
     @validate_arguments(config=dict(title='Testing'))
     def foo(a: int, b: int):
@@ -346,6 +359,7 @@ def test_config_title():
     assert foo.model.schema()['title'] == 'Testing'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_title_cls():
     class Config:
         title = 'Testing'
@@ -369,6 +383,7 @@ def test_config_fields():
             return f'{a}, {b}'
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_config_arbitrary_types_allowed():
     class EggBox:
         def __str__(self) -> str:
@@ -406,6 +421,7 @@ def test_validate(mocker):
     stub.assert_not_called()
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_annotated_use_of_alias():
     @validate_arguments
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field()], d: Annotated[int, Field(alias='')]):
@@ -432,6 +448,7 @@ def test_use_of_alias():
     assert foo(b=10) == 30
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_allow_population_by_field_name():
     @validate_arguments(config=dict(allow_population_by_field_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
@@ -442,6 +459,7 @@ def test_allow_population_by_field_name():
     assert foo(a=10, c=1) == 11
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_all():
     @validate_arguments(config=dict(validate_all=True))
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
@@ -451,6 +469,7 @@ def test_validate_all():
     assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
+@pytest.mark.xfail(reason='working on V2')
 @skip_pre_38
 def test_validate_all_positional(create_module):
     module = create_module(
@@ -469,6 +488,7 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_validate_extra():
     class TypedTest(TypedDict):
         y: str
