@@ -308,7 +308,6 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux-compiled, test-not-compiled, test-old-mypy, test-fastapi]
     strategy:
       fail-fast: false
       matrix:
@@ -378,6 +377,7 @@ jobs:
       - test-not-compiled
       - test-old-mypy
       - test-fastapi
+      - build
 
     runs-on: ubuntu-latest
 
