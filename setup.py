@@ -84,7 +84,7 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
             compiler_directives['linetrace'] = True
         # Set CFLAG to all optimizations (-O3)
         # Any additional CFLAGS will be appended. Only the last optimization flag will have effect
-        os.environ['CFLAGS'] = '-O3 ' + os.environ.get('CFLAGS', '')
+        os.environ['CFLAGS'] = '-O3 -g0' + os.environ.get('CFLAGS', '')
         ext_modules = cythonize(
             'pydantic/*.py',
             exclude=['pydantic/generics.py'],
