@@ -327,12 +327,12 @@ def test_enum_schema_custom_field():
         },
         'properties': {
             'pikalias': {
-                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
+                '$ref': '#/definitions/FooBarEnum',
                 'description': 'Pika is definitely the best!',
                 'title': 'Pikapika!',
             },
             'bulbialias': {
-                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
+                '$ref': '#/definitions/FooBarEnum',
                 'description': 'Bulbi is not...',
                 'title': 'Bulbibulbi!',
                 'default': 'foo',
@@ -387,12 +387,12 @@ def test_enum_and_model_have_same_behaviour():
             'enum': {'$ref': '#/definitions/Names'},
             'model': {'$ref': '#/definitions/Pika'},
             'titled_enum': {
-                'allOf': [{'$ref': '#/definitions/Names'}],
+                '$ref': '#/definitions/Names',
                 'description': 'Description of enum',
                 'title': 'Title of enum',
             },
             'titled_model': {
-                'allOf': [{'$ref': '#/definitions/Pika'}],
+                '$ref': '#/definitions/Pika',
                 'description': 'Description of model',
                 'title': 'Title of model',
             },
@@ -424,7 +424,7 @@ def test_enum_includes_extra_without_other_params():
         },
         'properties': {
             'enum': {'$ref': '#/definitions/Names'},
-            'extra_enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'extra': 'Extra field'},
+            'extra_enum': {'$ref': '#/definitions/Names', 'extra': 'Extra field'},
         },
         'required': ['enum', 'extra_enum'],
         'title': 'Foo',
@@ -1273,7 +1273,7 @@ def test_schema_overrides():
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
+                'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, '$ref': '#/definitions/Foo'}},
             },
             'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
         },
@@ -1547,9 +1547,7 @@ def test_model_default():
                 'type': 'object',
             }
         },
-        'properties': {
-            'inner': {'allOf': [{'$ref': '#/definitions/Inner'}], 'default': {'a': {'.': ''}}, 'title': 'Inner'}
-        },
+        'properties': {'inner': {'$ref': '#/definitions/Inner', 'default': {'a': {'.': ''}}, 'title': 'Inner'}},
         'title': 'Outer',
         'type': 'object',
     }

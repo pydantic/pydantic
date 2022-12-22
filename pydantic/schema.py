@@ -263,7 +263,7 @@ def field_schema(
     )
 
     # $ref will only be returned when there are no schema_overrides
-    if '$ref' in f_schema:
+    if '$ref' in f_schema and not schema_overrides:
         return f_schema, f_definitions, f_nested_models
     else:
         s.update(f_schema)
@@ -818,7 +818,7 @@ def get_schema_ref(name: str, ref_prefix: Optional[str], ref_template: str, sche
         schema_ref = {'$ref': ref_prefix + name}
     else:
         schema_ref = {'$ref': ref_template.format(model=name)}
-    return {'allOf': [schema_ref]} if schema_overrides else schema_ref
+    return schema_ref
 
 
 def field_singleton_schema(  # noqa: C901 (ignore complexity)
