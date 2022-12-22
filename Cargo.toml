@@ -60,6 +60,7 @@ name = "pydantic_core._pydantic_core"
 lto = "fat"
 codegen-units = 1
 panic = "abort"
+strip = true
 
 [build-dependencies]
 version_check = "0.9.4"
