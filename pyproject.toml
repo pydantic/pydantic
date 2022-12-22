@@ -170,10 +170,7 @@ disallow_incomplete_defs = true
 disallow_untyped_decorators = true
 disallow_untyped_calls = true
 disallow_untyped_defs = true
-
-# remaining arguments from `mypy --strict` which cause errors
-# no_implicit_optional = true
-# warn_return_any = true
+implicit_optional = true
 
 # ansi2html and devtools are required to avoid the need to install these packages when running linting,
 # they're used in the docs build script

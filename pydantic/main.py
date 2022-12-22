@@ -146,7 +146,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         _object_setattr(__pydantic_self__, '__dict__', values)
         _object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         if hasattr(__pydantic_self__, '__pydantic_post_init__'):
-            __pydantic_self__.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
+            __pydantic_self__.__pydantic_post_init__(context=None)
 
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined
@@ -298,7 +298,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             _fields_set = set(values.keys())
         _object_setattr(m, '__fields_set__', _fields_set)
         if hasattr(m, '__pydantic_post_init__'):
-            m.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
+            m.__pydantic_post_init__(context=None)
         return m
 
     def _copy_and_set_values(self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
