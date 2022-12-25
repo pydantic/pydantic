@@ -21,7 +21,7 @@ class PydanticErrorMixin:
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
     """
-    Error caused by incorrect use of pydantic
+    Error caused by incorrect use of Pydantic
     """
 
     def __init__(self, type: str, message: str) -> None:
