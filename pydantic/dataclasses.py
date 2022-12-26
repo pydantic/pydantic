@@ -103,7 +103,6 @@ if sys.version_info >= (3, 10):
         unsafe_hash: bool = False,
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
         use_proxy: Optional[bool] = None,
         kw_only: bool = ...,
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
@@ -121,7 +120,6 @@ if sys.version_info >= (3, 10):
         unsafe_hash: bool = False,
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
         use_proxy: Optional[bool] = None,
         kw_only: bool = ...,
     ) -> 'DataclassClassOrWrapper':
@@ -140,7 +138,6 @@ else:
         unsafe_hash: bool = False,
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
         use_proxy: Optional[bool] = None,
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
@@ -157,7 +154,6 @@ else:
         unsafe_hash: bool = False,
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
         use_proxy: Optional[bool] = None,
     ) -> 'DataclassClassOrWrapper':
         ...
@@ -174,7 +170,6 @@ def dataclass(
     unsafe_hash: bool = False,
     frozen: bool = False,
     config: Union[ConfigDict, Type[object], None] = None,
-    validate_on_init: Optional[bool] = None,
     use_proxy: Optional[bool] = None,
     kw_only: bool = False,
 ) -> Union[Callable[[Type[_T]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
@@ -200,7 +195,7 @@ def dataclass(
         if should_use_proxy:
             dc_cls_doc = ''
             dc_cls = DataclassProxy(cls)
-            default_validate_on_init = False
+            validate_on_init = False
         else:
             dc_cls_doc = cls.__doc__ or ''  # needs to be done before generating dataclass
             if sys.version_info >= (3, 10):
@@ -218,10 +213,9 @@ def dataclass(
                 dc_cls = dataclasses.dataclass(  # type: ignore
                     cls, init=init, repr=repr, eq=eq, order=order, unsafe_hash=unsafe_hash, frozen=frozen
                 )
-            default_validate_on_init = True
+            validate_on_init = True
 
-        should_validate_on_init = default_validate_on_init if validate_on_init is None else validate_on_init
-        _add_pydantic_validation_attributes(cls, the_config, should_validate_on_init, dc_cls_doc)
+        _add_pydantic_validation_attributes(cls, the_config, validate_on_init, dc_cls_doc)
         dc_cls.__pydantic_model__.__try_update_forward_refs__(**{cls.__name__: cls})
         return dc_cls
 
