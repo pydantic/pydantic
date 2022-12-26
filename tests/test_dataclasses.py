@@ -1488,6 +1488,8 @@ def test_frozen_dataclasses():
     class My(BaseModel):
         my: Second
 
+    assert My(my=Second(a='1')).my.b == 1
+
 
 def test_empty_dataclass():
     """should be able to inherit without adding a field"""

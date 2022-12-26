@@ -34,20 +34,7 @@ validation without altering default `M` behaviour.
 import sys
 from contextlib import contextmanager
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Generator,
-    Optional,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Optional, Type, TypeVar, Union, overload
 
 from typing_extensions import dataclass_transform
 
@@ -117,6 +104,7 @@ if sys.version_info >= (3, 10):
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
         validate_on_init: Optional[bool] = None,
+        use_proxy: Optional[bool] = None,
         kw_only: bool = ...,
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
@@ -134,6 +122,7 @@ if sys.version_info >= (3, 10):
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
         validate_on_init: Optional[bool] = None,
+        use_proxy: Optional[bool] = None,
         kw_only: bool = ...,
     ) -> 'DataclassClassOrWrapper':
         ...
@@ -152,6 +141,7 @@ else:
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
         validate_on_init: Optional[bool] = None,
+        use_proxy: Optional[bool] = None,
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
@@ -168,6 +158,7 @@ else:
         frozen: bool = False,
         config: Union[ConfigDict, Type[object], None] = None,
         validate_on_init: Optional[bool] = None,
+        use_proxy: Optional[bool] = None,
     ) -> 'DataclassClassOrWrapper':
         ...
 
@@ -184,6 +175,7 @@ def dataclass(
     frozen: bool = False,
     config: Union[ConfigDict, Type[object], None] = None,
     validate_on_init: Optional[bool] = None,
+    use_proxy: Optional[bool] = None,
     kw_only: bool = False,
 ) -> Union[Callable[[Type[_T]], 'DataclassClassOrWrapper'], 'DataclassClassOrWrapper']:
     """
@@ -197,7 +189,15 @@ def dataclass(
     def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
         import dataclasses
 
-        if is_builtin_dataclass(cls) and _extra_dc_args(_cls) == _extra_dc_args(_cls.__bases__[0]):  # type: ignore
+        should_use_proxy = (
+            use_proxy
+            if use_proxy is not None
+            else (
+                is_builtin_dataclass(cls)
+                and (cls.__bases__[0] is object or set(dir(cls)) == set(dir(cls.__bases__[0])))
+            )
+        )
+        if should_use_proxy:
             dc_cls_doc = ''
             dc_cls = DataclassProxy(cls)
             default_validate_on_init = False
@@ -431,14 +431,6 @@ def _dataclass_validate_assignment_setattr(self: 'Dataclass', name: str, value: 
     object.__setattr__(self, name, value)
 
 
-def _extra_dc_args(cls: Type[Any]) -> Set[str]:
-    return {
-        x
-        for x in dir(cls)
-        if x not in getattr(cls, '__dataclass_fields__', {}) and not (x.startswith('__') and x.endswith('__'))
-    }
-
-
 def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     """
     Whether a class is a stdlib dataclass
@@ -476,4 +468,4 @@ def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type[BaseConfig]
     and yield the validators
     It retrieves the parameters of the dataclass and forwards them to the newly created dataclass
     """
-    yield from _get_validators(dataclass(dc_cls, config=config, validate_on_init=False))
+    yield from _get_validators(dataclass(dc_cls, config=config, use_proxy=True))
