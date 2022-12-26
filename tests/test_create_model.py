@@ -9,7 +9,7 @@ from pydantic.generics import GenericModel
 
 @pytest.mark.xfail(reason='working on V2')
 def test_create_model():
-    model = create_model('FooModel', foo=(str, ...), bar=123)
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
     assert issubclass(model, BaseModel)
     assert issubclass(model.__config__, BaseModel.Config)
     assert model.__name__ == 'FooModel'
@@ -19,9 +19,8 @@ def test_create_model():
     assert model.__module__ == 'pydantic.main'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_create_model_usage():
-    model = create_model('FooModel', foo=(str, ...), bar=123)
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
     m = model(foo='hello')
     assert m.foo == 'hello'
     assert m.bar == 123
@@ -34,7 +33,7 @@ def test_create_model_usage():
 def test_create_model_pickle(create_module):
     """
     Pickle will work for dynamically created model only if it was defined globally with its class name
-    and module where it's defined was specified
+    and module where it's defined was test_create_model_usagespecified
     """
 
     @create_module
@@ -43,7 +42,7 @@ def test_create_model_pickle(create_module):
 
         from pydantic import create_model
 
-        FooModel = create_model('FooModel', foo=(str, ...), bar=123, __module__=__name__)
+        FooModel = create_model('FooModel', foo=(str, ...), bar=(int, 123), __module__=__name__)
 
         m = FooModel(foo='hello')
         d = pickle.dumps(m)
@@ -73,8 +72,8 @@ def test_config_and_base():
 @pytest.mark.xfail(reason='working on V2')
 def test_inheritance():
     class BarModel(BaseModel):
-        x = 1
-        y = 2
+        x: int = 1
+        y: int = 2
 
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
     assert model.__fields__.keys() == {'foo', 'bar', 'x', 'y'}

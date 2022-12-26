@@ -595,7 +595,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
     __cls_kwargs__: dict[str, Any] = None,
-    **field_definitions: Any,
+    **field_definitions: tuple[type, Any],
 ) -> type[Model]:
     ...
 
@@ -609,7 +609,7 @@ def create_model(
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
     __cls_kwargs__: dict[str, Any] = None,
-    **field_definitions: Any,
+    **field_definitions: tuple[type, Any],
 ) -> type[Model]:
     ...
 
@@ -623,7 +623,7 @@ def create_model(
     __validators__: dict[str, AnyClassMethod] = None,
     __cls_kwargs__: dict[str, Any] = None,
     __slots__: tuple[str, ...] | None = None,
-    **field_definitions: Any,
+    **field_definitions: tuple[type, Any],
 ) -> type[Model]:
     """
     Dynamically create a model.
@@ -635,9 +635,9 @@ def create_model(
     :param __cls_kwargs__: a dict for class creation
     :param __slots__: Deprecated, `__slots__` should not be passed to `create_model`
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
-        in the format `<name>=(<type>, <default default>)` or `<name>=<default value>, e.g.
-        `foobar=(str, ...)` or `foobar=123`, or, for complex use-cases, in the format
-        `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`, e.g.
+        in the format `<name>=(<type>, <default default>)`, e.g. `foobar=(str, ...)`,
+        or, for complex use-cases, in the format `<name>=<Field>` or
+        `<name>=(<type>, <FieldInfo>)`, e.g.
         `foo=Field(datetime, default_factory=datetime.utcnow, alias='bar')` or
         `foo=(str, FieldInfo(title='Foo'))`
     """
@@ -661,20 +661,15 @@ def create_model(
     for f_name, f_def in field_definitions.items():
         if f_name.startswith('_'):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
-        if isinstance(f_def, tuple):
-            try:
-                f_annotation, f_value = f_def
-            except ValueError as e:
-                raise PydanticUserError(
-                    'field definitions should either be a tuple of (<type>, <default>) or just a '
-                    'default value, unfortunately this means tuples as '
-                    'default values are not allowed'
-                ) from e
-        else:
-            f_annotation, f_value = None, f_def
+        try:
+            f_annotation, f_value = f_def
+        except (ValueError, TypeError) as e:
+            raise PydanticUserError(
+                'field definitions should be a tuple of (<type>, <default>);'
+                f' got {f_name}={f_def} instead'
+            ) from e
 
-        if f_annotation:
-            annotations[f_name] = f_annotation
+        annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
