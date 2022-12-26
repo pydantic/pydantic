@@ -1472,3 +1472,38 @@ def test_subclass_post_init_inheritance():
             self.a *= 3
 
     assert C().a == 6  # 1 * 3 + 3
+
+
+def test_frozen_dataclasses():
+    @dataclasses.dataclass(frozen=True)
+    class First:
+        a: int
+
+    @dataclasses.dataclass(frozen=True)
+    class Second(First):
+        @property
+        def b(self):
+            return self.a
+
+    class My(BaseModel):
+        my: Second
+
+
+def test_empty_dataclass():
+    """should be able to inherit without adding a field"""
+
+    @dataclasses.dataclass
+    class UnvalidatedDataclass:
+        a: int = 0
+
+    @pydantic.dataclasses.dataclass
+    class ValidatedDerivedA(UnvalidatedDataclass):
+        ...
+
+    @pydantic.dataclasses.dataclass()
+    class ValidatedDerivedB(UnvalidatedDataclass):
+        b: int = 0
+
+    @pydantic.dataclasses.dataclass()
+    class ValidatedDerivedC(UnvalidatedDataclass):
+        ...
