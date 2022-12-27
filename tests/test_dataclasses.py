@@ -1509,3 +1509,61 @@ def test_empty_dataclass():
     @pydantic.dataclasses.dataclass()
     class ValidatedDerivedC(UnvalidatedDataclass):
         ...
+
+
+def test_proxy_dataclass():
+    @dataclasses.dataclass
+    class Foo:
+        a: Optional[int] = dataclasses.field(default=42)
+        b: List = dataclasses.field(default_factory=list)
+
+        @dataclasses.dataclass
+        class Bar:
+            pass
+
+    @dataclasses.dataclass
+    class Model1:
+        foo: Foo
+
+    class Model2(BaseModel):
+        foo: Foo
+
+    m1 = Model1(foo=Foo())
+    m2 = Model2(foo=Foo())
+
+    assert m1.foo.a == m2.foo.a == 42
+    assert m1.foo.b == m2.foo.b == []
+    assert m1.foo.Bar() is not None
+    assert m2.foo.Bar() is not None
+
+
+def test_proxy_dataclass_2():
+    @dataclasses.dataclass
+    class M1:
+        a: int
+        b: str = 'b'
+        c: float = dataclasses.field(init=False)
+
+        def __post_init__(self):
+            self.c = float(self.a)
+
+    @dataclasses.dataclass
+    class M2:
+        a: int
+        b: str = 'b'
+        c: float = dataclasses.field(init=False)
+
+        def __post_init__(self):
+            self.c = float(self.a)
+
+        @pydantic.validator('b')
+        def check_b(cls, v):
+            if not v:
+                raise ValueError('b should not be empty')
+            return v
+
+    m1 = pydantic.parse_obj_as(M1, {'a': 3})
+    m2 = pydantic.parse_obj_as(M2, {'a': 3})
+    assert m1.a == m2.a == 3
+    assert m1.b == m2.b == 'b'
+    assert m1.c == m2.c == 3.0
