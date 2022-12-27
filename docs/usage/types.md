@@ -310,7 +310,7 @@ types:
   * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
   * `str`, following formats work:
 
-    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
     * `int` or `float` as a string (assumed as Unix time)
 
 * `date` fields can be:
@@ -327,7 +327,7 @@ types:
   * `time`, existing `time` object
   * `str`, following formats work:
 
-    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
 * `timedelta` fields can be:
 
