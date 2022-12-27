@@ -143,9 +143,7 @@ def complete_model_class(
         # print(cls.__config__)
         if cls.__config__.warn_on_undefined_types:
             raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            warning_string
-        )
+        cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
@@ -205,7 +203,7 @@ def build_inner_schema(  # noqa: C901
                 # should never happen
                 raise
         raise PydanticUndefinedAnnotation(name) from e
-    
+
     # check for forward references and raise PydanticUndefinedAnnotation
     for t in type_hints.values():
         if isinstance(t, typing.ForwardRef):
