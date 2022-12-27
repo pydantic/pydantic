@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ForwardRef, Optional
+from typing import ForwardRef
 
 import pytest
 
@@ -17,7 +17,7 @@ def test_missing_annotation_warning_defaults_to_true():
             a: Bar
 
         class Bar(BaseModel):
-            foo: Optional[Foo] = None
+            foo: Foo | None = None
 
 
 def test_missing_annotation_warning_disabled_in_config():
@@ -33,7 +33,7 @@ def test_missing_annotation_warning_disabled_in_config():
     assert Foo.__pydantic_model_complete__ is False
 
     class Bar(BaseModel):
-        foo: Optional[Foo] = None
+        foo: Foo | None = None
 
     assert Bar.__pydantic_model_complete__ is True
 
@@ -53,4 +53,4 @@ def test_user_warning():
             warn_on_undefined_types = False
 
     class Bar(BaseModel):
-        foo: Optional[Foo] = None
+        foo: Foo | None = None
