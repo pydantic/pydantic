@@ -44,6 +44,9 @@ def test_forward_ref_auto_update_no_model(create_module):
         class Foo(BaseModel):
             a: 'Bar' = None
 
+            class Config:
+                warn_on_undefined_types = False
+
         class Bar(BaseModel):
             b: 'Foo'
 
@@ -79,6 +82,9 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
         class Foo(BaseModel):
             foo: 'Foo'
             bar: 'Bar'  # noqa: F821
+
+            class Config:
+                warn_on_undefined_types = False
 
     assert hasattr(module.Foo, '__fields__') is False
 
@@ -467,6 +473,9 @@ class Spec(BaseModel):
 
 class PSpec(Spec):
     g: Optional[GSpec]
+    
+    class Config:
+        warn_on_undefined_types = False
 
 
 class GSpec(Spec):
@@ -693,6 +702,9 @@ def test_pep585_recursive_generics(create_module):
             name: str
             heroes: list[HeroRef]  # noqa: F821
 
+            class Config:
+                warn_on_undefined_types = False
+
         class Hero(BaseModel):
             name: str
             teams: list[Team]
@@ -787,6 +799,9 @@ def test_nested_more_annotation(create_module):
                 class Bar(BaseModel):
                     b: 'Foo'
 
+                    class Config:
+                        warn_on_undefined_types = False
+
                 return Bar
 
             return more_nested()
@@ -829,6 +844,9 @@ def test_nested_model_rebuild(create_module):
         def nested():
             class Bar(BaseModel):
                 b: 'Foo'
+
+                class Config:
+                    warn_on_undefined_types = False
 
             class Foo(BaseModel):
                 a: int
