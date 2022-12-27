@@ -139,8 +139,12 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
+        warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
+        # print(cls.__config__)
+        if cls.__config__.warn_on_undefined_types:
+            raise UserWarning(warning_string)
         cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
+            warning_string
         )
         # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
@@ -201,6 +205,11 @@ def build_inner_schema(  # noqa: C901
                 # should never happen
                 raise
         raise PydanticUndefinedAnnotation(name) from e
+    
+    # check for forward references and raise PydanticUndefinedAnnotation
+    for t in type_hints.values():
+        if isinstance(t, typing.ForwardRef):
+            raise PydanticUndefinedAnnotation(t.__forward_arg__)
 
     fields: dict[str, FieldInfo] = {}
     for ann_name, ann_type in type_hints.items():

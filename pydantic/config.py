@@ -83,6 +83,7 @@ class BaseConfig:
     validate_assignment: bool = False
     error_msg_templates: Dict[str, str] = {}  # TODO remove
     arbitrary_types_allowed: bool = False  # TODO default True, or remove
+    warn_on_undefined_types: bool = True
     orm_mode: bool = False  # TODO rename to from_attributes
     alias_generator: Optional[Callable[[str], str]] = None
     keep_untouched: Tuple[type, ...] = ()  # TODO remove??
