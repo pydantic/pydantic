@@ -1,3 +1,4 @@
+import re
 import sys
 from typing import Optional, Tuple
 
@@ -45,7 +46,7 @@ def test_forward_ref_auto_update_no_model(create_module):
             a: 'Bar' = None
 
             class Config:
-                warn_on_undefined_types = False
+                undefined_types_warning = False
 
         class Bar(BaseModel):
             b: 'Foo'
@@ -84,7 +85,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             bar: 'Bar'  # noqa: F821
 
             class Config:
-                warn_on_undefined_types = False
+                undefined_types_warning = False
 
     assert hasattr(module.Foo, '__fields__') is False
 
@@ -475,7 +476,7 @@ class PSpec(Spec):
     g: Optional[GSpec]
 
     class Config:
-        warn_on_undefined_types = False
+        undefined_types_warning = False
 
 
 class GSpec(Spec):
@@ -703,7 +704,7 @@ def test_pep585_recursive_generics(create_module):
             heroes: list[HeroRef]  # noqa: F821
 
             class Config:
-                warn_on_undefined_types = False
+                undefined_types_warning = False
 
         class Hero(BaseModel):
             name: str
@@ -800,7 +801,7 @@ def test_nested_more_annotation(create_module):
                     b: 'Foo'
 
                     class Config:
-                        warn_on_undefined_types = False
+                        undefined_types_warning = False
 
                 return Bar
 
@@ -846,7 +847,7 @@ def test_nested_model_rebuild(create_module):
                 b: 'Foo'
 
                 class Config:
-                    warn_on_undefined_types = False
+                    undefined_types_warning = False
 
             class Foo(BaseModel):
                 a: int
@@ -858,3 +859,90 @@ def test_nested_model_rebuild(create_module):
     bar_model = module.nested()
     assert bar_model.__pydantic_model_complete__ is True
     assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}
+
+
+def pytest_raises_undefined_types_warning(defining_class_name, missing_type_name):
+    """Returns a pytest.raises context manager that checks for the correct undefined types warning message.
+    usage: `with pytest_raises_undefined_types_warning(class_name='Foobar', missing_class_name='UndefinedType'):`
+    """
+
+    return pytest.raises(
+        UserWarning,
+        match=re.escape(
+            # split this f-string into two lines to pass linting (line too long)
+            f'`{defining_class_name}` is not fully defined, you should define `{missing_type_name}`, '
+            f'then call `{defining_class_name}.model_rebuild()`',
+        ),
+    )
+
+
+def test_undefined_type_raises_warning(create_module):
+    """Test undefined_types_warning is raised when a model declares a variable of type that is missing."""
+
+    with pytest_raises_undefined_types_warning(defining_class_name='Foobar', missing_type_name='UndefinedType'):
+        create_module(
+            # language=Python
+            """
+from __future__ import annotations
+from pydantic import BaseModel
+
+class Foobar(BaseModel):
+    a: UndefinedType
+"""
+        )
+
+
+def test_undefined_type_raises_warning_if_forward_ref(create_module):
+    """Test undefined_types_warning is raised when a model declares a variable of type that is a ForwardRef."""
+
+    with pytest_raises_undefined_types_warning(defining_class_name='Foobar', missing_type_name='UndefinedType'):
+
+        @create_module
+        def module():
+            from typing import ForwardRef
+
+            from pydantic import BaseModel
+
+            UndefinedType = ForwardRef('UndefinedType')
+
+            class Foobar(BaseModel):
+                a: UndefinedType
+
+
+def test_disable_undefined_types_warning(create_module):
+    """Test suppressing undefined_types_warning via config \
+        when a model declares a variable of type that is missing."""
+
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+class Foobar(BaseModel):
+    a: UndefinedType
+    class Config:
+        undefined_types_warning = False
+"""
+    )
+    # check that model is at least partially defined to ensure that
+    assert module.Foobar.__pydantic_model_complete__ is False
+
+
+def test_disable_undefined_types_warning_if_missing_class_is_a_forwardref(create_module):
+    """Test suppressing undefined_types_warning via config \
+        when a model declares a variable of type that is a ForwardRef."""
+
+    @create_module
+    def module():
+        from typing import ForwardRef
+
+        from pydantic import BaseModel
+
+        UndefinedType = ForwardRef('UndefinedType')
+
+        class Foobar(BaseModel):
+            a: UndefinedType
+
+            class Config:
+                undefined_types_warning = False

@@ -140,8 +140,7 @@ def complete_model_class(
         if raise_errors:
             raise
         warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
-        # print(cls.__config__)
-        if cls.__config__.warn_on_undefined_types:
+        if cls.__config__.undefined_types_warning:
             raise UserWarning(warning_string)
         cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
@@ -190,6 +189,8 @@ def build_inner_schema(  # noqa: C901
     model_ref = f'{module_name}.{name}'
     self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+
+    # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
         type_hints = _typing_extra.get_type_hints(cls, global_ns, local_ns, include_extras=True)
     except NameError as e:
@@ -204,7 +205,7 @@ def build_inner_schema(  # noqa: C901
                 raise
         raise PydanticUndefinedAnnotation(name) from e
 
-    # check for forward references and raise PydanticUndefinedAnnotation
+    # Also raise PydanticUndefinedAnnotation if a type_hint is a ForwardRef type (i.e. not yet defined)
     for t in type_hints.values():
         if isinstance(t, typing.ForwardRef):
             raise PydanticUndefinedAnnotation(t.__forward_arg__)
