@@ -1,7 +1,10 @@
 from __future__ import annotations as _annotations
-from typing import Optional
+
+from typing import Any, Optional
 
 __all__ = 'PydanticUserError', 'PydanticSchemaGenerationError'
+
+ErrorCodes = []
 
 
 class PydanticErrorMixin:
@@ -15,7 +18,7 @@ class PydanticErrorMixin:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __init__(self, code: str, message: Optional[str] = None) -> None:
+    def __init__(self, code: str[ErrorCodes], *, message: Optional[str] = None) -> None:
         self.code = code
         self.message = message
         print(self.__class__.mro())
@@ -30,6 +33,7 @@ class PydanticUserError(PydanticErrorMixin, TypeError):
     """
     Error caused by incorrect use of Pydantic
     """
+
     pass
 
 
@@ -37,6 +41,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     """
     Error occurs when annotations are not yet defined
     """
+
     pass
 
 
@@ -44,4 +49,5 @@ class PydanticSchemaGenerationError(PydanticUserError):
     """
     Error occurs when schema has not been generated correctly.
     """
+
     pass
