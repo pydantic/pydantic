@@ -3,8 +3,9 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-# This example shows how Book uses the Person type and Person uses the Book type.
-# We will demonstrate how to suppress the undefined types warning and define all the models.
+# This example shows how Book and Person types reference each other.
+# We will demonstrate how to suppress the undefined types warning
+# when define such models.
 
 
 class Book(BaseModel):
@@ -24,8 +25,11 @@ class Person(BaseModel):
 # Now, we can rebuild the `Book` model, since the `Person` model is now defined.
 Book.model_rebuild()
 
-# We'll not create some instances of our models, just to demonstrate that they work.
-python_crash_course = Book(title='Python Crash Course', author=Person(name='Eric Matthes'))
+# Let's create some instances of our models, to demonstrate that they work.
+python_crash_course = Book(
+    title='Python Crash Course',
+    author=Person(name='Eric Matthes'),
+)
 jane_doe = Person(name='Jane Doe', books_read=[python_crash_course])
 
 assert (
