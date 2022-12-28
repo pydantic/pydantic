@@ -36,7 +36,7 @@ lint-flake8:
 
 .PHONY: mypy
 mypy:
-	mypy pydantic docs/build
+	mypy pydantic docs/build --disable-recursive-aliases
 
 .PHONY: pyupgrade
 pyupgrade:

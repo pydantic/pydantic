@@ -74,6 +74,8 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
     command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    if parse_mypy_version(mypy_version) >= (0, 990):
+        command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     actual_result = mypy_api.run(command)
     actual_out, actual_err, actual_returncode = actual_result
@@ -114,6 +116,8 @@ def test_bad_toml_config() -> None:
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
     command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    if parse_mypy_version(mypy_version) >= (0, 990):
+        command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     with pytest.raises(ValueError) as e:
         mypy_api.run(command)
