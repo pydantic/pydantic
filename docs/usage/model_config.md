@@ -82,6 +82,11 @@ Similarly, if using the `@dataclass` decorator:
   raised on model declaration (default: `False`). See an example in
   [Field Types](types.md#arbitrary-types-allowed).
 
+**`undefined_types_warning`**
+: whether to raise a warning if a type is undefined when a model is declared. This occurs when a type is defined in another model declared elsewhere in code which has not yet executed.
+  If `True`, `UserWarning` will be raised on model declaration (default: `True`).
+  See an example in [Field Types](types.md#undefined_types_warning).
+
 **`orm_mode`**
 : whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
 

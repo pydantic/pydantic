@@ -926,6 +926,13 @@ You can allow arbitrary types using the `arbitrary_types_allowed` config in the
 
 {!.tmp_examples/types_arbitrary_allowed.md!}
 
+### Undefined Types Warning
+
+You can suppress the Undefined Types Warning by setting `undefined_types_warning` to `False` in the
+[Model Config](model_config.md).
+
+{!.tmp_examples/types_undefined_warning.md!}
+
 ### Generic Classes as Types
 
 !!! warning
