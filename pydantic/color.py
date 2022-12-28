@@ -41,17 +41,19 @@ class RGBA:
 
 
 # these are not compiled here to avoid import slowdown, they'll be compiled the first time they're used, then cached
-r_hex_short = r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*'
-r_hex_long = r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*'
 _r_255 = r'(\d{1,3}(?:\.\d+)?)'
 _r_comma = r'\s*,\s*'
-r_rgb = fr'\s*rgb\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}\)\s*'
+_r_space = r'\s* *\s*'
+_r_slash = r'\s*/\s*'
 _r_alpha = r'(\d(?:\.\d+)?|\.\d+|\d{1,2}%)'
-r_rgba = fr'\s*rgba\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_alpha}\s*\)\s*'
 _r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)(deg|rad|turn)?'
 _r_sl = r'(\d{1,3}(?:\.\d+)?)%'
-r_hsl = fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}\s*\)\s*'
-r_hsla = fr'\s*hsl\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}{_r_comma}{_r_alpha}\s*\)\s*'
+r_hex_short = r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*'
+r_hex_long = r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*'
+r_rgb = fr'\s*rgba?\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
+r_hsl = fr'\s*hsla?\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
+r_rgb_v4_style = fr'\s*rgba?\(\s*{_r_255}{_r_space}{_r_255}{_r_space}{_r_255}(?:{_r_slash}{_r_alpha})?\s*\)\s*'
+r_hsl_v4_style = fr'\s*hsla?\(\s*{_r_h}{_r_space}{_r_sl}{_r_space}{_r_sl}(?:{_r_slash}{_r_alpha})?\s*\)\s*'
 
 # colors where the two hex characters are the same, if all colors match this the short version of hex colors can be used
 repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
@@ -260,28 +262,18 @@ def parse_str(value: str) -> RGBA:
             alpha = None
         return ints_to_rgba(r, g, b, alpha)
 
-    m = re.fullmatch(r_rgb, value_lower)
-    if m:
-        return ints_to_rgba(*m.groups(), None)  # type: ignore
-
-    m = re.fullmatch(r_rgba, value_lower)
+    m = re.fullmatch(r_rgb, value_lower) or re.fullmatch(r_rgb_v4_style, value_lower)
     if m:
         return ints_to_rgba(*m.groups())  # type: ignore
 
-    m = re.fullmatch(r_hsl, value_lower)
+    m = re.fullmatch(r_hsl, value_lower) or re.fullmatch(r_hsl_v4_style, value_lower)
     if m:
-        h, h_units, s, l_ = m.groups()
-        return parse_hsl(h, h_units, s, l_)
-
-    m = re.fullmatch(r_hsla, value_lower)
-    if m:
-        h, h_units, s, l_, a = m.groups()
-        return parse_hsl(h, h_units, s, l_, parse_float_alpha(a))
+        return parse_hsl(*m.groups())  # type: ignore
 
     raise PydanticCustomError('color_error', 'value is not a valid color: string not recognised as a valid color')
 
 
-def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: Optional[float]) -> RGBA:
+def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: Optional[float] = None) -> RGBA:
     return RGBA(parse_color_value(r), parse_color_value(g), parse_color_value(b), parse_float_alpha(alpha))
 
 
@@ -342,7 +334,7 @@ def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float]
         h_value = h_value % 1
 
     r, g, b = hls_to_rgb(h_value, l_value, s_value)
-    return RGBA(r, g, b, alpha)
+    return RGBA(r, g, b, parse_float_alpha(alpha))
 
 
 def float_to_255(c: float) -> int:
