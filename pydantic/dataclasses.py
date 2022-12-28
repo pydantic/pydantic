@@ -254,6 +254,9 @@ class DataclassProxy:
     def __getattr__(self, name: str) -> Any:
         return getattr(self.__dataclass__, name)
 
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        return setattr(self.__dataclass__, __name, __value)
+
     def __instancecheck__(self, instance: Any) -> bool:
         return isinstance(instance, self.__dataclass__)
 
