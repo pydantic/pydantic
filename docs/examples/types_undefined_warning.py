@@ -10,7 +10,7 @@ from pydantic import BaseModel
 class Book(BaseModel):
     title: str
     author: Person  # note the `Person` type is not yet defined
-    
+
     # Suppress undefined types warning so we can continue defining our models.
     class Config:
         undefined_types_warning = False
