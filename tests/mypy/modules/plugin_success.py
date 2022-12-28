@@ -197,11 +197,11 @@ class ModelWithAnnotatedValidator(BaseModel):
 
 
 def _default_factory_str() -> str:
-    ...
+    return 'x'
 
 
 def _default_factory_list() -> List[int]:
-    ...
+    return [1, 2, 3]
 
 
 class FieldDefaultTestingModel(BaseModel):
