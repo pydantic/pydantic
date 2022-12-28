@@ -473,7 +473,7 @@ class Spec(BaseModel):
 
 class PSpec(Spec):
     g: Optional[GSpec]
-    
+
     class Config:
         warn_on_undefined_types = False
 
