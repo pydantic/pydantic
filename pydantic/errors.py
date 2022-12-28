@@ -1,4 +1,5 @@
 from __future__ import annotations as _annotations
+from typing import Optional
 
 __all__ = 'PydanticUserError', 'PydanticSchemaGenerationError'
 
@@ -9,41 +10,38 @@ class PydanticErrorMixin:
     """
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}(type="{self.type}", message="{self.message}")'
+        return f'{self.__class__.__name__}(code={self.code!r}, message={self.message!r})'
 
     def __repr__(self) -> str:
         return self.__str__()
 
-    def init_variables(self, type: str, message: str) -> None:
-        self.type = type
+    def __init__(self, code: str, message: Optional[str] = None) -> None:
+        self.code = code
         self.message = message
+        print(self.__class__.mro())
+        # If using mixin directly
+        if PydanticErrorMixin in self.__class__.mro():
+            super(self.__class__.mro()[2], self).__init__(message)
+        else:
+            super(self.__class__.mro()[3], self).__init__(message)
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
     """
     Error caused by incorrect use of Pydantic
     """
-
-    def __init__(self, type: str, message: str) -> None:
-        super(TypeError, self).__init__(message)
-        self.init_variables(type, message)
+    pass
 
 
 class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     """
     Error occurs when annotations are not yet defined
     """
-
-    def __init__(self, type: str, message: str) -> None:
-        super(NameError, self).__init__(message)
-        self.init_variables(type, message)
+    pass
 
 
 class PydanticSchemaGenerationError(PydanticUserError):
     """
     Error occurs when schema has not been generated correctly.
     """
-
-    def __init__(self, type: str, message: str) -> None:
-        super(PydanticUserError, self).__init__(type, message)
-        self.init_variables(type, message)
+    pass
