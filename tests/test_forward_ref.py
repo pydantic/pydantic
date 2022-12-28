@@ -925,7 +925,8 @@ class Foobar(BaseModel):
         undefined_types_warning = False
 """
     )
-    # check that model is at least partially defined to ensure that
+    # Since test is about suppressing the undefined_types_warning,
+    # we should also verify that our model was at least partially built
     assert module.Foobar.__pydantic_model_complete__ is False
 
 
@@ -946,3 +947,7 @@ def test_disable_undefined_types_warning_if_missing_class_is_a_forwardref(create
 
             class Config:
                 undefined_types_warning = False
+
+    # Since test is about suppressing the undefined_types_warning,
+    # we should also verify that our model was at least partially built
+    assert module.Foobar.__pydantic_model_complete__ is False
