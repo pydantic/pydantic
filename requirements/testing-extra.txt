@@ -16,7 +16,7 @@ executing==0.10.0
     # via devtools
 hypothesis==6.54.4
     # via -r requirements/testing-extra.in
-mypy==0.982
+mypy==0.991
     # via -r requirements/testing-extra.in
 mypy-extensions==0.4.3
     # via mypy
