@@ -50,9 +50,13 @@ _r_h = r'(-?\d+(?:\.\d+)?|-?\.\d+)(deg|rad|turn)?'
 _r_sl = r'(\d{1,3}(?:\.\d+)?)%'
 r_hex_short = r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*'
 r_hex_long = r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*'
+# CSS3 RGB examples: rgb(0, 0, 0), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 50%)
 r_rgb = fr'\s*rgba?\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
+# CSS3 HSL examples: hsl(270, 60%, 50%), hsla(270, 60%, 50%, 0.5), hsla(270, 60%, 50%, 50%)
 r_hsl = fr'\s*hsla?\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
+# CSS4 RGB examples: rgb(0 0 0), rgb(0 0 0 / 0.5), rgb(0 0 0 / 50%), rgba(0 0 0 / 50%)
 r_rgb_v4_style = fr'\s*rgba?\(\s*{_r_255}{_r_space}{_r_255}{_r_space}{_r_255}(?:{_r_slash}{_r_alpha})?\s*\)\s*'
+# CSS4 HSL examples: hsl(270 60% 50%), hsl(270 60% 50% / 0.5), hsl(270 60% 50% / 50%), hsla(270 60% 50% / 50%)
 r_hsl_v4_style = fr'\s*hsla?\(\s*{_r_h}{_r_space}{_r_sl}{_r_space}{_r_sl}(?:{_r_slash}{_r_alpha})?\s*\)\s*'
 
 # colors where the two hex characters are the same, if all colors match this the short version of hex colors can be used
