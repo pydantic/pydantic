@@ -508,6 +508,7 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
     def _enforce_dict_if_root(cls, obj: Any) -> Any:
         if cls.__custom_root_type__ and (
             not (isinstance(obj, dict) and obj.keys() == {ROOT_KEY})
+            and not (isinstance(obj, BaseModel) and obj.__fields__.keys() == {ROOT_KEY})
             or cls.__fields__[ROOT_KEY].shape in MAPPING_LIKE_SHAPES
         ):
             return {ROOT_KEY: obj}
