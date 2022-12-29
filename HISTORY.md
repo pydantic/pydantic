@@ -1,3 +1,19 @@
+## v1.10.3 (2022-12-29)
+
+* fix parsing of custom root models, #4883 by @gou177
+* fix: use dataclass proxy for frozen or empty dataclasses, #4878 by @PrettyWood
+* Fix `schema` and `schema_json` on models where a model instance is a one of default values, #4781 by @Bobronium
+* Add Jina AI to sponsors on docs index page, #4767 by @samuelcolvin
+* fix: support assignment on `DataclassProxy`, #4695 by @PrettyWood
+* Add `postgresql+psycopg` as allowed scheme for `PostgreDsn` to make it usable with SQLAlchemy 2, #4689 by @morian
+* Allow dict schemas to have both `patternProperties` and `additionalProperties`, #4641 by @jparise
+* Fixes error passing None for optional lists with `unique_items`, #4568 by @mfulgo
+* Fix `GenericModel` with `Callable` param raising a `TypeError`, #4551 by @mfulgo
+* Fix field regex with `StrictStr` type annotation, #4538 by @sisp
+* Correct `dataclass_transform` keyword argument name from `field_descriptors` to `field_specifiers`, #4500 by @samuelcolvin
+* fix: avoid multiple calls of `__post_init__` when dataclasses are inherited, #4487 by @PrettyWood
+* Reduce the size of binary wheels, #2276 by @samuelcolvin
+
 ## v1.10.2 (2022-09-05)
 
 * **Revert Change:** Revert percent encoding of URL parts which was originally added in #4224, #4470 by @samuelcolvin
