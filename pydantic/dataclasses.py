@@ -248,6 +248,9 @@ class DataclassProxy:
     def __getattr__(self, name: str) -> Any:
         return getattr(self.__dataclass__, name)
 
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        return setattr(self.__dataclass__, __name, __value)
+
     def __instancecheck__(self, instance: Any) -> bool:
         return isinstance(instance, self.__dataclass__)
 
@@ -279,7 +282,10 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
             init(self, *args, **kwargs)
 
     if hasattr(dc_cls, '__post_init__'):
-        post_init = dc_cls.__post_init__
+        try:
+            post_init = dc_cls.__post_init__.__wrapped__  # type: ignore[attr-defined]
+        except AttributeError:
+            post_init = dc_cls.__post_init__
 
         @wraps(post_init)
         def new_post_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:

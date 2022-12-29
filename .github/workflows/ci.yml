@@ -28,7 +28,7 @@ jobs:
             ${{ env.pythonLocation }}
             .mypy_cache
           key: >
-            lint
+            lint-v2
             ${{ runner.os }}
             ${{ env.pythonLocation }}
             ${{ hashFiles('tests/requirements-linting.txt') }}
@@ -78,7 +78,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          docs-build
+          docs-build-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -122,7 +122,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          test-linux-compiled
+          test-linux-compiled-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -183,7 +183,7 @@ jobs:
       with:
         path: ${{ env.pythonLocation }}
         key: >
-          test-not-compiled
+          test-not-compiled-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('setup.py') }}
@@ -308,8 +308,6 @@ jobs:
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
-    needs: [lint, test-linux-compiled, test-not-compiled, test-old-mypy, test-fastapi]
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')"
     strategy:
       fail-fast: false
       matrix:
@@ -379,6 +377,7 @@ jobs:
       - test-not-compiled
       - test-old-mypy
       - test-fastapi
+      - build
 
     runs-on: ubuntu-latest
 
@@ -387,6 +386,35 @@ jobs:
         uses: re-actors/alls-green@release/v1
         with:
           jobs: ${{ toJSON(needs) }}
+
+  inspect-pypi-assets:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+      - name: list dist files
+        run: |
+         ls -lh dist/
+         echo "`ls dist | wc -l` files"
+
+      - name: extract and list sdist file
+        run: |
+         mkdir sdist-files
+         tar -xvf dist/*.tar.gz -C sdist-files
+         tree -a sdist-files
+
+      - name: extract and list wheel file
+        run: |
+         ls dist/*cp310-manylinux*x86_64.whl | head -n 1
+         python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
   deploy:
     name: Deploy
@@ -436,6 +464,9 @@ jobs:
 
       - name: publish docs
         if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
-        run: make publish-docs
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.cloudflare_api_token }}
+          command: pages publish --project-name=pydantic-docs --branch=main site
         env:
-          NETLIFY: ${{ secrets.netlify_token }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}

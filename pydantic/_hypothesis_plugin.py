@@ -10,7 +10,7 @@ Pydantic is installed.  See also:
 https://hypothesis.readthedocs.io/en/latest/strategies.html#registering-strategies-via-setuptools-entry-points
 https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.register_type_strategy
 https://hypothesis.readthedocs.io/en/latest/strategies.html#interaction-with-pytest-cov
-https://pydantic-docs.helpmanual.io/usage/types/#pydantic-types
+https://docs.pydantic.dev/usage/types/#pydantic-types
 
 Note that because our motivation is to *improve user experience*, the strategies
 are always sound (never generate invalid data) but sacrifice completeness for

@@ -1523,6 +1523,38 @@ def test_dict_default():
     }
 
 
+def test_model_default():
+    """Make sure inner model types are encoded properly"""
+
+    class Inner(BaseModel):
+        a: Dict[Path, str] = {Path(): ''}
+
+    class Outer(BaseModel):
+        inner: Inner = Inner()
+
+    assert Outer.schema() == {
+        'definitions': {
+            'Inner': {
+                'properties': {
+                    'a': {
+                        'additionalProperties': {'type': 'string'},
+                        'default': {'.': ''},
+                        'title': 'A',
+                        'type': 'object',
+                    }
+                },
+                'title': 'Inner',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'inner': {'allOf': [{'$ref': '#/definitions/Inner'}], 'default': {'a': {'.': ''}}, 'title': 'Inner'}
+        },
+        'title': 'Outer',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [

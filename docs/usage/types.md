@@ -310,7 +310,7 @@ types:
   * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
   * `str`, following formats work:
 
-    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
     * `int` or `float` as a string (assumed as Unix time)
 
 * `date` fields can be:
@@ -327,7 +327,7 @@ types:
   * `time`, existing `time` object
   * `str`, following formats work:
 
-    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]]]`
+    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
 * `timedelta` fields can be:
 
@@ -490,7 +490,7 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 `CockroachDsn`
 : a cockroachdb DSN style URL; see [URLs](#urls)
 
-`RabbitMqDsn`
+`AmqpDsn`
 : an `AMQP` DSN style URL as used by RabbitMQ, StormMQ, ActiveMQ etc.; see [URLs](#urls)
 
 `RedisDsn`
@@ -607,9 +607,9 @@ For URI/URL validation the following types are available:
   - `cockroachdb+asyncpg`
   - `cockroachdb+psycopg2`
 - `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
-- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info
+- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info) (e.g., `rediss://:pass@localhost`)
 - `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port
-  not required from **v1.6** onwards), user info may be passed without user part (e.g., `rediss://:pass@localhost`)
+  not required from **v1.6** onwards), user info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`)
 - `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`
@@ -781,7 +781,7 @@ The value of numerous common types can be restricted using `con*` type functions
 
 {!.tmp_examples/types_constrained.md!}
 
-Where `Field` refers to the [field function](schema.md#field-customisation).
+Where `Field` refers to the [field function](schema.md#field-customization).
 
 ### Arguments to `conlist`
 The following arguments are available when using the `conlist` type function

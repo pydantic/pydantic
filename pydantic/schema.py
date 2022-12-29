@@ -1,6 +1,7 @@
 import re
 import warnings
 from collections import defaultdict
+from dataclasses import is_dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
@@ -971,7 +972,14 @@ def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelFie
 
 
 def encode_default(dft: Any) -> Any:
-    if isinstance(dft, Enum):
+    from .main import BaseModel
+
+    if isinstance(dft, BaseModel) or is_dataclass(dft):
+        dft = cast('dict[str, Any]', pydantic_encoder(dft))
+
+    if isinstance(dft, dict):
+        return {encode_default(k): encode_default(v) for k, v in dft.items()}
+    elif isinstance(dft, Enum):
         return dft.value
     elif isinstance(dft, (int, float, str)):
         return dft
@@ -979,8 +987,6 @@ def encode_default(dft: Any) -> Any:
         t = dft.__class__
         seq_args = (encode_default(v) for v in dft)
         return t(*seq_args) if is_namedtuple(t) else t(seq_args)
-    elif isinstance(dft, dict):
-        return {encode_default(k): encode_default(v) for k, v in dft.items()}
     elif dft is None:
         return None
     else:
@@ -1013,7 +1019,7 @@ def get_annotation_from_field_info(
         raise ValueError(
             f'On field "{field_name}" the following field constraints are set but not enforced: '
             f'{", ".join(unused_constraints)}. '
-            f'\nFor more details see https://pydantic-docs.helpmanual.io/usage/schema/#unenforced-field-constraints'
+            f'\nFor more details see https://docs.pydantic.dev/usage/schema/#unenforced-field-constraints'
         )
 
     return annotation
