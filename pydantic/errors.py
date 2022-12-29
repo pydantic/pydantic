@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 __all__ = 'PydanticUserError', 'PydanticSchemaGenerationError'
 
-ErrorCodes = []
+ErrorCodes = {}
 
 
 class PydanticErrorMixin:
@@ -18,7 +18,7 @@ class PydanticErrorMixin:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __init__(self, code: str[ErrorCodes], *, message: Optional[str] = None) -> None:
+    def __init__(self, code: ErrorCodes, *, message: Optional[str] = None) -> None:
         self.code = code
         self.message = message
         print(self.__class__.mro())
