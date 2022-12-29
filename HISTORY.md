@@ -159,10 +159,10 @@ for their kind support.
 ### Highlights
 
 * add Python 3.10 support, #2885 by @PrettyWood
-* [Discriminated unions](https://pydantic-docs.helpmanual.io/usage/types/#discriminated-unions-aka-tagged-unions), #619 by @PrettyWood
-* [`Config.smart_union` for better union logic](https://pydantic-docs.helpmanual.io/usage/model_config/#smart-union), #2092 by @PrettyWood
+* [Discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions), #619 by @PrettyWood
+* [`Config.smart_union` for better union logic](https://docs.pydantic.dev/usage/model_config/#smart-union), #2092 by @PrettyWood
 * Binaries for Macos M1 CPUs, #3498 by @samuelcolvin
-* Complex types can be set via [nested environment variables](https://pydantic-docs.helpmanual.io/usage/settings/#parsing-environment-variable-values), e.g. `foo___bar`, #3159 by @Air-Mark
+* Complex types can be set via [nested environment variables](https://docs.pydantic.dev/usage/settings/#parsing-environment-variable-values), e.g. `foo___bar`, #3159 by @Air-Mark
 * add a dark mode to _pydantic_ documentation, #2913 by @gbdlin
 * Add support for autocomplete in VS Code via `__dataclass_transform__`, #2721 by @tiangolo
 * Add "exclude" as a field parameter so that it can be configured using model config, #660 by @daviskirk
@@ -193,7 +193,7 @@ for their kind support.
   `pydantic.fields.ModelField`) to `__modify_schema__()` if present, #3434 by @jasujm
 * Fix issue when pydantic fail to parse `typing.ClassVar` string type annotation, #3401 by @uriyyo
 * Mention Python >= 3.9.2 as an alternative to `typing_extensions.TypedDict`, #3374 by @BvB93
-* Changed the validator method name in the [Custom Errors example](https://pydantic-docs.helpmanual.io/usage/models/#custom-errors) 
+* Changed the validator method name in the [Custom Errors example](https://docs.pydantic.dev/usage/models/#custom-errors) 
   to more accurately describe what the validator is doing; changed from `name_must_contain_space` to ` value_must_equal_bar`, #3327 by @michaelrios28
 * Add `AmqpDsn` class, #3254 by @kludex
 * Always use `Enum` value as default in generated JSON schema, #3190 by @joaommartins
@@ -215,7 +215,7 @@ for their kind support.
   just as when sourced from environment variables, #2917 by @davidmreed
 * add a dark mode to _pydantic_ documentation, #2913 by @gbdlin
 * Make `pydantic-mypy` plugin compatible with `pyproject.toml` configuration, consistent with `mypy` changes. 
-  See the [doc](https://pydantic-docs.helpmanual.io/mypy_plugin/#configuring-the-plugin) for more information, #2908 by @jrwalk
+  See the [doc](https://docs.pydantic.dev/mypy_plugin/#configuring-the-plugin) for more information, #2908 by @jrwalk
 * add Python 3.10 support, #2885 by @PrettyWood
 * Correctly parse generic models with `Json[T]`, #2860 by @geekingfrog
 * Update contrib docs re: Python version to use for building docs, #2856 by @paxcodes
@@ -260,7 +260,7 @@ for their kind support.
 * Support generating schema for `Generic` fields with subtypes, #2375 by @maximberg
 * fix(encoder): serialize `NameEmail` to str, #2341 by @alecgerona
 * add `Config.smart_union` to prevent coercion in `Union` if possible, see 
- [the doc](https://pydantic-docs.helpmanual.io/usage/model_config/#smart-union) for more information, #2092 by @PrettyWood
+ [the doc](https://docs.pydantic.dev/usage/model_config/#smart-union) for more information, #2092 by @PrettyWood
 * Add ability to use `typing.Counter` as a model field type, #2060 by @uriyyo
 * Add parameterised subclasses to `__bases__` when constructing new parameterised classes, so that `A <: B => A[int] <: B[int]`, #2007 by @diabolo-dan
 * Create `FileUrl` type that allows URLs that conform to [RFC 8089](https://tools.ietf.org/html/rfc8089#section-2).
@@ -310,10 +310,10 @@ for their kind support.
 
 ### Highlights
 
-* [Hypothesis plugin](https://pydantic-docs.helpmanual.io/hypothesis_plugin/) for testing, #2097 by @Zac-HD
-* support for [`NamedTuple` and `TypedDict`](https://pydantic-docs.helpmanual.io/usage/types/#annotated-types), #2216 by @PrettyWood
-* Support [`Annotated` hints on model fields](https://pydantic-docs.helpmanual.io/usage/schema/#typingannotated-fields), #2147 by @JacobHayes
-* [`frozen` parameter on `Config`](https://pydantic-docs.helpmanual.io/usage/model_config/) to allow models to be hashed, #1880 by @rhuille
+* [Hypothesis plugin](https://docs.pydantic.dev/hypothesis_plugin/) for testing, #2097 by @Zac-HD
+* support for [`NamedTuple` and `TypedDict`](https://docs.pydantic.dev/usage/types/#annotated-types), #2216 by @PrettyWood
+* Support [`Annotated` hints on model fields](https://docs.pydantic.dev/usage/schema/#typingannotated-fields), #2147 by @JacobHayes
+* [`frozen` parameter on `Config`](https://docs.pydantic.dev/usage/model_config/) to allow models to be hashed, #1880 by @rhuille
 
 ### Changes
 
@@ -370,7 +370,7 @@ for their kind support.
   to validate parameters without actually calling the function, #2127 by @PrettyWood
 * Add the ability to customize settings sources (add / disable / change priority order), #2107 by @kozlek
 * Fix mypy complaints about most custom _pydantic_ types, #2098 by @PrettyWood
-* Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://pydantic-docs.helpmanual.io/hypothesis_plugin/), #2097 by @Zac-HD
+* Add a [Hypothesis](https://hypothesis.readthedocs.io/) plugin for easier [property-based testing](https://increment.com/testing/in-praise-of-property-based-testing/) with Pydantic's custom types - [usage details here](https://docs.pydantic.dev/hypothesis_plugin/), #2097 by @Zac-HD
 * add validator for `None`, `NoneType` or `Literal[None]`, #2095 by @PrettyWood
 * Handle properly fields of type `Callable` with a default value, #2094 by @PrettyWood
 * Updated `create_model` return type annotation to return type which inherits from `__base__` argument, #2071 by @uriyyo
@@ -440,9 +440,9 @@ for their kind support.
 ### Highlights
 
 * Python 3.9 support, thanks @PrettyWood
-* [Private model attributes](https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes), thanks @Bobronium
-* ["secrets files" support in `BaseSettings`](https://pydantic-docs.helpmanual.io/usage/settings/#secret-support), thanks @mdgilene
-* [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://pydantic-docs.helpmanual.io/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
+* [Private model attributes](https://docs.pydantic.dev/usage/models/#private-model-attributes), thanks @Bobronium
+* ["secrets files" support in `BaseSettings`](https://docs.pydantic.dev/usage/settings/#secret-support), thanks @mdgilene
+* [convert stdlib dataclasses to pydantic dataclasses and use stdlib dataclasses in models](https://docs.pydantic.dev/usage/dataclasses/#stdlib-dataclasses-and-pydantic-dataclasses), thanks @PrettyWood
 
 ### Changes
 
@@ -585,7 +585,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 * **Breaking Change:** alias precedence logic changed so aliases on a field always take priority over
   an alias from `alias_generator` to avoid buggy/unexpected behaviour,
-  see [here](https://pydantic-docs.helpmanual.io/usage/model_config/#alias-precedence) for details, #1178 by @samuelcolvin
+  see [here](https://docs.pydantic.dev/usage/model_config/#alias-precedence) for details, #1178 by @samuelcolvin
 * Add support for unicode and punycode in TLDs, #1182 by @jamescurtin
 * Fix `cls` argument in validators during assignment, #1172 by @samuelcolvin
 * completing Luhn algorithm for `PaymentCardNumber`, #1166 by @cuencandres
@@ -627,7 +627,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 * **Possible Breaking Change:** Add support for required `Optional` with `name: Optional[AnyType] = Field(...)`
   and refactor `ModelField` creation to preserve `required` parameter value, #1031 by @tiangolo;
-  see [here](https://pydantic-docs.helpmanual.io/usage/models/#required-optional-fields) for details
+  see [here](https://docs.pydantic.dev/usage/models/#required-optional-fields) for details
 * Add benchmarks for `cattrs`, #513 by @sebastianmika
 * Add `exclude_none` option to `dict()` and friends, #587 by @niknetniko
 * Add benchmarks for `valideer`, #670 by @gsakkis

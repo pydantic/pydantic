@@ -1759,6 +1759,45 @@ def test_strict_str_max_length():
         Model(u='1234567')
 
 
+def test_strict_str_regex():
+    class Model(BaseModel):
+        u: StrictStr = Field(..., regex=r'^[0-9]+$')
+
+    assert Model(u='123').u == '123'
+
+    with pytest.raises(ValidationError, match='str type expected'):
+        Model(u=123)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(u='abc')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('u',),
+            'msg': 'string does not match regex "^[0-9]+$"',
+            'type': 'value_error.str.regex',
+            'ctx': {'pattern': '^[0-9]+$'},
+        }
+    ]
+
+
+def test_string_regex():
+    class Model(BaseModel):
+        u: str = Field(..., regex=r'^[0-9]+$')
+
+    assert Model(u='123').u == '123'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(u='abc')
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('u',),
+            'msg': 'string does not match regex "^[0-9]+$"',
+            'type': 'value_error.str.regex',
+            'ctx': {'pattern': '^[0-9]+$'},
+        }
+    ]
+
+
 def test_strict_bool():
     class Model(BaseModel):
         v: StrictBool

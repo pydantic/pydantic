@@ -60,7 +60,7 @@ description = 'Data validation and settings management using python type hints'
 THIS_DIR = Path(__file__).resolve().parent
 try:
     history = (THIS_DIR / 'HISTORY.md').read_text(encoding='utf-8')
-    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/pydantic/pydantic/issues/\1)', history)
+    history = re.sub(r'(\s)#(\d+)', r'\1[#\2](https://github.com/pydantic/pydantic/issues/\2)', history)
     history = re.sub(r'( +)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub('@@', '@', history)
 
@@ -82,9 +82,9 @@ if not any(arg in sys.argv for arg in ['clean', 'check']) and 'SKIP_CYTHON' not 
         compiler_directives = {}
         if 'CYTHON_TRACE' in sys.argv:
             compiler_directives['linetrace'] = True
-        # Set CFLAG to all optimizations (-O3)
+        # Set CFLAG to all optimizations (-O3), add `-g0` to reduce size of binaries, see #2276
         # Any additional CFLAGS will be appended. Only the last optimization flag will have effect
-        os.environ['CFLAGS'] = '-O3 ' + os.environ.get('CFLAGS', '')
+        os.environ['CFLAGS'] = '-O3 -g0 ' + os.environ.get('CFLAGS', '')
         ext_modules = cythonize(
             'pydantic/*.py',
             exclude=['pydantic/generics.py'],

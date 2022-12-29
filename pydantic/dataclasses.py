@@ -105,7 +105,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -121,7 +121,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -140,7 +140,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -155,7 +155,7 @@ else:
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -172,7 +172,7 @@ else:
         ...
 
 
-@dataclass_transform(kw_only_default=True, field_descriptors=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[_T]] = None,
     *,
@@ -253,6 +253,9 @@ class DataclassProxy:
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.__dataclass__, name)
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        return setattr(self.__dataclass__, __name, __value)
 
     def __instancecheck__(self, instance: Any) -> bool:
         return isinstance(instance, self.__dataclass__)

@@ -48,14 +48,14 @@ To demonstrate all the above parameter types:
 
 ## Using Field to describe function arguments
 
-[Field](schema.md#field-customisation) can also be used with `validate_arguments` to provide extra information about
+[Field](schema.md#field-customization) can also be used with `validate_arguments` to provide extra information about
 the field and validations. In general it should be used in a type hint with
 [Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:
 
 {!.tmp_examples/validation_decorator_field.md!}
 
-The [alias](model_config#alias-precedence) can be used with the decorator as normal.
+The [alias](model_config.md#alias-precedence) can be used with the decorator as normal.
 
 {!.tmp_examples/validation_decorator_field_alias.md!}
 

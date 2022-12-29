@@ -459,6 +459,34 @@ def test_list_enum_schema_extras():
     }
 
 
+def test_enum_schema_cleandoc():
+    class FooBar(str, Enum):
+        """
+        This is docstring which needs to be cleaned up
+        """
+
+        foo = 'foo'
+        bar = 'bar'
+
+    class Model(BaseModel):
+        enum: FooBar
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'enum': {'$ref': '#/definitions/FooBar'}},
+        'required': ['enum'],
+        'definitions': {
+            'FooBar': {
+                'title': 'FooBar',
+                'description': 'This is docstring which needs to be cleaned up',
+                'enum': ['foo', 'bar'],
+                'type': 'string',
+            }
+        },
+    }
+
+
 def test_json_schema():
     class Model(BaseModel):
         a = b'foobar'
@@ -1495,6 +1523,38 @@ def test_dict_default():
     }
 
 
+def test_model_default():
+    """Make sure inner model types are encoded properly"""
+
+    class Inner(BaseModel):
+        a: Dict[Path, str] = {Path(): ''}
+
+    class Outer(BaseModel):
+        inner: Inner = Inner()
+
+    assert Outer.schema() == {
+        'definitions': {
+            'Inner': {
+                'properties': {
+                    'a': {
+                        'additionalProperties': {'type': 'string'},
+                        'default': {'.': ''},
+                        'title': 'A',
+                        'type': 'object',
+                    }
+                },
+                'title': 'Inner',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'inner': {'allOf': [{'$ref': '#/definitions/Inner'}], 'default': {'a': {'.': ''}}, 'title': 'Inner'}
+        },
+        'title': 'Outer',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -1654,7 +1714,13 @@ def test_schema_dict_constr():
         'title': 'Foo',
         'type': 'object',
         'properties': {
-            'a': {'type': 'object', 'title': 'A', 'default': {}, 'patternProperties': {regex_str: {'type': 'string'}}}
+            'a': {
+                'type': 'object',
+                'title': 'A',
+                'default': {},
+                'additionalProperties': {'type': 'string'},
+                'patternProperties': {regex_str: {'type': 'string'}},
+            }
         },
     }
 

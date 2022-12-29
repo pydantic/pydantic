@@ -12,10 +12,10 @@ class MyModel(BaseModel):
         orm_mode = True
 
 
-BaseModel = declarative_base()
+Base = declarative_base()
 
 
-class SQLModel(BaseModel):
+class SQLModel(Base):
     __tablename__ = 'my_table'
     id = sa.Column('id', sa.Integer, primary_key=True)
     # 'metadata' is reserved by SQLAlchemy, hence the '_'

@@ -1497,3 +1497,19 @@ def test_inheritance_post_init_2():
     ConcreteClass()
     assert post_init_calls == 1
     assert post_init_post_parse_calls == 1
+
+
+def test_dataclass_setattr():
+    class Foo:
+        bar: str = 'cat'
+
+    default_config = dataclasses.make_dataclass(
+        cls_name=Foo.__name__,
+        bases=(dataclasses.dataclass(Foo),),
+        fields=[('bar', ClassVar[str], dataclasses.field(default=Foo.bar))],
+    )
+
+    config = pydantic.dataclasses.dataclass(default_config)
+    assert config.bar == 'cat'
+    setattr(config, 'bar', 'dog')
+    assert config.bar == 'dog'

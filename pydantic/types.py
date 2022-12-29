@@ -403,7 +403,7 @@ class ConstrainedStr(str):
     min_length: OptionalInt = None
     max_length: OptionalInt = None
     curtail_length: OptionalInt = None
-    regex: Optional[Pattern[str]] = None
+    regex: Optional[Union[str, Pattern[str]]] = None
     strict = False
 
     @classmethod
@@ -412,7 +412,7 @@ class ConstrainedStr(str):
             field_schema,
             minLength=cls.min_length,
             maxLength=cls.max_length,
-            pattern=cls.regex and cls.regex.pattern,
+            pattern=cls.regex and cls._get_pattern(cls.regex),
         )
 
     @classmethod
@@ -430,10 +430,14 @@ class ConstrainedStr(str):
             value = value[: cls.curtail_length]
 
         if cls.regex:
-            if not cls.regex.match(value):
-                raise errors.StrRegexError(pattern=cls.regex.pattern)
+            if not re.match(cls.regex, value):
+                raise errors.StrRegexError(pattern=cls._get_pattern(cls.regex))
 
         return value
+
+    @staticmethod
+    def _get_pattern(regex: Union[str, Pattern[str]]) -> str:
+        return regex if isinstance(regex, str) else regex.pattern
 
 
 def constr(
@@ -595,7 +599,10 @@ class ConstrainedList(list):  # type: ignore
         return v
 
     @classmethod
-    def unique_items_validator(cls, v: 'List[T]') -> 'List[T]':
+    def unique_items_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
+        if v is None:
+            return None
+
         for i, value in enumerate(v, start=1):
             if value in v[i:]:
                 raise errors.ListUniqueItemsError()
