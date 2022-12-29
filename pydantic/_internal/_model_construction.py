@@ -205,15 +205,14 @@ def build_inner_schema(  # noqa: C901
                 raise
         raise PydanticUndefinedAnnotation(name) from e
 
-    # Also raise PydanticUndefinedAnnotation if a type_hint is a ForwardRef type (i.e. not yet defined)
-    for t in type_hints.values():
-        if isinstance(t, typing.ForwardRef):
-            raise PydanticUndefinedAnnotation(t.__forward_arg__)
-
     fields: dict[str, FieldInfo] = {}
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
+
+        # raise a PydanticUndefinedAnnotation if type is undefined
+        if isinstance(ann_type, typing.ForwardRef):
+            raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
         for base in bases:
             if hasattr(base, ann_name):
