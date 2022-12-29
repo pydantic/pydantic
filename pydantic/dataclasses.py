@@ -288,7 +288,10 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
             init(self, *args, **kwargs)
 
     if hasattr(dc_cls, '__post_init__'):
-        post_init = dc_cls.__post_init__
+        try:
+            post_init = dc_cls.__post_init__.__wrapped__  # type: ignore[attr-defined]
+        except AttributeError:
+            post_init = dc_cls.__post_init__
 
         @wraps(post_init)
         def new_post_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:

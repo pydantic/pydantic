@@ -1474,6 +1474,31 @@ def test_subclass_post_init_inheritance():
     assert C().a == 6  # 1 * 3 + 3
 
 
+def test_inheritance_post_init_2():
+    post_init_calls = 0
+    post_init_post_parse_calls = 0
+
+    @pydantic.dataclasses.dataclass
+    class BaseClass:
+        def __post_init__(self):
+            nonlocal post_init_calls
+            post_init_calls += 1
+
+    @pydantic.dataclasses.dataclass
+    class AbstractClass(BaseClass):
+        pass
+
+    @pydantic.dataclasses.dataclass
+    class ConcreteClass(AbstractClass):
+        def __post_init_post_parse__(self):
+            nonlocal post_init_post_parse_calls
+            post_init_post_parse_calls += 1
+
+    ConcreteClass()
+    assert post_init_calls == 1
+    assert post_init_post_parse_calls == 1
+
+
 def test_dataclass_setattr():
     class Foo:
         bar: str = 'cat'
