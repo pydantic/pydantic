@@ -127,7 +127,7 @@ impl PyMultiHostUrl {
         self.ref_url.scheme()
     }
 
-    pub fn hosts<'s, 'py>(&'s self, py: Python<'py>) -> PyResult<Vec<&'py PyDict>> {
+    pub fn hosts<'py>(&self, py: Python<'py>) -> PyResult<Vec<&'py PyDict>> {
         if let Some(extra_urls) = &self.extra_urls {
             let mut hosts = Vec::with_capacity(extra_urls.len() + 1);
             for url in extra_urls {
@@ -223,7 +223,7 @@ impl PyMultiHostUrl {
     }
 }
 
-fn host_to_dict<'a, 'b>(py: Python<'a>, lib_url: &'b Url) -> PyResult<&'a PyDict> {
+fn host_to_dict<'a>(py: Python<'a>, lib_url: &Url) -> PyResult<&'a PyDict> {
     let dict = PyDict::new(py);
     dict.set_item(
         "username",
