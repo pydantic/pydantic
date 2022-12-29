@@ -7,3 +7,5 @@ pytest==7.1.2
 pytest-cov==3.0.0
 pytest-mock==3.8.2
 pytest-sugar==0.9.5
+# pin typing-extensions to minimum requirement - see #4885
+typing-extensions==4.2.0
