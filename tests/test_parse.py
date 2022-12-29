@@ -46,6 +46,7 @@ def test_parse_obj_root():
     m = MyModel.parse_obj('a')
     assert m.dict() == {'__root__': 'a'}
     assert m.__root__ == 'a'
+    assert MyModel.parse_obj(m) == m
 
 
 def test_parse_root_list():
