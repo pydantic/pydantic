@@ -32,19 +32,12 @@ python_crash_course = Book(
 )
 jane_doe = Person(name='Jane Doe', books_read=[python_crash_course])
 
-assert (
-    jane_doe.json(indent=2, exclude_unset=True)
-    == """
-{
-  "name": "Jane Doe",
-  "books_read": [
-    {
-      "title": "Python Crash Course",
-      "author": {
-        "name": "Eric Matthes"
-      }
-    }
-  ]
+assert jane_doe.dict(exclude_unset=True) == {
+    'name': 'Jane Doe',
+    'books_read': [
+        {
+            'title': 'Python Crash Course',
+            'author': {'name': 'Eric Matthes'},
+        },
+    ],
 }
-""".strip()
-)
