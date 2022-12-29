@@ -222,7 +222,7 @@ inheriting2.y = 'd'
 
 
 def _default_factory() -> str:
-    ...
+    return 'x'
 
 
 test: List[str] = []
