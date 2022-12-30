@@ -69,7 +69,7 @@ def test_value_validation():
                 raise ValueError('sum too large')
             return values
 
-    assert Response[Dict[int, int]](data={1: '4'}).dict() == {'data': {1: 4}}
+    assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
@@ -308,11 +308,11 @@ def test_generic():
         text: str
 
     success1 = Result[Data, Error](data=[Data(number=1, text='a')], positive_number=1)
-    assert success1.dict() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
+    assert success1.model_dump() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
     assert repr(success1) == "Result[Data, Error](data=[Data(number=1, text='a')], error=None, positive_number=1)"
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
-    assert success2.dict() == {'data': None, 'error': {'msg': 'error'}, 'positive_number': 1}
+    assert success2.model_dump() == {'data': None, 'error': {'msg': 'error'}, 'positive_number': 1}
     assert repr(success2) == "Result[Data, Error](data=None, error=Error(message='error'), positive_number=1)"
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
@@ -380,7 +380,7 @@ def test_optional_value():
         a: Optional[int] = 1
 
     model = MyModel[int]()
-    assert model.dict() == {'a': 1}
+    assert model.model_dump() == {'a': 1}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1007,7 +1007,7 @@ def test_deep_generic_with_multiple_typevars():
     assert ConcreteInnerModel.__fields__['data'].outer_type_ == List[float]
     assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
 
-    assert ConcreteInnerModel(data=['1'], extra='2').dict() == {'data': [1.0], 'extra': 2}
+    assert ConcreteInnerModel(data=['1'], extra='2').model_dump() == {'data': [1.0], 'extra': 2}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1031,7 +1031,7 @@ def test_deep_generic_with_multiple_inheritance():
     assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == List[str]
     assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
 
-    ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).dict() == {
+    ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).model_dump() == {
         'data': {1: 5},
         'stuff': ['123'],
         'extra': 5,
@@ -1149,7 +1149,7 @@ def test_generic_literal():
 
     Fields = Literal['foo', 'bar']
     m = GModel[Fields, str](field={'foo': 'x'})
-    assert m.dict() == {'field': {'foo': 'x'}}
+    assert m.model_dump() == {'field': {'foo': 'x'}}
 
 
 @pytest.mark.xfail(reason='working on V2')

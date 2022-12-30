@@ -9,7 +9,7 @@ class User(BaseModel):
 
 original_user = User(id=123, age=32)
 
-user_data = original_user.dict()
+user_data = original_user.model_dump()
 print(user_data)
 fields_set = original_user.__fields_set__
 print(fields_set)

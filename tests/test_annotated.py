@@ -142,12 +142,12 @@ def test_field_reuse():
     class Model(BaseModel):
         one: int = field
 
-    assert Model(one=1).dict() == {'one': 1}
+    assert Model(one=1).model_dump() == {'one': 1}
 
     class AnnotatedModel(BaseModel):
         one: Annotated[int, field]
 
-    assert AnnotatedModel(one=1).dict() == {'one': 1}
+    assert AnnotatedModel(one=1).model_dump() == {'one': 1}
 
 
 @pytest.mark.skip(reason='TODO JSON Schema')
@@ -190,4 +190,4 @@ def test_annotated_alias() -> None:
             "n(max_length=3)])]], required=True, description='foo')"
         ),
     }
-    assert MyModel(b='def', e=['xyz']).dict() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
+    assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])

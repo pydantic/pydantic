@@ -327,7 +327,7 @@ def test_date_constraints(constraint, msg, ok_value, error_value):
     class Model(BaseModel):
         a: condate(**{constraint: date(2020, 1, 1)})
 
-    assert Model(a=ok_value).dict() == {'a': ok_value}
+    assert Model(a=ok_value).model_dump() == {'a': ok_value}
 
     with pytest.raises(ValidationError, match=re.escape(f'Input should be {msg} 2020-01-01')):
         Model(a=error_value)

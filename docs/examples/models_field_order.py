@@ -11,7 +11,7 @@ class Model(BaseModel):
 
 print(Model.__fields__.keys())
 m = Model(e=2, a=1)
-print(m.dict())
+print(m.model_dump())
 try:
     Model(a='x', b='x', c='x', d='x', e='x')
 except ValidationError as e:

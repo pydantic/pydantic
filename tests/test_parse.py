@@ -29,7 +29,7 @@ def test_parse_obj_fails():
 @pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_submodel():
     m = Model.parse_obj(Model(a=10.2))
-    assert m.dict() == {'a': 10.2, 'b': 10}
+    assert m.model_dump() == {'a': 10.2, 'b': 10}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -48,7 +48,7 @@ def test_parse_obj_root():
         __root__: str
 
     m = MyModel.parse_obj('a')
-    assert m.dict() == {'__root__': 'a'}
+    assert m.model_dump() == {'__root__': 'a'}
     assert m.__root__ == 'a'
 
 
@@ -58,7 +58,7 @@ def test_parse_root_list():
         __root__: List[str]
 
     m = MyModel.parse_obj(['a'])
-    assert m.dict() == {'__root__': ['a']}
+    assert m.model_dump() == {'__root__': ['a']}
     assert m.__root__ == ['a']
 
 

@@ -1,7 +1,7 @@
 As well as accessing model attributes directly via their names (e.g. `model.foobar`), models can be converted
 and exported in a number of ways:
 
-## `model.dict(...)`
+## `model.model_dump(...)`
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 

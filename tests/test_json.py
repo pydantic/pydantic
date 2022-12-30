@@ -92,7 +92,7 @@ def test_model_encoding():
         d: ModelA
 
     m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'})
-    assert m.dict() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
+    assert m.model_dump() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
     assert m.model_dump_json() == '{"a": 10.2, "b": "foobar", "c": 10.2, "d": {"x": 123, "y": "123"}}'
     assert m.model_dump_json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
 
@@ -107,7 +107,7 @@ def test_subclass_encoding():
         b: SubDate
 
     m = Model(a=datetime.datetime(2032, 1, 1, 1, 1), b=SubDate(2020, 2, 29, 12, 30))
-    assert m.dict() == {'a': datetime.datetime(2032, 1, 1, 1, 1), 'b': SubDate(2020, 2, 29, 12, 30)}
+    assert m.model_dump() == {'a': datetime.datetime(2032, 1, 1, 1, 1), 'b': SubDate(2020, 2, 29, 12, 30)}
     assert m.model_dump_json() == '{"a": "2032-01-01T01:01:00", "b": "2020-02-29T12:30:00"}'
 
 
@@ -130,7 +130,7 @@ def test_subclass_custom_encoding():
             }
 
     m = Model(a=SubDate(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
-    assert m.dict() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
+    assert m.model_dump() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
     assert m.model_dump_json() == '{"a": "Thu, 01 Jan 20 01:01:00", "b": "P4DT4H0M0.000000S"}'
 
 
@@ -289,7 +289,7 @@ def test_custom_decode_encode():
             json_dumps = custom_dumps
 
     m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
-    assert m.dict() == {'a': 1, 'b': 'foo'}
+    assert m.model_dump() == {'a': 1, 'b': 'foo'}
     assert m.model_dump_json() == '{\n  "a": 1,\n  "b": "foo"\n}'
 
 

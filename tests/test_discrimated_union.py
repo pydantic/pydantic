@@ -167,7 +167,7 @@ def test_discriminated_union_validation():
 
     m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
     assert isinstance(m.pet, Lizard)
-    assert m.dict() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
+    assert m.model_dump() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
 
     with pytest.raises(ValidationError) as exc_info:
         Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})

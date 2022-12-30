@@ -16,4 +16,4 @@ m = Model(
     td='P3DT12H30M5S',
 )
 
-print(m.dict())
+print(m.model_dump())

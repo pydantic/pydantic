@@ -267,7 +267,7 @@ def test_validate_multiple():
                 raise TypeError(f'{field.alias} is too short')
             return v + 'x'
 
-    assert Model(a='1234', b='5678').dict() == {'a': '1234x', 'b': '5678x'}
+    assert Model(a='1234', b='5678').model_dump() == {'a': '1234x', 'b': '5678x'}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='x', b='x')
@@ -417,7 +417,7 @@ def test_wildcard_validators():
             calls.append(('check_all', v, field.name))
             return v
 
-    assert Model(a='abc', b='123').dict() == dict(a='abc', b=123)
+    assert Model(a='abc', b='123').model_dump() == dict(a='abc', b=123)
     assert calls == [('check_a', 'abc', 'a'), ('check_all', 'abc', 'a'), ('check_all', 123, 'b')]
 
 
@@ -825,7 +825,7 @@ def test_root_validator():
                 raise ValueError('foobar2')
             return dict(values, c='changed')
 
-    assert Model(a='123', b='bar', c='baz').dict() == {'a': 123, 'b': 'changed', 'c': 'changed'}
+    assert Model(a='123', b='bar', c='baz').model_dump() == {'a': 123, 'b': 'changed', 'c': 'changed'}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon', c='snap dragon2')
@@ -869,7 +869,7 @@ def test_root_validator_pre():
                 raise ValueError('foobar')
             return {'a': 42, 'b': 'changed'}
 
-    assert Model(a='123', b='bar').dict() == {'a': 42, 'b': 'changedchanged'}
+    assert Model(a='123', b='bar').model_dump() == {'a': 42, 'b': 'changedchanged'}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon')
@@ -957,7 +957,7 @@ def test_root_validator_types():
         class Config:
             extra = Extra.allow
 
-    assert Model(b='bar', c='wobble').dict() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
+    assert Model(b='bar', c='wobble').model_dump() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
 
     assert root_val_values == (Model, {'a': 1, 'b': 'bar', 'c': 'wobble'})
 
@@ -984,7 +984,7 @@ def test_root_validator_inheritance():
 
     assert len(Child.__post_root_validators__) == 2
     assert len(Child.__pre_root_validators__) == 0
-    assert Child(a=123).dict() == {'extra2': 2, 'extra1': 1, 'a': 123}
+    assert Child(a=123).model_dump() == {'extra2': 2, 'extra1': 1, 'a': 123}
     assert calls == ["parent validator: {'a': 123}", "child validator: {'extra1': 1, 'a': 123}"]
 
 
@@ -1087,7 +1087,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
             example_root_validator = classmethod(example_root_validator)
         example_root_validator = root_validator(example_root_validator)
 
-    assert Model(a='123', b='bar').dict() == {'a': 123, 'b': 'changed'}
+    assert Model(a='123', b='bar').model_dump() == {'a': 123, 'b': 'changed'}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon')

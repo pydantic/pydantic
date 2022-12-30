@@ -26,4 +26,4 @@ t = Transaction(
     value=9876543210,
 )
 
-print(t.dict())
+print(t.model_dump())

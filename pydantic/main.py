@@ -192,7 +192,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         for name, value in state.get('__private_attribute_values__', {}).items():
             _object_setattr(self, name, value)
 
-    def dict(
+    def model_dump(
         self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
@@ -209,7 +209,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.model_dump(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
@@ -253,7 +253,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             exclude_unset = skip_defaults
         encoder = typing.cast(typing.Callable[[Any], Any], encoder or self.__json_encoder__)
 
-        # We don't directly call `self.dict()`, which does exactly this with `to_dict=True`
+        # We don't directly call `self.model_dump()`, which does exactly this with `to_dict=True`
         # because we want to be able to keep raw `BaseModel` instances and not as `dict`.
         # This allows users to write custom JSON encoders for given `BaseModel` classes.
         data = dict(
@@ -394,7 +394,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(
+                return v.model_dump(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
@@ -571,9 +571,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):
-            return self.dict() == other.dict()
+            return self.model_dump() == other.model_dump()
         else:
-            return self.dict() == other
+            return self.model_dump() == other
 
     def __repr_args__(self) -> _repr.ReprArgs:
         return [

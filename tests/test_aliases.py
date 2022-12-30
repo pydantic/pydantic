@@ -24,7 +24,7 @@ def test_alias_generator():
     v = MyModel(**data)
     assert v.a == ['foo', 'bar']
     assert v.foo_bar == 'foobar'
-    assert v.dict(by_alias=True) == data
+    assert v.model_dump(by_alias=True) == data
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -44,7 +44,7 @@ def test_alias_generator_with_field_schema():
 
     data = {'MY_FIELD': ['a'], 'FOO': 'bar', 'BAZ_BAR': 'ok', 'ANOTHER_FIELD': '...'}
     m = MyModel(**data)
-    assert m.dict(by_alias=True) == data
+    assert m.model_dump(by_alias=True) == data
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -162,8 +162,8 @@ def test_pop_by_field_name():
             allow_population_by_field_name = True
             fields = {'last_updated_by': 'lastUpdatedBy'}
 
-    assert Model(lastUpdatedBy='foo').dict() == {'last_updated_by': 'foo'}
-    assert Model(last_updated_by='foo').dict() == {'last_updated_by': 'foo'}
+    assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
+    assert Model(last_updated_by='foo').model_dump() == {'last_updated_by': 'foo'}
     with pytest.raises(ValidationError) as exc_info:
         Model(lastUpdatedBy='foo', last_updated_by='bar')
     assert exc_info.value.errors() == [
@@ -363,7 +363,7 @@ def test_empty_string_alias():
     data = {'': 123}
     m = Model(**data)
     assert m.empty_string_key == 123
-    assert m.dict(by_alias=True) == data
+    assert m.model_dump(by_alias=True) == data
 
 
 @pytest.mark.parametrize(

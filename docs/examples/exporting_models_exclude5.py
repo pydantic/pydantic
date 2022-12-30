@@ -23,4 +23,4 @@ t = Transaction(
     value=9876543210,
 )
 
-print(t.dict(include={'id': True, 'user': {'id'}}))
+print(t.model_dump(include={'id': True, 'user': {'id'}}))

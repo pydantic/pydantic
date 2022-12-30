@@ -79,7 +79,7 @@ def test_inheritance():
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
     assert model.__fields__.keys() == {'foo', 'bar', 'x', 'y'}
     m = model(foo='a', x=4)
-    assert m.dict() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
+    assert m.model_dump() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -157,14 +157,14 @@ def test_inheritance_validators_all():
             return v * 2
 
     model = create_model('FooModel', a=(int, ...), b=(int, ...), __base__=BarModel)
-    assert model(a=2, b=6).dict() == {'a': 4, 'b': 12}
+    assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
-    assert m.dict() == {'this-is-funky': 123}
+    assert m.model_dump() == {'this-is-funky': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors() == [

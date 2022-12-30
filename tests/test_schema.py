@@ -215,7 +215,7 @@ def test_schema_class():
         Model()
 
     m = Model(bar=123)
-    assert m.dict() == {'foo': 4, 'bar': '123'}
+    assert m.model_dump() == {'foo': 4, 'bar': '123'}
 
     assert Model.schema() == {
         'type': 'object',
@@ -1812,8 +1812,8 @@ def test_optional_dict():
         'properties': {'something': {'title': 'Something', 'type': 'object'}},
     }
 
-    assert Model().dict() == {'something': None}
-    assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
+    assert Model().model_dump() == {'something': None}
+    assert Model(something={'foo': 'Bar'}).model_dump() == {'something': {'foo': 'Bar'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1832,9 +1832,9 @@ def test_optional_validator():
         'properties': {'something': {'title': 'Something', 'type': 'string'}},
     }
 
-    assert Model().dict() == {'something': None}
-    assert Model(something=None).dict() == {'something': None}
-    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert Model().model_dump() == {'something': None}
+    assert Model(something=None).model_dump() == {'something': None}
+    assert Model(something='hello').model_dump() == {'something': 'hello'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -2219,7 +2219,7 @@ def test_real_vs_phony_constraints():
     with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
         Model1(foo=122)
 
-    assert Model2(foo=122).dict() == {'foo': 122}
+    assert Model2(foo=122).model_dump() == {'foo': 122}
 
     assert (
         Model1.schema()

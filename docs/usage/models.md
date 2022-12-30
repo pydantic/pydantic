@@ -54,9 +54,9 @@ assert user.__fields_set__ == {'id'}
 ```
 The fields which were supplied when user was initialised.
 ```py
-assert user.dict() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
+assert user.model_dump() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
 ```
-Either `.dict()` or `dict(user)` will provide a dict of fields, but `.dict()` can take numerous other arguments.
+Either `.model_dump()` or `dict(user)` will provide a dict of fields, but `.model_dump()` can take numerous other arguments.
 ```py
 user.id = 321
 assert user.id == 321
@@ -68,12 +68,12 @@ This model is mutable so field values can be changed.
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-`dict()`
+`model_dump()`
 : returns a dictionary of the model's fields and values;
   cf. [exporting models](exporting_models.md#modeldict)
 
 `model_dump_json()`
-: returns a JSON string representation `dict()`;
+: returns a JSON string representation `model_dump()`;
   cf. [exporting models](exporting_models.md#modeljson)
 
 `copy()`
@@ -414,7 +414,7 @@ Field order is important in models for the following reasons:
   can access the values of earlier fields, but not later ones
 * field order is preserved in the model [schema](schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.dict()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
 
 As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.

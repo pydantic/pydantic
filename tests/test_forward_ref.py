@@ -19,7 +19,7 @@ class Model(BaseModel):
 """
     )
     m = module.Model(a='123')
-    assert m.dict() == {'a': 123}
+    assert m.model_dump() == {'a': 123}
 
 
 def test_postponed_annotations_auto_model_rebuild(create_module):
@@ -98,8 +98,8 @@ def test_basic_forward_ref(create_module):
         class Bar(BaseModel):
             b: Optional[FooRef] = None
 
-    assert module.Bar().dict() == {'b': None}
-    assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
+    assert module.Bar().model_dump() == {'b': None}
+    assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
 
 
 def test_self_forward_ref_module(create_module):
@@ -115,8 +115,8 @@ def test_self_forward_ref_module(create_module):
             a: int = 123
             b: FooRef = None
 
-    assert module.Foo().dict() == {'a': 123, 'b': None}
-    assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+    assert module.Foo().model_dump() == {'a': 123, 'b': None}
+    assert module.Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 def test_self_forward_ref_collection(create_module):
@@ -132,8 +132,8 @@ def test_self_forward_ref_collection(create_module):
             c: 'List[Foo]' = []
             d: 'Dict[str, Foo]' = {}
 
-    assert module.Foo().dict() == {'a': 123, 'b': None, 'c': [], 'd': {}}
-    assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).dict() == {
+    assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
+    assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).model_dump() == {
         'a': 123,
         'b': {'a': 321, 'b': None, 'c': [], 'd': {}},
         'c': [{'a': 234, 'b': None, 'c': [], 'd': {}}],
@@ -176,8 +176,8 @@ def test_self_forward_ref_local(create_module):
             return Foo
 
     Foo = module.main()
-    assert Foo().dict() == {'a': 123, 'b': None}
-    assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+    assert Foo().model_dump() == {'a': 123, 'b': None}
+    assert Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 @pytest.mark.xfail(reason='TODO dataclasses')
@@ -493,7 +493,7 @@ def test_forward_ref_with_create_model(create_module):
         assert Sub  # get rid of "local variable 'Sub' is assigned to but never used"
         Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
         instance = Main(sub={})
-        assert instance.sub.dict() == {'foo': 'bar'}
+        assert instance.sub.model_dump() == {'foo': 'bar'}
 
 
 @pytest.mark.xfail(reason='TODO dataclasses')
@@ -526,7 +526,7 @@ def test_nested_forward_ref():
         x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
 
     obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
-    assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
+    assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
 @pytest.mark.xfail(reason='TODO discriminator')
@@ -703,8 +703,8 @@ def test_pep585_recursive_generics(create_module):
     assert repr(module.Hero.__fields__['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
     h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
-    # insert_assert(h.dict())
-    assert h.dict() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
+    # insert_assert(h.model_dump())
+    assert h.model_dump() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
@@ -737,7 +737,7 @@ class Foobar(BaseModel):
 """
     )
     f = module.Foobar(x=1, y={'x': 2})
-    assert f.dict() == {'x': 1, 'y': {'x': 2, 'y': None}}
+    assert f.model_dump() == {'x': 1, 'y': {'x': 2, 'y': None}}
     assert f.__fields_set__ == {'x', 'y'}
     assert f.y.__fields_set__ == {'x'}
 
@@ -771,7 +771,7 @@ def nested():
 
     bar_model = module.nested()
     assert bar_model.__pydantic_model_complete__ is True
-    assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}
+    assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
 def test_nested_more_annotation(create_module):
@@ -816,7 +816,7 @@ def test_nested_annotation_priority(create_module):
 
     bar_model = module.nested()
     assert bar_model.__fields__['b'].metadata[0].gt == 10
-    assert bar_model(b=11).dict() == {'b': 11}
+    assert bar_model(b=11).model_dump() == {'b': 11}
     with pytest.raises(ValidationError, match=r'Input should be greater than 10 \[type=greater_than,'):
         bar_model(b=1)
 
@@ -839,4 +839,4 @@ def test_nested_model_rebuild(create_module):
 
     bar_model = module.nested()
     assert bar_model.__pydantic_model_complete__ is True
-    assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}
+    assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
