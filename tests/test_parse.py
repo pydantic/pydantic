@@ -13,41 +13,41 @@ class Model(BaseModel):
 
 
 def test_obj():
-    m = Model.parse_obj(dict(a=10.2))
+    m = Model.model_validate(dict(a=10.2))
     assert str(m) == 'a=10.2 b=10'
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_parse_obj_fails():
+def test_model_validate_fails():
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj([1, 2, 3])
+        Model.model_validate([1, 2, 3])
     assert exc_info.value.errors() == [
         {'loc': ('__root__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
     ]
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_parse_obj_submodel():
-    m = Model.parse_obj(Model(a=10.2))
+def test_model_validate_submodel():
+    m = Model.model_validate(Model(a=10.2))
     assert m.model_dump() == {'a': 10.2, 'b': 10}
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_parse_obj_wrong_model():
+def test_model_validate_wrong_model():
     class Foo(BaseModel):
         c = 123
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj(Foo())
+        Model.model_validate(Foo())
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_parse_obj_root():
+def test_model_validate_root():
     class MyModel(BaseModel):
         __root__: str
 
-    m = MyModel.parse_obj('a')
+    m = MyModel.model_validate('a')
     assert m.model_dump() == {'__root__': 'a'}
     assert m.__root__ == 'a'
 
@@ -57,7 +57,7 @@ def test_parse_root_list():
     class MyModel(BaseModel):
         __root__: List[str]
 
-    m = MyModel.parse_obj(['a'])
+    m = MyModel.model_validate(['a'])
     assert m.model_dump() == {'__root__': ['a']}
     assert m.__root__ == ['a']
 
@@ -73,7 +73,7 @@ def test_parse_nested_root_list():
     class MyModel(BaseModel):
         nested: NestedModel
 
-    m = MyModel.parse_obj({'nested': [{'id': 'foo'}]})
+    m = MyModel.model_validate({'nested': [{'id': 'foo'}]})
     assert isinstance(m.nested, NestedModel)
     assert isinstance(m.nested.__root__[0], NestedData)
 
@@ -90,7 +90,7 @@ def test_parse_nested_root_tuple():
         nested: List[NestedModel]
 
     data = [0, {'id': 'foo'}]
-    m = MyModel.parse_obj({'nested': [data]})
+    m = MyModel.model_validate({'nested': [data]})
     assert isinstance(m.nested[0], NestedModel)
     assert isinstance(m.nested[0].__root__[1], NestedData)
 
@@ -107,7 +107,7 @@ def test_parse_nested_custom_root():
         __root__: NestedModel
 
     nested = ['foo', 'bar']
-    m = MyModel.parse_obj(nested)
+    m = MyModel.model_validate(nested)
     assert isinstance(m, MyModel)
     assert isinstance(m.__root__, NestedModel)
     assert isinstance(m.__root__.__root__, List)
@@ -206,5 +206,5 @@ def test_const_differentiates_union():
     class Model(BaseModel):
         a: Union[SubModelA, SubModelB]
 
-    m = Model.parse_obj({'a': {'key': 'B', 'foo': 3}})
+    m = Model.model_validate({'a': {'key': 'B', 'foo': 3}})
     assert isinstance(m.a, SubModelB)

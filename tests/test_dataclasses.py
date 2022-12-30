@@ -791,7 +791,7 @@ def test_override_builtin_dataclass_nested():
         {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-    foo = Foo.parse_obj(
+    foo = Foo.model_validate(
         {
             'file': {
                 'filename': b'thefilename',
@@ -1131,7 +1131,7 @@ def test_issue_2541():
     class Example(BaseModel):
         item: Item
 
-    e = Example.parse_obj({'item': {'name': 123, 'infos': {'id': '1'}}})
+    e = Example.model_validate({'item': {'name': 123, 'infos': {'id': '1'}}})
     assert e.item.name == '123'
     assert e.item.infos.id == 1
     with pytest.raises(dataclasses.FrozenInstanceError):

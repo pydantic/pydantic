@@ -270,7 +270,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: type[Model], obj: Any) -> Model:
+    def model_validate(cls: type[Model], obj: Any) -> Model:
         values, fields_set = cls.__pydantic_validator__.validate_python(obj)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', values)
@@ -282,7 +282,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     def from_orm(cls: type[Model], obj: Any) -> Model:
         # TODO remove
-        return cls.parse_obj(obj)
+        return cls.model_validate(obj)
 
     @classmethod
     def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:

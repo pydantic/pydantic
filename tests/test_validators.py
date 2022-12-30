@@ -1184,12 +1184,12 @@ def test_literal_validator_str_enum():
         barfiz: Literal[Bar.FIZ]
         fizfuz: Literal[Bar.FIZ, Bar.FUZ]
 
-    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fiz'})
+    my_foo = Foo.model_validate({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fiz'})
     assert my_foo.bar is Bar.FIZ
     assert my_foo.barfiz is Bar.FIZ
     assert my_foo.fizfuz is Bar.FIZ
 
-    my_foo = Foo.parse_obj({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fuz'})
+    my_foo = Foo.model_validate({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fuz'})
     assert my_foo.bar is Bar.FIZ
     assert my_foo.barfiz is Bar.FIZ
     assert my_foo.fizfuz is Bar.FUZ

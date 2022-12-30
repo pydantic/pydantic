@@ -1117,7 +1117,7 @@ def test_generic_recursive_models(create_module):
 
     Model1 = module.Model1
     Model2 = module.Model2
-    result = Model1[str].parse_obj(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
     assert result == Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
 
 
@@ -1135,7 +1135,7 @@ def test_generic_enum():
     class MyModel(BaseModel):
         my_gen: SomeGenericModel[SomeStringEnum]
 
-    m = MyModel.parse_obj({'my_gen': {'some_field': 'A'}})
+    m = MyModel.model_validate({'my_gen': {'some_field': 'A'}})
     assert m.my_gen.some_field is SomeStringEnum.A
 
 

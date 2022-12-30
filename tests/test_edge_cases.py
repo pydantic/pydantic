@@ -1228,7 +1228,7 @@ def test_self():
     class Model(BaseModel):
         self: str
 
-    m = Model.parse_obj(dict(self='some value'))
+    m = Model.model_validate(dict(self='some value'))
     assert m.model_dump() == {'self': 'some value'}
     assert m.self == 'some value'
     assert m.model_json_schema() == {
@@ -1246,7 +1246,7 @@ def test_self_recursive():
     class Model(BaseModel):
         sm: SubModel
 
-    m = Model.parse_obj({'sm': {'self': '123'}})
+    m = Model.model_validate({'sm': {'self': '123'}})
     assert m.model_dump() == {'sm': {'self': 123}}
 
 
@@ -1264,7 +1264,7 @@ def test_nested_init():
         self: str
         nest: NestedModel
 
-    m = TopModel.parse_obj(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
+    m = TopModel.model_validate(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
     assert m.nest.modified_number == 1

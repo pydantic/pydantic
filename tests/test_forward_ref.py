@@ -525,7 +525,7 @@ def test_nested_forward_ref():
     class NestedTuple(BaseModel):
         x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
 
-    obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
+    obj = NestedTuple.model_validate({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
@@ -549,12 +549,12 @@ def test_discriminated_union_forward_ref(create_module):
             type: Literal['dog']
 
     with pytest.raises(PydanticUserError, match='`Pet` is not fully defined, you should define `Cat`'):
-        module.Pet.parse_obj({'type': 'pika'})
+        module.Pet.model_validate({'type': 'pika'})
 
     module.Pet.model_rebuild()
 
     with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
-        module.Pet.parse_obj({'type': 'pika'})
+        module.Pet.model_validate({'type': 'pika'})
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',

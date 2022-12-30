@@ -1474,7 +1474,7 @@ def test_default_factory_parse():
         inner_2: Inner = Field(Inner())
 
     default = Outer().model_dump()
-    parsed = Outer.parse_obj(default)
+    parsed = Outer.model_validate(default)
     assert parsed.model_dump() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
@@ -1489,9 +1489,9 @@ def test_reuse_same_field():
         required: str = required_field
 
     with pytest.raises(ValidationError):
-        Model1.parse_obj({})
+        Model1.model_validate({})
     with pytest.raises(ValidationError):
-        Model2.parse_obj({})
+        Model2.model_validate({})
 
 
 def test_base_config_type_hinting():

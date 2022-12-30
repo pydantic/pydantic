@@ -226,7 +226,7 @@ def test_typeddict_postponed_annotation(TypedDict):
         t: DataTD
 
     with pytest.raises(ValidationError):
-        Model.parse_obj({'t': {'v': -1}})
+        Model.model_validate({'t': {'v': -1}})
 
 
 @pytest.mark.skip(reason='TODO JsonSchema')

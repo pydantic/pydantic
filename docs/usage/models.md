@@ -79,7 +79,7 @@ Models possess the following methods and attributes:
 `copy()`
 : returns a copy (by default, shallow copy) of the model; cf. [exporting models](exporting_models.md#modelcopy)
 
-`parse_obj()`
+`model_validate()`
 : a utility for loading any object into a model with error handling if the object is not a dictionary;
   cf. [helper functions](#helper-functions)
 
@@ -228,9 +228,9 @@ You can also define your own error classes, which can specify a custom error cod
 
 *Pydantic* provides three `classmethod` helper functions on models for parsing data:
 
-* **`parse_obj`**: this is very similar to the `__init__` method of the model, except it takes a dict
+* **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict
   rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
-* **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `parse_obj`.
+* **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
   Parsing *pickle* data is also supported by setting the `content_type` argument appropriately.
 * **`parse_file`**: this takes in a file path, reads the file and passes the contents to `parse_raw`. If `content_type` is omitted,
   it is inferred from the file's extension.
@@ -360,11 +360,11 @@ Pydantic models can be defined with a custom root type by declaring the `__root_
 
 The root type can be any type supported by pydantic, and is specified by the type hint on the `__root__` field.
 The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
-the first and only argument to `parse_obj`.
+the first and only argument to `model_validate`.
 
 {!.tmp_examples/models_custom_root_field.md!}
 
-If you call the `parse_obj` method for a model with a custom root type with a *dict* as the first argument,
+If you call the `model_validate` method for a model with a custom root type with a *dict* as the first argument,
 the following logic is used:
 
 * If the custom root type is a mapping type (eg., `Dict` or `Mapping`),
@@ -378,7 +378,7 @@ This is demonstrated in the following example:
 {!.tmp_examples/models_custom_root_field_parse_obj.md!}
 
 !!! warning
-    Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
+    Calling the `model_validate` method on a dict with the single key `"__root__"` for non-mapping custom root types
     is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
 
 If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
@@ -500,7 +500,7 @@ Upon class creation pydantic constructs `__slots__` filled with private attribut
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
 logic used to populate pydantic models in a more ad-hoc way. This function behaves similarly to
-`BaseModel.parse_obj`, but works with arbitrary pydantic-compatible types.
+`BaseModel.model_validate`, but works with arbitrary pydantic-compatible types.
 
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
 For example:
