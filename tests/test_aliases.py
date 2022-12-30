@@ -72,7 +72,7 @@ def test_infer_alias():
             fields = {'a': '_a'}
 
     assert Model(_a='different').a == 'different'
-    assert repr(Model.__fields__['a']) == (
+    assert repr(Model.model_fields['a']) == (
         "ModelField(name='a', type=str, required=False, default='foobar', alias='_a')"
     )
 
@@ -104,8 +104,8 @@ def test_annotation_config():
         class Config:
             fields = {'b': 'foobar'}
 
-    assert list(Model.__fields__.keys()) == ['b', 'a']
-    assert [f.alias for f in Model.__fields__.values()] == ['foobar', 'a']
+    assert list(Model.model_fields.keys()) == ['b', 'a']
+    assert [f.alias for f in Model.model_fields.values()] == ['foobar', 'a']
     assert Model(foobar='123').b == 123.0
 
 
@@ -185,8 +185,8 @@ def test_alias_child_precedence():
         class Config:
             fields = {'y': 'y2', 'x': 'x2'}
 
-    assert Child.__fields__['y'].alias == 'y2'
-    assert Child.__fields__['x'].alias == 'x2'
+    assert Child.model_fields['y'].alias == 'y2'
+    assert Child.model_fields['x'].alias == 'x2'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -209,8 +209,8 @@ def test_alias_generator_parent():
             def alias_generator(cls, f_name):
                 return f_name + '2'
 
-    assert Child.__fields__['y'].alias == 'y2'
-    assert Child.__fields__['x'].alias == 'x2'
+    assert Child.model_fields['y'].alias == 'y2'
+    assert Child.model_fields['x'].alias == 'x2'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -228,11 +228,11 @@ def test_alias_generator_on_parent():
         y: str
         z: str
 
-    assert Parent.__fields__['x'].alias == 'a_b_c'
-    assert Parent.__fields__['y'].alias == 'Y'
-    assert Child.__fields__['x'].alias == 'a_b_c'
-    assert Child.__fields__['y'].alias == 'Y'
-    assert Child.__fields__['z'].alias == 'Z'
+    assert Parent.model_fields['x'].alias == 'a_b_c'
+    assert Parent.model_fields['y'].alias == 'Y'
+    assert Child.model_fields['x'].alias == 'a_b_c'
+    assert Child.model_fields['y'].alias == 'Y'
+    assert Child.model_fields['z'].alias == 'Z'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -250,8 +250,8 @@ def test_alias_generator_on_child():
             def alias_generator(x):
                 return x.upper()
 
-    assert [f.alias for f in Parent.__fields__.values()] == ['abc', 'y']
-    assert [f.alias for f in Child.__fields__.values()] == ['abc', 'Y', 'Z']
+    assert [f.alias for f in Parent.model_fields.values()] == ['abc', 'y']
+    assert [f.alias for f in Child.model_fields.values()] == ['abc', 'Y', 'Z']
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -269,8 +269,8 @@ def test_low_priority_alias():
             def alias_generator(x):
                 return x.upper()
 
-    assert [f.alias for f in Parent.__fields__.values()] == ['abc', 'y']
-    assert [f.alias for f in Child.__fields__.values()] == ['X', 'Y', 'Z']
+    assert [f.alias for f in Parent.model_fields.values()] == ['abc', 'y']
+    assert [f.alias for f in Child.model_fields.values()] == ['X', 'Y', 'Z']
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -291,8 +291,8 @@ def test_low_priority_alias_config():
             def alias_generator(x):
                 return x.upper()
 
-    assert [f.alias for f in Parent.__fields__.values()] == ['abc', 'y']
-    assert [f.alias for f in Child.__fields__.values()] == ['X', 'Y', 'Z']
+    assert [f.alias for f in Parent.model_fields.values()] == ['abc', 'y']
+    assert [f.alias for f in Child.model_fields.values()] == ['X', 'Y', 'Z']
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -305,7 +305,7 @@ def test_field_vs_config():
         class Config:
             fields = {'x': dict(alias='x_on_config'), 'y': dict(alias='y_on_config')}
 
-    assert [f.alias for f in Model.__fields__.values()] == ['x_on_field', 'y_on_config', 'z']
+    assert [f.alias for f in Model.model_fields.values()] == ['x_on_field', 'y_on_config', 'z']
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -338,15 +338,15 @@ def test_alias_priority():
             def alias_generator(x):
                 return f'{x}_generator_child'
 
-    # debug([f.alias for f in Parent.__fields__.values()], [f.alias for f in Child.__fields__.values()])
-    assert [f.alias for f in Parent.__fields__.values()] == [
+    # debug([f.alias for f in Parent.model_fields.values()], [f.alias for f in Child.model_fields.values()])
+    assert [f.alias for f in Parent.model_fields.values()] == [
         'a_field_parent',
         'b_field_parent',
         'c_field_parent',
         'd_config_parent',
         'e_generator_parent',
     ]
-    assert [f.alias for f in Child.__fields__.values()] == [
+    assert [f.alias for f in Child.model_fields.values()] == [
         'a_field_child',
         'b_config_child',
         'c_field_parent',

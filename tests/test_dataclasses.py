@@ -443,7 +443,7 @@ def test_fields():
         signup_ts: datetime = None
 
     user = User(id=123)
-    fields = user.__pydantic_model__.__fields__
+    fields = user.__pydantic_model__.model_fields
 
     assert fields['id'].required is True
     assert fields['id'].default is None
@@ -463,7 +463,7 @@ def test_default_factory_field():
         aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
-    fields = user.__pydantic_model__.__fields__
+    fields = user.__pydantic_model__.model_fields
 
     assert fields['id'].required is True
     assert fields['id'].default is None
@@ -1428,7 +1428,7 @@ def test_self_reference_dataclass():
     class MyDataclass:
         self_reference: 'MyDataclass'  # noqa: F821
 
-    assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
+    assert MyDataclass.__pydantic_model__.model_fields['self_reference'].type_ is MyDataclass
 
 
 @pytest.mark.xfail(reason='working on V2')

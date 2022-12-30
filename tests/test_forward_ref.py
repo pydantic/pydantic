@@ -33,7 +33,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.__fields__['a'].annotation.__name__ == 'SelfType'
+    assert module.Model.model_fields['a'].annotation.__name__ == 'SelfType'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
@@ -49,14 +49,14 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     assert module.Foo.__pydantic_model_complete__ is False
     assert module.Bar.__pydantic_model_complete__ is True
-    assert repr(module.Bar.__fields__['b']) == 'FieldInfo(annotation=Foo, required=True)'
+    assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
     # Bar should be complet and ready to use
     b = module.Bar(b={'a': {'b': {}}})
     assert b == {'b': {'a': {'b': {'a': None}}}}
 
     # __field__ is complete on Foo
-    assert repr(module.Foo.__fields__['a']).startswith(
+    assert repr(module.Foo.model_fields['a']).startswith(
         'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_validation_schema__'
     )
     # but Foo is not ready to use
@@ -80,7 +80,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             foo: 'Foo'
             bar: 'Bar'  # noqa: F821
 
-    assert hasattr(module.Foo, '__fields__') is False
+    assert hasattr(module.Foo, 'model_fields') is False
 
 
 def test_basic_forward_ref(create_module):
@@ -147,14 +147,14 @@ def test_self_forward_ref_collection(create_module):
         {'type': 'dict_type', 'loc': ('c', 0, 'b'), 'msg': 'Input should be a valid dictionary', 'input': 234}
     ]
 
-    assert repr(module.Foo.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.__fields__['b']) == IsStr(
+    assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
+    assert repr(module.Foo.model_fields['b']) == IsStr(
         regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo\'\}\}\)\]\)'
     )
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.__fields__['c']) == IsStr(regex=r'FieldInfo\(annotation=List\[Annotated\[SelfType.+')
-    assert repr(module.Foo.__fields__['d']) == IsStr(
+    assert repr(module.Foo.model_fields['c']) == IsStr(regex=r'FieldInfo\(annotation=List\[Annotated\[SelfType.+')
+    assert repr(module.Foo.model_fields['d']) == IsStr(
         regex=r'FieldInfo\(annotation=Dict\[str, Annotated\[SelfType, SchemaRef.*'
     )
 
@@ -671,7 +671,7 @@ class SelfReferencing(BaseModel):
 
     SelfReferencing = module.SelfReferencing
     if sys.version_info >= (3, 10):
-        assert repr(SelfReferencing.__fields__['names']) == IsStr(
+        assert repr(SelfReferencing.model_fields['names']) == IsStr(
             regex=r'FieldInfo\(annotation=list\[Annotated\[SelfType, SchemaRef.+, required=True\)'
         )
     # test that object creation works
@@ -699,8 +699,8 @@ def test_pep585_recursive_generics(create_module):
 
         Team.model_rebuild()
 
-    assert repr(module.Team.__fields__['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
-    assert repr(module.Hero.__fields__['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
+    assert repr(module.Team.model_fields['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
+    assert repr(module.Hero.model_fields['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
     h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
     # insert_assert(h.model_dump())
@@ -815,7 +815,7 @@ def test_nested_annotation_priority(create_module):
             return Bar
 
     bar_model = module.nested()
-    assert bar_model.__fields__['b'].metadata[0].gt == 10
+    assert bar_model.model_fields['b'].metadata[0].gt == 10
     assert bar_model(b=11).model_dump() == {'b': 11}
     with pytest.raises(ValidationError, match=r'Input should be greater than 10 \[type=greater_than,'):
         bar_model(b=1)

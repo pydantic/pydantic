@@ -80,7 +80,7 @@ def test_annotated(hint_fn, value, expected_repr):
         class M(BaseModel):
             x: hint = value
 
-    assert repr(M.__fields__['x']) == expected_repr
+    assert repr(M.model_fields['x']) == expected_repr
 
 
 @pytest.mark.parametrize(
@@ -179,7 +179,7 @@ def test_annotated_alias() -> None:
         d: IntAlias
         e: Nested
 
-    fields_repr = {k: repr(v) for k, v in MyModel.__fields__.items()}
+    fields_repr = {k: repr(v) for k, v in MyModel.model_fields.items()}
     assert fields_repr == {
         'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[MaxLen(max_length=3)])",
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',

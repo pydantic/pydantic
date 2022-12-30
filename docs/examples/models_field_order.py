@@ -9,7 +9,7 @@ class Model(BaseModel):
     e: float
 
 
-print(Model.__fields__.keys())
+print(Model.model_fields.keys())
 m = Model(e=2, a=1)
 print(m.model_dump())
 try:

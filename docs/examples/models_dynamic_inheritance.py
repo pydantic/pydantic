@@ -13,4 +13,4 @@ BarModel = create_model(
     __base__=FooModel,
 )
 print(BarModel)
-print(BarModel.__fields__.keys())
+print(BarModel.model_fields.keys())

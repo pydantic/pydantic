@@ -160,7 +160,7 @@ def test_classvar():
     assert Result.other == 1
     assert Result[int].other == 1
     assert Result[int](data=1).other == 1
-    assert 'other' not in Result.__fields__
+    assert 'other' not in Result.model_fields
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -171,8 +171,8 @@ def test_non_annotated_field():
         data: T
         other = True
 
-    assert 'other' in Result.__fields__
-    assert 'other' in Result[int].__fields__
+    assert 'other' in Result.model_fields
+    assert 'other' in Result[int].model_fields
 
     result = Result[int](data=1)
     assert result.other is True
@@ -988,8 +988,8 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
 
-    assert InnerModel[int].__fields__['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
-    assert (InnerModel[int].__fields__['a'].sub_fields[0].sub_fields[0].outer_type_.__fields__['a'].outer_type_) == int
+    assert InnerModel[int].model_fields['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
+    assert (InnerModel[int].model_fields['a'].sub_fields[0].sub_fields[0].outer_type_.model_fields['a'].outer_type_) == int
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1004,8 +1004,8 @@ def test_deep_generic_with_multiple_typevars():
         extra: U
 
     ConcreteInnerModel = InnerModel[int, float]
-    assert ConcreteInnerModel.__fields__['data'].outer_type_ == List[float]
-    assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
+    assert ConcreteInnerModel.model_fields['data'].outer_type_ == List[float]
+    assert ConcreteInnerModel.model_fields['extra'].outer_type_ == int
 
     assert ConcreteInnerModel(data=['1'], extra='2').model_dump() == {'data': [1.0], 'extra': 2}
 
@@ -1027,9 +1027,9 @@ def test_deep_generic_with_multiple_inheritance():
 
     ConcreteInnerModel = InnerModel[int, float, str]
 
-    assert ConcreteInnerModel.__fields__['data'].outer_type_ == Dict[int, float]
-    assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == List[str]
-    assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
+    assert ConcreteInnerModel.model_fields['data'].outer_type_ == Dict[int, float]
+    assert ConcreteInnerModel.model_fields['stuff'].outer_type_ == List[str]
+    assert ConcreteInnerModel.model_fields['extra'].outer_type_ == int
 
     ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).model_dump() == {
         'data': {1: 5},

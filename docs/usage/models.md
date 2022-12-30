@@ -105,7 +105,7 @@ Models possess the following methods and attributes:
 `__fields_set__`
 : Set of names of fields which were set when the model instance was initialised
 
-`__fields__`
+`model_fields`
 : a dictionary of the model's fields
 
 `__config__`

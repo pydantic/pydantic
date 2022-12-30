@@ -18,7 +18,7 @@ def test_str_bytes():
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.__fields__['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
+    assert repr(m.model_fields['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
 
     m = Model(v=b'b')
     assert m.v == 'b'
@@ -431,12 +431,12 @@ def test_recursive_lists():
         v: List[List[Union[int, float]]] = ...
 
     assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
-    assert Model.__fields__['v'].sub_fields[0].name == '_v'
-    assert len(Model.__fields__['v'].sub_fields) == 1
-    assert Model.__fields__['v'].sub_fields[0].sub_fields[0].name == '__v'
-    assert len(Model.__fields__['v'].sub_fields[0].sub_fields) == 1
-    assert Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields[1].name == '__v_float'
-    assert len(Model.__fields__['v'].sub_fields[0].sub_fields[0].sub_fields) == 2
+    assert Model.model_fields['v'].sub_fields[0].name == '_v'
+    assert len(Model.model_fields['v'].sub_fields) == 1
+    assert Model.model_fields['v'].sub_fields[0].sub_fields[0].name == '__v'
+    assert len(Model.model_fields['v'].sub_fields[0].sub_fields) == 1
+    assert Model.model_fields['v'].sub_fields[0].sub_fields[0].sub_fields[1].name == '__v_float'
+    assert len(Model.model_fields['v'].sub_fields[0].sub_fields[0].sub_fields) == 2
 
 
 class StrEnum(str, Enum):
@@ -905,8 +905,8 @@ def test_inheritance_subclass_default():
         x = MyStr('test')
         y: MyStr = MyStr('test')  # force subtype
 
-    assert Sub.__fields__['x'].type_ == str
-    assert Sub.__fields__['y'].type_ == MyStr
+    assert Sub.model_fields['x'].type_ == str
+    assert Sub.model_fields['y'].type_ == MyStr
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1009,13 +1009,13 @@ def test_annotation_inheritance():
         assert B.__annotations__['integer'] == int
     else:
         assert B.__annotations__ == {}
-    assert B.__fields__['integer'].type_ == int
+    assert B.model_fields['integer'].type_ == int
 
     class C(A):
         integer: str = 'G'
 
     assert C.__annotations__['integer'] == str
-    assert C.__fields__['integer'].type_ == str
+    assert C.model_fields['integer'].type_ == str
 
     with pytest.raises(TypeError) as exc_info:
 
@@ -1298,7 +1298,7 @@ def test_type_on_annotation():
         h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
         i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
-    assert Model.__fields__.keys() == {'b', 'c', 'e', 'f', 'g', 'h', 'i'}
+    assert Model.model_fields.keys() == {'b', 'c', 'e', 'f', 'g', 'h', 'i'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1338,8 +1338,8 @@ def test_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
 
-    assert Model.__fields__['a'].sub_fields is None
-    assert Model.__fields__['a'].allow_none is True
+    assert Model.model_fields['a'].sub_fields is None
+    assert Model.model_fields['a'].allow_none is True
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1361,9 +1361,9 @@ def test_not_optional_subfields():
         def check_a(cls, v):
             return v
 
-    assert Model.__fields__['a'].sub_fields is None
-    # assert Model.__fields__['a'].required is True
-    assert Model.__fields__['a'].allow_none is True
+    assert Model.model_fields['a'].sub_fields is None
+    # assert Model.model_fields['a'].required is True
+    assert Model.model_fields['a'].allow_none is True
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1398,8 +1398,8 @@ def test_field_str_shape():
     class Model(BaseModel):
         a: List[int]
 
-    assert repr(Model.__fields__['a']) == "ModelField(name='a', type=List[int], required=True)"
-    assert str(Model.__fields__['a']) == "name='a' type=List[int] required=True"
+    assert repr(Model.model_fields['a']) == "ModelField(name='a', type=List[int], required=True)"
+    assert str(Model.model_fields['a']) == "name='a' type=List[int] required=True"
 
 
 T1 = TypeVar('T1')
@@ -1443,7 +1443,7 @@ def test_field_type_display(type_, expected):
     class Model(BaseModel):
         a: type_
 
-    assert Model.__fields__['a']._type_display() == expected
+    assert Model.model_fields['a']._type_display() == expected
 
 
 def test_any_none():
@@ -1544,8 +1544,8 @@ def test_modify_fields():
     class Bar(Foo):
         pass
 
-    assert repr(Foo.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
-    assert repr(Bar.__fields__['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Foo.model_fields['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Bar.model_fields['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
 
@@ -1991,7 +1991,7 @@ def test_config_field_info_allow_mutation():
         class Config:
             validate_assignment = True
 
-    assert Foo.__fields__['a'].field_info.allow_mutation is True
+    assert Foo.model_fields['a'].field_info.allow_mutation is True
 
     f = Foo(a='x')
     f.a = 'y'
@@ -2004,7 +2004,7 @@ def test_config_field_info_allow_mutation():
             fields = {'a': {'allow_mutation': False}}
             validate_assignment = True
 
-    assert Bar.__fields__['a'].field_info.allow_mutation is False
+    assert Bar.model_fields['a'].field_info.allow_mutation is False
 
     b = Bar(a='x')
     with pytest.raises(TypeError):

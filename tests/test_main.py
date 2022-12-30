@@ -75,8 +75,8 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.__fields__['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
     assert m.model_dump_json() == '{"a": 10.2, "b": 10}'
@@ -92,7 +92,7 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
     assert m.model_dump_json() == '{"a": 1}'
 
@@ -354,7 +354,7 @@ def test_field_order():
         a: str
         d: dict = {}
 
-    assert list(Model.__fields__.keys()) == ['c', 'b', 'a', 'd']
+    assert list(Model.model_fields.keys()) == ['c', 'b', 'a', 'd']
 
 
 def test_required():
@@ -737,7 +737,7 @@ def test_value_field_name_shadows_attribute():
     class BadModel(BaseModel):
         schema = 'abc'  # This conflicts with the BaseModel's schema() class method, but has no annotation
 
-    assert len(BadModel.__fields__) == 0
+    assert len(BadModel.model_fields) == 0
 
 
 def test_class_var():
@@ -746,13 +746,13 @@ def test_class_var():
         b: ClassVar[int] = 1
         c: int = 2
 
-    assert list(MyModel.__fields__.keys()) == ['c']
+    assert list(MyModel.model_fields.keys()) == ['c']
 
     class MyOtherModel(MyModel):
         a = ''
         b = 2
 
-    assert list(MyOtherModel.__fields__.keys()) == ['c']
+    assert list(MyOtherModel.model_fields.keys()) == ['c']
 
 
 def test_fields_set():
@@ -1044,7 +1044,7 @@ def test_model_exclude_config_field_merging():
                 'b': {'exclude': ...},
             }
 
-    assert Model.__fields__['b'].field_info.exclude is ...
+    assert Model.model_fields['b'].field_info.exclude is ...
 
     class Model(BaseModel):
         b: int = Field(2, exclude={'a': {'test'}})
@@ -1054,7 +1054,7 @@ def test_model_exclude_config_field_merging():
                 'b': {'exclude': ...},
             }
 
-    assert Model.__fields__['b'].field_info.exclude == {'a': {'test'}}
+    assert Model.model_fields['b'].field_info.exclude == {'a': {'test'}}
 
     class Model(BaseModel):
         b: int = Field(2, exclude={'foo'})
@@ -1064,7 +1064,7 @@ def test_model_exclude_config_field_merging():
                 'b': {'exclude': {'bar'}},
             }
 
-    assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
+    assert Model.model_fields['b'].field_info.exclude == {'foo': ..., 'bar': ...}
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1297,9 +1297,9 @@ def test_model_export_inclusion():
         class Config:
             fields = {'a': {'include': {'s2', 's1', 's3'}}, 'b': {'include': {'s1', 's2', 's3', 's4'}}}
 
-    Model.__fields__['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
-    Model.__fields__['b'].field_info.include == {'s1': ...}
-    Model.__fields__['c'].field_info.include == {'s1': ..., 's2': ...}
+    Model.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    Model.model_fields['b'].field_info.include == {'s1': ...}
+    Model.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
 
     actual = Model().model_dump(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
     # s1 included via field, s2 via config and s3 via .dict call:
@@ -1529,9 +1529,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(m.__fields__['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.__fields__['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():
@@ -1702,14 +1702,14 @@ def test_class_kwargs_config():
 
     assert Base.__config__.extra is Extra.forbid
     assert Base.__config__.alias_generator is str.upper
-    # assert Base.__fields__['a'].alias == 'A'
+    # assert Base.model_fields['a'].alias == 'A'
 
     class Model(Base, extra='allow'):
         b: int
 
     assert Model.__config__.extra is Extra.allow  # overwritten as intended
     assert Model.__config__.alias_generator is str.upper  # inherited as intended
-    # assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+    # assert Model.model_fields['b'].alias == 'B'  # alias_generator still works
 
 
 def test_class_kwargs_config_json_encoders():
@@ -1782,9 +1782,9 @@ def test_final_field_decl_without_default_val(ann, value):
     Model.model_rebuild(ann=ann)
 
     assert 'a' not in Model.__class_vars__
-    assert 'a' in Model.__fields__
+    assert 'a' in Model.model_fields
 
-    assert Model.__fields__['a'].final
+    assert Model.model_fields['a'].final
 
 
 @pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
@@ -1800,7 +1800,7 @@ def test_final_field_decl_with_default_val(ann):
     Model.model_rebuild(ann=ann)
 
     assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.__fields__
+    assert 'a' not in Model.model_fields
 
 
 @pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
@@ -1822,7 +1822,7 @@ def test_field_by_default_is_not_final():
     class Model(BaseModel):
         a: int
 
-    assert not Model.__fields__['a'].final
+    assert not Model.model_fields['a'].final
 
 
 def test_post_init():

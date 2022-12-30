@@ -112,7 +112,7 @@ class ModelMetaclass(ABCMeta):
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
+        return hasattr(instance, 'model_fields') and super().__instancecheck__(instance)
 
 
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
@@ -121,7 +121,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
         __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
-        __fields__: typing.ClassVar[dict[str, FieldInfo]] = {}
+        model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
@@ -171,7 +171,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
             _object_setattr(self, '__dict__', values)
             self.__fields_set__ |= fields_set
-        elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
+        elif self.__config__.extra is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
@@ -293,7 +293,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
-        for name, field in cls.__fields__.items():
+        for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
                 fields_values[name] = values[field.alias]
             elif name in values:
@@ -517,15 +517,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             if exclude_defaults:
                 try:
-                    field = self.__fields__[field_key]
+                    field = self.model_fields[field_key]
                 except KeyError:
                     pass
                 else:
                     if not field.is_required() and field.default == v:
                         continue
 
-            if by_alias and field_key in self.__fields__:
-                dict_key = self.__fields__[field_key].alias or field_key
+            if by_alias and field_key in self.model_fields:
+                dict_key = self.model_fields[field_key].alias or field_key
             else:
                 dict_key = field_key
 
@@ -579,7 +579,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return [
             (k, v)
             for k, v in self.__dict__.items()
-            if not k.startswith('_') and (k not in self.__fields__ or self.__fields__[k].repr)
+            if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
 
 
