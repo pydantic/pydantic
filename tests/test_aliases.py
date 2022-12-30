@@ -395,7 +395,7 @@ def test_allow_population_by_field_name_config(
 
     with expectation:
         if use_construct:
-            f = Foo.construct(**{arg_name: expected_value})
+            f = Foo.model_construct(**{arg_name: expected_value})
         else:
             f = Foo(**{arg_name: expected_value})
 

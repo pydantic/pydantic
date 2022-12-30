@@ -285,7 +285,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return cls.parse_obj(obj)
 
     @classmethod
-    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
         """
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.

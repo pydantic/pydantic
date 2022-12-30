@@ -13,7 +13,7 @@ class Model(BaseModel):
 
 
 def test_simple_construct():
-    m = Model.construct(a=3.14)
+    m = Model.model_construct(a=3.14)
     assert m.a == 3.14
     assert m.b == 10
     assert m.__fields_set__ == {'a'}
@@ -21,7 +21,7 @@ def test_simple_construct():
 
 
 def test_construct_misuse():
-    m = Model.construct(b='foobar')
+    m = Model.model_construct(b='foobar')
     assert m.b == 'foobar'
     assert m.model_dump() == {'b': 'foobar'}
     with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
@@ -29,7 +29,7 @@ def test_construct_misuse():
 
 
 def test_construct_fields_set():
-    m = Model.construct(a=3.0, b=-1, _fields_set={'a'})
+    m = Model.model_construct(a=3.0, b=-1, _fields_set={'a'})
     assert m.a == 3
     assert m.b == -1
     assert m.__fields_set__ == {'a'}
@@ -37,12 +37,12 @@ def test_construct_fields_set():
 
 
 def test_construct_allow_extra():
-    """construct() should allow extra fields"""
+    """model_construct() should allow extra fields"""
 
     class Foo(BaseModel):
         x: int
 
-    assert Foo.construct(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+    assert Foo.model_construct(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
 
 def test_construct_keep_order():
@@ -52,7 +52,7 @@ def test_construct_keep_order():
         c: float
 
     instance = Foo(a=1, b=321, c=3.14)
-    instance_construct = Foo.construct(**instance.model_dump())
+    instance_construct = Foo.model_construct(**instance.model_dump())
     assert instance == instance_construct
     assert instance.model_dump() == instance_construct.model_dump()
     assert instance.model_dump_json() == instance_construct.model_dump_json()
@@ -376,6 +376,6 @@ def test_construct_default_factory():
         foo: List[int] = Field(default_factory=list)
         bar: str = 'Baz'
 
-    m = Model.construct()
+    m = Model.model_construct()
     assert m.foo == []
     assert m.bar == 'Baz'

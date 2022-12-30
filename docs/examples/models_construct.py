@@ -20,10 +20,10 @@ print(fields_set)
 
 # you can then create a new instance of User without
 # re-running validation which would be unnecessary at this point:
-new_user = User.construct(_fields_set=fields_set, **user_data)
+new_user = User.model_construct(_fields_set=fields_set, **user_data)
 print(repr(new_user))
 print(new_user.__fields_set__)
 
 # construct can be dangerous, only use it with validated data!:
-bad_user = User.construct(id='dog')
+bad_user = User.model_construct(id='dog')
 print(repr(bad_user))

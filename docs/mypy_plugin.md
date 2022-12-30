@@ -38,8 +38,8 @@ There are other benefits too! See below for more details.
 * **Optional:** If the [`init_typed` **plugin setting**](#plugin-settings) is set to `True`, the generated signature
   will use the types of the model fields (otherwise they will be annotated as `Any` to allow parsing).
 
-#### Generate a typed signature for `Model.construct`
-* The [`construct`](usage/models.md#creating-models-without-validation) method is a faster alternative to `__init__`
+#### Generate a typed signature for `Model.model_construct`
+* The [`model_construct`](usage/models.md#creating-models-without-validation) method is a faster alternative to `__init__`
   when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
   validation, static checking is important to detect errors.
 

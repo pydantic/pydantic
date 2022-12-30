@@ -51,5 +51,5 @@ body:
         - label: '[Field Types](https://pydantic-docs.helpmanual.io/usage/types/) - adding or changing a particular data type'
         - label: '[Function validation decorator](https://pydantic-docs.helpmanual.io/usage/validation_decorator/)'
         - label: '[Generic Models](https://pydantic-docs.helpmanual.io/usage/models/#generic-models)'
-        - label: '[Other Model behaviour](https://pydantic-docs.helpmanual.io/usage/models/) - `construct()`, pickling, private attributes, ORM mode'
+        - label: '[Other Model behaviour](https://pydantic-docs.helpmanual.io/usage/models/) - `model_construct()`, pickling, private attributes, ORM mode'
         - label: '[Plugins](https://pydantic-docs.helpmanual.io/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'

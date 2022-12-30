@@ -98,7 +98,7 @@ Models possess the following methods and attributes:
 `schema_json()`
 : returns a JSON string representation of `schema()`; cf. [schema](schema.md)
 
-`construct()`
+`model_construct()`
 : a class method for creating models without running validation;
   cf. [Creating models without validation](#creating-models-without-validation)
 
@@ -248,17 +248,17 @@ You can also define your own error classes, which can specify a custom error cod
 
 ### Creating models without validation
 
-*pydantic* also provides the `construct()` method which allows models to be created **without validation** this
+*pydantic* also provides the `model_construct()` method which allows models to be created **without validation** this
 can be useful when data has already been validated or comes from a trusted source and you want to create a model
-as efficiently as possible (`construct()` is generally around 30x faster than creating a model with full validation).
+as efficiently as possible (`model_construct()` is generally around 30x faster than creating a model with full validation).
 
 !!! warning
-    `construct()` does not do any validation, meaning it can create models which are invalid. **You should only
-    ever use the `construct()` method with data which has already been validated, or you trust.**
+    `model_construct()` does not do any validation, meaning it can create models which are invalid. **You should only
+    ever use the `model_construct()` method with data which has already been validated, or you trust.**
 
 {!.tmp_examples/models_construct.md!}
 
-The `_fields_set` keyword argument to `construct()` is optional, but allows you to be more precise about
+The `_fields_set` keyword argument to `model_construct()` is optional, but allows you to be more precise about
 which fields were originally set and which weren't. If it's omitted `__fields_set__` will just be the keys
 of the data provided.
 
