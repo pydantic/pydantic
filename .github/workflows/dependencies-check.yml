@@ -2,7 +2,8 @@ name: Dependencies Check
 
 on:
   schedule:
-    - cron: '55 18 * * *'
+  - cron: '30 19 * * *'
+  workflow_dispatch: {}
 
 jobs:
   find_dependency_cases:
@@ -12,9 +13,9 @@ jobs:
       PYTHON_DEPENDENCY_CASES: ${{ steps.list-python-dependencies.outputs.PYTHON_DEPENDENCY_CASES }}
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: samuelcolvin/list-python-dependencies@main
-        id: list-python-dependencies
+    - uses: actions/checkout@v3
+    - uses: samuelcolvin/list-python-dependencies@main
+      id: list-python-dependencies
 
   test:
     name: test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
