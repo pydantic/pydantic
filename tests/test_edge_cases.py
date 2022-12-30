@@ -147,7 +147,7 @@ def test_none_list():
     class Model(BaseModel):
         v = [None]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'v': {'title': 'V', 'default': [None], 'type': 'array', 'items': {}}},
@@ -1231,7 +1231,7 @@ def test_self():
     m = Model.parse_obj(dict(self='some value'))
     assert m.model_dump() == {'self': 'some value'}
     assert m.self == 'some value'
-    assert m.schema() == {
+    assert m.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'self': {'title': 'Self', 'type': 'string'}},
@@ -1461,7 +1461,7 @@ def test_type_var_any():
     class MyModel(BaseModel):
         foo: Foobar
 
-    assert MyModel.schema() == {'title': 'MyModel', 'type': 'object', 'properties': {'foo': {'title': 'Foo'}}}
+    assert MyModel.model_json_schema() == {'title': 'MyModel', 'type': 'object', 'properties': {'foo': {'title': 'Foo'}}}
     assert MyModel(foo=None).foo is None
     assert MyModel(foo='x').foo == 'x'
     assert MyModel(foo=123).foo == 123
@@ -1474,7 +1474,7 @@ def test_type_var_constraint():
     class MyModel(BaseModel):
         foo: Foobar
 
-    assert MyModel.schema() == {
+    assert MyModel.model_json_schema() == {
         'title': 'MyModel',
         'type': 'object',
         'properties': {'foo': {'title': 'Foo', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
@@ -1495,7 +1495,7 @@ def test_type_var_bound():
     class MyModel(BaseModel):
         foo: Foobar
 
-    assert MyModel.schema() == {
+    assert MyModel.model_json_schema() == {
         'title': 'MyModel',
         'type': 'object',
         'properties': {'foo': {'title': 'Foo', 'type': 'integer'}},
@@ -1956,7 +1956,7 @@ def test_config_field_info():
         class Config:
             fields = {'a': {'description': 'descr'}}
 
-    assert Foo.schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert Foo.model_json_schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1967,7 +1967,7 @@ def test_config_field_info_alias():
         class Config:
             fields = {'a': {'alias': 'b'}}
 
-    assert Foo.schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
+    assert Foo.model_json_schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1978,7 +1978,7 @@ def test_config_field_info_merge():
         class Config:
             fields = {'a': {'bar': 'Bar'}}
 
-    assert Foo.schema(by_alias=True)['properties'] == {
+    assert Foo.model_json_schema(by_alias=True)['properties'] == {
         'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
     }
 

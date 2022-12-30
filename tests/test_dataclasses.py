@@ -504,7 +504,7 @@ def test_schema():
         height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     user = User(id=123)
-    assert user.__pydantic_model__.schema() == {
+    assert user.__pydantic_model__.model_json_schema() == {
         'title': 'User',
         'type': 'object',
         'properties': {
@@ -542,7 +542,7 @@ def test_nested_schema():
     class Outer:
         n: Nested
 
-    assert Outer.__pydantic_model__.schema() == {
+    assert Outer.__pydantic_model__.model_json_schema() == {
         'title': 'Outer',
         'type': 'object',
         'properties': {'n': {'$ref': '#/definitions/Nested'}},
@@ -817,7 +817,7 @@ def test_override_builtin_dataclass_nested_schema():
         meta: Meta
 
     FileChecked = pydantic.dataclasses.dataclass(File)
-    assert FileChecked.__pydantic_model__.schema() == {
+    assert FileChecked.__pydantic_model__.model_json_schema() == {
         'definitions': {
             'Meta': {
                 'properties': {
@@ -998,13 +998,13 @@ def test_config_field_info_create_model():
         class Config:
             fields = {'a': {'description': 'descr'}}
 
-    assert A1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert A1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
     @pydantic.dataclasses.dataclass(config=A1.Config)
     class A2:
         a: str
 
-    assert A2.__pydantic_model__.schema()['properties'] == {
+    assert A2.__pydantic_model__.model_json_schema()['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
     }
 
@@ -1162,7 +1162,7 @@ def test_issue_2555():
     class M(pydantic.BaseModel):
         s: Sentence
 
-    assert M.schema()
+    assert M.model_json_schema()
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1184,14 +1184,14 @@ def test_schema_description_unset():
     class A:
         x: int
 
-    assert 'description' not in A.__pydantic_model__.schema()
+    assert 'description' not in A.__pydantic_model__.model_json_schema()
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
     class B:
         x: int
 
-    assert 'description' not in B.__pydantic_model__.schema()
+    assert 'description' not in B.__pydantic_model__.model_json_schema()
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1202,7 +1202,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert A.__pydantic_model__.schema()['description'] == 'my description'
+    assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
@@ -1211,7 +1211,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert A.__pydantic_model__.schema()['description'] == 'my description'
+    assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1246,7 +1246,7 @@ def test_issue_3162():
         user: User
         other_user: User
 
-    assert Users.schema() == {
+    assert Users.model_json_schema() == {
         'title': 'Users',
         'type': 'object',
         'properties': {'user': {'$ref': '#/definitions/User'}, 'other_user': {'$ref': '#/definitions/User'}},
@@ -1278,7 +1278,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
-    assert Top.__pydantic_model__.schema() == {
+    assert Top.__pydantic_model__.model_json_schema() == {
         'title': 'Top',
         'type': 'object',
         'properties': {

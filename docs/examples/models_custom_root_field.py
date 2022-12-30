@@ -11,6 +11,6 @@ class Pets(BaseModel):
 print(Pets(__root__=['dog', 'cat']))
 print(Pets(__root__=['dog', 'cat']).model_dump_json())
 print(Pets.parse_obj(['dog', 'cat']))
-print(Pets.schema())
+print(Pets.model_json_schema())
 pets_schema = schema([Pets])
 print(json.dumps(pets_schema, indent=2))

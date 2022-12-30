@@ -88,7 +88,7 @@ def test_wrap():
     assert issubclass(foo_bar.model, BaseModel)
     assert foo_bar.model.model_fields.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
     assert foo_bar.model.__name__ == 'FooBar'
-    assert foo_bar.model.schema()['title'] == 'FooBar'
+    assert foo_bar.model.model_json_schema()['title'] == 'FooBar'
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
@@ -356,7 +356,7 @@ def test_config_title():
 
     assert foo(1, 2) == '1, 2'
     assert foo(1, b=2) == '1, 2'
-    assert foo.model.schema()['title'] == 'Testing'
+    assert foo.model.model_json_schema()['title'] == 'Testing'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -370,7 +370,7 @@ def test_config_title_cls():
 
     assert foo(1, 2) == '1, 2'
     assert foo(1, b=2) == '1, 2'
-    assert foo.model.schema()['title'] == 'Testing'
+    assert foo.model.model_json_schema()['title'] == 'Testing'
 
 
 def test_config_fields():

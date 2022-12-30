@@ -390,7 +390,7 @@ def test_custom_schema():
     class MyModel(GenericModel, Generic[T]):
         a: int = Field(1, description='Custom')
 
-    schema = MyModel[int].schema()
+    schema = MyModel[int].model_json_schema()
     assert schema['properties']['a'].get('description') == 'Custom'
 
 
@@ -404,7 +404,7 @@ def test_child_schema():
     class Child(Model[T], Generic[T]):
         pass
 
-    schema = Child[int].schema()
+    schema = Child[int].model_json_schema()
     assert schema == {
         'title': 'Child[int]',
         'type': 'object',
@@ -1169,7 +1169,7 @@ def test_generic_enums():
         g_a: GModel[EnumA]
         g_b: GModel[EnumB]
 
-    assert set(Model.schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
+    assert set(Model.model_json_schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1300,7 +1300,7 @@ def test_parse_generic_json():
     record = MessageWrapper[Payload](message=raw)
     assert isinstance(record.message, Payload)
 
-    schema = record.schema()
+    schema = record.model_json_schema()
     assert schema['properties'] == {'msg': {'$ref': '#/definitions/Payload'}}
     assert schema['definitions']['Payload'] == {
         'title': 'Payload',

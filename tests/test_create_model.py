@@ -216,10 +216,10 @@ def test_config_field_info_create_model():
         fields = {'a': {'description': 'descr'}}
 
     m1 = create_model('M1', __config__=Config, a=(str, ...))
-    assert m1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert m1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
     m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
-    assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert m2.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
 @pytest.mark.xfail(reason='working on V2')

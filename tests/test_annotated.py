@@ -158,7 +158,7 @@ def test_config_field_info():
         class Config:
             fields = {'a': {'description': 'descr'}}
 
-    assert Foo.schema(by_alias=True)['properties'] == {
+    assert Foo.model_json_schema(by_alias=True)['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
     }
 

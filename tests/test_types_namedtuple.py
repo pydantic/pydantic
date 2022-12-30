@@ -64,7 +64,7 @@ def test_namedtuple_schema():
         pos2: Position2
         pos3: Tuple[int, int]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {

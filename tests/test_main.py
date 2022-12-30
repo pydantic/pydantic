@@ -730,12 +730,12 @@ def test_annotation_field_name_shadows_attribute():
     with pytest.raises(NameError):
         # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
         class BadModel(BaseModel):
-            schema: str  # This conflicts with the BaseModel's schema() class method
+            model_json_schema: str  # This conflicts with the BaseModel's model_json_schema() class method
 
 
 def test_value_field_name_shadows_attribute():
     class BadModel(BaseModel):
-        schema = 'abc'  # This conflicts with the BaseModel's schema() class method, but has no annotation
+        model_json_schema = 'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
 
     assert len(BadModel.model_fields) == 0
 
@@ -1753,7 +1753,7 @@ def test_new_union_origin():
     assert Model(x=3).x == 3
     assert Model(x='3').x == '3'
     assert Model(x='pika').x == 'pika'
-    # assert Model.schema() == {
+    # assert Model.model_json_schema() == {
     #     'title': 'Model',
     #     'type': 'object',
     #     'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},

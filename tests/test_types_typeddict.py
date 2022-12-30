@@ -196,7 +196,7 @@ def test_typeddict_schema(TypedDict):
         data: Data
         data_td: DataTD
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'data': {'$ref': '#/definitions/Data'}, 'data_td': {'$ref': '#/definitions/DataTD'}},
@@ -240,7 +240,7 @@ def test_typeddict_required(TypedDict, req_no_req):
     class Model(BaseModel):
         t: DataTD
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'t': {'$ref': '#/definitions/DataTD'}},
@@ -270,7 +270,7 @@ def test_typeddict_not_required_schema(TypedDict, req_no_req):
     class Model(BaseModel):
         t: DataTD
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'t': {'$ref': '#/definitions/DataTD'}},
@@ -304,7 +304,7 @@ def test_typed_dict_inheritance_schema(TypedDict, req_no_req):
     class Model(BaseModel):
         t: DataTD
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'t': {'$ref': '#/definitions/DataTD'}},
@@ -335,7 +335,7 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
     class Model(BaseModel):
         data_td: DataTD
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'data_td': {'$ref': '#/definitions/DataTD'}},

@@ -92,7 +92,7 @@ Models possess the following methods and attributes:
 `from_orm()`
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
 
-`schema()`
+`model_json_schema()`
 : returns a dictionary representing the model as JSON Schema; cf. [schema](schema.md)
 
 `schema_json()`

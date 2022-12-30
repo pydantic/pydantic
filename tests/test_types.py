@@ -2902,7 +2902,7 @@ def test_pattern(pattern_type):
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
-    # assert Foobar.schema() == {
+    # assert Foobar.model_json_schema() == {
     #     'type': 'object',
     #     'title': 'Foobar',
     #     'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
@@ -3445,7 +3445,7 @@ def test_none(value_type):
         my_json_none='null',
     )
 
-    # assert Model.schema() == {
+    # assert Model.model_json_schema() == {
     #     'title': 'Model',
     #     'type': 'object',
     #     'properties': {
@@ -3501,7 +3501,7 @@ def test_default_union_types():
     assert repr(DefaultModel(v=1).v) == '1'
     assert repr(DefaultModel(v='1').v) == "'1'"
 
-    # assert DefaultModel.schema() == {
+    # assert DefaultModel.model_json_schema() == {
     #     'title': 'DefaultModel',
     #     'type': 'object',
     #     'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},

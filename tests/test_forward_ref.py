@@ -282,7 +282,7 @@ def test_self_reference_json_schema(create_module):
             subaccounts: List['Account'] = []
 
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -318,7 +318,7 @@ class Account(BaseModel):
     """
     )
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -356,7 +356,7 @@ def test_circular_reference_json_schema(create_module):
             subaccounts: List['Account'] = []
 
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -404,7 +404,7 @@ class Account(BaseModel):
     """
     )
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -556,7 +556,7 @@ def test_discriminated_union_forward_ref(create_module):
     with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
         module.Pet.parse_obj({'type': 'pika'})
 
-    assert module.Pet.schema() == {
+    assert module.Pet.model_json_schema() == {
         'title': 'Pet',
         'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
         'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],

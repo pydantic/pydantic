@@ -19,4 +19,4 @@ class Character(Voice):
             return ''.join(word.capitalize() for word in string.split('_'))
 
 
-print(Character.schema(by_alias=True))
+print(Character.model_json_schema(by_alias=True))
