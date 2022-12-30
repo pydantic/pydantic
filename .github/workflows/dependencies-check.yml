@@ -19,6 +19,10 @@ jobs:
 
   test:
     name: test py${{ matrix.python-version }} on ${{ matrix.PYTHON_DEPENDENCY_CASE }}
+
+    needs:
+    - find_dependency_cases
+
     strategy:
       fail-fast: true
       matrix:
