@@ -876,9 +876,19 @@ def pytest_raises_undefined_types_warning(defining_class_name, missing_type_name
     )
 
 
-def test_undefined_type_raises_warning(create_module):
-    """Test undefined_types_warning is raised when a model declares a variable of type that is missing."""
+#   NOTE: the `undefined_types_warning` tests below are "statically parameterized" (i.e. have Duplicate Code).
+#   The initial attempt to refactor them into a single parameterized test was not strateforward, due to the use of the
+#   `create_module` fixture and the need for `from __future__ import annotations` be the first line in a module.
+#
+#   Test Parameters:
+#     1. config setting: (1a) default behavior vs (1b) overriding with Config setting:
+#     2. type checking approach: (2a) `from __future__ import annotations` vs (2b) `ForwardRef`
+#
+#   The parameter tags "1a", "1b", "2a", and "2b" are used in the test names below, to indicate which combination
+#   of conditions the test is covering.
 
+
+def test_undefined_types_warning_1a_raised_by_default_2a_future_annotations(create_module):
     with pytest_raises_undefined_types_warning(defining_class_name='Foobar', missing_type_name='UndefinedType'):
         create_module(
             # language=Python
@@ -892,9 +902,7 @@ class Foobar(BaseModel):
         )
 
 
-def test_undefined_type_raises_warning_if_forward_ref(create_module):
-    """Test undefined_types_warning is raised when a model declares a variable of type that is a ForwardRef."""
-
+def test_undefined_types_warning_1a_raised_by_default_2b_forward_ref(create_module):
     with pytest_raises_undefined_types_warning(defining_class_name='Foobar', missing_type_name='UndefinedType'):
 
         @create_module
@@ -909,10 +917,7 @@ def test_undefined_type_raises_warning_if_forward_ref(create_module):
                 a: UndefinedType
 
 
-def test_disable_undefined_types_warning(create_module):
-    """Test suppressing undefined_types_warning via config \
-        when a model declares a variable of type that is missing."""
-
+def test_undefined_types_warning_1b_suppressed_via_config_2a_future_annotations(create_module):
     module = create_module(
         # language=Python
         """
@@ -921,19 +926,17 @@ from pydantic import BaseModel
 
 class Foobar(BaseModel):
     a: UndefinedType
+    # Suppress the undefined_types_warning
     class Config:
         undefined_types_warning = False
 """
     )
-    # Since test is about suppressing the undefined_types_warning,
-    # we should also verify that our model was at least partially built
+    # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
+    # The presence of the `__pydantic_model_complete__` is a good indicator of this.
     assert module.Foobar.__pydantic_model_complete__ is False
 
 
-def test_disable_undefined_types_warning_if_missing_class_is_a_forwardref(create_module):
-    """Test suppressing undefined_types_warning via config \
-        when a model declares a variable of type that is a ForwardRef."""
-
+def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_module):
     @create_module
     def module():
         from typing import ForwardRef
@@ -945,9 +948,10 @@ def test_disable_undefined_types_warning_if_missing_class_is_a_forwardref(create
         class Foobar(BaseModel):
             a: UndefinedType
 
+            # Suppress the undefined_types_warning
             class Config:
                 undefined_types_warning = False
 
-    # Since test is about suppressing the undefined_types_warning,
-    # we should also verify that our model was at least partially built
+    # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
+    # The presence of the `__pydantic_model_complete__` is a good indicator of this.
     assert module.Foobar.__pydantic_model_complete__ is False
