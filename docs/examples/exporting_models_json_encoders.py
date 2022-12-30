@@ -15,4 +15,4 @@ class WithCustomEncoders(BaseModel):
 
 
 m = WithCustomEncoders(dt=datetime(2032, 6, 1), diff=timedelta(hours=100))
-print(m.json())
+print(m.model_dump_json())

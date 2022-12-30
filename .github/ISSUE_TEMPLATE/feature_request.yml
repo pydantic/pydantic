@@ -44,7 +44,7 @@ body:
       options:
         - label: '[Compatibility between releases](https://pydantic-docs.helpmanual.io/changelog/)'
         - label: '[Data validation/parsing](https://pydantic-docs.helpmanual.io/usage/models/#basic-model-usage)'
-        - label: '[Data serialization](https://pydantic-docs.helpmanual.io/usage/exporting_models/) - `.dict()` and `.json()`'
+        - label: '[Data serialization](https://pydantic-docs.helpmanual.io/usage/exporting_models/) - `.dict()` and `.model_dump_json()`'
         - label: '[JSON Schema](https://pydantic-docs.helpmanual.io/usage/schema/)'
         - label: '[Dataclasses](https://pydantic-docs.helpmanual.io/usage/dataclasses/)'
         - label: '[Model Config](https://pydantic-docs.helpmanual.io/usage/model_config/)'

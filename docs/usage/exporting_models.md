@@ -47,9 +47,9 @@ Example:
 
 {!.tmp_examples/exporting_models_copy.md!}
 
-## `model.json(...)`
+## `model.model_dump_json(...)`
 
-The `.json()` method will serialise a model to JSON. (For models with a [custom root type](models.md#custom-root-types),
+The `.model_dump_json()` method will serialise a model to JSON. (For models with a [custom root type](models.md#custom-root-types),
 only the value for the `__root__` key is serialised)
 
 Arguments:

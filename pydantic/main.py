@@ -226,7 +226,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             )
         )
 
-    def json(
+    def model_dump_json(
         self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
@@ -247,7 +247,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.json(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.model_dump_json(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults

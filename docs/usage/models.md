@@ -72,7 +72,7 @@ Models possess the following methods and attributes:
 : returns a dictionary of the model's fields and values;
   cf. [exporting models](exporting_models.md#modeldict)
 
-`json()`
+`model_dump_json()`
 : returns a JSON string representation `dict()`;
   cf. [exporting models](exporting_models.md#modeljson)
 
@@ -414,7 +414,7 @@ Field order is important in models for the following reasons:
   can access the values of earlier fields, but not later ones
 * field order is preserved in the model [schema](schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.dict()` and `.json()` etc.](exporting_models.md#modeldict)
+* field order is preserved by [`.dict()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
 
 As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.

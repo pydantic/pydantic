@@ -546,11 +546,11 @@ def test_skip_defaults_deprecated():
     with pytest.warns(DeprecationWarning, match=match):
         assert m.dict(skip_defaults=False) == m.dict(exclude_unset=False)
 
-    match = r'Model.json\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
+    match = r'Model.model_dump_json\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
     with pytest.warns(DeprecationWarning, match=match):
-        assert m.json(skip_defaults=True) == m.json(exclude_unset=True)
+        assert m.model_dump_json(skip_defaults=True) == m.model_dump_json(exclude_unset=True)
     with pytest.warns(DeprecationWarning, match=match):
-        assert m.json(skip_defaults=False) == m.json(exclude_unset=False)
+        assert m.model_dump_json(skip_defaults=False) == m.model_dump_json(exclude_unset=False)
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1560,7 +1560,7 @@ def test_exclude_none():
 
     m = MyModel(b=3)
     assert m.dict(exclude_none=True) == {'b': 3}
-    assert m.json(exclude_none=True) == '{"b": 3}'
+    assert m.model_dump_json(exclude_none=True) == '{"b": 3}'
 
 
 def test_exclude_none_recursive():

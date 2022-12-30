@@ -79,7 +79,7 @@ def test_ultra_simple_repr():
     assert repr(m.__fields__['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.dict() == {'a': 10.2, 'b': 10}
-    assert m.json() == '{"a": 10.2, "b": 10}'
+    assert m.model_dump_json() == '{"a": 10.2, "b": 10}'
     assert str(m) == 'a=10.2 b=10'
 
 
@@ -94,7 +94,7 @@ def test_default_factory_field():
     assert str(m) == 'a=1'
     assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
-    assert m.json() == '{"a": 1}'
+    assert m.model_dump_json() == '{"a": 1}'
 
 
 def test_comparing():
@@ -863,7 +863,7 @@ def test_dir_fields():
     m = MyModel(attribute_a=5)
 
     assert 'dict' in dir(m)
-    assert 'json' in dir(m)
+    assert 'model_dump_json' in dir(m)
     assert 'attribute_a' in dir(m)
     assert 'attribute_b' in dir(m)
 

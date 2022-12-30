@@ -1321,7 +1321,7 @@ def test_post_init_after_validation():
         set_wrapper: SetWrapper
 
     model = Model(set_wrapper=SetWrapper({1, 2, 3}))
-    json_text = model.json()
+    json_text = model.model_dump_json()
     assert Model.parse_raw(json_text) == model
 
 

@@ -24,4 +24,4 @@ class FooModel(BaseModel):
 
 
 m = FooModel(date=300)
-print(m.json())
+print(m.model_dump_json())

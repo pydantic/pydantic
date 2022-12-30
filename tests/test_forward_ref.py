@@ -625,7 +625,7 @@ class Model(BaseModel):
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
-    assert m.json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
+    assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
 @pytest.mark.xfail(reason='TODO json encoding')
@@ -648,7 +648,7 @@ class User(BaseModel):
     )
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+    assert m.model_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
 
 
 skip_pep585 = pytest.mark.skipif(

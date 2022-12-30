@@ -55,7 +55,7 @@ def test_construct_keep_order():
     instance_construct = Foo.construct(**instance.dict())
     assert instance == instance_construct
     assert instance.dict() == instance_construct.dict()
-    assert instance.json() == instance_construct.json()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
 
 
 def test_large_any_str():
@@ -232,7 +232,7 @@ def test_copy_update_unset():
         foo: Optional[str]
         bar: Optional[str]
 
-    assert Foo(foo='hello').copy(update={'bar': 'world'}).json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
+    assert Foo(foo='hello').copy(update={'bar': 'world'}).model_dump_json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
 
 
 @pytest.mark.xfail(reason='working on V2')
