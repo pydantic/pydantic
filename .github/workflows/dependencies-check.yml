@@ -2,7 +2,7 @@ name: Dependencies Check
 
 on:
   schedule:
-    - cron: "42 18 * * *"
+    - cron: '55 18 * * *'
 
 jobs:
   find_dependency_cases:
