@@ -40,9 +40,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install -r requirements/testing.txt
+    - run: make install-testing
 
-    - run: pip install .
+    - name: uninstall optional deps
+      run: pip uninstall -y email-validator devtools python-dotenv
 
     - run: pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
