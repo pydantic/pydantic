@@ -232,7 +232,10 @@ def test_copy_update_unset():
         foo: Optional[str]
         bar: Optional[str]
 
-    assert Foo(foo='hello').copy(update={'bar': 'world'}).model_dump_json(exclude_unset=True) == '{"foo": "hello", "bar": "world"}'
+    assert (
+        Foo(foo='hello').copy(update={'bar': 'world'}).model_dump_json(exclude_unset=True)
+        == '{"foo": "hello", "bar": "world"}'
+    )
 
 
 @pytest.mark.xfail(reason='working on V2')

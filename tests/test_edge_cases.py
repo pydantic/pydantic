@@ -1461,7 +1461,11 @@ def test_type_var_any():
     class MyModel(BaseModel):
         foo: Foobar
 
-    assert MyModel.model_json_schema() == {'title': 'MyModel', 'type': 'object', 'properties': {'foo': {'title': 'Foo'}}}
+    assert MyModel.model_json_schema() == {
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {'foo': {'title': 'Foo'}},
+    }
     assert MyModel(foo=None).foo is None
     assert MyModel(foo='x').foo == 'x'
     assert MyModel(foo=123).foo == 123
@@ -1956,7 +1960,9 @@ def test_config_field_info():
         class Config:
             fields = {'a': {'description': 'descr'}}
 
-    assert Foo.model_json_schema(by_alias=True)['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert Foo.model_json_schema(by_alias=True)['properties'] == {
+        'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
+    }
 
 
 @pytest.mark.xfail(reason='working on V2')

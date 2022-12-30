@@ -535,7 +535,11 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'type': 'string', 'title': 'A'}},
+    }
 
 
 @pytest.mark.xfail(reason='working on V2')

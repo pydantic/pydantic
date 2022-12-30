@@ -209,7 +209,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.model_dump(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.model_dump(): "skip_defaults" is deprecated'
+                ' and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
@@ -247,7 +248,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.model_dump_json(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.model_dump_json(): "skip_defaults" is deprecated'
+                ' and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
@@ -360,7 +362,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
-    def model_json_schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> typing.Dict[str, Any]:
+    def model_json_schema(
+        cls, by_alias: bool = True, ref_template: str = default_ref_template
+    ) -> typing.Dict[str, Any]:
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
@@ -375,7 +379,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         from .json import pydantic_encoder
 
         return cls.__config__.json_dumps(
-            cls.model_json_schema(by_alias=by_alias, ref_template=ref_template), default=pydantic_encoder, **dumps_kwargs
+            cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
+            default=pydantic_encoder,
+            **dumps_kwargs,
         )
 
     @classmethod

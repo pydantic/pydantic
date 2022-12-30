@@ -735,7 +735,9 @@ def test_annotation_field_name_shadows_attribute():
 
 def test_value_field_name_shadows_attribute():
     class BadModel(BaseModel):
-        model_json_schema = 'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
+        model_json_schema = (
+            'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
+        )
 
     assert len(BadModel.model_fields) == 0
 

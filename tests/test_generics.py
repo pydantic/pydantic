@@ -989,7 +989,9 @@ def test_deep_generic_with_referenced_inner_generic():
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
 
     assert InnerModel[int].model_fields['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
-    assert (InnerModel[int].model_fields['a'].sub_fields[0].sub_fields[0].outer_type_.model_fields['a'].outer_type_) == int
+    assert (
+        InnerModel[int].model_fields['a'].sub_fields[0].sub_fields[0].outer_type_.model_fields['a'].outer_type_
+    ) == int
 
 
 @pytest.mark.xfail(reason='working on V2')

@@ -164,7 +164,9 @@ def test_custom_encoder():
         class Config:
             json_encoders = {datetime.timedelta: lambda v: f'{v.total_seconds():0.3f}s', Decimal: lambda v: 'a decimal'}
 
-    assert Model(x=123, y=5, z='2032-06-01').model_dump_json() == '{"x": "123.000s", "y": "a decimal", "z": "2032-06-01"}'
+    assert (
+        Model(x=123, y=5, z='2032-06-01').model_dump_json() == '{"x": "123.000s", "y": "a decimal", "z": "2032-06-01"}'
+    )
 
 
 def test_custom_iso_timedelta():
