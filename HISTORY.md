@@ -1,4 +1,10 @@
+## v1.10.4 (2022-12-30)
+
+* Change dependency to `typing-extensions>=4.2.0`, #4885 by @samuelcolvin
+
 ## v1.10.3 (2022-12-29)
+
+**NOTE: v1.10.3 was ["yanked"](https://pypi.org/help/#yanked) from PyPI due to #4885 which is fixed in v1.10.4**
 
 * fix parsing of custom root models, #4883 by @gou177
 * fix: use dataclass proxy for frozen or empty dataclasses, #4878 by @PrettyWood

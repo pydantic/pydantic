@@ -15,6 +15,10 @@
 
 Updated late 10 Jul 2022, see [pydantic#4226](https://github.com/pydantic/pydantic/pull/4226).
 
+Update 30 Dec 2022: **The new release deadline for Pydantic V2 is the end of Q1 2023**, 
+see [pydantic#4887](https://github.com/pydantic/pydantic/issues/4887) for more details, futher updates
+will be posted on that issue.
+
 ---
 
 I've spoken to quite a few people about pydantic V2, and mention it in passing even more.
