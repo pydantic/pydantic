@@ -259,7 +259,7 @@ for their kind support.
 * Add `PastDate` and `FutureDate` types, #2425 by @Kludex
 * Support generating schema for `Generic` fields with subtypes, #2375 by @maximberg
 * fix(encoder): serialize `NameEmail` to str, #2341 by @alecgerona
-* add `Config.smart_union` to prevent coercion in `Union` if possible, see
+* add `Config.smart_union` to prevent coercion in `Union` if possible, see 
  [the doc](https://docs.pydantic.dev/usage/model_config/#smart-union) for more information, #2092 by @PrettyWood
 * Add ability to use `typing.Counter` as a model field type, #2060 by @uriyyo
 * Add parameterised subclasses to `__bases__` when constructing new parameterised classes, so that `A <: B => A[int] <: B[int]`, #2007 by @diabolo-dan
