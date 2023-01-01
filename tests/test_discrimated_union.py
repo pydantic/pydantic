@@ -5,7 +5,7 @@ from typing import Generic, TypeVar, Union
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseConfig, BaseModel, Field, ValidationError
 from pydantic.errors import PydanticUserError
 from pydantic.generics import GenericModel
 
@@ -280,10 +280,8 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
         literal: Literal['a'] = Field(alias='lit')
 
     class B(BaseModel):
+        model_config = BaseConfig(allow_population_by_field_name=True)
         literal: Literal['b'] = Field(alias='lit')
-
-        class Config:
-            allow_population_by_field_name = True
 
     class Top(BaseModel):
         sub: Union[A, B] = Field(..., discriminator='literal')

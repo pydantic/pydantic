@@ -160,7 +160,9 @@ def complete_model_class(
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
-    cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))
+    cls.__signature__ = ClassAttribute(
+        '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
+    )
     return True
 
 
@@ -226,7 +228,7 @@ def build_inner_schema(  # noqa: C901
             delattr(cls, ann_name)
 
     schema = model_fields_schema(
-        model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed, local_ns
+        model_ref, fields, validator_functions, cls.model_config['arbitrary_types_allowed'], local_ns
     )
     return schema, fields
 
@@ -258,7 +260,7 @@ def generate_model_signature(
         merged_params[param.name] = param
 
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = config.allow_population_by_field_name
+        allow_names = config['allow_population_by_field_name']
         for field_name, field in fields.items():
             param_name = field.alias or field_name
             if field_name in merged_params or param_name in merged_params:
@@ -276,7 +278,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
 
-    if config.extra is Extra.allow:
+    if config['extra'] is Extra.allow:
         use_var_kw = True
 
     if var_kw and use_var_kw:

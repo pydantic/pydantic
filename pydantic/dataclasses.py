@@ -337,7 +337,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     setattr(dc_cls, '__validate__', classmethod(_validate_dataclass))
     setattr(dc_cls, '__get_validators__', classmethod(_get_validators))
 
-    if dc_cls.__pydantic_model__.__config__.validate_assignment and not dc_cls.__dataclass_params__.frozen:
+    if dc_cls.__pydantic_model__.model_config.validate_assignment and not dc_cls.__dataclass_params__.frozen:
         setattr(dc_cls, '__setattr__', _dataclass_validate_assignment_setattr)
 
 

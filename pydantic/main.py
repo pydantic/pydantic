@@ -16,7 +16,7 @@ import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from ._internal._fields import Undefined
-from .config import BaseConfig, Extra, build_config, inherit_config
+from .config import BaseConfig, Extra, _default_base_config, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
@@ -50,8 +50,8 @@ class ModelMetaclass(ABCMeta):
             __config__, new_model_config = build_config(cls_name, bases, namespace, kwargs)
             if new_model_config is not None:
                 namespace['Config'] = new_model_config
-            namespace['__config__'] = __config__
-
+            namespace['model_config'] = __config__
+            # print(__config__)
             namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
@@ -78,13 +78,13 @@ class ModelMetaclass(ABCMeta):
             for name, value in namespace.items():
                 validator_functions.extract_validator(name, value)
 
-            if __config__.json_encoders:
-                json_encoder = partial(custom_pydantic_encoder, __config__.json_encoders)
+            if __config__['json_encoders']:
+                json_encoder = partial(custom_pydantic_encoder, __config__['json_encoders'])
             else:
                 json_encoder = pydantic_encoder  # type: ignore[assignment]
             namespace['__json_encoder__'] = staticmethod(json_encoder)
 
-            if '__hash__' not in namespace and __config__.frozen:
+            if '__hash__' not in namespace and __config__['frozen']:
 
                 def hash_func(self_: Any) -> int:
                     return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
@@ -122,7 +122,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
         __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
         __fields__: typing.ClassVar[dict[str, FieldInfo]] = {}
-        __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
         __signature__: typing.ClassVar[Signature]
@@ -134,7 +133,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
-    Config = BaseConfig
+    model_config = _default_base_config()
     __slots__ = '__dict__', '__fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
@@ -165,13 +164,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def __setattr__(self, name, value):
         if name.startswith('_'):
             _object_setattr(self, name, value)
-        elif self.__config__.frozen:
+        elif self.model_config['frozen']:
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
-        elif self.__config__.validate_assignment:
+        elif self.model_config['validate_assignment']:
             values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
             _object_setattr(self, '__dict__', values)
             self.__fields_set__ |= fields_set
-        elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
+        elif self.model_config['extra'] is not Extra.allow and name not in self.__fields__:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
@@ -267,7 +266,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 exclude_none=exclude_none,
             )
         )
-        return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
+        return self.model_config['json_dumps'](data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def parse_obj(cls: type[Model], obj: Any) -> Model:
@@ -374,7 +373,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     ) -> str:
         from .json import pydantic_encoder
 
-        return cls.__config__.json_dumps(
+        return cls.model_config['json_dumps'](
             cls.schema(by_alias=by_alias, ref_template=ref_template), default=pydantic_encoder, **dumps_kwargs
         )
 
@@ -444,7 +443,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             return v.__class__(*seq_args) if _typing_extra.is_namedtuple(v.__class__) else v.__class__(seq_args)
 
-        elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
+        elif isinstance(v, Enum) and getattr(cls.model_config, 'use_enum_values', False):
             return v.value
 
         else:
@@ -682,7 +681,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['Config'] = inherit_config(__config__, BaseConfig)
+        namespace['model_config'] = inherit_config(__config__, BaseConfig)
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

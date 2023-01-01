@@ -38,6 +38,7 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    BaseConfig,
     BaseModel,
     ByteSize,
     DirectoryPath,
@@ -1908,8 +1909,7 @@ def test_finite_float_config():
     class Model(BaseModel):
         a: float
 
-        class Config:
-            allow_inf_nan = False
+        model_config = BaseConfig(allow_inf_nan=False)
 
     assert Model(a=42).a == 42
     with pytest.raises(ValidationError) as exc_info:
@@ -2124,8 +2124,7 @@ def test_anystr_strip_whitespace(enabled, str_check, result_str_check):
     class Model(BaseModel):
         str_check: str
 
-        class Config:
-            anystr_strip_whitespace = enabled
+        model_config = BaseConfig(anystr_strip_whitespace=enabled)
 
     m = Model(str_check=str_check)
     assert m.str_check == result_str_check
@@ -2139,8 +2138,7 @@ def test_anystr_upper(enabled, str_check, result_str_check):
     class Model(BaseModel):
         str_check: str
 
-        class Config:
-            anystr_upper = enabled
+        model_config = BaseConfig(anystr_upper=enabled)
 
     m = Model(str_check=str_check)
 
@@ -2155,8 +2153,7 @@ def test_anystr_lower(enabled, str_check, result_str_check):
     class Model(BaseModel):
         str_check: str
 
-        class Config:
-            anystr_lower = enabled
+        model_config = BaseConfig(anystr_lower=enabled)
 
     m = Model(str_check=str_check)
 

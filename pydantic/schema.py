@@ -530,7 +530,7 @@ def model_process_schema(
         s = enum_process_schema(model, field=field)
         return s, {}, set()
     model = cast(Type['BaseModel'], model)
-    s = {'title': model.__config__.title or model.__name__}
+    s = {'title': model.model_config.title or model.__name__}
     doc = getdoc(model)
     if doc:
         s['description'] = doc
@@ -544,7 +544,7 @@ def model_process_schema(
         known_models=known_models,
     )
     s.update(m_schema)
-    schema_extra = model.__config__.schema_extra
+    schema_extra = model.model_config.schema_extra
     if callable(schema_extra):
         if len(signature(schema_extra).parameters) == 1:
             schema_extra(s)
@@ -599,12 +599,12 @@ def model_type_schema(
                 required.append(k)
     if ROOT_KEY in properties:
         out_schema = properties[ROOT_KEY]
-        out_schema['title'] = model.__config__.title or model.__name__
+        out_schema['title'] = model.model_config.title or model.__name__
     else:
         out_schema = {'type': 'object', 'properties': properties}
         if required:
             out_schema['required'] = required
-    if model.__config__.extra == 'forbid':
+    if model.model_config.extra == 'forbid':
         out_schema['additionalProperties'] = False
     return out_schema, definitions, nested_models
 

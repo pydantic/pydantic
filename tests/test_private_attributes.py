@@ -2,7 +2,7 @@ from typing import ClassVar, Generic, TypeVar
 
 import pytest
 
-from pydantic import BaseModel, Extra, PrivateAttr
+from pydantic import BaseConfig, BaseModel, Extra, PrivateAttr
 from pydantic.fields import Undefined
 from pydantic.generics import GenericModel
 
@@ -73,8 +73,7 @@ def test_private_attribute_annotation():
 
         _foo: str
 
-        class Config:
-            underscore_attrs_are_private = True
+        model_config = BaseConfig(underscore_attrs_are_private=True)
 
     assert Model.__slots__ == {'_foo'}
     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
@@ -109,8 +108,7 @@ def test_underscore_attrs_are_private():
         _foo: str = 'abc'
         _bar: ClassVar[str] = 'cba'
 
-        class Config:
-            underscore_attrs_are_private = True
+        model_config = BaseConfig(underscore_attrs_are_private=True)
 
     assert Model.__slots__ == {'_foo'}
     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
@@ -130,8 +128,7 @@ def test_private_attribute_intersection_with_extra_field():
     class Model(BaseModel):
         _foo = PrivateAttr('private_attribute')
 
-        class Config:
-            extra = Extra.allow
+        model_config = BaseConfig(extra=Extra.allow)
 
     assert Model.__slots__ == {'_foo'}
     m = Model(_foo='field')
@@ -189,8 +186,7 @@ def test_config_override_init():
             super().__init__(**data)
             self._private_attr = 123
 
-        class Config:
-            underscore_attrs_are_private = True
+        model_config = BaseConfig(underscore_attrs_are_private=True)
 
     m = MyModel(x='hello')
     assert m.dict() == {'x': 'hello'}
@@ -205,8 +201,7 @@ def test_generic_private_attribute():
         value: T
         _private_value: T
 
-        class Config:
-            underscore_attrs_are_private = True
+        model_config = BaseConfig(underscore_attrs_are_private=True)
 
     m = Model[int](value=1, _private_attr=3)
     m._private_value = 3

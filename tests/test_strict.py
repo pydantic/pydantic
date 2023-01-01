@@ -8,7 +8,7 @@ else:
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseConfig, BaseModel, Field, ValidationError
 
 
 @pytest.fixture(scope='session', name='ModelWithStrictField')
@@ -51,8 +51,7 @@ def model_with_strict_config_false():
         c: Annotated[int, Field(strict=None)]
         d: Annotated[int, Field()]
 
-        class Config:
-            strict = True
+        model_config = BaseConfig(strict=True)
 
     return ModelWithStrictConfig
 
@@ -82,8 +81,7 @@ def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: Type[Base
 
 def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
     class Model(ModelWithStrictConfig):
-        class Config:
-            strict = False
+        model_config = BaseConfig(strict=False)
 
     values = [
         Model(a='1', b=2, c=3, d=4),

@@ -3,7 +3,7 @@ from typing import NamedTuple, Tuple
 
 import pytest
 
-from pydantic import BaseModel, PositiveInt, ValidationError
+from pydantic import BaseConfig, BaseModel, PositiveInt, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -153,8 +153,7 @@ def test_namedtuple_arbitrary_type():
     class Model(BaseModel):
         x: Tup
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = BaseConfig(arbitrary_types_allowed=True)
 
     data = {'x': Tup(c=CustomClass())}
     model = Model.parse_obj(data)

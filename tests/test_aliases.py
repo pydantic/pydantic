@@ -388,10 +388,8 @@ def test_allow_population_by_field_name_config(
     expected_value: int = 7
 
     class Foo(BaseModel):
+        model_config = BaseConfig(allow_population_by_field_name=allow_population_by_field_name_config)
         bar_: int = Field(..., alias='bar')
-
-        class Config(BaseConfig):
-            allow_population_by_field_name = allow_population_by_field_name_config
 
     with expectation:
         if use_construct:

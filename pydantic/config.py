@@ -66,80 +66,114 @@ class ConfigDict(TypedDict, total=False):
 config_keys = set(ConfigDict.__annotations__.keys())
 
 
-class BaseConfig:
-    title: Optional[str] = None
-    anystr_lower: bool = False  # TODO rename to str_to_lower
-    anystr_upper: bool = False  # TODO rename to str_to_upper
-    anystr_strip_whitespace: bool = False  # TODO rename to str_strip_whitespace
-    min_anystr_length: int = 0  # TODO rename to str_min_length
-    max_anystr_length: Optional[int] = None  # TODO rename to str_max_length
-    validate_all: bool = False  # TODO remove
-    extra: Extra = Extra.ignore
-    allow_mutation: bool = True  # TODO remove - replaced by frozen
-    frozen: bool = False
-    allow_population_by_field_name: bool = False  # TODO rename to populate_by_name
-    use_enum_values: bool = False
-    fields: Dict[str, Union[str, Dict[str, str]]] = {}  # TODO remove
-    validate_assignment: bool = False
-    error_msg_templates: Dict[str, str] = {}  # TODO remove
-    arbitrary_types_allowed: bool = False  # TODO default True, or remove
-    orm_mode: bool = False  # TODO rename to from_attributes
-    alias_generator: Optional[Callable[[str], str]] = None
-    keep_untouched: Tuple[type, ...] = ()  # TODO remove??
-    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}  # TODO remove, new model method
-    json_loads: Callable[[str], Any] = json.loads  # TODO decide
-    json_dumps: Callable[..., str] = json.dumps  # TODO decide
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]] = {}  # TODO decide
-    underscore_attrs_are_private: bool = False  # TODO remove
-    allow_inf_nan: bool = True
+class BaseConfig(TypedDict, total=False):
+    title: Optional[str]
+    anystr_lower: bool  # TODO rename to str_to_lower
+    anystr_upper: bool  # TODO rename to str_to_upper
+    anystr_strip_whitespace: bool  # TODO rename to str_strip_whitespace
+    min_anystr_length: int  # TODO rename to str_min_length
+    max_anystr_length: Optional[int]  # TODO rename to str_max_length
+    validate_all: bool  # TODO remove
+    extra: Extra
+    allow_mutation: bool  # TODO remove - replaced by frozen
+    frozen: bool
+    allow_population_by_field_name: bool  # TODO rename to populate_by_name
+    use_enum_values: bool
+    fields: Dict[str, Union[str, Dict[str, str]]]  # TODO remove
+    validate_assignment: bool
+    error_msg_templates: Dict[str, str]  # TODO remove
+    arbitrary_types_allowed: bool  # TODO default True, or remove
+    orm_mode: bool  # TODO rename to from_attributes
+    alias_generator: Optional[Callable[[str], str]]
+    keep_untouched: Tuple[type, ...]  # TODO remove??
+    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable']  # TODO remove, new model method
+    json_loads: Callable[[str], Any]  # TODO decide
+    json_dumps: Callable[..., str]  # TODO decide
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]]  # TODO decide
+    underscore_attrs_are_private: bool  # TODO remove
+    allow_inf_nan: bool
 
-    strict: bool = False
+    strict: bool
 
     # whether inherited models as fields should be reconstructed as base model,
     # and whether such a copy should be shallow or deep
-    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'  # TODO remove???
+    copy_on_model_validation: Literal['none', 'deep', 'shallow']  # TODO remove???
 
     # whether `Union` should check all allowed types before even trying to coerce
-    smart_union: bool = False  # TODO remove
+    smart_union: bool  # TODO remove
     # whether dataclass `__post_init__` should be run before or after validation
-    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'  # TODO remove
+    post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
-    @classmethod
-    def get_field_info(cls, name: str) -> Dict[str, Any]:
-        """
-        Get properties of FieldInfo from the `fields` property of the config class.
-        """
+    # @classmethod
+    # def get_field_info(cls, name: str) -> Dict[str, Any]:
+    #     """
+    #     Get properties of FieldInfo from the `fields` property of the config class.
+    #     """
 
-        fields_value = cls.fields.get(name)
+    #     fields_value = cls.fields.get(name)
 
-        if isinstance(fields_value, str):
-            field_info: Dict[str, Any] = {'alias': fields_value}
-        elif isinstance(fields_value, dict):
-            field_info = fields_value
-        else:
-            field_info = {}
+    #     if isinstance(fields_value, str):
+    #         field_info: Dict[str, Any] = {'alias': fields_value}
+    #     elif isinstance(fields_value, dict):
+    #         field_info = fields_value
+    #     else:
+    #         field_info = {}
 
-        if 'alias' in field_info:
-            field_info.setdefault('alias_priority', 2)
+    #     if 'alias' in field_info:
+    #         field_info.setdefault('alias_priority', 2)
 
-        if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
-            alias = cls.alias_generator(name)
-            if not isinstance(alias, str):
-                raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
-            field_info.update(alias=alias, alias_priority=1)
-        return field_info
+    #     if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
+    #         alias = cls.alias_generator(name)
+    #         if not isinstance(alias, str):
+    #             raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
+    #         field_info.update(alias=alias, alias_priority=1)
+    #     return field_info
 
-    @classmethod
-    def prepare_field(cls, field: Any) -> None:
-        """
-        Optional hook to check or modify fields during model creation.
-        """
-        pass
+    # @classmethod
+    # def prepare_field(cls, field: Any) -> None:
+    #     """
+    #     Optional hook to check or modify fields during model creation.
+    #     """
+    #     pass
+
+
+def _default_base_config() -> BaseConfig:
+    return BaseConfig(
+        title=None,
+        anystr_lower=False,
+        anystr_upper=False,
+        anystr_strip_whitespace=False,
+        min_anystr_length=0,
+        max_anystr_length=None,
+        validate_all=False,
+        extra=Extra.ignore,
+        allow_mutation=True,
+        frozen=False,
+        allow_population_by_field_name=False,
+        use_enum_values=False,
+        fields={},
+        validate_assignment=False,
+        error_msg_templates={},
+        arbitrary_types_allowed=False,
+        orm_mode=False,
+        alias_generator=None,
+        keep_untouched=(),
+        schema_extra={},
+        json_loads=json.loads,
+        json_dumps=json.dumps,
+        json_encoders={},
+        underscore_attrs_are_private=False,
+        allow_inf_nan=True,
+        strict=False,
+        copy_on_model_validation='shallow',
+        smart_union=False,
+        post_init_call='before_validation',
+    )
 
 
 def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig]:
     if config is None:
-        return BaseConfig
+        return _default_base_config
 
     else:
         config_dict = (
@@ -157,13 +191,13 @@ def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig
 
 
 def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
-    # TODO remove
-    if not self_config:
-        base_classes: Tuple['ConfigType', ...] = (parent_config,)
-    elif self_config == parent_config:
-        base_classes = (self_config,)
-    else:
-        base_classes = self_config, parent_config
+    # # TODO remove
+    # if not self_config:
+    #     base_classes: Tuple['ConfigType', ...] = (parent_config,)
+    # elif self_config == parent_config:
+    #     base_classes = (self_config,)
+    # else:
+    #     base_classes = self_config, parent_config
 
     namespace['json_encoders'] = {
         **getattr(parent_config, 'json_encoders', {}),
@@ -171,7 +205,8 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **nam
         **namespace.get('json_encoders', {}),
     }
 
-    return type('Config', base_classes, namespace)
+    # return type('Config', base_classes, namespace)
+    return self_config
 
 
 def build_config(
@@ -183,35 +218,44 @@ def build_config(
     Note: merging json_encoders is not currently implemented
     """
     config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
-    config_from_namespace = namespace.get('Config')
+    # config_from_namespace = namespace.get('Config')
 
-    config_bases = []
+    config_bases = _default_base_config()
     for base in bases:
-        config = getattr(base, 'Config', None)
+        config = getattr(base, 'model_config', None)
         if config:
-            config_bases.append(config)
+            config_bases.update(config)
+    if 'model_config' in namespace:
+        config_bases.update(namespace.get('model_config'))
+    prepare_config(config_bases, cls_name)
 
-    if len(config_bases) == 1 and not any([config_kwargs, config_from_namespace]):
-        return BaseConfig, None
+    # return config_bases, config_bases
+    if not config_kwargs:
+        return config_bases, None
 
-    if config_from_namespace:
-        config_bases = [config_from_namespace] + config_bases
+    config_bases.update(config_kwargs)
+    prepare_config(config_bases, cls_name)
+    return config_bases, config_bases
+    # if config_from_namespace:
+    #     config_bases = [config_from_namespace] + config_bases
 
-    combined_config: type[BaseConfig] = type('CombinedConfig', tuple(config_bases), config_kwargs)
-    prepare_config(combined_config, cls_name)
+    # combined_config: TypedDict[BaseConfig] = TypedDict('CombinedConfig', tuple(config_bases), config_kwargs)
+    # combined_config: Type[TypedDict] = TypedDict('CombinedConfig', {"name": str})
+    # prepare_config(combined_config, cls_name)
 
-    if config_from_namespace and config_kwargs:
-        # we want to override `Config` so future inheritance includes config_kwargs
-        new_model_config: type[BaseConfig] = type('ConfigWithKwargs', (config_from_namespace,), config_kwargs)
-        return combined_config, new_model_config
-    else:
-        # we want to use CombinedConfig for `__config__`, but we
-        return combined_config, combined_config
+    # if config_from_namespace and config_kwargs:
+    #     # we want to override `Config` so future inheritance includes config_kwargs
+    #     new_model_config: type[BaseConfig] = type('ConfigWithKwargs', (config_from_namespace,), config_kwargs)
+    #     return combined_config, new_model_config
+    # else:
+    #     # we want to use CombinedConfig for `__config__`, but we
+    #     return combined_config, combined_config
 
 
 def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
-    if not isinstance(config.extra, Extra):
+    # TODO only allow enum values in V2?
+    if not isinstance(config['extra'], Extra):
         try:
-            config.extra = Extra(config.extra)
+            config['extra'] = Extra(config['extra'])
         except ValueError:
-            raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
+            raise ValueError(f'"{cls_name}": {config["extra"]} is not a valid value for "extra"')

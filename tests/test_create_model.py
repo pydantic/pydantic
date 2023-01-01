@@ -2,7 +2,7 @@ from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic import BaseConfig, BaseModel, Extra, Field, ValidationError, create_model, errors, validator
 from pydantic.fields import ModelPrivateAttr
 from pydantic.generics import GenericModel
 
@@ -11,11 +11,11 @@ from pydantic.generics import GenericModel
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=123)
     assert issubclass(model, BaseModel)
-    assert issubclass(model.__config__, BaseModel.Config)
+    assert issubclass(model.model_config, BaseModel.model_config)
     assert model.__name__ == 'FooModel'
     assert model.__fields__.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
-    assert model.__config__.__name__ == 'Config'
+    assert model.model_config.__name__ == 'Config'
     assert model.__module__ == 'pydantic.main'
 
 
@@ -67,7 +67,7 @@ def test_field_wrong_tuple():
 
 def test_config_and_base():
     with pytest.raises(errors.PydanticUserError):
-        create_model('FooModel', __config__=BaseModel.Config, __base__=BaseModel)
+        create_model('FooModel', __config__=BaseModel.model_config, __base__=BaseModel)
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -84,33 +84,31 @@ def test_inheritance():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_custom_config():
-    class Config:
-        fields = {'foo': 'api-foo-field'}
+    config = BaseConfig(fields={'foo': 'api-foo-field'})
 
-    model = create_model('FooModel', foo=(int, ...), __config__=Config)
+    model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.__config__, BaseModel.Config)
+    assert issubclass(model.__config__, BaseModel.model_config)
     with pytest.raises(ValidationError):
         model(foo=654)
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_custom_config_inherits():
-    class Config(BaseModel.Config):
+    class Config(BaseModel.model_config):
         fields = {'foo': 'api-foo-field'}
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.__config__, BaseModel.Config)
+    assert issubclass(model.__config__, BaseModel.model_config)
     with pytest.raises(ValidationError):
         model(foo=654)
 
 
 def test_custom_config_extras():
-    class Config(BaseModel.Config):
-        extra = Extra.forbid
+    config = BaseConfig(extra=Extra.forbid)
 
-    model = create_model('FooModel', foo=(int, ...), __config__=Config)
+    model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(foo=654)
     with pytest.raises(ValidationError):
         model(bar=654)
