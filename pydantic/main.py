@@ -47,10 +47,8 @@ _base_class_defined = False
 class ModelMetaclass(ABCMeta):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any) -> type:
         if _base_class_defined:
-            __config__, new_model_config = build_config(cls_name, bases, namespace, kwargs)
-            if new_model_config is not None:
-                namespace['Config'] = new_model_config
-            namespace['model_config'] = __config__
+            config_new = build_config(cls_name, bases, namespace, kwargs)
+            namespace['model_config'] = config_new
             # print(__config__)
             namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
             if private_attributes:
@@ -78,13 +76,13 @@ class ModelMetaclass(ABCMeta):
             for name, value in namespace.items():
                 validator_functions.extract_validator(name, value)
 
-            if __config__['json_encoders']:
-                json_encoder = partial(custom_pydantic_encoder, __config__['json_encoders'])
+            if config_new['json_encoders']:
+                json_encoder = partial(custom_pydantic_encoder, config_new['json_encoders'])
             else:
                 json_encoder = pydantic_encoder  # type: ignore[assignment]
             namespace['__json_encoder__'] = staticmethod(json_encoder)
 
-            if '__hash__' not in namespace and __config__['frozen']:
+            if '__hash__' not in namespace and config_new['frozen']:
 
                 def hash_func(self_: Any) -> int:
                     return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
@@ -589,7 +587,7 @@ _base_class_defined = True
 def create_model(
     __model_name: str,
     *,
-    __config__: type[BaseConfig] | None = None,
+    __config__: BaseConfig | None = None,
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -603,7 +601,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: type[BaseConfig] | None = None,
+    __config__: BaseConfig | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -616,7 +614,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: type[BaseConfig] | None = None,
+    __config__: BaseConfig | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -681,7 +679,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = inherit_config(__config__, BaseConfig)
+        namespace['model_config'] = inherit_config(__config__, _default_base_config())
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
     from .main import BaseModel
 
-    ConfigType = Type['BaseConfig']
-
     class SchemaExtraCallable(Protocol):
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
@@ -171,9 +169,9 @@ def _default_base_config() -> BaseConfig:
     )
 
 
-def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig]:
+def get_config(config: Union[ConfigDict, Type[object], None]) -> BaseConfig:
     if config is None:
-        return _default_base_config
+        return _default_base_config()
 
     else:
         config_dict = (
@@ -181,16 +179,12 @@ def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig
             if isinstance(config, dict)
             else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
         )
-
-        class Config(BaseConfig):
-            ...
-
-        for k, v in config_dict.items():
-            setattr(Config, k, v)
-        return Config
+        config_new = _default_base_config()
+        config_new.update(config_dict)  # type:ignore
+        return config_new
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
+def inherit_config(self_config: BaseConfig, parent_config: BaseConfig, **namespace: Any) -> BaseConfig:
     # # TODO remove
     # if not self_config:
     #     base_classes: Tuple['ConfigType', ...] = (parent_config,)
@@ -211,49 +205,35 @@ def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **nam
 
 def build_config(
     cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]
-) -> tuple[type[BaseConfig], type[BaseConfig] | None]:
+) -> BaseConfig:
     """
     TODO update once we're sure what this does.
 
     Note: merging json_encoders is not currently implemented
     """
     config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
-    # config_from_namespace = namespace.get('Config')
 
-    config_bases = _default_base_config()
+    config_default = dict(_default_base_config())
+    config_bases = {}
     for base in bases:
-        config = getattr(base, 'model_config', None)
+        config: Optional[Dict[str, object]] = getattr(base, 'model_config', None)
         if config:
-            config_bases.update(config)
-    if 'model_config' in namespace:
-        config_bases.update(namespace.get('model_config'))
-    prepare_config(config_bases, cls_name)
+            config_bases.update({key: value for key, value in config.items() if config_default[key] != value})
+    config_new = dict(list(config_default.items()) + list(config_bases.items()))
 
-    # return config_bases, config_bases
-    if not config_kwargs:
-        return config_bases, None
+    config_from_namespace = namespace.get('model_config', None)
+    if config_from_namespace:
+        if not isinstance(config_from_namespace, dict):
+            raise ValueError(f'"{cls_name}": {config_from_namespace} must be of type {dict}')
+        config_new.update(config_from_namespace)
 
-    config_bases.update(config_kwargs)
-    prepare_config(config_bases, cls_name)
-    return config_bases, config_bases
-    # if config_from_namespace:
-    #     config_bases = [config_from_namespace] + config_bases
-
-    # combined_config: TypedDict[BaseConfig] = TypedDict('CombinedConfig', tuple(config_bases), config_kwargs)
-    # combined_config: Type[TypedDict] = TypedDict('CombinedConfig', {"name": str})
-    # prepare_config(combined_config, cls_name)
-
-    # if config_from_namespace and config_kwargs:
-    #     # we want to override `Config` so future inheritance includes config_kwargs
-    #     new_model_config: type[BaseConfig] = type('ConfigWithKwargs', (config_from_namespace,), config_kwargs)
-    #     return combined_config, new_model_config
-    # else:
-    #     # we want to use CombinedConfig for `__config__`, but we
-    #     return combined_config, combined_config
+    config_new.update(config_kwargs)
+    new_model_config = BaseConfig(config_new)  # type: ignore
+    prepare_config(new_model_config, cls_name)
+    return new_model_config
 
 
-def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
-    # TODO only allow enum values in V2?
+def prepare_config(config: BaseConfig, cls_name: str) -> None:
     if not isinstance(config['extra'], Extra):
         try:
             config['extra'] = Extra(config['extra'])

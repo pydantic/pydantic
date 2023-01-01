@@ -1154,7 +1154,6 @@ def test_illegal_extra_value():
             foo: int
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
         model_config = BaseConfig(allow_mutation=False, extra=Extra.forbid)

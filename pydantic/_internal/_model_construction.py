@@ -233,9 +233,7 @@ def build_inner_schema(  # noqa: C901
     return schema, fields
 
 
-def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config: type[BaseConfig]
-) -> Signature:
+def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: BaseConfig) -> Signature:
     """
     Generate signature for model based on its fields
     """

@@ -11,7 +11,7 @@ import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, Extra, ValidationError, validator
+from pydantic import BaseConfig, BaseModel, Extra, ValidationError, validator
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -874,8 +874,7 @@ def test_dataclass_arbitrary():
         a: ArbitraryType
         b: Test
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = BaseConfig(arbitrary_types_allowed=True)
 
     TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
 
@@ -890,8 +889,7 @@ def test_forward_stdlib_dataclass_params():
         item: Item
         other: str
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = BaseConfig(arbitrary_types_allowed=True)
 
     e = Example(item=Item(name='pika'), other='bulbi')
     e.other = 'bulbi2'
@@ -972,8 +970,7 @@ class ModelForPickle(pydantic.BaseModel):
 
     dataclass: BuiltInDataclassForPickle
 
-    class Config:
-        validate_assignment = True
+    model_config = pydantic.BaseConfig(validate_assignment=True)
         """
     )
     obj = module.ModelForPickle(dataclass=module.BuiltInDataclassForPickle(value=5))
@@ -995,12 +992,11 @@ def test_config_field_info_create_model():
     class A1(BaseModel):
         a: str
 
-        class Config:
-            fields = {'a': {'description': 'descr'}}
+        model_config = BaseConfig(fields={'a': {'description': 'descr'}})
 
     assert A1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
-    @pydantic.dataclasses.dataclass(config=A1.Config)
+    @pydantic.dataclasses.dataclass(config=A1.model_config)
     class A2:
         a: str
 
