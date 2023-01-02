@@ -369,6 +369,7 @@ class ModelField(Representation):
         'annotation',
         'sub_fields',
         'sub_fields_mapping',
+        'discriminator_default',
         'key_field',
         'validators',
         'pre_validators',
@@ -426,6 +427,7 @@ class ModelField(Representation):
         self.validate_always: bool = False
         self.sub_fields: Optional[List[ModelField]] = None
         self.sub_fields_mapping: Optional[Dict[str, 'ModelField']] = None  # used for discriminated union
+        self.discriminator_default: Optional['ModelField'] = None  # used for discriminated union
         self.key_field: Optional[ModelField] = None
         self.validators: 'ValidatorsList' = []
         self.pre_validators: Optional['ValidatorsList'] = None
@@ -769,6 +771,7 @@ class ModelField(Representation):
 
         assert self.sub_fields is not None
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
+        discriminator_default: Optional['ModelField'] = None
         all_aliases: Set[str] = set()
 
         for sub_field in self.sub_fields:
@@ -777,12 +780,15 @@ class ModelField(Representation):
                 # Stopping everything...will need to call `update_forward_refs`
                 return
 
-            alias, discriminator_values = get_discriminator_alias_and_values(t, self.discriminator_key)
+            alias, discriminator_values, is_optional = get_discriminator_alias_and_values(t, self.discriminator_key)
             all_aliases.add(alias)
             for discriminator_value in discriminator_values:
                 sub_fields_mapping[discriminator_value] = sub_field
+            if is_optional:
+                discriminator_default = sub_field
 
         self.sub_fields_mapping = sub_fields_mapping
+        self.discriminator_default = discriminator_default
         self.discriminator_alias = get_unique_discriminator_alias(all_aliases, self.discriminator_key)
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':
@@ -1105,6 +1111,12 @@ class ModelField(Representation):
     ) -> 'ValidateReturn':
         assert self.discriminator_key is not None
         assert self.discriminator_alias is not None
+
+        if self.discriminator_default is not None and self.discriminator_alias not in v:
+            sub_field = self.discriminator_default
+            if not isinstance(loc, tuple):
+                loc = (loc,)
+            return sub_field.validate(v, values, loc=(*loc, display_as_type(sub_field.type_)), cls=cls)
 
         try:
             discriminator_value = v[self.discriminator_alias]

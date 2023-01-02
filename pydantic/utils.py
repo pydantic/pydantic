@@ -755,7 +755,7 @@ def get_unique_discriminator_alias(all_aliases: Collection[str], discriminator_k
     return unique_aliases.pop()
 
 
-def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple[str, Tuple[str, ...]]:
+def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple[str, Tuple[str, ...], bool]:
     """
     Get alias and all valid values in the `Literal` type of the discriminator field
     `tp` can be a `BaseModel` class or directly an `Annotated` `Union` of many.
@@ -769,22 +769,23 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
         tp = tp.__pydantic_model__
 
     if is_union(get_origin(tp)):
-        alias, all_values = _get_union_alias_and_all_values(tp, discriminator_key)
-        return alias, tuple(v for values in all_values for v in values)
+        alias, all_values, is_optional = _get_union_alias_and_all_values(tp, discriminator_key)
+        return alias, tuple(v for values in all_values for v in values), is_optional
     elif is_root_model:
         union_type = tp.__fields__[ROOT_KEY].type_
-        alias, all_values = _get_union_alias_and_all_values(union_type, discriminator_key)
+        alias, all_values, is_optional = _get_union_alias_and_all_values(union_type, discriminator_key)
 
         if len(set(all_values)) > 1:
             raise ConfigError(
                 f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}'
             )
 
-        return alias, all_values[0]
+        return alias, all_values[0], is_optional
 
     else:
         try:
-            t_discriminator_type = tp.__fields__[discriminator_key].type_
+            model = tp.__fields__[discriminator_key]
+            t_discriminator_type, annotation = model.type_, model.annotation
         except AttributeError as e:
             raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`') from e
         except KeyError as e:
@@ -793,16 +794,22 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
         if not is_literal_type(t_discriminator_type):
             raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
 
-        return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)
+        is_optional = _is_optional(annotation)
+        return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type), is_optional
+
+
+def _is_optional(t: Type[Any]) -> bool:
+    origin = get_origin(t)
+    return origin is Union and type(None) in get_args(t)
 
 
 def _get_union_alias_and_all_values(
     union_type: Type[Any], discriminator_key: str
-) -> Tuple[str, Tuple[Tuple[str, ...], ...]]:
+) -> Tuple[str, Tuple[Tuple[str, ...], ...], bool]:
     zipped_aliases_values = [get_discriminator_alias_and_values(t, discriminator_key) for t in get_args(union_type)]
     # unzip: [('alias_a',('v1', 'v2)), ('alias_b', ('v3',))] => [('alias_a', 'alias_b'), (('v1', 'v2'), ('v3',))]
-    all_aliases, all_values = zip(*zipped_aliases_values)
-    return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values
+    all_aliases, all_values, _ = zip(*zipped_aliases_values)
+    return get_unique_discriminator_alias(all_aliases, discriminator_key), all_values, False
 
 
 KT = TypeVar('KT')

@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Generic, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated, Literal
@@ -265,6 +265,20 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
+
+
+def test_discriminated_union_with_default():
+    class A(BaseModel):
+        l: Optional[Literal['a']] = 'a'
+
+    class B(BaseModel):
+        l: Literal['b']
+
+    class Top(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='l')
+
+    t = Top(sub={})
+    assert isinstance(t, Top) and isinstance(t.sub, A)
 
 
 def test_discriminated_union_basemodel_instance_value_with_alias():
