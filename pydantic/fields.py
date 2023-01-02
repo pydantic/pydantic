@@ -771,7 +771,7 @@ class ModelField(Representation):
 
         assert self.sub_fields is not None
         sub_fields_mapping: Dict[str, 'ModelField'] = {}
-        discriminator_default: Optional['ModelField'] = None
+        discriminator_default: List['ModelField'] = []
         all_aliases: Set[str] = set()
 
         for sub_field in self.sub_fields:
@@ -785,10 +785,14 @@ class ModelField(Representation):
             for discriminator_value in discriminator_values:
                 sub_fields_mapping[discriminator_value] = sub_field
             if is_optional:
-                discriminator_default = sub_field
+                discriminator_default.append(sub_field)
+
+        if len(discriminator_default) > 1:
+            name, count = self.discriminator_key, len(discriminator_default)
+            raise ConfigError(f'Discriminator field {name!r} is defined `Optional` in {count} variants')
 
         self.sub_fields_mapping = sub_fields_mapping
-        self.discriminator_default = discriminator_default
+        self.discriminator_default = discriminator_default[0] if discriminator_default else None
         self.discriminator_alias = get_unique_discriminator_alias(all_aliases, self.discriminator_key)
 
     def _create_sub_type(self, type_: Type[Any], name: str, *, for_keys: bool = False) -> 'ModelField':

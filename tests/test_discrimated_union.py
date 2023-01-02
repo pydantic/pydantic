@@ -66,6 +66,22 @@ def test_discriminated_union_literal_discriminator():
             number: int
 
 
+def test_discriminated_union_single_default_discriminator():
+    class Cat(BaseModel):
+        pet_type: Optional[Literal['cat']]
+        c: str
+
+    class Dog(BaseModel):
+        pet_type: Optional[Literal['dog']]
+        d: str
+
+    with pytest.raises(ConfigError, match="Discriminator field 'pet_type' is defined `Optional` in 2 variants"):
+
+        class Model(BaseModel):
+            pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+            number: int
+
+
 def test_discriminated_union_root_same_discriminator():
     class BlackCat(BaseModel):
         pet_type: Literal['blackcat']
