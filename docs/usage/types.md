@@ -285,6 +285,11 @@ Setting a discriminated union has many benefits:
     Python changes `Union[T]` into `T` at interpretation time, so it is not possible for `pydantic` to
     distinguish fields of `Union[T]` from `T`.
 
+You can set discriminated field as `Optional` in one of the variants. This variant becomes the default
+if the value is not set:
+
+{!.tmp_examples/types_union_discriminated_default.md!}
+
 #### Nested Discriminated Unions
 
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
