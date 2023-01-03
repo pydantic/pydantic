@@ -28,7 +28,7 @@ function make_tty_ops() {
         print(tty);
       }
     },
-    flush(tty) {
+    fsync(tty) {
       print(tty);
     },
   };
@@ -85,7 +85,7 @@ async function main() {
       get(`./run_tests.py?v=${Date.now()}`, 'text'),
       // e4cf2e2 commit matches the pydantic-core wheel being used, so tests should pass
       get(zip_url, 'blob'),
-      importScripts('https://cdn.jsdelivr.net/pyodide/v0.21.0/full/pyodide.js'),
+      importScripts('https://cdn.jsdelivr.net/pyodide/v0.22.0/full/pyodide.js'),
     ]);
 
     const pyodide = await loadPyodide();
