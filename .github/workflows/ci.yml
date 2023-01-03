@@ -247,10 +247,10 @@ jobs:
           # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
           # in node_modules/pyodide/repodata.json, to get the version, run:
           # `cat node_modules/pyodide/repodata.json | python -m json.tool | rg platform`
-          version: '3.1.14'
+          version: '3.1.27'
           actions-cache-folder: emsdk-cache
 
-      - run: pip install 'maturin>=0.13,<0.14' 'black>=22.3.0,<23' typing_extensions
+      - run: pip install 'maturin>=0.13,<0.15' 'black>=22.3.0,<23' typing_extensions
 
       - name: build wheels
         run: make build-wasm

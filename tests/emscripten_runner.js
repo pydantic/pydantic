@@ -44,7 +44,7 @@ function make_tty_ops(stream) {
         console.warn(e);
       }
     },
-    flush(tty) {
+    fsync(tty) {
       if (!tty.output || tty.output.length === 0) {
         return;
       }
