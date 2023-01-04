@@ -213,7 +213,6 @@ def test_json_encoder_simple_inheritance():
     assert Child().json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json_encoder_inheritance_override():
     class Parent(BaseModel):
         dt: datetime.datetime = datetime.datetime.now()

@@ -203,6 +203,11 @@ def build_inner_schema(  # noqa: C901
         raise PydanticUndefinedAnnotation(name) from e
 
     fields: dict[str, FieldInfo] = {}
+    # collect already created FieldInfo's
+    for base in reversed(bases):
+        if hasattr(base, '__fields__'):
+            fields.update(base.__fields__)
+
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
@@ -217,6 +222,10 @@ def build_inner_schema(  # noqa: C901
         try:
             default = getattr(cls, ann_name)
         except AttributeError:
+            # if field has no default value and is not in __annotations__ this means that it is
+            # defined in a base class and we can skip it
+            if ann_name not in cls.__annotations__:
+                continue
             fields[ann_name] = FieldInfo.from_annotation(ann_type)
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
