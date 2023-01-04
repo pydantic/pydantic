@@ -23,7 +23,7 @@ class Person(BaseModel):
 
 
 # Now, we can rebuild the `Book` model, since the `Person` model is now defined.
-# Note: there's no need to call `model_rebuild()` on `Person`, 
+# Note: there's no need to call `model_rebuild()` on `Person`,
 # it's already complete.
 Book.model_rebuild()
 
