@@ -208,6 +208,8 @@ def build_inner_schema(  # noqa: C901
         if hasattr(base, '__fields__'):
             fields.update(base.__fields__)
 
+    # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
+    annotations = cls.__dict__.get('__annotations__', {})
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
@@ -224,7 +226,7 @@ def build_inner_schema(  # noqa: C901
         except AttributeError:
             # if field has no default value and is not in __annotations__ this means that it is
             # defined in a base class and we can skip it
-            if ann_name not in cls.__annotations__:
+            if ann_name not in annotations:
                 continue
             fields[ann_name] = FieldInfo.from_annotation(ann_type)
         else:
