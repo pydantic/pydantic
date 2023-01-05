@@ -139,9 +139,10 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
-        )
+        warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
+        if cls.__config__.undefined_types_warning:
+            raise UserWarning(warning_string)
+        cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
@@ -188,6 +189,8 @@ def build_inner_schema(  # noqa: C901
     model_ref = f'{module_name}.{name}'
     self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+
+    # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
         type_hints = _typing_extra.get_type_hints(cls, global_ns, local_ns, include_extras=True)
     except NameError as e:
@@ -206,6 +209,10 @@ def build_inner_schema(  # noqa: C901
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
+
+        # raise a PydanticUndefinedAnnotation if type is undefined
+        if isinstance(ann_type, typing.ForwardRef):
+            raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
         for base in bases:
             if hasattr(base, ann_name):
