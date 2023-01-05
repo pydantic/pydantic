@@ -230,8 +230,8 @@ def test_constrained_list_optional():
         req: Optional[conlist(str, min_length=1)]
         opt: Optional[conlist(str, min_length=1)] = None
 
-    assert Model(req=None).dict() == {'req': None, 'opt': None}
-    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None).model_dump() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=[], opt=[])
@@ -253,7 +253,7 @@ def test_constrained_list_optional():
         },
     ]
 
-    assert Model(req=['a'], opt=['a']).dict() == {'req': ['a'], 'opt': ['a']}
+    assert Model(req=['a'], opt=['a']).model_dump() == {'req': ['a'], 'opt': ['a']}
 
 
 def test_constrained_list_constraints():
@@ -334,7 +334,7 @@ def test_conlist():
         foo: List[int] = Field(..., min_length=2, max_length=4)
         bar: conlist(str, min_length=1, max_length=4) = None
 
-    assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': [1, 2], 'bar': ['spoon']}
+    assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': [1, 2], 'bar': ['spoon']}
 
     msg = r'List should have at least 2 items after validation, not 1 \[type=too_short,'
     with pytest.raises(ValidationError, match=msg):
@@ -445,8 +445,8 @@ def test_constrained_set_optional():
         req: Optional[conset(str, min_length=1)]
         opt: Optional[conset(str, min_length=1)] = None
 
-    assert Model(req=None).dict() == {'req': None, 'opt': None}
-    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None).model_dump() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=set(), opt=set())
@@ -468,7 +468,7 @@ def test_constrained_set_optional():
         },
     ]
 
-    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
+    assert Model(req={'a'}, opt={'a'}).model_dump() == {'req': {'a'}, 'opt': {'a'}}
 
 
 def test_constrained_set_constraints():
@@ -549,9 +549,9 @@ def test_conset():
         foo: Set[int] = Field(..., min_length=2, max_length=4)
         bar: conset(str, min_length=1, max_length=4) = None
 
-    assert Model(foo=[1, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
-    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
     with pytest.raises(ValidationError, match='Set should have at least 2 items after validation, not 1'):
         Model(foo=[1])
@@ -599,11 +599,11 @@ def test_confrozenset():
         bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
-    assert m.dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert m.model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
     assert isinstance(m.foo, frozenset)
     assert isinstance(m.bar, frozenset)
 
-    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).dict() == {'foo': {1, 2}, 'bar': {'spoon'}}
+    assert Model(foo=[1, 1, 1, 2, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
 
     with pytest.raises(ValidationError, match='Frozenset should have at least 2 items after validation, not 1'):
         Model(foo=[1])
@@ -650,8 +650,8 @@ def test_constrained_frozenset_optional():
         req: Optional[confrozenset(str, min_length=1)]
         opt: Optional[confrozenset(str, min_length=1)] = None
 
-    assert Model(req=None).dict() == {'req': None, 'opt': None}
-    assert Model(req=None, opt=None).dict() == {'req': None, 'opt': None}
+    assert Model(req=None).model_dump() == {'req': None, 'opt': None}
+    assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(req=frozenset(), opt=frozenset())
@@ -673,7 +673,7 @@ def test_constrained_frozenset_optional():
         },
     ]
 
-    assert Model(req={'a'}, opt={'a'}).dict() == {'req': {'a'}, 'opt': {'a'}}
+    assert Model(req={'a'}, opt={'a'}).model_dump() == {'req': {'a'}, 'opt': {'a'}}
 
 
 @pytest.fixture(scope='session', name='ConStringModel')
@@ -821,9 +821,9 @@ def test_string_import_any():
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    assert PyObjectModel(thing='math.cos').dict() == {'thing': math.cos}
-    assert PyObjectModel(thing='os.path').dict() == {'thing': os.path}
-    assert PyObjectModel(thing=[1, 2, 3]).dict() == {'thing': [1, 2, 3]}
+    assert PyObjectModel(thing='math.cos').model_dump() == {'thing': math.cos}
+    assert PyObjectModel(thing='os.path').model_dump() == {'thing': os.path}
+    assert PyObjectModel(thing=[1, 2, 3]).model_dump() == {'thing': [1, 2, 3]}
 
 
 @pytest.mark.parametrize(
@@ -837,7 +837,7 @@ def test_string_import_constraints(annotation):
     class PyObjectModel(BaseModel):
         thing: annotation
 
-    assert PyObjectModel(thing='math.pi').dict() == {'thing': pytest.approx(3.141592654)}
+    assert PyObjectModel(thing='math.pi').model_dump() == {'thing': pytest.approx(3.141592654)}
     with pytest.raises(ValidationError, match='type=greater_than_equal'):
         PyObjectModel(thing='math.e')
 
@@ -849,7 +849,7 @@ def test_decimal():
     m = Model(v='1.234')
     assert m.v == Decimal('1.234')
     assert isinstance(m.v, Decimal)
-    assert m.dict() == {'v': Decimal('1.234')}
+    assert m.model_dump() == {'v': Decimal('1.234')}
 
 
 @pytest.fixture(scope='session', name='CheckModel')
@@ -972,7 +972,7 @@ def test_default_validators(field, value, result, CheckModel):
         with pytest.raises(ValidationError):
             CheckModel(**kwargs)
     else:
-        assert CheckModel(**kwargs).dict()[field] == result
+        assert CheckModel(**kwargs).model_dump()[field] == result
 
 
 @pytest.fixture(scope='session', name='StrModel')
@@ -1795,7 +1795,7 @@ def test_float_validation():
         h: confloat(allow_inf_nan=False) = None
 
     m = Model(a=5.1, b=-5.2, c=0, d=0, e=5.3, f=9.9, g=2.5, h=42)
-    assert m.dict() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5, 'h': 42}
+    assert m.model_dump() == {'a': 5.1, 'b': -5.2, 'c': 0, 'd': 0, 'e': 5.3, 'f': 9.9, 'g': 2.5, 'h': 42}
 
     assert Model(a=float('inf')).a == float('inf')
     assert Model(b=float('-inf')).b == float('-inf')
@@ -2075,7 +2075,7 @@ def test_uuid_validation():
     d = uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
 
     m = UUIDModel(a=a, b=b, c=c, d=d)
-    assert m.dict() == {'a': a, 'b': b, 'c': c, 'd': d}
+    assert m.model_dump() == {'a': a, 'b': b, 'c': c, 'd': d}
 
     with pytest.raises(ValidationError) as exc_info:
         UUIDModel(a=d, b=c, c=b, d=a)
@@ -2497,7 +2497,7 @@ def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
 
-    assert Model(a=0).dict() == {'a': 0}
+    assert Model(a=0).model_dump() == {'a': 0}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-1)
@@ -2517,7 +2517,7 @@ def test_number_ge():
     class Model(BaseModel):
         a: conint(ge=0) = 0
 
-    assert Model(a=0).dict() == {'a': 0}
+    assert Model(a=0).model_dump() == {'a': 0}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-1)
@@ -2537,7 +2537,7 @@ def test_number_lt():
     class Model(BaseModel):
         a: conint(lt=5) = 0
 
-    assert Model(a=4).dict() == {'a': 4}
+    assert Model(a=4).model_dump() == {'a': 4}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=5)
@@ -2557,7 +2557,7 @@ def test_number_le():
     class Model(BaseModel):
         a: conint(le=5) = 0
 
-    assert Model(a=5).dict() == {'a': 5}
+    assert Model(a=5).model_dump() == {'a': 5}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=6)
@@ -2578,7 +2578,7 @@ def test_number_multiple_of_int_valid(value):
     class Model(BaseModel):
         a: conint(multiple_of=5)
 
-    assert Model(a=value).dict() == {'a': value}
+    assert Model(a=value).model_dump() == {'a': value}
 
 
 @pytest.mark.parametrize('value', [1337, 23, 6, 14])
@@ -2605,7 +2605,7 @@ def test_number_multiple_of_float_valid(value):
     class Model(BaseModel):
         a: confloat(multiple_of=0.1)
 
-    assert Model(a=value).dict() == {'a': value}
+    assert Model(a=value).model_dump() == {'a': value}
 
 
 @pytest.mark.parametrize('value', [0.07, 1.27, 1.003])
@@ -2638,7 +2638,7 @@ def test_new_type_success():
         c: c_type
 
     m = Model(a=42, b=24, c=[1, 2, 3])
-    assert m.dict() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
+    assert m.model_dump() == {'a': 42, 'b': 24, 'c': [1, 2, 3]}
 
 
 def test_new_type_fails():
@@ -2681,7 +2681,7 @@ def test_valid_simple_json():
         json_obj: Json
 
     obj = '{"a": 1, "b": [2, 3]}'
-    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+    assert JsonModel(json_obj=obj).model_dump() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
 def test_valid_simple_json_any():
@@ -2689,7 +2689,7 @@ def test_valid_simple_json_any():
         json_obj: Json[Any]
 
     obj = '{"a": 1, "b": [2, 3]}'
-    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+    assert JsonModel(json_obj=obj).model_dump() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
 @pytest.mark.parametrize('gen_type', [lambda: Json, lambda: Json[Any]])
@@ -2719,7 +2719,7 @@ def test_valid_simple_json_bytes():
         json_obj: Json
 
     obj = b'{"a": 1, "b": [2, 3]}'
-    assert JsonModel(json_obj=obj).dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+    assert JsonModel(json_obj=obj).model_dump() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
 def test_valid_detailed_json():
@@ -2727,10 +2727,10 @@ def test_valid_detailed_json():
         json_obj: Json[List[int]]
 
     obj = '[1, 2, 3]'
-    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+    assert JsonDetailedModel(json_obj=obj).model_dump() == {'json_obj': [1, 2, 3]}
 
     obj = b'[1, 2, 3]'
-    assert JsonDetailedModel(json_obj=obj).dict() == {'json_obj': [1, 2, 3]}
+    assert JsonDetailedModel(json_obj=obj).model_dump() == {'json_obj': [1, 2, 3]}
 
     obj = '(1, 2, 3)'
     with pytest.raises(ValidationError) as exc_info:
@@ -2759,7 +2759,7 @@ def test_valid_model_json():
     m = JsonDetailedModel(json_obj=obj)
     assert isinstance(m.json_obj, Model)
     assert m.json_obj.a == 1
-    assert m.dict() == {'json_obj': {'a': 1, 'b': [2, 3]}}
+    assert m.model_dump() == {'json_obj': {'a': 1, 'b': [2, 3]}}
 
 
 def test_invalid_model_json():
@@ -2841,7 +2841,7 @@ def test_json_pre_validator():
             call_count += 1
             return v
 
-    assert JsonModel(json_obj='"foobar"').dict() == {'json_obj': 'foobar'}
+    assert JsonModel(json_obj='"foobar"').model_dump() == {'json_obj': 'foobar'}
     assert call_count == 1
 
 
@@ -2849,8 +2849,8 @@ def test_json_optional_simple():
     class JsonOptionalModel(BaseModel):
         json_obj: Optional[Json]
 
-    assert JsonOptionalModel(json_obj=None).dict() == {'json_obj': None}
-    assert JsonOptionalModel(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
+    assert JsonOptionalModel(json_obj=None).model_dump() == {'json_obj': None}
+    assert JsonOptionalModel(json_obj='["x", "y", "z"]').model_dump() == {'json_obj': ['x', 'y', 'z']}
 
 
 def test_json_optional_complex():
@@ -2879,7 +2879,7 @@ def test_json_required():
     class JsonRequired(BaseModel):
         json_obj: Json
 
-    assert JsonRequired(json_obj='["x", "y", "z"]').dict() == {'json_obj': ['x', 'y', 'z']}
+    assert JsonRequired(json_obj='["x", "y", "z"]').model_dump() == {'json_obj': ['x', 'y', 'z']}
     with pytest.raises(ValidationError, match=r'JSON input should be string, bytes or bytearray \[type=json_type,'):
         JsonRequired(json_obj=None)
     with pytest.raises(ValidationError, match=r'Field required \[type=missing,'):
@@ -2902,7 +2902,7 @@ def test_pattern(pattern_type):
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
-    # assert Foobar.schema() == {
+    # assert Foobar.model_json_schema() == {
     #     'type': 'object',
     #     'title': 'Foobar',
     #     'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
@@ -3138,7 +3138,7 @@ def test_generic_without_params():
         generic_tuple: Tuple
 
     m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
-    assert m.dict() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
+    assert m.model_dump() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
 
 
 def test_generic_without_params_error():
@@ -3427,7 +3427,7 @@ def test_deque_json():
     class Model(BaseModel):
         v: Deque[int]
 
-    assert Model(v=deque((1, 2, 3))).json() == '{"v": [1, 2, 3]}'
+    assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v": [1, 2, 3]}'
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
@@ -3445,7 +3445,7 @@ def test_none(value_type):
         my_json_none='null',
     )
 
-    # assert Model.schema() == {
+    # assert Model.model_json_schema() == {
     #     'title': 'Model',
     #     'type': 'object',
     #     'properties': {
@@ -3501,7 +3501,7 @@ def test_default_union_types():
     assert repr(DefaultModel(v=1).v) == '1'
     assert repr(DefaultModel(v='1').v) == "'1'"
 
-    # assert DefaultModel.schema() == {
+    # assert DefaultModel.model_json_schema() == {
     #     'title': 'DefaultModel',
     #     'type': 'object',
     #     'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
@@ -3539,11 +3539,11 @@ def test_union_compound_types():
     class Model(BaseModel):
         values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
 
-    assert Model(values={'L': '1'}).dict() == {'values': {'L': '1'}}
-    assert Model(values=['L1']).dict() == {'values': ['L1']}
-    assert Model(values=('L1',)).dict() == {'values': ['L1']}
+    assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
+    assert Model(values=['L1']).model_dump() == {'values': ['L1']}
+    assert Model(values=('L1',)).model_dump() == {'values': ['L1']}
     assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
-    assert Model(values={'x': ('pika',)}).dict() == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ('pika',)}).model_dump() == {'values': {'x': ['pika']}}
     with pytest.raises(ValidationError) as e:
         Model(values={'x': {'a': 'b'}})
     # insert_assert(e.value.errors())

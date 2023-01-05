@@ -103,7 +103,7 @@ assert day_of_week(m.signup_ts) == 3
 
 
 data = {'age': 10, 'first_name': 'Alena', 'last_name': 'Sousova', 'list_of_ints': [410]}
-m_from_obj = Model.parse_obj(data)
+m_from_obj = Model.model_validate(data)
 
 assert isinstance(m_from_obj, Model)
 assert m_from_obj.age == 10

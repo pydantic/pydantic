@@ -22,7 +22,7 @@ strategies support them without any user configuration.
 
 ### Use with JSON Schemas
 
-To test client-side code, you can use [`Model.schema()`](usage/models.md) with the
+To test client-side code, you can use [`Model.model_json_schema()`](usage/models.md) with the
 [`hypothesis-jsonschema` package](https://pypi.org/project/hypothesis-jsonschema/)
 to generate arbitrary JSON instances matching the schema.
 For web API testing, [Schemathesis](https://schemathesis.readthedocs.io) provides

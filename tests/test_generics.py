@@ -69,7 +69,7 @@ def test_value_validation():
                 raise ValueError('sum too large')
             return values
 
-    assert Response[Dict[int, int]](data={1: '4'}).dict() == {'data': {1: 4}}
+    assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 'a'})
     assert exc_info.value.errors() == [
@@ -160,7 +160,7 @@ def test_classvar():
     assert Result.other == 1
     assert Result[int].other == 1
     assert Result[int](data=1).other == 1
-    assert 'other' not in Result.__fields__
+    assert 'other' not in Result.model_fields
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -171,8 +171,8 @@ def test_non_annotated_field():
         data: T
         other = True
 
-    assert 'other' in Result.__fields__
-    assert 'other' in Result[int].__fields__
+    assert 'other' in Result.model_fields
+    assert 'other' in Result[int].model_fields
 
     result = Result[int](data=1)
     assert result.other is True
@@ -308,11 +308,11 @@ def test_generic():
         text: str
 
     success1 = Result[Data, Error](data=[Data(number=1, text='a')], positive_number=1)
-    assert success1.dict() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
+    assert success1.model_dump() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
     assert repr(success1) == "Result[Data, Error](data=[Data(number=1, text='a')], error=None, positive_number=1)"
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
-    assert success2.dict() == {'data': None, 'error': {'msg': 'error'}, 'positive_number': 1}
+    assert success2.model_dump() == {'data': None, 'error': {'msg': 'error'}, 'positive_number': 1}
     assert repr(success2) == "Result[Data, Error](data=None, error=Error(message='error'), positive_number=1)"
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
@@ -380,7 +380,7 @@ def test_optional_value():
         a: Optional[int] = 1
 
     model = MyModel[int]()
-    assert model.dict() == {'a': 1}
+    assert model.model_dump() == {'a': 1}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -390,7 +390,7 @@ def test_custom_schema():
     class MyModel(GenericModel, Generic[T]):
         a: int = Field(1, description='Custom')
 
-    schema = MyModel[int].schema()
+    schema = MyModel[int].model_json_schema()
     assert schema['properties']['a'].get('description') == 'Custom'
 
 
@@ -404,7 +404,7 @@ def test_child_schema():
     class Child(Model[T], Generic[T]):
         pass
 
-    schema = Child[int].schema()
+    schema = Child[int].model_json_schema()
     assert schema == {
         'title': 'Child[int]',
         'type': 'object',
@@ -988,8 +988,10 @@ def test_deep_generic_with_referenced_inner_generic():
         InnerModel[int](a=['s', {'a': 'wrong'}])
     assert InnerModel[int](a=['s', {'a': 1}]).a[1].a == 1
 
-    assert InnerModel[int].__fields__['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
-    assert (InnerModel[int].__fields__['a'].sub_fields[0].sub_fields[0].outer_type_.__fields__['a'].outer_type_) == int
+    assert InnerModel[int].model_fields['a'].outer_type_ == List[Union[ReferencedModel[int], str]]
+    assert (
+        InnerModel[int].model_fields['a'].sub_fields[0].sub_fields[0].outer_type_.model_fields['a'].outer_type_
+    ) == int
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1004,10 +1006,10 @@ def test_deep_generic_with_multiple_typevars():
         extra: U
 
     ConcreteInnerModel = InnerModel[int, float]
-    assert ConcreteInnerModel.__fields__['data'].outer_type_ == List[float]
-    assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
+    assert ConcreteInnerModel.model_fields['data'].outer_type_ == List[float]
+    assert ConcreteInnerModel.model_fields['extra'].outer_type_ == int
 
-    assert ConcreteInnerModel(data=['1'], extra='2').dict() == {'data': [1.0], 'extra': 2}
+    assert ConcreteInnerModel(data=['1'], extra='2').model_dump() == {'data': [1.0], 'extra': 2}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1027,11 +1029,11 @@ def test_deep_generic_with_multiple_inheritance():
 
     ConcreteInnerModel = InnerModel[int, float, str]
 
-    assert ConcreteInnerModel.__fields__['data'].outer_type_ == Dict[int, float]
-    assert ConcreteInnerModel.__fields__['stuff'].outer_type_ == List[str]
-    assert ConcreteInnerModel.__fields__['extra'].outer_type_ == int
+    assert ConcreteInnerModel.model_fields['data'].outer_type_ == Dict[int, float]
+    assert ConcreteInnerModel.model_fields['stuff'].outer_type_ == List[str]
+    assert ConcreteInnerModel.model_fields['extra'].outer_type_ == int
 
-    ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).dict() == {
+    ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5).model_dump() == {
         'data': {1: 5},
         'stuff': ['123'],
         'extra': 5,
@@ -1117,7 +1119,7 @@ def test_generic_recursive_models(create_module):
 
     Model1 = module.Model1
     Model2 = module.Model2
-    result = Model1[str].parse_obj(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
     assert result == Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
 
 
@@ -1135,7 +1137,7 @@ def test_generic_enum():
     class MyModel(BaseModel):
         my_gen: SomeGenericModel[SomeStringEnum]
 
-    m = MyModel.parse_obj({'my_gen': {'some_field': 'A'}})
+    m = MyModel.model_validate({'my_gen': {'some_field': 'A'}})
     assert m.my_gen.some_field is SomeStringEnum.A
 
 
@@ -1149,7 +1151,7 @@ def test_generic_literal():
 
     Fields = Literal['foo', 'bar']
     m = GModel[Fields, str](field={'foo': 'x'})
-    assert m.dict() == {'field': {'foo': 'x'}}
+    assert m.model_dump() == {'field': {'foo': 'x'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1169,7 +1171,7 @@ def test_generic_enums():
         g_a: GModel[EnumA]
         g_b: GModel[EnumB]
 
-    assert set(Model.schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
+    assert set(Model.model_json_schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1300,7 +1302,7 @@ def test_parse_generic_json():
     record = MessageWrapper[Payload](message=raw)
     assert isinstance(record.message, Payload)
 
-    schema = record.schema()
+    schema = record.model_json_schema()
     assert schema['properties'] == {'msg': {'$ref': '#/definitions/Payload'}}
     assert schema['definitions']['Payload'] == {
         'title': 'Payload',

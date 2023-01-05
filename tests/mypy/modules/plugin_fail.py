@@ -94,9 +94,9 @@ class UndefinedAnnotationModel(BaseModel):
 UndefinedAnnotationModel()
 
 
-Model.construct(x=1)
-Model.construct(_fields_set={'x'}, x=1, y='2')
-Model.construct(x='1', y='2')
+Model.model_construct(x=1)
+Model.model_construct(_fields_set={'x'}, x=1, y='2')
+Model.model_construct(x='1', y='2')
 
 # Strict mode fails
 inheriting = InheritingModel(x='1', y='1')

@@ -50,7 +50,7 @@ Similarly, if using the `@dataclass` decorator:
 
 **`use_enum_values`**
 : whether to populate models with the `value` property of enums, rather than the raw enum.
-  This may be useful if you want to serialise `model.dict()` later (default: `False`)
+  This may be useful if you want to serialise `model.model_dump()` later (default: `False`)
 
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to

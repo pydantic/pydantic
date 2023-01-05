@@ -119,7 +119,7 @@ def test_discriminated_union_validation():
         number: int
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
+        Model.model_validate({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet',),
@@ -131,7 +131,7 @@ def test_discriminated_union_validation():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': 'fish', 'number': 2})
+        Model.model_validate({'pet': 'fish', 'number': 2})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet',),
@@ -142,7 +142,7 @@ def test_discriminated_union_validation():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'fish'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet',),
@@ -160,17 +160,17 @@ def test_discriminated_union_validation():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'lizard'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'lizard'}, 'number': 2})
     assert exc_info.value.errors() == [
         {'loc': ('pet', 'Lizard', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
 
-    m = Model.parse_obj({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
+    m = Model.model_validate({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
     assert isinstance(m.pet, Lizard)
-    assert m.dict() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
+    assert m.model_dump() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet', 'Cat', '__root__', 'WhiteCat', 'white_infos'),
@@ -178,7 +178,7 @@ def test_discriminated_union_validation():
             'type': 'value_error.missing',
         }
     ]
-    m = Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
+    m = Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
     assert isinstance(m.pet.__root__, WhiteCat)
 
 
@@ -207,7 +207,7 @@ def test_discriminated_annotated_union():
         number: int
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
+        Model.model_validate({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet',),
@@ -219,7 +219,7 @@ def test_discriminated_annotated_union():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'fish'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet',),
@@ -230,15 +230,15 @@ def test_discriminated_annotated_union():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'dog'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'dog'}, 'number': 2})
     assert exc_info.value.errors() == [
         {'loc': ('pet', 'Dog', 'dog_name'), 'msg': 'field required', 'type': 'value_error.missing'},
     ]
-    m = Model.parse_obj({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
+    m = Model.model_validate({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
     assert isinstance(m.pet, Dog)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet', 'Union[BlackCat, WhiteCat]'),
@@ -249,7 +249,7 @@ def test_discriminated_annotated_union():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
+        Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
             'loc': ('pet', 'Union[BlackCat, WhiteCat]', 'WhiteCat', 'white_infos'),
@@ -257,7 +257,7 @@ def test_discriminated_annotated_union():
             'type': 'value_error.missing',
         }
     ]
-    m = Model.parse_obj({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
+    m = Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
     assert isinstance(m.pet, WhiteCat)
 
 
@@ -304,9 +304,9 @@ def test_discriminated_union_int():
     class Top(BaseModel):
         sub: Union[A, B] = Field(..., discriminator='l')
 
-    assert isinstance(Top.parse_obj({'sub': {'m': 2}}).sub, B)
+    assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
-        Top.parse_obj({'sub': {'m': 3}})
+        Top.model_validate({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
             'loc': ('sub',),
@@ -332,9 +332,9 @@ def test_discriminated_union_enum():
     class Top(BaseModel):
         sub: Union[A, B] = Field(..., discriminator='m')
 
-    assert isinstance(Top.parse_obj({'sub': {'m': EnumValue.b}}).sub, B)
+    assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
-        Top.parse_obj({'sub': {'m': 3}})
+        Top.model_validate({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
             'loc': ('sub',),
@@ -420,18 +420,18 @@ def test_generic():
         result: Union[Success[T], Failure] = Field(discriminator='type')
 
     with pytest.raises(ValidationError, match="Discriminator 'type' is missing in value"):
-        Container[str].parse_obj({'result': {}})
+        Container[str].model_validate({'result': {}})
 
     with pytest.raises(
         ValidationError,
         match=re.escape("No match for discriminator 'type' and value 'Other' (allowed values: 'Success', 'Failure')"),
     ):
-        Container[str].parse_obj({'result': {'type': 'Other'}})
+        Container[str].model_validate({'result': {'type': 'Other'}})
 
     with pytest.raises(
         ValidationError, match=re.escape('Container[str]\nresult -> Success[str] -> data\n  field required')
     ):
-        Container[str].parse_obj({'result': {'type': 'Success'}})
+        Container[str].model_validate({'result': {'type': 'Success'}})
 
     # coercion is done properly
-    assert Container[str].parse_obj({'result': {'type': 'Success', 'data': 1}}).result.data == '1'
+    assert Container[str].model_validate({'result': {'type': 'Success', 'data': 1}}).result.data == '1'

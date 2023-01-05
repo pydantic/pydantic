@@ -261,7 +261,7 @@ class PydanticModelTransformer:
                 if not ctx.api.final_iteration:
                     ctx.api.defer()
         self.add_initializer(fields, config)
-        self.add_construct_method(fields)
+        self.add_model_construct_method(fields)
         self.set_frozen(fields, frozen=config.allow_mutation is False or config.frozen is True)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
@@ -421,9 +421,9 @@ class PydanticModelTransformer:
         if '__init__' not in ctx.cls.info.names:
             add_method(ctx, '__init__', init_arguments, NoneType())
 
-    def add_construct_method(self, fields: List['PydanticModelField']) -> None:
+    def add_model_construct_method(self, fields: List['PydanticModelField']) -> None:
         """
-        Adds a fully typed `construct` classmethod to the class.
+        Adds a fully typed `model_construct` classmethod to the class.
 
         Similar to the fields-aware __init__ method, but always uses the field names (not aliases),
         and does not treat settings fields as optional.
@@ -445,7 +445,7 @@ class PydanticModelTransformer:
 
         add_method(
             ctx,
-            'construct',
+            'model_construct',
             construct_arguments,
             return_type=self_type,
             self_type=self_type,
@@ -561,7 +561,7 @@ class PydanticModelTransformer:
         self, fields: List['PydanticModelField'], typed: bool, force_all_optional: bool, use_alias: bool
     ) -> List[Argument]:
         """
-        Helper function used during the construction of the `__init__` and `construct` method signatures.
+        Helper function used during the construction of the `__init__` and `model_construct` method signatures.
 
         Returns a list of mypy Argument instances for use in the generated signatures.
         """

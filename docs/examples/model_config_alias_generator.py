@@ -15,4 +15,4 @@ class Voice(BaseModel):
 
 voice = Voice(Name='Filiz', LanguageCode='tr-TR')
 print(voice.language_code)
-print(voice.dict(by_alias=True))
+print(voice.model_dump(by_alias=True))

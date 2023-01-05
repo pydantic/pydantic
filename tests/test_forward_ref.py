@@ -20,7 +20,7 @@ class Model(BaseModel):
 """
     )
     m = module.Model(a='123')
-    assert m.dict() == {'a': 123}
+    assert m.model_dump() == {'a': 123}
 
 
 def test_postponed_annotations_auto_model_rebuild(create_module):
@@ -34,7 +34,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.__fields__['a'].annotation.__name__ == 'SelfType'
+    assert module.Model.model_fields['a'].annotation.__name__ == 'SelfType'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
@@ -53,14 +53,14 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     assert module.Foo.__pydantic_model_complete__ is False
     assert module.Bar.__pydantic_model_complete__ is True
-    assert repr(module.Bar.__fields__['b']) == 'FieldInfo(annotation=Foo, required=True)'
+    assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
     # Bar should be complet and ready to use
     b = module.Bar(b={'a': {'b': {}}})
     assert b == {'b': {'a': {'b': {'a': None}}}}
 
     # __field__ is complete on Foo
-    assert repr(module.Foo.__fields__['a']).startswith(
+    assert repr(module.Foo.model_fields['a']).startswith(
         'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_validation_schema__'
     )
     # but Foo is not ready to use
@@ -87,7 +87,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             class Config:
                 undefined_types_warning = False
 
-    assert hasattr(module.Foo, '__fields__') is False
+    assert hasattr(module.Foo, 'model_fields') is False
 
 
 def test_basic_forward_ref(create_module):
@@ -105,8 +105,8 @@ def test_basic_forward_ref(create_module):
         class Bar(BaseModel):
             b: Optional[FooRef] = None
 
-    assert module.Bar().dict() == {'b': None}
-    assert module.Bar(b={'a': '123'}).dict() == {'b': {'a': 123}}
+    assert module.Bar().model_dump() == {'b': None}
+    assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
 
 
 def test_self_forward_ref_module(create_module):
@@ -122,8 +122,8 @@ def test_self_forward_ref_module(create_module):
             a: int = 123
             b: FooRef = None
 
-    assert module.Foo().dict() == {'a': 123, 'b': None}
-    assert module.Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+    assert module.Foo().model_dump() == {'a': 123, 'b': None}
+    assert module.Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 def test_self_forward_ref_collection(create_module):
@@ -139,8 +139,8 @@ def test_self_forward_ref_collection(create_module):
             c: 'List[Foo]' = []
             d: 'Dict[str, Foo]' = {}
 
-    assert module.Foo().dict() == {'a': 123, 'b': None, 'c': [], 'd': {}}
-    assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).dict() == {
+    assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
+    assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).model_dump() == {
         'a': 123,
         'b': {'a': 321, 'b': None, 'c': [], 'd': {}},
         'c': [{'a': 234, 'b': None, 'c': [], 'd': {}}],
@@ -154,14 +154,14 @@ def test_self_forward_ref_collection(create_module):
         {'type': 'dict_type', 'loc': ('c', 0, 'b'), 'msg': 'Input should be a valid dictionary', 'input': 234}
     ]
 
-    assert repr(module.Foo.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.__fields__['b']) == IsStr(
+    assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
+    assert repr(module.Foo.model_fields['b']) == IsStr(
         regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo\'\}\}\)\]\)'
     )
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.__fields__['c']) == IsStr(regex=r'FieldInfo\(annotation=List\[Annotated\[SelfType.+')
-    assert repr(module.Foo.__fields__['d']) == IsStr(
+    assert repr(module.Foo.model_fields['c']) == IsStr(regex=r'FieldInfo\(annotation=List\[Annotated\[SelfType.+')
+    assert repr(module.Foo.model_fields['d']) == IsStr(
         regex=r'FieldInfo\(annotation=Dict\[str, Annotated\[SelfType, SchemaRef.*'
     )
 
@@ -183,8 +183,8 @@ def test_self_forward_ref_local(create_module):
             return Foo
 
     Foo = module.main()
-    assert Foo().dict() == {'a': 123, 'b': None}
-    assert Foo(b={'a': '321'}).dict() == {'a': 123, 'b': {'a': 321, 'b': None}}
+    assert Foo().model_dump() == {'a': 123, 'b': None}
+    assert Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 @pytest.mark.xfail(reason='TODO dataclasses')
@@ -289,7 +289,7 @@ def test_self_reference_json_schema(create_module):
             subaccounts: List['Account'] = []
 
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -325,7 +325,7 @@ class Account(BaseModel):
     """
     )
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -363,7 +363,7 @@ def test_circular_reference_json_schema(create_module):
             subaccounts: List['Account'] = []
 
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -411,7 +411,7 @@ class Account(BaseModel):
     """
     )
     Account = module.Account
-    assert Account.schema() == {
+    assert Account.model_json_schema() == {
         '$ref': '#/definitions/Account',
         'definitions': {
             'Account': {
@@ -503,7 +503,7 @@ def test_forward_ref_with_create_model(create_module):
         assert Sub  # get rid of "local variable 'Sub' is assigned to but never used"
         Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
         instance = Main(sub={})
-        assert instance.sub.dict() == {'foo': 'bar'}
+        assert instance.sub.model_dump() == {'foo': 'bar'}
 
 
 @pytest.mark.xfail(reason='TODO dataclasses')
@@ -535,8 +535,8 @@ def test_nested_forward_ref():
     class NestedTuple(BaseModel):
         x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
 
-    obj = NestedTuple.parse_obj({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
-    assert obj.dict() == {'x': (1, {'x': (2, {'x': (3, None)})})}
+    obj = NestedTuple.model_validate({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
+    assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
 @pytest.mark.xfail(reason='TODO discriminator')
@@ -559,14 +559,14 @@ def test_discriminated_union_forward_ref(create_module):
             type: Literal['dog']
 
     with pytest.raises(PydanticUserError, match='`Pet` is not fully defined, you should define `Cat`'):
-        module.Pet.parse_obj({'type': 'pika'})
+        module.Pet.model_validate({'type': 'pika'})
 
     module.Pet.model_rebuild()
 
     with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
-        module.Pet.parse_obj({'type': 'pika'})
+        module.Pet.model_validate({'type': 'pika'})
 
-    assert module.Pet.schema() == {
+    assert module.Pet.model_json_schema() == {
         'title': 'Pet',
         'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
         'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
@@ -635,7 +635,7 @@ class Model(BaseModel):
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
-    assert m.json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
+    assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
 @pytest.mark.xfail(reason='TODO json encoding')
@@ -658,7 +658,7 @@ class User(BaseModel):
     )
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+    assert m.model_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
 
 
 skip_pep585 = pytest.mark.skipif(
@@ -681,7 +681,7 @@ class SelfReferencing(BaseModel):
 
     SelfReferencing = module.SelfReferencing
     if sys.version_info >= (3, 10):
-        assert repr(SelfReferencing.__fields__['names']) == IsStr(
+        assert repr(SelfReferencing.model_fields['names']) == IsStr(
             regex=r'FieldInfo\(annotation=list\[Annotated\[SelfType, SchemaRef.+, required=True\)'
         )
     # test that object creation works
@@ -712,12 +712,12 @@ def test_pep585_recursive_generics(create_module):
 
         Team.model_rebuild()
 
-    assert repr(module.Team.__fields__['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
-    assert repr(module.Hero.__fields__['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
+    assert repr(module.Team.model_fields['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
+    assert repr(module.Hero.model_fields['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
     h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
-    # insert_assert(h.dict())
-    assert h.dict() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
+    # insert_assert(h.model_dump())
+    assert h.model_dump() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
@@ -750,7 +750,7 @@ class Foobar(BaseModel):
 """
     )
     f = module.Foobar(x=1, y={'x': 2})
-    assert f.dict() == {'x': 1, 'y': {'x': 2, 'y': None}}
+    assert f.model_dump() == {'x': 1, 'y': {'x': 2, 'y': None}}
     assert f.__fields_set__ == {'x', 'y'}
     assert f.y.__fields_set__ == {'x'}
 
@@ -784,7 +784,7 @@ def nested():
 
     bar_model = module.nested()
     assert bar_model.__pydantic_model_complete__ is True
-    assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}
+    assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
 def test_nested_more_annotation(create_module):
@@ -831,8 +831,8 @@ def test_nested_annotation_priority(create_module):
             return Bar
 
     bar_model = module.nested()
-    assert bar_model.__fields__['b'].metadata[0].gt == 10
-    assert bar_model(b=11).dict() == {'b': 11}
+    assert bar_model.model_fields['b'].metadata[0].gt == 10
+    assert bar_model(b=11).model_dump() == {'b': 11}
     with pytest.raises(ValidationError, match=r'Input should be greater than 10 \[type=greater_than,'):
         bar_model(b=1)
 
@@ -858,7 +858,7 @@ def test_nested_model_rebuild(create_module):
 
     bar_model = module.nested()
     assert bar_model.__pydantic_model_complete__ is True
-    assert bar_model(b={'a': 1}).dict() == {'b': {'a': 1}}
+    assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
 def pytest_raises_undefined_types_warning(defining_class_name, missing_type_name):

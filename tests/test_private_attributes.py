@@ -25,7 +25,7 @@ def test_private_attribute():
     m._foo = None
     assert m._foo is None
 
-    assert m.dict() == {}
+    assert m.model_dump() == {}
     assert m.__dict__ == {}
 
 
@@ -63,7 +63,7 @@ def test_private_attribute_factory():
     m._foo = None
     assert m._foo is None
 
-    assert m.dict() == {}
+    assert m.model_dump() == {}
     assert m.__dict__ == {}
 
 
@@ -99,7 +99,7 @@ def test_private_attribute_annotation():
     m._foo = '123'
     assert m._foo == '123'
 
-    assert m.dict() == {}
+    assert m.model_dump() == {}
     assert m.__dict__ == {}
 
 
@@ -136,11 +136,11 @@ def test_private_attribute_intersection_with_extra_field():
     assert Model.__slots__ == {'_foo'}
     m = Model(_foo='field')
     assert m._foo == 'private_attribute'
-    assert m.__dict__ == m.dict() == {'_foo': 'field'}
+    assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
 
     m._foo = 'still_private'
     assert m._foo == 'still_private'
-    assert m.__dict__ == m.dict() == {'_foo': 'field'}
+    assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
 
 
 def test_private_attribute_invalid_name():
@@ -193,7 +193,7 @@ def test_config_override_init():
             underscore_attrs_are_private = True
 
     m = MyModel(x='hello')
-    assert m.dict() == {'x': 'hello'}
+    assert m.model_dump() == {'x': 'hello'}
     assert m._private_attr == 123
 
 
@@ -210,7 +210,7 @@ def test_generic_private_attribute():
 
     m = Model[int](value=1, _private_attr=3)
     m._private_value = 3
-    assert m.dict() == {'value': 1}
+    assert m.model_dump() == {'value': 1}
 
 
 @pytest.mark.xfail(reason='config inheritance error')
@@ -265,5 +265,5 @@ def test_private_attribute_multiple_inheritance():
     m._baz = None
     assert m._baz is None
 
-    assert m.dict() == {}
+    assert m.model_dump() == {}
     assert m.__dict__ == {}
