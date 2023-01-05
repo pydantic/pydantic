@@ -112,7 +112,7 @@ class ModelMetaclass(ABCMeta):
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, '__fields__') and super().__instancecheck__(instance)
+        return hasattr(instance, 'model_fields') and super().__instancecheck__(instance)
 
 
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
@@ -121,7 +121,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
         __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
-        __fields__: typing.ClassVar[dict[str, FieldInfo]] = {}
+        model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
@@ -171,7 +171,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
             _object_setattr(self, '__dict__', values)
             self.__fields_set__ |= fields_set
-        elif self.__config__.extra is not Extra.allow and name not in self.__fields__:
+        elif self.__config__.extra is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
@@ -192,7 +192,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         for name, value in state.get('__private_attribute_values__', {}).items():
             _object_setattr(self, name, value)
 
-    def dict(
+    def model_dump(
         self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
@@ -209,7 +209,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.dict(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.model_dump(): "skip_defaults" is deprecated'
+                ' and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
@@ -226,7 +227,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             )
         )
 
-    def json(
+    def model_dump_json(
         self,
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
@@ -247,13 +248,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         if skip_defaults is not None:
             warnings.warn(
-                f'{self.__class__.__name__}.json(): "skip_defaults" is deprecated and replaced by "exclude_unset"',
+                f'{self.__class__.__name__}.model_dump_json(): "skip_defaults" is deprecated'
+                ' and replaced by "exclude_unset"',
                 DeprecationWarning,
             )
             exclude_unset = skip_defaults
         encoder = typing.cast(typing.Callable[[Any], Any], encoder or self.__json_encoder__)
 
-        # We don't directly call `self.dict()`, which does exactly this with `to_dict=True`
+        # We don't directly call `self.model_dump()`, which does exactly this with `to_dict=True`
         # because we want to be able to keep raw `BaseModel` instances and not as `dict`.
         # This allows users to write custom JSON encoders for given `BaseModel` classes.
         data = dict(
@@ -270,7 +272,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
-    def parse_obj(cls: type[Model], obj: Any) -> Model:
+    def model_validate(cls: type[Model], obj: Any) -> Model:
         values, fields_set = cls.__pydantic_validator__.validate_python(obj)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', values)
@@ -282,10 +284,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     def from_orm(cls: type[Model], obj: Any) -> Model:
         # TODO remove
-        return cls.parse_obj(obj)
+        return cls.model_validate(obj)
 
     @classmethod
-    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
         """
         Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
@@ -293,7 +295,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
-        for name, field in cls.__fields__.items():
+        for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
                 fields_values[name] = values[field.alias]
             elif name in values:
@@ -360,7 +362,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
-    def schema(cls, by_alias: bool = True, ref_template: str = default_ref_template) -> typing.Dict[str, Any]:
+    def model_json_schema(
+        cls, by_alias: bool = True, ref_template: str = default_ref_template
+    ) -> typing.Dict[str, Any]:
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
@@ -375,7 +379,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         from .json import pydantic_encoder
 
         return cls.__config__.json_dumps(
-            cls.schema(by_alias=by_alias, ref_template=ref_template), default=pydantic_encoder, **dumps_kwargs
+            cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
+            default=pydantic_encoder,
+            **dumps_kwargs,
         )
 
     @classmethod
@@ -394,7 +400,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, BaseModel):
             if to_dict:
-                return v.dict(
+                return v.model_dump(
                     by_alias=by_alias,
                     exclude_unset=exclude_unset,
                     exclude_defaults=exclude_defaults,
@@ -517,15 +523,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             if exclude_defaults:
                 try:
-                    field = self.__fields__[field_key]
+                    field = self.model_fields[field_key]
                 except KeyError:
                     pass
                 else:
                     if not field.is_required() and field.default == v:
                         continue
 
-            if by_alias and field_key in self.__fields__:
-                dict_key = self.__fields__[field_key].alias or field_key
+            if by_alias and field_key in self.model_fields:
+                dict_key = self.model_fields[field_key].alias or field_key
             else:
                 dict_key = field_key
 
@@ -571,15 +577,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):
-            return self.dict() == other.dict()
+            return self.model_dump() == other.model_dump()
         else:
-            return self.dict() == other
+            return self.model_dump() == other
 
     def __repr_args__(self) -> _repr.ReprArgs:
         return [
             (k, v)
             for k, v in self.__dict__.items()
-            if not k.startswith('_') and (k not in self.__fields__ or self.__fields__[k].repr)
+            if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
 
 

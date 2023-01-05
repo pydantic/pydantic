@@ -75,7 +75,7 @@ def pydantic_encoder(obj: Any) -> Any:
     from .main import BaseModel
 
     if isinstance(obj, BaseModel):
-        return obj.dict()
+        return obj.model_dump()
     elif is_dataclass(obj):
         return asdict(obj)
 

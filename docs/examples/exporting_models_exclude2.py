@@ -66,8 +66,8 @@ include_keys = {
     'hobbies': {0: True, -1: {'name'}},
 }
 
-# would be the same as user.dict(exclude=exclude_keys) in this case:
-print(user.dict(include=include_keys))
+# would be the same as user.model_dump(exclude=exclude_keys) in this case:
+print(user.model_dump(include=include_keys))
 
 # To exclude a field from all members of a nested list or tuple, use "__all__":
-print(user.dict(exclude={'hobbies': {'__all__': {'info'}}}))
+print(user.model_dump(exclude={'hobbies': {'__all__': {'info'}}}))

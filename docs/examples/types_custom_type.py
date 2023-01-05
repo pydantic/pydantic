@@ -65,4 +65,4 @@ class Model(BaseModel):
 model = Model(post_code='sw8 5el')
 print(model)
 print(model.post_code)
-print(Model.schema())
+print(Model.model_json_schema())

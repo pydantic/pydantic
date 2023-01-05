@@ -153,10 +153,10 @@ class ValidatedFunction:
         duplicate_kwargs = []
         fields_alias = [
             field.alias
-            for name, field in self.model.__fields__.items()
+            for name, field in self.model.model_fields.items()
             if name not in (self.v_args_name, self.v_kwargs_name)
         ]
-        non_var_fields = set(self.model.__fields__) - {self.v_args_name, self.v_kwargs_name}
+        non_var_fields = set(self.model.model_fields) - {self.v_args_name, self.v_kwargs_name}
         for k, v in kwargs.items():
             if k in non_var_fields or k in fields_alias:
                 if k in self.positional_only_args:
@@ -176,7 +176,7 @@ class ValidatedFunction:
         return values
 
     def execute(self, m: BaseModel) -> Any:
-        d = {k: v for k, v in m._iter() if k in m.__fields_set__ or m.__fields__[k].default_factory}
+        d = {k: v for k, v in m._iter() if k in m.__fields_set__ or m.model_fields[k].default_factory}
         var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:

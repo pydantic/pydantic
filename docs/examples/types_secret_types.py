@@ -11,8 +11,8 @@ sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
 # Standard access methods will not display the secret
 print(sm)
 print(sm.password)
-print(sm.dict())
-print(sm.json())
+print(sm.model_dump())
+print(sm.model_dump_json())
 
 # Use get_secret_value method to see the secret's content.
 print(sm.password.get_secret_value())
@@ -44,7 +44,7 @@ sm2 = SimpleModelDumpable(
 # Standard access methods will not display the secret
 print(sm2)
 print(sm2.password)
-print(sm2.dict())
+print(sm2.model_dump())
 
 # But the json method will
-print(sm2.json())
+print(sm2.model_dump_json())

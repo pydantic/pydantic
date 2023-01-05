@@ -23,4 +23,4 @@ t = Transaction(
     value=9876543210,
 )
 
-print(t.dict(exclude={'value': True, 'user': {'username'}}))
+print(t.model_dump(exclude={'value': True, 'user': {'username'}}))
