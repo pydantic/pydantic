@@ -202,14 +202,9 @@ def build_inner_schema(  # noqa: C901
                 raise
         raise PydanticUndefinedAnnotation(name) from e
 
-    fields: dict[str, FieldInfo] = {}
-    # collect already created FieldInfo's
-    for base in reversed(bases):
-        if hasattr(base, '__fields__'):
-            fields.update(base.__fields__)
-
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     annotations = cls.__dict__.get('__annotations__', {})
+    fields: dict[str, FieldInfo] = {}
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
@@ -225,10 +220,11 @@ def build_inner_schema(  # noqa: C901
             default = getattr(cls, ann_name)
         except AttributeError:
             # if field has no default value and is not in __annotations__ this means that it is
-            # defined in a base class and we can skip it
+            # defined in a base class and we can take it from there
             if ann_name not in annotations:
-                continue
-            fields[ann_name] = FieldInfo.from_annotation(ann_type)
+                fields[ann_name] = cls.__fields__[ann_name]
+            else:
+                fields[ann_name] = FieldInfo.from_annotation(ann_type)
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
