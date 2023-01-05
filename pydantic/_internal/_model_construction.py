@@ -232,7 +232,7 @@ def build_inner_schema(  # noqa: C901
             if ann_name in annotations:
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
-                fields[ann_name] = cls.__fields__[ann_name]
+                fields[ann_name] = cls.model_fields[ann_name]
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
