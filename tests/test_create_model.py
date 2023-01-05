@@ -13,7 +13,7 @@ def test_create_model():
     assert issubclass(model, BaseModel)
     assert issubclass(model.model_config, BaseModel.model_config)
     assert model.__name__ == 'FooModel'
-    assert model.__fields__.keys() == {'foo', 'bar'}
+    assert model.model_fields.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
     assert model.model_config.__name__ == 'Config'
     assert model.__module__ == 'pydantic.main'
@@ -57,7 +57,7 @@ def test_create_model_pickle(create_module):
 def test_invalid_name():
     with pytest.warns(RuntimeWarning):
         model = create_model('FooModel', _foo=(str, ...))
-    assert len(model.__fields__) == 0
+    assert len(model.model_fields) == 0
 
 
 def test_field_wrong_tuple():
@@ -77,9 +77,9 @@ def test_inheritance():
         y = 2
 
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
-    assert model.__fields__.keys() == {'foo', 'bar', 'x', 'y'}
+    assert model.model_fields.keys() == {'foo', 'bar', 'x', 'y'}
     m = model(foo='a', x=4)
-    assert m.dict() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
+    assert m.model_dump() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -155,14 +155,14 @@ def test_inheritance_validators_all():
             return v * 2
 
     model = create_model('FooModel', a=(int, ...), b=(int, ...), __base__=BarModel)
-    assert model(a=2, b=6).dict() == {'a': 4, 'b': 12}
+    assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
-    assert m.dict() == {'this-is-funky': 123}
+    assert m.model_dump() == {'this-is-funky': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors() == [
@@ -175,25 +175,25 @@ def test_repeat_base_usage():
     class Model(BaseModel):
         a: str
 
-    assert Model.__fields__.keys() == {'a'}
+    assert Model.model_fields.keys() == {'a'}
 
     model = create_model('FooModel', b=1, __base__=Model)
 
-    assert Model.__fields__.keys() == {'a'}
-    assert model.__fields__.keys() == {'a', 'b'}
+    assert Model.model_fields.keys() == {'a'}
+    assert model.model_fields.keys() == {'a', 'b'}
 
     model2 = create_model('Foo2Model', c=1, __base__=Model)
 
-    assert Model.__fields__.keys() == {'a'}
-    assert model.__fields__.keys() == {'a', 'b'}
-    assert model2.__fields__.keys() == {'a', 'c'}
+    assert Model.model_fields.keys() == {'a'}
+    assert model.model_fields.keys() == {'a', 'b'}
+    assert model2.model_fields.keys() == {'a', 'c'}
 
     model3 = create_model('Foo2Model', d=1, __base__=model)
 
-    assert Model.__fields__.keys() == {'a'}
-    assert model.__fields__.keys() == {'a', 'b'}
-    assert model2.__fields__.keys() == {'a', 'c'}
-    assert model3.__fields__.keys() == {'a', 'b', 'd'}
+    assert Model.model_fields.keys() == {'a'}
+    assert model.model_fields.keys() == {'a', 'b'}
+    assert model2.model_fields.keys() == {'a', 'c'}
+    assert model3.model_fields.keys() == {'a', 'b', 'd'}
 
 
 def test_dynamic_and_static():
@@ -205,7 +205,7 @@ def test_dynamic_and_static():
     DynamicA = create_model('A', x=(int, ...), y=(float, ...), z=(str, ...))
 
     for field_name in ('x', 'y', 'z'):
-        assert A.__fields__[field_name].default == DynamicA.__fields__[field_name].default
+        assert A.model_fields[field_name].default == DynamicA.model_fields[field_name].default
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -214,10 +214,10 @@ def test_config_field_info_create_model():
         fields = {'a': {'description': 'descr'}}
 
     m1 = create_model('M1', __config__=Config, a=(str, ...))
-    assert m1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert m1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
     m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
-    assert m2.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert m2.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -274,4 +274,4 @@ def test_create_model_with_slots():
     with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
         model = create_model('PartialPet', **field_definitions)
 
-    assert model.__fields__.keys() == {'foobar'}
+    assert model.model_fields.keys() == {'foobar'}

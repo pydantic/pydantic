@@ -75,11 +75,11 @@ def test_ultra_simple_repr():
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
-    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.__fields__['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
-    assert m.dict() == {'a': 10.2, 'b': 10}
-    assert m.json() == '{"a": 10.2, "b": 10}'
+    assert m.model_dump() == {'a': 10.2, 'b': 10}
+    assert m.model_dump_json() == '{"a": 10.2, "b": 10}'
     assert str(m) == 'a=10.2 b=10'
 
 
@@ -92,9 +92,9 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
-    assert m.json() == '{"a": 1}'
+    assert m.model_dump_json() == '{"a": 1}'
 
 
 def test_comparing():
@@ -195,7 +195,7 @@ def test_allow_extra():
         model_config = BaseConfig(extra=Extra.allow)
         a: float = ...
 
-    assert Model(a='10.2', b=12).dict() == {'a': 10.2, 'b': 12}
+    assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
 
 
 def test_allow_extra_repr():
@@ -288,10 +288,10 @@ def test_extra_ignored():
 
 def test_set_attr():
     m = UltraSimpleModel(a=10.2)
-    assert m.dict() == {'a': 10.2, 'b': 10}
+    assert m.model_dump() == {'a': 10.2, 'b': 10}
 
     m.b = 20
-    assert m.dict() == {'a': 10.2, 'b': 20}
+    assert m.model_dump() == {'a': 10.2, 'b': 20}
 
 
 def test_set_attr_invalid():
@@ -300,7 +300,7 @@ def test_set_attr_invalid():
         b: int = 10
 
     m = UltraSimpleModel(a=10.2)
-    assert m.dict() == {'a': 10.2, 'b': 10}
+    assert m.model_dump() == {'a': 10.2, 'b': 10}
 
     with pytest.raises(ValueError) as exc_info:
         m.c = 20
@@ -327,8 +327,8 @@ def test_population_by_field_name():
         a: str = Field(alias='_a')
 
     assert Model(a='different').a == 'different'
-    assert Model(a='different').dict() == {'a': 'different'}
-    assert Model(a='different').dict(by_alias=True) == {'_a': 'different'}
+    assert Model(a='different').model_dump() == {'a': 'different'}
+    assert Model(a='different').model_dump(by_alias=True) == {'_a': 'different'}
 
 
 def test_field_order():
@@ -338,7 +338,7 @@ def test_field_order():
         a: str
         d: dict = {}
 
-    assert list(Model.__fields__.keys()) == ['c', 'b', 'a', 'd']
+    assert list(Model.model_fields.keys()) == ['c', 'b', 'a', 'd']
 
 
 def test_required():
@@ -348,7 +348,7 @@ def test_required():
         b: int = 10
 
     m = Model(a=10.2)
-    assert m.dict() == dict(a=10.2, b=10)
+    assert m.model_dump() == dict(a=10.2, b=10)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -473,10 +473,10 @@ def test_validating_assignment_pass(ValidateAssignmentModel):
     p = ValidateAssignmentModel(a=5, b='hello')
     p.a = 2
     assert p.a == 2
-    assert p.dict() == {'a': 2, 'b': 'hello'}
+    assert p.model_dump() == {'a': 2, 'b': 'hello'}
     p.b = 'hi'
     assert p.b == 'hi'
-    assert p.dict() == {'a': 2, 'b': 'hi'}
+    assert p.model_dump() == {'a': 2, 'b': 'hi'}
 
 
 def test_validating_assignment_fail(ValidateAssignmentModel):
@@ -529,7 +529,7 @@ def test_literal_enum_values():
         model_config = BaseConfig(use_enum_values=True)
 
     m = Model(baz=FooEnum.foo)
-    assert m.dict() == {'baz': 'foo_value', 'boo': 'hoo'}
+    assert m.model_dump() == {'baz': 'foo_value', 'boo': 'hoo'}
     assert m.baz.value == 'foo_value'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -567,7 +567,7 @@ def test_set_tuple_values():
     m = Model(foo=['a', 'b'], bar=['c', 'd'])
     assert m.foo == {'a', 'b'}
     assert m.bar == ('c', 'd')
-    assert m.dict() == {'foo': {'a', 'b'}, 'bar': ('c', 'd')}
+    assert m.model_dump() == {'foo': {'a', 'b'}, 'bar': ('c', 'd')}
 
 
 def test_default_copy():
@@ -696,14 +696,16 @@ def test_annotation_field_name_shadows_attribute():
     with pytest.raises(NameError):
         # When defining a model that has an attribute with the name of a built-in attribute, an exception is raised
         class BadModel(BaseModel):
-            schema: str  # This conflicts with the BaseModel's schema() class method
+            model_json_schema: str  # This conflicts with the BaseModel's model_json_schema() class method
 
 
 def test_value_field_name_shadows_attribute():
     class BadModel(BaseModel):
-        schema = 'abc'  # This conflicts with the BaseModel's schema() class method, but has no annotation
+        model_json_schema = (
+            'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
+        )
 
-    assert len(BadModel.__fields__) == 0
+    assert len(BadModel.model_fields) == 0
 
 
 def test_class_var():
@@ -712,13 +714,13 @@ def test_class_var():
         b: ClassVar[int] = 1
         c: int = 2
 
-    assert list(MyModel.__fields__.keys()) == ['c']
+    assert list(MyModel.model_fields.keys()) == ['c']
 
     class MyOtherModel(MyModel):
         a = ''
         b = 2
 
-    assert list(MyOtherModel.__fields__.keys()) == ['c']
+    assert list(MyOtherModel.model_fields.keys()) == ['c']
 
 
 def test_fields_set():
@@ -742,10 +744,10 @@ def test_exclude_unset_dict():
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.dict(exclude_unset=True) == {'a': 5}
+    assert m.model_dump(exclude_unset=True) == {'a': 5}
 
     m = MyModel(a=5, b=3)
-    assert m.dict(exclude_unset=True) == {'a': 5, 'b': 3}
+    assert m.model_dump(exclude_unset=True) == {'a': 5, 'b': 3}
 
 
 def test_exclude_unset_recursive():
@@ -759,8 +761,8 @@ def test_exclude_unset_recursive():
         e: ModelA
 
     m = ModelB(c=5, e={'a': 0})
-    assert m.dict() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
-    assert m.dict(exclude_unset=True) == {'c': 5, 'e': {'a': 0}}
+    assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert m.model_dump(exclude_unset=True) == {'c': 5, 'e': {'a': 0}}
     assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
 
 
@@ -772,8 +774,8 @@ def test_dict_exclude_unset_populated_by_alias():
 
     m = MyModel(alias_a='a')
 
-    assert m.dict(exclude_unset=True) == {'a': 'a'}
-    assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a'}
+    assert m.model_dump(exclude_unset=True) == {'a': 'a'}
+    assert m.model_dump(exclude_unset=True, by_alias=True) == {'alias_a': 'a'}
 
 
 def test_dict_exclude_unset_populated_by_alias_with_extra():
@@ -784,8 +786,8 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
 
     m = MyModel(alias_a='a', c='c')
 
-    assert m.dict(exclude_unset=True) == {'a': 'a', 'c': 'c'}
-    assert m.dict(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
+    assert m.model_dump(exclude_unset=True) == {'a': 'a', 'c': 'c'}
+    assert m.model_dump(exclude_unset=True, by_alias=True) == {'alias_a': 'a', 'c': 'c'}
 
 
 def test_exclude_defaults():
@@ -796,20 +798,20 @@ def test_exclude_defaults():
         nullable_facultative: Optional[str] = None
 
     m = Model(mandatory='a', nullable_mandatory=None)
-    assert m.dict(exclude_defaults=True) == {
+    assert m.model_dump(exclude_defaults=True) == {
         'mandatory': 'a',
         'nullable_mandatory': None,
     }
 
     m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative=None)
-    assert m.dict(exclude_defaults=True) == {
+    assert m.model_dump(exclude_defaults=True) == {
         'mandatory': 'a',
         'nullable_mandatory': None,
         'facultative': 'y',
     }
 
     m = Model(mandatory='a', nullable_mandatory=None, facultative='y', nullable_facultative='z')
-    assert m.dict(exclude_defaults=True) == {
+    assert m.model_dump(exclude_defaults=True) == {
         'mandatory': 'a',
         'nullable_mandatory': None,
         'facultative': 'y',
@@ -824,8 +826,8 @@ def test_dir_fields():
 
     m = MyModel(attribute_a=5)
 
-    assert 'dict' in dir(m)
-    assert 'json' in dir(m)
+    assert 'model_dump' in dir(m)
+    assert 'model_dump_json' in dir(m)
     assert 'attribute_a' in dir(m)
     assert 'attribute_b' in dir(m)
 
@@ -836,8 +838,8 @@ def test_dict_with_extra_keys():
         a: str = Field(None, alias='alias_a')
 
     m = MyModel(extra_key='extra')
-    assert m.dict() == {'a': None, 'extra_key': 'extra'}
-    assert m.dict(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
+    assert m.model_dump() == {'a': None, 'extra_key': 'extra'}
+    assert m.model_dump(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
 
 
 def test_untouched_types():
@@ -874,7 +876,7 @@ def test_model_iteration():
         d: Foo
 
     m = Bar(c=3, d={})
-    assert m.dict() == {'c': 3, 'd': {'a': 1, 'b': 2}}
+    assert m.model_dump() == {'c': 3, 'd': {'a': 1, 'b': 2}}
     assert list(m) == [('c', 3), ('d', Foo())]
     assert dict(m) == {'c': 3, 'd': Foo()}
 
@@ -957,10 +959,10 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 
     if isinstance(expected, type) and issubclass(expected, Exception):
         with pytest.raises(expected, match=raises_match):
-            m.dict(exclude=exclude)
+            m.model_dump(exclude=exclude)
     else:
         original_exclude = deepcopy(exclude)
-        assert m.dict(exclude=exclude) == expected
+        assert m.model_dump(exclude=exclude) == expected
         assert exclude == original_exclude
 
 
@@ -988,7 +990,7 @@ def test_model_export_dict_exclusion(excludes, expected):
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
     original_excludes = deepcopy(excludes)
-    assert m.dict(exclude=excludes) == expected
+    assert m.model_dump(exclude=excludes) == expected
     assert excludes == original_excludes
 
 
@@ -1004,7 +1006,7 @@ def test_model_exclude_config_field_merging():
         )
         b: int = Field(2, exclude=...)
 
-    assert Model.__fields__['b'].field_info.exclude is ...
+    assert Model.model_fields['b'].field_info.exclude is ...
 
     class Model(BaseModel):
         model_config = BaseConfig(
@@ -1014,7 +1016,7 @@ def test_model_exclude_config_field_merging():
         )
         b: int = Field(2, exclude={'a': {'test'}})
 
-    assert Model.__fields__['b'].field_info.exclude == {'a': {'test'}}
+    assert Model.model_fields['b'].field_info.exclude == {'a': {'test'}}
 
     class Model(BaseModel):
         model_config = BaseConfig(
@@ -1024,7 +1026,7 @@ def test_model_exclude_config_field_merging():
         )
         b: int = Field(2, exclude={'foo'})
 
-    assert Model.__fields__['b'].field_info.exclude == {'foo': ..., 'bar': ...}
+    assert Model.model_fields['b'].field_info.exclude == {'foo': ..., 'bar': ...}
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1043,7 +1045,7 @@ def test_model_exclude_copy_on_model_validation():
     my_user._priv = 13
     assert my_user.id == 42
     assert my_user.password.get_secret_value() == 'hashedpassword'
-    assert my_user.dict() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
+    assert my_user.model_dump() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
 
     class Transaction(BaseModel):
         model_config = BaseConfig(fields={'value': {'exclude': True}})
@@ -1062,7 +1064,7 @@ def test_model_exclude_copy_on_model_validation():
     assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` does a shallow copy
     assert t.user._priv == 13
     assert t.user.password.get_secret_value() == 'hashedpassword'
-    assert t.dict() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
+    assert t.model_dump() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1187,7 +1189,7 @@ def test_model_export_exclusion_with_fields_and_config(kinds, exclude, expected)
         Config = ParentConfig
 
     m = Model()
-    assert m.dict(exclude=exclude) == expected, 'Unexpected model export result'
+    assert m.model_dump(exclude=exclude) == expected, 'Unexpected model export result'
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1207,10 +1209,10 @@ def test_model_export_exclusion_inheritance():
         s: Sub = Sub()
 
     class Child(Parent):
-
+        
         model_config = BaseConfig(fields={'c': {'exclude': ...}, 's': {'exclude': {'s2'}}})
 
-    actual = Child(a=0, b=1, c=2, d=3).dict()
+    actual = Child(a=0, b=1, c=2, d=3).model_dump()
     expected = {'d': 3, 's': {'s3': 'v3'}}
     assert actual == expected, 'Unexpected model export result'
 
@@ -1228,7 +1230,7 @@ def test_model_export_with_true_instead_of_ellipsis():
         s: Sub = Sub()
 
     m = Model()
-    assert m.dict(exclude={'s': True}) == {'a': 2}
+    assert m.model_dump(exclude={'s': True}) == {'a': 2}
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1247,11 +1249,11 @@ def test_model_export_inclusion():
         b: Sub = Field(Sub(), include={'s1'})
         c: Sub = Field(Sub(), include={'s1', 's2'})
 
-    Model.__fields__['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
-    Model.__fields__['b'].field_info.include == {'s1': ...}
-    Model.__fields__['c'].field_info.include == {'s1': ..., 's2': ...}
+    Model.model_fields['a'].field_info.include == {'s1': ..., 's2': ..., 's3': ...}
+    Model.model_fields['b'].field_info.include == {'s1': ...}
+    Model.model_fields['c'].field_info.include == {'s1': ..., 's2': ...}
 
-    actual = Model().dict(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
+    actual = Model().model_dump(include={'a': {'s3', 's4'}, 'b': ..., 'c': ...})
     # s1 included via field, s2 via config and s3 via .dict call:
     expected = {'a': {'s3': 'v3'}, 'b': {'s1': 'v1'}, 'c': {'s1': 'v1', 's2': 'v2'}}
 
@@ -1280,7 +1282,7 @@ def test_model_export_inclusion_inheritance():
         # s however, is merged, resulting in only s1 being included.
         model_config = BaseConfig(fields={'a': {'include': ...}, 's': {'include': {'s1'}}})
 
-    actual = Child(a=0, b=1, c=2).dict()
+    actual = Child(a=0, b=1, c=2).model_dump()
     expected = {'a': 0, 'b': 1, 's': {'s1': 'v1'}}
     assert actual == expected, 'Unexpected model export result'
 
@@ -1306,7 +1308,7 @@ def test_recursive_model():
         field: Optional['MyModel']  # noqa: F821
 
     m = MyModel(field={'field': {'field': None}})
-    assert m.dict() == {'field': {'field': {'field': None}}}
+    assert m.model_dump() == {'field': {'field': {'field': None}}}
 
 
 def test_two_defaults():
@@ -1418,9 +1420,9 @@ def test_default_factory_parse():
         inner_1: Inner = Field(default_factory=Inner)
         inner_2: Inner = Field(Inner())
 
-    default = Outer().dict()
-    parsed = Outer.parse_obj(default)
-    assert parsed.dict() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
+    default = Outer().model_dump()
+    parsed = Outer.model_validate(default)
+    assert parsed.model_dump() == {'inner_1': {'val': 0}, 'inner_2': {'val': 0}}
     assert repr(parsed) == 'Outer(inner_1=Inner(val=0), inner_2=Inner(val=0))'
 
 
@@ -1434,9 +1436,9 @@ def test_reuse_same_field():
         required: str = required_field
 
     with pytest.raises(ValidationError):
-        Model1.parse_obj({})
+        Model1.model_validate({})
     with pytest.raises(ValidationError):
-        Model2.parse_obj({})
+        Model2.model_validate({})
 
 
 def test_base_config_type_hinting():
@@ -1472,9 +1474,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.__fields__['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(m.__fields__['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.__fields__['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():
@@ -1643,14 +1645,14 @@ def test_class_kwargs_config():
 
     assert Base.model_config['extra'] is Extra.forbid
     assert Base.model_config['alias_generator'] is str.upper
-    # assert Base.__fields__['a'].alias == 'A'
+    # assert Base.model_fields['a'].alias == 'A'
 
     class Model(Base, extra='allow'):
         b: int
 
     assert Model.model_config['extra'] is Extra.allow  # overwritten as intended
     assert Model.model_config['alias_generator'] is str.upper  # inherited as intended
-    # assert Model.__fields__['b'].alias == 'B'  # alias_generator still works
+    # assert Model.model_fields['b'].alias == 'B'  # alias_generator still works
 
 
 def test_class_kwargs_config_json_encoders():
@@ -1691,7 +1693,7 @@ def test_new_union_origin():
     assert Model(x=3).x == 3
     assert Model(x='3').x == '3'
     assert Model(x='pika').x == 'pika'
-    # assert Model.schema() == {
+    # assert Model.model_json_schema() == {
     #     'title': 'Model',
     #     'type': 'object',
     #     'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
@@ -1720,9 +1722,9 @@ def test_final_field_decl_without_default_val(ann, value):
     Model.model_rebuild(ann=ann)
 
     assert 'a' not in Model.__class_vars__
-    assert 'a' in Model.__fields__
+    assert 'a' in Model.model_fields
 
-    assert Model.__fields__['a'].final
+    assert Model.model_fields['a'].final
 
 
 @pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
@@ -1738,7 +1740,7 @@ def test_final_field_decl_with_default_val(ann):
     Model.model_rebuild(ann=ann)
 
     assert 'a' in Model.__class_vars__
-    assert 'a' not in Model.__fields__
+    assert 'a' not in Model.model_fields
 
 
 @pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
@@ -1760,7 +1762,7 @@ def test_field_by_default_is_not_final():
     class Model(BaseModel):
         a: int
 
-    assert not Model.__fields__['a'].final
+    assert not Model.model_fields['a'].final
 
 
 def test_post_init():
@@ -1771,7 +1773,7 @@ def test_post_init():
         b: int
 
         def model_post_init(self, **kwargs) -> None:
-            assert self.dict() == {'a': 3, 'b': 4}
+            assert self.model_dump() == {'a': 3, 'b': 4}
             calls.append('submodel_post_init')
 
     class Model(BaseModel):
@@ -1780,11 +1782,11 @@ def test_post_init():
         sub: SubModel
 
         def model_post_init(self, **kwargs) -> None:
-            assert self.dict() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+            assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
-    assert m.dict() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
     assert calls == ['submodel_post_init', 'model_post_init']
 
 

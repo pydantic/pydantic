@@ -64,7 +64,7 @@ def test_namedtuple_schema():
         pos2: Position2
         pos3: Tuple[int, int]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -140,7 +140,7 @@ def test_namedtuple_postponed_annotation():
     # The effect of issue #2760 is that this call raises a `PydanticUserError` even though the type declared on `Tup.v`
     # references a binding in this module's global scope.
     with pytest.raises(ValidationError):
-        Model.parse_obj({'t': [-1]})
+        Model.model_validate({'t': [-1]})
 
 
 def test_namedtuple_arbitrary_type():
@@ -156,7 +156,7 @@ def test_namedtuple_arbitrary_type():
         model_config = BaseConfig(arbitrary_types_allowed=True)
 
     data = {'x': Tup(c=CustomClass())}
-    model = Model.parse_obj(data)
+    model = Model.model_validate(data)
     assert isinstance(model.x.c, CustomClass)
 
     with pytest.raises(PydanticSchemaGenerationError):

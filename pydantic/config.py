@@ -81,6 +81,7 @@ class BaseConfig(TypedDict, total=False):
     validate_assignment: bool
     error_msg_templates: Dict[str, str]  # TODO remove
     arbitrary_types_allowed: bool  # TODO default True, or remove
+    undefined_types_warning: bool  # TODO review docs
     orm_mode: bool  # TODO rename to from_attributes
     alias_generator: Optional[Callable[[str], str]]
     keep_untouched: Tuple[type, ...]  # TODO remove??
@@ -153,6 +154,7 @@ def _default_base_config() -> BaseConfig:
         validate_assignment=False,
         error_msg_templates={},
         arbitrary_types_allowed=False,
+        undefined_types_warning=True,
         orm_mode=False,
         alias_generator=None,
         keep_untouched=(),

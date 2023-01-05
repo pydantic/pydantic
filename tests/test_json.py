@@ -92,9 +92,9 @@ def test_model_encoding():
         d: ModelA
 
     m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'})
-    assert m.dict() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
-    assert m.json() == '{"a": 10.2, "b": "foobar", "c": 10.2, "d": {"x": 123, "y": "123"}}'
-    assert m.json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
+    assert m.model_dump() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
+    assert m.model_dump_json() == '{"a": 10.2, "b": "foobar", "c": 10.2, "d": {"x": 123, "y": "123"}}'
+    assert m.model_dump_json(exclude={'b'}) == '{"a": 10.2, "c": 10.2, "d": {"x": 123, "y": "123"}}'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -107,8 +107,8 @@ def test_subclass_encoding():
         b: SubDate
 
     m = Model(a=datetime.datetime(2032, 1, 1, 1, 1), b=SubDate(2020, 2, 29, 12, 30))
-    assert m.dict() == {'a': datetime.datetime(2032, 1, 1, 1, 1), 'b': SubDate(2020, 2, 29, 12, 30)}
-    assert m.json() == '{"a": "2032-01-01T01:01:00", "b": "2020-02-29T12:30:00"}'
+    assert m.model_dump() == {'a': datetime.datetime(2032, 1, 1, 1, 1), 'b': SubDate(2020, 2, 29, 12, 30)}
+    assert m.model_dump_json() == '{"a": "2032-01-01T01:01:00", "b": "2020-02-29T12:30:00"}'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -130,8 +130,8 @@ def test_subclass_custom_encoding():
         b: SubDelta
 
     m = Model(a=SubDate(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
-    assert m.dict() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
-    assert m.json() == '{"a": "Thu, 01 Jan 20 01:01:00", "b": "P4DT4H0M0.000000S"}'
+    assert m.model_dump() == {'a': SubDate(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
+    assert m.model_dump_json() == '{"a": "Thu, 01 Jan 20 01:01:00", "b": "P4DT4H0M0.000000S"}'
 
 
 def test_invalid_model():
@@ -164,7 +164,9 @@ def test_custom_encoder():
         y: Decimal
         z: datetime.date
 
-    assert Model(x=123, y=5, z='2032-06-01').json() == '{"x": "123.000s", "y": "a decimal", "z": "2032-06-01"}'
+    assert (
+        Model(x=123, y=5, z='2032-06-01').model_dump_json() == '{"x": "123.000s", "y": "a decimal", "z": "2032-06-01"}'
+    )
 
 
 def test_custom_iso_timedelta():
@@ -173,7 +175,7 @@ def test_custom_iso_timedelta():
         x: datetime.timedelta
 
     m = Model(x=123)
-    assert m.json() == '{"x": "P0DT0H2M3.000000S"}'
+    assert m.model_dump_json() == '{"x": "P0DT0H2M3.000000S"}'
 
 
 # def test_con_decimal_encode() -> None:
@@ -191,7 +193,7 @@ def test_custom_iso_timedelta():
 #         id: Id
 #         price: Decimal = Decimal('0.01')
 #
-#     assert Obj(id=1).json() == '{"id": 1, "price": 0.01}'
+#     assert Obj(id=1).model_dump_json() == '{"id": 1, "price": 0.01}'
 #     assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
 
 
@@ -205,10 +207,9 @@ def test_json_encoder_simple_inheritance():
     class Child(Parent):
         model_config = BaseConfig(json_encoders={datetime.timedelta: lambda _: 'child_encoder'})
 
-    assert Child().json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
+    assert Child().model_dump_json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json_encoder_inheritance_override():
     class Parent(BaseModel):
         model_config = BaseConfig(json_encoders={datetime.datetime: lambda _: 'parent_encoder'})
@@ -217,7 +218,7 @@ def test_json_encoder_inheritance_override():
     class Child(Parent):
         model_config = BaseConfig(json_encoders={datetime.datetime: lambda _: 'child_encoder'})
 
-    assert Child().json() == '{"dt": "child_encoder"}'
+    assert Child().model_dump_json() == '{"dt": "child_encoder"}'
 
 
 def test_custom_encoder_arg():
@@ -225,8 +226,8 @@ def test_custom_encoder_arg():
         x: datetime.timedelta
 
     m = Model(x=123)
-    assert m.json() == '{"x": 123.0}'
-    assert m.json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
+    assert m.model_dump_json() == '{"x": 123.0}'
+    assert m.model_dump_json(encoder=lambda v: '__default__') == '{"x": "__default__"}'
 
 
 def test_encode_dataclass():
@@ -255,7 +256,7 @@ def test_encode_custom_root():
     class Model(BaseModel):
         __root__: List[str]
 
-    assert Model(__root__=['a', 'b']).json() == '["a", "b"]'
+    assert Model(__root__=['a', 'b']).model_dump_json() == '["a", "b"]'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -278,8 +279,8 @@ def test_custom_decode_encode():
         b: str
 
     m = Model.parse_raw('${"a": 1, "b": "foo"}$$')
-    assert m.dict() == {'a': 1, 'b': 'foo'}
-    assert m.json() == '{\n  "a": 1,\n  "b": "foo"\n}'
+    assert m.model_dump() == {'a': 1, 'b': 'foo'}
+    assert m.model_dump_json() == '{\n  "a": 1,\n  "b": "foo"\n}'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -317,13 +318,13 @@ def test_json_nested_encode_models():
 
     timon.friend = pumbaa
 
-    assert iphone.json(models_as_dict=False) == '{"manufacturer": "Apple", "number": 18002752273}'
+    assert iphone.model_dump_json(models_as_dict=False) == '{"manufacturer": "Apple", "number": 18002752273}'
     assert (
-        pumbaa.json(models_as_dict=False)
+        pumbaa.model_dump_json(models_as_dict=False)
         == '{"name": "Pumbaa", "SSN": 234, "birthday": 737424000.0, "phone": 18007267864, "friend": null}'
     )
     assert (
-        timon.json(models_as_dict=False)
+        timon.model_dump_json(models_as_dict=False)
         == '{"name": "Timon", "SSN": 123, "birthday": 738892800.0, "phone": 18002752273, "friend": 234}'
     )
 
@@ -345,7 +346,7 @@ def test_custom_encode_fallback_basemodel():
     class Bar(BaseModel):
         foo: Foo
 
-    assert Bar(foo=Foo(x=MyExoticType())).json(encoder=custom_encoder) == '{"foo": {"x": "exo"}}'
+    assert Bar(foo=Foo(x=MyExoticType())).model_dump_json(encoder=custom_encoder) == '{"foo": {"x": "exo"}}'
 
 
 def test_custom_encode_error():
@@ -361,7 +362,7 @@ def test_custom_encode_error():
         model_config = BaseConfig(arbitrary_types_allowed=True)
 
     with pytest.raises(TypeError, match='not serialisable'):
-        Foo(x=MyExoticType()).json(encoder=custom_encoder)
+        Foo(x=MyExoticType()).model_dump_json(encoder=custom_encoder)
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -370,4 +371,4 @@ def test_recursive():
         value: Optional[str]
         nested: Optional[BaseModel]
 
-    assert Model(value=None, nested=Model(value=None)).json(exclude_none=True) == '{"nested": {}}'
+    assert Model(value=None, nested=Model(value=None)).model_dump_json(exclude_none=True) == '{"nested": {}}'

@@ -19,4 +19,4 @@ class Spam(BaseModel):
 
 m = Spam(foo={'count': 4}, bars=[{'apple': 'x1'}, {'apple': 'x2'}])
 print(m)
-print(m.dict())
+print(m.model_dump())

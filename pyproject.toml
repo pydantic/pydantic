@@ -50,7 +50,7 @@ classifiers = [
 ]
 requires-python = '>=3.7'
 dependencies = [
-    'typing-extensions>=4.1.0',
+    'typing-extensions>=4.2.0',
     'pydantic-core>=0.7.1',
     'annotated-types>=0.4.0',
 ]

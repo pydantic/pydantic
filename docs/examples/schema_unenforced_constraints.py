@@ -15,7 +15,7 @@ class Model(BaseModel):
     foo: PositiveInt = Field(..., exclusiveMaximum=10)
 
 
-print(Model.schema())
+print(Model.model_json_schema())
 
 
 # if you find yourself needing this, an alternative is to declare
@@ -27,4 +27,4 @@ class Model(BaseModel):
     foo: int = Field(..., gt=0, lt=10)
 
 
-print(Model.schema())
+print(Model.model_json_schema())

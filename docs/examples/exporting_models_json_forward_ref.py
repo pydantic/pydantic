@@ -31,4 +31,4 @@ wolfgang = User(
         User(name='John', address=Address(city='London', country='UK')),
     ],
 )
-print(wolfgang.json(models_as_dict=False))
+print(wolfgang.model_dump_json(models_as_dict=False))

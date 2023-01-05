@@ -11,11 +11,11 @@ class User(BaseModel):
     signup_ts: datetime = None
 
 
-m = User.parse_obj({'id': 123, 'name': 'James'})
+m = User.model_validate({'id': 123, 'name': 'James'})
 print(m)
 
 try:
-    User.parse_obj(['not', 'a', 'dict'])
+    User.model_validate(['not', 'a', 'dict'])
 except ValidationError as e:
     print(e)
 

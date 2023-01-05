@@ -16,8 +16,8 @@
 87: error: Missing named argument "e" for "DefaultTestingModel"  [call-arg]
 91: error: Name "Undefined" is not defined  [name-defined]
 94: error: Missing named argument "undefined" for "UndefinedAnnotationModel"  [call-arg]
-97: error: Missing named argument "y" for "construct" of "Model"  [call-arg]
-99: error: Argument "x" to "construct" of "Model" has incompatible type "str"; expected "int"  [arg-type]
+97: error: Missing named argument "y" for "model_construct" of "Model"  [call-arg]
+99: error: Argument "x" to "model_construct" of "Model" has incompatible type "str"; expected "int"  [arg-type]
 149: error: Missing named argument "x" for "DynamicAliasModel2"  [call-arg]
 168: error: Unused "type: ignore" comment
 175: error: Unused "type: ignore" comment

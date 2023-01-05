@@ -24,9 +24,9 @@ t = Transaction(
 )
 
 # using a set:
-print(t.dict(exclude={'user', 'value'}))
+print(t.model_dump(exclude={'user', 'value'}))
 
 # using a dict:
-print(t.dict(exclude={'user': {'username', 'password'}, 'value': True}))
+print(t.model_dump(exclude={'user': {'username', 'password'}, 'value': True}))
 
-print(t.dict(include={'id': True, 'user': {'id'}}))
+print(t.model_dump(include={'id': True, 'user': {'id'}}))

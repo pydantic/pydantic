@@ -96,7 +96,7 @@ def deferred_model_get_pydantic_validation_schema(
     """
     Used on model as `__get_pydantic_validation_schema__` if not all type hints are available.
 
-    This method generates the schema for the model and also sets `__fields__`, but it does NOT build
+    This method generates the schema for the model and also sets `model_fields`, but it does NOT build
     the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
     models.
     """
@@ -109,8 +109,8 @@ def deferred_model_get_pydantic_validation_schema(
     )
 
     core_config = generate_config(cls)
-    # we have to set __fields__ as otherwise `repr` on the model will fail
-    cls.__fields__ = fields
+    # we have to set model_fields as otherwise `repr` on the model will fail
+    cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     return core_schema.new_class_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
 
@@ -139,9 +139,10 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
-        )
+        warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
+        if cls.__config__.undefined_types_warning:
+            raise UserWarning(warning_string)
+        cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
@@ -151,7 +152,7 @@ def complete_model_class(
     validator_functions.check_for_unused()
 
     core_config = generate_config(cls)
-    cls.__fields__ = fields
+    cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
@@ -190,6 +191,8 @@ def build_inner_schema(  # noqa: C901
     model_ref = f'{module_name}.{name}'
     self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+
+    # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
         type_hints = _typing_extra.get_type_hints(cls, global_ns, local_ns, include_extras=True)
     except NameError as e:
@@ -204,10 +207,17 @@ def build_inner_schema(  # noqa: C901
                 raise
         raise PydanticUndefinedAnnotation(name) from e
 
+    # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
+    # annotations is only used for finding fields in parent classes
+    annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo] = {}
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
+
+        # raise a PydanticUndefinedAnnotation if type is undefined
+        if isinstance(ann_type, typing.ForwardRef):
+            raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
         for base in bases:
             if hasattr(base, ann_name):
@@ -219,7 +229,12 @@ def build_inner_schema(  # noqa: C901
         try:
             default = getattr(cls, ann_name)
         except AttributeError:
-            fields[ann_name] = FieldInfo.from_annotation(ann_type)
+            # if field has no default value and is not in __annotations__ this means that it is
+            # defined in a base class and we can take it from there
+            if ann_name in annotations:
+                fields[ann_name] = FieldInfo.from_annotation(ann_type)
+            else:
+                fields[ann_name] = cls.model_fields[ann_name]
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:

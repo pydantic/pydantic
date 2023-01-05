@@ -54,9 +54,9 @@ assert user.__fields_set__ == {'id'}
 ```
 The fields which were supplied when user was initialised.
 ```py
-assert user.dict() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
+assert user.model_dump() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
 ```
-Either `.dict()` or `dict(user)` will provide a dict of fields, but `.dict()` can take numerous other arguments.
+Either `.model_dump()` or `dict(user)` will provide a dict of fields, but `.model_dump()` can take numerous other arguments.
 ```py
 user.id = 321
 assert user.id == 321
@@ -68,18 +68,18 @@ This model is mutable so field values can be changed.
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-`dict()`
+`model_dump()`
 : returns a dictionary of the model's fields and values;
   cf. [exporting models](exporting_models.md#modeldict)
 
-`json()`
-: returns a JSON string representation `dict()`;
+`model_dump_json()`
+: returns a JSON string representation `model_dump()`;
   cf. [exporting models](exporting_models.md#modeljson)
 
 `copy()`
 : returns a copy (by default, shallow copy) of the model; cf. [exporting models](exporting_models.md#modelcopy)
 
-`parse_obj()`
+`model_validate()`
 : a utility for loading any object into a model with error handling if the object is not a dictionary;
   cf. [helper functions](#helper-functions)
 
@@ -92,20 +92,20 @@ Models possess the following methods and attributes:
 `from_orm()`
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
 
-`schema()`
+`model_json_schema()`
 : returns a dictionary representing the model as JSON Schema; cf. [schema](schema.md)
 
 `schema_json()`
 : returns a JSON string representation of `schema()`; cf. [schema](schema.md)
 
-`construct()`
+`model_construct()`
 : a class method for creating models without running validation;
   cf. [Creating models without validation](#creating-models-without-validation)
 
 `__fields_set__`
 : Set of names of fields which were set when the model instance was initialised
 
-`__fields__`
+`model_fields`
 : a dictionary of the model's fields
 
 `__config__`
@@ -228,9 +228,9 @@ You can also define your own error classes, which can specify a custom error cod
 
 *Pydantic* provides three `classmethod` helper functions on models for parsing data:
 
-* **`parse_obj`**: this is very similar to the `__init__` method of the model, except it takes a dict
+* **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict
   rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
-* **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `parse_obj`.
+* **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
   Parsing *pickle* data is also supported by setting the `content_type` argument appropriately.
 * **`parse_file`**: this takes in a file path, reads the file and passes the contents to `parse_raw`. If `content_type` is omitted,
   it is inferred from the file's extension.
@@ -248,17 +248,17 @@ You can also define your own error classes, which can specify a custom error cod
 
 ### Creating models without validation
 
-*pydantic* also provides the `construct()` method which allows models to be created **without validation** this
+*pydantic* also provides the `model_construct()` method which allows models to be created **without validation** this
 can be useful when data has already been validated or comes from a trusted source and you want to create a model
-as efficiently as possible (`construct()` is generally around 30x faster than creating a model with full validation).
+as efficiently as possible (`model_construct()` is generally around 30x faster than creating a model with full validation).
 
 !!! warning
-    `construct()` does not do any validation, meaning it can create models which are invalid. **You should only
-    ever use the `construct()` method with data which has already been validated, or you trust.**
+    `model_construct()` does not do any validation, meaning it can create models which are invalid. **You should only
+    ever use the `model_construct()` method with data which has already been validated, or you trust.**
 
 {!.tmp_examples/models_construct.md!}
 
-The `_fields_set` keyword argument to `construct()` is optional, but allows you to be more precise about
+The `_fields_set` keyword argument to `model_construct()` is optional, but allows you to be more precise about
 which fields were originally set and which weren't. If it's omitted `__fields_set__` will just be the keys
 of the data provided.
 
@@ -360,11 +360,11 @@ Pydantic models can be defined with a custom root type by declaring the `__root_
 
 The root type can be any type supported by pydantic, and is specified by the type hint on the `__root__` field.
 The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
-the first and only argument to `parse_obj`.
+the first and only argument to `model_validate`.
 
 {!.tmp_examples/models_custom_root_field.md!}
 
-If you call the `parse_obj` method for a model with a custom root type with a *dict* as the first argument,
+If you call the `model_validate` method for a model with a custom root type with a *dict* as the first argument,
 the following logic is used:
 
 * If the custom root type is a mapping type (eg., `Dict` or `Mapping`),
@@ -378,7 +378,7 @@ This is demonstrated in the following example:
 {!.tmp_examples/models_custom_root_field_parse_obj.md!}
 
 !!! warning
-    Calling the `parse_obj` method on a dict with the single key `"__root__"` for non-mapping custom root types
+    Calling the `model_validate` method on a dict with the single key `"__root__"` for non-mapping custom root types
     is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.
 
 If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
@@ -414,7 +414,7 @@ Field order is important in models for the following reasons:
   can access the values of earlier fields, but not later ones
 * field order is preserved in the model [schema](schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.dict()` and `.json()` etc.](exporting_models.md#modeldict)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
 
 As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.
@@ -500,7 +500,7 @@ Upon class creation pydantic constructs `__slots__` filled with private attribut
 
 Pydantic includes a standalone utility function `parse_obj_as` that can be used to apply the parsing
 logic used to populate pydantic models in a more ad-hoc way. This function behaves similarly to
-`BaseModel.parse_obj`, but works with arbitrary pydantic-compatible types.
+`BaseModel.model_validate`, but works with arbitrary pydantic-compatible types.
 
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
 For example:

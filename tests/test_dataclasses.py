@@ -443,7 +443,7 @@ def test_fields():
         signup_ts: datetime = None
 
     user = User(id=123)
-    fields = user.__pydantic_model__.__fields__
+    fields = user.__pydantic_model__.model_fields
 
     assert fields['id'].required is True
     assert fields['id'].default is None
@@ -463,7 +463,7 @@ def test_default_factory_field():
         aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
-    fields = user.__pydantic_model__.__fields__
+    fields = user.__pydantic_model__.model_fields
 
     assert fields['id'].required is True
     assert fields['id'].default is None
@@ -504,7 +504,7 @@ def test_schema():
         height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     user = User(id=123)
-    assert user.__pydantic_model__.schema() == {
+    assert user.__pydantic_model__.model_json_schema() == {
         'title': 'User',
         'type': 'object',
         'properties': {
@@ -542,7 +542,7 @@ def test_nested_schema():
     class Outer:
         n: Nested
 
-    assert Outer.__pydantic_model__.schema() == {
+    assert Outer.__pydantic_model__.model_json_schema() == {
         'title': 'Outer',
         'type': 'object',
         'properties': {'n': {'$ref': '#/definitions/Nested'}},
@@ -791,7 +791,7 @@ def test_override_builtin_dataclass_nested():
         {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
-    foo = Foo.parse_obj(
+    foo = Foo.model_validate(
         {
             'file': {
                 'filename': b'thefilename',
@@ -817,7 +817,7 @@ def test_override_builtin_dataclass_nested_schema():
         meta: Meta
 
     FileChecked = pydantic.dataclasses.dataclass(File)
-    assert FileChecked.__pydantic_model__.schema() == {
+    assert FileChecked.__pydantic_model__.model_json_schema() == {
         'definitions': {
             'Meta': {
                 'properties': {
@@ -994,13 +994,13 @@ def test_config_field_info_create_model():
 
         model_config = BaseConfig(fields={'a': {'description': 'descr'}})
 
-    assert A1.schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    assert A1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
     @pydantic.dataclasses.dataclass(config=A1.model_config)
     class A2:
         a: str
 
-    assert A2.__pydantic_model__.schema()['properties'] == {
+    assert A2.__pydantic_model__.model_json_schema()['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
     }
 
@@ -1127,7 +1127,7 @@ def test_issue_2541():
     class Example(BaseModel):
         item: Item
 
-    e = Example.parse_obj({'item': {'name': 123, 'infos': {'id': '1'}}})
+    e = Example.model_validate({'item': {'name': 123, 'infos': {'id': '1'}}})
     assert e.item.name == '123'
     assert e.item.infos.id == 1
     with pytest.raises(dataclasses.FrozenInstanceError):
@@ -1158,7 +1158,7 @@ def test_issue_2555():
     class M(pydantic.BaseModel):
         s: Sentence
 
-    assert M.schema()
+    assert M.model_json_schema()
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1180,14 +1180,14 @@ def test_schema_description_unset():
     class A:
         x: int
 
-    assert 'description' not in A.__pydantic_model__.schema()
+    assert 'description' not in A.__pydantic_model__.model_json_schema()
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
     class B:
         x: int
 
-    assert 'description' not in B.__pydantic_model__.schema()
+    assert 'description' not in B.__pydantic_model__.model_json_schema()
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1198,7 +1198,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert A.__pydantic_model__.schema()['description'] == 'my description'
+    assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
@@ -1207,7 +1207,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert A.__pydantic_model__.schema()['description'] == 'my description'
+    assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1242,7 +1242,7 @@ def test_issue_3162():
         user: User
         other_user: User
 
-    assert Users.schema() == {
+    assert Users.model_json_schema() == {
         'title': 'Users',
         'type': 'object',
         'properties': {'user': {'$ref': '#/definitions/User'}, 'other_user': {'$ref': '#/definitions/User'}},
@@ -1274,7 +1274,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
-    assert Top.__pydantic_model__.schema() == {
+    assert Top.__pydantic_model__.model_json_schema() == {
         'title': 'Top',
         'type': 'object',
         'properties': {
@@ -1317,7 +1317,7 @@ def test_post_init_after_validation():
         set_wrapper: SetWrapper
 
     model = Model(set_wrapper=SetWrapper({1, 2, 3}))
-    json_text = model.json()
+    json_text = model.model_dump_json()
     assert Model.parse_raw(json_text) == model
 
 
@@ -1424,7 +1424,7 @@ def test_self_reference_dataclass():
     class MyDataclass:
         self_reference: 'MyDataclass'  # noqa: F821
 
-    assert MyDataclass.__pydantic_model__.__fields__['self_reference'].type_ is MyDataclass
+    assert MyDataclass.__pydantic_model__.model_fields['self_reference'].type_ is MyDataclass
 
 
 @pytest.mark.xfail(reason='working on V2')

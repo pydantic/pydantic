@@ -326,7 +326,7 @@ def get_flat_models_from_model(model: Type['BaseModel'], known_models: TypeModel
     flat_models: TypeModelSet = set()
     flat_models.add(model)
     known_models |= flat_models
-    fields = cast(Sequence[ModelField], model.__fields__.values())
+    fields = cast(Sequence[ModelField], model.model_fields.values())
     flat_models |= get_flat_models_from_fields(fields, known_models=known_models)
     return flat_models
 
@@ -574,7 +574,7 @@ def model_type_schema(
     required = []
     definitions: Dict[str, Any] = {}
     nested_models: Set[str] = set()
-    for k, f in model.__fields__.items():
+    for k, f in model.model_fields.items():
         try:
             f_schema, f_definitions, f_nested_models = field_schema(
                 f,

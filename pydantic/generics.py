@@ -96,7 +96,7 @@ class GenericModel(BaseModel):
         type_hints = _typing_extra.get_type_hints(cls, include_extras=True).items()
         instance_type_hints = {k: v for k, v in type_hints if typing_extensions.get_origin(v) is not ClassVar}
 
-        fields = {k: (DeferredType(), cls.__fields__[k]) for k in instance_type_hints if k in cls.__fields__}
+        fields = {k: (DeferredType(), cls.model_fields[k]) for k in instance_type_hints if k in cls.model_fields}
 
         model_module, called_globally = get_caller_frame_info()
         created_model = cast(
@@ -357,7 +357,7 @@ def _prepare_model_fields(
     Replace DeferredType fields with concrete type hints and prepare them.
     """
 
-    for key, field in created_model.__fields__.items():
+    for key, field in created_model.model_fields.items():
         if key not in fields:
             assert field.annotation.__class__ is not DeferredType
             # https://github.com/nedbat/coveragepy/issues/198

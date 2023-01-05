@@ -34,9 +34,9 @@ error = Error(code=404, message='Not found')
 
 print(Response[int](data=1))
 print(Response[str](data='value'))
-print(Response[str](data='value').dict())
-print(Response[DataModel](data=data).dict())
-print(Response[DataModel](error=error).dict())
+print(Response[str](data='value').model_dump())
+print(Response[DataModel](data=data).model_dump())
+print(Response[DataModel](error=error).model_dump())
 try:
     Response[int](data='value')
 except ValidationError as e:

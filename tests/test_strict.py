@@ -37,7 +37,7 @@ def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: Ty
 
 def test_parse_strict_mode_on_field_valid(ModelWithStrictField: Type[BaseModel]) -> None:
     value = ModelWithStrictField(a=1)
-    assert value.dict() == {'a': 1}
+    assert value.model_dump() == {'a': 1}
 
 
 @pytest.fixture(scope='session', name='ModelWithStrictConfig')
@@ -76,7 +76,7 @@ def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: Type[Base
         ModelWithStrictConfig(a=1, b='2', c=3, d=4),
         ModelWithStrictConfig(a=1, b=2, c=3, d=4),
     ]
-    assert all(v.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
+    assert all(v.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
 
 
 def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
@@ -90,4 +90,4 @@ def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: Type[Bas
         Model(a=1, b='2', c=3, d=4),
         Model(a=1, b=2, c=3, d=4),
     ]
-    assert all(v.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
+    assert all(v.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
