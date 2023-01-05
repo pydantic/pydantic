@@ -28,12 +28,34 @@ Model.from_orm({})
 Model.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
 
 
+class KwargsModel(BaseModel, alias_generator=None, allow_mutation=False, extra=Extra.forbid):
+    x: int
+    y: str
+
+    def method(self) -> None:
+        pass
+
+
+kwargs_model = KwargsModel(x=1, y='y', z='z')
+kwargs_model = KwargsModel(x=1)
+kwargs_model.y = 'a'
+KwargsModel.from_orm({})
+KwargsModel.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
+
+
 class ForbidExtraModel(BaseModel):
     class Config:
         extra = 'forbid'
 
 
 ForbidExtraModel(x=1)
+
+
+class KwargsForbidExtraModel(BaseModel, extra='forbid'):
+    pass
+
+
+KwargsForbidExtraModel(x=1)
 
 
 class ForbidExtraModel2(BaseModel):
@@ -53,9 +75,17 @@ class BadExtraModel(BaseModel):
         extra = 1
 
 
+class KwargsBadExtraModel(BaseModel, extra=1):
+    pass
+
+
 class BadConfig1(BaseModel):
     class Config:
         orm_mode: Any = {}  # not sensible, but should still be handled gracefully
+
+
+class KwargsBadConfig1(BaseModel, orm_mode={}):
+    pass
 
 
 class BadConfig2(BaseModel):
@@ -63,9 +93,17 @@ class BadConfig2(BaseModel):
         orm_mode = list  # not sensible, but should still be handled gracefully
 
 
+class KwargsBadConfig2(BaseModel, orm_mode=list):
+    pass
+
+
 class InheritingModel(Model):
     class Config:
         allow_mutation = True
+
+
+class KwargsInheritingModel(KwargsModel, allow_mutation=True):
+    pass
 
 
 class DefaultTestingModel(BaseModel):
@@ -150,6 +188,15 @@ DynamicAliasModel2(y='y', z=1)
 DynamicAliasModel2(x='y', z=1)
 
 
+class KwargsDynamicAliasModel(BaseModel, allow_population_by_field_name=True):
+    x: str = Field(..., alias=x_alias)
+    z: int
+
+
+KwargsDynamicAliasModel(y='y', z=1)
+KwargsDynamicAliasModel(x='y', z=1)
+
+
 class AliasGeneratorModel(BaseModel):
     x: int
 
@@ -177,6 +224,23 @@ class UntypedFieldModel(BaseModel):
 
 AliasGeneratorModel2(x=1)
 AliasGeneratorModel2(y=1, z=1)
+
+
+class KwargsAliasGeneratorModel(BaseModel, alias_generator=lambda x: x + '_'):
+    x: int
+
+
+KwargsAliasGeneratorModel(x=1)
+KwargsAliasGeneratorModel(x_=1)
+KwargsAliasGeneratorModel(z=1)
+
+
+class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
+    x: int = Field(..., alias='y')
+
+
+KwargsAliasGeneratorModel2(x=1)
+KwargsAliasGeneratorModel2(y=1, z=1)
 
 
 class CoverageTester(Missing):  # noqa F821
