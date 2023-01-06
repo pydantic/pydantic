@@ -34,5 +34,5 @@ class MainModel(BaseModel):
         title = 'Main'
 
 
-# this is equivalent to json.dumps(MainModel.schema(), indent=2):
+# this is equivalent to json.dumps(MainModel.model_json_schema(), indent=2):
 print(MainModel.schema_json(indent=2))

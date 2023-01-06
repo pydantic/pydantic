@@ -99,9 +99,9 @@ def test_key():
         'description': 'This is a test.',
     }
     assert ApplePie.__schema_cache__.keys() == set()
-    assert ApplePie.schema() == s
+    assert ApplePie.model_json_schema() == s
     assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
-    assert ApplePie.schema() == s
+    assert ApplePie.model_json_schema() == s
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -114,7 +114,7 @@ def test_by_alias():
             title = 'Apple Pie'
             fields = {'a': 'Snap', 'b': 'Crackle'}
 
-    assert ApplePie.schema() == {
+    assert ApplePie.model_json_schema() == {
         'type': 'object',
         'title': 'Apple Pie',
         'properties': {
@@ -123,8 +123,8 @@ def test_by_alias():
         },
         'required': ['Snap'],
     }
-    assert list(ApplePie.schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
-    assert list(ApplePie.schema(by_alias=False)['properties'].keys()) == ['a', 'b']
+    assert list(ApplePie.model_json_schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
+    assert list(ApplePie.model_json_schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -139,7 +139,7 @@ def test_ref_template():
         class Config:
             title = 'Apple Pie'
 
-    assert ApplePie.schema(ref_template='foobar/{model}.json') == {
+    assert ApplePie.model_json_schema(ref_template='foobar/{model}.json') == {
         'title': 'Apple Pie',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'number'}, 'key_lime': {'$ref': 'foobar/KeyLimePie.json'}},
@@ -151,7 +151,7 @@ def test_ref_template():
             },
         },
     }
-    assert ApplePie.schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
+    assert ApplePie.model_json_schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
     assert 'foobar/KeyLimePie.json' in json_schema
     assert '#/definitions/KeyLimePie' not in json_schema
@@ -168,13 +168,13 @@ def test_by_alias_generator():
             def alias_generator(x):
                 return x.upper()
 
-    assert ApplePie.schema() == {
+    assert ApplePie.model_json_schema() == {
         'title': 'ApplePie',
         'type': 'object',
         'properties': {'A': {'title': 'A', 'type': 'number'}, 'B': {'title': 'B', 'default': 10, 'type': 'integer'}},
         'required': ['A'],
     }
-    assert ApplePie.schema(by_alias=False)['properties'].keys() == {'a', 'b'}
+    assert ApplePie.model_json_schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -188,7 +188,7 @@ def test_sub_model():
         a: int
         b: Foo = None
 
-    assert Bar.schema() == {
+    assert Bar.model_json_schema() == {
         'type': 'object',
         'title': 'Bar',
         'definitions': {
@@ -215,9 +215,9 @@ def test_schema_class():
         Model()
 
     m = Model(bar=123)
-    assert m.dict() == {'foo': 4, 'bar': '123'}
+    assert m.model_dump() == {'foo': 4, 'bar': '123'}
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'type': 'object',
         'title': 'Model',
         'properties': {
@@ -240,8 +240,8 @@ def test_schema_class_by_alias():
     class Model(BaseModel):
         foo: int = Field(4, alias='foofoo')
 
-    assert list(Model.schema()['properties'].keys()) == ['foofoo']
-    assert list(Model.schema(by_alias=False)['properties'].keys()) == ['foo']
+    assert list(Model.model_json_schema()['properties'].keys()) == ['foofoo']
+    assert list(Model.model_json_schema(by_alias=False)['properties'].keys()) == ['foo']
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -258,7 +258,7 @@ def test_choices():
         bar: BarEnum
         spam: SpamEnum = Field(None)
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -288,7 +288,7 @@ def test_enum_modify_schema():
     class Model(BaseModel):
         spam: SpamEnum = Field(None)
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'definitions': {
             'SpamEnum': {
                 'description': 'An enumeration.',
@@ -315,7 +315,7 @@ def test_enum_schema_custom_field():
         bulbi: FooBarEnum = Field('foo', alias='bulbialias', title='Bulbibulbi!', description='Bulbi is not...')
         cara: FooBarEnum
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'definitions': {
             'FooBarEnum': {
                 'description': 'An enumeration.',
@@ -368,7 +368,7 @@ def test_enum_and_model_have_same_behaviour():
             description='Description of model',
         )
 
-    assert Foo.schema() == {
+    assert Foo.model_json_schema() == {
         'definitions': {
             'Pika': {
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
@@ -414,7 +414,7 @@ def test_enum_includes_extra_without_other_params():
         enum: Names
         extra_enum: Names = Field(..., extra='Extra field')
 
-    assert Foo.schema() == {
+    assert Foo.model_json_schema() == {
         'definitions': {
             'Names': {
                 'description': 'An enumeration.',
@@ -443,7 +443,7 @@ def test_list_enum_schema_extras():
     class Model(BaseModel):
         foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'definitions': {
             'FoodChoice': {
                 'description': 'An enumeration.',
@@ -474,7 +474,7 @@ def test_enum_schema_cleandoc():
     class Model(BaseModel):
         enum: FooBar
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'enum': {'$ref': '#/definitions/FooBar'}},
@@ -514,7 +514,7 @@ def test_list_sub_model():
     class Bar(BaseModel):
         b: List[Foo]
 
-    assert Bar.schema() == {
+    assert Bar.model_json_schema() == {
         'title': 'Bar',
         'type': 'object',
         'definitions': {
@@ -535,7 +535,11 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'type': 'string', 'title': 'A'}},
+    }
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -544,7 +548,7 @@ def test_any():
         a: Any
         b: object
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -561,7 +565,7 @@ def test_set():
         b: set
         c: set = {1}
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -578,7 +582,7 @@ def test_const_str():
     class Model(BaseModel):
         a: str = Field('some string', const=True)
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string', 'default': 'some string'}},
@@ -590,7 +594,7 @@ def test_const_false():
     class Model(BaseModel):
         a: str = Field('some string', const=False)
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'default': 'some string'}},
@@ -623,7 +627,7 @@ def test_tuple(field_type, extra_props):
     class Model(BaseModel):
         a: field_type
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', **extra_props}},
@@ -636,7 +640,7 @@ def test_deque():
     class Model(BaseModel):
         a: Deque[str]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'string'}}},
@@ -649,7 +653,7 @@ def test_bool():
     class Model(BaseModel):
         a: bool
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
@@ -662,7 +666,7 @@ def test_strict_bool():
     class Model(BaseModel):
         a: StrictBool
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
@@ -675,7 +679,7 @@ def test_dict():
     class Model(BaseModel):
         a: dict
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'object'}},
@@ -688,7 +692,7 @@ def test_list():
     class Model(BaseModel):
         a: list
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {}}},
@@ -756,7 +760,7 @@ def test_list_union_dict(field_type, expected_schema):
     base_schema = {'title': 'Model', 'type': 'object'}
     base_schema.update(expected_schema)
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -778,7 +782,7 @@ def test_date_types(field_type, expected_schema):
 
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': attribute_schema}, 'required': ['a']}
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -836,7 +840,7 @@ def test_str_basic_types(field_type, expected_schema):
 
     base_schema = {'title': 'Model', 'type': 'object'}
     base_schema.update(expected_schema)
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -855,7 +859,7 @@ def test_str_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema['properties']['a'] == expected_schema
 
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': expected_schema}, 'required': ['a']}
@@ -881,7 +885,7 @@ def test_special_str_types(field_type, expected_schema):
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
     base_schema['properties']['a'] = expected_schema
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -899,7 +903,7 @@ def test_email_str_types(field_type, expected_schema):
     }
     base_schema['properties']['a']['format'] = expected_schema
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -915,7 +919,7 @@ def test_secret_types(field_type, inner_type):
         'required': ['a'],
     }
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -944,7 +948,7 @@ def test_special_int_types(field_type, expected_schema):
     }
     base_schema['properties']['a'].update(expected_schema)
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -977,7 +981,7 @@ def test_special_float_types(field_type, expected_schema):
     }
     base_schema['properties']['a'].update(expected_schema)
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -997,7 +1001,7 @@ def test_uuid_types(field_type, expected_schema):
     }
     base_schema['properties']['a']['format'] = expected_schema
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1016,7 +1020,7 @@ def test_path_types(field_type, expected_schema):
     }
     base_schema['properties']['a']['format'] = expected_schema
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1026,7 +1030,7 @@ def test_json_type():
         b: Json[int]
         c: Json[Any]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -1043,7 +1047,7 @@ def test_ipv4address_type():
     class Model(BaseModel):
         ip_address: IPv4Address
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1057,7 +1061,7 @@ def test_ipv6address_type():
     class Model(BaseModel):
         ip_address: IPv6Address
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1071,7 +1075,7 @@ def test_ipvanyaddress_type():
     class Model(BaseModel):
         ip_address: IPvAnyAddress
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1085,7 +1089,7 @@ def test_ipv4interface_type():
     class Model(BaseModel):
         ip_interface: IPv4Interface
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1099,7 +1103,7 @@ def test_ipv6interface_type():
     class Model(BaseModel):
         ip_interface: IPv6Interface
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1113,7 +1117,7 @@ def test_ipvanyinterface_type():
     class Model(BaseModel):
         ip_interface: IPvAnyInterface
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1127,7 +1131,7 @@ def test_ipv4network_type():
     class Model(BaseModel):
         ip_network: IPv4Network
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1141,7 +1145,7 @@ def test_ipv6network_type():
     class Model(BaseModel):
         ip_network: IPv6Network
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1155,7 +1159,7 @@ def test_ipvanynetwork_type():
     class Model(BaseModel):
         ip_network: IPvAnyNetwork
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1180,7 +1184,7 @@ def test_callable_type(type_, default_value):
         foo: int
 
     with pytest.warns(UserWarning):
-        model_schema = Model.schema()
+        model_schema = Model.model_json_schema()
 
     assert 'callback' not in model_schema['properties']
 
@@ -1191,7 +1195,7 @@ def test_error_non_supported_types():
         a: ImportString
 
     with pytest.raises(ValueError):
-        Model.schema()
+        Model.model_json_schema()
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1304,7 +1308,7 @@ def test_schema_overrides():
     class Model(BaseModel):
         d: Baz
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -1338,7 +1342,7 @@ def test_schema_overrides_w_union():
     class Spam(BaseModel):
         a: Union[Foo, Bar] = Field(..., description='xxx')
 
-    assert Spam.schema()['properties'] == {
+    assert Spam.model_json_schema()['properties'] == {
         'a': {
             'title': 'A',
             'description': 'xxx',
@@ -1529,7 +1533,7 @@ def test_list_default():
     class UserModel(BaseModel):
         friends: List[int] = [1]
 
-    assert UserModel.schema() == {
+    assert UserModel.model_json_schema() == {
         'title': 'UserModel',
         'type': 'object',
         'properties': {'friends': {'title': 'Friends', 'default': [1], 'type': 'array', 'items': {'type': 'integer'}}},
@@ -1544,7 +1548,7 @@ def test_enum_str_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1555,7 +1559,7 @@ def test_enum_int_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1563,7 +1567,7 @@ def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
 
-    assert UserModel.schema() == {
+    assert UserModel.model_json_schema() == {
         'title': 'UserModel',
         'type': 'object',
         'properties': {
@@ -1587,7 +1591,7 @@ def test_model_default():
     class Outer(BaseModel):
         inner: Inner = Inner()
 
-    assert Outer.schema() == {
+    assert Outer.model_json_schema() == {
         'definitions': {
             'Inner': {
                 'properties': {
@@ -1651,7 +1655,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     }
 
     expected_schema['properties']['a'].update(expected_extra)
-    assert Foo.schema() == expected_schema
+    assert Foo.model_json_schema() == expected_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1755,7 +1759,7 @@ def test_schema_kwargs():
     class Foo(BaseModel):
         a: str = Field('foo', examples=['bar'])
 
-    assert Foo.schema() == {
+    assert Foo.model_json_schema() == {
         'title': 'Foo',
         'type': 'object',
         'properties': {'a': {'type': 'string', 'title': 'A', 'default': 'foo', 'examples': ['bar']}},
@@ -1771,7 +1775,7 @@ def test_schema_dict_constr():
     class Foo(BaseModel):
         a: ConStrKeyDict = {}
 
-    assert Foo.schema() == {
+    assert Foo.model_json_schema() == {
         'title': 'Foo',
         'type': 'object',
         'properties': {
@@ -1798,7 +1802,7 @@ def test_bytes_constrained_types(field_type, expected_schema):
     base_schema = {'title': 'Model', 'type': 'object', 'properties': {'a': {}}, 'required': ['a']}
     base_schema['properties']['a'] = expected_schema
 
-    assert Model.schema() == base_schema
+    assert Model.model_json_schema() == base_schema
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1806,14 +1810,14 @@ def test_optional_dict():
     class Model(BaseModel):
         something: Optional[Dict[str, Any]]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'something': {'title': 'Something', 'type': 'object'}},
     }
 
-    assert Model().dict() == {'something': None}
-    assert Model(something={'foo': 'Bar'}).dict() == {'something': {'foo': 'Bar'}}
+    assert Model().model_dump() == {'something': None}
+    assert Model(something={'foo': 'Bar'}).model_dump() == {'something': {'foo': 'Bar'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1826,15 +1830,15 @@ def test_optional_validator():
             assert v is None or 'x' not in v, 'should not contain x'
             return v
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'something': {'title': 'Something', 'type': 'string'}},
     }
 
-    assert Model().dict() == {'something': None}
-    assert Model(something=None).dict() == {'something': None}
-    assert Model(something='hello').dict() == {'something': 'hello'}
+    assert Model().model_dump() == {'something': None}
+    assert Model(something=None).model_dump() == {'something': None}
+    assert Model(something='hello').model_dump() == {'something': 'hello'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1846,7 +1850,7 @@ def test_field_with_validator():
         def check_field(cls, v, *, values, config, field):
             return v
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'something': {'type': 'integer', 'title': 'Something'}},
@@ -1920,7 +1924,7 @@ def test_known_model_optimization():
         },
     }
 
-    assert Model.schema() == expected
+    assert Model.model_json_schema() == expected
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1928,7 +1932,7 @@ def test_root():
     class Model(BaseModel):
         __root__: str
 
-    assert Model.schema() == {'title': 'Model', 'type': 'string'}
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'string'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1936,7 +1940,7 @@ def test_root_list():
     class Model(BaseModel):
         __root__: List[str]
 
-    assert Model.schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1947,7 +1951,7 @@ def test_root_nested_model():
     class Model(BaseModel):
         __root__: List[NestedModel]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'array',
         'items': {'$ref': '#/definitions/NestedModel'},
@@ -1973,7 +1977,7 @@ def test_new_type_schema():
         b: b_type
         c: c_type
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'properties': {
             'a': {'title': 'A', 'type': 'integer'},
             'b': {'title': 'B', 'type': 'integer'},
@@ -1993,7 +1997,7 @@ def test_literal_schema():
         c: Literal['a', 1]
         d: Literal['a', Literal['b'], 1, 2]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'properties': {
             'a': {'title': 'A', 'type': 'integer', 'enum': [1]},
             'b': {'title': 'B', 'type': 'string', 'enum': ['a']},
@@ -2021,7 +2025,7 @@ def test_literal_enum():
     class Model(BaseModel):
         kind: Literal[MyEnum.FOO]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'type': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
@@ -2034,7 +2038,7 @@ def test_color_type():
     class Model(BaseModel):
         color: Color
 
-    model_schema = Model.schema()
+    model_schema = Model.model_json_schema()
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
@@ -2051,7 +2055,7 @@ def test_model_with_schema_extra():
         class Config:
             schema_extra = {'examples': [{'a': 'Foo'}]}
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
@@ -2072,7 +2076,7 @@ def test_model_with_schema_extra_callable():
                 schema['type'] = 'override'
                 assert model_class is Model
 
-    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -2086,7 +2090,7 @@ def test_model_with_schema_extra_callable_no_model_class():
                 schema.pop('properties')
                 schema['type'] = 'override'
 
-    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -2103,7 +2107,7 @@ def test_model_with_schema_extra_callable_classmethod():
                 schema['type'] = cls.type
                 assert model_class is Model
 
-    assert Model.schema() == {'title': 'Model', 'type': 'foo'}
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -2117,7 +2121,7 @@ def test_model_with_schema_extra_callable_instance_method():
                 schema['type'] = 'override'
                 assert model_class is Model
 
-    assert Model.schema() == {'title': 'Model', 'type': 'override'}
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -2128,7 +2132,7 @@ def test_model_with_extra_forbidden():
         class Config:
             extra = Extra.forbid
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
@@ -2197,7 +2201,7 @@ def test_enforced_constraints(annotation, kwargs, field_schema):
     class Model(BaseModel):
         a: annotation = Field(..., **kwargs)
 
-    schema = Model.schema()
+    schema = Model.model_json_schema()
     # debug(schema['properties']['a'])
     assert schema['properties']['a'] == field_schema
 
@@ -2219,11 +2223,11 @@ def test_real_vs_phony_constraints():
     with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
         Model1(foo=122)
 
-    assert Model2(foo=122).dict() == {'foo': 122}
+    assert Model2(foo=122).model_dump() == {'foo': 122}
 
     assert (
-        Model1.schema()
-        == Model2.schema()
+        Model1.model_json_schema()
+        == Model2.model_json_schema()
         == {
             'title': 'Test Model',
             'type': 'object',
@@ -2238,7 +2242,7 @@ def test_subfield_field_info():
     class MyModel(BaseModel):
         entries: Dict[str, List[int]]
 
-    assert MyModel.schema() == {
+    assert MyModel.model_json_schema() == {
         'title': 'MyModel',
         'type': 'object',
         'properties': {
@@ -2293,7 +2297,7 @@ def test_schema_attributes():
     class Example(BaseModel):
         example: ExampleEnum
 
-    assert Example.schema() == {
+    assert Example.model_json_schema() == {
         'title': 'Example',
         'type': 'object',
         'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
@@ -2329,7 +2333,7 @@ def test_path_modify_schema():
         path2: MyPath
         path3: List[MyPath]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -2349,7 +2353,7 @@ def test_frozen_set():
         c: frozenset = frozenset({1, 2, 3})
         d: frozenset = ...
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -2373,7 +2377,7 @@ def test_iterable():
     class Model(BaseModel):
         a: Iterable[int]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'array', 'items': {'type': 'integer'}}},
@@ -2388,7 +2392,7 @@ def test_new_type():
     class Model(BaseModel):
         a: new_type
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
@@ -2479,8 +2483,8 @@ class MyModel(BaseModel):
         my_model_1: module_1.MyModel
         my_model_2: module_2.MyModel
 
-    assert len(Model.schema()['definitions']) == 4
-    assert set(Model.schema()['definitions']) == {
+    assert len(Model.model_json_schema()['definitions']) == 4
+    assert set(Model.model_json_schema()['definitions']) == {
         f'{module_1.__name__}__MyEnum',
         f'{module_1.__name__}__MyModel',
         f'{module_2.__name__}__MyEnum',
@@ -2508,7 +2512,7 @@ def test_schema_for_generic_field():
         data: GenModel[str]
         data1: GenModel
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -2530,7 +2534,7 @@ def test_schema_for_generic_field():
         data: GenModelModified[str]
         data1: GenModelModified
 
-    assert ModelModified.schema() == {
+    assert ModelModified.model_json_schema() == {
         'title': 'ModelModified',
         'type': 'object',
         'properties': {
@@ -2550,7 +2554,7 @@ def test_namedtuple_default():
     class LocationBase(BaseModel):
         coords: Coordinates = Coordinates(0, 0)
 
-    assert LocationBase.schema() == {
+    assert LocationBase.model_json_schema() == {
         'title': 'LocationBase',
         'type': 'object',
         'properties': {
@@ -2622,7 +2626,7 @@ def test_advanced_generic_schema():
         data4: Tuple[CustomType]
         data5: Tuple[CustomType, str]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -2692,7 +2696,7 @@ def test_nested_generic():
     class Model(BaseModel):
         ref: Ref['Model']  # noqa
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'definitions': {
@@ -2726,12 +2730,12 @@ def test_nested_generic_model():
         box_str: Box[str]
         box_int: Box[int]
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'definitions': {
-            'Box_str_': Box[str].schema(),
-            'Box_int_': Box[int].schema(),
+            'Box_str_': Box[str].model_json_schema(),
+            'Box_int_': Box[int].model_json_schema(),
         },
         'properties': {
             'box_str': {'$ref': '#/definitions/Box_str_'},
@@ -2762,7 +2766,7 @@ def test_complex_nested_generic():
 
     Model.model_rebuild()
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'definitions': {
             'Model': {
                 'title': 'Model',
@@ -2804,7 +2808,7 @@ def test_schema_with_field_parameter():
     class MyModel(BaseModel):
         value: RestrictedAlphabetStr = Field(alphabet='ABC')
 
-    assert MyModel.schema() == {
+    assert MyModel.model_json_schema() == {
         'title': 'MyModel',
         'type': 'object',
         'properties': {
@@ -2836,7 +2840,7 @@ def test_discriminated_union():
     class Model(BaseModel):
         pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -2935,7 +2939,7 @@ def test_discriminated_annotated_union():
         pet: Pet
         number: int
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -3030,7 +3034,7 @@ def test_alias_same():
         pet: Union[Cat, Dog] = Field(discriminator='pet_type')
         number: int
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'type': 'object',
         'title': 'Model',
         'properties': {
@@ -3124,7 +3128,7 @@ def test_discriminated_union_in_list():
         pets: Pet
         n: int
 
-    assert Model.schema() == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -3201,7 +3205,7 @@ def test_extra_inheritance():
         root: str = Field('asa', description='image height', level=3)
 
     m = Model()
-    assert m.schema()['properties'] == {
+    assert m.model_json_schema()['properties'] == {
         'root': {
             'title': 'Root',
             'type': 'string',
@@ -3224,7 +3228,7 @@ def test_model_with_type_attributes():
         a: Type[Foo]
         b: Type[Bar]
 
-    assert Baz.schema() == {
+    assert Baz.model_json_schema() == {
         'title': 'Baz',
         'type': 'object',
         'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
@@ -3248,7 +3252,7 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
     class Foobar(BaseModel):
         password: secret_cls = Field(**field_kw)
 
-    assert Foobar.schema() == {
+    assert Foobar.model_json_schema() == {
         'title': 'Foobar',
         'type': 'object',
         'properties': {

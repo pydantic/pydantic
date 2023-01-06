@@ -12,4 +12,4 @@ class FooBarModel(BaseModel):
 
 
 m = FooBarModel(foo=datetime(2032, 6, 1, 12, 13, 14), bar={'whatever': 123})
-print(m.json())
+print(m.model_dump_json())

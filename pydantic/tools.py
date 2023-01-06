@@ -33,7 +33,7 @@ def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] =
 
 def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'dict[str, Any]':
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
-    return _get_parsing_type(type_, type_name=title).schema(**schema_kwargs)
+    return _get_parsing_type(type_, type_name=title).model_json_schema(**schema_kwargs)
 
 
 def schema_json_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_json_kwargs: Any) -> str:

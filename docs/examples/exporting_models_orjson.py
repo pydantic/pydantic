@@ -19,4 +19,4 @@ class User(BaseModel):
 
 
 user = User.parse_raw('{"id":123,"signup_ts":1234567890,"name":"John Doe"}')
-print(user.json())
+print(user.model_dump_json())

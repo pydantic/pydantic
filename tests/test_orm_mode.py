@@ -125,7 +125,7 @@ def test_orm_mode():
 
     anna_model = Person.from_orm(anna)
 
-    assert anna_model.dict() == {
+    assert anna_model.model_dump() == {
         'name': 'Anna',
         'pets': [{'name': 'Bones', 'species': 'dog'}, {'name': 'Orion', 'species': 'cat'}],
         'age': 20.0,
@@ -169,7 +169,7 @@ def test_object_with_getattr():
     model = Model.from_orm(foo)
     assert model.foo == 'Foo'
     assert model.bar == 1
-    assert model.dict(exclude_unset=True) == {'foo': 'Foo'}
+    assert model.model_dump(exclude_unset=True) == {'foo': 'Foo'}
     with pytest.raises(ValidationError):
         ModelInvalid.from_orm(foo)
 
@@ -209,7 +209,7 @@ def test_extra_allow():
             extra = 'allow'
 
     model = Model.from_orm(TestCls())
-    assert model.dict() == {'x': 1}
+    assert model.model_dump() == {'x': 1}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -226,7 +226,7 @@ def test_extra_forbid():
             extra = 'forbid'
 
     model = Model.from_orm(TestCls())
-    assert model.dict() == {'x': 1}
+    assert model.model_dump() == {'x': 1}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -252,7 +252,7 @@ def test_root_validator():
             orm_mode = True
 
     model = Model.from_orm(TestCls())
-    assert model.dict() == {'x': 1, 'y': 2, 'z': 3}
+    assert model.model_dump() == {'x': 1, 'y': 2, 'z': 3}
     # assert isinstance(validator_value, GetterDict)
     assert validator_value == {'x': 1, 'y': 2}
 
@@ -276,7 +276,7 @@ def test_custom_getter_dict():
             getter_dict = custom_getter_dict
 
     model = Model.from_orm(TestCls())
-    assert model.dict() == {'x': 42, 'y': 24}
+    assert model.model_dump() == {'x': 42, 'y': 24}
 
 
 @pytest.mark.xfail(reason='working on V2')

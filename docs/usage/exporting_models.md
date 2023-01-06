@@ -1,7 +1,7 @@
 As well as accessing model attributes directly via their names (e.g. `model.foobar`), models can be converted
 and exported in a number of ways:
 
-## `model.dict(...)`
+## `model.model_dump(...)`
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
@@ -47,9 +47,9 @@ Example:
 
 {!.tmp_examples/exporting_models_copy.md!}
 
-## `model.json(...)`
+## `model.model_dump_json(...)`
 
-The `.json()` method will serialise a model to JSON. (For models with a [custom root type](models.md#custom-root-types),
+The `.model_dump_json()` method will serialise a model to JSON. (For models with a [custom root type](models.md#custom-root-types),
 only the value for the `__root__` key is serialised)
 
 Arguments:

@@ -18,4 +18,4 @@ class User:
 
 
 user = User(id='42')
-print(user.__pydantic_model__.schema())
+print(user.__pydantic_model__.model_json_schema())
