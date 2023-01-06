@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import pytest
 
-from pydantic import BaseModel, PydanticUserError, ValidationError, root_validator
+from pydantic import BaseModel, PydanticUserError, ValidationError, root_validator, BaseConfig
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -57,17 +57,13 @@ def test_orm_mode_root():
             self.jp_name = jp_name
 
     class Pokemon(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         en_name: str
         jp_name: str
 
-        class Config:
-            orm_mode = True
-
     class PokemonList(BaseModel):
         __root__: List[Pokemon]
-
-        class Config:
-            orm_mode = True
+        model_config = BaseConfig(orm_mode=True)
 
     pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
     bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
@@ -80,9 +76,7 @@ def test_orm_mode_root():
 
     class PokemonDict(BaseModel):
         __root__: Dict[str, Pokemon]
-
-        class Config:
-            orm_mode = True
+        model_config = BaseConfig(orm_mode=True)
 
     pokemons = PokemonDict.from_orm({'pika': pika, 'bulbi': bulbi})
     assert pokemons.__root__ == {
@@ -105,19 +99,15 @@ def test_orm_mode():
             self.pets = pets
 
     class Pet(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         name: str
         species: str
 
-        class Config:
-            orm_mode = True
-
     class Person(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         name: str
         age: float = None
         pets: List[Pet]
-
-        class Config:
-            orm_mode = True
 
     bones = PetCls(name='Bones', species='dog')
     orion = PetCls(name='Orion', species='cat')
@@ -152,18 +142,14 @@ def test_object_with_getattr():
                 raise AttributeError
 
     class Model(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         foo: str
         bar: int = 1
 
-        class Config:
-            orm_mode = True
-
     class ModelInvalid(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         foo: str
         bar: int
-
-        class Config:
-            orm_mode = True
 
     foo = FooGetAttr()
     model = Model.from_orm(foo)
@@ -184,11 +170,9 @@ def test_properties():
             return '5'
 
     class Model(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         x: int
         y: int
-
-        class Config:
-            orm_mode = True
 
     model = Model.from_orm(XyProperty())
     assert model.x == 4
@@ -202,11 +186,8 @@ def test_extra_allow():
         y = 2
 
     class Model(BaseModel):
+        model_config = BaseConfig(orm_mode=True, extra='allow')
         x: int
-
-        class Config:
-            orm_mode = True
-            extra = 'allow'
 
     model = Model.from_orm(TestCls())
     assert model.model_dump() == {'x': 1}
@@ -219,11 +200,8 @@ def test_extra_forbid():
         y = 2
 
     class Model(BaseModel):
+        model_config = BaseConfig(orm_mode=True, extra='forbid')
         x: int
-
-        class Config:
-            orm_mode = True
-            extra = 'forbid'
 
     model = Model.from_orm(TestCls())
     assert model.model_dump() == {'x': 1}
@@ -238,6 +216,7 @@ def test_root_validator():
         y = 2
 
     class Model(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         x: int
         y: int
         z: int
@@ -247,9 +226,6 @@ def test_root_validator():
             nonlocal validator_value
             validator_value = value
             return {**value, 'z': value['x'] + value['y']}
-
-        class Config:
-            orm_mode = True
 
     model = Model.from_orm(TestCls())
     assert model.model_dump() == {'x': 1, 'y': 2, 'z': 3}
@@ -317,17 +293,13 @@ def test_recursive_parsing():
 @pytest.mark.xfail(reason='working on V2')
 def test_nested_orm():
     class User(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         first_name: str
         last_name: str
 
-        class Config:
-            orm_mode = True
-
     class State(BaseModel):
+        model_config = BaseConfig(orm_mode=True)
         user: User
-
-        class Config:
-            orm_mode = True
 
     # Pass an "orm instance"
     State.from_orm(SimpleNamespace(user=SimpleNamespace(first_name='John', last_name='Appleseed')))

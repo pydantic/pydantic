@@ -347,7 +347,7 @@ def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) ->
 
     flat_models: TypeModelSet = set()
 
-    field_type = field.type_
+    field_type = field.annotation
     if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
         field_type = field_type.__pydantic_model__
 
@@ -544,7 +544,7 @@ def model_process_schema(
         known_models=known_models,
     )
     s.update(m_schema)
-    schema_extra = model.model_config.schema_extra
+    schema_extra = model.model_config['schema_extra']
     if callable(schema_extra):
         if len(signature(schema_extra).parameters) == 1:
             schema_extra(s)

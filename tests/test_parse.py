@@ -4,7 +4,7 @@ from typing import List, Tuple, Union
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, Field, ValidationError, parse_obj_as, BaseConfig
 
 
 class Model(BaseModel):
@@ -168,10 +168,8 @@ def test_file_json_loads(tmp_path):
         return data
 
     class Example(BaseModel):
+        model_config = BaseConfig(json_loads=custom_json_loads)
         a: int
-
-        class Config:
-            json_loads = custom_json_loads
 
     p = tmp_path / 'test_json_loads.json'
     p.write_text('{"a": 12}')

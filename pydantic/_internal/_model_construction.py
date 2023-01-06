@@ -140,7 +140,7 @@ def complete_model_class(
         if raise_errors:
             raise
         warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
-        if cls.__config__.undefined_types_warning:
+        if cls.model_config['undefined_types_warning']:
             raise UserWarning(warning_string)
         cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later

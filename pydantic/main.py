@@ -16,7 +16,7 @@ import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from ._internal._fields import Undefined
-from .config import BaseConfig, Extra, _default_base_config, build_config, inherit_config
+from .config import BaseConfig, Extra, build_config, get_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
@@ -49,7 +49,6 @@ class ModelMetaclass(ABCMeta):
         if _base_class_defined:
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
-            # print(__config__)
             namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
@@ -131,7 +130,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
-    model_config = _default_base_config()
+    model_config = get_config(None)
     __slots__ = '__dict__', '__fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
@@ -685,7 +684,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = inherit_config(__config__, _default_base_config())
+        namespace['model_config'] = inherit_config(__config__, get_config(None))
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

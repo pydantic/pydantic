@@ -208,10 +208,8 @@ def test_allow_extra_repr():
 
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
+        model_config = BaseConfig(extra=Extra.forbid)
         foo: str = 'whatever'
-
-        class Config:
-            extra = Extra.forbid
 
     m = ForbiddenExtra()
     assert m.foo == 'whatever'
@@ -359,10 +357,7 @@ def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
-        class Config:
-            allow_mutation = True
-            extra = Extra.forbid
-            frozen = False
+        model_config = BaseConfig(extra=Extra.forbid, frozen=False)
 
     m = TestModel()
 
@@ -855,8 +850,7 @@ def test_untouched_types():
     classproperty = _ClassPropertyDescriptor
 
     class Model(BaseModel):
-        class Config:
-            keep_untouched = (classproperty,)
+        model_config = BaseConfig(keep_untouched=(classproperty,))
 
         @classproperty
         def class_name(cls) -> str:
@@ -1209,7 +1203,6 @@ def test_model_export_exclusion_inheritance():
         s: Sub = Sub()
 
     class Child(Parent):
-        
         model_config = BaseConfig(fields={'c': {'exclude': ...}, 's': {'exclude': {'s2'}}})
 
     actual = Child(a=0, b=1, c=2, d=3).model_dump()
@@ -1673,13 +1666,10 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    class Base(BaseModel):
-        class Config(BaseConfig):
-            some_config = 'value'
 
     with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
 
-        class Model(Base, some_config='new_value'):
+        class Model(BaseModel, some_config='new_value'):
             a: int
 
 

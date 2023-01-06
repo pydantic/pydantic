@@ -1,24 +1,17 @@
 from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator, BaseConfig
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
+    model_config = BaseConfig(alias_generator=None, frozen=True, extra=Extra.forbid)
     x: int
     y: str
 
     def method(self) -> None:
         pass
-
-    class Config:
-        alias_generator = None
-        allow_mutation = False
-        extra = Extra.forbid
-
-        def config_method(self) -> None:
-            ...
 
 
 model = Model(x=1, y='y', z='z')
@@ -29,43 +22,36 @@ Model.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
 
 
 class ForbidExtraModel(BaseModel):
-    class Config:
-        extra = 'forbid'
+    model_config = BaseConfig(extra='forbid')  # type: ignore[typeddict-item]
 
 
 ForbidExtraModel(x=1)
 
 
 class ForbidExtraModel2(BaseModel):
-    class Config:
-        extra = 'forbid'
-        validate_all = False
-
-    Config.validate_all = True
+    model_config = BaseConfig(extra='forbid')  # type: ignore[typeddict-item]
 
 
 ForbidExtraModel2(x=1)
 
 
 class BadExtraModel(BaseModel):
-    class Config:
-        extra = 1  # type: ignore[pydantic-config]  # noqa F821
-        extra = 1
+    model_config = BaseConfig(
+        extra=1,  # type: ignore[pydantic-config]
+        extra=1,  # type: ignore[typeddict-item] # noqa E999
+    )
 
 
 class BadConfig1(BaseModel):
-    class Config:
-        orm_mode: Any = {}  # not sensible, but should still be handled gracefully
+    model_config = BaseConfig(orm_mode={})  # type: ignore[typeddict-item]
 
 
 class BadConfig2(BaseModel):
-    class Config:
-        orm_mode = list  # not sensible, but should still be handled gracefully
+    model_config = BaseConfig(orm_mode=list)  # type: ignore[typeddict-item]
 
 
 class InheritingModel(Model):
-    class Config:
-        allow_mutation = True
+    model_config = BaseConfig(frozen=False)
 
 
 class DefaultTestingModel(BaseModel):
@@ -142,8 +128,7 @@ class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = BaseConfig(allow_population_by_field_name=True)
 
 
 DynamicAliasModel2(y='y', z=1)
@@ -153,8 +138,7 @@ DynamicAliasModel2(x='y', z=1)
 class AliasGeneratorModel(BaseModel):
     x: int
 
-    class Config:
-        alias_generator = lambda x: x + '_'  # noqa E731
+    model_config = BaseConfig(alias_generator=lambda x: x + '_')
 
 
 AliasGeneratorModel(x=1)
@@ -165,8 +149,7 @@ AliasGeneratorModel(z=1)
 class AliasGeneratorModel2(BaseModel):
     x: int = Field(..., alias='y')
 
-    class Config:  # type: ignore[pydantic-alias]  # noqa F821
-        alias_generator = lambda x: x + '_'  # noqa E731
+    model_config = BaseConfig(alias_generator=lambda x: x + '_')  # type: ignore[pydantic-alias]
 
 
 class UntypedFieldModel(BaseModel):
@@ -202,10 +185,7 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    class Config:
-        alias_generator = None
-        frozen = True
-        extra = Extra.forbid
+    model_config = BaseConfig(alias_generator=None, frozen=True, extra=Extra.forbid)
 
 
 frozenmodel = FrozenModel(x=1, y='b')
@@ -213,8 +193,7 @@ frozenmodel.y = 'a'
 
 
 class InheritingModel2(FrozenModel):
-    class Config:
-        frozen = False
+    model_config = BaseConfig(frozen=False)
 
 
 inheriting2 = InheritingModel2(x=1, y='c')

@@ -963,14 +963,13 @@ def test_invalid_string_types(value, errors):
 
 @pytest.mark.xfail(reason='working on V2')
 def test_inheritance_config():
+    # TODO move alias from config to Field, possible on child level only?
     class Parent(BaseModel):
         a: int
 
     class Child(Parent):
+        model_config = BaseConfig(fields={'a': 'aaa', 'b': 'bbb'})
         b: str
-
-        class Config:
-            fields = {'a': 'aaa', 'b': 'bbb'}
 
     m = Child(aaa=1, bbb='s')
     assert repr(m) == "Child(a=1, b='s')"
@@ -978,12 +977,9 @@ def test_inheritance_config():
 
 def test_partial_inheritance_config():
     class Parent(BaseModel):
-        model_config = BaseConfig(fields={'a': 'aaa'})
-
         a: int = Field(alias='aaa')
 
     class Child(Parent):
-        model_config = BaseConfig(fields={'b': 'bbb'})
         b: str = Field(alias='bbb')
 
     m = Child(aaa=1, bbb='s')
@@ -1124,6 +1120,7 @@ def test_multiple_errors():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_validate_all():
+    # TODO remove or rename, validate_all doesn't exist anymore
     class Model(BaseModel):
         model_config = BaseConfig(validate_all=True)
         a: int
@@ -1155,7 +1152,7 @@ def test_illegal_extra_value():
 
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
-        model_config = BaseConfig(allow_mutation=False, extra=Extra.forbid)
+        model_config = BaseConfig(frozen=True, extra=Extra.forbid)
 
     class Mixin(BaseModel):
         model_config = BaseConfig(use_enum_values=True)
@@ -1163,22 +1160,22 @@ def test_multiple_inheritance_config():
     class Child(Mixin, Parent):
         model_config = BaseConfig(allow_population_by_field_name=True)
 
-    assert BaseModel.model_config['allow_mutation'] is True
+    assert BaseModel.model_config['frozen'] is False
     assert BaseModel.model_config['allow_population_by_field_name'] is False
     assert BaseModel.model_config['extra'] is Extra.ignore
     assert BaseModel.model_config['use_enum_values'] is False
 
-    assert Parent.model_config['allow_mutation'] is False
+    assert Parent.model_config['frozen'] is True
     assert Parent.model_config['allow_population_by_field_name'] is False
     assert Parent.model_config['extra'] is Extra.forbid
     assert Parent.model_config['use_enum_values'] is False
 
-    assert Mixin.model_config['allow_mutation'] is True
+    assert Mixin.model_config['frozen'] is False
     assert Mixin.model_config['allow_population_by_field_name'] is False
     assert Mixin.model_config['extra'] is Extra.ignore
     assert Mixin.model_config['use_enum_values'] is True
 
-    assert Child.model_config['allow_mutation'] is False
+    assert Child.model_config['frozen'] is True
     assert Child.model_config['allow_population_by_field_name'] is True
     assert Child.model_config['extra'] is Extra.forbid
     assert Child.model_config['use_enum_values'] is True
@@ -1958,10 +1955,10 @@ def test_config_field_info_merge():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_allow_mutation():
     class Foo(BaseModel):
-        model_config = BaseConfig(validate_assignment=True)
+        model_config = BaseConfig(frozen=False, validate_assignment=True)
         a: str = Field(...)
 
-    assert Foo.model_fields['a'].field_info.allow_mutation is True
+    assert Foo.__fields__['a'].metadata.frozen is True
 
     f = Foo(a='x')
     f.a = 'y'

@@ -261,10 +261,7 @@ obj: SomeDict = {
 }
 
 
-class Config(BaseConfig):
-    title = 'Record'
-    extra = Extra.ignore
-    max_anystr_length = 1234
+config = BaseConfig(title='Record', extra=Extra.ignore, max_anystr_length=1234)
 
 
 class CustomPath(PurePath):

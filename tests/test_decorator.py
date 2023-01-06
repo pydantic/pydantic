@@ -461,6 +461,7 @@ def test_allow_population_by_field_name():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_validate_all():
+    # TODO remove or rename, validate_all doesn't exist anymore
     @validate_arguments(config=dict(validate_all=True))
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
@@ -472,6 +473,7 @@ def test_validate_all():
 @pytest.mark.xfail(reason='working on V2')
 @skip_pre_38
 def test_validate_all_positional(create_module):
+    # TODO remove or rename, validate_all doesn't exist anymore
     module = create_module(
         # language=Python
         """

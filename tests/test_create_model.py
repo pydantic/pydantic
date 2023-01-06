@@ -88,7 +88,7 @@ def test_custom_config():
 
     model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.__config__, BaseModel.model_config)
+    assert issubclass(model.model_config, BaseModel.model_config)
     with pytest.raises(ValidationError):
         model(foo=654)
 
@@ -100,7 +100,7 @@ def test_custom_config_inherits():
 
     model = create_model('FooModel', foo=(int, ...), __config__=Config)
     assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.__config__, BaseModel.model_config)
+    assert issubclass(model.model_config, BaseModel.model_config)
     with pytest.raises(ValidationError):
         model(foo=654)
 
@@ -232,7 +232,7 @@ def test_generics_model():
     )
     result = AAModel[int](aa=1)
     assert result.aa == 1
-    assert result.__config__.orm_mode is True
+    assert result.model_config.orm_mode is True
 
 
 @pytest.mark.xfail(reason='working on V2')

@@ -38,30 +38,24 @@ class ConfigDict(TypedDict, total=False):
     anystr_strip_whitespace: bool
     min_anystr_length: int
     max_anystr_length: Optional[int]
-    validate_all: bool
     extra: Extra
-    allow_mutation: bool
     frozen: bool
     allow_population_by_field_name: bool
     use_enum_values: bool
-    fields: Dict[str, Union[str, Dict[str, str]]]
     validate_assignment: bool
-    error_msg_templates: Dict[str, str]
     arbitrary_types_allowed: bool
     orm_mode: bool
     alias_generator: Optional[Callable[[str], str]]
     keep_untouched: Tuple[type, ...]
-    schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
     json_loads: Callable[[str], object]
     json_dumps: Callable[..., Any]
     json_encoders: Dict[Type[object], Callable[..., Any]]
-    underscore_attrs_are_private: bool
     allow_inf_nan: bool
     copy_on_model_validation: Literal['none', 'deep', 'shallow']
     post_init_call: Literal['before_validation', 'after_validation']
 
 
-config_keys = set(ConfigDict.__annotations__.keys())
+config_keys = set([*ConfigDict.__annotations__.keys(), 'undefined_types_warning'])
 
 
 class BaseConfig(TypedDict, total=False):
@@ -71,15 +65,11 @@ class BaseConfig(TypedDict, total=False):
     anystr_strip_whitespace: bool  # TODO rename to str_strip_whitespace
     min_anystr_length: int  # TODO rename to str_min_length
     max_anystr_length: Optional[int]  # TODO rename to str_max_length
-    validate_all: bool  # TODO remove
     extra: Extra
-    allow_mutation: bool  # TODO remove - replaced by frozen
     frozen: bool
     allow_population_by_field_name: bool  # TODO rename to populate_by_name
     use_enum_values: bool
-    fields: Dict[str, Union[str, Dict[str, str]]]  # TODO remove
     validate_assignment: bool
-    error_msg_templates: Dict[str, str]  # TODO remove
     arbitrary_types_allowed: bool  # TODO default True, or remove
     undefined_types_warning: bool  # TODO review docs
     orm_mode: bool  # TODO rename to from_attributes
@@ -89,7 +79,6 @@ class BaseConfig(TypedDict, total=False):
     json_loads: Callable[[str], Any]  # TODO decide
     json_dumps: Callable[..., str]  # TODO decide
     json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]]  # TODO decide
-    underscore_attrs_are_private: bool  # TODO remove
     allow_inf_nan: bool
 
     strict: bool
@@ -98,8 +87,6 @@ class BaseConfig(TypedDict, total=False):
     # and whether such a copy should be shallow or deep
     copy_on_model_validation: Literal['none', 'deep', 'shallow']  # TODO remove???
 
-    # whether `Union` should check all allowed types before even trying to coerce
-    smart_union: bool  # TODO remove
     # whether dataclass `__post_init__` should be run before or after validation
     post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
@@ -144,30 +131,22 @@ def _default_base_config() -> BaseConfig:
         anystr_strip_whitespace=False,
         min_anystr_length=0,
         max_anystr_length=None,
-        validate_all=False,
         extra=Extra.ignore,
-        allow_mutation=True,
         frozen=False,
         allow_population_by_field_name=False,
         use_enum_values=False,
-        fields={},
         validate_assignment=False,
-        error_msg_templates={},
         arbitrary_types_allowed=False,
         undefined_types_warning=True,
         orm_mode=False,
         alias_generator=None,
         keep_untouched=(),
-        schema_extra={},
         json_loads=json.loads,
         json_dumps=json.dumps,
         json_encoders={},
-        underscore_attrs_are_private=False,
         allow_inf_nan=True,
         strict=False,
         copy_on_model_validation='shallow',
-        smart_union=False,
-        post_init_call='before_validation',
     )
 
 

@@ -18,6 +18,7 @@ from mypy.nodes import (
     Context,
     Decorator,
     EllipsisExpr,
+    Expression,
     FuncBase,
     FuncDef,
     JsonDict,
@@ -229,7 +230,6 @@ def from_orm_callback(ctx: MethodContext) -> Type:
 class PydanticModelTransformer:
     tracked_config_fields: Set[str] = {
         'extra',
-        'allow_mutation',
         'frozen',
         'orm_mode',
         'allow_population_by_field_name',
@@ -247,7 +247,7 @@ class PydanticModelTransformer:
         In particular:
         * determines the model config and fields,
         * adds a fields-aware signature for the initializer and construct methods
-        * freezes the class if allow_mutation = False or frozen = True
+        * freezes the class if frozen = True
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         ctx = self._ctx
@@ -262,7 +262,7 @@ class PydanticModelTransformer:
                     ctx.api.defer()
         self.add_initializer(fields, config)
         self.add_model_construct_method(fields)
-        self.set_frozen(fields, frozen=config.allow_mutation is False or config.frozen is True)
+        self.set_frozen(fields, frozen=config.frozen is True)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
             'config': config.set_values_dict(),
@@ -294,13 +294,15 @@ class PydanticModelTransformer:
         cls = ctx.cls
         config = ModelConfigData()
         for stmt in cls.defs.body:
-            if not isinstance(stmt, ClassDef):
+            if not isinstance(stmt, AssignmentStmt):
                 continue
-            if stmt.name == 'Config':
-                for substmt in stmt.defs.body:
-                    if not isinstance(substmt, AssignmentStmt):
-                        continue
-                    config.update(self.get_config_update(substmt))
+            lhs = stmt.lvalues[0]
+            if isinstance(lhs, NameExpr) and lhs.name == 'model_config':
+                if isinstance(stmt.rvalue, CallExpr):
+                    for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
+                        if arg_name is None:
+                            continue
+                        config.update(self.get_config_update(arg_name, arg))
                 if (
                     config.has_alias_generator
                     and not config.allow_population_by_field_name
@@ -331,7 +333,7 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr) or lhs.name.startswith('_'):
+            if not isinstance(lhs, NameExpr) or lhs.name.startswith('_') or lhs.name == 'model_config':
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
@@ -473,32 +475,31 @@ class PydanticModelTransformer:
                 var._fullname = get_fullname(info) + '.' + get_name(var)
                 info.names[get_name(var)] = SymbolTableNode(MDEF, var)
 
-    def get_config_update(self, substmt: AssignmentStmt) -> Optional['ModelConfigData']:
+    def get_config_update(self, name: str, arg: Expression) -> Optional['ModelConfigData']:
         """
-        Determines the config update due to a single statement in the Config class definition.
+        Determines the config update due to a single kwarg in the ConfigDict definition.
 
         Warns if a tracked config attribute is set to a value the plugin doesn't know how to interpret (e.g., an int)
         """
-        lhs = substmt.lvalues[0]
-        if not (isinstance(lhs, NameExpr) and lhs.name in self.tracked_config_fields):
+        if name not in self.tracked_config_fields:
             return None
-        if lhs.name == 'extra':
-            if isinstance(substmt.rvalue, StrExpr):
-                forbid_extra = substmt.rvalue.value == 'forbid'
-            elif isinstance(substmt.rvalue, MemberExpr):
-                forbid_extra = substmt.rvalue.name == 'forbid'
+        if name == 'extra':
+            if isinstance(arg, StrExpr):
+                forbid_extra = arg.value == 'forbid'
+            elif isinstance(arg, MemberExpr):
+                forbid_extra = arg.name == 'forbid'
             else:
-                error_invalid_config_value(lhs.name, self._ctx.api, substmt)
+                error_invalid_config_value(name, self._ctx.api, arg)
                 return None
             return ModelConfigData(forbid_extra=forbid_extra)
-        if lhs.name == 'alias_generator':
+        if name == 'alias_generator':
             has_alias_generator = True
-            if isinstance(substmt.rvalue, NameExpr) and substmt.rvalue.fullname == 'builtins.None':
+            if isinstance(arg, NameExpr) and arg.fullname == 'builtins.None':
                 has_alias_generator = False
             return ModelConfigData(has_alias_generator=has_alias_generator)
-        if isinstance(substmt.rvalue, NameExpr) and substmt.rvalue.fullname in ('builtins.True', 'builtins.False'):
-            return ModelConfigData(**{lhs.name: substmt.rvalue.fullname == 'builtins.True'})
-        error_invalid_config_value(lhs.name, self._ctx.api, substmt)
+        if isinstance(arg, NameExpr) and arg.fullname in ('builtins.True', 'builtins.False'):
+            return ModelConfigData(**{name: arg.fullname == 'builtins.True'})
+        error_invalid_config_value(name, self._ctx.api, arg)
         return None
 
     @staticmethod
@@ -644,14 +645,12 @@ class ModelConfigData:
     def __init__(
         self,
         forbid_extra: Optional[bool] = None,
-        allow_mutation: Optional[bool] = None,
         frozen: Optional[bool] = None,
         orm_mode: Optional[bool] = None,
         allow_population_by_field_name: Optional[bool] = None,
         has_alias_generator: Optional[bool] = None,
     ):
         self.forbid_extra = forbid_extra
-        self.allow_mutation = allow_mutation
         self.frozen = frozen
         self.orm_mode = orm_mode
         self.allow_population_by_field_name = allow_population_by_field_name
