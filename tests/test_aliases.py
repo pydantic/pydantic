@@ -139,7 +139,7 @@ def test_get_field_info_inherit():
 @pytest.mark.xfail(reason='working on V2')
 def test_pop_by_field_name():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.forbid, allow_population_by_field_name=True)
+        model_config = BaseConfig(extra=Extra.forbid, populate_by_name=True)
         last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
@@ -172,7 +172,7 @@ def test_alias_child_precedence():
 @pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_parent():
     class Parent(BaseModel):
-        model_config = BaseConfig(allow_population_by_field_name=True, alias_generator=lambda f_name: f_name + '1')
+        model_config = BaseConfig(populate_by_name=True, alias_generator=lambda f_name: f_name + '1')
         x: int
 
     class Child(Parent):
@@ -327,7 +327,7 @@ def test_empty_string_alias():
 
 
 @pytest.mark.parametrize(
-    'use_construct, allow_population_by_field_name_config, arg_name, expectation',
+    'use_construct, populate_by_name_config, arg_name, expectation',
     [
         [False, True, 'bar', does_not_raise()],
         [False, True, 'bar_', does_not_raise()],
@@ -339,16 +339,16 @@ def test_empty_string_alias():
         [True, False, 'bar_', does_not_raise()],
     ],
 )
-def test_allow_population_by_field_name_config(
+def test_populate_by_name_config(
     use_construct: bool,
-    allow_population_by_field_name_config: bool,
+    populate_by_name_config: bool,
     arg_name: str,
     expectation: ContextManager,
 ):
     expected_value: int = 7
 
     class Foo(BaseModel):
-        model_config = BaseConfig(allow_population_by_field_name=allow_population_by_field_name_config)
+        model_config = BaseConfig(populate_by_name=populate_by_name_config)
         bar_: int = Field(..., alias='bar')
 
     with expectation:

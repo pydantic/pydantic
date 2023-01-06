@@ -34,17 +34,17 @@ class Extra(str, Enum):
 
 class ConfigDict(TypedDict, total=False):
     title: Optional[str]
-    anystr_lower: bool
-    anystr_strip_whitespace: bool
-    min_anystr_length: int
-    max_anystr_length: Optional[int]
+    str_to_lower: bool
+    str_to_upper: bool
+    str_min_length: int
+    str_max_length: Optional[int]
     extra: Extra
     frozen: bool
-    allow_population_by_field_name: bool
+    populate_by_name: bool
     use_enum_values: bool
     validate_assignment: bool
     arbitrary_types_allowed: bool
-    orm_mode: bool
+    from_attributes: bool
     alias_generator: Optional[Callable[[str], str]]
     keep_untouched: Tuple[type, ...]
     json_loads: Callable[[str], object]
@@ -60,19 +60,19 @@ config_keys = set([*ConfigDict.__annotations__.keys(), 'undefined_types_warning'
 
 class BaseConfig(TypedDict, total=False):
     title: Optional[str]
-    anystr_lower: bool  # TODO rename to str_to_lower
-    anystr_upper: bool  # TODO rename to str_to_upper
-    anystr_strip_whitespace: bool  # TODO rename to str_strip_whitespace
-    min_anystr_length: int  # TODO rename to str_min_length
-    max_anystr_length: Optional[int]  # TODO rename to str_max_length
+    str_to_lower: bool
+    str_to_upper: bool
+    str_strip_whitespace: bool
+    str_min_length: int
+    str_max_length: Optional[int]
     extra: Extra
     frozen: bool
-    allow_population_by_field_name: bool  # TODO rename to populate_by_name
+    populate_by_name: bool
     use_enum_values: bool
     validate_assignment: bool
     arbitrary_types_allowed: bool  # TODO default True, or remove
     undefined_types_warning: bool  # TODO review docs
-    orm_mode: bool  # TODO rename to from_attributes
+    from_attributes: bool
     alias_generator: Optional[Callable[[str], str]]
     keep_untouched: Tuple[type, ...]  # TODO remove??
     schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable']  # TODO remove, new model method
@@ -126,19 +126,19 @@ class BaseConfig(TypedDict, total=False):
 def _default_base_config() -> BaseConfig:
     return BaseConfig(
         title=None,
-        anystr_lower=False,
-        anystr_upper=False,
-        anystr_strip_whitespace=False,
-        min_anystr_length=0,
-        max_anystr_length=None,
+        str_to_lower=False,
+        str_to_upper=False,
+        str_strip_whitespace=False,
+        str_min_length=0,
+        str_max_length=None,
         extra=Extra.ignore,
         frozen=False,
-        allow_population_by_field_name=False,
+        populate_by_name=False,
         use_enum_values=False,
         validate_assignment=False,
         arbitrary_types_allowed=False,
         undefined_types_warning=True,
-        orm_mode=False,
+        from_attributes=False,
         alias_generator=None,
         keep_untouched=(),
         json_loads=json.loads,

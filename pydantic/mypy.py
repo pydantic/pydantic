@@ -116,7 +116,7 @@ class PydanticPlugin(Plugin):
 
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         if fullname.endswith('.from_orm'):
-            return from_orm_callback
+            return from_attributes_callback
         return None
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
@@ -205,9 +205,9 @@ class PydanticPluginConfig:
                 setattr(self, key, setting)
 
 
-def from_orm_callback(ctx: MethodContext) -> Type:
+def from_attributes_callback(ctx: MethodContext) -> Type:
     """
-    Raise an error if orm_mode is not enabled
+    Raise an error if from_attributes is not enabled
     """
     model_type: Instance
     if isinstance(ctx.type, CallableType) and isinstance(ctx.type.ret_type, Instance):
@@ -221,9 +221,9 @@ def from_orm_callback(ctx: MethodContext) -> Type:
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
     if pydantic_metadata is None:
         return ctx.default_return_type
-    orm_mode = pydantic_metadata.get('config', {}).get('orm_mode')
-    if orm_mode is not True:
-        error_from_orm(get_name(model_type.type), ctx.api, ctx.context)
+    from_attributes = pydantic_metadata.get('config', {}).get('from_attributes')
+    if from_attributes is not True:
+        error_from_attributes(get_name(model_type.type), ctx.api, ctx.context)
     return ctx.default_return_type
 
 
@@ -231,8 +231,8 @@ class PydanticModelTransformer:
     tracked_config_fields: Set[str] = {
         'extra',
         'frozen',
-        'orm_mode',
-        'allow_population_by_field_name',
+        'from_attributes',
+        'populate_by_name',
         'alias_generator',
     }
 
@@ -305,7 +305,7 @@ class PydanticModelTransformer:
                         config.update(self.get_config_update(arg_name, arg))
                 if (
                     config.has_alias_generator
-                    and not config.allow_population_by_field_name
+                    and not config.populate_by_name
                     and self.plugin_config.warn_required_dynamic_aliases
                 ):
                     error_required_dynamic_aliases(ctx.api, stmt)
@@ -367,7 +367,7 @@ class PydanticModelTransformer:
             alias, has_dynamic_alias = self.get_alias_info(stmt)
             if (
                 has_dynamic_alias
-                and not model_config.allow_population_by_field_name
+                and not model_config.populate_by_name
                 and self.plugin_config.warn_required_dynamic_aliases
             ):
                 error_required_dynamic_aliases(ctx.api, stmt)
@@ -411,8 +411,8 @@ class PydanticModelTransformer:
         """
         ctx = self._ctx
         typed = self.plugin_config.init_typed
-        use_alias = config.allow_population_by_field_name is not True
-        force_all_optional = bool(config.has_alias_generator and not config.allow_population_by_field_name)
+        use_alias = config.populate_by_name is not True
+        force_all_optional = bool(config.has_alias_generator and not config.populate_by_name)
         init_arguments = self.get_field_arguments(
             fields, typed=typed, force_all_optional=force_all_optional, use_alias=use_alias
         )
@@ -581,7 +581,7 @@ class PydanticModelTransformer:
         We disallow arbitrary kwargs if the extra config setting is "forbid", or if the plugin config says to,
         *unless* a required dynamic alias is present (since then we can't determine a valid signature).
         """
-        if not config.allow_population_by_field_name:
+        if not config.populate_by_name:
             if self.is_dynamic_alias_present(fields, bool(config.has_alias_generator)):
                 return False
         if config.forbid_extra:
@@ -646,14 +646,14 @@ class ModelConfigData:
         self,
         forbid_extra: Optional[bool] = None,
         frozen: Optional[bool] = None,
-        orm_mode: Optional[bool] = None,
-        allow_population_by_field_name: Optional[bool] = None,
+        from_attributes: Optional[bool] = None,
+        populate_by_name: Optional[bool] = None,
         has_alias_generator: Optional[bool] = None,
     ):
         self.forbid_extra = forbid_extra
         self.frozen = frozen
-        self.orm_mode = orm_mode
-        self.allow_population_by_field_name = allow_population_by_field_name
+        self.from_attributes = from_attributes
+        self.populate_by_name = populate_by_name
         self.has_alias_generator = has_alias_generator
 
     def set_values_dict(self) -> Dict[str, Any]:
@@ -670,7 +670,7 @@ class ModelConfigData:
             setattr(self, key, value)
 
 
-ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_orm call', 'Pydantic')
+ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_attributes call', 'Pydantic')
 ERROR_CONFIG = ErrorCode('pydantic-config', 'Invalid config value', 'Pydantic')
 ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic')
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
@@ -678,8 +678,8 @@ ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydanti
 ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
 
 
-def error_from_orm(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
-    api.fail(f'"{model_name}" does not have orm_mode=True', context, code=ERROR_ORM)
+def error_from_attributes(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
+    api.fail(f'"{model_name}" does not have from_attributes=True', context, code=ERROR_ORM)
 
 
 def error_invalid_config_value(name: str, api: SemanticAnalyzerPluginInterface, context: Context) -> None:

@@ -449,8 +449,8 @@ def test_use_of_alias():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_allow_population_by_field_name():
-    @validate_arguments(config=dict(allow_population_by_field_name=True))
+def test_populate_by_name():
+    @validate_arguments(config=dict(populate_by_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
         return a + c
 

@@ -1,14 +1,14 @@
 17: error: Unexpected keyword argument "z" for "Model"  [call-arg]
 18: error: Missing named argument "y" for "Model"  [call-arg]
 19: error: Property "y" defined in "Model" is read-only  [misc]
-20: error: "Model" does not have orm_mode=True  [pydantic-orm]
+20: error: "Model" does not have from_attributes=True  [pydantic-orm]
 28: error: Unexpected keyword argument "x" for "ForbidExtraModel"  [call-arg]
 35: error: Unexpected keyword argument "x" for "ForbidExtraModel2"  [call-arg]
 41: error: Invalid value for "Config.extra"  [pydantic-config]
 41: note: Error code "pydantic-config" not covered by "type: ignore" comment
-46: error: Invalid value for "Config.orm_mode"  [pydantic-config]
+46: error: Invalid value for "Config.from_attributes"  [pydantic-config]
 46: note: Error code "pydantic-config" not covered by "type: ignore" comment
-50: error: Invalid value for "Config.orm_mode"  [pydantic-config]
+50: error: Invalid value for "Config.from_attributes"  [pydantic-config]
 50: note: Error code "pydantic-config" not covered by "type: ignore" comment
 60: error: Incompatible types in assignment (expression has type "ellipsis", variable has type "int")  [assignment]
 69: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]

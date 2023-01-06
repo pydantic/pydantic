@@ -43,11 +43,11 @@ class BadExtraModel(BaseModel):
 
 
 class BadConfig1(BaseModel):
-    model_config = BaseConfig(orm_mode={})  # type: ignore[typeddict-item]
+    model_config = BaseConfig(from_attributes={})  # type: ignore[typeddict-item]
 
 
 class BadConfig2(BaseModel):
-    model_config = BaseConfig(orm_mode=list)  # type: ignore[typeddict-item]
+    model_config = BaseConfig(from_attributes=list)  # type: ignore[typeddict-item]
 
 
 class InheritingModel(Model):
@@ -128,7 +128,7 @@ class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    model_config = BaseConfig(allow_population_by_field_name=True)
+    model_config = BaseConfig(populate_by_name=True)
 
 
 DynamicAliasModel2(y='y', z=1)

@@ -1158,25 +1158,25 @@ def test_multiple_inheritance_config():
         model_config = BaseConfig(use_enum_values=True)
 
     class Child(Mixin, Parent):
-        model_config = BaseConfig(allow_population_by_field_name=True)
+        model_config = BaseConfig(populate_by_name=True)
 
     assert BaseModel.model_config['frozen'] is False
-    assert BaseModel.model_config['allow_population_by_field_name'] is False
+    assert BaseModel.model_config['populate_by_name'] is False
     assert BaseModel.model_config['extra'] is Extra.ignore
     assert BaseModel.model_config['use_enum_values'] is False
 
     assert Parent.model_config['frozen'] is True
-    assert Parent.model_config['allow_population_by_field_name'] is False
+    assert Parent.model_config['populate_by_name'] is False
     assert Parent.model_config['extra'] is Extra.forbid
     assert Parent.model_config['use_enum_values'] is False
 
     assert Mixin.model_config['frozen'] is False
-    assert Mixin.model_config['allow_population_by_field_name'] is False
+    assert Mixin.model_config['populate_by_name'] is False
     assert Mixin.model_config['extra'] is Extra.ignore
     assert Mixin.model_config['use_enum_values'] is True
 
     assert Child.model_config['frozen'] is True
-    assert Child.model_config['allow_population_by_field_name'] is True
+    assert Child.model_config['populate_by_name'] is True
     assert Child.model_config['extra'] is Extra.forbid
     assert Child.model_config['use_enum_values'] is True
 

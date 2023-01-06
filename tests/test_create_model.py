@@ -228,11 +228,11 @@ def test_generics_model():
         pass
 
     AAModel = create_model(
-        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'orm_mode': True}, aa=(int, Field(0))
+        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'from_attributes': True}, aa=(int, Field(0))
     )
     result = AAModel[int](aa=1)
     assert result.aa == 1
-    assert result.model_config.orm_mode is True
+    assert result.model_config.from_attributes is True
 
 
 @pytest.mark.xfail(reason='working on V2')

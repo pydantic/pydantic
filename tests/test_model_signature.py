@@ -82,7 +82,7 @@ def test_use_field_name():
     class Foo(BaseModel):
         foo: str = Field(..., alias='this is invalid')
 
-        model_config = BaseConfig(allow_population_by_field_name=True)
+        model_config = BaseConfig(populate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
@@ -91,7 +91,7 @@ def test_does_not_use_reserved_word():
     class Foo(BaseModel):
         from_: str = Field(..., alias='from')
 
-        model_config = BaseConfig(allow_population_by_field_name=True)
+        model_config = BaseConfig(populate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 

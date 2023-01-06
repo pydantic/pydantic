@@ -5,11 +5,8 @@ from pydantic.dataclasses import dataclass
 
 
 class MyConfig:
-    max_anystr_length = 10
+    str_max_length = 10
     validate_assignment = True
-    error_msg_templates = {
-        'value_error.any_str.max_length': 'max_length:{limit_value}',
-    }
 
 
 @dataclass(config=MyConfig)

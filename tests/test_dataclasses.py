@@ -292,7 +292,7 @@ def test_inheritance():
 @pytest.mark.xfail(reason='working on V2')
 def test_validate_long_string_error():
     class Config:
-        max_anystr_length = 3
+        str_max_length = 3
 
     @pydantic.dataclasses.dataclass(config=Config)
     class MyDataclass:
@@ -314,7 +314,7 @@ def test_validate_long_string_error():
 @pytest.mark.xfail(reason='working on V2')
 def test_validate_assigment_long_string_error():
     class Config:
-        max_anystr_length = 3
+        str_max_length = 3
         validate_assignment = True
 
     @pydantic.dataclasses.dataclass(config=Config)
@@ -339,7 +339,7 @@ def test_validate_assigment_long_string_error():
 @pytest.mark.xfail(reason='working on V2')
 def test_no_validate_assigment_long_string_error():
     class Config:
-        max_anystr_length = 3
+        str_max_length = 3
         validate_assignment = False
 
     @pydantic.dataclasses.dataclass(config=Config)

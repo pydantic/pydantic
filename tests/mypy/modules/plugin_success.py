@@ -9,7 +9,7 @@ class Model(BaseModel):
     x: float
     y: str
 
-    model_config = BaseConfig(orm_mode=True)
+    model_config = BaseConfig(from_attributes=True)
 
     not_config = BaseConfig(frozen=True)
 
@@ -61,7 +61,7 @@ class NoMutationModel(BaseModel):
 class MutationModel(NoMutationModel):
     a = 1
 
-    model_config = BaseConfig(frozen=False, orm_mode=True)
+    model_config = BaseConfig(frozen=False, from_attributes=True)
 
 
 MutationModel(x=1).x = 2
@@ -146,7 +146,7 @@ class FrozenModel(BaseModel):
 class NotFrozenModel(FrozenModel):
     a: int = 1
 
-    model_config = BaseConfig(frozen=False, orm_mode=True)
+    model_config = BaseConfig(frozen=False, from_attributes=True)
 
 
 NotFrozenModel(x=1).x = 2
