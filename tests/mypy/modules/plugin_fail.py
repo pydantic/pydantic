@@ -1,6 +1,6 @@
 from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, validator, BaseConfig
+from pydantic import BaseConfig, BaseModel, Extra, Field, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 

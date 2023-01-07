@@ -75,7 +75,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 def test_forward_ref_one_of_fields_not_defined(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel, BaseConfig
+        from pydantic import BaseConfig, BaseModel
 
         class Foo(BaseModel):
             model_config = BaseConfig(undefined_types_warning=False)
@@ -685,7 +685,7 @@ def test_pep585_recursive_generics(create_module):
     def module():
         from typing import ForwardRef
 
-        from pydantic import BaseModel, BaseConfig
+        from pydantic import BaseConfig, BaseModel
 
         HeroRef = ForwardRef('Hero')
 
@@ -779,7 +779,7 @@ def nested():
 def test_nested_more_annotation(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel, BaseConfig
+        from pydantic import BaseConfig, BaseModel
 
         def nested():
             class Foo(BaseModel):
@@ -827,7 +827,7 @@ def test_nested_annotation_priority(create_module):
 def test_nested_model_rebuild(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel, BaseConfig
+        from pydantic import BaseConfig, BaseModel
 
         def nested():
             class Bar(BaseModel):

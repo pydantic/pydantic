@@ -55,7 +55,7 @@ class ConfigDict(TypedDict, total=False):
     post_init_call: Literal['before_validation', 'after_validation']
 
 
-config_keys = set([*ConfigDict.__annotations__.keys(), 'undefined_types_warning'])
+config_keys = {*ConfigDict.__annotations__.keys(), 'undefined_types_warning'}
 
 
 class BaseConfig(TypedDict, total=False):

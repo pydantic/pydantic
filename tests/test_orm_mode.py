@@ -3,7 +3,7 @@ from typing import Dict, List
 
 import pytest
 
-from pydantic import BaseModel, PydanticUserError, ValidationError, root_validator, BaseConfig
+from pydantic import BaseConfig, BaseModel, PydanticUserError, ValidationError, root_validator
 
 
 @pytest.mark.xfail(reason='working on V2')

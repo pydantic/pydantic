@@ -4,7 +4,7 @@ from typing import List, Tuple, Union
 
 import pytest
 
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as, BaseConfig
+from pydantic import BaseConfig, BaseModel, Field, ValidationError, parse_obj_as
 
 
 class Model(BaseModel):
