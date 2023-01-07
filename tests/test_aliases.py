@@ -4,7 +4,7 @@ from typing import Any, ContextManager, List, Optional
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Extra, ValidationError
+from pydantic import BaseModel, ConfigDict, Extra, ValidationError
 from pydantic.fields import Field
 
 
@@ -14,7 +14,7 @@ def test_alias_generator():
         return ''.join(x.capitalize() for x in string.split('_'))
 
     class MyModel(BaseModel):
-        model_config = BaseConfig(alias_generator=to_camel)
+        model_config = ConfigDict(alias_generator=to_camel)
         a: List[str] = None
         foo_bar: str
 
@@ -31,7 +31,7 @@ def test_alias_generator_with_field_schema():
         return string.upper()
 
     class MyModel(BaseModel):
-        model_config = BaseConfig(alias_generator=to_upper_case)
+        model_config = ConfigDict(alias_generator=to_upper_case)
         my_shiny_field: Any  # Alias from Config.fields will be used
         foo_bar: str  # Alias from Config.fields will be used
         baz_bar: str  # Alias will be generated
@@ -53,7 +53,7 @@ def test_alias_generator_wrong_type_error():
     with pytest.raises(TypeError) as e:
 
         class MyModel(BaseModel):
-            model_config = BaseConfig(alias_generator=return_bytes)
+            model_config = ConfigDict(alias_generator=return_bytes)
             bar: Any
 
     assert str(e.value) == "Config.alias_generator must return str, not <class 'bytes'>"
@@ -102,7 +102,7 @@ def test_alias_camel_case():
         one_thing: int
         another_thing: int
 
-        class Config(BaseConfig):
+        class Config(ConfigDict):
             @classmethod
             def get_field_info(cls, name):
                 field_config = super().get_field_info(name) or {}
@@ -119,7 +119,7 @@ def test_alias_camel_case():
 @pytest.mark.xfail(reason='working on V2')
 def test_get_field_info_inherit():
     class ModelOne(BaseModel):
-        class Config(BaseConfig):
+        class Config(ConfigDict):
             @classmethod
             def get_field_info(cls, name):
                 field_config = super().get_field_info(name) or {}
@@ -139,7 +139,7 @@ def test_get_field_info_inherit():
 @pytest.mark.xfail(reason='working on V2')
 def test_pop_by_field_name():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.forbid, populate_by_name=True)
+        model_config = ConfigDict(extra=Extra.forbid, populate_by_name=True)
         last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
@@ -172,11 +172,11 @@ def test_alias_child_precedence():
 @pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_parent():
     class Parent(BaseModel):
-        model_config = BaseConfig(populate_by_name=True, alias_generator=lambda f_name: f_name + '1')
+        model_config = ConfigDict(populate_by_name=True, alias_generator=lambda f_name: f_name + '1')
         x: int
 
     class Child(Parent):
-        model_config = BaseConfig(alias_generator=lambda f_name: f_name + '2')
+        model_config = ConfigDict(alias_generator=lambda f_name: f_name + '2')
         y: int
 
     assert Child.model_fields['y'].alias == 'y2'
@@ -186,7 +186,7 @@ def test_alias_generator_parent():
 @pytest.mark.xfail(reason='working on V2')
 def test_alias_generator_on_parent():
     class Parent(BaseModel):
-        model_config = BaseConfig(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=lambda x: x.upper())
         x: bool = Field(..., alias='a_b_c')
         y: str
 
@@ -208,7 +208,7 @@ def test_alias_generator_on_child():
         y: str
 
     class Child(Parent):
-        model_config = BaseConfig(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=lambda x: x.upper())
 
         y: str
         z: str
@@ -224,7 +224,7 @@ def test_low_priority_alias():
         y: str
 
     class Child(Parent):
-        model_config = BaseConfig(alias_generator=lambda x: x.upper())
+        model_config = ConfigDict(alias_generator=lambda x: x.upper())
 
         y: str
         z: str
@@ -348,7 +348,7 @@ def test_populate_by_name_config(
     expected_value: int = 7
 
     class Foo(BaseModel):
-        model_config = BaseConfig(populate_by_name=populate_by_name_config)
+        model_config = ConfigDict(populate_by_name=populate_by_name_config)
         bar_: int = Field(..., alias='bar')
 
     with expectation:

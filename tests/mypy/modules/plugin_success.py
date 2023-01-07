@@ -1,6 +1,6 @@
 from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseConfig, BaseModel, Field, create_model, validator
+from pydantic import BaseModel, ConfigDict, Field, create_model, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
@@ -9,9 +9,9 @@ class Model(BaseModel):
     x: float
     y: str
 
-    model_config = BaseConfig(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
-    not_config = BaseConfig(frozen=True)
+    not_config = ConfigDict(frozen=True)
 
 
 class SelfReferencingModel(BaseModel):
@@ -55,13 +55,13 @@ forward_model = ForwardReferencingModel(x=1, y='a', future=future_model)
 class NoMutationModel(BaseModel):
     x: int
 
-    model_config = BaseConfig(frozen=True)
+    model_config = ConfigDict(frozen=True)
 
 
 class MutationModel(NoMutationModel):
     a = 1
 
-    model_config = BaseConfig(frozen=False, from_attributes=True)
+    model_config = ConfigDict(frozen=False, from_attributes=True)
 
 
 MutationModel(x=1).x = 2
@@ -140,13 +140,13 @@ dynamic_model.x = 2
 class FrozenModel(BaseModel):
     x: int
 
-    model_config = BaseConfig(frozen=True)
+    model_config = ConfigDict(frozen=True)
 
 
 class NotFrozenModel(FrozenModel):
     a: int = 1
 
-    model_config = BaseConfig(frozen=False, from_attributes=True)
+    model_config = ConfigDict(frozen=False, from_attributes=True)
 
 
 NotFrozenModel(x=1).x = 2

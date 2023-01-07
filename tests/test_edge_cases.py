@@ -7,7 +7,7 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Extra, ValidationError, constr, errors, validator
+from pydantic import BaseModel, ConfigDict, Extra, ValidationError, constr, errors, validator
 from pydantic.fields import Field
 
 
@@ -817,7 +817,7 @@ def test_advanced_include_nested_lists(include, expected):
 
 def test_field_set_ignore_extra():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.ignore)
+        model_config = ConfigDict(extra=Extra.ignore)
         a: int
         b: int
         c: int = 3
@@ -836,7 +836,7 @@ def test_field_set_ignore_extra():
 def test_field_set_allow_extra():
     class Model(BaseModel):
 
-        model_config = BaseConfig(extra=Extra.allow)
+        model_config = ConfigDict(extra=Extra.allow)
         a: int
         b: int
         c: int = 3
@@ -968,7 +968,7 @@ def test_inheritance_config():
         a: int
 
     class Child(Parent):
-        model_config = BaseConfig(fields={'a': 'aaa', 'b': 'bbb'})
+        model_config = ConfigDict(fields={'a': 'aaa', 'b': 'bbb'})
         b: str
 
     m = Child(aaa=1, bbb='s')
@@ -1020,7 +1020,7 @@ def test_annotation_inheritance():
 @pytest.mark.xfail(reason='working on V2')
 def test_string_none():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.ignore)
+        model_config = ConfigDict(extra=Extra.ignore)
         a: constr(min_length=20, max_length=1000) = ...
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1122,7 +1122,7 @@ def test_multiple_errors():
 def test_validate_all():
     # TODO remove or rename, validate_all doesn't exist anymore
     class Model(BaseModel):
-        model_config = BaseConfig(validate_all=True)
+        model_config = ConfigDict(validate_all=True)
         a: int
         b: int
 
@@ -1136,7 +1136,7 @@ def test_validate_all():
 
 def test_force_extra():
     class Model(BaseModel):
-        model_config = BaseConfig(extra='ignore')
+        model_config = ConfigDict(extra='ignore')
         foo: int
 
     assert Model.model_config['extra'] is Extra.ignore
@@ -1146,7 +1146,7 @@ def test_illegal_extra_value():
     with pytest.raises(ValueError, match='is not a valid value for "extra"'):
 
         class Model(BaseModel):
-            model_config = BaseConfig(extra='foo')
+            model_config = ConfigDict(extra='foo')
             foo: int
 
 
@@ -1161,13 +1161,13 @@ def test_multiple_inheritance_config():
         return x.upper()
 
     class Parent(BaseModel):
-        model_config = BaseConfig(frozen=True, extra=Extra.forbid, json_encoders={int: int_encoder})
+        model_config = ConfigDict(frozen=True, extra=Extra.forbid, json_encoders={int: int_encoder})
 
     class Mixin(BaseModel):
-        model_config = BaseConfig(use_enum_values=True, json_encoders={int: int2_encoder})
+        model_config = ConfigDict(use_enum_values=True, json_encoders={int: int2_encoder})
 
     class Child(Mixin, Parent, json_encoders={str: str_encoder}):
-        model_config = BaseConfig(populate_by_name=True)
+        model_config = ConfigDict(populate_by_name=True)
 
     assert BaseModel.model_config['frozen'] is False
     assert BaseModel.model_config['populate_by_name'] is False
@@ -1582,7 +1582,7 @@ def test_exclude_none_recursive():
 
 def test_exclude_none_with_extra():
     class MyModel(BaseModel):
-        model_config = BaseConfig(extra='allow')
+        model_config = ConfigDict(extra='allow')
         a: str = 'default'
         b: Optional[str] = None
 
@@ -1872,14 +1872,14 @@ def test_default_factory_called_once():
         return v
 
     class MyModel(BaseModel):
-        model_config = BaseConfig(validate_all=True)
+        model_config = ConfigDict(validate_all=True)
         id: int = Field(default_factory=factory)
 
     m1 = MyModel()
     assert m1.id == 1
 
     class MyBadModel(BaseModel):
-        model_config = BaseConfig(validate_all=True)
+        model_config = ConfigDict(validate_all=True)
         id: List[str] = Field(default_factory=factory)
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1938,7 +1938,7 @@ def test_iter_coverage():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info():
     class Foo(BaseModel):
-        model_config = BaseConfig(fields={'a': {'description': 'descr'}})
+        model_config = ConfigDict(fields={'a': {'description': 'descr'}})
         a: str = Field(...)
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
@@ -1949,7 +1949,7 @@ def test_config_field_info():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_alias():
     class Foo(BaseModel):
-        model_config = BaseConfig(fields={'a': {'alias': 'b'}})
+        model_config = ConfigDict(fields={'a': {'alias': 'b'}})
         a: str = Field(...)
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
@@ -1958,7 +1958,7 @@ def test_config_field_info_alias():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_merge():
     class Foo(BaseModel):
-        model_config = BaseConfig(fields={'a': {'bar': 'Bar'}})
+        model_config = ConfigDict(fields={'a': {'bar': 'Bar'}})
         a: str = Field(..., foo='Foo')
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
@@ -1969,7 +1969,7 @@ def test_config_field_info_merge():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_allow_mutation():
     class Foo(BaseModel):
-        model_config = BaseConfig(frozen=False, validate_assignment=True)
+        model_config = ConfigDict(frozen=False, validate_assignment=True)
         a: str = Field(...)
 
     assert Foo.__fields__['a'].metadata.frozen is True
@@ -1979,7 +1979,7 @@ def test_config_field_info_allow_mutation():
     assert f.model_dump() == {'a': 'y'}
 
     class Bar(BaseModel):
-        model_config = BaseConfig(fields={'a': {'allow_mutation': False}}, validate_assignment=True)
+        model_config = ConfigDict(fields={'a': {'allow_mutation': False}}, validate_assignment=True)
         a: str = Field(...)
 
     assert Bar.model_fields['a'].field_info.allow_mutation is False
@@ -1998,7 +1998,7 @@ def test_arbitrary_types_allowed_custom_eq():
             return True
 
     class Model(BaseModel):
-        model_config = BaseConfig(arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
         x: Foo = Foo()
 
     assert Model().x == Foo()

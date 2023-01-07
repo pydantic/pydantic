@@ -75,10 +75,10 @@ def test_forward_ref_auto_update_no_model(create_module):
 def test_forward_ref_one_of_fields_not_defined(create_module):
     @create_module
     def module():
-        from pydantic import BaseConfig, BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         class Foo(BaseModel):
-            model_config = BaseConfig(undefined_types_warning=False)
+            model_config = ConfigDict(undefined_types_warning=False)
             foo: 'Foo'
             bar: 'Bar'  # noqa: F821
 
@@ -457,7 +457,7 @@ def test_forward_ref_optional(create_module):
         # language=Python
         """
 from __future__ import annotations
-from pydantic import BaseModel, Field, BaseConfig
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 
 
@@ -468,7 +468,7 @@ class Spec(BaseModel):
 
 
 class PSpec(Spec):
-    model_config = BaseConfig(undefined_types_warning = False)
+    model_config = ConfigDict(undefined_types_warning = False)
     g: Optional[GSpec]
 
 
@@ -602,7 +602,7 @@ def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel, BaseConfig
+from pydantic import BaseModel, ConfigDict
 
 
 class User(BaseModel):
@@ -617,7 +617,7 @@ class User(BaseModel):
 
 
 class Model(BaseModel):
-    model_config=BaseConfig(json_encoders={ 'User': lambda v: f'User({v.y})'})
+    model_config=ConfigDict(json_encoders={ 'User': lambda v: f'User({v.y})'})
     foo_user: FooUser
     user: User
 
@@ -633,14 +633,14 @@ def test_json_encoder_forward_ref(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel, BaseConfig
+from pydantic import BaseModel, ConfigDict
 from typing import ForwardRef, List, Optional
 
 class User(BaseModel):
     name: str
     friends: Optional[List['User']] = None
 
-    mdoel_config = BaseConfig(
+    mdoel_config = ConfigDict(
         json_encoders = {
             ForwardRef('User'): lambda v: f'User({v.name})',
         })
@@ -685,12 +685,12 @@ def test_pep585_recursive_generics(create_module):
     def module():
         from typing import ForwardRef
 
-        from pydantic import BaseConfig, BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         HeroRef = ForwardRef('Hero')
 
         class Team(BaseModel):
-            model_config = BaseConfig(undefined_types_warning=False)
+            model_config = ConfigDict(undefined_types_warning=False)
 
             name: str
             heroes: list[HeroRef]  # noqa: F821
@@ -779,7 +779,7 @@ def nested():
 def test_nested_more_annotation(create_module):
     @create_module
     def module():
-        from pydantic import BaseConfig, BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         def nested():
             class Foo(BaseModel):
@@ -787,7 +787,7 @@ def test_nested_more_annotation(create_module):
 
             def more_nested():
                 class Bar(BaseModel):
-                    model_config = BaseConfig(undefined_types_warning=False)
+                    model_config = ConfigDict(undefined_types_warning=False)
                     b: 'Foo'
 
                 return Bar
@@ -827,11 +827,11 @@ def test_nested_annotation_priority(create_module):
 def test_nested_model_rebuild(create_module):
     @create_module
     def module():
-        from pydantic import BaseConfig, BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         def nested():
             class Bar(BaseModel):
-                model_config = BaseConfig(undefined_types_warning=False)
+                model_config = ConfigDict(undefined_types_warning=False)
                 b: 'Foo'
 
             class Foo(BaseModel):

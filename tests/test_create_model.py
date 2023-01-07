@@ -2,7 +2,7 @@ from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors, validator
 from pydantic.fields import ModelPrivateAttr
 from pydantic.generics import GenericModel
 
@@ -82,7 +82,7 @@ def test_inheritance():
 
 
 def test_custom_config():
-    config = BaseConfig(frozen=True)
+    config = ConfigDict(frozen=True)
     expected_config = BaseModel.model_config.copy()
     expected_config['frozen'] = True
 
@@ -95,7 +95,7 @@ def test_custom_config():
 
 
 def test_custom_config_inherits():
-    class Config(BaseConfig):
+    class Config(ConfigDict):
         custom_config: bool
 
     config = Config(custom_config=True, validate_assignment=True)
@@ -111,7 +111,7 @@ def test_custom_config_inherits():
 
 
 def test_custom_config_extras():
-    config = BaseConfig(extra=Extra.forbid)
+    config = ConfigDict(extra=Extra.forbid)
 
     model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(foo=654)
@@ -218,7 +218,7 @@ def test_config_field_info_create_model():
     # TODO fields doesn't exist anymore, remove test?
     # class Config:
     #     fields = {'a': {'description': 'descr'}}
-    config = BaseConfig()
+    config = ConfigDict()
 
     m1 = create_model('M1', __config__=config, a=(str, ...))
     assert m1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}

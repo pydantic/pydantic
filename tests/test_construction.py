@@ -3,7 +3,7 @@ from typing import Any, List, Optional
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic.fields import Undefined
 
 
@@ -297,7 +297,7 @@ def test_copy_undefined(ModelTwo):
 @pytest.mark.xfail(reason='working on V2')
 def test_immutable_copy_with_allow_mutation():
     class Model(BaseModel):
-        model_config = BaseConfig(allow_mutation=False)
+        model_config = ConfigDict(allow_mutation=False)
         a: int
         b: int
 
@@ -312,7 +312,7 @@ def test_immutable_copy_with_allow_mutation():
 
 def test_immutable_copy_with_frozen():
     class Model(BaseModel):
-        model_config = BaseConfig(frozen=True)
+        model_config = ConfigDict(frozen=True)
         a: int
         b: int
 

@@ -12,7 +12,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, NameEmail, create_model
+from pydantic import BaseModel, ConfigDict, NameEmail, create_model
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
@@ -120,7 +120,7 @@ def test_subclass_custom_encoding():
         pass
 
     class Model(BaseModel):
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             json_encoders={
                 datetime.datetime: lambda v: v.strftime('%a, %d %b %C %H:%M:%S'),
                 datetime.timedelta: timedelta_isoformat,
@@ -157,7 +157,7 @@ def test_iso_timedelta(input, output):
 
 def test_custom_encoder():
     class Model(BaseModel):
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             json_encoders={datetime.timedelta: lambda v: f'{v.total_seconds():0.3f}s', Decimal: lambda v: 'a decimal'}
         )
         x: datetime.timedelta
@@ -171,7 +171,7 @@ def test_custom_encoder():
 
 def test_custom_iso_timedelta():
     class Model(BaseModel):
-        model_config = BaseConfig(json_encoders={datetime.timedelta: timedelta_isoformat})
+        model_config = ConfigDict(json_encoders={datetime.timedelta: timedelta_isoformat})
         x: datetime.timedelta
 
     m = Model(x=123)
@@ -199,23 +199,23 @@ def test_custom_iso_timedelta():
 
 def test_json_encoder_simple_inheritance():
     class Parent(BaseModel):
-        model_config = BaseConfig(json_encoders={datetime.datetime: lambda _: 'parent_encoder'})
+        model_config = ConfigDict(json_encoders={datetime.datetime: lambda _: 'parent_encoder'})
         dt: datetime.datetime = datetime.datetime.now()
         timedt: datetime.timedelta = datetime.timedelta(hours=100)
 
     class Child(Parent):
-        model_config = BaseConfig(json_encoders={datetime.timedelta: lambda _: 'child_encoder'})
+        model_config = ConfigDict(json_encoders={datetime.timedelta: lambda _: 'child_encoder'})
 
     assert Child().model_dump_json() == '{"dt": "parent_encoder", "timedt": "child_encoder"}'
 
 
 def test_json_encoder_inheritance_override():
     class Parent(BaseModel):
-        model_config = BaseConfig(json_encoders={datetime.datetime: lambda _: 'parent_encoder'})
+        model_config = ConfigDict(json_encoders={datetime.datetime: lambda _: 'parent_encoder'})
         dt: datetime.datetime = datetime.datetime.now()
 
     class Child(Parent):
-        model_config = BaseConfig(json_encoders={datetime.datetime: lambda _: 'child_encoder'})
+        model_config = ConfigDict(json_encoders={datetime.datetime: lambda _: 'child_encoder'})
 
     assert Child().model_dump_json() == '{"dt": "child_encoder"}'
 
@@ -273,7 +273,7 @@ def test_custom_decode_encode():
         return json.dumps(s, default=default, indent=2)
 
     class Model(BaseModel):
-        model_config = BaseConfig(json_loads=custom_loads, json_dumps=custom_dumps)
+        model_config = ConfigDict(json_loads=custom_loads, json_dumps=custom_dumps)
         a: int
         b: str
 
@@ -295,7 +295,7 @@ def test_json_nested_encode_models():
         phone: Phone
         friend: Optional['User'] = None  # noqa: F821  # https://github.com/PyCQA/pyflakes/issues/567
 
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             json_encoders={
                 datetime.datetime: lambda v: v.timestamp(),
                 Phone: lambda v: v.number if v else None,
@@ -340,7 +340,7 @@ def test_custom_encode_fallback_basemodel():
     class Foo(BaseModel):
         x: MyExoticType
 
-        model_config = BaseConfig(arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class Bar(BaseModel):
         foo: Foo
@@ -358,7 +358,7 @@ def test_custom_encode_error():
     class Foo(BaseModel):
         x: MyExoticType
 
-        model_config = BaseConfig(arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     with pytest.raises(TypeError, match='not serialisable'):
         Foo(x=MyExoticType()).model_dump_json(encoder=custom_encoder)

@@ -4,7 +4,7 @@ from typing import List, Tuple, Union
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, parse_obj_as
 
 
 class Model(BaseModel):
@@ -168,7 +168,7 @@ def test_file_json_loads(tmp_path):
         return data
 
     class Example(BaseModel):
-        model_config = BaseConfig(json_loads=custom_json_loads)
+        model_config = ConfigDict(json_loads=custom_json_loads)
         a: int
 
     p = tmp_path / 'test_json_loads.json'

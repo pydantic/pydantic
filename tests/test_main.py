@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 import pytest
 from typing_extensions import Final, Literal
 
-from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
+from pydantic import BaseModel, ConfigDict, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
 
 
 def test_success():
@@ -192,7 +192,7 @@ def test_not_required():
 
 def test_allow_extra():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.allow)
+        model_config = ConfigDict(extra=Extra.allow)
         a: float = ...
 
     assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
@@ -200,7 +200,7 @@ def test_allow_extra():
 
 def test_allow_extra_repr():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.allow)
+        model_config = ConfigDict(extra=Extra.allow)
         a: float = ...
 
     assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
@@ -208,7 +208,7 @@ def test_allow_extra_repr():
 
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
-        model_config = BaseConfig(extra=Extra.forbid)
+        model_config = ConfigDict(extra=Extra.forbid)
         foo: str = 'whatever'
 
     m = ForbiddenExtra()
@@ -217,7 +217,7 @@ def test_forbidden_extra_success():
 
 def test_forbidden_extra_fails():
     class ForbiddenExtra(BaseModel):
-        model_config = BaseConfig(extra=Extra.forbid)
+        model_config = ConfigDict(extra=Extra.forbid)
         foo: str = 'whatever'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -240,7 +240,7 @@ def test_forbidden_extra_fails():
 
 def test_assign_extra_no_validate():
     class Model(BaseModel):
-        model_config = BaseConfig(validate_assignment=True)
+        model_config = ConfigDict(validate_assignment=True)
         a: float
 
     model = Model(a=0.2)
@@ -250,7 +250,7 @@ def test_assign_extra_no_validate():
 
 def test_assign_extra_validate():
     class Model(BaseModel):
-        model_config = BaseConfig(validate_assignment=True)
+        model_config = ConfigDict(validate_assignment=True)
         a: float
 
     model = Model(a=0.2)
@@ -260,7 +260,7 @@ def test_assign_extra_validate():
 
 def test_extra_allowed():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.allow)
+        model_config = ConfigDict(extra=Extra.allow)
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -274,7 +274,7 @@ def test_extra_allowed():
 
 def test_extra_ignored():
     class Model(BaseModel):
-        model_config = BaseConfig(extra=Extra.ignore)
+        model_config = ConfigDict(extra=Extra.ignore)
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -321,7 +321,7 @@ def test_any():
 
 def test_population_by_field_name():
     class Model(BaseModel):
-        model_config = BaseConfig(populate_by_name=True)
+        model_config = ConfigDict(populate_by_name=True)
         a: str = Field(alias='_a')
 
     assert Model(a='different').a == 'different'
@@ -357,7 +357,7 @@ def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
-        model_config = BaseConfig(extra=Extra.forbid, frozen=False)
+        model_config = ConfigDict(extra=Extra.forbid, frozen=False)
 
     m = TestModel()
 
@@ -368,7 +368,7 @@ def test_mutability():
 
 def test_frozen_model():
     class FrozenModel(BaseModel):
-        model_config = BaseConfig(extra=Extra.forbid, frozen=True)
+        model_config = ConfigDict(extra=Extra.forbid, frozen=True)
 
         a: int = 10
 
@@ -413,7 +413,7 @@ def test_with_declared_hash():
 
 def test_frozen_with_hashable_fields_are_hashable():
     class TestModel(BaseModel):
-        model_config = BaseConfig(frozen=True)
+        model_config = ConfigDict(frozen=True)
         a: int = 10
 
     m = TestModel()
@@ -423,7 +423,7 @@ def test_frozen_with_hashable_fields_are_hashable():
 
 def test_frozen_with_unhashable_fields_are_not_hashable():
     class TestModel(BaseModel):
-        model_config = BaseConfig(frozen=True)
+        model_config = ConfigDict(frozen=True)
         a: int = 10
         y: List[int] = [1, 2, 3]
 
@@ -435,7 +435,7 @@ def test_frozen_with_unhashable_fields_are_not_hashable():
 
 def test_hash_function_give_different_result_for_different_object():
     class TestModel(BaseModel):
-        model_config = BaseConfig(frozen=True)
+        model_config = ConfigDict(frozen=True)
 
         a: int = 10
 
@@ -447,7 +447,7 @@ def test_hash_function_give_different_result_for_different_object():
 
     # Redefined `TestModel`
     class TestModel(BaseModel):
-        model_config = BaseConfig(frozen=True)
+        model_config = ConfigDict(frozen=True)
         a: int = 10
 
     m4 = TestModel()
@@ -457,7 +457,7 @@ def test_hash_function_give_different_result_for_different_object():
 @pytest.fixture(name='ValidateAssignmentModel', scope='session')
 def validate_assignment_fixture():
     class ValidateAssignmentModel(BaseModel):
-        model_config = BaseConfig(validate_assignment=True)
+        model_config = ConfigDict(validate_assignment=True)
         a: int = 2
         b: constr(min_length=1)
 
@@ -505,7 +505,7 @@ def test_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
 
     class Model(BaseModel):
-        model_config = BaseConfig(use_enum_values=True)
+        model_config = ConfigDict(use_enum_values=True)
         foo: FooEnum
 
     m = Model(foo='foo')
@@ -521,7 +521,7 @@ def test_literal_enum_values():
     class Model(BaseModel):
         baz: Literal[FooEnum.foo]
         boo: str = 'hoo'
-        model_config = BaseConfig(use_enum_values=True)
+        model_config = ConfigDict(use_enum_values=True)
 
     m = Model(baz=FooEnum.foo)
     assert m.model_dump() == {'baz': 'foo_value', 'boo': 'hoo'}
@@ -580,7 +580,7 @@ class ArbitraryType:
 
 def test_arbitrary_type_allowed_validation_success():
     class ArbitraryTypeAllowedModel(BaseModel):
-        model_config = BaseConfig(arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
         t: ArbitraryType
 
     arbitrary_type_instance = ArbitraryType()
@@ -594,7 +594,7 @@ class OtherClass:
 
 def test_arbitrary_type_allowed_validation_fails():
     class ArbitraryTypeAllowedModel(BaseModel):
-        model_config = BaseConfig(arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
         t: ArbitraryType
 
     input_value = OtherClass()
@@ -763,7 +763,7 @@ def test_exclude_unset_recursive():
 
 def test_dict_exclude_unset_populated_by_alias():
     class MyModel(BaseModel):
-        model_config = BaseConfig(populate_by_name=True)
+        model_config = ConfigDict(populate_by_name=True)
         a: str = Field('default', alias='alias_a')
         b: str = Field('default', alias='alias_b')
 
@@ -775,7 +775,7 @@ def test_dict_exclude_unset_populated_by_alias():
 
 def test_dict_exclude_unset_populated_by_alias_with_extra():
     class MyModel(BaseModel):
-        model_config = BaseConfig(extra='allow')
+        model_config = ConfigDict(extra='allow')
         a: str = Field('default', alias='alias_a')
         b: str = Field('default', alias='alias_b')
 
@@ -829,7 +829,7 @@ def test_dir_fields():
 
 def test_dict_with_extra_keys():
     class MyModel(BaseModel):
-        model_config = BaseConfig(extra=Extra.allow)
+        model_config = ConfigDict(extra=Extra.allow)
         a: str = Field(None, alias='alias_a')
 
     m = MyModel(extra_key='extra')
@@ -850,7 +850,7 @@ def test_untouched_types():
     classproperty = _ClassPropertyDescriptor
 
     class Model(BaseModel):
-        model_config = BaseConfig(keep_untouched=(classproperty,))
+        model_config = ConfigDict(keep_untouched=(classproperty,))
 
         @classproperty
         def class_name(cls) -> str:
@@ -993,7 +993,7 @@ def test_model_exclude_config_field_merging():
     """Test merging field exclude values from config."""
 
     class Model(BaseModel):
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             fields={
                 'b': {'exclude': ...},
             }
@@ -1003,7 +1003,7 @@ def test_model_exclude_config_field_merging():
     assert Model.model_fields['b'].field_info.exclude is ...
 
     class Model(BaseModel):
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             fields={
                 'b': {'exclude': ...},
             }
@@ -1013,7 +1013,7 @@ def test_model_exclude_config_field_merging():
     assert Model.model_fields['b'].field_info.exclude == {'a': {'test'}}
 
     class Model(BaseModel):
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             fields={
                 'b': {'exclude': {'bar'}},
             }
@@ -1042,7 +1042,7 @@ def test_model_exclude_copy_on_model_validation():
     assert my_user.model_dump() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
 
     class Transaction(BaseModel):
-        model_config = BaseConfig(fields={'value': {'exclude': True}})
+        model_config = ConfigDict(fields={'value': {'exclude': True}})
         id: str
         user: User = Field(..., exclude={'username'})
         value: int
@@ -1067,7 +1067,7 @@ def test_model_exclude_copy_on_model_validation_shallow():
     do the same as the previous test but perform a shallow copy"""
 
     class User(BaseModel):
-        model_config = BaseConfig(copy_on_model_validation='shallow')
+        model_config = ConfigDict(copy_on_model_validation='shallow')
 
         hobbies: List[str]
 
@@ -1087,7 +1087,7 @@ def test_model_exclude_copy_on_model_validation_shallow():
 def test_copy_on_model_validation_warning(comv_value):
     class User(BaseModel):
         # True interpreted as 'shallow', False interpreted as 'none'
-        model_config = BaseConfig(copy_on_model_validation=comv_value)
+        model_config = ConfigDict(copy_on_model_validation=comv_value)
 
         hobbies: List[str]
 
@@ -1111,7 +1111,7 @@ def test_validation_deep_copy():
     """By default, Config.copy_on_model_validation should do a deep copy"""
 
     class A(BaseModel):
-        model_config = BaseConfig(copy_on_model_validation='deep')
+        model_config = ConfigDict(copy_on_model_validation='deep')
         name: str
 
     class B(BaseModel):
@@ -1195,7 +1195,7 @@ def test_model_export_exclusion_inheritance():
         s4: str = Field('v4', exclude=...)
 
     class Parent(BaseModel):
-        model_config = BaseConfig(fields={'a': {'exclude': ...}, 's': {'exclude': {'s1'}}})
+        model_config = ConfigDict(fields={'a': {'exclude': ...}, 's': {'exclude': {'s1'}}})
         a: int
         b: int = Field(..., exclude=...)
         c: int
@@ -1203,7 +1203,7 @@ def test_model_export_exclusion_inheritance():
         s: Sub = Sub()
 
     class Child(Parent):
-        model_config = BaseConfig(fields={'c': {'exclude': ...}, 's': {'exclude': {'s2'}}})
+        model_config = ConfigDict(fields={'c': {'exclude': ...}, 's': {'exclude': {'s2'}}})
 
     actual = Child(a=0, b=1, c=2, d=3).model_dump()
     expected = {'d': 3, 's': {'s3': 'v3'}}
@@ -1216,7 +1216,7 @@ def test_model_export_with_true_instead_of_ellipsis():
         s1: int = 1
 
     class Model(BaseModel):
-        model_config = BaseConfig(fields={'c': {'exclude': True}})
+        model_config = ConfigDict(fields={'c': {'exclude': True}})
         a: int = 2
         b: int = Field(3, exclude=True)
         c: int = Field(4)
@@ -1235,7 +1235,7 @@ def test_model_export_inclusion():
         s4: str = 'v4'
 
     class Model(BaseModel):
-        model_config = BaseConfig(
+        model_config = ConfigDict(
             fields={'a': {'include': {'s2', 's1', 's3'}}, 'b': {'include': {'s1', 's2', 's3', 's4'}}}
         )
         a: Sub = Sub()
@@ -1263,7 +1263,7 @@ def test_model_export_inclusion_inheritance():
 
     class Parent(BaseModel):
         # b will be included since fields are set idependently
-        model_config = BaseConfig(fields={'b': {'include': ...}})
+        model_config = ConfigDict(fields={'b': {'include': ...}})
         a: int
         b: int
         c: int
@@ -1273,7 +1273,7 @@ def test_model_export_inclusion_inheritance():
         # b is still included even if it doesn't occur here since fields
         # are still considered separately.
         # s however, is merged, resulting in only s1 being included.
-        model_config = BaseConfig(fields={'a': {'include': ...}, 's': {'include': {'s1'}}})
+        model_config = ConfigDict(fields={'a': {'include': ...}, 's': {'include': {'s1'}}})
 
     actual = Child(a=0, b=1, c=2).model_dump()
     expected = {'a': 0, 'b': 1, 's': {'s1': 'v1'}}
@@ -1342,7 +1342,7 @@ def test_default_factory():
     MY_SINGLETON = MySingleton()
 
     class SingletonFieldModel(BaseModel):
-        model_config = BaseConfig(arbitrary_types_allowed=True)
+        model_config = ConfigDict(arbitrary_types_allowed=True)
         singleton: MySingleton = Field(default_factory=lambda: MY_SINGLETON)
 
     assert SingletonFieldModel().singleton is SingletonFieldModel().singleton
@@ -1446,7 +1446,7 @@ def test_allow_mutation_field():
     """assigning a allow_mutation=False field should raise a TypeError"""
 
     class Entry(BaseModel):
-        model_config = BaseConfig(validate_assignment=True)
+        model_config = ConfigDict(validate_assignment=True)
         id: float = Field(allow_mutation=False)
         val: float
 
@@ -1498,7 +1498,7 @@ def test_inherited_model_field_untouched():
     """It should not copy models used as fields if explicitly asked"""
 
     class Image(BaseModel):
-        model_config = BaseConfig(copy_on_model_validation='none')
+        model_config = ConfigDict(copy_on_model_validation='none')
         path: str
 
         def __hash__(self):
@@ -1657,7 +1657,7 @@ def test_class_kwargs_config_json_encoders():
 
 def test_class_kwargs_config_and_attr_conflict():
     class Model(BaseModel, extra='allow', alias_generator=str.upper):
-        model_config = BaseConfig(extra='forbid', title='Foobar')
+        model_config = ConfigDict(extra='forbid', title='Foobar')
         b: int
 
     assert Model.model_config['extra'] is Extra.allow

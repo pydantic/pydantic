@@ -25,7 +25,7 @@ from ._validation_functions import ValidationFunctions
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from ..config import BaseConfig
+    from ..config import ConfigDict
     from ..main import BaseModel
 
 __all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class'
@@ -248,7 +248,7 @@ def build_inner_schema(  # noqa: C901
     return schema, fields
 
 
-def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: BaseConfig) -> Signature:
+def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:
     """
     Generate signature for model based on its fields
     """

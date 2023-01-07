@@ -54,7 +54,7 @@ from typing_extensions import dataclass_transform
 from pydantic._internal._utils import ClassAttribute
 
 from ._internal import _fields
-from .config import BaseConfig, ConfigDict, Extra, get_config
+from .config import ConfigDict, Extra, get_config
 from .fields import Field, FieldInfo
 from .main import create_model
 
@@ -259,7 +259,7 @@ class DataclassProxy:
 
 def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     dc_cls: Type['Dataclass'],
-    config: BaseConfig,
+    config: ConfigDict,
     validate_on_init: bool,
     dc_cls_doc: str,
 ) -> None:
@@ -476,7 +476,7 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     )
 
 
-def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type[BaseConfig]) -> 'CallableGenerator':
+def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type[ConfigDict]) -> 'CallableGenerator':
     """
     Create a pydantic.dataclass from a builtin dataclass to add type validation
     and yield the validators

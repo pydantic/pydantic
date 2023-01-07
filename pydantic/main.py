@@ -16,7 +16,7 @@ import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from ._internal._fields import Undefined
-from .config import BaseConfig, Extra, build_config, get_config
+from .config import ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
@@ -130,7 +130,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
-    model_config = get_config(None)
+    model_config = get_config()
     __slots__ = '__dict__', '__fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
@@ -592,7 +592,7 @@ _base_class_defined = True
 def create_model(
     __model_name: str,
     *,
-    __config__: BaseConfig | None = None,
+    __config__: ConfigDict | None = None,
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -606,7 +606,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: BaseConfig | None = None,
+    __config__: ConfigDict | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -619,7 +619,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: BaseConfig | None = None,
+    __config__: ConfigDict | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,

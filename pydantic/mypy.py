@@ -339,7 +339,7 @@ class PydanticModelTransformer:
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
                 error_untyped_fields(ctx.api, stmt)
 
-            # if lhs.name == '__config__':  # BaseConfig not well handled; I'm not sure why yet
+            # if lhs.name == '__config__':  # ConfigDict not well handled; I'm not sure why yet
             #     continue
 
             sym = cls.info.names.get(lhs.name)

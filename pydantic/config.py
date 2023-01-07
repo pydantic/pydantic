@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'build_config', 'prepare_config'
+__all__ = 'ConfigDict', 'get_config', 'Extra', 'build_config', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -33,32 +33,6 @@ class Extra(str, Enum):
 
 
 class ConfigDict(TypedDict, total=False):
-    title: Optional[str]
-    str_to_lower: bool
-    str_to_upper: bool
-    str_min_length: int
-    str_max_length: Optional[int]
-    extra: Extra
-    frozen: bool
-    populate_by_name: bool
-    use_enum_values: bool
-    validate_assignment: bool
-    arbitrary_types_allowed: bool
-    from_attributes: bool
-    alias_generator: Optional[Callable[[str], str]]
-    keep_untouched: Tuple[type, ...]
-    json_loads: Callable[[str], object]
-    json_dumps: Callable[..., Any]
-    json_encoders: Dict[Type[object], Callable[..., Any]]
-    allow_inf_nan: bool
-    copy_on_model_validation: Literal['none', 'deep', 'shallow']
-    post_init_call: Literal['before_validation', 'after_validation']
-
-
-config_keys = {*ConfigDict.__annotations__.keys(), 'undefined_types_warning'}
-
-
-class BaseConfig(TypedDict, total=False):
     title: Optional[str]
     str_to_lower: bool
     str_to_upper: bool
@@ -124,8 +98,11 @@ class BaseConfig(TypedDict, total=False):
     #     pass
 
 
-def _default_base_config() -> BaseConfig:
-    return BaseConfig(
+config_keys = set(ConfigDict.__annotations__.keys())
+
+
+def _default_config() -> ConfigDict:
+    return ConfigDict(
         title=None,
         str_to_lower=False,
         str_to_upper=False,
@@ -151,9 +128,9 @@ def _default_base_config() -> BaseConfig:
     )
 
 
-def get_config(config: Union[ConfigDict, Type[object], None] = None) -> BaseConfig:
+def get_config(config: Union[ConfigDict, Type[object], None] = None) -> ConfigDict:
     if config is None:
-        return _default_base_config()
+        return _default_config()
 
     else:
         config_dict = (
@@ -161,16 +138,16 @@ def get_config(config: Union[ConfigDict, Type[object], None] = None) -> BaseConf
             if isinstance(config, dict)
             else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
         )
-        config_new = _default_base_config()
+        config_new = _default_config()
         config_new.update(config_dict)  # type:ignore
         return config_new
 
 
 def build_config(
     cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]
-) -> BaseConfig:
+) -> ConfigDict:
     """
-    Build a new BaseConfig instance based on (from lowest to highest)
+    Build a new ConfigDict instance based on (from lowest to highest)
     - default options
     - options defined in base
     - options defined in namespace
@@ -178,7 +155,7 @@ def build_config(
     """
     config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
 
-    config_default = dict(_default_base_config())
+    config_default = dict(_default_config())
     config_bases = {}
     configs_ordered = [config_default]
     # collect all config options from bases
@@ -197,7 +174,7 @@ def build_config(
     configs_ordered.append(config_kwargs)
 
     config_new.update(config_kwargs)
-    new_model_config = BaseConfig(config_new)  # type: ignore
+    new_model_config = ConfigDict(config_new)  # type: ignore
     # merge `json_encoders`-dict in correct order
     new_model_config['json_encoders'] = {}
     for c in configs_ordered:
@@ -207,7 +184,7 @@ def build_config(
     return new_model_config
 
 
-def prepare_config(config: BaseConfig, cls_name: str) -> None:
+def prepare_config(config: ConfigDict, cls_name: str) -> None:
     if not isinstance(config['extra'], Extra):
         try:
             config['extra'] = Extra(config['extra'])

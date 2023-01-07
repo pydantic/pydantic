@@ -1,8 +1,8 @@
-from pydantic import BaseConfig, BaseModel, ValidationError
+from pydantic import ConfigDict, BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    model_config = BaseConfig(str_max_length=10)
+    model_config = ConfigDict(str_max_length=10)
     v: str
 
 
