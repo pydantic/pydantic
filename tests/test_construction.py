@@ -294,22 +294,6 @@ def test_copy_undefined(ModelTwo):
     assert not hasattr(m3, '__foo__')
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_immutable_copy_with_allow_mutation():
-    class Model(BaseModel):
-        model_config = ConfigDict(allow_mutation=False)
-        a: int
-        b: int
-
-    m = Model(a=40, b=10)
-    assert m == m.copy()
-
-    m2 = m.copy(update={'b': 12})
-    assert repr(m2) == 'Model(a=40, b=12)'
-    with pytest.raises(TypeError):
-        m2.b = 13
-
-
 def test_immutable_copy_with_frozen():
     class Model(BaseModel):
         model_config = ConfigDict(frozen=True)

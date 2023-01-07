@@ -1215,7 +1215,7 @@ def test_nested_literal_validator():
 @pytest.mark.xfail(reason='working on V2')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
-        x: Union[Literal[42], Literal['pika']] = Field(allow_mutation=False)
+        x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
 
     m = Model(x=42)
     with pytest.raises(TypeError):

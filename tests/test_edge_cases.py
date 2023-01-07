@@ -8,6 +8,7 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 import pytest
 
 from pydantic import BaseModel, ConfigDict, Extra, ValidationError, constr, errors, validator
+from pydantic._internal._fields import PydanticGeneralMetadata
 from pydantic.fields import Field
 
 
@@ -1967,22 +1968,22 @@ def test_config_field_info_merge():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_config_field_info_allow_mutation():
+def test_config_field_info_frozen():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)
         a: str = Field(...)
 
-    assert Foo.__fields__['a'].metadata.frozen is True
+    assert Foo.model_fields['a'].metadata == []
 
     f = Foo(a='x')
     f.a = 'y'
     assert f.model_dump() == {'a': 'y'}
 
     class Bar(BaseModel):
-        model_config = ConfigDict(fields={'a': {'allow_mutation': False}}, validate_assignment=True)
-        a: str = Field(...)
+        model_config = ConfigDict(validate_assignment=True)
+        a: str = Field(..., frozen=True)
 
-    assert Bar.model_fields['a'].field_info.allow_mutation is False
+    assert PydanticGeneralMetadata(frozen=True) in Bar.model_fields['a'].metadata
 
     b = Bar(a='x')
     with pytest.raises(TypeError):

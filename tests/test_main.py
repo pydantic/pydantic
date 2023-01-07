@@ -1442,12 +1442,12 @@ def test_base_config_type_hinting():
 
 
 @pytest.mark.xfail(reason='https://github.com/pydantic/pydantic-core/pull/237')
-def test_allow_mutation_field():
-    """assigning a allow_mutation=False field should raise a TypeError"""
+def test_frozen_field():
+    """assigning a frozen=True field should raise a TypeError"""
 
     class Entry(BaseModel):
         model_config = ConfigDict(validate_assignment=True)
-        id: float = Field(allow_mutation=False)
+        id: float = Field(frozen=True)
         val: float
 
     r = Entry(id=1, val=100)
@@ -1455,7 +1455,7 @@ def test_allow_mutation_field():
     r.val = 101
     assert r.val == 101
     assert r.id == 1
-    with pytest.raises(TypeError, match='"id" has allow_mutation set to False and cannot be assigned'):
+    with pytest.raises(TypeError, match='"id" has frozen set to True and cannot be assigned'):
         r.id = 2
 
 
