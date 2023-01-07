@@ -85,7 +85,6 @@ class ModelMetaclass(ABCMeta):
             namespace['__json_encoder__'] = staticmethod(json_encoder)
 
             if '__hash__' not in namespace and __config__.frozen:
-
                 def hash_func(self_: Any) -> int:
                     return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
 
@@ -193,15 +192,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             _object_setattr(self, name, value)
 
     def model_dump(
-        self,
-        *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        by_alias: bool = False,
-        skip_defaults: bool | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
+            self,
+            *,
+            include: AbstractSetIntStr | MappingIntStrAny | None = None,
+            exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+            by_alias: bool = False,
+            skip_defaults: bool | None = None,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
     ) -> dict[str, Any]:
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
@@ -228,18 +227,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     def model_dump_json(
-        self,
-        *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        by_alias: bool = False,
-        skip_defaults: bool | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = None,
-        models_as_dict: bool = True,
-        **dumps_kwargs: Any,
+            self,
+            *,
+            include: AbstractSetIntStr | MappingIntStrAny | None = None,
+            exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+            by_alias: bool = False,
+            skip_defaults: bool | None = None,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
+            encoder: typing.Callable[[Any], Any] | None = None,
+            models_as_dict: bool = True,
+            **dumps_kwargs: Any,
     ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
@@ -330,12 +329,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return m
 
     def copy(
-        self: Model,
-        *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: typing.Dict[str, Any] | None = None,
-        deep: bool = False,
+            self: Model,
+            *,
+            include: AbstractSetIntStr | MappingIntStrAny | None = None,
+            exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+            update: typing.Dict[str, Any] | None = None,
+            deep: bool = False,
     ) -> Model:
         """
         Duplicate a model, optionally choose which fields to include, exclude and change.
@@ -359,11 +358,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         else:
             fields_set = set(self.__fields_set__)
 
+        # removing excluded fields from `__fields_set__`
+        if exclude:
+            fields_set -= exclude
+
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
     def model_json_schema(
-        cls, by_alias: bool = True, ref_template: str = default_ref_template
+            cls, by_alias: bool = True, ref_template: str = default_ref_template
     ) -> typing.Dict[str, Any]:
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
@@ -374,7 +377,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def schema_json(
-        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+            cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
     ) -> str:
         from .json import pydantic_encoder
 
@@ -387,15 +390,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     @typing.no_type_check
     def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include: AbstractSetIntStr | MappingIntStrAny | None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None,
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
+            cls,
+            v: Any,
+            to_dict: bool,
+            by_alias: bool,
+            include: AbstractSetIntStr | MappingIntStrAny | None,
+            exclude: AbstractSetIntStr | MappingIntStrAny | None,
+            exclude_unset: bool,
+            exclude_defaults: bool,
+            exclude_none: bool,
     ) -> Any:
 
         if isinstance(v, BaseModel):
@@ -428,7 +431,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 )
                 for k_, v_ in v.items()
                 if (not value_exclude or not value_exclude.is_excluded(k_))
-                and (not value_include or value_include.is_included(k_))
+                   and (not value_include or value_include.is_included(k_))
             }
 
         elif _utils.sequence_like(v):
@@ -445,7 +448,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 )
                 for i, v_ in enumerate(v)
                 if (not value_exclude or not value_exclude.is_excluded(i))
-                and (not value_include or value_include.is_included(i))
+                   and (not value_include or value_include.is_included(i))
             )
 
             return v.__class__(*seq_args) if _typing_extra.is_namedtuple(v.__class__) else v.__class__(seq_args)
@@ -458,7 +461,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def model_rebuild(
-        cls, *, force: bool = False, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None
+            cls, *, force: bool = False, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -488,14 +491,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         yield from self.__dict__.items()
 
     def _iter(
-        self,
-        to_dict: bool = False,
-        by_alias: bool = False,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
+            self,
+            to_dict: bool = False,
+            by_alias: bool = False,
+            include: AbstractSetIntStr | MappingIntStrAny | None = None,
+            exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
     ) -> 'TupleGenerator':
 
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
@@ -549,11 +552,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             yield dict_key, v
 
     def _calculate_keys(
-        self,
-        include: MappingIntStrAny | None,
-        exclude: MappingIntStrAny | None,
-        exclude_unset: bool,
-        update: typing.Dict[str, Any] | None = None,
+            self,
+            include: MappingIntStrAny | None,
+            exclude: MappingIntStrAny | None,
+            exclude_unset: bool,
+            update: typing.Dict[str, Any] | None = None,
     ) -> typing.AbstractSet[str] | None:
         if include is None and exclude is None and exclude_unset is False:
             return None
@@ -594,42 +597,42 @@ _base_class_defined = True
 
 @typing.overload
 def create_model(
-    __model_name: str,
-    *,
-    __config__: type[BaseConfig] | None = None,
-    __base__: None = None,
-    __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
-    **field_definitions: Any,
+        __model_name: str,
+        *,
+        __config__: type[BaseConfig] | None = None,
+        __base__: None = None,
+        __module__: str = __name__,
+        __validators__: dict[str, AnyClassMethod] = None,
+        __cls_kwargs__: dict[str, Any] = None,
+        **field_definitions: Any,
 ) -> type[Model]:
     ...
 
 
 @typing.overload
 def create_model(
-    __model_name: str,
-    *,
-    __config__: type[BaseConfig] | None = None,
-    __base__: type[Model] | tuple[type[Model], ...],
-    __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
-    **field_definitions: Any,
+        __model_name: str,
+        *,
+        __config__: type[BaseConfig] | None = None,
+        __base__: type[Model] | tuple[type[Model], ...],
+        __module__: str = __name__,
+        __validators__: dict[str, AnyClassMethod] = None,
+        __cls_kwargs__: dict[str, Any] = None,
+        **field_definitions: Any,
 ) -> type[Model]:
     ...
 
 
 def create_model(
-    __model_name: str,
-    *,
-    __config__: type[BaseConfig] | None = None,
-    __base__: type[Model] | tuple[type[Model], ...] | None = None,
-    __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
-    __slots__: tuple[str, ...] | None = None,
-    **field_definitions: Any,
+        __model_name: str,
+        *,
+        __config__: type[BaseConfig] | None = None,
+        __base__: type[Model] | tuple[type[Model], ...] | None = None,
+        __module__: str = __name__,
+        __validators__: dict[str, AnyClassMethod] = None,
+        __cls_kwargs__: dict[str, Any] = None,
+        __slots__: tuple[str, ...] | None = None,
+        **field_definitions: Any,
 ) -> type[Model]:
     """
     Dynamically create a model.
