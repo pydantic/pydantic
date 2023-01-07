@@ -361,7 +361,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         # removing excluded fields from `__fields_set__`
         if exclude:
-            fields_set -= exclude
+            fields_set -= set(exclude)
 
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
