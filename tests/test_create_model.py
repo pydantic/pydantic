@@ -11,11 +11,10 @@ from pydantic.generics import GenericModel
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=123)
     assert issubclass(model, BaseModel)
-    assert issubclass(model.model_config, BaseModel.model_config)
+    assert model.model_config == BaseModel.model_config
     assert model.__name__ == 'FooModel'
     assert model.model_fields.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
-    assert model.model_config.__name__ == 'Config'
     assert model.__module__ == 'pydantic.main'
 
 
@@ -82,27 +81,33 @@ def test_inheritance():
     assert m.model_dump() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_custom_config():
-    config = BaseConfig(fields={'foo': 'api-foo-field'})
+    config = BaseConfig(frozen=True)
+    expected_config = BaseModel.model_config.copy()
+    expected_config['frozen'] = True
 
     model = create_model('FooModel', foo=(int, ...), __config__=config)
-    assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.model_config, BaseModel.model_config)
-    with pytest.raises(ValidationError):
-        model(foo=654)
+    m = model(**{'foo': '987'})
+    assert m.foo == 987
+    assert model.model_config == expected_config
+    with pytest.raises(TypeError):
+        m.foo = 654
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_custom_config_inherits():
-    class Config(BaseModel.model_config):
-        fields = {'foo': 'api-foo-field'}
+    class Config(BaseConfig):
+        custom_config: bool
 
-    model = create_model('FooModel', foo=(int, ...), __config__=Config)
-    assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.model_config, BaseModel.model_config)
+    config = Config(custom_config=True, validate_assignment=True)
+    expected_config = Config(BaseModel.model_config)
+    expected_config.update(config)
+
+    model = create_model('FooModel', foo=(int, ...), __config__=config)
+    m = model(**{'foo': '987'})
+    assert m.foo == 987
+    assert model.model_config == expected_config
     with pytest.raises(ValidationError):
-        model(foo=654)
+        m.foo = ['123']
 
 
 def test_custom_config_extras():
@@ -210,13 +215,15 @@ def test_dynamic_and_static():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_create_model():
-    class Config:
-        fields = {'a': {'description': 'descr'}}
+    # TODO fields doesn't exist anymore, remove test?
+    # class Config:
+    #     fields = {'a': {'description': 'descr'}}
+    config = BaseConfig()
 
-    m1 = create_model('M1', __config__=Config, a=(str, ...))
+    m1 = create_model('M1', __config__=config, a=(str, ...))
     assert m1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
-    m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
+    m2 = create_model('M2', __config__=config, a=(str, Field(...)))
     assert m2.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
@@ -232,7 +239,7 @@ def test_generics_model():
     )
     result = AAModel[int](aa=1)
     assert result.aa == 1
-    assert result.model_config.from_attributes is True
+    assert result.model_config['from_attributes'] is True
 
 
 @pytest.mark.xfail(reason='working on V2')

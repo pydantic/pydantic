@@ -630,7 +630,7 @@ def create_model(
     """
     Dynamically create a model.
     :param __model_name: name of the created model
-    :param __config__: config class to use for the new model
+    :param __config__: config dict to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
