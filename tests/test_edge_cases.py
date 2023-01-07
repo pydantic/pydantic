@@ -1151,34 +1151,48 @@ def test_illegal_extra_value():
 
 
 def test_multiple_inheritance_config():
+    def int_encoder(x):
+        return x + 1
+
+    def int2_encoder(x):
+        return x + 2
+
+    def str_encoder(x):
+        return x.upper()
+
     class Parent(BaseModel):
-        model_config = BaseConfig(frozen=True, extra=Extra.forbid)
+        model_config = BaseConfig(frozen=True, extra=Extra.forbid, json_encoders={int: int_encoder})
 
     class Mixin(BaseModel):
-        model_config = BaseConfig(use_enum_values=True)
+        model_config = BaseConfig(use_enum_values=True, json_encoders={int: int2_encoder})
 
-    class Child(Mixin, Parent):
+    class Child(Mixin, Parent, json_encoders={str: str_encoder}):
         model_config = BaseConfig(populate_by_name=True)
 
     assert BaseModel.model_config['frozen'] is False
     assert BaseModel.model_config['populate_by_name'] is False
     assert BaseModel.model_config['extra'] is Extra.ignore
     assert BaseModel.model_config['use_enum_values'] is False
+    assert BaseModel.model_config['json_encoders'] == {}
 
     assert Parent.model_config['frozen'] is True
     assert Parent.model_config['populate_by_name'] is False
     assert Parent.model_config['extra'] is Extra.forbid
     assert Parent.model_config['use_enum_values'] is False
+    assert Parent.model_config['json_encoders'][int] is int_encoder
 
     assert Mixin.model_config['frozen'] is False
     assert Mixin.model_config['populate_by_name'] is False
     assert Mixin.model_config['extra'] is Extra.ignore
     assert Mixin.model_config['use_enum_values'] is True
+    assert Mixin.model_config['json_encoders'][int] is int2_encoder
 
     assert Child.model_config['frozen'] is True
     assert Child.model_config['populate_by_name'] is True
     assert Child.model_config['extra'] is Extra.forbid
     assert Child.model_config['use_enum_values'] is True
+    assert Child.model_config['json_encoders'][str] is str_encoder
+    assert Child.model_config['json_encoders'][int] is int_encoder
 
 
 def test_submodel_different_type():

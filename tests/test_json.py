@@ -197,7 +197,6 @@ def test_custom_iso_timedelta():
 #     assert Obj.parse_raw('{"id": 1, "price": 0.01}') == Obj(id=1)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json_encoder_simple_inheritance():
     class Parent(BaseModel):
         model_config = BaseConfig(json_encoders={datetime.datetime: lambda _: 'parent_encoder'})

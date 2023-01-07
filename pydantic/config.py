@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'build_config', 'inherit_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'build_config', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -90,6 +90,7 @@ class BaseConfig(TypedDict, total=False):
     # whether dataclass `__post_init__` should be run before or after validation
     post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
+    # TODO where to impelement these two classmethods?
     # @classmethod
     # def get_field_info(cls, name: str) -> Dict[str, Any]:
     #     """
@@ -150,7 +151,7 @@ def _default_base_config() -> BaseConfig:
     )
 
 
-def get_config(config: Union[ConfigDict, Type[object], None]) -> BaseConfig:
+def get_config(config: Union[ConfigDict, Type[object], None] = None) -> BaseConfig:
     if config is None:
         return _default_base_config()
 
@@ -165,51 +166,43 @@ def get_config(config: Union[ConfigDict, Type[object], None]) -> BaseConfig:
         return config_new
 
 
-def inherit_config(self_config: BaseConfig, parent_config: BaseConfig, **namespace: Any) -> BaseConfig:
-    # # TODO remove
-    # if not self_config:
-    #     base_classes: Tuple['ConfigType', ...] = (parent_config,)
-    # elif self_config == parent_config:
-    #     base_classes = (self_config,)
-    # else:
-    #     base_classes = self_config, parent_config
-
-    namespace['json_encoders'] = {
-        **getattr(parent_config, 'json_encoders', {}),
-        **getattr(self_config, 'json_encoders', {}),
-        **namespace.get('json_encoders', {}),
-    }
-
-    # return type('Config', base_classes, namespace)
-    return self_config
-
-
 def build_config(
     cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]
 ) -> BaseConfig:
     """
-    TODO update once we're sure what this does.
-
-    Note: merging json_encoders is not currently implemented
+    Build a new BaseConfig instance based on (from lowest to highest)
+    - default options
+    - options defined in base
+    - options defined in namespace
+    - options defined via kwargs
     """
     config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
 
     config_default = dict(_default_base_config())
     config_bases = {}
+    configs_ordered = [config_default]
+    # collect all config options from bases
+    # to avoid that options will be overriden by default-values we just take value != default-value
     for base in bases:
-        config: Optional[Dict[str, object]] = getattr(base, 'model_config', None)
+        config = getattr(base, 'model_config', {})
         if config:
+            configs_ordered.append(config)
             config_bases.update({key: value for key, value in config.items() if config_default[key] != value})
-    config_new = dict(list(config_default.items()) + list(config_bases.items()))
+    config_new = dict(tuple(config_default.items()) + tuple(config_bases.items()))
 
-    config_from_namespace = namespace.get('model_config', None)
+    config_from_namespace = namespace.get('model_config')
     if config_from_namespace:
-        if not isinstance(config_from_namespace, dict):
-            raise ValueError(f'"{cls_name}": {config_from_namespace} must be of type {dict}')
+        configs_ordered.append(config_from_namespace)
         config_new.update(config_from_namespace)
+    configs_ordered.append(config_kwargs)
 
     config_new.update(config_kwargs)
     new_model_config = BaseConfig(config_new)  # type: ignore
+    # merge `json_encoders`-dict in correct order
+    new_model_config['json_encoders'] = {}
+    for c in configs_ordered:
+        new_model_config['json_encoders'].update(c.get('json_encoders', {}))
+
     prepare_config(new_model_config, cls_name)
     return new_model_config
 
