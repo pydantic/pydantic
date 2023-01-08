@@ -1,4 +1,4 @@
-from typing import Any, Generic, List, Optional, Set, TypeVar, Union
+from typing import Generic, List, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, validator
 from pydantic.dataclasses import dataclass
@@ -28,18 +28,12 @@ class ForbidExtraModel(BaseModel):
 ForbidExtraModel(x=1)
 
 
-class ForbidExtraModel2(BaseModel):
-    model_config = ConfigDict(extra='forbid')  # type: ignore[typeddict-item]
-
-
-ForbidExtraModel2(x=1)
-
-
 class BadExtraModel(BaseModel):
-    model_config = ConfigDict(
-        extra=1,  # type: ignore[pydantic-config]
-        extra=1,  # type: ignore[typeddict-item] # noqa E999
-    )
+    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
+
+
+class BadExtraButIgnoredModel(BaseModel):
+    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item,pydantic-config]
 
 
 class BadConfig1(BaseModel):
