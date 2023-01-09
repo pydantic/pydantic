@@ -54,7 +54,7 @@ dependencies = [
     'pydantic-core>=0.7.1',
     'annotated-types>=0.4.0',
 ]
-optional-dependencies = { email = ['email-validator>=1.0.3'] }
+optional-dependencies = { email = ['email-validator>=1.2.0'] }
 dynamic = ['version', 'readme']
 
 entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
