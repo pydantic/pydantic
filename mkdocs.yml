@@ -39,7 +39,6 @@ extra_css:
 - 'extra/tweaks.css'
 extra_javascript:
 - 'extra/redirects.js'
-- 'extra/ad.js'
 
 nav:
 - Overview: index.md
