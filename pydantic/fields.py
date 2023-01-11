@@ -287,7 +287,7 @@ def Field(
     :param unique_items: only applies to lists, requires the field not to have duplicated
       elements. The schema will have a ``uniqueItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
-      schema will have a ``maximum`` validation keyword
+      schema will have a ``minLength`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
       schema will have a ``maxLength`` validation keyword
     :param allow_mutation: a boolean which defaults to True. When False, the field raises a TypeError if the field is
