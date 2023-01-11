@@ -2,17 +2,5 @@
 
 {% block content %}
   {{ super() }}
-  <script>
-    const u = new URL(window.location.href)
-    const url_query = new URLSearchParams({
-      width: window.innerWidth.toString(),
-      height: window.innerHeight.toString(),
-      url_host: u.host,
-      url_path: u.pathname,
-      url_hash: u.hash,
-      url_query: u.search,
-      referer: document.referrer,
-    })
-    fetch(`${window.location.origin}/flarelytics.txt?${url_query.toString()}`)
-  </script>
+  <script src="/flarelytics/client.js"></script>
 {% endblock %}
