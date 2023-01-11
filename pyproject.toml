@@ -92,7 +92,7 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani']
+reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani', 'kennethreitz']
 require_change_file = false
 
 [tool.flake8]
