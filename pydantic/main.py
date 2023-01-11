@@ -20,7 +20,8 @@ from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .schema import default_ref_template, model_schema
+# from .schema import default_ref_template, model_schema
+from .schema import inner_schema_to_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -361,28 +362,46 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
-    @classmethod
-    def model_json_schema(
-        cls, by_alias: bool = True, ref_template: str = default_ref_template
-    ) -> typing.Dict[str, Any]:
-        cached = cls.__schema_cache__.get((by_alias, ref_template))
-        if cached is not None:
-            return cached
-        s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
-        cls.__schema_cache__[(by_alias, ref_template)] = s
-        return s
+    # @classmethod
+    # def model_json_schema(
+    #     cls, by_alias: bool = True, ref_template: str = default_ref_template
+    # ) -> typing.Dict[str, Any]:
+    #     cached = cls.__schema_cache__.get((by_alias, ref_template))
+    #     if cached is not None:
+    #         return cached
+    #     s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
+    #     cls.__schema_cache__[(by_alias, ref_template)] = s
+    #     return s
+
+    # @classmethod
+    # def schema_json(
+    #     cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+    # ) -> str:
+    #     from .json import pydantic_encoder
+
+    #     return cls.__config__.json_dumps(
+    #         cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
+    #         default=pydantic_encoder,
+    #         **dumps_kwargs,
+    #     )
 
     @classmethod
-    def schema_json(
-        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
-    ) -> str:
-        from .json import pydantic_encoder
+    def json_schema(cls, *, ref_template=None):
+        from ._internal._model_construction import build_inner_schema
 
-        return cls.__config__.json_dumps(
-            cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
-            default=pydantic_encoder,
-            **dumps_kwargs,
+        types_namespace = None
+
+        # cls.model_rebuild()
+        inner_schema, fields = build_inner_schema(
+            cls,
+            cls.__name__,
+            cls.__pydantic_validator_functions__,
+            cls.__bases__,
+            types_namespace,
         )
+
+        return inner_schema_to_json_schema(inner_schema, fields)
+        # complete_model_class(cls)
 
     @classmethod
     @typing.no_type_check
