@@ -382,3 +382,16 @@ def test_construct_default_factory():
     m = Model.model_construct()
     assert m.foo == []
     assert m.bar == 'Baz'
+
+
+def test_copy_with_excluded_fields():
+    class User(BaseModel):
+        name: str
+        age: int
+        dob: str
+
+    user = User(name='test_user', age=23, dob='01/01/2000')
+    user_copy = user.copy(exclude={'dob': ...})
+
+    assert 'dob' in user.__fields_set__
+    assert 'dob' not in user_copy.__fields_set__

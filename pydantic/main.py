@@ -359,6 +359,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         else:
             fields_set = set(self.__fields_set__)
 
+        # removing excluded fields from `__fields_set__`
+        if exclude:
+            fields_set -= set(exclude)
+
         return self._copy_and_set_values(values, fields_set, deep=deep)
 
     @classmethod
