@@ -12,45 +12,14 @@ TYPE_MAP = {
 }
 
 
-def is_required(field_name, field):
-    pass
-
-
 def get_schema_property_json(field_name, field):
     return {
         'title': field_name,
         'type': TYPE_MAP.get(field.annotation, 'object')
     }
 
-    # _property = {}
-    # _property['title'] = field.title
-    # _property['type'] = TYPE_MAP.get(field.annotation, 'object')
-    # # _json_schema['properties'].update(_property)
 
-    # # field.annotation
-
-    # # print(dir(field))
-    # # print(field.metadata)
-    # # print(field.__gt__)
-    # # print()
-    # # exit()
-    # # property['exclusiveMinimum']
-
-    # # if field.title:
-    #     # _json_schema
-
-    # # json_schema_extra
-    # # description
-    # # title
-
-    # # _json_schema['properties'].update(property)
-    # return _json_schema
-
-    # return {'title' 'type'}
-    pass
-
-
-def inner_schema_to_json_schema(inner_schema, fields):
+def internal_to_json_schema(inner_schema, fields):
     # print(inner_schema)
 
     assert inner_schema['type'] == 'typed-dict'

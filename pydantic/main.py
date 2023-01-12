@@ -22,7 +22,7 @@ from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
 
 # from .schema import default_ref_template, model_schema
-from .schema import inner_schema_to_json_schema
+from .schema import internal_to_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -404,7 +404,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             types_namespace,
         )
 
-        return inner_schema_to_json_schema(inner_schema, fields)
+        return internal_to_json_schema(inner_schema, fields)
 
     @classmethod
     @typing.no_type_check
