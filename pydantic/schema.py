@@ -1,4 +1,4 @@
-from genson import SchemaBuilder
+import re
 
 # from ._generate_schema import generate_config, model_fields_schema
 TYPE_MAP = {
@@ -8,76 +8,77 @@ TYPE_MAP = {
     bool: 'boolean',
     float: 'number',
     None: 'null',
-    dict: 'object'
-
+    dict: 'object',
 }
 
-def get_field_json(field_name, field):
-    # print(locals())
-    _json_schema = {
-        "properties": {},
-        "required": []
+
+def is_required(field_name, field):
+    pass
+
+
+def get_schema_property_json(field_name, field):
+    return {
+        'title': field_name,
+        'type': TYPE_MAP.get(field.annotation, 'object')
     }
 
-    if field.is_required():
-        _json_schema['required'].append(field_name)
+    # _property = {}
+    # _property['title'] = field.title
+    # _property['type'] = TYPE_MAP.get(field.annotation, 'object')
+    # # _json_schema['properties'].update(_property)
 
-    property = {}
-    property['title'] = field.title
-    property['type'] = TYPE_MAP.get(field.annotation)
+    # # field.annotation
 
+    # # print(dir(field))
+    # # print(field.metadata)
+    # # print(field.__gt__)
+    # # print()
+    # # exit()
+    # # property['exclusiveMinimum']
 
-    field.annotation
+    # # if field.title:
+    #     # _json_schema
 
-    print(field)
-    print()
-    # exit()
-    # property['exclusiveMinimum']
+    # # json_schema_extra
+    # # description
+    # # title
 
-    if field.title:
-        _json_schema
+    # # _json_schema['properties'].update(property)
+    # return _json_schema
 
-    # json_schema_extra
-    # description
-    # title
+    # return {'title' 'type'}
+    pass
 
-    _json_schema['properties'].update(property)
-    return _json_schema
 
 def inner_schema_to_json_schema(inner_schema, fields):
-    # TODO: additional params
-    # from pprint import pprint
-    # pprint(locals())
-    # fields = None
-    print(inner_schema)
-
     # print(inner_schema)
+
     assert inner_schema['type'] == 'typed-dict'
 
-
     # Start the JSON Schema document.
-    _json_schema = {
+    _json_schema_doc = {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         # "$id"
-        # "title": "test",
+        "title": normalize_name(inner_schema['ref'].split('.')[-1]),
         "type": "object",
-        "properties": {},
+        "properties": dict(),
         "required": []
     }
 
     # Update the properites.
-    for field_name in fields:
-        _new_json_schema = get_field_json(field_name=field_name, field=fields[field_name])
+    for i, field_name in enumerate(inner_schema['fields']):
+        # Get a reference to the field from inner schema, in case we need it later on.
+        _inner_schema_field = inner_schema['fields'][field_name]
+        _fieldinfo = fields[list(fields.keys())[i]]
 
-        # Update the properies for the under-construction JSON Schema.
-        if _new_json_schema["properties"]:
-            _json_schema["properties"].update(_new_json_schema["properties"])
+        # Update the extracted properties for the field.
+        _json_schema_doc['properties'][field_name] = get_schema_property_json(field_name=field_name, field=fields[field_name])
 
-        # Update required for the under-construction JSON Schema.
-        if _new_json_schema["required"]:
-            _json_schema["required"].extend(_new_json_schema["required"])
+        # If the field is required, let's declare it as so.
+        if _fieldinfo.is_required():
+            _json_schema_doc["required"].append(field_name)
 
-    return _json_schema
+    return _json_schema_doc
 
 
 def normalize_name(name: str) -> str:
@@ -87,10 +88,10 @@ def normalize_name(name: str) -> str:
     return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name)
 
 
-class SkipField(Exception):
-    """
-    Utility exception used to exclude fields from schema.
-    """
+# class SkipField(Exception):
+#     """
+#     Utility exception used to exclude fields from schema.
+#     """
 
-    def __init__(self, message: str) -> None:
-        self.message = message
+#     def __init__(self, message: str) -> None:
+#         self.message = message
