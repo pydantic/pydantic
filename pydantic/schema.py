@@ -2,7 +2,7 @@ import re
 
 # from ._generate_schema import generate_config, model_fields_schema
 TYPE_MAP = {
-    int: 'integer',
+    int: 'number',
     str: 'string',
     list: 'array',
     bool: 'boolean',
@@ -47,7 +47,7 @@ def internal_to_json_schema(inner_schema, fields):
 
         # If the field is required, let's declare it as so.
         if _fieldinfo.is_required():
-            _json_schema_doc["required"].append(field_name)
+            _json_schema_doc["required"].append(normalize_name(field_name))
 
     return _json_schema_doc
 
