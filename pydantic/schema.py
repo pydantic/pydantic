@@ -11,6 +11,8 @@ TYPE_MAP = {
     dict: 'object',
 }
 
+DEFAULT_JSON_SCHEMA = "https://json-schema.org/draft/2020-12/schema"
+
 
 def get_schema_property_json(field_name, field):
     return {
@@ -26,11 +28,11 @@ def internal_to_json_schema(inner_schema, fields):
 
     # Start the JSON Schema document.
     _json_schema_doc = {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$schema": DEFAULT_JSON_SCHEMA,
         # "$id"
         "title": normalize_name(inner_schema['ref'].split('.')[-1]),
         "type": "object",
-        "properties": dict(),
+        "properties": {},
         "required": []
     }
 
@@ -55,12 +57,3 @@ def normalize_name(name: str) -> str:
     Normalizes the given name. This can be applied to either a model *or* enum.
     """
     return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name)
-
-
-# class SkipField(Exception):
-#     """
-#     Utility exception used to exclude fields from schema.
-#     """
-
-#     def __init__(self, message: str) -> None:
-#         self.message = message
