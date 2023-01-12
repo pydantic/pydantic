@@ -391,12 +391,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def json_schema(cls, *, ref_template=None):
-        from ._internal._model_construction import build_inner_schema
 
         types_namespace = None
 
         # cls.model_rebuild()
-        inner_schema, fields = build_inner_schema(
+        inner_schema, fields = _model_construction.build_inner_schema(
             cls,
             cls.__name__,
             cls.__pydantic_validator_functions__,
@@ -405,7 +404,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
         return inner_schema_to_json_schema(inner_schema, fields)
-        # complete_model_class(cls)
 
     @classmethod
     @typing.no_type_check

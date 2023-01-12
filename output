@@ -1,0 +1,24 @@
+{
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "age": {
+      "title": "Age",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 100,
+      "type": "integer"
+    },
+    "metadata": {
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ]
+}
