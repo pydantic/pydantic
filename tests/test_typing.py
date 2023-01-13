@@ -74,8 +74,8 @@ def test_schema_typing() -> None:
         'type': 'typed-dict',
         'fields': {
             'a': {'schema': {'type': 'str'}},
-            'b': {'schema': {'type': 'str'}, 'alias': 'foobar'},
-            'c': {'schema': {'type': 'str'}, 'alias': [['foobar', 0, 'bar'], ['foo']]},
+            'b': {'schema': {'type': 'str'}, 'validation_alias': 'foobar'},
+            'c': {'schema': {'type': 'str'}, 'validation_alias': [['foobar', 0, 'bar'], ['foo']]},
             'd': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'spam'}},
         },
     }

@@ -21,7 +21,7 @@ pub struct ListValidator {
 pub fn get_items_schema(
     schema: &PyDict,
     config: Option<&PyDict>,
-    build_context: &mut BuildContext,
+    build_context: &mut BuildContext<CombinedValidator>,
 ) -> PyResult<Option<Box<CombinedValidator>>> {
     match schema.get_item(pyo3::intern!(schema.py(), "items_schema")) {
         Some(d) => {
@@ -75,7 +75,7 @@ impl BuildValidator for ListValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, build_context)?;
@@ -132,7 +132,7 @@ impl Validator for ListValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         match self.item_validator {
             Some(ref mut v) => v.complete(build_context),
             None => Ok(()),

@@ -3,7 +3,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::{function_name, kwargs, py_err, SchemaDict};
 use crate::errors::{
     ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
@@ -22,7 +22,7 @@ impl BuildValidator for FunctionBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let mode: &str = schema.get_as_req(intern!(schema.py(), "mode"))?;
         match mode {
@@ -35,19 +35,13 @@ impl BuildValidator for FunctionBuilder {
     }
 }
 
-macro_rules! kwargs {
-    ($py:ident, $($k:ident: $v:expr),* $(,)?) => {{
-        Some(pyo3::types::IntoPyDict::into_py_dict([$((stringify!($k), $v.into_py($py)),)*], $py).into())
-    }};
-}
-
 macro_rules! impl_build {
     ($impl_name:ident, $name:literal) => {
         impl $impl_name {
             pub fn build(
                 schema: &PyDict,
                 config: Option<&PyDict>,
-                build_context: &mut BuildContext,
+                build_context: &mut BuildContext<CombinedValidator>,
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
                 let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?;
@@ -71,13 +65,6 @@ macro_rules! impl_build {
             }
         }
     };
-}
-
-fn function_name(f: &PyAny) -> PyResult<String> {
-    match f.getattr(intern!(f.py(), "__name__")) {
-        Ok(name) => name.extract(),
-        _ => f.repr()?.extract(),
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -117,7 +104,7 @@ impl Validator for FunctionBeforeValidator {
         self.validator.ask(question)
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.validator.complete(build_context)
     }
 }
@@ -154,7 +141,7 @@ impl Validator for FunctionAfterValidator {
         self.validator.ask(question)
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.validator.complete(build_context)
     }
 }
@@ -244,7 +231,7 @@ impl Validator for FunctionWrapValidator {
         self.validator.ask(question)
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.validator.complete(build_context)
     }
 }

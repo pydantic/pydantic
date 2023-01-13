@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime, timezone
 from typing import Optional
@@ -7,7 +8,7 @@ from dirty_equals import AnyThing, IsBytes, IsStr, IsTuple
 from hypothesis import given, strategies
 from typing_extensions import TypedDict
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError
 
 
 @pytest.fixture(scope='module')
@@ -147,3 +148,14 @@ def test_urls_text(url_validator, text):
         error = exc.errors()[0]
         assert error['type'] == 'url_parsing'
         assert error['ctx']['error'] == 'relative URL without a base'
+
+
+@pytest.fixture(scope='module')
+def str_serializer():
+    return SchemaSerializer({'type': 'str'})
+
+
+@given(strategies.text())
+def test_serialize_string(str_serializer: SchemaSerializer, data):
+    assert str_serializer.to_python(data) == data
+    assert json.loads(str_serializer.to_json(data)) == data

@@ -91,7 +91,7 @@ impl<'a> From<&'a PyDelta> for EitherTimedelta<'a> {
     }
 }
 
-pub fn pytimedelta_as_timedelta(py_timedelta: &PyDelta) -> Duration {
+pub fn pytimedelta_as_duration(py_timedelta: &PyDelta) -> Duration {
     // see https://docs.python.org/3/c-api/datetime.html#c.PyDateTime_DELTA_GET_DAYS
     // days can be negative, but seconds and microseconds are always positive.
     let mut days = py_timedelta.get_days(); // -999999999 to 999999999
@@ -118,7 +118,7 @@ impl<'a> EitherTimedelta<'a> {
     pub fn as_raw(&self) -> Duration {
         match self {
             Self::Raw(timedelta) => timedelta.clone(),
-            Self::Py(py_timedelta) => pytimedelta_as_timedelta(py_timedelta),
+            Self::Py(py_timedelta) => pytimedelta_as_duration(py_timedelta),
         }
     }
 
@@ -195,10 +195,10 @@ pub fn pydatetime_as_datetime(py_dt: &PyDateTime) -> PyResult<DateTime> {
     let mut offset: Option<i32> = None;
     let tzinfo = py_dt.getattr(intern!(py, "tzinfo"))?;
     if !tzinfo.is_none() {
-        let offset_delta = tzinfo.getattr(intern!(py, "utcoffset"))?.call1((py_dt.as_ref(),))?;
+        let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_dt.as_ref(),))?;
         // as per the docs, utcoffset() can return None
         if !offset_delta.is_none() {
-            let offset_seconds: f64 = offset_delta.getattr(intern!(py, "total_seconds"))?.call0()?.extract()?;
+            let offset_seconds: f64 = offset_delta.call_method0(intern!(py, "total_seconds"))?.extract()?;
             offset = Some(offset_seconds.round() as i32);
         }
     }

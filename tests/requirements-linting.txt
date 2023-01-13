@@ -1,4 +1,4 @@
 black==22.12.0
-ruff==0.0.174
+ruff==0.0.209
 isort[colors]==5.10.1
 pyright==1.1.283

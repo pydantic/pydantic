@@ -11,6 +11,7 @@ use pyo3::types::{
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
+use crate::build_tools::safe_repr;
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
 use crate::{PyMultiHostUrl, PyUrl};
 
@@ -22,7 +23,7 @@ use super::datetime::{
 use super::input_abstract::InputType;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    py_error_on_minusone, py_string_str, repr_string, EitherBytes, EitherString, EitherTimedelta, GenericArguments,
+    py_error_on_minusone, py_string_str, EitherBytes, EitherString, EitherTimedelta, GenericArguments,
     GenericCollection, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
 };
 
@@ -66,10 +67,7 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(key_int) = self.extract::<usize>() {
             key_int.into()
         } else {
-            match repr_string(self) {
-                Ok(s) => s.into(),
-                Err(_) => format!("{self:?}").into(),
-            }
+            safe_repr(self).to_string().into()
         }
     }
 
@@ -215,6 +213,8 @@ impl<'a> Input<'a> for PyAny {
             };
             Ok(str.into())
         } else if let Ok(py_byte_array) = self.cast_as::<PyByteArray>() {
+            // see https://docs.rs/pyo3/latest/pyo3/types/struct.PyByteArray.html#method.as_bytes
+            // for why this is marked unsafe
             let str = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
                 Ok(s) => s,
                 Err(_) => return Err(ValError::new(ErrorType::StringUnicode, self)),

@@ -23,7 +23,7 @@ impl BuildValidator for LaxOrStrictValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let lax_schema = schema.get_as_req(intern!(py, "lax_schema"))?;
@@ -68,7 +68,7 @@ impl Validator for LaxOrStrictValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.lax_validator.complete(build_context)?;
         self.strict_validator.complete(build_context)
     }

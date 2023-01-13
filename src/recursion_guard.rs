@@ -1,16 +1,12 @@
-use std::collections::HashSet;
 use std::hash::BuildHasherDefault;
 
-use nohash_hasher::NoHashHasher;
-
-type BuildNoHashHasher<T> = BuildHasherDefault<NoHashHasher<T>>;
-pub type NoHashSet<T> = HashSet<T, BuildNoHashHasher<T>>;
+use nohash_hasher::IntSet;
 
 /// This is used to avoid cyclic references in input data causing recursive validation and a nasty segmentation fault.
 /// It's used in `validators/recursive.rs` to detect when a reference is reused within itself.
 #[derive(Debug, Clone, Default)]
 pub struct RecursionGuard {
-    ids: Option<NoHashSet<usize>>,
+    ids: Option<IntSet<usize>>,
     // see validators/recursive.rs::BACKUP_GUARD_LIMIT for details
     // depth could be a hashmap {validator_id => depth} but for simplicity and performance it's easier to just
     // use one number for all validators
@@ -25,7 +21,7 @@ impl RecursionGuard {
             // "If the set did not have this value present, `true` is returned."
             Some(ref mut set) => !set.insert(id),
             None => {
-                let mut set: NoHashSet<usize> = NoHashSet::with_capacity_and_hasher(10, BuildHasherDefault::default());
+                let mut set: IntSet<usize> = IntSet::with_capacity_and_hasher(10, BuildHasherDefault::default());
                 set.insert(id);
                 self.ids = Some(set);
                 false
@@ -33,7 +29,7 @@ impl RecursionGuard {
         }
     }
 
-    // see #143 this used as a backup in case the identity check recursion guard fails
+    // see #143 this is used as a backup in case the identity check recursion guard fails
     pub fn incr_depth(&mut self) -> u16 {
         self.depth += 1;
         self.depth

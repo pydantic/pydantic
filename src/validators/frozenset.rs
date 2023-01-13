@@ -64,7 +64,7 @@ impl Validator for FrozenSetValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         match self.item_validator {
             Some(ref mut v) => v.complete(build_context),
             None => Ok(()),

@@ -16,7 +16,7 @@ impl BuildValidator for NoneValidator {
     fn build(
         _schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         Ok(Self.into())
     }

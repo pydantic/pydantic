@@ -41,6 +41,7 @@ nohash-hasher = "0.2.0"
 url = "2.3.1"
 # idna is already required by url, added here to be explicit
 idna = "0.3.0"
+base64 = "0.13.1"
 
 [lib]
 name = "_pydantic_core"

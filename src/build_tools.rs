@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 
@@ -112,7 +113,7 @@ impl fmt::Debug for SchemaError {
 
 impl fmt::Display for SchemaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.message)
+        f.write_str(&self.message)
     }
 }
 
@@ -194,3 +195,24 @@ macro_rules! py_err {
     };
 }
 pub(crate) use py_err;
+
+pub fn function_name(f: &PyAny) -> PyResult<String> {
+    match f.getattr(intern!(f.py(), "__name__")) {
+        Ok(name) => name.extract(),
+        _ => f.repr()?.extract(),
+    }
+}
+
+macro_rules! kwargs {
+    ($py:ident, $($k:ident: $v:expr),* $(,)?) => {{
+        Some(pyo3::types::IntoPyDict::into_py_dict([$((stringify!($k), $v.into_py($py)),)*], $py).into())
+    }};
+}
+pub(crate) use kwargs;
+
+pub fn safe_repr(v: &PyAny) -> Cow<str> {
+    match v.repr() {
+        Ok(r) => r.to_string_lossy(),
+        Err(_) => v.to_string().into(),
+    }
+}

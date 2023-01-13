@@ -3,7 +3,9 @@ from ._pydantic_core import (
     PydanticCustomError,
     PydanticKnownError,
     PydanticOmit,
+    PydanticSerializationError,
     SchemaError,
+    SchemaSerializer,
     SchemaValidator,
     Url,
     ValidationError,
@@ -16,6 +18,7 @@ __all__ = (
     'CoreConfig',
     'CoreSchema',
     'SchemaValidator',
+    'SchemaSerializer',
     'Url',
     'MultiHostUrl',
     'SchemaError',
@@ -23,4 +26,5 @@ __all__ = (
     'PydanticCustomError',
     'PydanticKnownError',
     'PydanticOmit',
+    'PydanticSerializationError',
 )

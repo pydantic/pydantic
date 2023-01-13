@@ -29,7 +29,7 @@ impl BuildValidator for DictValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let key_validator = match schema.get_item(intern!(py, "keys_schema")) {
@@ -84,7 +84,7 @@ impl Validator for DictValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.key_validator.complete(build_context)?;
         self.value_validator.complete(build_context)
     }
