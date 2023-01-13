@@ -76,8 +76,6 @@ def internal_to_json_schema(inner_schema, fields):
         inner_schema_field = inner_schema['fields'][field_name]
         field = fields[list(fields.keys())[i]]
 
-        print(inner_schema_field)
-
         # Update the extracted properties for the field.
         json_schema_doc['properties'][field_name] = get_schema_property_json(field_name=field_name, inner_schema_field=inner_schema_field)
 
