@@ -391,7 +391,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     #     )
 
     @classmethod
-    def json_schema(cls, *, ref_template=None):
+    def model_json_schema(cls, *, ref_template=None):
 
         types_namespace = None
 
