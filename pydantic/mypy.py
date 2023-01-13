@@ -293,22 +293,44 @@ class PydanticModelTransformer:
         ctx = self._ctx
         cls = ctx.cls
         config = ModelConfigData()
+
+        has_config_kwargs = False
+        has_config_from_namespace = False
+
+        for name, expr in cls.keywords.items():
+            config_data = self.get_config_update(name, expr)
+            if config_data:
+                has_config_kwargs = True
+                config.update(config_data)
+
         for stmt in cls.defs.body:
             if not isinstance(stmt, AssignmentStmt):
                 continue
             lhs = stmt.lvalues[0]
-            if isinstance(lhs, NameExpr) and lhs.name == 'model_config':
-                if isinstance(stmt.rvalue, CallExpr):
-                    for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
-                        if arg_name is None:
-                            continue
-                        config.update(self.get_config_update(arg_name, arg))
-                if (
-                    config.has_alias_generator
-                    and not config.populate_by_name
-                    and self.plugin_config.warn_required_dynamic_aliases
-                ):
-                    error_required_dynamic_aliases(ctx.api, stmt)
+            if not isinstance(lhs, NameExpr) or lhs.name != 'model_config' or not isinstance(stmt.rvalue, CallExpr):
+                continue
+
+            if has_config_kwargs:
+                ctx.api.fail(
+                    'Specifying config in two places is ambiguous, use either Config attribute or class kwargs',
+                    cls,
+                )
+                break
+
+            has_config_from_namespace = True
+
+            for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
+                if arg_name is None:
+                    continue
+                config.update(self.get_config_update(arg_name, arg))
+
+        if has_config_kwargs or has_config_from_namespace:
+            if (
+                config.has_alias_generator
+                and not config.populate_by_name
+                and self.plugin_config.warn_required_dynamic_aliases
+            ):
+                error_required_dynamic_aliases(ctx.api, stmt)
         for info in cls.info.mro[1:]:  # 0 is the current class
             if METADATA_KEY not in info.metadata:
                 continue
