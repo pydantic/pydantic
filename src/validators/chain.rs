@@ -22,7 +22,7 @@ impl BuildValidator for ChainValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let steps: Vec<CombinedValidator> = schema
             .get_as_req::<&PyList>(intern!(schema.py(), "steps"))?
@@ -57,7 +57,7 @@ impl BuildValidator for ChainValidator {
 fn build_validator_steps<'a>(
     step: &'a PyAny,
     config: Option<&'a PyDict>,
-    build_context: &mut BuildContext,
+    build_context: &mut BuildContext<CombinedValidator>,
 ) -> PyResult<Vec<CombinedValidator>> {
     let validator = build_validator(step, config, build_context)?;
     if let CombinedValidator::Chain(chain_validator) = validator {
@@ -95,7 +95,7 @@ impl Validator for ChainValidator {
         self.steps.iter().any(|v| v.ask(question))
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.steps.iter_mut().try_for_each(|v| v.complete(build_context))
     }
 }

@@ -7,7 +7,7 @@ use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{is_strict, schema_or_config, SchemaDict};
+use crate::build_tools::{is_strict, py_err, schema_or_config, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
@@ -31,7 +31,7 @@ impl BuildValidator for UnionValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let choices: Vec<CombinedValidator> = schema
@@ -144,7 +144,7 @@ impl Validator for UnionValidator {
         self.choices.iter().all(|v| v.ask(question))
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.choices.iter_mut().try_for_each(|v| v.complete(build_context))
     }
 }
@@ -185,6 +185,7 @@ impl Discriminator {
 #[derive(Debug, Clone)]
 pub struct TaggedUnionValidator {
     choices: AHashMap<String, CombinedValidator>,
+    repeat_choices: Option<AHashMap<String, String>>,
     discriminator: Discriminator,
     from_attributes: bool,
     strict: bool,
@@ -200,20 +201,26 @@ impl BuildValidator for TaggedUnionValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let discriminator = Discriminator::new(py, schema.get_as_req(intern!(py, "discriminator"))?)?;
         let discriminator_repr = discriminator.to_string_py(py)?;
 
-        let mut choices = AHashMap::new();
+        let schema_choices: &PyDict = schema.get_as_req(intern!(py, "choices"))?;
+        let mut choices = AHashMap::with_capacity(schema_choices.len());
+        let mut repeat_choices_vec: Vec<(String, String)> = Vec::new();
         let mut first = true;
         let mut tags_repr = String::with_capacity(50);
         let mut descr = String::with_capacity(50);
 
-        for item in schema.get_as_req::<&PyDict>(intern!(py, "choices"))?.items().iter() {
-            let tag: String = item.get_item(0)?.extract()?;
-            let value = item.get_item(1)?;
+        for (key, value) in schema_choices {
+            let tag: String = key.extract()?;
+            if let Ok(py_str) = value.cast_as::<PyString>() {
+                let repeat_tag = py_str.to_str()?.to_string();
+                repeat_choices_vec.push((tag, repeat_tag));
+                continue;
+            }
             let validator = build_validator(value, config, build_context)?;
             if first {
                 first = false;
@@ -226,12 +233,41 @@ impl BuildValidator for TaggedUnionValidator {
             }
             choices.insert(tag, validator);
         }
+        let repeat_choices = if repeat_choices_vec.is_empty() {
+            None
+        } else {
+            let mut wrong_values = Vec::with_capacity(repeat_choices_vec.len());
+            let mut repeat_choices = AHashMap::with_capacity(repeat_choices_vec.len());
+            for (tag, repeat_tag) in repeat_choices_vec {
+                match choices.get(repeat_tag.as_str()) {
+                    Some(validator) => {
+                        write!(tags_repr, ", '{tag}'").unwrap();
+                        write!(descr, ",{}", validator.get_name()).unwrap();
+                        repeat_choices.insert(tag, repeat_tag);
+                    }
+                    None => wrong_values.push(format!("`{repeat_tag}`")),
+                }
+            }
+            if !wrong_values.is_empty() {
+                return py_err!(
+                    "String values in choices don't match any keys: {}",
+                    wrong_values.join(", ")
+                );
+            }
+            Some(repeat_choices)
+        };
 
         let key = intern!(py, "from_attributes");
         let from_attributes = schema_or_config(schema, config, key, key)?.unwrap_or(false);
 
+        let descr = match discriminator {
+            Discriminator::SelfSchema => "self-schema".to_string(),
+            _ => descr,
+        };
+
         Ok(Self {
             choices,
+            repeat_choices,
             discriminator,
             from_attributes,
             strict: is_strict(schema, config)?,
@@ -308,7 +344,7 @@ impl Validator for TaggedUnionValidator {
         self.choices.values().all(|v| v.ask(question))
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.choices
             .iter_mut()
             .try_for_each(|(_, validator)| validator.complete(build_context))
@@ -371,22 +407,29 @@ impl TaggedUnionValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if let Some(validator) = self.choices.get(tag.as_ref()) {
-            match validator.validate(py, input, extra, slots, recursion_guard) {
+            return match validator.validate(py, input, extra, slots, recursion_guard) {
                 Ok(res) => Ok(res),
                 Err(err) => Err(err.with_outer_location(tag.as_ref().into())),
+            };
+        } else if let Some(ref repeat_choices) = self.repeat_choices {
+            if let Some(choice_tag) = repeat_choices.get(tag.as_ref()) {
+                let validator = &self.choices[choice_tag];
+                return match validator.validate(py, input, extra, slots, recursion_guard) {
+                    Ok(res) => Ok(res),
+                    Err(err) => Err(err.with_outer_location(tag.as_ref().into())),
+                };
             }
-        } else {
-            match self.custom_error {
-                Some(ref custom_error) => Err(custom_error.as_val_error(input)),
-                None => Err(ValError::new(
-                    ErrorType::UnionTagInvalid {
-                        discriminator: self.discriminator_repr.clone(),
-                        tag: tag.to_string(),
-                        expected_tags: self.tags_repr.clone(),
-                    },
-                    input,
-                )),
-            }
+        }
+        match self.custom_error {
+            Some(ref custom_error) => Err(custom_error.as_val_error(input)),
+            None => Err(ValError::new(
+                ErrorType::UnionTagInvalid {
+                    discriminator: self.discriminator_repr.clone(),
+                    tag: tag.to_string(),
+                    expected_tags: self.tags_repr.clone(),
+                },
+                input,
+            )),
         }
     }
 

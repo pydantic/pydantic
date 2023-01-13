@@ -33,7 +33,7 @@ impl BuildValidator for NewClassValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         // models ignore the parent config and always use the config from this model

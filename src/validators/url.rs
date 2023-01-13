@@ -38,7 +38,7 @@ impl BuildValidator for UrlValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let (allowed_schemes, name) = get_allowed_schemas(schema, Self::EXPECTED_TYPE)?;
 
@@ -149,7 +149,7 @@ impl BuildValidator for MultiHostUrlValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let (allowed_schemes, name) = get_allowed_schemas(schema, Self::EXPECTED_TYPE)?;
 

@@ -35,14 +35,14 @@ impl BuildValidator for RecursiveRefValidator {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let name: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
         let (validator_id, answers) = build_context.find_slot_id_answer(&name)?;
         Ok(Self {
             validator_id,
             inner_name: "...".to_string(),
-            answers,
+            answers: answers.unwrap(),
         }
         .into())
     }
@@ -84,7 +84,7 @@ impl Validator for RecursiveRefValidator {
     }
 
     /// don't need to call complete on the inner validator here, complete_validators takes care of that.
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         let validator = build_context.find_validator(self.validator_id)?;
         self.inner_name = validator.get_name().to_string();
         Ok(())

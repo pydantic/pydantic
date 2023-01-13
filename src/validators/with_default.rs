@@ -9,15 +9,37 @@ use crate::errors::{ValError, ValResult};
 use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
-use crate::validators::build_validator;
 
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-enum DefaultType {
+pub enum DefaultType {
     None,
     Default(PyObject),
     DefaultFactory(PyObject),
+}
+
+impl DefaultType {
+    pub fn new(schema: &PyDict) -> PyResult<Self> {
+        let py = schema.py();
+        match (
+            schema.get_as(intern!(py, "default"))?,
+            schema.get_as(intern!(py, "default_factory"))?,
+        ) {
+            (Some(_), Some(_)) => py_err!("'default' and 'default_factory' cannot be used together"),
+            (Some(default), None) => Ok(Self::Default(default)),
+            (None, Some(default_factory)) => Ok(Self::DefaultFactory(default_factory)),
+            (None, None) => Ok(Self::None),
+        }
+    }
+
+    pub fn default_value(&self, py: Python) -> PyResult<Option<Cow<PyObject>>> {
+        match self {
+            Self::Default(ref default) => Ok(Some(Cow::Borrowed(default))),
+            Self::DefaultFactory(ref default_factory) => Ok(Some(Cow::Owned(default_factory.call0(py)?))),
+            Self::None => Ok(None),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -41,18 +63,10 @@ impl BuildValidator for WithDefaultValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let default = match (
-            schema.get_as(intern!(py, "default"))?,
-            schema.get_as(intern!(py, "default_factory"))?,
-        ) {
-            (Some(_), Some(_)) => return py_err!("'default' and 'default_factory' cannot be used together"),
-            (Some(default), None) => DefaultType::Default(default),
-            (None, Some(default_factory)) => DefaultType::DefaultFactory(default_factory),
-            (None, None) => DefaultType::None,
-        };
+        let default = DefaultType::new(schema)?;
         let on_error = match schema.get_as::<&str>(intern!(py, "on_error"))? {
             Some("raise") => OnError::Raise,
             Some("omit") => OnError::Omit,
@@ -94,7 +108,7 @@ impl Validator for WithDefaultValidator {
             Ok(v) => Ok(v),
             Err(e) => match self.on_error {
                 OnError::Raise => Err(e),
-                OnError::Default => Ok(self.default_value(py)?.unwrap().as_ref().clone()),
+                OnError::Default => Ok(self.default.default_value(py)?.unwrap().as_ref().clone()),
                 OnError::Omit => Err(ValError::Omit),
             },
         }
@@ -108,20 +122,12 @@ impl Validator for WithDefaultValidator {
         self.validator.ask(question)
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.validator.complete(build_context)
     }
 }
 
 impl WithDefaultValidator {
-    pub fn default_value(&self, py: Python) -> PyResult<Option<Cow<PyObject>>> {
-        match self.default {
-            DefaultType::Default(ref default) => Ok(Some(Cow::Borrowed(default))),
-            DefaultType::DefaultFactory(ref default_factory) => Ok(Some(Cow::Owned(default_factory.call0(py)?))),
-            DefaultType::None => Ok(None),
-        }
-    }
-
     pub fn has_default(&self) -> bool {
         !matches!(self.default, DefaultType::None)
     }
@@ -133,7 +139,7 @@ impl WithDefaultValidator {
 
 pub fn get_default<'a>(py: Python<'a>, validator: &'a CombinedValidator) -> PyResult<Option<Cow<'a, PyObject>>> {
     if let CombinedValidator::WithDefault(validator) = validator {
-        validator.default_value(py)
+        validator.default.default_value(py)
     } else {
         Ok(None)
     }

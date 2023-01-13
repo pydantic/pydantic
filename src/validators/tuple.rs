@@ -20,7 +20,7 @@ impl BuildValidator for TupleBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         match schema.get_as::<&str>(intern!(schema.py(), "mode"))? {
             Some("positional") => TuplePositionalValidator::build(schema, config, build_context),
@@ -42,7 +42,7 @@ impl TupleVariableValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, build_context)?;
@@ -98,7 +98,7 @@ impl Validator for TupleVariableValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         match self.item_validator {
             Some(ref mut v) => v.complete(build_context),
             None => Ok(()),
@@ -118,14 +118,14 @@ impl TuplePositionalValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
         let validators: Vec<CombinedValidator> = items
             .iter()
             .map(|item| build_validator(item, config, build_context))
-            .collect::<PyResult<Vec<CombinedValidator>>>()?;
+            .collect::<PyResult<_>>()?;
 
         let descr = validators.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(", ");
         Ok(Self {
@@ -242,7 +242,7 @@ impl Validator for TuplePositionalValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.items_validators
             .iter_mut()
             .try_for_each(|v| v.complete(build_context))

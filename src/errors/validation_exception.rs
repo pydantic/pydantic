@@ -8,8 +8,7 @@ use pyo3::ffi::Py_ssize_t;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::py_error_type;
-use crate::input::repr_string;
+use crate::build_tools::{py_error_type, safe_repr};
 
 use super::line_error::ValLineError;
 use super::location::Location;
@@ -191,10 +190,7 @@ impl PyLineError {
         write!(output, "  {message} [type={}", self.error_type.type_string())?;
 
         let input_value = self.input_value.as_ref(py);
-        let input_str = match repr_string(input_value) {
-            Ok(s) => s,
-            Err(_) => input_value.to_string(),
-        };
+        let input_str = safe_repr(input_value);
         truncate_input_value!(output, input_str);
 
         if let Ok(type_) = input_value.get_type().name() {

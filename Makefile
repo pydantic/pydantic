@@ -49,9 +49,9 @@ build-wasm:
 
 .PHONY: format
 format:
-	$(ruff) --fix
 	$(isort)
 	$(black)
+	$(ruff) --fix --exit-zero
 	cargo fmt
 
 .PHONY: lint-python

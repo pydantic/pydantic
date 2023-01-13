@@ -21,7 +21,7 @@ use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Ex
 struct TypedDictField {
     name: String,
     lookup_key: LookupKey,
-    name_pystring: Py<PyString>,
+    name_py: Py<PyString>,
     required: bool,
     validator: CombinedValidator,
     frozen: bool,
@@ -44,7 +44,7 @@ impl BuildValidator for TypedDictValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let strict = is_strict(schema, config)?;
@@ -122,7 +122,7 @@ impl BuildValidator for TypedDictValidator {
                 }
             }
 
-            let lookup_key = match field_info.get_item(intern!(py, "alias")) {
+            let lookup_key = match field_info.get_item(intern!(py, "validation_alias")) {
                 Some(alias) => {
                     let alt_alias = if populate_by_name { Some(field_name) } else { None };
                     LookupKey::from_py(py, alias, alt_alias)?
@@ -133,7 +133,7 @@ impl BuildValidator for TypedDictValidator {
             fields.push(TypedDictField {
                 name: field_name.to_string(),
                 lookup_key,
-                name_pystring: PyString::intern(py, field_name).into(),
+                name_py: PyString::intern(py, field_name).into(),
                 validator,
                 required,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
@@ -217,9 +217,9 @@ impl Validator for TypedDictValidator {
                             .validate(py, value, &extra, slots, recursion_guard)
                         {
                             Ok(value) => {
-                                output_dict.set_item(&field.name_pystring, value)?;
+                                output_dict.set_item(&field.name_py, value)?;
                                 if let Some(ref mut fs) = fields_set_vec {
-                                    fs.push(field.name_pystring.clone_ref(py));
+                                    fs.push(field.name_py.clone_ref(py));
                                 }
                             }
                             Err(ValError::Omit) => continue,
@@ -232,7 +232,7 @@ impl Validator for TypedDictValidator {
                         }
                         continue;
                     } else if let Some(value) = get_default(py, &field.validator)? {
-                        output_dict.set_item(&field.name_pystring, value.as_ref())?;
+                        output_dict.set_item(&field.name_py, value.as_ref())?;
                     } else if field.required {
                         errors.push(ValLineError::new_with_loc(
                             ErrorType::Missing,
@@ -328,7 +328,7 @@ impl Validator for TypedDictValidator {
         }
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.fields
             .iter_mut()
             .try_for_each(|f| f.validator.complete(build_context))

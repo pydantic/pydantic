@@ -26,7 +26,7 @@ impl BuildValidator for GeneratorValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let item_validator = get_items_schema(schema, config, build_context)?;
         let name = match item_validator {
@@ -76,7 +76,7 @@ impl Validator for GeneratorValidator {
         }
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         match self.item_validator {
             Some(ref mut v) => v.complete(build_context),
             None => Ok(()),
