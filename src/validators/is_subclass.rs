@@ -22,7 +22,7 @@ impl BuildValidator for IsSubclassValidator {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;

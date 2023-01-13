@@ -22,7 +22,7 @@ impl BuildValidator for JsonValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let validator = match schema.get_as(intern!(schema.py(), "schema"))? {
             Some(schema) => {
@@ -70,7 +70,7 @@ impl Validator for JsonValidator {
         self.validator.as_ref().map(|v| v.ask(question)).unwrap_or(false)
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         match self.validator {
             Some(ref mut v) => v.complete(build_context),
             None => Ok(()),

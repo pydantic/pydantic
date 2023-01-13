@@ -5,14 +5,15 @@ from typing import Any, TypedDict
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
 if sys.version_info < (3, 11):
-    from typing_extensions import NotRequired
+    from typing_extensions import NotRequired, TypeAlias
 else:
-    from typing import NotRequired
+    from typing import NotRequired, TypeAlias
 
 __all__ = (
     '__version__',
     'build_profile',
     'SchemaValidator',
+    'SchemaSerializer',
     'Url',
     'MultiHostUrl',
     'SchemaError',
@@ -20,6 +21,7 @@ __all__ = (
     'PydanticCustomError',
     'PydanticKnownError',
     'PydanticOmit',
+    'PydanticSerializationError',
     'list_all_errors',
 )
 __version__: str
@@ -39,6 +41,37 @@ class SchemaValidator:
     def validate_assignment(
         self, field: str, input: Any, data: 'dict[str, Any]', strict: 'bool | None' = None, context: Any = None
     ) -> 'dict[str, Any]': ...
+
+IncEx: TypeAlias = 'set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None'
+
+class SchemaSerializer:
+    def __init__(self, schema: CoreSchema, config: 'CoreConfig | None' = None) -> None: ...
+    def to_python(
+        self,
+        value: Any,
+        *,
+        mode: str | None = None,
+        include: IncEx = None,
+        exclude: IncEx = None,
+        by_alias: bool = True,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+    ) -> Any: ...
+    def to_json(
+        self,
+        value: Any,
+        *,
+        indent: int | None = None,
+        include: IncEx = None,
+        exclude: IncEx = None,
+        by_alias: bool = True,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+    ) -> bytes: ...
 
 class Url:
     scheme: str
@@ -110,6 +143,9 @@ class PydanticKnownError(ValueError):
 
 class PydanticOmit(Exception):
     def __init__(self) -> None: ...
+
+class PydanticSerializationError(ValueError):
+    def __init__(self, message: str) -> None: ...
 
 class ErrorTypeInfo(TypedDict):
     type: ErrorType

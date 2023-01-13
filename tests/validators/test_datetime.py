@@ -351,7 +351,7 @@ def test_datetime_future_timezone():
 
 def test_mock_utc_offset_8_hours(mocker):
     """
-    Test that mocking time.localtime() is working, note that due to caching in datetime.rs,
+    Test that mocking time.localtime() is working, note that due to caching in datetime_etc,
     time.localtime() will return `{'tm_gmtoff': 8 * 60 * 60}` for the rest of the session.
     """
     mocker.patch('time.localtime', return_value=type('time.struct_time', (), {'tm_gmtoff': 8 * 60 * 60}))

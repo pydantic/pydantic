@@ -64,7 +64,7 @@ impl BuildValidator for CustomErrorValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext,
+        build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let custom_error = CustomError::build(schema)?.unwrap();
         let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
@@ -101,7 +101,7 @@ impl Validator for CustomErrorValidator {
         self.validator.ask(question)
     }
 
-    fn complete(&mut self, build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.validator.complete(build_context)
     }
 }

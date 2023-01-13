@@ -21,7 +21,7 @@ impl BuildValidator for StrValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let con_str_validator = StrConstrainedValidator::build(schema, config)?;
 

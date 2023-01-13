@@ -21,7 +21,7 @@ impl BuildValidator for FloatValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let use_constrained = schema.get_item(intern!(py, "multiple_of")).is_some()

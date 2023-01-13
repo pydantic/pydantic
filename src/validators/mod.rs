@@ -2,13 +2,12 @@ use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
 
-use ahash::AHashSet;
 use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 
-use crate::build_context::{extract_used_refs, BuildContext};
+use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
 use crate::errors::{ValError, ValResult, ValidationError};
 use crate::input::Input;
@@ -51,6 +50,8 @@ mod union;
 mod url;
 mod with_default;
 
+pub use with_default::DefaultType;
+
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
@@ -65,27 +66,13 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, schema: &PyAny, config: Option<&PyDict>) -> PyResult<Self> {
-        let self_schema = Self::get_self_schema(py);
+        let schema = Self::validate_schema(py, schema)?;
 
-        let schema_obj = self_schema
-            .validator
-            .validate(
-                py,
-                schema,
-                &Extra::default(),
-                &self_schema.slots,
-                &mut RecursionGuard::default(),
-            )
-            .map_err(|e| SchemaError::from_val_error(py, e))?;
-        let schema = schema_obj.as_ref(py);
-
-        let mut used_refs = AHashSet::new();
-        extract_used_refs(schema, &mut used_refs)?;
-        let mut build_context = BuildContext::new(used_refs);
+        let mut build_context = BuildContext::for_schema(schema)?;
 
         let mut validator = build_validator(schema, config, &mut build_context)?;
         validator.complete(&build_context)?;
-        let slots = build_context.into_slots()?;
+        let slots = build_context.into_slots_val()?;
         let config_title = match config {
             Some(c) => c.get_item("title"),
             None => None,
@@ -228,8 +215,27 @@ impl SchemaValidator {
 static SCHEMA_DEFINITION: GILOnceCell<SchemaValidator> = GILOnceCell::new();
 
 impl SchemaValidator {
+    pub(crate) fn validate_schema<'py>(py: Python<'py>, schema: &'py PyAny) -> PyResult<&'py PyAny> {
+        let self_schema = Self::get_self_schema(py);
+        match self_schema.validator.validate(
+            py,
+            schema,
+            &Extra::default(),
+            &self_schema.slots,
+            &mut RecursionGuard::default(),
+        ) {
+            Ok(schema_obj) => Ok(schema_obj.into_ref(py)),
+            Err(e) => Err(SchemaError::from_val_error(py, e)),
+        }
+    }
+
     fn get_self_schema(py: Python) -> &Self {
-        SCHEMA_DEFINITION.get_or_init(py, || Self::build_self_schema(py).unwrap())
+        SCHEMA_DEFINITION.get_or_init(py, || match Self::build_self_schema(py) {
+            Ok(schema) => schema,
+            Err(e) => {
+                panic!("Error building schema validator:\n  {e}");
+            }
+        })
     }
 
     fn build_self_schema(py: Python) -> PyResult<Self> {
@@ -238,11 +244,7 @@ impl SchemaValidator {
         py.run(code, None, Some(locals))?;
         let self_schema: &PyDict = locals.get_as_req(intern!(py, "self_schema"))?;
 
-        let mut used_refs = AHashSet::new();
-        // NOTE: we don't call `extract_used_refs` for performance reasons, if more recursive references
-        // are used, they would need to be manually added here.
-        used_refs.insert("root-schema".to_string());
-        let mut build_context = BuildContext::new(used_refs);
+        let mut build_context = BuildContext::for_self_schema();
 
         let validator = match build_validator(self_schema, None, &mut build_context) {
             Ok(v) => v,
@@ -250,7 +252,7 @@ impl SchemaValidator {
         };
         Ok(Self {
             validator,
-            slots: build_context.into_slots()?,
+            slots: build_context.into_slots_val()?,
             schema: py.None(),
             title: "Self Schema".into_py(py),
         })
@@ -266,8 +268,11 @@ pub trait BuildValidator: Sized {
 
     /// Build a new validator from the schema, the return type is a trait to provide a way for validators
     /// to return other validators, see `string.rs`, `int.rs`, `float.rs` and `function.rs` for examples
-    fn build(schema: &PyDict, config: Option<&PyDict>, build_context: &mut BuildContext)
-        -> PyResult<CombinedValidator>;
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedValidator>,
+    ) -> PyResult<CombinedValidator>;
 }
 
 /// Logic to create a particular validator, called in the `validator_match` macro, then in turn by `build_validator`
@@ -275,7 +280,7 @@ fn build_specific_validator<'a, T: BuildValidator>(
     val_type: &str,
     schema_dict: &'a PyDict,
     config: Option<&'a PyDict>,
-    build_context: &mut BuildContext,
+    build_context: &mut BuildContext<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
     let py = schema_dict.py();
     if let Some(schema_ref) = schema_dict.get_as::<String>(intern!(py, "ref"))? {
@@ -284,7 +289,7 @@ fn build_specific_validator<'a, T: BuildValidator>(
         // unless it's used/referenced
         if build_context.ref_used(&schema_ref) {
             let answers = Answers::new(schema_dict)?;
-            let slot_id = build_context.prepare_slot(schema_ref, answers.clone())?;
+            let slot_id = build_context.prepare_slot(schema_ref, Some(answers.clone()))?;
             let inner_val = T::build(schema_dict, config, build_context)?;
             let name = inner_val.get_name().to_string();
             build_context.complete_slot(slot_id, inner_val)?;
@@ -303,9 +308,7 @@ macro_rules! validator_match {
             $(
                 <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $build_context),
             )+
-            _ => {
-                return py_err!(r#"Unknown schema type: "{}""#, $type)
-            },
+            _ => return py_err!(r#"Unknown schema type: "{}""#, $type),
         }
     };
 }
@@ -313,7 +316,7 @@ macro_rules! validator_match {
 pub fn build_validator<'a>(
     schema: &'a PyAny,
     config: Option<&'a PyDict>,
-    build_context: &mut BuildContext,
+    build_context: &mut BuildContext<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
     let dict: &PyDict = schema.cast_as()?;
     let type_: &str = dict.get_as_req(intern!(schema.py(), "type"))?;
@@ -546,7 +549,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
 
     /// this method must be implemented for any validator which holds references to other validators,
     /// it is used by `RecursiveRefValidator` to set its name
-    fn complete(&mut self, _build_context: &BuildContext) -> PyResult<()> {
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }

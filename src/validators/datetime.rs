@@ -25,7 +25,7 @@ impl BuildValidator for DateTimeValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext,
+        _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         Ok(Self {
             strict: is_strict(schema, config)?,

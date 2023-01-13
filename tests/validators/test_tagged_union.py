@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson
 from .test_typed_dict import Cls
@@ -354,3 +354,68 @@ def test_custom_error_type():
             'input': {'foo': 'other', 'bar': 'Bar'},
         }
     ]
+
+
+def test_tag_repeated(py_and_json: PyAndJson):
+    v = py_and_json(
+        {
+            'type': 'tagged-union',
+            'discriminator': 'food',
+            'choices': {
+                'apple': {
+                    'type': 'typed-dict',
+                    'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                },
+                'banana': {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'c': {'schema': {'type': 'str'}},
+                        'd': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    },
+                },
+                'cherry': 'banana',
+                'durian': 'apple',
+            },
+        }
+    )
+    assert v.validate_test({'food': 'apple', 'a': 'ap', 'b': '13'}) == {'a': 'ap', 'b': 13}
+    assert v.validate_test({'food': 'durian', 'a': 'ap', 'b': '13'}) == {'a': 'ap', 'b': 13}
+
+    assert v.validate_test({'food': 'banana', 'c': 'C', 'd': [1, '2']}) == {'c': 'C', 'd': [1, 2]}
+    assert v.validate_test({'food': 'cherry', 'c': 'C', 'd': [1, '2']}) == {'c': 'C', 'd': [1, 2]}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_test({'food': 'wrong'})
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'union_tag_invalid',
+            'loc': (),
+            'msg': (
+                "Input tag 'wrong' found using 'food' does not match any of the expected tags: "
+                "'apple', 'banana', 'cherry', 'durian'"
+            ),
+            'input': {'food': 'wrong'},
+            'ctx': {
+                'discriminator': "'food'",
+                'tag': 'wrong',
+                'expected_tags': "'apple', 'banana', 'cherry', 'durian'",
+            },
+        }
+    ]
+
+
+def test_tag_repeated_invalid():
+    with pytest.raises(SchemaError, match="SchemaError: String values in choices don't match any keys: `wrong`"):
+        SchemaValidator(
+            {
+                'type': 'tagged-union',
+                'discriminator': 'food',
+                'choices': {
+                    'apple': {
+                        'type': 'typed-dict',
+                        'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                    },
+                    'cherry': 'wrong',
+                },
+            }
+        )
