@@ -64,39 +64,6 @@ class ConfigDict(TypedDict, total=False):
     # whether dataclass `__post_init__` should be run before or after validation
     post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
-    # TODO where to impelement these two classmethods?
-    # @classmethod
-    # def get_field_info(cls, name: str) -> Dict[str, Any]:
-    #     """
-    #     Get properties of FieldInfo from the `fields` property of the config class.
-    #     """
-
-    #     fields_value = cls.fields.get(name)
-
-    #     if isinstance(fields_value, str):
-    #         field_info: Dict[str, Any] = {'alias': fields_value}
-    #     elif isinstance(fields_value, dict):
-    #         field_info = fields_value
-    #     else:
-    #         field_info = {}
-
-    #     if 'alias' in field_info:
-    #         field_info.setdefault('alias_priority', 2)
-
-    #     if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
-    #         alias = cls.alias_generator(name)
-    #         if not isinstance(alias, str):
-    #             raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
-    #         field_info.update(alias=alias, alias_priority=1)
-    #     return field_info
-
-    # @classmethod
-    # def prepare_field(cls, field: Any) -> None:
-    #     """
-    #     Optional hook to check or modify fields during model creation.
-    #     """
-    #     pass
-
 
 config_keys = set(ConfigDict.__annotations__.keys())
 

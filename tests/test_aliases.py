@@ -97,46 +97,6 @@ def test_annotation_config():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_alias_camel_case():
-    class Model(BaseModel):
-        one_thing: int
-        another_thing: int
-
-        class Config(ConfigDict):
-            @classmethod
-            def get_field_info(cls, name):
-                field_config = super().get_field_info(name) or {}
-                if 'alias' not in field_config:
-                    field_config['alias'] = re.sub(r'(?:^|_)([a-z])', lambda m: m.group(1).upper(), name)
-                return field_config
-
-    v = Model(**{'OneThing': 123, 'AnotherThing': '321'})
-    assert v.one_thing == 123
-    assert v.another_thing == 321
-    assert v == {'one_thing': 123, 'another_thing': 321}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_get_field_info_inherit():
-    class ModelOne(BaseModel):
-        class Config(ConfigDict):
-            @classmethod
-            def get_field_info(cls, name):
-                field_config = super().get_field_info(name) or {}
-                if 'alias' not in field_config:
-                    field_config['alias'] = re.sub(r'_([a-z])', lambda m: m.group(1).upper(), name)
-                return field_config
-
-    class ModelTwo(ModelOne):
-        one_thing: int
-        another_thing: int
-        third_thing: int = Field(alias='Banana')
-
-    v = ModelTwo(**{'oneThing': 123, 'anotherThing': '321', 'Banana': 1})
-    assert v == {'one_thing': 123, 'another_thing': 321, 'third_thing': 1}
-
-
-@pytest.mark.xfail(reason='working on V2')
 def test_pop_by_field_name():
     class Model(BaseModel):
         model_config = ConfigDict(extra=Extra.forbid, populate_by_name=True)
