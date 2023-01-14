@@ -1546,3 +1546,21 @@ def test_subclass_post_init_inheritance():
             self.a *= 3
 
     assert C().a == 6  # 1 * 3 + 3
+
+
+@pytest.mark.xfail(reason='working on V2')
+def test_config_as_type_deprecated():
+    class Config:
+        validate_assignment = True
+
+    match = (
+        'dataclass: support for "config" as "<class \'type\'>" is deprecated and will be removed in a future version'
+    )
+
+    with pytest.warns(DeprecationWarning, match=match):
+
+        @pydantic.dataclasses.dataclass(config=Config)
+        class MyDataclass:
+            a: int
+
+        assert MyDataclass.__pydantic_model__.module_config == ConfigDict(validate_assignment=True)

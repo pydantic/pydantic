@@ -32,6 +32,7 @@ The trick is to create a wrapper around `M` that will act as a proxy to trigger
 validation without altering default `M` behaviour.
 """
 import sys
+import warnings
 from contextlib import contextmanager
 from functools import wraps
 from typing import (
@@ -54,7 +55,7 @@ from typing_extensions import dataclass_transform
 from pydantic._internal._utils import ClassAttribute
 
 from ._internal import _fields
-from .config import ConfigDict, Extra, get_config
+from .config import ConfigDict, Extra
 from .fields import Field, FieldInfo
 from .main import create_model
 
@@ -192,7 +193,15 @@ def dataclass(
     or a wrapper that will trigger validation around a stdlib dataclass
     to avoid modifying it directly
     """
-    the_config = get_config(config)
+    if isinstance(config, type):
+        warnings.warn(
+            f'{dataclass.__name__}: support for "config" as "{type(config)}" is deprecated'
+            ' and will be removed in a future version"',
+            DeprecationWarning,
+        )
+        the_config = ConfigDict({k: getattr(config, k) for k in dir(config) if not k.startswith('__')})  # type: ignore
+    else:
+        the_config = ConfigDict() if config is None else ConfigDict(config)  # type: ignore
 
     def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
         import dataclasses
@@ -361,13 +370,13 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
 
 def create_pydantic_model_from_dataclass(
     dc_cls: Type['Dataclass'],
-    config: Optional[Any] = None,
+    config: Optional[ConfigDict] = None,
     dc_cls_doc: Optional[str] = None,
 ) -> Type['BaseModel']:
     import dataclasses
 
     if config is None:
-        config = get_config(None)
+        config = ConfigDict()
 
     field_definitions: Dict[str, Any] = {}
     for field in dataclasses.fields(dc_cls):

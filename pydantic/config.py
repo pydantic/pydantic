@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'ConfigDict', 'get_config', 'Extra', 'build_config', 'prepare_config'
+__all__ = 'ConfigDict', 'Extra', 'build_config', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -104,19 +104,6 @@ _default_config = ConfigDict(
     strict=False,
     copy_on_model_validation='shallow',
 )
-
-
-def get_config(config: Union[ConfigDict, Type[object], None] = None) -> ConfigDict:
-    if config is None:
-        return ConfigDict()
-
-    else:
-        config_dict = (
-            config
-            if isinstance(config, dict)
-            else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
-        )
-        return ConfigDict(config_dict)  # type: ignore
 
 
 def build_config(

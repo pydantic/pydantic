@@ -16,7 +16,7 @@ import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from ._internal._fields import Undefined
-from .config import ConfigDict, Extra, build_config, get_config
+from .config import ConfigDict, Extra, build_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
@@ -130,7 +130,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
-    model_config = get_config()
+    model_config = ConfigDict()
     __slots__ = '__dict__', '__fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
