@@ -1,4 +1,3 @@
-import re
 from contextlib import nullcontext as does_not_raise
 from typing import Any, ContextManager, List, Optional
 

@@ -32,7 +32,7 @@ class Extra(str, Enum):
     forbid = 'forbid'
 
 
-class ConfigDict(TypedDict, total=False):
+class _ConfigDict(TypedDict, total=False):
     title: Optional[str]
     str_to_lower: bool
     str_to_upper: bool
@@ -65,39 +65,50 @@ class ConfigDict(TypedDict, total=False):
     post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
 
-config_keys = set(ConfigDict.__annotations__.keys())
+config_keys = set(_ConfigDict.__annotations__.keys())
 
 
-def _default_config() -> ConfigDict:
-    return ConfigDict(
-        title=None,
-        str_to_lower=False,
-        str_to_upper=False,
-        str_strip_whitespace=False,
-        str_min_length=0,
-        str_max_length=None,
-        extra=Extra.ignore,
-        frozen=False,
-        populate_by_name=False,
-        use_enum_values=False,
-        validate_assignment=False,
-        arbitrary_types_allowed=False,
-        undefined_types_warning=True,
-        from_attributes=False,
-        alias_generator=None,
-        keep_untouched=(),
-        json_loads=json.loads,
-        json_dumps=json.dumps,
-        json_encoders={},
-        allow_inf_nan=True,
-        strict=False,
-        copy_on_model_validation='shallow',
-    )
+if TYPE_CHECKING:
+
+    class ConfigDict(_ConfigDict):
+        ...
+
+else:
+
+    class ConfigDict(dict):
+        def __missing__(self, key):
+            return _default_config[key]
+
+
+_default_config = ConfigDict(
+    title=None,
+    str_to_lower=False,
+    str_to_upper=False,
+    str_strip_whitespace=False,
+    str_min_length=0,
+    str_max_length=None,
+    extra=Extra.ignore,
+    frozen=False,
+    populate_by_name=False,
+    use_enum_values=False,
+    validate_assignment=False,
+    arbitrary_types_allowed=False,
+    undefined_types_warning=True,
+    from_attributes=False,
+    alias_generator=None,
+    keep_untouched=(),
+    json_loads=json.loads,
+    json_dumps=json.dumps,
+    json_encoders={},
+    allow_inf_nan=True,
+    strict=False,
+    copy_on_model_validation='shallow',
+)
 
 
 def get_config(config: Union[ConfigDict, Type[object], None] = None) -> ConfigDict:
     if config is None:
-        return _default_config()
+        return ConfigDict()
 
     else:
         config_dict = (
@@ -105,9 +116,7 @@ def get_config(config: Union[ConfigDict, Type[object], None] = None) -> ConfigDi
             if isinstance(config, dict)
             else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
         )
-        config_new = _default_config()
-        config_new.update(config_dict)  # type:ignore
-        return config_new
+        return ConfigDict(config_dict)  # type: ignore
 
 
 def build_config(
@@ -115,24 +124,21 @@ def build_config(
 ) -> ConfigDict:
     """
     Build a new ConfigDict instance based on (from lowest to highest)
-    - default options
     - options defined in base
     - options defined in namespace
     - options defined via kwargs
     """
     config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
 
-    config_default = dict(_default_config())
     config_bases = {}
-    configs_ordered = [config_default]
+    configs_ordered = []
     # collect all config options from bases
-    # to avoid that options will be overriden by default-values we just take value != default-value
     for base in bases:
-        config = getattr(base, 'model_config', {})
+        config = getattr(base, 'model_config', None)
         if config:
             configs_ordered.append(config)
-            config_bases.update({key: value for key, value in config.items() if config_default[key] != value})
-    config_new = dict(tuple(config_default.items()) + tuple(config_bases.items()))
+            config_bases.update({key: value for key, value in config.items()})
+    config_new = dict(config_bases.items())
 
     config_from_namespace = namespace.get('model_config')
     if config_from_namespace:
@@ -143,9 +149,12 @@ def build_config(
     config_new.update(config_kwargs)
     new_model_config = ConfigDict(config_new)  # type: ignore
     # merge `json_encoders`-dict in correct order
-    new_model_config['json_encoders'] = {}
+    json_encoders = {}
     for c in configs_ordered:
-        new_model_config['json_encoders'].update(c.get('json_encoders', {}))
+        json_encoders.update(c.get('json_encoders', {}))
+
+    if json_encoders:
+        new_model_config['json_encoders'] = json_encoders
 
     prepare_config(new_model_config, cls_name)
     return new_model_config
