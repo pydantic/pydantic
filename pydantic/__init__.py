@@ -1,4 +1,3 @@
-# flake8: noqa
 from pydantic_core import ValidationError
 
 from . import dataclasses
