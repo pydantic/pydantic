@@ -11,20 +11,20 @@ except ValueError as e:
 
 # but you can set the schema attribute directly:
 # (Note: here exclusiveMaximum will not be enforce)
-class Model(BaseModel):
+class ModelA(BaseModel):
     foo: PositiveInt = Field(..., exclusiveMaximum=10)
 
 
-print(Model.model_json_schema())
+print(ModelA.model_json_schema())
 
 
 # if you find yourself needing this, an alternative is to declare
 # the constraints in Field (or you could use conint())
 # here both constraints will be enforced:
-class Model(BaseModel):
+class ModelB(BaseModel):
     # Here both constraints will be applied and the schema
     # will be generated correctly
     foo: int = Field(..., gt=0, lt=10)
 
 
-print(Model.model_json_schema())
+print(ModelB.model_json_schema())

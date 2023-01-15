@@ -14,7 +14,7 @@ m = Model(e=2, a=1)
 print(m.model_dump())
 try:
     Model(a='x', b='x', c='x', d='x', e='x')
-except ValidationError as e:
-    error_locations = [e['loc'] for e in e.errors()]
+except ValidationError as err:
+    error_locations = [e['loc'] for e in err.errors()]
 
 print(error_locations)
