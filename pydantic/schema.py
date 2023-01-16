@@ -10,6 +10,7 @@ TYPE_MAP = {
     # float: 'number',
     # None: 'null',
     # dict: 'object',
+    'datetime': 'date-time',
     'str': 'string',
     'int': 'number'
 }
@@ -52,7 +53,7 @@ def get_schema_property_json(*, field_name, inner_schema_field):
 
 
 
-def internal_to_json_schema(inner_schema, fields):
+def internal_to_json_schema(inner_schema, fields) -> dict:
     """Returns a JSON Schema document, draft 2020-12."""
 
     # Sanity check.
