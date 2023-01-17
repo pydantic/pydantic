@@ -44,8 +44,7 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
         _types.append(internal_to_json_types(declared_type))
 
     # If only one type was found, shorten it.
-    if len(_types) == 1:
-        _types = _types[0]
+    _types = _types[0] if len(_types) == 1 else _types
 
     return {'title': normalize_name(field_name), 'type': _types}
 
