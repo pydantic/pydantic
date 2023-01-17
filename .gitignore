@@ -30,6 +30,7 @@ test.py
 _build/
 pydantic/*.c
 pydantic/*.so
+pydantic/schema.py
 .auto-format
 /sandbox/
 /.ghtopdep_cache/
