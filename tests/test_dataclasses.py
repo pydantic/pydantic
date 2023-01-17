@@ -1,3 +1,4 @@
+import copy
 import dataclasses
 import pickle
 import re
@@ -1608,3 +1609,13 @@ def test_proxy_dataclass_2():
     assert m1.a == m2.a == 3
     assert m1.b == m2.b == 'b'
     assert m1.c == m2.c == 3.0
+
+
+def test_can_deepcopy_wrapped_dataclass_type():
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class A:
+        name: int
+
+    B = copy.deepcopy(A)
+    assert B(1) == A(1)
