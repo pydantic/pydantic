@@ -27,10 +27,9 @@ def internal_to_json_types(s: str) -> str:
     return TYPE_MAP.get(s, s)
 
 
-def get_schema_property_json(*, field_name: str, inner_schema_field: __JSON_MAP__):
+def get_schema_property_json(*, field_name: str, inner_schema_field: Dict[str, Any]):
     """
-    Returns a dict which is used to construct JSON Schema for a given
-    field's properties.
+    Returns a dict, used to construct JSON Schema for a given field's properties.
     """
 
     declared_type = inner_schema_field['schema']['type']
@@ -51,7 +50,7 @@ def get_schema_property_json(*, field_name: str, inner_schema_field: __JSON_MAP_
     return {'title': normalize_name(field_name), 'type': _types}
 
 
-def internal_to_json_schema(inner_schema: typing.Dict[str, Any], fields) -> typing.Dict[str, typing.Any]t:
+def internal_to_json_schema(inner_schema: typing.Dict[str, Any], fields) -> Dict[str, Any]:
     """Returns a JSON Schema document, compatible with draft 2020-12."""
 
     # print(inner_schema)
