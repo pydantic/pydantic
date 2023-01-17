@@ -1,5 +1,6 @@
 import re
 import typing
+from typing import Any, Dict
 
 # from ._generate_schema import generate_config, model_fields_schema
 TYPE_MAP = {
@@ -17,14 +18,16 @@ TYPE_MAP = {
     'int': 'number',
 }
 
-DEFAULT_JSON_SCHEMA = 'https://json-schema.org/draft/2020-12/schema'
+DEFAULT_JSON_SCHEMA_URI = 'https://json-schema.org/draft/2020-12/schema'
+DEFAULT_JSON_SCHEMA_PREFIX = '#/definitions/'
+DEFAULT_JSON_SCHEMA_REF_TEMPLATE = '#/definitions/{model}'
 
 
 def internal_to_json_types(s: str) -> str:
     return TYPE_MAP.get(s, s)
 
 
-def get_schema_property_json(*, field_name: str, inner_schema_field: typing.Dict[str, typing.Any]):
+def get_schema_property_json(*, field_name: str, inner_schema_field: __JSON_MAP__):
     """
     Returns a dict which is used to construct JSON Schema for a given
     field's properties.
@@ -48,8 +51,8 @@ def get_schema_property_json(*, field_name: str, inner_schema_field: typing.Dict
     return {'title': normalize_name(field_name), 'type': _types}
 
 
-def internal_to_json_schema(inner_schema, fields) -> dict:
-    """Returns a JSON Schema document, draft 2020-12."""
+def internal_to_json_schema(inner_schema: typing.Dict[str, Any], fields) -> typing.Dict[str, typing.Any]t:
+    """Returns a JSON Schema document, compatible with draft 2020-12."""
 
     # print(inner_schema)
 
@@ -58,7 +61,7 @@ def internal_to_json_schema(inner_schema, fields) -> dict:
 
     # Start the JSON Schema document.
     json_schema_doc = {
-        '$schema': DEFAULT_JSON_SCHEMA,
+        '$schema': DEFAULT_JSON_SCHEMA_URI,
         # "$id"
         'title': normalize_name(inner_schema['ref'].split('.')[-1]),
         'type': 'object',

@@ -376,18 +376,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     #     cls.__schema_cache__[(by_alias, ref_template)] = s
     #     return s
 
-    # @classmethod
-    # def schema_json(
-    #     cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
-    # ) -> str:
-    #     from .json import pydantic_encoder
-
-    #     return cls.__config__.json_dumps(
-    #         cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
-    #         default=pydantic_encoder,
-    #         **dumps_kwargs,
-    #     )
-
     @classmethod
     def model_json_schema(cls, *, ref_template=None) -> typing.Dict[str, Any]:
 
