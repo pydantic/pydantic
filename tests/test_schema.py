@@ -37,7 +37,7 @@ from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
-from pydantic.jsonschema import (
+from pydantic.json_schema import (
     get_flat_models_from_model,
     get_flat_models_from_models,
     get_model_name_map,
