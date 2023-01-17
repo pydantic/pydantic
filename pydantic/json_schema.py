@@ -27,7 +27,7 @@ def internal_to_json_types(s: str) -> str:
     return TYPE_MAP.get(s, s)
 
 
-def get_schema_property_json(*, field_name: str, inner_schema_field: Dict[str, Any]):
+def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]):
     """
     Returns a dict, used to construct JSON Schema for a given field's properties.
     """
