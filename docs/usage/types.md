@@ -933,7 +933,7 @@ to get validators to parse and validate the input data.
 
 !!! tip
     These validators have the same semantics as in [Validators](validators.md), you can
-    declare a parameter `config`,types_import_string_1.py `field`, etc.
+    declare a parameter `config`, `field`, etc.
 
 {!.tmp_examples/types_custom_type.md!}
 
