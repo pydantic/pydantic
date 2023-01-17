@@ -589,23 +589,20 @@ the resulting field value would be the function `cos`; see [ImportString](#impor
 Pydantic also supports exotic types, which are described in detail below:
 
 #### ImportString
-On model instantiation, pointers will be evaluated and imported,
-(distantly related behavior to [PyObject](https://docs.python.org/3/c-api/structures.html#c.PyObject)).
-There is some nuance to this behavior, demonstrated in the examples below.
+On model instantiation, pointers will be evaluated and imported. There is
+some nuance to this behavior, demonstrated in the examples below.
+
+> A known limitation: setting a default value to a string
+> won't result in validation (thus evaluation). This is actively
+> being worked on.
 
 **Good behavior:**
-{!.tmp_examples/types_import_string_1.md!}
-(This script is complete, it should run "as is")
-
-**Assigning a default string value doesn't result in evaluation:**
-_(Known issue)_
-{!.tmp_examples/types_import_string_2.md!}
-(This script is complete, it should run "as is")
+{!.tmp_examples/types_import_string_usage.md!}
 
 **Serializing an `ImportString` type to json is possible with a
 [custom encoder](exporting_models.md#json_encoders) which accounts for
 the evaluated object:**
-{!.tmp_examples/types_import_string_3.md!}
+{!.tmp_examples/types_import_string_serialization.md!}
 
 ### URLs
 
