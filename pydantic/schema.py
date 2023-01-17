@@ -10,12 +10,13 @@ TYPE_MAP = {
     # float: 'number',
     # None: 'null',
     # dict: 'object',
+    'new-class': 'object',
     'datetime': 'date-time',
     'str': 'string',
-    'int': 'number'
+    'int': 'number',
 }
 
-DEFAULT_JSON_SCHEMA = "https://json-schema.org/draft/2020-12/schema"
+DEFAULT_JSON_SCHEMA = 'https://json-schema.org/draft/2020-12/schema'
 
 
 def internal_to_json_types(s):
@@ -30,6 +31,7 @@ def get_schema_property_json(*, field_name, inner_schema_field):
     declared_type = inner_schema_field['schema']['type']
     _types = []
 
+    # Support for nullables.
     if declared_type == 'nullable':
         t = inner_schema_field['schema']['schema']['type']
         _types.append(internal_to_json_types(t))
@@ -37,36 +39,27 @@ def get_schema_property_json(*, field_name, inner_schema_field):
     else:
         _types.append(internal_to_json_types(declared_type))
 
-    # # {'schema': {'type': 'nullable', 'schema': {'type': 'str'}}, 'required': True}
-    # # {'schema': {'type': 'int'}, 'required': True}
-
     # If only one type was found, shorten it.
     if len(_types) == 1:
         _types = _types[0]
 
-    return {
-        'title': normalize_name(field_name),
-        'type': _types
-    }
-
-
-
+    return {'title': normalize_name(field_name), 'type': _types}
 
 
 def internal_to_json_schema(inner_schema, fields) -> dict:
     """Returns a JSON Schema document, draft 2020-12."""
-
+    print(inner_schema)
     # Sanity check.
     assert inner_schema['type'] == 'typed-dict'
 
     # Start the JSON Schema document.
     json_schema_doc = {
-        "$schema": DEFAULT_JSON_SCHEMA,
+        '$schema': DEFAULT_JSON_SCHEMA,
         # "$id"
-        "title": normalize_name(inner_schema['ref'].split('.')[-1]),
-        "type": "object",
-        "properties": {},
-        "required": []
+        'title': normalize_name(inner_schema['ref'].split('.')[-1]),
+        'type': 'object',
+        'properties': {},
+        'required': [],
     }
 
     # Update the properites.
@@ -78,11 +71,13 @@ def internal_to_json_schema(inner_schema, fields) -> dict:
         field = fields[list(fields.keys())[i]]
 
         # Update the extracted properties for the field.
-        json_schema_doc['properties'][field_name] = get_schema_property_json(field_name=field_name, inner_schema_field=inner_schema_field)
+        json_schema_doc['properties'][field_name] = get_schema_property_json(
+            field_name=field_name, inner_schema_field=inner_schema_field
+        )
 
         # If the field is required, let's declare it as so.
         if field.is_required():
-            json_schema_doc["required"].append(normalize_name(field_name))
+            json_schema_doc['required'].append(normalize_name(field_name))
 
     return json_schema_doc
 
