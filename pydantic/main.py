@@ -20,7 +20,7 @@ from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .schema import internal_to_json_schema
+from .jsonschema import internal_to_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -389,7 +389,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     #     )
 
     @classmethod
-    def model_json_schema(cls, *, ref_template=None):
+    def model_json_schema(cls, *, ref_template=None) -> typing.Dict[str, Any]:
 
         types_namespace = None
 

@@ -1,4 +1,5 @@
 import re
+import typing
 
 # from ._generate_schema import generate_config, model_fields_schema
 TYPE_MAP = {
@@ -19,12 +20,13 @@ TYPE_MAP = {
 DEFAULT_JSON_SCHEMA = 'https://json-schema.org/draft/2020-12/schema'
 
 
-def internal_to_json_types(s):
+def internal_to_json_types(s: str) -> str:
     return TYPE_MAP.get(s, s)
 
 
-def get_schema_property_json(*, field_name, inner_schema_field):
-    """Returns a dict which is used to construct JSON Schema for a given
+def get_schema_property_json(*, field_name: str, inner_schema_field: typing.Dict[str, typing.Any]):
+    """
+    Returns a dict which is used to construct JSON Schema for a given
     field's properties.
     """
 
@@ -48,7 +50,9 @@ def get_schema_property_json(*, field_name, inner_schema_field):
 
 def internal_to_json_schema(inner_schema, fields) -> dict:
     """Returns a JSON Schema document, draft 2020-12."""
-    print(inner_schema)
+
+    # print(inner_schema)
+
     # Sanity check.
     assert inner_schema['type'] == 'typed-dict'
 
