@@ -32,7 +32,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         match extra.mode {
-            SerMode::Json => match value.cast_as::<PyDelta>() {
+            SerMode::Json => match value.downcast::<PyDelta>() {
                 Ok(py_timedelta) => extra.config.timedelta_mode.timedelta_to_json(py_timedelta),
                 Err(_) => {
                     extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
@@ -44,7 +44,7 @@ impl TypeSerializer for TimeDeltaSerializer {
     }
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-        match key.cast_as::<PyDelta>() {
+        match key.downcast::<PyDelta>() {
             Ok(py_timedelta) => extra.config.timedelta_mode.json_key(py_timedelta),
             Err(_) => {
                 extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
@@ -61,7 +61,7 @@ impl TypeSerializer for TimeDeltaSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        match value.cast_as::<PyDelta>() {
+        match value.downcast::<PyDelta>() {
             Ok(py_timedelta) => extra
                 .config
                 .timedelta_mode

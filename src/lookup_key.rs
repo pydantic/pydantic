@@ -44,7 +44,7 @@ macro_rules! py_string {
 
 impl LookupKey {
     pub fn from_py(py: Python, value: &PyAny, alt_alias: Option<&str>) -> PyResult<Self> {
-        if let Ok(alias_py) = value.cast_as::<PyString>() {
+        if let Ok(alias_py) = value.downcast::<PyString>() {
             let alias: String = alias_py.extract()?;
             let alias_py: Py<PyString> = alias_py.into_py(py);
             match alt_alias {
@@ -57,12 +57,12 @@ impl LookupKey {
                 None => Ok(LookupKey::Simple(alias, alias_py)),
             }
         } else {
-            let list: &PyList = value.cast_as()?;
+            let list: &PyList = value.downcast()?;
             let first = match list.get_item(0) {
                 Ok(v) => v,
                 Err(_) => return py_err!("Lookup paths should have at least one element"),
             };
-            let mut locs: Vec<Path> = if first.cast_as::<PyString>().is_ok() {
+            let mut locs: Vec<Path> = if first.downcast::<PyString>().is_ok() {
                 // list of strings rather than list of lists
                 vec![Self::path_choice(list)?]
             } else {
@@ -268,7 +268,7 @@ fn path_to_string(path: &Path) -> String {
 
 impl PathItem {
     pub fn from_py(index: usize, obj: &PyAny) -> PyResult<Self> {
-        if let Ok(py_str_key) = obj.cast_as::<PyString>() {
+        if let Ok(py_str_key) = obj.downcast::<PyString>() {
             let str_key = py_str_key.to_str()?.to_string();
             Ok(Self::S(str_key, py_str_key.into()))
         } else {
@@ -283,7 +283,7 @@ impl PathItem {
 
     pub fn py_get_item<'a>(&self, py_any: &'a PyAny) -> Option<&'a PyAny> {
         // we definitely don't want to index strings, so explicitly omit this case
-        if py_any.cast_as::<PyString>().is_ok() {
+        if py_any.downcast::<PyString>().is_ok() {
             None
         } else {
             // otherwise, blindly try getitem on v since no better logic is realistic
@@ -302,7 +302,7 @@ impl PathItem {
         match self {
             Self::S(_, py_key) => {
                 // if obj is a dict, we want to use get_item, not getattr
-                if obj.cast_as::<PyDict>().is_ok() {
+                if obj.downcast::<PyDict>().is_ok() {
                     Ok(self.py_get_item(obj))
                 } else {
                     py_get_attrs(obj, py_key)

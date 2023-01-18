@@ -57,9 +57,9 @@ impl TypeSerializer for NewClassSerializer {
 pub(super) fn object_to_dict<'py>(value: &'py PyAny, is_model: bool, extra: &Extra) -> PyResult<&'py PyDict> {
     let py = value.py();
     let attr = value.getattr(intern!(py, "__dict__"))?;
-    let attrs: &PyDict = attr.cast_as()?;
+    let attrs: &PyDict = attr.downcast()?;
     if is_model && extra.exclude_unset {
-        let fields_set: &PySet = value.getattr(intern!(py, "__fields_set__"))?.cast_as()?;
+        let fields_set: &PySet = value.getattr(intern!(py, "__fields_set__"))?.downcast()?;
 
         let new_attrs = attrs.copy()?;
         for key in new_attrs.keys() {

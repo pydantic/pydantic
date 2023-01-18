@@ -163,7 +163,7 @@ impl Discriminator {
     fn new(py: Python, raw: &PyAny) -> PyResult<Self> {
         if raw.is_callable() {
             return Ok(Self::Function(raw.to_object(py)));
-        } else if let Ok(py_str) = raw.cast_as::<PyString>() {
+        } else if let Ok(py_str) = raw.downcast::<PyString>() {
             if py_str.to_str()? == "self-schema-discriminator" {
                 return Ok(Self::SelfSchema);
             }
@@ -216,7 +216,7 @@ impl BuildValidator for TaggedUnionValidator {
 
         for (key, value) in schema_choices {
             let tag: String = key.extract()?;
-            if let Ok(py_str) = value.cast_as::<PyString>() {
+            if let Ok(py_str) = value.downcast::<PyString>() {
                 let repeat_tag = py_str.to_str()?.to_string();
                 repeat_choices_vec.push((tag, repeat_tag));
                 continue;
@@ -321,7 +321,7 @@ impl Validator for TaggedUnionValidator {
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    let tag: &PyString = tag.cast_as(py)?;
+                    let tag: &PyString = tag.downcast(py)?;
                     self.find_call_validator(py, tag.to_string_lossy(), input, extra, slots, recursion_guard)
                 }
             }

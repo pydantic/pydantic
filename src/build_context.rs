@@ -146,7 +146,7 @@ impl BuildContext<CombinedSerializer> {
 }
 
 fn extract_used_refs(schema: &PyAny, refs: &mut AHashSet<String>) -> PyResult<()> {
-    if let Ok(dict) = schema.cast_as::<PyDict>() {
+    if let Ok(dict) = schema.downcast::<PyDict>() {
         let py = schema.py();
         if matches!(dict.get_as(intern!(py, "type")), Ok(Some("recursive-ref"))) {
             refs.insert(dict.get_as_req(intern!(py, "schema_ref"))?);
@@ -155,7 +155,7 @@ fn extract_used_refs(schema: &PyAny, refs: &mut AHashSet<String>) -> PyResult<()
                 extract_used_refs(value, refs)?;
             }
         }
-    } else if let Ok(list) = schema.cast_as::<PyList>() {
+    } else if let Ok(list) = schema.downcast::<PyList>() {
         for item in list.iter() {
             extract_used_refs(item, refs)?;
         }

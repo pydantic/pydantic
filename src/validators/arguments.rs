@@ -48,7 +48,7 @@ impl BuildValidator for ArgumentsValidator {
         let mut had_default_arg = false;
 
         for (arg_index, arg) in arguments_schema.iter().enumerate() {
-            let arg: &PyDict = arg.cast_as()?;
+            let arg: &PyDict = arg.downcast()?;
 
             let name: String = arg.get_as_req(intern!(py, "name"))?;
             let mode = arg
