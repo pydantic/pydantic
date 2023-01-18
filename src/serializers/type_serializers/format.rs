@@ -83,7 +83,7 @@ impl TypeSerializer for FunctionSerializer {
     ) -> Result<S::Ok, S::Error> {
         match self.call(value) {
             Ok(v) => {
-                let py_str: &PyString = v.cast_as(value.py()).map_err(py_err_se_err)?;
+                let py_str: &PyString = v.downcast(value.py()).map_err(py_err_se_err)?;
                 serialize_py_str(py_str, serializer)
             }
             Err(e) => Err(S::Error::custom(e)),

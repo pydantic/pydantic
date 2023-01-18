@@ -309,7 +309,7 @@ impl<'py> Iterator for MappingGenericIterator<'py> {
             Some(Ok(item)) => item,
             None => return None,
         };
-        let tuple: &PyTuple = match item.cast_as() {
+        let tuple: &PyTuple = match item.downcast() {
             Ok(tuple) => tuple,
             Err(_) => {
                 return Some(Err(ValError::new(
@@ -370,7 +370,7 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
             let name: &PyAny = unsafe { self.attributes.get_item_unchecked(self.index) };
             self.index += 1;
             // from benchmarks this is 14x faster than using the python `startswith` method
-            let name_cow = match name.cast_as::<PyString>() {
+            let name_cow = match name.downcast::<PyString>() {
                 Ok(name) => name.to_string_lossy(),
                 Err(e) => return Some(Err(e.into())),
             };

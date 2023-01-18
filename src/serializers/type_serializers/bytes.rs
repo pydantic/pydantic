@@ -32,7 +32,7 @@ impl TypeSerializer for BytesSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
-        match value.cast_as::<PyBytes>() {
+        match value.downcast::<PyBytes>() {
             Ok(py_bytes) => match extra.mode {
                 SerMode::Json => extra.config.bytes_mode.bytes_to_string(py_bytes).map(|s| s.into_py(py)),
                 _ => Ok(value.into_py(py)),
@@ -45,7 +45,7 @@ impl TypeSerializer for BytesSerializer {
     }
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-        match key.cast_as::<PyBytes>() {
+        match key.downcast::<PyBytes>() {
             Ok(py_bytes) => extra.config.bytes_mode.bytes_to_string(py_bytes),
             Err(_) => {
                 extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
@@ -62,7 +62,7 @@ impl TypeSerializer for BytesSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        match value.cast_as::<PyBytes>() {
+        match value.downcast::<PyBytes>() {
             Ok(py_bytes) => extra.config.bytes_mode.serialize_bytes(py_bytes, serializer),
             Err(_) => {
                 extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);

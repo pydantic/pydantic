@@ -98,7 +98,7 @@ impl PydanticCustomError {
         if let Some(ref context) = self.context {
             for item in context.as_ref(py).items().iter() {
                 let (key, value): (&PyString, &PyAny) = item.extract()?;
-                if let Ok(py_str) = value.cast_as::<PyString>() {
+                if let Ok(py_str) = value.downcast::<PyString>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
                 } else if let Ok(value_int) = value.extract::<i64>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());

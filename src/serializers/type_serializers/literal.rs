@@ -30,7 +30,7 @@ impl BuildSerializer for LiteralBuildSerializer {
             py_err!(r#""expected" should have length > 0"#)
         } else if expected.iter().all(|item| item.extract::<i64>().is_ok()) {
             IntSerializer::build(schema, config, build_context)
-        } else if expected.iter().all(|item| item.cast_as::<PyString>().is_ok()) {
+        } else if expected.iter().all(|item| item.downcast::<PyString>().is_ok()) {
             StrSerializer::build(schema, config, build_context)
         } else {
             AnySerializer::build(schema, config, build_context)

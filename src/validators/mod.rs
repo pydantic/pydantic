@@ -318,7 +318,7 @@ pub fn build_validator<'a>(
     config: Option<&'a PyDict>,
     build_context: &mut BuildContext<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
-    let dict: &PyDict = schema.cast_as()?;
+    let dict: &PyDict = schema.downcast()?;
     let type_: &str = dict.get_as_req(intern!(schema.py(), "type"))?;
     validator_match!(
         type_,

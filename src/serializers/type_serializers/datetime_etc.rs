@@ -50,7 +50,7 @@ macro_rules! build_serializer {
                 extra: &Extra,
             ) -> PyResult<PyObject> {
                 let py = value.py();
-                match value.cast_as::<$cast_as>() {
+                match value.downcast::<$cast_as>() {
                     Ok(py_value) => match extra.mode {
                         SerMode::Json => {
                             let s = $convert_func(py_value)?;
@@ -66,7 +66,7 @@ macro_rules! build_serializer {
             }
 
             fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-                match key.cast_as::<$cast_as>() {
+                match key.downcast::<$cast_as>() {
                     Ok(py_value) => Ok(Cow::Owned($convert_func(py_value)?)),
                     Err(_) => {
                         extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
@@ -83,7 +83,7 @@ macro_rules! build_serializer {
                 exclude: Option<&PyAny>,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
-                match value.cast_as::<$cast_as>() {
+                match value.downcast::<$cast_as>() {
                     Ok(py_value) => {
                         let s = $convert_func(py_value).map_err(py_err_se_err)?;
                         serializer.serialize_str(&s)

@@ -24,7 +24,7 @@ impl BuildSerializer for ChainBuilder {
             .iter()
             .last()
             .unwrap()
-            .cast_as()?;
+            .downcast()?;
         CombinedSerializer::build(last_schema, config, build_context)
     }
 }

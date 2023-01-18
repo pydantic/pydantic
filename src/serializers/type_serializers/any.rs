@@ -85,7 +85,7 @@ pub(crate) fn fallback_to_python_known(
     macro_rules! serialize_seq {
         ($t:ty) => {
             value
-                .cast_as::<$t>()?
+                .downcast::<$t>()?
                 .iter()
                 .map(|v| fallback_to_python(v, include, exclude, extra))
                 .collect::<PyResult<Vec<PyObject>>>()?
@@ -94,7 +94,7 @@ pub(crate) fn fallback_to_python_known(
 
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
-            let py_seq: &$t = value.cast_as()?;
+            let py_seq: &$t = value.downcast()?;
             let mut items = Vec::with_capacity(py_seq.len());
             let filter = AnyFilter::new();
 
@@ -135,10 +135,10 @@ pub(crate) fn fallback_to_python_known(
             ObType::Bytes => extra
                 .config
                 .bytes_mode
-                .bytes_to_string(value.cast_as()?)
+                .bytes_to_string(value.downcast()?)
                 .map(|s| s.into_py(py))?,
             ObType::Bytearray => {
-                let py_byte_array: &PyByteArray = value.cast_as()?;
+                let py_byte_array: &PyByteArray = value.downcast()?;
                 // see https://docs.rs/pyo3/latest/pyo3/types/struct.PyByteArray.html#method.as_bytes
                 // for why this is marked unsafe
                 let bytes = unsafe { py_byte_array.as_bytes() };
@@ -163,24 +163,24 @@ pub(crate) fn fallback_to_python_known(
                 let elements = serialize_seq!(PyFrozenSet);
                 PyList::new(py, elements).into_py(py)
             }
-            ObType::Dict => serialize_dict(value.cast_as()?)?,
+            ObType::Dict => serialize_dict(value.downcast()?)?,
             ObType::Datetime => {
-                let py_dt: &PyDateTime = value.cast_as()?;
+                let py_dt: &PyDateTime = value.downcast()?;
                 let iso_dt = super::datetime_etc::datetime_to_string(py_dt)?;
                 iso_dt.into_py(py)
             }
             ObType::Date => {
-                let py_date: &PyDate = value.cast_as()?;
+                let py_date: &PyDate = value.downcast()?;
                 let iso_date = super::datetime_etc::date_to_string(py_date)?;
                 iso_date.into_py(py)
             }
             ObType::Time => {
-                let py_time: &PyTime = value.cast_as()?;
+                let py_time: &PyTime = value.downcast()?;
                 let iso_time = super::datetime_etc::time_to_string(py_time)?;
                 iso_time.into_py(py)
             }
             ObType::Timedelta => {
-                let py_timedelta: &PyDelta = value.cast_as()?;
+                let py_timedelta: &PyDelta = value.downcast()?;
                 extra.config.timedelta_mode.timedelta_to_json(py_timedelta)?
             }
             ObType::Url => {
@@ -214,7 +214,7 @@ pub(crate) fn fallback_to_python_known(
             }
             ObType::Dict => {
                 // different logic for keys from above
-                let dict: &PyDict = value.cast_as()?;
+                let dict: &PyDict = value.downcast()?;
                 let new_dict = PyDict::new(py);
                 let filter = AnyFilter::new();
 
@@ -303,7 +303,7 @@ pub(crate) fn fallback_serialize_known<S: Serializer>(
 
     macro_rules! serialize_seq {
         ($t:ty) => {{
-            let py_seq: &$t = value.cast_as().map_err(py_err_se_err)?;
+            let py_seq: &$t = value.downcast().map_err(py_err_se_err)?;
             let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
             for element in py_seq {
                 let item_serializer = SerializeInfer::new(element, include, exclude, extra);
@@ -315,7 +315,7 @@ pub(crate) fn fallback_serialize_known<S: Serializer>(
 
     macro_rules! serialize_seq_filter {
         ($t:ty) => {{
-            let py_seq: &$t = value.cast_as().map_err(py_err_se_err)?;
+            let py_seq: &$t = value.downcast().map_err(py_err_se_err)?;
             let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
             let filter = AnyFilter::new();
             for (index, element) in py_seq.iter().enumerate() {
@@ -352,43 +352,43 @@ pub(crate) fn fallback_serialize_known<S: Serializer>(
         ObType::Bool => serialize!(bool),
         ObType::Float => serialize!(f64),
         ObType::Str => {
-            let py_str: &PyString = value.cast_as().map_err(py_err_se_err)?;
+            let py_str: &PyString = value.downcast().map_err(py_err_se_err)?;
             super::string::serialize_py_str(py_str, serializer)
         }
         ObType::Bytes => {
-            let py_bytes: &PyBytes = value.cast_as().map_err(py_err_se_err)?;
+            let py_bytes: &PyBytes = value.downcast().map_err(py_err_se_err)?;
             extra.config.bytes_mode.serialize_bytes(py_bytes, serializer)
         }
         ObType::Bytearray => {
-            let py_byte_array: &PyByteArray = value.cast_as().map_err(py_err_se_err)?;
+            let py_byte_array: &PyByteArray = value.downcast().map_err(py_err_se_err)?;
             let bytes = unsafe { py_byte_array.as_bytes() };
             match from_utf8(bytes) {
                 Ok(s) => serializer.serialize_str(s),
                 Err(e) => Err(py_err_se_err(e)),
             }
         }
-        ObType::Dict => serialize_dict!(value.cast_as::<PyDict>().map_err(py_err_se_err)?),
+        ObType::Dict => serialize_dict!(value.downcast::<PyDict>().map_err(py_err_se_err)?),
         ObType::List => serialize_seq_filter!(PyList),
         ObType::Tuple => serialize_seq_filter!(PyTuple),
         ObType::Set => serialize_seq!(PySet),
         ObType::Frozenset => serialize_seq!(PyFrozenSet),
         ObType::Datetime => {
-            let py_dt: &PyDateTime = value.cast_as().map_err(py_err_se_err)?;
+            let py_dt: &PyDateTime = value.downcast().map_err(py_err_se_err)?;
             let iso_dt = super::datetime_etc::datetime_to_string(py_dt).map_err(py_err_se_err)?;
             serializer.serialize_str(&iso_dt)
         }
         ObType::Date => {
-            let py_date: &PyDate = value.cast_as().map_err(py_err_se_err)?;
+            let py_date: &PyDate = value.downcast().map_err(py_err_se_err)?;
             let iso_date = super::datetime_etc::date_to_string(py_date).map_err(py_err_se_err)?;
             serializer.serialize_str(&iso_date)
         }
         ObType::Time => {
-            let py_time: &PyTime = value.cast_as().map_err(py_err_se_err)?;
+            let py_time: &PyTime = value.downcast().map_err(py_err_se_err)?;
             let iso_time = super::datetime_etc::time_to_string(py_time).map_err(py_err_se_err)?;
             serializer.serialize_str(&iso_time)
         }
         ObType::Timedelta => {
-            let py_timedelta: &PyDelta = value.cast_as().map_err(py_err_se_err)?;
+            let py_timedelta: &PyDelta = value.downcast().map_err(py_err_se_err)?;
             extra
                 .config
                 .timedelta_mode
@@ -428,28 +428,28 @@ pub(crate) fn fallback_json_key<'py>(key: &'py PyAny, extra: &Extra) -> PyResult
             Ok(Cow::Borrowed(v))
         }
         ObType::Str => {
-            let py_str: &PyString = key.cast_as()?;
+            let py_str: &PyString = key.downcast()?;
             Ok(Cow::Borrowed(py_str.to_str()?))
         }
-        ObType::Bytes => extra.config.bytes_mode.bytes_to_string(key.cast_as()?),
+        ObType::Bytes => extra.config.bytes_mode.bytes_to_string(key.downcast()?),
         // perhaps we could do something faster for things like ints and floats?
         ObType::Datetime => {
-            let py_dt: &PyDateTime = key.cast_as()?;
+            let py_dt: &PyDateTime = key.downcast()?;
             let iso_dt = super::datetime_etc::datetime_to_string(py_dt)?;
             Ok(Cow::Owned(iso_dt))
         }
         ObType::Date => {
-            let py_date: &PyDate = key.cast_as()?;
+            let py_date: &PyDate = key.downcast()?;
             let iso_date = super::datetime_etc::date_to_string(py_date)?;
             Ok(Cow::Owned(iso_date))
         }
         ObType::Time => {
-            let py_time: &PyTime = key.cast_as()?;
+            let py_time: &PyTime = key.downcast()?;
             let iso_time = super::datetime_etc::time_to_string(py_time)?;
             Ok(Cow::Owned(iso_time))
         }
         ObType::Timedelta => {
-            let py_timedelta: &PyDelta = key.cast_as()?;
+            let py_timedelta: &PyDelta = key.downcast()?;
             extra.config.timedelta_mode.json_key(py_timedelta)
         }
         ObType::Url => {
