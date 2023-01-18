@@ -1,7 +1,12 @@
 use idna::punycode::decode_to_string;
+use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use url::Url;
+
+use crate::SchemaValidator;
+
+static SCHEMA_DEFINITION_URL: GILOnceCell<SchemaValidator> = GILOnceCell::new();
 
 #[pyclass(name = "Url", module = "pydantic_core._pydantic_core")]
 #[derive(Clone)]
@@ -20,8 +25,22 @@ impl PyUrl {
     }
 }
 
+fn build_schema_validator(py: Python, schema_type: &str) -> SchemaValidator {
+    let schema: &PyDict = PyDict::new(py);
+    schema.set_item("type", schema_type).unwrap();
+    SchemaValidator::py_new(py, schema, None).unwrap()
+}
+
 #[pymethods]
 impl PyUrl {
+    #[new]
+    pub fn py_new(py: Python, url: &PyAny) -> PyResult<Self> {
+        let schema_obj = SCHEMA_DEFINITION_URL
+            .get_or_init(py, || build_schema_validator(py, "url"))
+            .validate_python(py, url, None, None)?;
+        schema_obj.extract(py)
+    }
+
     #[getter]
     pub fn scheme(&self) -> &str {
         self.lib_url.scheme()
@@ -120,8 +139,18 @@ impl PyMultiHostUrl {
     }
 }
 
+static SCHEMA_DEFINITION_MULTI_HOST_URL: GILOnceCell<SchemaValidator> = GILOnceCell::new();
+
 #[pymethods]
 impl PyMultiHostUrl {
+    #[new]
+    pub fn py_new(py: Python, url: &PyAny) -> PyResult<Self> {
+        let schema_obj = SCHEMA_DEFINITION_MULTI_HOST_URL
+            .get_or_init(py, || build_schema_validator(py, "multi-host-url"))
+            .validate_python(py, url, None, None)?;
+        schema_obj.extract(py)
+    }
+
     #[getter]
     pub fn scheme(&self) -> &str {
         self.ref_url.scheme()

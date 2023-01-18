@@ -1,4 +1,5 @@
 import re
+from typing import Optional, Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -10,7 +11,27 @@ from ..conftest import Err, PyAndJson
 
 def test_url_ok(py_and_json: PyAndJson):
     v = py_and_json(core_schema.url_schema())
-    url: Url = v.validate_test('https://example.com/foo/bar?baz=qux#quux')
+    url = v.validate_test('https://example.com/foo/bar?baz=qux#quux')
+
+    assert isinstance(url, Url)
+    assert str(url) == 'https://example.com/foo/bar?baz=qux#quux'
+    assert repr(url) == "Url('https://example.com/foo/bar?baz=qux#quux')"
+    assert url.unicode_string() == 'https://example.com/foo/bar?baz=qux#quux'
+    assert url.scheme == 'https'
+    assert url.host == 'example.com'
+    assert url.unicode_host() == 'example.com'
+    assert url.path == '/foo/bar'
+    assert url.query == 'baz=qux'
+    assert url.query_params() == [('baz', 'qux')]
+    assert url.fragment == 'quux'
+    assert url.username is None
+    assert url.password is None
+    assert url.port == 443
+
+
+def test_url_from_constructor_ok():
+    url = Url('https://example.com/foo/bar?baz=qux#quux')
+
     assert isinstance(url, Url)
     assert str(url) == 'https://example.com/foo/bar?baz=qux#quux'
     assert repr(url) == "Url('https://example.com/foo/bar?baz=qux#quux')"
@@ -32,6 +53,52 @@ def url_validator_fixture():
     return SchemaValidator(core_schema.url_schema())
 
 
+SCHEMA_VALIDATOR_MODE = 'SCHEMA_VALIDATOR'
+URL_CLASS_MODE = 'URI_CLASS'
+MULTI_URL_CLASS_MODE = 'MULTI_URL_CLASS'
+
+
+def url_test_case_helper(
+    url: str, expected: Union[Err, str], validator_mode: str, url_validator: Optional[SchemaValidator] = None
+):
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError) as exc_info:
+            if validator_mode == SCHEMA_VALIDATOR_MODE:
+                url_validator.validate_python(url)
+            elif validator_mode == URL_CLASS_MODE:
+                Url(url)
+            else:  # validator_mode == MULTI_URL_CLASS_MODE:
+                MultiHostUrl(url)
+        assert exc_info.value.error_count() == 1
+        error = exc_info.value.errors()[0]
+        assert error['type'] == 'url_parsing'
+        assert error['ctx']['error'] == expected.message
+    else:
+        if validator_mode == SCHEMA_VALIDATOR_MODE:
+            output_url = url_validator.validate_python(url)
+        elif validator_mode == URL_CLASS_MODE:
+            output_url = Url(url)
+        elif validator_mode == MULTI_URL_CLASS_MODE:
+            output_url = MultiHostUrl(url)
+        else:
+            raise ValueError(f'Unknown validator mode: {validator_mode}')
+        assert isinstance(output_url, (Url, MultiHostUrl))
+        if isinstance(expected, str):
+            assert str(output_url) == expected
+        else:
+            assert isinstance(expected, dict)
+            output_parts = {}
+            for key in expected:
+                if key == 'str()':
+                    output_parts[key] = str(output_url)
+                elif key.endswith('()'):
+                    output_parts[key] = getattr(output_url, key[:-2])()
+                else:
+                    output_parts[key] = getattr(output_url, key)
+            assert output_parts == expected
+
+
+@pytest.mark.parametrize('mode', [SCHEMA_VALIDATOR_MODE, URL_CLASS_MODE])
 @pytest.mark.parametrize(
     'url,expected',
     [
@@ -197,59 +264,8 @@ def url_validator_fixture():
         ),
     ],
 )
-def test_url_cases(url_validator, url, expected):
-    if isinstance(expected, Err):
-        with pytest.raises(ValidationError) as exc_info:
-            url_validator.validate_python(url)
-        assert exc_info.value.error_count() == 1
-        error = exc_info.value.errors()[0]
-        assert error['type'] == 'url_parsing'
-        assert error['ctx']['error'] == expected.message
-    else:
-        output_url = url_validator.validate_python(url)
-        assert isinstance(output_url, (Url, MultiHostUrl))
-        if isinstance(expected, str):
-            assert str(output_url) == expected
-        else:
-            assert isinstance(expected, dict)
-            output_parts = {}
-            for key in expected:
-                if key == 'str()':
-                    output_parts[key] = str(output_url)
-                elif key.endswith('()'):
-                    output_parts[key] = getattr(output_url, key[:-2])()
-                else:
-                    output_parts[key] = getattr(output_url, key)
-            assert output_parts == expected
-
-
-@pytest.mark.parametrize(
-    'validator_kwargs,url,expected',
-    [
-        (
-            dict(default_port=1234, default_path='/baz'),
-            'http://example.org',
-            {'str()': 'http://example.org:1234/baz', 'path': '/baz'},
-        ),
-        (dict(default_port=1234, default_path='/baz'), 'http://example.org/', 'http://example.org:1234/baz'),
-        (dict(default_port=1234, default_path='/baz'), 'http://example.org/bang', 'http://example.org:1234/bang'),
-        (dict(default_port=1234, default_path='/baz'), 'http://example.org:1111', 'http://example.org:1111/baz'),
-        (dict(default_port=1234, default_path='/baz'), 'foobar://example.org', 'foobar://example.org:1234/baz'),
-        (dict(default_host='localhost'), 'redis:///foobar', 'redis://localhost/foobar'),
-        (dict(default_host='localhost'), 'redis://', 'redis://localhost'),
-        (dict(default_host='localhost', default_path='/baz'), 'redis://', 'redis://localhost/baz'),
-        (dict(default_host='localhost'), 'redis://xxx/foobar', 'redis://xxx/foobar'),
-        (dict(host_required=True), 'redis://', Err('empty host')),
-    ],
-)
-@pytest.mark.parametrize('validator_type', ['Url', 'MultiHostUrl'])
-def test_url_defaults(validator_type, validator_kwargs, url, expected):
-    if validator_type == 'Url':
-        schema = core_schema.url_schema(**validator_kwargs)
-    else:
-        schema = core_schema.multi_host_url_schema(**validator_kwargs)
-    s = SchemaValidator(schema)
-    test_url_cases(s, url, expected)
+def test_url_cases(url_validator, url, expected, mode):
+    url_test_case_helper(url, expected, mode, url_validator)
 
 
 @pytest.mark.parametrize(
@@ -265,7 +281,7 @@ def test_url_defaults(validator_type, validator_kwargs, url, expected):
 )
 def test_url_defaults_single_url(validator_kwargs, url, expected):
     s = SchemaValidator(core_schema.url_schema(**validator_kwargs))
-    test_url_cases(s, url, expected)
+    url_test_case_helper(url, expected, SCHEMA_VALIDATOR_MODE, s)
 
 
 @pytest.mark.parametrize(
@@ -288,12 +304,51 @@ def test_url_defaults_single_url(validator_kwargs, url, expected):
                 'hosts()': [{'host': 'localhost', 'password': None, 'port': None, 'username': None}],
             },
         ),
+        (
+            {},
+            'redis://localhost,127.0.0.1',
+            {
+                'str()': 'redis://localhost,127.0.0.1',
+                'hosts()': [
+                    {'host': 'localhost', 'password': None, 'port': None, 'username': None},
+                    {'host': '127.0.0.1', 'password': None, 'port': None, 'username': None},
+                ],
+            },
+        ),
         ({}, 'redis://', {'str()': 'redis://', 'hosts()': []}),
     ],
 )
 def test_url_defaults_multi_host_url(validator_kwargs, url, expected):
     s = SchemaValidator(core_schema.multi_host_url_schema(**validator_kwargs))
-    test_url_cases(s, url, expected)
+    url_test_case_helper(url, expected, SCHEMA_VALIDATOR_MODE, s)
+
+
+@pytest.mark.parametrize(
+    'url,expected',
+    [
+        (
+            'http://example.org:1234/baz',
+            {
+                'str()': 'http://example.org:1234/baz',
+                'hosts()': [{'host': 'example.org', 'password': None, 'port': 1234, 'username': None}],
+                'path': '/baz',
+            },
+        ),
+        (
+            'redis://localhost,127.0.0.1',
+            {
+                'str()': 'redis://localhost,127.0.0.1',
+                'hosts()': [
+                    {'host': 'localhost', 'password': None, 'port': None, 'username': None},
+                    {'host': '127.0.0.1', 'password': None, 'port': None, 'username': None},
+                ],
+            },
+        ),
+        ('redis://', {'str()': 'redis://', 'hosts()': []}),
+    ],
+)
+def test_multi_host_url(url, expected):
+    url_test_case_helper(url, expected, MULTI_URL_CLASS_MODE, None)
 
 
 def test_multi_host_default_host_no_comma():
