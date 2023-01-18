@@ -31,7 +31,7 @@ impl BuildValidator for LiteralBuilder {
             return py_err!(r#""expected" should have length > 0"#);
         } else if expected.len() == 1 {
             let first = expected.get_item(0)?;
-            if let Ok(py_str) = first.cast_as::<PyString>() {
+            if let Ok(py_str) = first.downcast::<PyString>() {
                 return Ok(LiteralSingleStringValidator::new(py_str.to_str()?.to_string()).into());
             } else if let Ok(int) = first.extract::<i64>() {
                 return Ok(LiteralSingleIntValidator::new(int).into());
@@ -268,7 +268,7 @@ impl LiteralGeneralValidator {
             repr_args.push(item.repr()?.extract()?);
             if let Ok(int) = item.extract::<i64>() {
                 expected_int.insert(int);
-            } else if let Ok(py_str) = item.cast_as::<PyString>() {
+            } else if let Ok(py_str) = item.downcast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
             } else {
                 expected_py.append(item)?;

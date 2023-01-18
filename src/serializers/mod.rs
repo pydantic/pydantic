@@ -33,7 +33,7 @@ impl SchemaSerializer {
     pub fn py_new(py: Python, schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let schema = SchemaValidator::validate_schema(py, schema)?;
         let mut build_context = BuildContext::for_schema(schema)?;
-        let serializer = CombinedSerializer::build(schema.cast_as()?, config, &mut build_context)?;
+        let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut build_context)?;
         Ok(Self {
             serializer,
             slots: build_context.into_slots_ser()?,

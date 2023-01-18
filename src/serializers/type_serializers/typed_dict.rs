@@ -76,7 +76,7 @@ impl BuildSerializer for TypedDictSerializer {
 
         for (key, value) in fields_dict.iter() {
             let key: String = key.extract()?;
-            let field_info: &PyDict = value.cast_as()?;
+            let field_info: &PyDict = value.downcast()?;
 
             let schema = field_info.get_as_req(intern!(py, "schema"))?;
 
@@ -141,7 +141,7 @@ impl TypeSerializer for TypedDictSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
-        match value.cast_as::<PyDict>() {
+        match value.downcast::<PyDict>() {
             Ok(py_dict) => {
                 // NOTE! we maintain the order of the input dict assuming that's right
                 let new_dict = PyDict::new(py);
@@ -151,7 +151,7 @@ impl TypeSerializer for TypedDictSerializer {
                         continue;
                     }
                     if let Some((next_include, next_exclude)) = self.filter.key_filter(key, include, exclude)? {
-                        if let Ok(key_py_str) = key.cast_as::<PyString>() {
+                        if let Ok(key_py_str) = key.downcast::<PyString>() {
                             if let Some(field) = self.fields.get(key_py_str.to_str()?) {
                                 if self.exclude_default(value, extra, field)? {
                                     continue;
@@ -185,7 +185,7 @@ impl TypeSerializer for TypedDictSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        match value.cast_as::<PyDict>() {
+        match value.downcast::<PyDict>() {
             Ok(py_dict) => {
                 let expected_len = match self.include_extra {
                     true => py_dict.len(),
@@ -201,7 +201,7 @@ impl TypeSerializer for TypedDictSerializer {
                     if let Some((next_include, next_exclude)) =
                         self.filter.key_filter(key, include, exclude).map_err(py_err_se_err)?
                     {
-                        if let Ok(key_py_str) = key.cast_as::<PyString>() {
+                        if let Ok(key_py_str) = key.downcast::<PyString>() {
                             let key_str = key_py_str.to_str().map_err(py_err_se_err)?;
                             if let Some(field) = self.fields.get(key_str) {
                                 if self.exclude_default(value, extra, field).map_err(py_err_se_err)? {
