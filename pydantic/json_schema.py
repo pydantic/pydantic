@@ -72,26 +72,40 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
     """
 
     declared_type = inner_schema_field['schema']['type']
-    _types = []
+    types = []
+    items = []
 
     # Support for nullables.
     if declared_type == 'nullable':
         t = inner_schema_field['schema']['schema']['type']
-        _types.append(internal_to_json_types(t))
-        _types.append('null')
+        types.append(internal_to_json_types(t))
+        types.append('null')
     else:
-        _types.append(internal_to_json_types(declared_type))
+        types.append(internal_to_json_types(declared_type))
 
-    # If only one type was found, shorten it.
-    _types = _types[0] if len(_types) == 1 else _types
 
-    return {'title': normalize_name(field_name), 'type': _types}
+
+    # Support for typed arrays, which appear in JSON Schema as:
+    #    "items": {"type": "number"}
+    if 'items_schema' in inner_schema_field['schema']:
+        items_schema = inner_schema_field['schema']['items_schema']['type']
+        items_schema = internal_to_json_types(items_schema)
+        items.append(items_schema)
+
+    # Prepare the final dictionary.
+    properties = {'title': normalize_name(field_name)}
+    # If only one type was found, shorten it (not an array).
+    properties['type'] = types[0] if len(types) == 1 else types
+
+    # Include typed array support.
+    if items:
+        properties['items'] = items
+
+    return properties
 
 
 def internal_to_json_schema(inner_schema: Dict[str, Any], fields) -> Dict[str, Any]:
     """Returns a JSON Schema document, compatible with draft 2020-12."""
-
-    # print(inner_schema)
 
     # Sanity check.
     assert inner_schema['type'] == 'typed-dict'
