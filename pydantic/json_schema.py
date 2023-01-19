@@ -7,7 +7,7 @@ TYPE_MAP = {
     # Build-ins.
     # int: 'number',
     # str: 'string',
-    # list: 'array',
+    'list': 'array',
     # bool: 'boolean',
     # float: 'number',
     # None: 'null',
