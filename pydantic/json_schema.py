@@ -97,7 +97,6 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
     # If only one type was found, shorten it (not an array).
     properties['type'] = types[0] if len(types) == 1 else types
 
-    print(inner_schema_field)
     # Include typed array support.
     if items:
         properties['items'] = {'type': items}
