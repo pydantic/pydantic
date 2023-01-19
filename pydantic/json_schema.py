@@ -1,6 +1,5 @@
 import re
-import typing
-from typing import Any, Dict, List, Sequence, Union, Type, Optional
+from typing import Any, Dict, Optional
 
 # from ._generate_schema import generate_config, model_fields_schema
 TYPE_MAP = {
@@ -22,8 +21,8 @@ DEFAULT_JSON_SCHEMA_URI = 'https://json-schema.org/draft/2020-12/schema'
 DEFAULT_JSON_SCHEMA_REF_PREFIX = '#/definitions/'
 DEFAULT_JSON_SCHEMA_REF_TEMPLATE = '#/definitions/{model}'
 
-if typing.TYPE_CHECKING:
-    Model = typing.TypeVar('Model', bound='BaseModel')
+# if typing.TYPE_CHECKING:
+#     Model = typing.TypeVar('Model', bound='BaseModel')
 
 
 def internal_to_json_types(s: str) -> str:
@@ -31,7 +30,8 @@ def internal_to_json_types(s: str) -> str:
 
 
 def generate_schema(
-    models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
+    # models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
+    models,
     *,
     by_alias: bool = True,
     title: Optional[str] = None,
@@ -60,7 +60,7 @@ def generate_schema(
     """
 
     if ref_prefix is None:
-        ref_prefix = DEFAULT_JSON_SCHEMA_PREFIX
+        ref_prefix = DEFAULT_JSON_SCHEMA_REF_PREFIX
 
     # TODO: implement.
     pass
