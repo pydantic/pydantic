@@ -1,20 +1,56 @@
-import re
-from typing import Any, Dict, Optional
+"""Notes / TODO:
 
-# from ._generate_schema import generate_config, model_fields_schema
-TYPE_MAP = {
+- no support for (e.g. "multipleOf" : 10), as of yet, as this doesn't appear to
+    be included in the pydantic-core schema.
+- Support must be added for class Config e.g. schema_extra:
+    class Quintessense(BaseModel):
+        id: int = 123
+
+        class Config:
+            schema_extra = {
+                'example': {
+                    'id': 123
+                }
+            }
+
+
+"""
+import re
+from typing import Any, Dict, Tuple, Optional
+
+# For reference, (type, format) pairs for converting between
+#   Pydantic-Core Schema types to JSON Schema.
+TYPE_MAP: Dict[str, Tuple[str, Optional[str]]] = {
     # Build-ins.
-    # int: 'number',
-    # str: 'string',
-    'list': 'array',
-    # bool: 'boolean',
-    # float: 'number',
-    # None: 'null',
-    'dict': 'object',
-    'new-class': 'object',
-    'datetime': 'date-time',
-    'str': 'string',
-    'int': 'number',
+    'str': ('string', None),
+    'int': ('number', None),
+    'float': ('number', None),
+    'bool': ('boolean', None),
+    'list': ('array', None),
+    'None': ('null', None),
+    'dict': ('object', None),
+    'new-class': ('object', None),
+    'datetime': ('string', 'date-time'),
+    'time': ('string', 'time'),
+    'date': ('string', 'date'),
+    'timedelta': ('number', 'time-delta'),
+    'Decimal': ('number', None),
+    'UUID': ('string', 'uuid'),
+    'Path': ('string', 'path'),
+    'bytes': ('string', 'binary'),
+    # 'Pattern': ('string', 'regex'),
+    # 'IPv4Network': ('string', 'ipv4network'),
+    # 'IPv6Network': ('string', 'ipv6network'),
+    # 'IPv4Interface': ('string', 'ipv4interface'),
+    # 'IPv6Interface': ('string', 'ipv6interface'),
+    # 'IPv4Address': ('string', 'ipv4'),
+    # 'IPv6Address': ('string', 'ipv6'),
+
+    # 'EmailStr': ('string', 'email'),
+    # 'UrlStr': ('string', 'url'),
+    # 'NameEmail': ('string', 'name-email'),
+    # 'PyObject': ('string', 'python-object'),
+    # 'Json': ('string', 'json'),
 }
 
 DEFAULT_JSON_SCHEMA_URI = 'https://json-schema.org/draft/2020-12/schema'
@@ -25,8 +61,21 @@ DEFAULT_JSON_SCHEMA_REF_TEMPLATE = '#/definitions/{model}'
 #     Model = typing.TypeVar('Model', bound='BaseModel')
 
 
+def inernal_to_json(s: str) -> dict:
+    mapping = TYPE_MAP.get(s, s)
+
+    return {
+        'type': mapping[0],
+        'format': mapping[1]
+    }
+
+
 def internal_to_json_types(s: str) -> str:
-    return TYPE_MAP.get(s, s)
+    return TYPE_MAP.get(s, s)[0]
+
+
+def internal_to_json_type_format(s: str) -> str:
+    return TYPE_MAP.get(s, s)[1]
 
 
 def generate_schema(
