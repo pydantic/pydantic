@@ -37,7 +37,7 @@ TYPE_MAP: Dict[str, Tuple[str, Optional[str]]] = {
     'Decimal': ('number', None),
     'UUID': ('string', 'uuid'),
     'Path': ('string', 'path'),
-    'bytes': ('string', 'binary'),
+    # 'bytes': ('string', 'binary'),
     # 'Pattern': ('string', 'regex'),
     # 'IPv4Network': ('string', 'ipv4network'),
     # 'IPv6Network': ('string', 'ipv6network'),
