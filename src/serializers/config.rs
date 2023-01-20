@@ -147,14 +147,10 @@ impl BytesMode {
 }
 
 pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
-    #[cfg(not(PyPy))]
-    return match pyo3::exceptions::PyUnicodeDecodeError::new_utf8(py, data, err) {
+    match pyo3::exceptions::PyUnicodeDecodeError::new_utf8(py, data, err) {
         Ok(decode_err) => PyErr::from_value(decode_err),
         Err(err) => err,
-    };
-    // See https://github.com/PyO3/pyo3/issues/2770
-    #[cfg(PyPy)]
-    pyo3::exceptions::PyValueError::new_err(err.to_string())
+    }
 }
 
 fn py_bytes_to_str(py_bytes: &PyBytes) -> PyResult<&str> {
