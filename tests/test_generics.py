@@ -24,11 +24,10 @@ from pydantic import BaseModel, Field, Json, ValidationError, root_validator, va
 from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_generic_name():
     data_type = TypeVar('data_type')
 
-    class Result(GenericModel, Generic[data_type]):
+    class Result(BaseModel, Generic[data_type]):
         data: data_type
 
     if sys.version_info >= (3, 9):
@@ -37,17 +36,16 @@ def test_generic_name():
     assert Result[int].__name__ == 'Result[int]'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_double_parameterize_error():
     data_type = TypeVar('data_type')
 
-    class Result(GenericModel, Generic[data_type]):
+    class Result(BaseModel, Generic[data_type]):
         data: data_type
 
     with pytest.raises(TypeError) as exc_info:
         Result[int][int]
 
-    assert str(exc_info.value) == 'Cannot parameterize a concrete instantiation of a generic model'
+    assert str(exc_info.value) == "<class 'tests.test_generics.Result[int]'> is not a generic class"
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -85,15 +83,14 @@ def test_value_validation():
     assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'sum too large', 'type': 'value_error'}]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_methods_are_inherited():
-    class CustomGenericModel(GenericModel):
+    class CustomModel(BaseModel):
         def method(self):
             return self.data
 
     T = TypeVar('T')
 
-    class Model(CustomGenericModel, Generic[T]):
+    class Model(CustomModel, Generic[T]):
         data: T
 
     instance = Model[int](data=1)
@@ -213,7 +210,6 @@ def test_subclass_can_be_genericized():
     Result[T]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parameter_count():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1310,3 +1306,22 @@ def test_parse_generic_json():
         'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
         'required': ['payload_field'],
     }
+
+
+def test_typevar_cycle_recursion_depth_error_message():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(BaseModel, Generic[T, S]):
+        x: T
+        y: S
+
+    with pytest.raises(TypeError) as exc_info:
+        A[S, T]
+
+    assert str(exc_info.value) == (
+        'The maximum recursion depth was exceeded while generating the schema for a TypeVar. '
+        'This likely indicates a cycle in the TypeVar substitutions map (self.typevars_map={~T: ~S, ~S: ~T}). '
+        'This may be resolved by using the TypeVars in the same order as the original parameterization, '
+        'or by using entirely new ones.'
+    )

@@ -30,12 +30,13 @@ def model_fields_schema(
     validator_functions: ValidationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
+    typevars_map: dict[Any, type[Any]] | None = None,
 ) -> core_schema.CoreSchema:
     """
     Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
     since this is typed_dict schema which is used to create the model.
     """
-    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
+    schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {k: schema_generator.generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
         ref=ref,
@@ -63,11 +64,17 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
 
 
 class GenerateSchema:
-    __slots__ = 'arbitrary_types', 'types_namespace'
+    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map'
 
-    def __init__(self, arbitrary_types: bool, types_namespace: dict[str, Any] | None):
+    def __init__(
+        self,
+        arbitrary_types: bool,
+        types_namespace: dict[str, Any] | None,
+        typevars_map: dict[Any, type[Any]] | None,
+    ):
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
+        self.typevars_map = typevars_map
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """
@@ -117,6 +124,26 @@ class GenerateSchema:
             if issubclass(obj, dict):
                 return self._dict_subclass_schema(obj)
             # probably need to take care of other subclasses here
+        elif isinstance(obj, typing.TypeVar):
+            # TODO: Add a check for recursion depth exception and an explanatory re-raise
+            #   Idea: you shouldn't create a cycle of typevar substitutions. I don't think this is ever sensible.
+            if self.typevars_map is not None and obj in self.typevars_map:
+                mapped = self.typevars_map[obj]
+                if mapped is not obj:
+                    try:
+                        return self.generate_schema(mapped)
+                    except RecursionError as exc:
+                        raise TypeError(
+                            f'The maximum recursion depth was exceeded while generating the schema for a TypeVar. '
+                            f'This likely indicates a cycle in the TypeVar substitutions map ({self.typevars_map=}). '
+                            'This may be resolved by using the TypeVars in the same order as the original '
+                            'parameterization, or by using entirely new ones.'
+                        ) from exc
+            if obj.__bound__:
+                return self.generate_schema(obj.__bound__)
+            if obj.__constraints__:
+                return self._union_schema(typing.Union[obj.__constraints__])
+            return core_schema.AnySchema(type='any')
 
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:

@@ -123,6 +123,7 @@ def complete_model_class(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[Any, type[Any]] | None = None,
 ) -> bool:
     """
     Collect bound validator functions, build the model validation schema and set the model signature.
@@ -135,7 +136,7 @@ def complete_model_class(
     validator_functions.set_bound_functions(cls)
 
     try:
-        inner_schema, fields = build_inner_schema(cls, name, validator_functions, bases, types_namespace)
+        inner_schema, fields = build_inner_schema(cls, name, validator_functions, bases, types_namespace, typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -171,6 +172,7 @@ def build_inner_schema(  # noqa: C901
     validator_functions: ValidationFunctions,
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[Any, type[Any]] | None = None,
 ) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
     module_name = getattr(cls, '__module__', None)
     global_ns: dict[str, Any] | None = None
@@ -241,7 +243,7 @@ def build_inner_schema(  # noqa: C901
             delattr(cls, ann_name)
 
     schema = model_fields_schema(
-        model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed, local_ns
+        model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed, local_ns, typevars_map
     )
     return schema, fields
 

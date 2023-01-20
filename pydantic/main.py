@@ -19,6 +19,7 @@ from ._internal._fields import Undefined
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
+from .generics_utils import create_generic_submodel, is_generic_model
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .schema import default_ref_template, model_schema
 
@@ -41,6 +42,10 @@ _object_setattr = _model_construction.object_setattr
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _base_class_defined = False
+
+_generic_types_cache: _utils.LimitedDict[
+    typing.Tuple[type[Any], Any, typing.Tuple[Any, ...]], type[BaseModel]
+] = _utils.LimitedDict()
 
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
@@ -462,7 +467,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def model_rebuild(
-        cls, *, force: bool = False, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None
+        cls,
+        *,
+        force: bool = False,
+        raise_errors: bool = True,
+        types_namespace: typing.Dict[str, Any] | None = None,
+        typevars_map: dict[Any, type[Any]] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -483,6 +493,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 cls.__bases__,
                 raise_errors=raise_errors,
                 types_namespace=types_namespace,
+                typevars_map=typevars_map,
             )
 
     def __iter__(self) -> 'TupleGenerator':
@@ -591,6 +602,51 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
+
+    def __class_getitem__(cls, item: typing.Union[type[Any], typing.Tuple[type[Any], ...]]) -> type[Any]:
+        def _cache_key(_params: Any) -> typing.Tuple[type[Any], Any, typing.Tuple[Any, ...]]:
+            return cls, _params, typing_extensions.get_args(_params)
+
+        cached = _generic_types_cache.get(_cache_key(item))
+        if cached is not None:
+            return cached
+
+        if not isinstance(item, tuple):
+            item = (item,)
+
+        if not is_generic_model(cls):
+            raise TypeError('Cannot parameterize a non-generic BaseModel subclass')
+
+        generic_alias = super().__class_getitem__(item)  # type: ignore[misc]
+
+        model_name = cls.__concrete_name__(item)
+        submodel = create_generic_submodel(model_name, cls)
+
+        typevars_map = dict(zip(submodel.__parameters__, item))
+        submodel.model_rebuild(force=True, typevars_map=typevars_map)
+        submodel.__parameters__ = generic_alias.__parameters__
+
+        _generic_types_cache[_cache_key(item)] = submodel
+        if len(item) == 1:
+            _generic_types_cache[_cache_key(item[0])] = submodel
+
+        return submodel
+
+    @classmethod
+    def __concrete_name__(cls: type[Any], params: typing.Tuple[type[Any], ...]) -> str:
+        """Compute class name for child classes.
+
+        :param params: Tuple of types the class . Given a generic class
+            `Model` with 2 type variables and a concrete model `Model[str, int]`,
+            the value `(str, int)` would be passed to `params`.
+        :return: String representing a the new class where `params` are
+            passed to `cls` as type variables.
+
+        This method can be overridden to achieve a custom naming scheme for GenericModels.
+        """
+        param_names = [_repr.display_as_type(param) for param in params]
+        params_component = ', '.join(param_names)
+        return f'{cls.__name__}[{params_component}]'
 
 
 _base_class_defined = True
