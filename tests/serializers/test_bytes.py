@@ -1,6 +1,5 @@
 import base64
 import json
-import platform
 from enum import Enum
 
 import pytest
@@ -30,16 +29,8 @@ def test_bytes_invalid_all():
         s.to_json(b'\x81')
 
 
-@pytest.mark.skipif(platform.python_implementation() != 'PyPy', reason='see PyO3/pyo3#2770')
-def test_bytes_invalid_pypy():
-    s = SchemaSerializer(core_schema.bytes_schema())
-
-    with pytest.raises(ValueError, match='invalid utf-8 sequence of 1 bytes from index 0'):
-        s.to_python(b'\x81', mode='json')
-
-
-@pytest.mark.skipif(platform.python_implementation() != 'CPython', reason='see PyO3/pyo3#2770')
 def test_bytes_invalid_cpython():
+    # PyO3/pyo3#2770 is now fixed
     s = SchemaSerializer(core_schema.bytes_schema())
 
     with pytest.raises(UnicodeDecodeError, match="'utf-8' codec can't decode byte 0x81 in position 0: invalid utf-8"):
