@@ -45,7 +45,7 @@ jobs:
         name: cache rust
         uses: Swatinem/rust-cache@v2
         with:
-          key: v3
+          key: v5
 
       - run: cargo install rustfilt coverage-prepare
         if: steps.cache-rust.outputs.cache-hit != 'true'
@@ -59,11 +59,11 @@ jobs:
 
       - id: cache-py
         name: cache python
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
           key: >
-            py
+            py-v2
             ${{ runner.os }}
             ${{ env.pythonLocation }}
             ${{ hashFiles('tests/requirements.txt') }}
@@ -131,7 +131,7 @@ jobs:
 
       - id: cache-py
         name: cache python
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
           key: >
@@ -176,7 +176,7 @@ jobs:
         with:
           node-version: '18'
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         id: cache-py
         name: cache python
         with:
@@ -410,8 +410,95 @@ jobs:
          ls dist/*cp310-manylinux*x86_64.whl | head -n 1
          python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
+  test-builds-arch:
+    name: test build on ${{ matrix.target }}-${{ matrix.distro }}
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64, armv7, s390x]
+        distro: ['ubuntu22.04']
+        include:
+          - target: aarch64
+            distro: alpine_latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+      - uses: uraimo/run-on-arch-action@v2.5.0
+        if: matrix.distro == 'ubuntu22.04'
+        name: Install & test on Ubuntu
+        with:
+          arch: ${{ matrix.target }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update
+            apt-get install -y --no-install-recommends python3 python3-pip
+          run: |
+            rm -r pydantic_core
+            pip install -U pip typing-extensions
+            pip install -r tests/requirements.txt
+            pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            pytest
+
+      - uses: uraimo/run-on-arch-action@v2.5.0
+        if: matrix.distro == 'alpine_latest'
+        name: Install & test on Alpine
+        with:
+          arch: ${{ matrix.target }}
+          distro: ${{ matrix.distro }}
+          githubToken: ${{ github.token }}
+          install: |
+            apk update
+            apk add python3 py3-pip
+          run: |
+            rm -r pydantic_core
+            pip install -U pip typing-extensions
+            pip install -r tests/requirements.txt
+            pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            pytest
+
+  test-builds-os:
+    name: test build on ${{ matrix.os }}
+    needs: [build]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: get dist artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
+      - run: rm -r pydantic_core
+      - run: pip install -U pip typing-extensions
+      - run: pip install -r tests/requirements.txt
+      - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+      - run: pytest
+
   release:
-    needs: [build, check]
+    needs: [test-builds-arch, test-builds-os, check]
     if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 

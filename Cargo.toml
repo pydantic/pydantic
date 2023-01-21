@@ -52,7 +52,7 @@ crate-type = ["cdylib", "rlib"]
 extension-module = ["pyo3/extension-module"]
 # required for cargo bench
 auto-initialize = ["pyo3/auto-initialize"]
-default = ["mimalloc", "extension-module"]
+default = ["mimalloc", "extension-module", "mimalloc/local_dynamic_tls"]
 
 [package.metadata.maturin]
 name = "pydantic_core._pydantic_core"
