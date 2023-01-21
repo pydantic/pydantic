@@ -90,6 +90,7 @@ def test_write_docstrings_to_test_file_raises_value_error():
         write_docstrings_to_test_file(DocstringTestBadIndent, f)
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Windows does not support NamedTemporaryFile')
 def test_docstrings():
     with NamedTemporaryFile('w', suffix='.py') as f:
         write_docstrings_to_test_file(pydantic_core.core_schema, f)
