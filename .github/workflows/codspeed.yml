@@ -34,6 +34,9 @@ jobs:
       - run: pip install -r tests/requirements.txt
         if: steps.cache-py.outputs.cache-hit != 'true'
 
+      - run: pip install pytest-codspeed~=1.2.0
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
       - run: rm rust-toolchain
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
