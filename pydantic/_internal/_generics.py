@@ -1,7 +1,11 @@
+from __future__ import annotations as _annotations
+
 import sys
 import typing
 from types import prepare_class, resolve_bases
 from typing import Any
+
+from typing_extensions import TypeGuard
 
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 Parametrization = typing.Mapping[TypeVarType, type[Any]]
@@ -10,10 +14,20 @@ if typing.TYPE_CHECKING:
     from pydantic import BaseModel
 
     class GenericBaseModel(BaseModel):
-        __parameters__: typing.ClassVar[typing.Tuple[TypeVarType, ...]]
+        __parameters__: typing.ClassVar[tuple[TypeVarType, ...]]
 
 
-def create_generic_submodel(model_name: str, base: type['GenericBaseModel']) -> type['GenericBaseModel']:
+def create_generic_submodel(model_name: str, base: type[GenericBaseModel]) -> type[GenericBaseModel]:
+    """
+    Dynamically create a submodel of a provided (generic) BaseModel.
+
+    This is used when producing concrete parametrizations of generic models. This function
+    only *creates* the new subclass; the schema/validators/serialization must be updated to
+    reflect a concrete parametrization elsewhere.
+
+    :param model_name: name of the newly created model
+    :param base: base class for the new model to inherit from
+    """
     namespace: dict[str, Any] = {'__module__': base.__module__}
     bases = (base,)
     resolved_bases = resolve_bases(bases)
@@ -36,11 +50,9 @@ def create_generic_submodel(model_name: str, base: type['GenericBaseModel']) -> 
     return created_model
 
 
-def _get_caller_frame_info(depth: int = 2) -> typing.Tuple[typing.Optional[str], bool]:
+def _get_caller_frame_info(depth: int = 2) -> tuple[typing.Optional[str], bool]:
     """
     Used inside a function to check whether it was called globally
-
-    Will only work against non-compiled code, therefore used only in pydantic.generics
 
     :returns Tuple[module_name, called_globally]
     """
@@ -54,5 +66,13 @@ def _get_caller_frame_info(depth: int = 2) -> typing.Tuple[typing.Optional[str],
     return frame_globals.get('__name__'), previous_caller_frame.f_locals is frame_globals
 
 
-def is_generic_model(x: type['BaseModel']) -> typing.TypeGuard[type['GenericBaseModel']]:
+def is_generic_model(x: type[BaseModel]) -> TypeGuard[type[GenericBaseModel]]:
+    """
+    This TypeGuard serves as a workaround for shortcomings in the ability to check at runtime
+    if a (model) class is generic (i.e., inherits from typing.Generic), and also have mypy recognize
+    the implications related to attributes.
+
+    TODO: Need to make sure that, on all supported versions of python, this check works properly and implies
+        that the `__parameters__` attribute exists with the expected contents.
+    """
     return issubclass(x, typing.Generic)  # type: ignore[arg-type]

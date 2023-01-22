@@ -125,8 +125,6 @@ class GenerateSchema:
                 return self._dict_subclass_schema(obj)
             # probably need to take care of other subclasses here
         elif isinstance(obj, typing.TypeVar):
-            # TODO: Add a check for recursion depth exception and an explanatory re-raise
-            #   Idea: you shouldn't create a cycle of typevar substitutions. I don't think this is ever sensible.
             if self.typevars_map is not None and obj in self.typevars_map:
                 mapped = self.typevars_map[obj]
                 if mapped is not obj:
@@ -139,11 +137,12 @@ class GenerateSchema:
                             'This may be resolved by using the TypeVars in the same order as the original '
                             'parameterization, or by using entirely new ones.'
                         ) from exc
-            if obj.__bound__:
+            elif obj.__bound__:
                 return self.generate_schema(obj.__bound__)
-            if obj.__constraints__:
+            elif obj.__constraints__:
                 return self._union_schema(typing.Union[obj.__constraints__])
-            return core_schema.AnySchema(type='any')
+            else:
+                return core_schema.AnySchema(type='any')
 
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:

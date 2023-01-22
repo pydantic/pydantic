@@ -14,12 +14,11 @@ from typing import Any
 
 import typing_extensions
 
-from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
+from ._internal import _generics, _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from ._internal._fields import Undefined
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
-from .generics_utils import create_generic_submodel, is_generic_model
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .schema import default_ref_template, model_schema
 
@@ -43,9 +42,7 @@ _object_setattr = _model_construction.object_setattr
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _base_class_defined = False
 
-_generic_types_cache: _utils.LimitedDict[
-    typing.Tuple[type[Any], Any, typing.Tuple[Any, ...]], type[BaseModel]
-] = _utils.LimitedDict()
+_generic_types_cache: _utils.LimitedDict[tuple[type[Any], Any, tuple[Any, ...]], type[BaseModel]] = _utils.LimitedDict()
 
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
@@ -603,47 +600,50 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
 
-    def __class_getitem__(cls, item: typing.Union[type[Any], typing.Tuple[type[Any], ...]]) -> type[Any]:
-        def _cache_key(_params: Any) -> typing.Tuple[type[Any], Any, typing.Tuple[Any, ...]]:
+    def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[Any]:
+        def _cache_key(_params: Any) -> tuple[type[Any], Any, tuple[Any, ...]]:
             return cls, _params, typing_extensions.get_args(_params)
 
-        cached = _generic_types_cache.get(_cache_key(item))
+        cached = _generic_types_cache.get(_cache_key(typevar_values))
         if cached is not None:
             return cached
 
-        if not isinstance(item, tuple):
-            item = (item,)
-
-        if not is_generic_model(cls):
+        if not _generics.is_generic_model(cls):
             raise TypeError('Cannot parameterize a non-generic BaseModel subclass')
 
-        generic_alias = super().__class_getitem__(item)  # type: ignore[misc]
+        if not isinstance(typevar_values, tuple):
+            typevar_values = (typevar_values,)
 
-        model_name = cls.__concrete_name__(item)
-        submodel = create_generic_submodel(model_name, cls)
+        generic_alias = super().__class_getitem__(typevar_values)  # type: ignore[misc]
 
-        typevars_map = dict(zip(submodel.__parameters__, item))
+        model_name = cls.model_concrete_name(typevar_values)
+        submodel = _generics.create_generic_submodel(model_name, cls)
+
+        typevars_map = dict(zip(submodel.__parameters__, typevar_values))
         submodel.model_rebuild(force=True, typevars_map=typevars_map)
         submodel.__parameters__ = generic_alias.__parameters__
 
-        _generic_types_cache[_cache_key(item)] = submodel
-        if len(item) == 1:
-            _generic_types_cache[_cache_key(item[0])] = submodel
+        _generic_types_cache[_cache_key(typevar_values)] = submodel
+        if len(typevar_values) == 1:
+            _generic_types_cache[_cache_key(typevar_values[0])] = submodel
 
         return submodel
 
     @classmethod
-    def __concrete_name__(cls: type[Any], params: typing.Tuple[type[Any], ...]) -> str:
+    def model_concrete_name(cls, params: tuple[type[Any], ...]) -> str:
         """Compute class name for child classes.
 
-        :param params: Tuple of types the class . Given a generic class
+        :param params: Tuple of types of the class . Given a generic class
             `Model` with 2 type variables and a concrete model `Model[str, int]`,
             the value `(str, int)` would be passed to `params`.
-        :return: String representing a the new class where `params` are
+        :return: String representing the new class where `params` are
             passed to `cls` as type variables.
 
-        This method can be overridden to achieve a custom naming scheme for GenericModels.
+        This method can be overridden to achieve a custom naming scheme for generic BaseModels.
         """
+        if not _generics.is_generic_model(cls):
+            raise TypeError('Concrete names should only be generated for generic models.')
+
         param_names = [_repr.display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
