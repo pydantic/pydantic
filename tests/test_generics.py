@@ -7,6 +7,7 @@ from typing import (
     ClassVar,
     Dict,
     Generic,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -21,7 +22,8 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
-from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
+from pydantic.generics import GenericModel, iter_contained_typevars, replace_types
+from pydantic.main import _generic_types_cache
 
 
 def test_generic_name():
@@ -239,6 +241,32 @@ def test_cover_cache():
     assert len(_generic_types_cache) == cache_size + 2
     Model[int]  # uses the cache
     assert len(_generic_types_cache) == cache_size + 2
+
+
+def test_cache_keys_are_hashable():
+    cache_size = len(_generic_types_cache)
+    T = TypeVar('T')
+    C = Callable[[str, Dict[str, Any]], Iterable[str]]
+
+    class MyGenericModel(BaseModel, Generic[T]):
+        t: T
+
+    # Callable's first params get converted to a list, which is not hashable.
+    # Make sure we can handle that special case
+    Simple = MyGenericModel[Callable[[int], str]]
+    assert len(_generic_types_cache) == cache_size + 2
+    # Nested Callables
+    MyGenericModel[Callable[[C], Iterable[str]]]
+    assert len(_generic_types_cache) == cache_size + 4
+    MyGenericModel[Callable[[Simple], Iterable[int]]]
+    assert len(_generic_types_cache) == cache_size + 6
+    MyGenericModel[Callable[[MyGenericModel[C]], Iterable[int]]]
+    assert len(_generic_types_cache) == cache_size + 10
+
+    class Model(BaseModel):
+        x: MyGenericModel[Callable[[C], Iterable[str]]] = Field(...)
+
+    assert len(_generic_types_cache) == cache_size + 10
 
 
 @pytest.mark.xfail(reason='working on V2')
