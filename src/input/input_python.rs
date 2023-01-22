@@ -350,9 +350,9 @@ impl<'a> Input<'a> for PyAny {
                 Ok(self.into())
             } else if let Ok((obj, kwargs)) = self.extract::<(&PyAny, &PyDict)>() {
                 if from_attributes_applicable(obj) {
-                    return Ok(GenericMapping::PyGetAttr(obj, Some(kwargs)));
+                    Ok(GenericMapping::PyGetAttr(obj, Some(kwargs)))
                 } else {
-                    return Err(ValError::new(ErrorType::DictAttributesType, self));
+                    Err(ValError::new(ErrorType::DictAttributesType, self))
                 }
             } else {
                 // note the error here gives a hint about from_attributes
