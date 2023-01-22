@@ -1,11 +1,10 @@
+use ahash::AHashSet;
 use std::cell::RefCell;
 use std::fmt::Debug;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{intern, AsPyPointer};
-
-use nohash_hasher::IntSet;
 
 use crate::build_tools::py_err;
 
@@ -198,7 +197,7 @@ impl CollectWarnings {
 #[derive(Default, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct RecursionInfo {
-    ids: IntSet<usize>,
+    ids: AHashSet<usize>,
     /// as with `src/recursion_guard.rs` this is used as a backup in case the identity check recursion guard fails
     /// see #143
     depth: u16,

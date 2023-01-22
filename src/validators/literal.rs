@@ -1,11 +1,8 @@
-use std::hash::BuildHasherDefault;
-
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashSet;
-use nohash_hasher::IntSet;
 
 use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValResult};
@@ -195,14 +192,14 @@ impl Validator for LiteralMultipleStringsValidator {
 
 #[derive(Debug, Clone)]
 pub struct LiteralMultipleIntsValidator {
-    expected: IntSet<i64>,
+    expected: AHashSet<i64>,
     expected_repr: String,
     name: String,
 }
 
 impl LiteralMultipleIntsValidator {
     fn new(expected_list: &PyList) -> Option<Self> {
-        let mut expected: IntSet<i64> = IntSet::with_hasher(BuildHasherDefault::default());
+        let mut expected: AHashSet<i64> = AHashSet::with_capacity(expected_list.len());
         let mut repr_args = Vec::new();
         for item in expected_list.iter() {
             if let Ok(int) = item.extract() {

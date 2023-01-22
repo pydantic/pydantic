@@ -1,18 +1,17 @@
-use std::hash::{BuildHasher, BuildHasherDefault, Hash};
+use ahash::AHashSet;
+use std::hash::Hash;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString};
 
-use nohash_hasher::{IntSet, NoHashHasher};
-
 use crate::build_tools::SchemaDict;
 
 #[derive(Debug, Clone, Default)]
 pub(super) struct SchemaFilter<T> {
-    include: Option<IntSet<T>>,
-    exclude: Option<IntSet<T>>,
+    include: Option<AHashSet<T>>,
+    exclude: Option<AHashSet<T>>,
 }
 
 impl SchemaFilter<usize> {
@@ -28,15 +27,14 @@ impl SchemaFilter<usize> {
         }
     }
 
-    fn build_set_ints(v: Option<&PyAny>) -> PyResult<Option<IntSet<usize>>> {
+    fn build_set_ints(v: Option<&PyAny>) -> PyResult<Option<AHashSet<usize>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
                     Ok(None)
                 } else {
                     let py_set: &PySet = value.downcast()?;
-                    let mut set: IntSet<usize> =
-                        IntSet::with_capacity_and_hasher(py_set.len(), BuildHasherDefault::default());
+                    let mut set: AHashSet<usize> = AHashSet::with_capacity(py_set.len());
 
                     for item in py_set {
                         set.insert(item.extract()?);
@@ -69,7 +67,7 @@ impl SchemaFilter<isize> {
         let exclude = if exclude.is_empty() {
             None
         } else {
-            let mut set: IntSet<isize> = IntSet::with_capacity_and_hasher(exclude.len(), BuildHasherDefault::default());
+            let mut set: AHashSet<isize> = AHashSet::with_capacity(exclude.len());
             for item in exclude {
                 set.insert(item.as_ref(py).hash()?);
             }
@@ -78,15 +76,14 @@ impl SchemaFilter<isize> {
         Ok(Self { include: None, exclude })
     }
 
-    fn build_set_hashes(v: Option<&PyAny>) -> PyResult<Option<IntSet<isize>>> {
+    fn build_set_hashes(v: Option<&PyAny>) -> PyResult<Option<AHashSet<isize>>> {
         match v {
             Some(value) => {
                 if value.is_none() {
                     Ok(None)
                 } else {
                     let py_set: &PySet = value.downcast()?;
-                    let mut set: IntSet<isize> =
-                        IntSet::with_capacity_and_hasher(py_set.len(), BuildHasherDefault::default());
+                    let mut set: AHashSet<isize> = AHashSet::with_capacity(py_set.len());
 
                     for item in py_set {
                         set.insert(item.hash()?);
@@ -190,7 +187,6 @@ trait FilterLogic<T: Eq + Copy> {
 impl<T> FilterLogic<T> for SchemaFilter<T>
 where
     T: Hash + Eq + Copy,
-    BuildHasherDefault<NoHashHasher<T>>: BuildHasher,
 {
     fn explicit_include(&self, value: T) -> bool {
         match self.include {
