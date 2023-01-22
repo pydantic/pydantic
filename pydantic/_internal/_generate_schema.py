@@ -133,9 +133,9 @@ class GenerateSchema:
                     except RecursionError as exc:
                         raise TypeError(
                             f'The maximum recursion depth was exceeded while generating the schema for a TypeVar. '
-                            f'This likely indicates a cycle in the TypeVar substitutions map ({self.typevars_map=}). '
-                            'This may be resolved by using the TypeVars in the same order as the original '
-                            'parameterization, or by using entirely new ones.'
+                            f'This likely indicates a cycle in the TypeVar substitutions map '
+                            f'(self.typevars_map={self.typevars_map}). This may be resolved by using the TypeVars in '
+                            'the same order as the original parameterization, or by using entirely new ones.'
                         ) from exc
             elif obj.__bound__:
                 return self.generate_schema(obj.__bound__)
