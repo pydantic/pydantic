@@ -8,6 +8,9 @@ on:
       - '**'
   pull_request: {}
 
+env:
+  COLUMNS: 120
+
 jobs:
   test-cpython:
     name: test ${{ matrix.python-version }} rust ${{ matrix.rust-toolchain }}
@@ -152,6 +155,38 @@ jobs:
 
       - run: pytest
 
+  test-os:
+    name: test on ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-v1
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - run: pip install -r tests/requirements.txt
+
+      - run: pip install -e .
+        env:
+          RUST_BACKTRACE: 1
+
+      - run: pip freeze
+
+      - run: pytest
+
   lint:
     runs-on: ubuntu-latest
 
@@ -202,7 +237,7 @@ jobs:
       - run: npm run lint
 
   bench:
-    # run the rust benchmarks
+    name: rust benchmarks
     runs-on: ubuntu-latest
 
     steps:
@@ -271,7 +306,7 @@ jobs:
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
     if: always()
-    needs: [test-cpython, test-pypy, lint, bench, build-wasm-emscripten]
+    needs: [test-cpython, test-pypy, test-os, lint, bench, build-wasm-emscripten]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
@@ -374,7 +409,7 @@ jobs:
 
       - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
-      - run: twine check dist/*
+      - run: twine check --strict dist/*
 
       - uses: actions/upload-artifact@v3
         with:
@@ -521,7 +556,7 @@ jobs:
           name: pypi_files
           path: dist
 
-      - run: twine check dist/*
+      - run: twine check --strict dist/*
 
       - name: upload to pypi
         run: twine upload dist/*
