@@ -73,7 +73,7 @@ impl Validator for DictValidator {
             GenericMapping::PyMapping(mapping) => {
                 self.validate_mapping(py, input, mapping, extra, slots, recursion_guard)
             }
-            GenericMapping::PyGetAttr(_) => unreachable!(),
+            GenericMapping::PyGetAttr(_, _) => unreachable!(),
             GenericMapping::JsonObject(json_object) => {
                 self.validate_json_object(py, input, json_object, extra, slots, recursion_guard)
             }

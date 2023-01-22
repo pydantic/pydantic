@@ -292,10 +292,10 @@ impl Validator for TaggedUnionValidator {
         match self.discriminator {
             Discriminator::LookupKey(ref lookup_key) => {
                 macro_rules! find_validator {
-                    ($dict:ident, $get_method:ident) => {{
+                    ($get_method:ident, $($dict:ident),+) => {{
                         // note all these methods return PyResult<Option<(data, data)>>, the outer Err is just for
                         // errors when getting attributes which should be "raised"
-                        match lookup_key.$get_method($dict)? {
+                        match lookup_key.$get_method($( $dict ),+)? {
                             Some((_, value)) => {
                                 if self.strict {
                                     value.strict_str()
@@ -309,10 +309,10 @@ impl Validator for TaggedUnionValidator {
                 }
                 let dict = input.validate_typed_dict(self.strict, self.from_attributes)?;
                 let tag = match dict {
-                    GenericMapping::PyDict(dict) => find_validator!(dict, py_get_dict_item),
-                    GenericMapping::PyGetAttr(obj) => find_validator!(obj, py_get_attr),
-                    GenericMapping::PyMapping(mapping) => find_validator!(mapping, py_get_mapping_item),
-                    GenericMapping::JsonObject(mapping) => find_validator!(mapping, json_get),
+                    GenericMapping::PyDict(dict) => find_validator!(py_get_dict_item, dict),
+                    GenericMapping::PyGetAttr(obj, kwargs) => find_validator!(py_get_attr, obj, kwargs),
+                    GenericMapping::PyMapping(mapping) => find_validator!(py_get_mapping_item, mapping),
+                    GenericMapping::JsonObject(mapping) => find_validator!(json_get, mapping),
                 }?;
                 self.find_call_validator(py, tag.as_cow()?, input, extra, slots, recursion_guard)
             }

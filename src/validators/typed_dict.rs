@@ -191,9 +191,9 @@ impl Validator for TypedDictValidator {
         };
 
         macro_rules! process {
-            ($dict:ident, $get_method:ident, $iter:ty) => {{
+            ($dict:ident, $get_method:ident, $iter:ty $(,$kwargs:ident)?) => {{
                 for field in &self.fields {
-                    let op_key_value = match field.lookup_key.$get_method($dict) {
+                    let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
                         Ok(v) => v,
                         Err(err) => {
                             errors.push(ValLineError::new_with_loc(
@@ -303,8 +303,8 @@ impl Validator for TypedDictValidator {
         }
         match dict {
             GenericMapping::PyDict(d) => process!(d, py_get_dict_item, DictGenericIterator),
+            GenericMapping::PyGetAttr(d, kwargs) => process!(d, py_get_attr, AttributesGenericIterator, kwargs),
             GenericMapping::PyMapping(d) => process!(d, py_get_mapping_item, MappingGenericIterator),
-            GenericMapping::PyGetAttr(d) => process!(d, py_get_attr, AttributesGenericIterator),
             GenericMapping::JsonObject(d) => process!(d, json_get, JsonObjectGenericIterator),
         }
 
