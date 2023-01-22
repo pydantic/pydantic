@@ -33,10 +33,10 @@ pub enum GenericCollection<'a> {
 }
 
 macro_rules! derive_from {
-    ($enum:ident, $key:ident, $type:ty) => {
+    ($enum:ident, $key:ident, $type:ty $(, $extra_types:ident )*) => {
         impl<'a> From<&'a $type> for $enum<'a> {
             fn from(s: &'a $type) -> $enum<'a> {
-                Self::$key(s)
+                Self::$key(s $(, $extra_types )*)
             }
         }
     };
@@ -243,13 +243,13 @@ impl<'a> GenericCollection<'a> {
 pub enum GenericMapping<'a> {
     PyDict(&'a PyDict),
     PyMapping(&'a PyMapping),
-    PyGetAttr(&'a PyAny),
+    PyGetAttr(&'a PyAny, Option<&'a PyDict>),
     JsonObject(&'a JsonObject),
 }
 
 derive_from!(GenericMapping, PyDict, PyDict);
 derive_from!(GenericMapping, PyMapping, PyMapping);
-derive_from!(GenericMapping, PyGetAttr, PyAny);
+derive_from!(GenericMapping, PyGetAttr, PyAny, None);
 derive_from!(GenericMapping, JsonObject, JsonObject);
 
 pub struct DictGenericIterator<'py> {
