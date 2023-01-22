@@ -156,7 +156,17 @@ impl LookupKey {
         }
     }
 
-    pub fn py_get_attr<'data, 's>(&'s self, obj: &'data PyAny) -> PyResult<Option<(&'s str, &'data PyAny)>> {
+    pub fn py_get_attr<'data, 's>(
+        &'s self,
+        obj: &'data PyAny,
+        kwargs: Option<&'data PyDict>,
+    ) -> PyResult<Option<(&'s str, &'data PyAny)>> {
+        if let Some(dict) = kwargs {
+            if let Ok(Some(item)) = self.py_get_dict_item(dict) {
+                return Ok(Some(item));
+            }
+        }
+
         match self {
             LookupKey::Simple(key, py_key) => match py_get_attrs(obj, py_key)? {
                 Some(value) => Ok(Some((key, value))),
