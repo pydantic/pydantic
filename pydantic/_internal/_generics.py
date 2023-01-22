@@ -8,7 +8,6 @@ from typing import Any
 from typing_extensions import TypeGuard
 
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
-Parametrization = typing.Mapping[TypeVarType, type[Any]]
 
 if typing.TYPE_CHECKING:
     from pydantic import BaseModel
