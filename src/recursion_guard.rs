@@ -1,12 +1,10 @@
-use std::hash::BuildHasherDefault;
-
-use nohash_hasher::IntSet;
+use ahash::AHashSet;
 
 /// This is used to avoid cyclic references in input data causing recursive validation and a nasty segmentation fault.
 /// It's used in `validators/recursive.rs` to detect when a reference is reused within itself.
 #[derive(Debug, Clone, Default)]
 pub struct RecursionGuard {
-    ids: Option<IntSet<usize>>,
+    ids: Option<AHashSet<usize>>,
     // see validators/recursive.rs::BACKUP_GUARD_LIMIT for details
     // depth could be a hashmap {validator_id => depth} but for simplicity and performance it's easier to just
     // use one number for all validators
@@ -21,7 +19,7 @@ impl RecursionGuard {
             // "If the set did not have this value present, `true` is returned."
             Some(ref mut set) => !set.insert(id),
             None => {
-                let mut set: IntSet<usize> = IntSet::with_capacity_and_hasher(10, BuildHasherDefault::default());
+                let mut set: AHashSet<usize> = AHashSet::with_capacity(10);
                 set.insert(id);
                 self.ids = Some(set);
                 false
