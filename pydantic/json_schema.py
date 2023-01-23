@@ -29,7 +29,7 @@ TYPE_MAP: Dict[str, Tuple[str, Optional[str]]] = {
     'list': ('array', None),
     'None': ('null', None),
     'dict': ('object', None),
-    'new-class': ('object', None),
+    'model': ('object', None),
     'datetime': ('string', 'date-time'),
     'time': ('string', 'time'),
     'date': ('string', 'date'),
