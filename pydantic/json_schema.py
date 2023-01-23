@@ -99,8 +99,21 @@ def generate_schema(
       the models and sub-models passed in ``models``.
     """
 
+    definitions = {}
+    for model in models:
+        definitions.update(get_model_definitions(model, by_alias=by_alias, ref_prefix=ref_prefix, ref_template=ref_template))
 
-def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]):
+    schema = {
+        '$schema': DEFAULT_JSON_SCHEMA_URI,
+        'definitions': definitions,
+    }
+    if title:
+        schema['title'] = title
+    if description:
+        schema['description'] = description
+    return schema
+
+def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any], *, ref_prefix: str = DEFAULT_JSON_SCHEMA_REF_PREFIX,  ref_template: str = DEFAULT_JSON_SCHEMA_REF_TEMPLATE):
     """
     Returns a dict, used to construct JSON Schema for a given field's properties.
     """
@@ -108,6 +121,8 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
     declared_type = inner_schema_field['schema']['type']
     types = []
     items = []
+
+    is_reference = False
 
     # Support for nullables.
     if declared_type == 'nullable':
@@ -117,6 +132,11 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
     else:
         types.append(internal_to_json_types(declared_type))
 
+    # Support for new classes.
+    if declared_type == 'new-class':
+        declared_type = 'object'
+        is_reference = True
+
     # Support for typed arrays, which appear in JSON Schema as:
     #    "items": {"type": "number"}
     if 'items_schema' in inner_schema_field['schema']:
@@ -124,21 +144,32 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
         items_schema = internal_to_json_types(items_schema)
         items.append(items_schema)
 
-    # Prepare the final dictionary.
-    properties = {'title': normalize_name(field_name)}
-    # If only one type was found, shorten it (not an array).
-    properties['type'] = types[0] if len(types) == 1 else types
 
-    # Include typed array support.
-    if items:
-        properties['items'] = {'type': items}
+    # Support for references.
+    if is_reference:
+        # Add the reference.
+        ref = ref_template.format(model=normalize_name(field_name))
+        if ref_prefix:
+            ref = ref_prefix + ref
+        properties = {'$ref': ref}
+
+    else:
+        # Prepare the final dictionary.
+        properties = {'title': normalize_name(field_name)}
+
+        # If only one type was found, shorten it (not an array).
+        properties['type'] = types[0] if len(types) == 1 else types
+
+        # Include typed array support.
+        if items:
+            properties['items'] = {'type': items}
 
     return properties
 
 
 
 # ref_template='foobar/{model}.json'
-def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=DEFAULT_JSON_SCHEMA_REF_PREFIX, expand_refs=False, ref_template=DEFAULT_JSON_SCHEMA_REF_TEMPLATE) -> Dict[str, Any]:
+def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=DEFAULT_JSON_SCHEMA_REF_PREFIX,  ref_template=DEFAULT_JSON_SCHEMA_REF_TEMPLATE) -> Dict[str, Any]:
     """Returns a JSON Schema document, compatible with draft 2020-12."""
 
     # Sanity check.
@@ -186,10 +217,8 @@ def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=
 
             json_schema_defines[class_name] = class_ref
 
-
-            json_schema_defines[class_name] = get_schema_property_json(
-            field_name=class_name, inner_schema_field=inner_schema_field
-        )
+            ref = ref_prefix + ref_template.format(model=class_name)
+            json_schema_defines[class_name] = ref
 
     # if json_schema_defines:
     json_schema_doc['definitions'] = json_schema_defines
