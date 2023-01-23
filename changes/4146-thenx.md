@@ -1,1 +1,1 @@
-Fix X | Y union syntax breaks GenericModel (#4146)
+Fix `X | Y` union syntax breaking `GenericModel`
