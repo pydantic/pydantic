@@ -23,10 +23,8 @@ mod validators;
 // required for benchmarks
 pub use self::url::{PyMultiHostUrl, PyUrl};
 pub use build_tools::SchemaError;
-pub use errors::{
-    list_all_errors, PydanticCustomError, PydanticKnownError, PydanticOmit, PydanticSerializationError, ValidationError,
-};
-pub use serializers::SchemaSerializer;
+pub use errors::{list_all_errors, PydanticCustomError, PydanticKnownError, PydanticOmit, ValidationError};
+pub use serializers::{PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer};
 pub use validators::SchemaValidator;
 
 pub fn get_version() -> String {
@@ -50,6 +48,7 @@ fn _pydantic_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PydanticKnownError>()?;
     m.add_class::<PydanticOmit>()?;
     m.add_class::<PydanticSerializationError>()?;
+    m.add_class::<PydanticSerializationUnexpectedValue>()?;
     m.add_class::<PyUrl>()?;
     m.add_class::<PyMultiHostUrl>()?;
     m.add_class::<SchemaSerializer>()?;

@@ -7,13 +7,16 @@ use crate::build_context::BuildContext;
 use crate::SchemaValidator;
 
 use config::SerializationConfig;
-use extra::{Extra, SerMode};
+pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
+use extra::{CollectWarnings, Extra, SerMode, SerRecursionGuard};
 pub use shared::CombinedSerializer;
 use shared::{to_json_bytes, BuildSerializer, TypeSerializer};
 
 mod config;
+mod errors;
 mod extra;
 mod filter;
+mod infer;
 mod ob_type;
 mod shared;
 mod type_serializers;
@@ -55,21 +58,26 @@ impl SchemaSerializer {
         exclude_defaults: Option<bool>,
         exclude_none: Option<bool>,
         round_trip: Option<bool>,
+        warnings: Option<bool>,
     ) -> PyResult<PyObject> {
         let mode: SerMode = mode.into();
+        let warnings = CollectWarnings::new(warnings);
+        let rec_guard = SerRecursionGuard::default();
         let extra = Extra::new(
             py,
             &mode,
             &self.slots,
             by_alias,
+            &warnings,
             exclude_unset,
             exclude_defaults,
             exclude_none,
             round_trip,
             &self.config,
+            &rec_guard,
         );
         let v = self.serializer.to_python(value, include, exclude, &extra)?;
-        extra.warnings.final_check(py)?;
+        warnings.final_check(py)?;
         Ok(v)
     }
 
@@ -86,18 +94,22 @@ impl SchemaSerializer {
         exclude_defaults: Option<bool>,
         exclude_none: Option<bool>,
         round_trip: Option<bool>,
+        warnings: Option<bool>,
     ) -> PyResult<PyObject> {
-        let mode = SerMode::Json;
+        let warnings = CollectWarnings::new(warnings);
+        let rec_guard = SerRecursionGuard::default();
         let extra = Extra::new(
             py,
-            &mode,
+            &SerMode::Json,
             &self.slots,
             by_alias,
+            &warnings,
             exclude_unset,
             exclude_defaults,
             exclude_none,
             round_trip,
             &self.config,
+            &rec_guard,
         );
         let bytes = to_json_bytes(
             value,
@@ -109,7 +121,7 @@ impl SchemaSerializer {
             self.json_size,
         )?;
 
-        extra.warnings.final_check(py)?;
+        warnings.final_check(py)?;
 
         self.json_size = bytes.len();
         let py_bytes = PyBytes::new(py, &bytes);

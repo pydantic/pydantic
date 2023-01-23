@@ -31,8 +31,8 @@ def test_dict_key_json():
     assert s.to_python(v) == v
     assert s.to_python(v, round_trip=True) == {'[1,2]': 3, '[4,5]': 9}
 
-    assert s.to_python(v, mode='json') == {'(1, 2)': 3, '(4, 5)': 9}
+    assert s.to_python(v, mode='json') == {'1,2': 3, '4,5': 9}
     assert s.to_python(v, mode='json', round_trip=True) == {'[1,2]': 3, '[4,5]': 9}
 
-    assert s.to_json(v) == b'{"(1, 2)":3,"(4, 5)":9}'
+    assert s.to_json(v) == b'{"1,2":3,"4,5":9}'
     assert s.to_json(v, round_trip=True) == b'{"[1,2]":3,"[4,5]":9}'

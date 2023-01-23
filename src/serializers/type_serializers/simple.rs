@@ -1,11 +1,15 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use std::borrow::Cow;
 
 use serde::Serialize;
 
-use super::any::{fallback_serialize, fallback_to_python};
-use super::{BuildSerializer, CombinedSerializer, Extra, IsType, ObType, SerMode, TypeSerializer};
 use crate::build_context::BuildContext;
+
+use super::{
+    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra,
+    IsType, ObType, SerMode, TypeSerializer,
+};
 
 #[derive(Debug, Clone)]
 pub struct NoneSerializer;
@@ -35,8 +39,18 @@ impl TypeSerializer for NoneSerializer {
             IsType::Exact => Ok(py.None().into_py(py)),
             // I don't think subclasses of None can exist
             _ => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, extra)
+            }
+        }
+    }
+
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        match extra.ob_type_lookup.is_type(key, ObType::None) {
+            IsType::Exact => infer_json_key_known(&ObType::None, key, extra),
+            _ => {
+                extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                infer_json_key(key, extra)
             }
         }
     }
@@ -52,10 +66,14 @@ impl TypeSerializer for NoneSerializer {
         match extra.ob_type_lookup.is_type(value, ObType::None) {
             IsType::Exact => serializer.serialize_none(),
             _ => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
 
@@ -92,11 +110,21 @@ macro_rules! build_simple_serializer {
                             let rust_value = value.extract::<$rust_type>()?;
                             Ok(rust_value.to_object(py))
                         }
-                        _ => fallback_to_python(value, include, exclude, extra),
+                        _ => infer_to_python(value, include, exclude, extra),
                     },
                     IsType::False => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_to_python(value, include, exclude, extra)
+                        extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        infer_to_python(value, include, exclude, extra)
+                    }
+                }
+            }
+
+            fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+                match extra.ob_type_lookup.is_type(key, $ob_type) {
+                    IsType::Exact | IsType::Subclass => infer_json_key_known(&$ob_type, key, extra),
+                    IsType::False => {
+                        extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                        infer_json_key(key, extra)
                     }
                 }
             }
@@ -112,10 +140,16 @@ macro_rules! build_simple_serializer {
                 match value.extract::<$rust_type>() {
                     Ok(v) => v.serialize(serializer),
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_serialize(value, serializer, include, exclude, extra)
+                        extra
+                            .warnings
+                            .on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        infer_serialize(value, serializer, include, exclude, extra)
                     }
                 }
+            }
+
+            fn get_name(&self) -> &str {
+                Self::EXPECTED_TYPE
             }
         }
     };

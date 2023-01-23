@@ -10,8 +10,11 @@ use serde::ser::Error;
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
-use super::any::{fallback_json_key, AnySerializer};
-use super::{py_err_se_err, to_json_bytes, utf8_py_error, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
+use super::any::AnySerializer;
+use super::{
+    infer_json_key, py_err_se_err, to_json_bytes, utf8_py_error, BuildSerializer, CombinedSerializer, Extra,
+    TypeSerializer,
+};
 
 #[derive(Debug, Clone)]
 pub struct JsonSerializer {
@@ -64,7 +67,7 @@ impl TypeSerializer for JsonSerializer {
             let s = from_utf8(&bytes).map_err(|e| utf8_py_error(py, e, &bytes))?;
             Ok(Cow::Owned(s.to_string()))
         } else {
-            fallback_json_key(key, extra)
+            infer_json_key(key, extra)
         }
     }
 
@@ -87,5 +90,9 @@ impl TypeSerializer for JsonSerializer {
             self.serializer
                 .serde_serialize(value, serializer, include, exclude, extra)
         }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }

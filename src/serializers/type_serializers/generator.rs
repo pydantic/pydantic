@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator};
@@ -7,10 +9,10 @@ use serde::ser::SerializeSeq;
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
-use super::any::{fallback_serialize, fallback_to_python, AnySerializer};
+use super::any::AnySerializer;
 use super::{
-    py_err_se_err, BuildSerializer, CombinedSerializer, Extra, ExtraOwned, PydanticSerializer, SchemaFilter, SerMode,
-    TypeSerializer,
+    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra, ExtraOwned,
+    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
 };
 
 #[derive(Debug, Clone)]
@@ -83,10 +85,14 @@ impl TypeSerializer for GeneratorSerializer {
                 }
             }
             Err(_) => {
-                extra.warnings.fallback_filtering(Self::EXPECTED_TYPE, value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, extra)
             }
         }
+    }
+
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -121,10 +127,14 @@ impl TypeSerializer for GeneratorSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.fallback_filtering(Self::EXPECTED_TYPE, value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
 
@@ -161,6 +171,7 @@ impl SerializationIterator {
             if let Some((next_include, next_exclude)) = filter {
                 let v = self
                     .item_serializer
+                    // TODO do we need error_on_fallback to be customizable?
                     .to_python(element, next_include, next_exclude, &extra)?;
                 extra.warnings.final_check(py)?;
                 return Ok(Some(v));

@@ -2,6 +2,8 @@ import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
+from ..conftest import plain_repr
+
 
 @pytest.mark.parametrize(
     'input_value,expected_value',
@@ -230,6 +232,18 @@ def test_no_choices():
         'union -> choices\n'
         "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]"
     )
+
+
+def test_empty_choices():
+    msg = r'Error building "union" validator:\s+SchemaError: One or more union choices required'
+    with pytest.raises(SchemaError, match=msg):
+        SchemaValidator({'type': 'union', 'choices': []})
+
+
+def test_one_choice():
+    v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}]})
+    assert plain_repr(v) == 'SchemaValidator(name="str",validator=Str(StrValidator{strict:false}),slots=[])'
+    assert v.validate_python('hello') == 'hello'
 
 
 def test_strict_union():

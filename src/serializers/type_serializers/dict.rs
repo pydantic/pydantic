@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -7,10 +9,10 @@ use serde::ser::SerializeMap;
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
-use super::any::{fallback_serialize, fallback_to_python, AnySerializer};
+use super::any::AnySerializer;
 use super::{
-    py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer, SchemaFilter, SerMode,
-    TypeSerializer,
+    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer,
+    SchemaFilter, SerMode, TypeSerializer,
 };
 
 #[derive(Debug, Clone)]
@@ -19,6 +21,7 @@ pub struct DictSerializer {
     value_serializer: Box<CombinedSerializer>,
     // isize because we look up include exclude via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
+    name: String,
 }
 
 impl BuildSerializer for DictSerializer {
@@ -46,10 +49,17 @@ impl BuildSerializer for DictSerializer {
             }
             None => SchemaFilter::default(),
         };
+        let name = format!(
+            "{}[{}, {}]",
+            Self::EXPECTED_TYPE,
+            key_serializer.get_name(),
+            value_serializer.get_name()
+        );
         Ok(Self {
             key_serializer: Box::new(key_serializer),
             value_serializer: Box::new(value_serializer),
             filter,
+            name,
         }
         .into())
     }
@@ -83,10 +93,14 @@ impl TypeSerializer for DictSerializer {
                 Ok(new_dict.into_py(py))
             }
             Err(_) => {
-                extra.warnings.fallback_filtering(Self::EXPECTED_TYPE, value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, extra)
             }
         }
+    }
+
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -115,9 +129,13 @@ impl TypeSerializer for DictSerializer {
                 map.end()
             }
             Err(_) => {
-                extra.warnings.fallback_filtering(Self::EXPECTED_TYPE, value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }

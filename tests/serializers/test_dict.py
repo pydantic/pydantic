@@ -22,8 +22,8 @@ def test_dict_any_any():
     assert v.to_json({'a': 1, b'b': 2, 33: 3, True: 4}) == b'{"a":1,"b":2,"33":3,"true":4}'
 
     assert v.to_python({(1, 2): 3}) == {(1, 2): 3}
-    assert v.to_python({(1, 2): 3}, mode='json') == {'(1, 2)': 3}
-    assert v.to_json({(1, 2): 3}) == b'{"(1, 2)":3}'
+    assert v.to_python({(1, 2): 3}, mode='json') == {'1,2': 3}
+    assert v.to_json({(1, 2): 3}) == b'{"1,2":3}'
 
 
 def test_include():

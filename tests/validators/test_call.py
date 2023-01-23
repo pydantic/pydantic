@@ -104,7 +104,8 @@ def test_in_union():
                         'type': 'arguments',
                         'arguments_schema': [{'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}}],
                     },
-                }
+                },
+                {'type': 'int'},
             ],
         }
     )
@@ -117,7 +118,8 @@ def test_in_union():
             'loc': ('call[my_function]', 'arguments', 1),
             'msg': 'Unexpected positional argument',
             'input': 2,
-        }
+        },
+        {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': (1, 2)},
     ]
 
 

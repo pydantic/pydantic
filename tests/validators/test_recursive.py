@@ -567,6 +567,7 @@ def test_union_cycle(strict: bool):
                     'type': 'typed-dict',
                 }
             ],
+            'auto_collapse': False,
             'strict': strict,
             'ref': 'root-schema',
             'type': 'union',
@@ -645,6 +646,7 @@ def test_function_change_id(strict: bool):
                     'schema': {'schema_ref': 'root-schema', 'type': 'recursive-ref'},
                 }
             ],
+            'auto_collapse': False,
             'strict': strict,
             'ref': 'root-schema',
             'type': 'union',

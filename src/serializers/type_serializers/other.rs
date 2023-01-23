@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 use crate::build_context::BuildContext;
-use crate::build_tools::SchemaDict;
+use crate::build_tools::{py_err, SchemaDict};
 use crate::serializers::shared::CombinedSerializer;
 
 use super::any::AnySerializer;
@@ -56,7 +56,7 @@ impl BuildSerializer for FunctionBuilder {
 pub struct CustomErrorBuilder;
 
 impl BuildSerializer for CustomErrorBuilder {
-    const EXPECTED_TYPE: &'static str = "custom_error";
+    const EXPECTED_TYPE: &'static str = "custom-error";
 
     fn build(
         schema: &PyDict,
@@ -67,3 +67,71 @@ impl BuildSerializer for CustomErrorBuilder {
         CombinedSerializer::build(sub_schema, config, build_context)
     }
 }
+
+pub struct CallBuilder;
+
+impl BuildSerializer for CallBuilder {
+    const EXPECTED_TYPE: &'static str = "call";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        let return_schema = schema.get_as::<&PyDict>(intern!(schema.py(), "return_schema"))?;
+        match return_schema {
+            Some(return_schema) => CombinedSerializer::build(return_schema, config, build_context),
+            None => AnySerializer::build(schema, config, build_context),
+        }
+    }
+}
+
+pub struct LaxOrStrictBuilder;
+
+impl BuildSerializer for LaxOrStrictBuilder {
+    const EXPECTED_TYPE: &'static str = "lax-or-strict";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        let lax_schema: &PyDict = schema.get_as_req(intern!(schema.py(), "lax_schema"))?;
+        CombinedSerializer::build(lax_schema, config, build_context)
+    }
+}
+
+pub struct ArgumentsBuilder;
+
+impl BuildSerializer for ArgumentsBuilder {
+    const EXPECTED_TYPE: &'static str = "arguments";
+
+    fn build(
+        _schema: &PyDict,
+        _config: Option<&PyDict>,
+        _build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        py_err!("`arguments` validators require a custom serializer")
+    }
+}
+
+macro_rules! any_build_serializer {
+    ($struct_name:ident, $expected_type:literal) => {
+        pub struct $struct_name;
+
+        impl BuildSerializer for $struct_name {
+            const EXPECTED_TYPE: &'static str = $expected_type;
+
+            fn build(
+                schema: &PyDict,
+                config: Option<&PyDict>,
+                build_context: &mut BuildContext<CombinedSerializer>,
+            ) -> PyResult<CombinedSerializer> {
+                AnySerializer::build(schema, config, build_context)
+            }
+        }
+    };
+}
+any_build_serializer!(IsInstanceBuilder, "is-instance");
+any_build_serializer!(IsSubclassBuilder, "is-subclass");
+any_build_serializer!(CallableBuilder, "callable");

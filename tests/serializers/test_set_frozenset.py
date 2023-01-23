@@ -26,10 +26,10 @@ def test_frozenset_any():
 @pytest.mark.parametrize(
     'input_value,json_output,warning_type',
     [
-        ('apple', 'apple', '`set` but got `str`'),
-        ([1, 2, 3], [1, 2, 3], '`set` but got `list`'),
-        ((1, 2, 3), [1, 2, 3], '`set` but got `tuple`'),
-        (frozenset([1, 2, 3]), IsList(1, 2, 3, check_order=False), '`set` but got `frozenset`'),
+        ('apple', 'apple', r'`set\[int\]` but got `str`'),
+        ([1, 2, 3], [1, 2, 3], r'`set\[int\]` but got `list`'),
+        ((1, 2, 3), [1, 2, 3], r'`set\[int\]` but got `tuple`'),
+        (frozenset([1, 2, 3]), IsList(1, 2, 3, check_order=False), r'`set\[int\]` but got `frozenset`'),
         ({1, 2, 'a'}, IsList(1, 2, 'a', check_order=False), '`int` but got `str`'),
     ],
 )
@@ -37,11 +37,11 @@ def test_set_fallback(input_value, json_output, warning_type):
     v = SchemaSerializer(core_schema.set_schema(core_schema.int_schema()))
     assert v.to_python({1, 2, 3}) == {1, 2, 3}
 
-    with pytest.warns(UserWarning, match=f'Expected {warning_type} - slight slowdown possible'):
+    with pytest.warns(UserWarning, match=f'Expected {warning_type} - serialized value may not be as expected'):
         assert v.to_python(input_value) == input_value
 
-    with pytest.warns(UserWarning, match=f'Expected {warning_type} - slight slowdown possible'):
+    with pytest.warns(UserWarning, match=f'Expected {warning_type} - serialized value may not be as expected'):
         assert v.to_python(input_value, mode='json') == json_output
 
-    with pytest.warns(UserWarning, match=f'Expected {warning_type} - slight slowdown possible'):
+    with pytest.warns(UserWarning, match=f'Expected {warning_type} - serialized value may not be as expected'):
         assert json.loads(v.to_json(input_value)) == json_output

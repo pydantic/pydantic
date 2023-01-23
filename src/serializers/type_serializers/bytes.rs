@@ -5,8 +5,10 @@ use pyo3::types::{PyBytes, PyDict};
 
 use crate::build_context::BuildContext;
 
-use super::any::{fallback_json_key, fallback_serialize, fallback_to_python};
-use super::{BuildSerializer, CombinedSerializer, Extra, SerMode, TypeSerializer};
+use super::{
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
+    TypeSerializer,
+};
 
 #[derive(Debug, Clone)]
 pub struct BytesSerializer;
@@ -38,8 +40,8 @@ impl TypeSerializer for BytesSerializer {
                 _ => Ok(value.into_py(py)),
             },
             Err(_) => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, extra)
             }
         }
     }
@@ -48,8 +50,8 @@ impl TypeSerializer for BytesSerializer {
         match key.downcast::<PyBytes>() {
             Ok(py_bytes) => extra.config.bytes_mode.bytes_to_string(py_bytes),
             Err(_) => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
-                fallback_json_key(key, extra)
+                extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                infer_json_key(key, extra)
             }
         }
     }
@@ -65,9 +67,13 @@ impl TypeSerializer for BytesSerializer {
         match value.downcast::<PyBytes>() {
             Ok(py_bytes) => extra.config.bytes_mode.serialize_bytes(py_bytes, serializer),
             Err(_) => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }

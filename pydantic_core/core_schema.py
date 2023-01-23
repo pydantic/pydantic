@@ -88,13 +88,37 @@ class FunctionSerSchema(TypedDict, total=False):
     return_type: ExpectedSerializationTypes
 
 
+def function_ser_schema(
+    function: SerializeFunction, return_type: ExpectedSerializationTypes | None = None
+) -> FunctionSerSchema:
+    """
+    Returns a schema for serialization with a function.
+
+    Args:
+        function: The function to use for serialization
+        return_type: The type that the function returns
+    """
+    return dict_not_none(type='function', function=function, return_type=return_type)
+
+
 class FormatSerSchema(TypedDict, total=False):
     type: Required[Literal['format']]
     formatting_string: Required[str]
 
 
+def format_ser_schema(formatting_string: str) -> FormatSerSchema:
+    """
+    Returns a schema for serialization using python's `format` method.
+
+    Args:
+        formatting_string: String defining the format to use
+    """
+    return FormatSerSchema(type='format', formatting_string=formatting_string)
+
+
 class NewClassSerSchema(TypedDict, total=False):
     type: Required[Literal['new-class']]
+    cls: Required[Type[Any]]
     schema: Required[CoreSchema]
 
 
@@ -1544,6 +1568,8 @@ def nullable_schema(
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
     choices: Required[List[CoreSchema]]
+    # default true, whether to automatically collapse unions with one element to the inner validator
+    auto_collapse: bool
     custom_error_type: str
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
@@ -1555,6 +1581,7 @@ class UnionSchema(TypedDict, total=False):
 
 def union_schema(
     *choices: CoreSchema,
+    auto_collapse: bool | None = None,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
     custom_error_context: dict[str, str | int] | None = None,
@@ -1576,6 +1603,7 @@ def union_schema(
 
     Args:
         *choices: The schemas to match
+        auto_collapse: whether to automatically collapse unions with one element to the inner validator, default true
         custom_error_type: The custom error type to use if the validation fails
         custom_error_message: The custom error message to use if the validation fails
         custom_error_context: The custom error context to use if the validation fails
@@ -1587,6 +1615,7 @@ def union_schema(
     return dict_not_none(
         type='union',
         choices=choices,
+        auto_collapse=auto_collapse,
         custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
@@ -2048,7 +2077,7 @@ def call_schema(
     serialization: SerSchema | None = None,
 ) -> CallSchema:
     """
-    Returns a schema that matches an arguments schema, e.g.:
+    Returns a schema that matches an arguments schema, then calls a function, e.g.:
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
@@ -2108,7 +2137,7 @@ def recursive_reference_schema(schema_ref: str) -> RecursiveReferenceSchema:
 
 
 class CustomErrorSchema(TypedDict, total=False):
-    type: Required[Literal['custom_error']]
+    type: Required[Literal['custom-error']]
     schema: Required[CoreSchema]
     custom_error_type: Required[str]
     custom_error_message: str
@@ -2150,7 +2179,7 @@ def custom_error_schema(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='custom_error',
+        type='custom-error',
         schema=schema,
         custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
