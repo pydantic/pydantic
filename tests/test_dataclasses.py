@@ -1611,6 +1611,17 @@ def test_proxy_dataclass_2():
     assert m1.c == m2.c == 3.0
 
 
+def test_can_copy_wrapped_dataclass_type():
+    @pydantic.dataclasses.dataclass
+    @dataclasses.dataclass
+    class A:
+        name: int
+
+    B = copy.copy(A)
+    assert B is not A
+    assert B(1) == A(1)
+
+
 def test_can_deepcopy_wrapped_dataclass_type():
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
@@ -1618,4 +1629,5 @@ def test_can_deepcopy_wrapped_dataclass_type():
         name: int
 
     B = copy.deepcopy(A)
+    assert B is not A
     assert B(1) == A(1)
