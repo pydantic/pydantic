@@ -56,27 +56,17 @@ TYPE_MAP: Dict[str, Tuple[str, Optional[str]]] = {
 
 DEFAULT_JSON_SCHEMA_URI = 'https://json-schema.org/draft/2020-12/schema'
 DEFAULT_JSON_SCHEMA_REF_PREFIX = '#/definitions/'
-DEFAULT_JSON_SCHEMA_REF_TEMPLATE = '#/definitions/{model}'
+DEFAULT_JSON_SCHEMA_REF_TEMPLATE = '{model}'
 
 # if typing.TYPE_CHECKING:
 #     Model = typing.TypeVar('Model', bound='BaseModel')
 
-
-def inernal_to_json(s: str) -> dict:
-    mapping = TYPE_MAP.get(s, s)
-
-    return {
-        'type': mapping[0],
-        'format': mapping[1]
-    }
-
-
 def internal_to_json_types(s: str) -> str:
-    return TYPE_MAP.get(s, s)[0]
+    return TYPE_MAP.get(s, [s])[0]
 
 
 def internal_to_json_type_format(s: str) -> str:
-    return TYPE_MAP.get(s, s)[1]
+    return TYPE_MAP.get(s, [s])[1]
 
 
 def generate_schema(
@@ -94,9 +84,9 @@ def generate_schema(
     top-level JSON key, including their sub-models.
 
     :param models: a list of models to include in the generated JSON Schema
-    :param by_alias: generate the schemas using the aliases defined, if any
-    :param title: title for the generated schema that includes the definitions
-    :param description: description for the generated schema
+    # :param by_alias: generate the schemas using the aliases defined, if any
+    # :param title: title for the generated schema that includes the definitions
+    # :param description: description for the generated schema
     :param ref_prefix: the JSON Pointer prefix for schema references with ``$ref``, if None, will be set to the
       default of ``#/definitions/``. Update it if you want the schemas to reference the definitions somewhere
       else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
@@ -108,12 +98,6 @@ def generate_schema(
     :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
       the models and sub-models passed in ``models``.
     """
-
-    if ref_prefix is None:
-        ref_prefix = DEFAULT_JSON_SCHEMA_REF_PREFIX
-
-    # TODO: implement.
-    pass
 
 
 def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]):
@@ -152,23 +136,33 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
     return properties
 
 
-def internal_to_json_schema(inner_schema: Dict[str, Any], fields) -> Dict[str, Any]:
+
+# ref_template='foobar/{model}.json'
+def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=DEFAULT_JSON_SCHEMA_REF_PREFIX, expand_refs=False, ref_template=DEFAULT_JSON_SCHEMA_REF_TEMPLATE) -> Dict[str, Any]:
     """Returns a JSON Schema document, compatible with draft 2020-12."""
 
     # Sanity check.
     assert inner_schema['type'] == 'typed-dict'
 
+    model_name = normalize_name(inner_schema['ref'].split('.')[-1])
+
+    # Set the reference prefix.
+    schema = DEFAULT_JSON_SCHEMA_URI
+    ref = ref_prefix + ref_template.format(model=model_name)
+
     # Start the JSON Schema document.
     json_schema_doc = {
-        '$schema': DEFAULT_JSON_SCHEMA_URI,
-        # "$id"
-        'title': normalize_name(inner_schema['ref'].split('.')[-1]),
+        '$schema': schema,
+        "$ref": ref,
+        'title': model_name,
         'type': 'object',
         'properties': {},
         'required': [],
+        'definitions': dict(),
     }
+    json_schema_defines = {}
 
-    # Update the properites.
+    # Iterate over the fields and add them to the JSON Schema document.
     for i, field_name in enumerate(inner_schema['fields']):
 
         # Get a reference to the fields from inner schema,
@@ -185,6 +179,22 @@ def internal_to_json_schema(inner_schema: Dict[str, Any], fields) -> Dict[str, A
         if field.is_required():
             json_schema_doc['required'].append(normalize_name(field_name))
 
+        # If the field is a reference to another model, let's add it to the definitions.
+        if 'cls' in inner_schema_field['schema']:
+            class_name = inner_schema_field['schema']['cls'].__name__
+            class_ref = inner_schema_field['schema']['cls']
+
+            json_schema_defines[class_name] = class_ref
+
+
+            json_schema_defines[class_name] = get_schema_property_json(
+            field_name=class_name, inner_schema_field=inner_schema_field
+        )
+
+    # if json_schema_defines:
+    json_schema_doc['definitions'] = json_schema_defines
+
+    # Return the JSON Schema document.
     return json_schema_doc
 
 
