@@ -11,7 +11,7 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 from typing_extensions import Annotated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -155,9 +155,10 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
+    cls.__pydantic_validation_schema__ = outer_schema = core_schema.new_class_schema(
         cls, inner_schema, config=core_config, call_after_init=model_post_init
     )
+    cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances

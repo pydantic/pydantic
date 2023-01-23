@@ -186,7 +186,7 @@ class GenerateSchema:
         schema = apply_validators(schema, validator_functions.get_field_validators(name))
         field_schema = core_schema.typed_dict_field(schema, required=required)
         if field.alias is not None:
-            field_schema['alias'] = field.alias
+            field_schema['validation_alias'] = field.alias
         return field_schema
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
@@ -316,10 +316,14 @@ class GenerateSchema:
         Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
         """
         params = get_args(tuple_type)
+        # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         if not params:
-            return core_schema.tuple_variable_schema()
-
-        if params[-1] is Ellipsis:
+            if tuple_type == typing.Tuple:
+                return core_schema.tuple_variable_schema()
+            else:
+                # special case for `tuple[()]` which means `tuple[]` - an empty tuple
+                return core_schema.tuple_positional_schema()
+        elif params[-1] is Ellipsis:
             if len(params) == 2:
                 sv = core_schema.tuple_variable_schema(self.generate_schema(params[0]))
                 return sv
@@ -329,6 +333,9 @@ class GenerateSchema:
             return core_schema.tuple_positional_schema(
                 *[self.generate_schema(p) for p in items_schema], extra_schema=self.generate_schema(extra_schema)
             )
+        elif len(params) == 1 and params[0] == ():
+            # special case for `Tuple[()]` which means `Tuple[]` - an empty tuple
+            return core_schema.tuple_positional_schema()
         else:
             return core_schema.tuple_positional_schema(*[self.generate_schema(p) for p in params])
 

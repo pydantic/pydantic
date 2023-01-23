@@ -25,13 +25,15 @@ from .schema import default_ref_template, model_schema
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaValidator
+    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
     Model = typing.TypeVar('Model', bound='BaseModel')
+    # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
+    IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
 
 __all__ = 'BaseModel', 'create_model'
 
@@ -120,6 +122,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # populated by the metaclass, defined here to help IDEs only
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
+        __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
         __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
@@ -195,81 +198,60 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def model_dump(
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+        mode: typing_extensions.Literal['json', 'python'] | str = 'python',
+        include: IncEx = None,
+        exclude: IncEx = None,
         by_alias: bool = False,
-        skip_defaults: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: bool = True,
     ) -> dict[str, Any]:
         """
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
-
         """
-        if skip_defaults is not None:
-            warnings.warn(
-                f'{self.__class__.__name__}.model_dump(): "skip_defaults" is deprecated'
-                ' and replaced by "exclude_unset"',
-                DeprecationWarning,
-            )
-            exclude_unset = skip_defaults
-
-        return dict(
-            self._iter(
-                to_dict=True,
-                by_alias=by_alias,
-                include=include,
-                exclude=exclude,
-                exclude_unset=exclude_unset,
-                exclude_defaults=exclude_defaults,
-                exclude_none=exclude_none,
-            )
+        return self.__pydantic_serializer__.to_python(
+            self,
+            mode=mode,
+            by_alias=by_alias,
+            include=include,
+            exclude=exclude,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
         )
 
     def model_dump_json(
         self,
         *,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
+        indent: int | None = None,
+        include: IncEx = None,
+        exclude: IncEx = None,
         by_alias: bool = False,
-        skip_defaults: bool | None = None,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = None,
-        models_as_dict: bool = True,
-        **dumps_kwargs: Any,
-    ) -> str:
+        round_trip: bool = False,
+        warnings: bool = True,
+    ) -> bytes:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
-
-        `encoder` is an optional function to supply as `default` to json.dumps(), other arguments as per `json.dumps()`.
         """
-        if skip_defaults is not None:
-            warnings.warn(
-                f'{self.__class__.__name__}.model_dump_json(): "skip_defaults" is deprecated'
-                ' and replaced by "exclude_unset"',
-                DeprecationWarning,
-            )
-            exclude_unset = skip_defaults
-        encoder = typing.cast(typing.Callable[[Any], Any], encoder or self.__json_encoder__)
-
-        # We don't directly call `self.model_dump()`, which does exactly this with `to_dict=True`
-        # because we want to be able to keep raw `BaseModel` instances and not as `dict`.
-        # This allows users to write custom JSON encoders for given `BaseModel` classes.
-        data = dict(
-            self._iter(
-                to_dict=models_as_dict,
-                by_alias=by_alias,
-                include=include,
-                exclude=exclude,
-                exclude_unset=exclude_unset,
-                exclude_defaults=exclude_defaults,
-                exclude_none=exclude_none,
-            )
+        return self.__pydantic_serializer__.to_json(
+            self,
+            indent=indent,
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
         )
-        return self.__config__.json_dumps(data, default=encoder, **dumps_kwargs)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
