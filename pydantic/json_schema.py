@@ -176,16 +176,20 @@ def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=
     assert inner_schema['type'] == 'typed-dict'
 
     model_name = normalize_name(inner_schema['ref'].split('.')[-1])
+    model_title = normalize_name(inner_schema['ref'].title())
 
     # Set the reference prefix.
     schema = DEFAULT_JSON_SCHEMA_URI
     ref = ref_prefix + ref_template.format(model=model_name)
 
+    # looking for the title in the schema
+    if 'title' in inner_schema:
+        print('yay')
     # Start the JSON Schema document.
     json_schema_doc = {
         '$schema': schema,
         "$ref": ref,
-        'title': model_name,
+        'title': model_title,
         'type': 'object',
         'properties': {},
         'required': [],
@@ -216,9 +220,7 @@ def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=
             class_ref = inner_schema_field['schema']['cls']
 
             json_schema_defines[class_name] = class_ref
-
-            ref = ref_prefix + ref_template.format(model=class_name)
-            json_schema_defines[class_name] = ref
+            json_schema_defines[class_name] = 'hi'
 
     # if json_schema_defines:
     json_schema_doc['definitions'] = json_schema_defines
