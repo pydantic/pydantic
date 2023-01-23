@@ -1,9 +1,10 @@
 """Notes / TODO:
 
-- no support for (e.g. "multipleOf" : 10), as of yet, as this doesn't appear to
+- No support for (e.g. "multipleOf" : 10), as of yet, as this doesn't appear to
     be included in the pydantic-core schema.
 - Support must be added for class Config e.g. schema_extra:
-    class Quintessense(BaseModel):
+
+    class Example(BaseModel):
         id: int = 123
 
         class Config:
@@ -131,8 +132,6 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
         types.append('null')
     else:
         types.append(internal_to_json_types(declared_type))
-
-
 
     # Support for typed arrays, which appear in JSON Schema as:
     #    "items": {"type": "number"}
