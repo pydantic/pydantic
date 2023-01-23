@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
@@ -7,14 +9,18 @@ use serde::ser::SerializeSeq;
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
-use super::any::{fallback_serialize, fallback_to_python, AnySerializer};
-use super::{BuildSerializer, CombinedSerializer, Extra, PydanticSerializer, SerMode, TypeSerializer};
+use super::any::AnySerializer;
+use super::{
+    infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer, SerMode,
+    TypeSerializer,
+};
 
 macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $py_type:ty) => {
         #[derive(Debug, Clone)]
         pub struct $struct_name {
             item_serializer: Box<CombinedSerializer>,
+            name: String,
         }
 
         impl BuildSerializer for $struct_name {
@@ -30,8 +36,10 @@ macro_rules! build_serializer {
                     Some(items_schema) => CombinedSerializer::build(items_schema, config, build_context)?,
                     None => AnySerializer::build(schema, config, build_context)?,
                 };
+                let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
                 Ok(Self {
                     item_serializer: Box::new(item_serializer),
+                    name,
                 }
                 .into())
             }
@@ -60,10 +68,14 @@ macro_rules! build_serializer {
                         }
                     }
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_to_python(value, include, exclude, extra)
+                        extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        infer_to_python(value, include, exclude, extra)
                     }
                 }
+            }
+
+            fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+                self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
             }
 
             fn serde_serialize<S: serde::ser::Serializer>(
@@ -87,10 +99,16 @@ macro_rules! build_serializer {
                         seq.end()
                     }
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_serialize(value, serializer, include, exclude, extra)
+                        extra
+                            .warnings
+                            .on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        infer_serialize(value, serializer, include, exclude, extra)
                     }
                 }
+            }
+
+            fn get_name(&self) -> &str {
+                &self.name
             }
         }
     };

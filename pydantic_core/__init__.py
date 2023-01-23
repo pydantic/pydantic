@@ -4,6 +4,7 @@ from ._pydantic_core import (
     PydanticKnownError,
     PydanticOmit,
     PydanticSerializationError,
+    PydanticSerializationUnexpectedValue,
     SchemaError,
     SchemaSerializer,
     SchemaValidator,
@@ -27,4 +28,5 @@ __all__ = (
     'PydanticKnownError',
     'PydanticOmit',
     'PydanticSerializationError',
+    'PydanticSerializationUnexpectedValue',
 )

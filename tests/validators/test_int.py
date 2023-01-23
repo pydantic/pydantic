@@ -175,7 +175,7 @@ def test_union_int(py_and_json: PyAndJson):
 
 
 def test_union_int_simple(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'union', 'choices': [{'type': 'int'}]})
+    v = py_and_json({'type': 'union', 'choices': [{'type': 'int'}, {'type': 'list'}]})
     assert v.validate_test('5') == 5
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('xxx')
@@ -186,7 +186,8 @@ def test_union_int_simple(py_and_json: PyAndJson):
             'loc': ('int',),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'xxx',
-        }
+        },
+        {'type': 'list_type', 'loc': ('list[any]',), 'msg': 'Input should be a valid list/array', 'input': 'xxx'},
     ]
 
 

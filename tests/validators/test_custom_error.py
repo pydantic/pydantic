@@ -31,7 +31,7 @@ def test_custom_error_type(py_and_json: PyAndJson):
 
 def test_custom_error_error():
     with pytest.raises(SchemaError, match=r'custom_error_type\s+Field required \[type=missing'):
-        SchemaValidator({'type': 'custom_error', 'schema': {'type': 'int'}})
+        SchemaValidator({'type': 'custom-error', 'schema': {'type': 'int'}})
 
 
 def test_custom_error_invalid():
@@ -54,7 +54,7 @@ def test_ask():
             'type': 'new-class',
             'cls': MyModel,
             'schema': {
-                'type': 'custom_error',
+                'type': 'custom-error',
                 'custom_error_type': 'foobar',
                 'custom_error_message': 'Hello there',
                 'schema': {

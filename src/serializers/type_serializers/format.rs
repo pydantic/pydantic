@@ -8,11 +8,9 @@ use serde::ser::Error;
 
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
-use crate::errors::PydanticSerializationError;
 
-use super::any::fallback_json_key;
 use super::string::serialize_py_str;
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
+use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer};
 
 #[derive(Debug, Clone)]
 pub struct FunctionSerializer {
@@ -68,9 +66,10 @@ impl TypeSerializer for FunctionSerializer {
         self.call(value).map_err(PydanticSerializationError::new_err)
     }
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+    fn json_key<'py>(&self, key: &'py PyAny, _extra: &Extra) -> PyResult<Cow<'py, str>> {
         let v = self.call(key).map_err(PydanticSerializationError::new_err)?;
-        fallback_json_key(v.into_ref(key.py()), extra)
+        let py_str: &PyString = v.into_ref(key.py()).downcast()?;
+        Ok(Cow::Borrowed(py_str.to_str()?))
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -88,5 +87,9 @@ impl TypeSerializer for FunctionSerializer {
             }
             Err(e) => Err(S::Error::custom(e)),
         }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }

@@ -1,58 +1,84 @@
-use ahash::AHashSet;
 use std::cell::RefCell;
-use std::fmt::Debug;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{intern, AsPyPointer};
 
+use ahash::AHashSet;
+use serde::ser::Error;
+
 use crate::build_tools::py_err;
 
 use super::config::SerializationConfig;
+use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER};
 use super::ob_type::ObTypeLookup;
 use super::shared::CombinedSerializer;
 
 /// Useful things which are passed around by type_serializers
+#[derive(Clone)]
+#[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct Extra<'a> {
     pub mode: &'a SerMode,
     pub slots: &'a [CombinedSerializer],
     pub ob_type_lookup: &'a ObTypeLookup,
-    pub warnings: CollectWarnings,
+    pub warnings: &'a CollectWarnings,
     pub by_alias: bool,
     pub exclude_unset: bool,
     pub exclude_defaults: bool,
     pub exclude_none: bool,
     pub round_trip: bool,
     pub config: &'a SerializationConfig,
-    pub rec_guard: SerRecursionGuard,
+    pub rec_guard: &'a SerRecursionGuard,
+    // the next two are used for union logic
+    pub check: SerCheck,
 }
 
 impl<'a> Extra<'a> {
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn new(
+    pub fn new(
         py: Python<'a>,
         mode: &'a SerMode,
         slots: &'a [CombinedSerializer],
         by_alias: Option<bool>,
+        warnings: &'a CollectWarnings,
         exclude_unset: Option<bool>,
         exclude_defaults: Option<bool>,
         exclude_none: Option<bool>,
         round_trip: Option<bool>,
         config: &'a SerializationConfig,
+        rec_guard: &'a SerRecursionGuard,
     ) -> Self {
         Self {
             mode,
             slots,
             ob_type_lookup: ObTypeLookup::cached(py),
-            warnings: CollectWarnings::new(true),
+            warnings,
             by_alias: by_alias.unwrap_or(true),
             exclude_unset: exclude_unset.unwrap_or(false),
             exclude_defaults: exclude_defaults.unwrap_or(false),
             exclude_none: exclude_none.unwrap_or(false),
             round_trip: round_trip.unwrap_or(false),
             config,
-            rec_guard: SerRecursionGuard::default(),
+            rec_guard,
+            check: SerCheck::None,
         }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub(crate) enum SerCheck {
+    // no checks, used everywhere except in union choices
+    None,
+    // strict means subclasses are not allowed
+    Strict,
+    // check but allow subclasses
+    Lax,
+}
+
+impl SerCheck {
+    pub fn enabled(&self) -> bool {
+        *self != SerCheck::None
     }
 }
 
@@ -69,6 +95,7 @@ pub(crate) struct ExtraOwned {
     round_trip: bool,
     config: SerializationConfig,
     rec_guard: SerRecursionGuard,
+    check: SerCheck,
 }
 
 impl ExtraOwned {
@@ -84,6 +111,7 @@ impl ExtraOwned {
             round_trip: extra.round_trip,
             config: extra.config.clone(),
             rec_guard: extra.rec_guard.clone(),
+            check: extra.check,
         }
     }
 
@@ -92,14 +120,15 @@ impl ExtraOwned {
             mode: &self.mode,
             slots: &self.slots,
             ob_type_lookup: ObTypeLookup::cached(py),
-            warnings: self.warnings.clone(),
+            warnings: &self.warnings,
             by_alias: self.by_alias,
             exclude_unset: self.exclude_unset,
             exclude_defaults: self.exclude_defaults,
             exclude_none: self.exclude_none,
             round_trip: self.round_trip,
             config: &self.config,
-            rec_guard: self.rec_guard.clone(),
+            rec_guard: &self.rec_guard,
+            check: self.check,
         }
     }
 }
@@ -141,29 +170,51 @@ pub(crate) struct CollectWarnings {
 }
 
 impl CollectWarnings {
-    pub(crate) fn new(active: bool) -> Self {
+    pub(crate) fn new(active: Option<bool>) -> Self {
         Self {
-            active,
+            active: active.unwrap_or(true),
             warnings: RefCell::new(None),
         }
     }
 
-    pub(crate) fn fallback_slow(&self, field_type: &str, value: &PyAny) {
+    pub fn custom_warning(&self, warning: String) {
         if self.active {
-            self.fallback(field_type, value, "slight slowdown possible");
+            self.add_warning(warning);
         }
     }
 
-    pub(crate) fn fallback_filtering(&self, field_type: &str, value: &PyAny) {
-        if self.active {
-            self.fallback(field_type, value, "filtering via include/exclude unavailable");
+    pub fn on_fallback_py(&self, field_type: &str, value: &PyAny, extra: &Extra) -> PyResult<()> {
+        if extra.check.enabled() {
+            Err(PydanticSerializationUnexpectedValue::new_err(None))
+        } else {
+            self.fallback_warning(field_type, value);
+            Ok(())
         }
     }
 
-    fn fallback(&self, field_type: &str, value: &PyAny, reason: &str) {
+    pub fn on_fallback_ser<S: serde::ser::Serializer>(
+        &self,
+        field_type: &str,
+        value: &PyAny,
+        extra: &Extra,
+    ) -> Result<(), S::Error> {
+        if extra.check.enabled() {
+            // note: I think this should never actually happen since we use `to_python(..., mode='json')` during
+            // JSON serialisation to "try" union branches, but it's here for completeness/correctness
+            // in particular, in future we could allow errors instead of warnings on fallback
+            Err(S::Error::custom(UNEXPECTED_TYPE_SER))
+        } else {
+            self.fallback_warning(field_type, value);
+            Ok(())
+        }
+    }
+
+    fn fallback_warning(&self, field_type: &str, value: &PyAny) {
         if self.active {
             let type_name = value.get_type().name().unwrap_or("<unknown python object>");
-            self.add_warning(format!("Expected `{field_type}` but got `{type_name}` - {reason}"));
+            self.add_warning(format!(
+                "Expected `{field_type}` but got `{type_name}` - serialized value may not be as expected"
+            ));
         }
     }
 
@@ -176,7 +227,7 @@ impl CollectWarnings {
         }
     }
 
-    pub(crate) fn final_check(&self, py: Python) -> PyResult<()> {
+    pub fn final_check(&self, py: Python) -> PyResult<()> {
         if self.active {
             match *self.warnings.borrow() {
                 Some(ref warnings) => {

@@ -152,7 +152,7 @@ def test_union_float(py_and_json: PyAndJson):
 
 
 def test_union_float_simple(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'union', 'choices': [{'type': 'float'}]})
+    v = py_and_json({'type': 'union', 'choices': [{'type': 'float'}, {'type': 'list'}]})
     assert v.validate_test('5') == 5
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('xxx')
@@ -163,7 +163,8 @@ def test_union_float_simple(py_and_json: PyAndJson):
             'loc': ('float',),
             'msg': 'Input should be a valid number, unable to parse string as an number',
             'input': 'xxx',
-        }
+        },
+        {'type': 'list_type', 'loc': ('list[any]',), 'msg': 'Input should be a valid list/array', 'input': 'xxx'},
     ]
 
 

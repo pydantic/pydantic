@@ -10,7 +10,7 @@ use serde::ser::Error;
 use crate::build_tools::{py_err, SchemaDict};
 use crate::input::pytimedelta_as_duration;
 
-use super::shared::py_err_se_err;
+use super::errors::py_err_se_err;
 
 #[derive(Debug, Clone)]
 pub(crate) struct SerializationConfig {

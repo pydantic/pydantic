@@ -59,7 +59,7 @@ pub struct CustomErrorValidator {
 }
 
 impl BuildValidator for CustomErrorValidator {
-    const EXPECTED_TYPE: &'static str = "custom_error";
+    const EXPECTED_TYPE: &'static str = "custom-error";
 
     fn build(
         schema: &PyDict,

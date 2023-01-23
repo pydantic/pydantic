@@ -10,7 +10,7 @@ pub use self::line_error::{pretty_line_errors, InputValue, ValError, ValLineErro
 pub use self::location::LocItem;
 pub use self::types::{list_all_errors, ErrorType};
 pub use self::validation_exception::ValidationError;
-pub use self::value_exception::{PydanticCustomError, PydanticKnownError, PydanticOmit, PydanticSerializationError};
+pub use self::value_exception::{PydanticCustomError, PydanticKnownError, PydanticOmit};
 
 pub fn py_err_string(py: Python, err: PyErr) -> String {
     let value = err.value(py);

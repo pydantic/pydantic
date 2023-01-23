@@ -46,13 +46,13 @@ def test_bytes_dict_key():
 
 def test_bytes_fallback():
     s = SchemaSerializer(core_schema.bytes_schema())
-    with pytest.warns(UserWarning, match='Expected `bytes` but got `int` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `bytes` but got `int` - serialized value may not be as expected'):
         assert s.to_python(123) == 123
-    with pytest.warns(UserWarning, match='Expected `bytes` but got `int` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `bytes` but got `int` - serialized value may not be as expected'):
         assert s.to_python(123, mode='json') == 123
-    with pytest.warns(UserWarning, match='Expected `bytes` but got `int` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `bytes` but got `int` - serialized value may not be as expected'):
         assert s.to_json(123) == b'123'
-    with pytest.warns(UserWarning, match='Expected `bytes` but got `str` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `bytes` but got `str` - serialized value may not be as expected'):
         assert s.to_json('foo') == b'"foo"'
 
 

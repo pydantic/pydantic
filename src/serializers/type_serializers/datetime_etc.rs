@@ -6,8 +6,10 @@ use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 use crate::build_context::BuildContext;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
 
-use super::any::{fallback_json_key, fallback_serialize, fallback_to_python};
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, SerMode, TypeSerializer};
+use super::{
+    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
+    SerMode, TypeSerializer,
+};
 
 pub(crate) fn datetime_to_string(py_dt: &PyDateTime) -> PyResult<String> {
     let dt = pydatetime_as_datetime(py_dt)?;
@@ -59,8 +61,8 @@ macro_rules! build_serializer {
                         _ => Ok(value.into_py(py)),
                     },
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_to_python(value, include, exclude, extra)
+                        extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        infer_to_python(value, include, exclude, extra)
                     }
                 }
             }
@@ -69,8 +71,8 @@ macro_rules! build_serializer {
                 match key.downcast::<$cast_as>() {
                     Ok(py_value) => Ok(Cow::Owned($convert_func(py_value)?)),
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
-                        fallback_json_key(key, extra)
+                        extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                        infer_json_key(key, extra)
                     }
                 }
             }
@@ -89,10 +91,16 @@ macro_rules! build_serializer {
                         serializer.serialize_str(&s)
                     }
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_serialize(value, serializer, include, exclude, extra)
+                        extra
+                            .warnings
+                            .on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        infer_serialize(value, serializer, include, exclude, extra)
                     }
                 }
+            }
+
+            fn get_name(&self) -> &str {
+                Self::EXPECTED_TYPE
             }
         }
     };

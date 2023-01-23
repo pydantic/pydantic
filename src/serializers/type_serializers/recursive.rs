@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -47,6 +49,10 @@ impl TypeSerializer for RecursiveRefSerializer {
         r
     }
 
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+    }
+
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
         value: &PyAny,
@@ -60,5 +66,9 @@ impl TypeSerializer for RecursiveRefSerializer {
         let r = comb_serializer.serde_serialize(value, serializer, include, exclude, extra);
         extra.rec_guard.pop(value_id);
         r
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }

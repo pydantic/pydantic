@@ -1,16 +1,17 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
+use std::borrow::Cow;
 
 use serde::ser::SerializeSeq;
 
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
-use super::any::{fallback_serialize, fallback_to_python, AnySerializer};
+use super::any::AnySerializer;
 use super::{
-    py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer, SchemaFilter, SerMode,
-    TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
+    PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
 };
 
 pub struct TupleBuilder;
@@ -34,6 +35,7 @@ impl BuildSerializer for TupleBuilder {
 pub struct TupleVariableSerializer {
     item_serializer: Box<CombinedSerializer>,
     filter: SchemaFilter<usize>,
+    name: String,
 }
 
 impl TupleVariableSerializer {
@@ -50,9 +52,11 @@ impl TupleVariableSerializer {
             Some(items_schema) => CombinedSerializer::build(items_schema, config, build_context)?,
             None => AnySerializer::build(schema, config, build_context)?,
         };
+        let name = format!("tuple[{}, ...]", item_serializer.get_name());
         Ok(Self {
             item_serializer: Box::new(item_serializer),
             filter: SchemaFilter::from_schema(schema)?,
+            name,
         }
         .into())
     }
@@ -84,8 +88,26 @@ impl TypeSerializer for TupleVariableSerializer {
                 }
             }
             Err(_) => {
-                extra.warnings.fallback_filtering("tuple", value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(&self.name, value, extra)?;
+                infer_to_python(value, include, exclude, extra)
+            }
+        }
+    }
+
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        match key.downcast::<PyTuple>() {
+            Ok(py_tuple) => {
+                let item_serializer = self.item_serializer.as_ref();
+
+                let mut key_builder = KeyBuilder::new();
+                for element in py_tuple.iter() {
+                    key_builder.push(&item_serializer.json_key(element, extra)?);
+                }
+                Ok(Cow::Owned(key_builder.finish()))
+            }
+            Err(_) => {
+                extra.warnings.on_fallback_py(&self.name, key, extra)?;
+                infer_json_key(key, extra)
             }
         }
     }
@@ -118,10 +140,14 @@ impl TypeSerializer for TupleVariableSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.fallback_filtering("tuple", value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(&self.name, value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
@@ -130,6 +156,7 @@ pub struct TuplePositionalSerializer {
     items_serializers: Vec<CombinedSerializer>,
     extra_serializer: Box<CombinedSerializer>,
     filter: SchemaFilter<usize>,
+    name: String,
 }
 
 impl TuplePositionalSerializer {
@@ -145,13 +172,21 @@ impl TuplePositionalSerializer {
             Some(extra_schema) => CombinedSerializer::build(extra_schema, config, build_context)?,
             None => AnySerializer::build(schema, config, build_context)?,
         };
+        let items_serializers: Vec<CombinedSerializer> = items
+            .iter()
+            .map(|item| CombinedSerializer::build(item.downcast()?, config, build_context))
+            .collect::<PyResult<_>>()?;
+
+        let descr = items_serializers
+            .iter()
+            .map(|v| v.get_name())
+            .collect::<Vec<_>>()
+            .join(", ");
         Ok(Self {
-            items_serializers: items
-                .iter()
-                .map(|item| CombinedSerializer::build(item.downcast()?, config, build_context))
-                .collect::<PyResult<_>>()?,
+            items_serializers,
             extra_serializer: Box::new(extra_serializer),
             filter: SchemaFilter::from_schema(schema)?,
+            name: format!("tuple[{descr}]"),
         }
         .into())
     }
@@ -197,8 +232,34 @@ impl TypeSerializer for TuplePositionalSerializer {
                 }
             }
             Err(_) => {
-                extra.warnings.fallback_filtering("tuple", value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(&self.name, value, extra)?;
+                infer_to_python(value, include, exclude, extra)
+            }
+        }
+    }
+
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        match key.downcast::<PyTuple>() {
+            Ok(py_tuple) => {
+                let mut py_tuple_iter = py_tuple.iter();
+
+                let mut key_builder = KeyBuilder::new();
+                for serializer in self.items_serializers.iter() {
+                    let element = match py_tuple_iter.next() {
+                        Some(value) => value,
+                        None => break,
+                    };
+                    key_builder.push(&serializer.json_key(element, extra)?);
+                }
+                let extra_serializer = self.extra_serializer.as_ref();
+                for element in py_tuple_iter {
+                    key_builder.push(&extra_serializer.json_key(element, extra)?);
+                }
+                Ok(Cow::Owned(key_builder.finish()))
+            }
+            Err(_) => {
+                extra.warnings.on_fallback_py(&self.name, key, extra)?;
+                infer_json_key(key, extra)
             }
         }
     }
@@ -251,9 +312,40 @@ impl TypeSerializer for TuplePositionalSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.fallback_filtering("tuple", value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(&self.name, value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+}
+
+pub(crate) struct KeyBuilder {
+    key: String,
+    first: bool,
+}
+
+impl KeyBuilder {
+    pub fn new() -> Self {
+        Self {
+            key: String::with_capacity(31),
+            first: true,
+        }
+    }
+
+    pub fn push(&mut self, key: &str) {
+        if self.first {
+            self.first = false;
+        } else {
+            self.key.push(',');
+        }
+        self.key.push_str(key);
+    }
+
+    pub fn finish(self) -> String {
+        self.key
     }
 }
