@@ -602,7 +602,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[Any]:
         def _cache_key(_params: Any) -> tuple[type[Any], Any, tuple[Any, ...]]:
-            args = typing.get_args(_params)
+            args = typing_extensions.get_args(_params)
             # python returns a list for Callables, which is not hashable
             if len(args) == 2 and isinstance(args[0], list):
                 args = (tuple(args[0]), args[1])
