@@ -6,6 +6,7 @@ use pyo3::types::{
     PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTime, PyTuple,
 };
 
+use strum::Display;
 use strum_macros::EnumString;
 
 use crate::url::{PyMultiHostUrl, PyUrl};
@@ -97,9 +98,13 @@ impl ObTypeLookup {
         let ans = match expected_ob_type {
             ObType::None => self.none == ob_type,
             ObType::Int => self.int == ob_type,
+            // op_value is None on recursive calls
+            ObType::IntSubclass => self.int == ob_type && op_value.is_none(),
             ObType::Bool => self.bool == ob_type,
             ObType::Float => self.float == ob_type,
+            ObType::FloatSubclass => self.float == ob_type && op_value.is_none(),
             ObType::Str => self.string == ob_type,
+            ObType::StrSubclass => self.string == ob_type && op_value.is_none(),
             ObType::Dict => self.dict == ob_type,
             ObType::List => self.list == ob_type,
             ObType::Tuple => self.tuple == ob_type,
@@ -148,13 +153,23 @@ impl ObTypeLookup {
         if ob_type == self.none {
             ObType::None
         } else if ob_type == self.int {
-            ObType::Int
+            // op_value is None on recursive calls, e.g. hence the original value would be a subclass
+            match op_value {
+                Some(_) => ObType::Int,
+                None => ObType::IntSubclass,
+            }
         } else if ob_type == self.bool {
             ObType::Bool
         } else if ob_type == self.float {
-            ObType::Float
+            match op_value {
+                Some(_) => ObType::Float,
+                None => ObType::FloatSubclass,
+            }
         } else if ob_type == self.string {
-            ObType::Str
+            match op_value {
+                Some(_) => ObType::Str,
+                None => ObType::StrSubclass,
+            }
         } else if ob_type == self.dict {
             ObType::Dict
         } else if ob_type == self.list {
@@ -219,16 +234,19 @@ fn is_pydantic_model(op_value: Option<&PyAny>) -> bool {
     }
 }
 
-#[derive(Debug, Clone, EnumString)]
+#[derive(Debug, Clone, EnumString, Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum ObType {
     None,
     // numeric types
     Int,
+    IntSubclass,
     Bool,
     Float,
+    FloatSubclass,
     // string types
     Str,
+    StrSubclass,
     Bytes,
     Bytearray,
     // sequence types

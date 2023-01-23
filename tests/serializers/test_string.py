@@ -25,12 +25,19 @@ def test_str():
 
 def test_str_fallback():
     s = SchemaSerializer(core_schema.string_schema())
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
         assert s.to_python(123) == 123
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
         assert s.to_python(123, mode='json') == 123
-    with pytest.warns(UserWarning, match='Expected `str` but got `int` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
         assert s.to_json(123) == b'123'
+
+
+def test_str_no_warnings():
+    s = SchemaSerializer(core_schema.string_schema())
+    assert s.to_python(123, warnings=False) == 123
+    assert s.to_python(123, mode='json', warnings=False) == 123
+    assert s.to_json(123, warnings=False) == b'123'
 
 
 class StrSubclass(str):

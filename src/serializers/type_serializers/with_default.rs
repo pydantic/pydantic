@@ -56,6 +56,10 @@ impl TypeSerializer for WithDefaultSerializer {
         self.serializer.to_python(value, include, exclude, extra)
     }
 
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        self.serializer.json_key(key, extra)
+    }
+
     fn serde_serialize<S: serde::ser::Serializer>(
         &self,
         value: &PyAny,
@@ -66,5 +70,13 @@ impl TypeSerializer for WithDefaultSerializer {
     ) -> Result<S::Ok, S::Error> {
         self.serializer
             .serde_serialize(value, serializer, include, exclude, extra)
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
+    }
+
+    fn retry_with_lax_check(&self) -> bool {
+        self.serializer.retry_with_lax_check()
     }
 }

@@ -13,7 +13,7 @@ def test_function(value, expected_python, expected_json):
     def repr_function(value, **kwargs):
         return repr(value)
 
-    s = SchemaSerializer(core_schema.any_schema(serialization={'type': 'function', 'function': repr_function}))
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.function_ser_schema(repr_function)))
     assert s.to_python(value) == expected_python
     assert s.to_json(value) == expected_json
     assert s.to_python(value, mode='json') == json.loads(expected_json)
@@ -27,7 +27,7 @@ def test_function_args():
         f_kwargs = kwargs
         return value * 2
 
-    s = SchemaSerializer(core_schema.any_schema(serialization={'type': 'function', 'function': double}))
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.function_ser_schema(double)))
     assert s.to_python(4) == 8
     assert f_kwargs == {'mode': 'python', 'include': None, 'exclude': None}
     assert s.to_python('x') == 'xx'
@@ -49,10 +49,42 @@ def test_function_error():
     def raise_error(value, **kwargs):
         raise TypeError('foo')
 
-    s = SchemaSerializer(core_schema.any_schema(serialization={'type': 'function', 'function': raise_error}))
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.function_ser_schema(raise_error)))
 
-    with pytest.raises(PydanticSerializationError, match='Error calling `raise_error`: TypeError: foo'):
+    msg = 'Error calling function `raise_error`: TypeError: foo$'
+    with pytest.raises(PydanticSerializationError, match=msg) as exc_info:
         s.to_python('abc')
+    assert isinstance(exc_info.value.__cause__, TypeError)
+
+    with pytest.raises(PydanticSerializationError, match=msg) as exc_info:
+        s.to_python('abc', mode='json')
+    assert isinstance(exc_info.value.__cause__, TypeError)
+
+    with pytest.raises(PydanticSerializationError, match=msg):
+        s.to_json('foo')
+
+
+def test_function_error_keys():
+    def raise_error(value, **kwargs):
+        raise TypeError('foo')
+
+    s = SchemaSerializer(
+        core_schema.dict_schema(
+            core_schema.any_schema(serialization=core_schema.function_ser_schema(raise_error)), core_schema.int_schema()
+        )
+    )
+
+    msg = 'Error calling function `raise_error`: TypeError: foo$'
+    with pytest.raises(PydanticSerializationError, match=msg) as exc_info:
+        s.to_python({'abc': 1})
+    assert isinstance(exc_info.value.__cause__, TypeError)
+
+    with pytest.raises(PydanticSerializationError, match=msg) as exc_info:
+        s.to_python({'abc': 1}, mode='json')
+    assert isinstance(exc_info.value.__cause__, TypeError)
+
+    with pytest.raises(PydanticSerializationError, match=msg):
+        s.to_json({'abc': 1})
 
 
 def test_function_known_type():
@@ -62,7 +94,7 @@ def test_function_known_type():
         return value
 
     s = SchemaSerializer(
-        core_schema.any_schema(serialization={'type': 'function', 'function': append_42, 'return_type': 'list'})
+        core_schema.any_schema(serialization=core_schema.function_ser_schema(append_42, return_type='list'))
     )
     assert s.to_python([1, 2, 3]) == [1, 2, 3, 42]
     assert s.to_python([1, 2, 3], mode='json') == [1, 2, 3, 42]
@@ -82,9 +114,7 @@ def test_function_known_type():
 def test_invalid_return_type():
     with pytest.raises(SchemaError, match='function -> return_type\n  Input should be'):
         SchemaSerializer(
-            core_schema.any_schema(
-                serialization={'type': 'function', 'function': lambda _: 1, 'return_type': 'different'}
-            )
+            core_schema.any_schema(serialization=core_schema.function_ser_schema(lambda _: 1, return_type='different'))
         )
 
 
@@ -93,7 +123,7 @@ def test_dict_keys():
         return f'<{value}>'
 
     s = SchemaSerializer(
-        core_schema.dict_schema(core_schema.int_schema(serialization={'type': 'function', 'function': fmt}))
+        core_schema.dict_schema(core_schema.int_schema(serialization=core_schema.function_ser_schema(fmt)))
     )
     assert s.to_python({1: True}) == {'<1>': True}
 
@@ -104,7 +134,7 @@ def test_function_as_key():
 
     s = SchemaSerializer(
         core_schema.dict_schema(
-            core_schema.any_schema(serialization={'type': 'function', 'function': repr_function}),
+            core_schema.any_schema(serialization=core_schema.function_ser_schema(repr_function)),
             core_schema.any_schema(),
         )
     )

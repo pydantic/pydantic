@@ -46,7 +46,8 @@ def test_generator_any():
     assert s.to_json(gen_ok('a', b'b', 3)) == b'["a","b",3]'
     assert s.to_json(('a', b'b', 3)) == b'["a","b",3]'
 
-    with pytest.warns(UserWarning, match='Expected `generator` but got `int` - filtering via include/exclude'):
+    msg = 'Expected `generator` but got `int` - serialized value may not be as expected'
+    with pytest.warns(UserWarning, match=msg):
         assert s.to_python(4) == 4
 
     with pytest.raises(ValueError, match='oops'):
@@ -77,12 +78,12 @@ def test_generator_int():
     with pytest.raises(ValueError, match='oops'):
         s.to_json(gen_error(1, 2))
 
-    with pytest.warns(UserWarning, match='Expected `int` but got `str` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
         s.to_json(gen_ok(1, 'a'))
 
     gen = s.to_python(gen_ok(1, 'a'))
     assert next(gen) == 1
-    with pytest.warns(UserWarning, match='Expected `int` but got `str` - slight slowdown possible'):
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
         assert next(gen) == 'a'
 
 

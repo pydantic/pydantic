@@ -56,11 +56,17 @@ def test_simple_serializers(schema_type, value, expected_python, expected_json, 
 @pytest.mark.parametrize('schema_type', ['int', 'bool', 'float', 'none'])
 def test_simple_serializers_fallback(schema_type):
     s = SchemaSerializer({'type': schema_type})
-    with pytest.warns(UserWarning, match=f'Expected `{schema_type}` but got `list` - slight slowdown possible'):
+    with pytest.warns(
+        UserWarning, match=f'Expected `{schema_type}` but got `list` - serialized value may not be as expected'
+    ):
         assert s.to_python([1, 2, 3]) == [1, 2, 3]
 
-    with pytest.warns(UserWarning, match=f'Expected `{schema_type}` but got `list` - slight slowdown possible'):
+    with pytest.warns(
+        UserWarning, match=f'Expected `{schema_type}` but got `list` - serialized value may not be as expected'
+    ):
         assert s.to_python([1, 2, b'bytes'], mode='json') == [1, 2, 'bytes']
 
-    with pytest.warns(UserWarning, match=f'Expected `{schema_type}` but got `list` - slight slowdown possible'):
+    with pytest.warns(
+        UserWarning, match=f'Expected `{schema_type}` but got `list` - serialized value may not be as expected'
+    ):
         assert s.to_json([1, 2, 3]) == b'[1,2,3]'

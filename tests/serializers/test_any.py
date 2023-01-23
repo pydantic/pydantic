@@ -73,6 +73,9 @@ def test_set_member_db(any_serializer):
         (b'foobar', b'"foobar"'),
         (bytearray(b'foobar'), b'"foobar"'),
         ((1, 2, 3), b'[1,2,3]'),
+        ({1: 2, 'a': 4}, b'{"1":2,"a":4}'),
+        ({(1, 'a', 2): 3}, b'{"1,a,2":3}'),
+        ({(1,): 3}, b'{"1":3}'),
         (datetime(2022, 12, 3, 12, 30, 45), b'"2022-12-03T12:30:45"'),
         (date(2022, 12, 3), b'"2022-12-03"'),
         (time(12, 30, 45), b'"12:30:45"'),
@@ -116,7 +119,7 @@ def test_any_with_date_serializer():
         assert s.to_python(b'bang', mode='json') == 'bang'
 
     assert [w.message.args[0] for w in warning_info.list] == [
-        'Pydantic serializer warnings:\n  Expected `date` but got `bytes` - slight slowdown possible'
+        'Pydantic serializer warnings:\n  Expected `date` but got `bytes` - serialized value may not be as expected'
     ]
 
 
@@ -130,7 +133,8 @@ def test_any_with_timedelta_serializer():
         assert s.to_python(b'bang', mode='json') == 'bang'
 
     assert [w.message.args[0] for w in warning_info.list] == [
-        'Pydantic serializer warnings:\n  Expected `timedelta` but got `bytes` - slight slowdown possible'
+        'Pydantic serializer warnings:\n  Expected `timedelta` but got `bytes` - '
+        'serialized value may not be as expected'
     ]
 
 

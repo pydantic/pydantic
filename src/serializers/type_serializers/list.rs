@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -7,15 +9,17 @@ use serde::ser::SerializeSeq;
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
-use super::any::{fallback_serialize, fallback_to_python, AnySerializer};
+use super::any::AnySerializer;
 use super::{
-    py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer, SchemaFilter, TypeSerializer,
+    infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializer,
+    SchemaFilter, TypeSerializer,
 };
 
 #[derive(Debug, Clone)]
 pub struct ListSerializer {
     item_serializer: Box<CombinedSerializer>,
     filter: SchemaFilter<usize>,
+    name: String,
 }
 
 impl BuildSerializer for ListSerializer {
@@ -31,9 +35,11 @@ impl BuildSerializer for ListSerializer {
             Some(items_schema) => CombinedSerializer::build(items_schema, config, build_context)?,
             None => AnySerializer::build(schema, config, build_context)?,
         };
+        let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
         Ok(Self {
             item_serializer: Box::new(item_serializer),
             filter: SchemaFilter::from_schema(schema)?,
+            name,
         }
         .into())
     }
@@ -62,10 +68,14 @@ impl TypeSerializer for ListSerializer {
                 Ok(items.into_py(py))
             }
             Err(_) => {
-                extra.warnings.fallback_filtering(Self::EXPECTED_TYPE, value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, extra)
             }
         }
+    }
+
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+        self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -95,9 +105,13 @@ impl TypeSerializer for ListSerializer {
                 seq.end()
             }
             Err(_) => {
-                extra.warnings.fallback_filtering(Self::EXPECTED_TYPE, value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }

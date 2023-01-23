@@ -1,10 +1,10 @@
 use std::borrow::Cow;
-use std::fmt;
 use std::fmt::Debug;
 
+use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PySet};
 
 use enum_dispatch::enum_dispatch;
 use serde::Serialize;
@@ -12,10 +12,11 @@ use serde_json::ser::PrettyFormatter;
 
 use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict};
-use crate::PydanticSerializationError;
 
+use super::errors::se_err_py_err;
 use super::extra::Extra;
-use super::type_serializers::any::{fallback_json_key, fallback_to_python};
+use super::infer::infer_json_key;
+use super::ob_type::{IsType, ObType};
 
 pub(crate) trait BuildSerializer: Sized {
     const EXPECTED_TYPE: &'static str;
@@ -47,21 +48,21 @@ macro_rules! combined_serializer {
                 schema: &PyDict,
                 config: Option<&PyDict>,
                 build_context: &mut BuildContext<CombinedSerializer>
-            ) -> PyResult<Option<CombinedSerializer>> {
+            ) -> PyResult<CombinedSerializer> {
                 match lookup_type {
                     $(
                         <$b_serializer>::EXPECTED_TYPE => match <$b_serializer>::build(schema, config, build_context) {
-                            Ok(serializer) => Ok(Some(serializer)),
+                            Ok(serializer) => Ok(serializer),
                             Err(err) => py_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
                         },
                     )*
                     $(
                         <$builder>::EXPECTED_TYPE => match <$builder>::build(schema, config, build_context) {
-                            Ok(serializer) => Ok(Some(serializer)),
+                            Ok(serializer) => Ok(serializer),
                             Err(err) => py_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
                         },
                     )*
-                    _ => Ok(None),
+                    _ => py_err!("Unknown serialization schema type: `{}`", lookup_type),
                 }
             }
         }
@@ -85,10 +86,16 @@ combined_serializer! {
     // but aren't actually used for serialization, e.g. their `build` method must return another serializer
     find_only: {
         super::type_serializers::tuple::TupleBuilder;
+        super::type_serializers::union::TaggedUnionBuilder;
         super::type_serializers::other::ChainBuilder;
         super::type_serializers::other::FunctionBuilder;
         super::type_serializers::other::CustomErrorBuilder;
-        super::type_serializers::literal::LiteralBuildSerializer;
+        super::type_serializers::other::CallBuilder;
+        super::type_serializers::other::LaxOrStrictBuilder;
+        super::type_serializers::other::ArgumentsBuilder;
+        super::type_serializers::other::IsInstanceBuilder;
+        super::type_serializers::other::IsSubclassBuilder;
+        super::type_serializers::other::CallableBuilder;
     }
     // `both` means the struct is added to both the `CombinedSerializer` enum and the match statement in
     // `find_serializer` so they can be used via a `type` str.
@@ -118,6 +125,8 @@ combined_serializer! {
         WithDefault: super::type_serializers::with_default::WithDefaultSerializer;
         Json: super::type_serializers::json::JsonSerializer;
         Recursive: super::type_serializers::recursive::RecursiveRefSerializer;
+        Union: super::type_serializers::union::UnionSerializer;
+        Literal: super::type_serializers::literal::LiteralSerializer;
     }
 }
 
@@ -150,10 +159,7 @@ impl CombinedSerializer {
                 Some(ser_type) => {
                     // otherwise if `schema.serialization.type` is defined, use that with `find_serializer`
                     // instead of `schema.type`. In this case it's an error if a serializer isn't found.
-                    return match Self::find_serializer(ser_type, ser_schema, config, build_context)? {
-                        Some(serializer) => Ok(serializer),
-                        None => py_err!("Unknown serialization schema type: `{}`", ser_type),
-                    };
+                    return Self::find_serializer(ser_type, ser_schema, config, build_context);
                 }
                 // if `schema.serialization.type` is None, fall back to `schema.type`
                 None => (),
@@ -161,10 +167,7 @@ impl CombinedSerializer {
         }
 
         let type_: &str = schema.get_as_req(type_key)?;
-        match Self::find_serializer(type_, schema, config, build_context)? {
-            Some(serializer) => Ok(serializer),
-            None => super::type_serializers::any::AnySerializer::build(schema, config, build_context),
-        }
+        Self::find_serializer(type_, schema, config, build_context)
     }
 }
 
@@ -201,12 +204,23 @@ pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
         include: Option<&PyAny>,
         exclude: Option<&PyAny>,
         extra: &Extra,
-    ) -> PyResult<PyObject> {
-        fallback_to_python(value, include, exclude, extra)
-    }
+    ) -> PyResult<PyObject>;
 
-    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-        fallback_json_key(key, extra)
+    fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>>;
+
+    fn _invalid_as_json_key<'py>(
+        &self,
+        key: &'py PyAny,
+        extra: &Extra,
+        expected_type: &'static str,
+    ) -> PyResult<Cow<'py, str>> {
+        match extra.ob_type_lookup.is_type(key, ObType::None) {
+            IsType::Exact | IsType::Subclass => py_err!(PyTypeError; "`{}` not valid as object key", expected_type),
+            IsType::False => {
+                extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                infer_json_key(key, extra)
+            }
+        }
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -217,18 +231,21 @@ pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error>;
-}
 
-pub(crate) fn py_err_se_err<T: serde::ser::Error, E: fmt::Display>(py_error: E) -> T {
-    T::custom(py_error.to_string())
+    fn get_name(&self) -> &str;
+
+    /// Used by union serializers to decide if it's worth trying again while allowing subclasses
+    fn retry_with_lax_check(&self) -> bool {
+        false
+    }
 }
 
 pub(crate) struct PydanticSerializer<'py> {
     value: &'py PyAny,
     serializer: &'py CombinedSerializer,
-    extra: &'py Extra<'py>,
     include: Option<&'py PyAny>,
     exclude: Option<&'py PyAny>,
+    extra: &'py Extra<'py>,
 }
 
 impl<'py> PydanticSerializer<'py> {
@@ -256,6 +273,7 @@ impl<'py> Serialize for PydanticSerializer<'py> {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn to_json_bytes(
     value: &PyAny,
     serializer: &CombinedSerializer,
@@ -273,18 +291,33 @@ pub(crate) fn to_json_bytes(
             let indent = vec![b' '; indent];
             let formatter = PrettyFormatter::with_indent(&indent);
             let mut ser = serde_json::Serializer::with_formatter(writer, formatter);
-            serializer
-                .serialize(&mut ser)
-                .map_err(PydanticSerializationError::json_error)?;
+            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
             ser.into_inner()
         }
         None => {
             let mut ser = serde_json::Serializer::new(writer);
-            serializer
-                .serialize(&mut ser)
-                .map_err(PydanticSerializationError::json_error)?;
+            serializer.serialize(&mut ser).map_err(se_err_py_err)?;
             ser.into_inner()
         }
     };
     Ok(bytes)
+}
+
+pub(super) fn object_to_dict<'py>(value: &'py PyAny, is_model: bool, extra: &Extra) -> PyResult<&'py PyDict> {
+    let py = value.py();
+    let attr = value.getattr(intern!(py, "__dict__"))?;
+    let attrs: &PyDict = attr.downcast()?;
+    if is_model && extra.exclude_unset {
+        let fields_set: &PySet = value.getattr(intern!(py, "__fields_set__"))?.downcast()?;
+
+        let new_attrs = attrs.copy()?;
+        for key in new_attrs.keys() {
+            if !fields_set.contains(key)? {
+                new_attrs.del_item(key)?;
+            }
+        }
+        Ok(new_attrs)
+    } else {
+        Ok(attrs)
+    }
 }

@@ -140,8 +140,8 @@ class BasicModel:
             setattr(self, key, value)
 
 
-@pytest.fixture(scope='module', name='core_serializer')
-def core_serializer_fixture():
+@pytest.fixture(scope='module', name='basic_model_serializer')
+def basic_model_serializer_fixture():
     return SchemaSerializer(
         core_schema.new_class_schema(
             BasicModel,
@@ -162,17 +162,17 @@ def core_serializer_fixture():
 
 
 @pytest.mark.benchmark(group='model-python')
-def test_core_model_py(benchmark, core_serializer):
+def test_core_model_py(benchmark, basic_model_serializer):
     m = BasicModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8)
-    assert core_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
-    benchmark(core_serializer.to_python, m)
+    assert basic_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
+    benchmark(basic_model_serializer.to_python, m)
 
 
 @pytest.mark.benchmark(group='model-json')
-def test_core_model_json(benchmark, core_serializer):
+def test_core_model_json(benchmark, basic_model_serializer):
     m = BasicModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8)
-    assert core_serializer.to_json(m) == b'{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7,"h":8}'
-    benchmark(core_serializer.to_json, m)
+    assert basic_model_serializer.to_json(m) == b'{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7,"h":8}'
+    benchmark(basic_model_serializer.to_json, m)
 
 
 class FieldsSetModel:
@@ -183,26 +183,47 @@ class FieldsSetModel:
             setattr(self, key, value)
 
 
+@pytest.fixture(scope='module', name='fs_model_serializer')
+def fs_model_serializer_fixture():
+    return SchemaSerializer(
+        core_schema.new_class_schema(
+            FieldsSetModel,
+            core_schema.typed_dict_schema(
+                {
+                    'a': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'b': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'c': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'd': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'e': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'f': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'g': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'h': core_schema.typed_dict_field(core_schema.int_schema()),
+                }
+            ),
+        )
+    )
+
+
 @pytest.mark.benchmark(group='model-exclude-unset')
-def test_model_exclude_unset_false(benchmark, core_serializer):
+def test_model_exclude_unset_false(benchmark, fs_model_serializer):
     m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
-    assert core_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
-    assert core_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
+    assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
+    assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
 
     @benchmark
     def r():
-        core_serializer.to_python(m)
+        fs_model_serializer.to_python(m)
 
 
 @pytest.mark.benchmark(group='model-exclude-unset')
-def test_model_exclude_unset_true(benchmark, core_serializer):
+def test_model_exclude_unset_true(benchmark, fs_model_serializer):
     m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
-    assert core_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
-    assert core_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
+    assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
+    assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
 
     @benchmark
     def r():
-        core_serializer.to_python(m, exclude_unset=True)
+        fs_model_serializer.to_python(m, exclude_unset=True)
 
 
 @skip_pydantic

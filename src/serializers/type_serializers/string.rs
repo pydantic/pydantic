@@ -5,8 +5,10 @@ use pyo3::types::{PyDict, PyString};
 
 use crate::build_context::BuildContext;
 
-use super::any::{fallback_json_key, fallback_serialize, fallback_to_python};
-use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, IsType, ObType, SerMode, TypeSerializer};
+use super::{
+    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
+    IsType, ObType, SerMode, TypeSerializer,
+};
 
 #[derive(Debug, Clone)]
 pub struct StrSerializer;
@@ -39,8 +41,8 @@ impl TypeSerializer for StrSerializer {
                 _ => Ok(value.into_py(py)),
             },
             IsType::False => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                fallback_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                infer_to_python(value, include, exclude, extra)
             }
         }
     }
@@ -49,8 +51,8 @@ impl TypeSerializer for StrSerializer {
         if let Ok(py_str) = key.downcast::<PyString>() {
             Ok(py_str.to_string_lossy())
         } else {
-            extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
-            fallback_json_key(key, extra)
+            extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+            infer_json_key(key, extra)
         }
     }
 
@@ -65,10 +67,14 @@ impl TypeSerializer for StrSerializer {
         match value.downcast::<PyString>() {
             Ok(py_str) => serialize_py_str(py_str, serializer),
             Err(_) => {
-                extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                fallback_serialize(value, serializer, include, exclude, extra)
+                extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                infer_serialize(value, serializer, include, exclude, extra)
             }
         }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
     }
 }
 

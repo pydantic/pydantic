@@ -6,8 +6,10 @@ use pyo3::types::PyDict;
 use crate::build_context::BuildContext;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
-use super::any::{fallback_json_key, fallback_serialize, fallback_to_python};
-use super::{BuildSerializer, CombinedSerializer, Extra, SerMode, TypeSerializer};
+use super::{
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
+    TypeSerializer,
+};
 
 macro_rules! build_serializer {
     ($struct_name:ident, $expected_type:literal, $extract:ty) => {
@@ -41,8 +43,8 @@ macro_rules! build_serializer {
                         _ => Ok(value.into_py(py)),
                     },
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_to_python(value, include, exclude, extra)
+                        extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
+                        infer_to_python(value, include, exclude, extra)
                     }
                 }
             }
@@ -51,8 +53,8 @@ macro_rules! build_serializer {
                 match key.extract::<$extract>() {
                     Ok(py_url) => Ok(Cow::Owned(py_url.__str__().to_string())),
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, key);
-                        fallback_json_key(key, extra)
+                        extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
+                        infer_json_key(key, extra)
                     }
                 }
             }
@@ -68,10 +70,16 @@ macro_rules! build_serializer {
                 match value.extract::<$extract>() {
                     Ok(py_url) => serializer.serialize_str(&py_url.__str__()),
                     Err(_) => {
-                        extra.warnings.fallback_slow(Self::EXPECTED_TYPE, value);
-                        fallback_serialize(value, serializer, include, exclude, extra)
+                        extra
+                            .warnings
+                            .on_fallback_ser::<S>(self.get_name(), value, extra)?;
+                        infer_serialize(value, serializer, include, exclude, extra)
                     }
                 }
+            }
+
+            fn get_name(&self) -> &str {
+                Self::EXPECTED_TYPE
             }
         }
     };
