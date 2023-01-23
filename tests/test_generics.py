@@ -853,6 +853,17 @@ def test_replace_types():
         # example)
         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
 
+    if sys.version_info >= (3, 10):
+        assert replace_types(list[T] | None, {T: int}) == list[int] | None
+        assert replace_types(List[str | list | T], {T: int}) == List[str | list | int]
+        assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
+        assert replace_types(list[str | list | list[T]], {T: int}) == list[str | list | list[int]]
+        assert replace_types(list[Model[T] | None] | None, {T: T}) == list[Model[T] | None] | None
+        assert (
+            replace_types(T | list[T | list[T | list[T | None] | None] | None] | None, {T: int})
+            == int | list[int | list[int | list[int | None] | None] | None] | None
+        )
+
 
 def test_replace_types_with_user_defined_generic_type_field():
     """Test that using user defined generic types as generic model fields are handled correctly."""

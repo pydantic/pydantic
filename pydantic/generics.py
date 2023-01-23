@@ -1,4 +1,7 @@
+import functools
+import operator
 import sys
+import types
 import typing
 from typing import (
     TYPE_CHECKING,
@@ -268,6 +271,10 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             # See: https://www.python.org/dev/peps/pep-0585
             origin_type = getattr(typing, type_._name)
         assert origin_type is not None
+        # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
+        # We also cannot use isinstance() since we have to compare types.
+        if sys.version_info >= (3, 10) and origin_type is types.UnionType:  # noqa: E721
+            return functools.reduce(operator.or_, resolved_type_args)
         return origin_type[resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
