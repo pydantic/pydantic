@@ -148,7 +148,7 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
     # Support for references.
     if is_reference:
         # Add the reference.
-        ref = ref_template.format(model=normalize_name(field_name))
+        ref = ref_template.format(model=normalize_name(inner_schema_field['schema']['cls'].__name__))
         if ref_prefix:
             ref = ref_prefix + ref
         properties = {'$ref': ref}
