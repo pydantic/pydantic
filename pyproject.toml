@@ -46,7 +46,6 @@ classifiers = [
     'Environment :: MacOS X',
     'Framework :: Hypothesis',
     'Framework :: Pydantic',
-    'Framework :: Pydantic :: 1',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
 ]
