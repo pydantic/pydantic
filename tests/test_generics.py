@@ -853,16 +853,25 @@ def test_replace_types():
         # example)
         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
 
-    if sys.version_info >= (3, 10):
-        assert replace_types(list[T] | None, {T: int}) == list[int] | None
-        assert replace_types(List[str | list | T], {T: int}) == List[str | list | int]
-        assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
-        assert replace_types(list[str | list | list[T]], {T: int}) == list[str | list | list[int]]
-        assert replace_types(list[Model[T] | None] | None, {T: T}) == list[Model[T] | None] | None
-        assert (
-            replace_types(T | list[T | list[T | list[T | None] | None] | None] | None, {T: int})
-            == int | list[int | list[int | list[int | None] | None] | None] | None
-        )
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='pep-604 syntax (Ex.: list | int) was added in python3.10')
+def test_replace_types_with_pep_604_syntax() -> None:
+    T = TypeVar('T')
+
+    class Model(GenericModel, Generic[T]):
+        a: T
+
+    assert replace_types(T | None, {T: int}) == int | None
+    assert replace_types(list[T] | None, {T: int}) == list[int] | None
+    assert replace_types(List[str | list | T], {T: int}) == List[str | list | int]
+    assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
+    assert replace_types(list[str | list | list[T]], {T: int}) == list[str | list | list[int]]
+    assert replace_types(list[Model[T] | None] | None, {T: T}) == list[Model[T] | None] | None
+    assert (
+        replace_types(T | list[T | list[T | list[T | None] | None] | None] | None, {T: int})
+        == int | list[int | list[int | list[int | None] | None] | None] | None
+    )
+    assert replace_types(list[list[list[T | None]]], {T: int}) == list[list[list[int | None]]]
 
 
 def test_replace_types_with_user_defined_generic_type_field():
@@ -919,6 +928,68 @@ def test_deep_generic():
     generic_model = OuterModel[inner_model, NormalModel, int]
 
     inner_models = [inner_model(c=1, d='a')]
+    generic_model(a={1: inner_models, 2: None}, b=None, c=1, d=1.5)
+    generic_model(a={}, b=NormalModel(e=1, f='a'), c=1, d=1.5)
+    generic_model(a={}, b=1, c=1, d=1.5)
+
+    assert InnerModel.__concrete__ is False
+    assert inner_model.__concrete__ is True
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='pep-604 syntax (Ex.: list | int) was added in python3.10')
+def test_wrapping_resolved_generic_with_pep_604_syntax() -> None:
+    T = TypeVar('T')
+
+    class InnerModel(GenericModel, Generic[T]):
+        generic: list[T] | None
+
+    class OuterModel(BaseModel):
+        wrapper: InnerModel[int]
+
+    with pytest.raises(ValidationError):
+        OuterModel(wrapper={'generic': ['string_instead_of_int']})
+    assert OuterModel(wrapper={'generic': [1]}).dict() == {'wrapper': {'generic': [1]}}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='pep-604 syntax (Ex.: list | int) was added in python3.10')
+def test_type_propagation_in_deep_generic_with_pep_604_syntax() -> None:
+    T = TypeVar('T')
+
+    class InnerModel(GenericModel, Generic[T]):
+        generic: list[T] | None
+
+    class OuterModel(GenericModel, Generic[T]):
+        wrapper: InnerModel[T] | None
+
+    with pytest.raises(ValidationError):
+        OuterModel[int](wrapper={'generic': ['string_instead_of_int']})
+    assert OuterModel[int](wrapper={'generic': [1]}) == {'wrapper': {'generic': [1]}}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='pep-604 syntax (Ex.: list | int) was added in python3.10')
+def test_deep_generic_with_pep_604_syntax() -> None:
+    T = TypeVar('T')
+    S = TypeVar('S')
+    R = TypeVar('R')
+
+    class OuterModel(GenericModel, Generic[T, S, R]):
+        a: Dict[R, list[T] | None]
+        b: S | R | None
+        c: R
+        d: float
+
+    class InnerModel(GenericModel, Generic[T, R]):
+        c: list[T] | None
+        d: list[R] | None
+
+    class NormalModel(BaseModel):
+        e: int
+        f: str
+
+    inner_model = InnerModel[int, str]
+    generic_model = OuterModel[inner_model, NormalModel, int]
+
+    inner_models = [inner_model(c=[1], d=['a'])]
     generic_model(a={1: inner_models, 2: None}, b=None, c=1, d=1.5)
     generic_model(a={}, b=NormalModel(e=1, f='a'), c=1, d=1.5)
     generic_model(a={}, b=1, c=1, d=1.5)
