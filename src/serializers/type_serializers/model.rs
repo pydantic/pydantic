@@ -16,14 +16,14 @@ use super::{
 };
 
 #[derive(Debug, Clone)]
-pub struct NewClassSerializer {
+pub struct ModelSerializer {
     class: Py<PyType>,
     serializer: Box<CombinedSerializer>,
     name: String,
 }
 
-impl BuildSerializer for NewClassSerializer {
-    const EXPECTED_TYPE: &'static str = "new-class";
+impl BuildSerializer for ModelSerializer {
+    const EXPECTED_TYPE: &'static str = "model";
 
     fn build(
         schema: &PyDict,
@@ -44,7 +44,7 @@ impl BuildSerializer for NewClassSerializer {
     }
 }
 
-impl NewClassSerializer {
+impl ModelSerializer {
     fn allow_value(&self, value: &PyAny, extra: &Extra) -> PyResult<bool> {
         match extra.check {
             SerCheck::Strict => value.get_type().eq(self.class.as_ref(value.py())),
@@ -54,7 +54,7 @@ impl NewClassSerializer {
     }
 }
 
-impl TypeSerializer for NewClassSerializer {
+impl TypeSerializer for ModelSerializer {
     fn to_python(
         &self,
         value: &PyAny,

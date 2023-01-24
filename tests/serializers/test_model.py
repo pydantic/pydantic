@@ -24,9 +24,9 @@ class BasicSubModel(BasicModel):
     pass
 
 
-def test_new_class():
+def test_model():
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             BasicModel,
             core_schema.typed_dict_schema(
                 {
@@ -68,7 +68,7 @@ def test_dataclass():
         ),
         DataClass,
         serialization={
-            'type': 'new-class',
+            'type': 'model',
             'cls': DataClass,
             'schema': core_schema.typed_dict_schema(
                 {
@@ -93,9 +93,9 @@ def test_dataclass():
     assert json.loads(s.to_json(dc)) == {'foo': 1, 'bar': 'bar-str', 'spam': 'bite'}
 
 
-def test_new_class_allow_extra():
+def test_model_allow_extra():
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             BasicModel,
             core_schema.typed_dict_schema(
                 {
@@ -136,7 +136,7 @@ def test_new_class_allow_extra():
 )
 def test_include_exclude_args(params):
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             BasicModel,
             core_schema.typed_dict_schema(
                 {
@@ -159,7 +159,7 @@ def test_include_exclude_args(params):
 
 def test_alias():
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             BasicModel,
             core_schema.typed_dict_schema(
                 {
@@ -174,9 +174,9 @@ def test_alias():
     assert s.to_python(value) == IsStrictDict(Meow=0, Woof=1, bird=2)
 
 
-def test_new_class_wrong_warn():
+def test_model_wrong_warn():
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             type('Anything', (), {}),
             core_schema.typed_dict_schema(
                 {
@@ -194,7 +194,7 @@ def test_new_class_wrong_warn():
 
 def test_exclude_none():
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             BasicModel,
             core_schema.typed_dict_schema(
                 {
@@ -227,7 +227,7 @@ class FieldsSetModel:
 
 def test_exclude_unset():
     s = SchemaSerializer(
-        core_schema.new_class_schema(
+        core_schema.model_schema(
             FieldsSetModel,
             core_schema.typed_dict_schema(
                 {
