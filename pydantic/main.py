@@ -159,6 +159,26 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if hasattr(__pydantic_self__, '__pydantic_post_init__'):
             __pydantic_self__.__pydantic_post_init__(context=None)
 
+    @classmethod
+    def model_validate(cls: type[Model], obj: Any) -> Model:
+        values, fields_set = cls.__pydantic_validator__.validate_python(obj)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', values)
+        _object_setattr(m, '__fields_set__', fields_set)
+        if hasattr(cls, '__pydantic_post_init__'):
+            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
+        return m
+
+    @classmethod
+    def model_validate_json(cls: type[Model], json_data: str | bytes | bytearray) -> Model:
+        values, fields_set = cls.__pydantic_validator__.validate_json(json_data)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', values)
+        _object_setattr(m, '__fields_set__', fields_set)
+        if hasattr(cls, '__pydantic_post_init__'):
+            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
+        return m
+
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined
         def model_post_init(self, **kwargs: Any) -> None:
@@ -252,16 +272,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             round_trip=round_trip,
             warnings=warnings,
         )
-
-    @classmethod
-    def model_validate(cls: type[Model], obj: Any) -> Model:
-        values, fields_set = cls.__pydantic_validator__.validate_python(obj)
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', values)
-        _object_setattr(m, '__fields_set__', fields_set)
-        if hasattr(cls, '__pydantic_post_init__'):
-            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
-        return m
 
     @classmethod
     def from_orm(cls: type[Model], obj: Any) -> Model:

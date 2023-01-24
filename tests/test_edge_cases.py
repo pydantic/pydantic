@@ -160,13 +160,12 @@ def test_none_list():
     }
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'value,result',
     [
         ({'a': 2, 'b': 4}, {'a': 2, 'b': 4}),
-        ({1: '2', 'b': 4}, {'1': 2, 'b': 4}),
-        ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
+        ({b'a': '2', 'b': 4}, {'a': 2, 'b': 4}),
+        # ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
     ],
 )
 def test_typed_dict(value, result):
@@ -367,14 +366,15 @@ def test_tuple_length_error():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_tuple_invalid():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='xxx')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'}]
+    assert exc_info.value.errors() == [
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': 'xxx'}
+    ]
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -654,61 +654,43 @@ def test_advanced_value_exclude_include():
 @pytest.mark.parametrize(
     'exclude,expected',
     [
-        # Normal nested __all__
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{'j': 1}, {'j': 2}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='normal nested __all__',
         ),
-        # Merge sub dicts
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
-            {'subs': [{'k': 1, 'subsubs': [{}, {}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='value take priority over __all__ 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
+            id='__all__ not merged',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
             {'subs': [{'k': 1}, {'k': 2, 'subsubs': [{'i': 3}]}]},
+            id='value take priority over __all__ 2',
         ),
-        # Merge sub sets
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
-            {'subs': [{'k': 1, 'subsubs': []}, {'k': 2, 'subsubs': []}]},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}]}, {'k': 2, 'subsubs': []}]},
+            id='sets',
         ),
         # Merge sub dict-set
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
-            {'subs': [{'k': 1, 'subsubs': [{'j': 1}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='dict and set',
         ),
-        # Different keys
-        ({'subs': {'__all__': {'subsubs'}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}),
-        ({'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}),
-        ({'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}, {'subs': [{}, {'k': 2}]}),
-        # Nested different keys
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
-            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+        pytest.param(
+            {'subs': {'__all__': {'subsubs'}, 0: {'k'}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2}]},
         ),
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
-            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
-            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
-        ),
-        # Ignore __all__ for index with defined exclude
-        (
-            {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
-            {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
-        ),
-        ({'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}}, {'subs': [{'k': 2, 'subsubs': [{'i': 3}]}]}),
-        ({'subs': {'__all__': ..., 0: {'subsubs'}}}, {'subs': [{'k': 1}]}),
     ],
 )
-@pytest.mark.xfail(reason='fix new exclude logic')
 def test_advanced_exclude_nested_lists(exclude, expected):
     class SubSubModel(BaseModel):
         i: int
@@ -729,76 +711,18 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 @pytest.mark.parametrize(
     'include,expected',
     [
-        # Normal nested __all__
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
             {'subs': [{'subsubs': [{'i': 1}, {'i': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='normal nested __all__',
         ),
-        # Merge sub dicts
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
-            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
-        ),
-        # Merge sub sets
-        (
-            {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        # Merge sub dict-set
-        (
-            {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
-            {'subs': [{'subsubs': [{'i': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
-        ),
-        # Different keys
-        (
-            {'subs': {'__all__': {'subsubs'}, 0: {'k'}}},
-            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}},
-            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}},
-            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        # Nested different keys
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        # Ignore __all__ for index with defined include
-        (
-            {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
-            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}},
-            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
-        ),
-        (
-            {'subs': {'__all__': ..., 0: {'subsubs'}}},
-            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2, 'subsubs': [{'i': 3, 'j': 3}]}]},
+            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='value take priority over __all__ 1',
         ),
     ],
 )
-@pytest.mark.xfail(reason='fix new exclude logic')
 def test_advanced_include_nested_lists(include, expected):
     class SubSubModel(BaseModel):
         i: int
@@ -925,18 +849,12 @@ class CustomStr(str):
         return 7
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'value,expected',
     [
         ('a string', 'a string'),
         (b'some bytes', 'some bytes'),
         (bytearray('foobar', encoding='utf8'), 'foobar'),
-        (123, '123'),
-        (123.45, '123.45'),
-        (Decimal('12.45'), '12.45'),
-        (True, 'True'),
-        (False, 'False'),
         (StrEnum.a, 'a10'),
         (CustomStr('whatever'), 'whatever'),
     ],

@@ -187,6 +187,9 @@ class GenerateSchema:
         field_schema = core_schema.typed_dict_field(schema, required=required)
         if field.alias is not None:
             field_schema['validation_alias'] = field.alias
+            field_schema['serialization_alias'] = field.alias
+        if field.exclude:
+            field_schema['serialization_exclude'] = True
         return field_schema
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:

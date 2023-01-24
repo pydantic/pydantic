@@ -112,7 +112,7 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    return core_schema.new_class_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
+    return core_schema.model_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
 
 
 def complete_model_class(
@@ -155,7 +155,7 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    cls.__pydantic_validation_schema__ = outer_schema = core_schema.new_class_schema(
+    cls.__pydantic_validation_schema__ = outer_schema = core_schema.model_schema(
         cls, inner_schema, config=core_config, call_after_init=model_post_init
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
@@ -188,7 +188,7 @@ def build_inner_schema(  # noqa: C901
                 global_ns = module.__dict__
 
     model_ref = f'{module_name}.{name}'
-    self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
+    self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(model_ref))
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
