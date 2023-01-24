@@ -17,7 +17,7 @@ use super::function::convert_err;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct NewClassValidator {
+pub struct ModelValidator {
     strict: bool,
     revalidate: bool,
     validator: Box<CombinedValidator>,
@@ -27,8 +27,8 @@ pub struct NewClassValidator {
     expect_fields_set: bool,
 }
 
-impl BuildValidator for NewClassValidator {
-    const EXPECTED_TYPE: &'static str = "new-class";
+impl BuildValidator for ModelValidator {
+    const EXPECTED_TYPE: &'static str = "model";
 
     fn build(
         schema: &PyDict,
@@ -64,7 +64,7 @@ impl BuildValidator for NewClassValidator {
     }
 }
 
-impl Validator for NewClassValidator {
+impl Validator for ModelValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -120,7 +120,7 @@ impl Validator for NewClassValidator {
     }
 }
 
-impl NewClassValidator {
+impl ModelValidator {
     fn create_class(&self, py: Python, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
         // based on the following but with the second argument of new_func set to an empty tuple as required
         // https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77

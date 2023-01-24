@@ -36,7 +36,7 @@ mod json;
 mod lax_or_strict;
 mod list;
 mod literal;
-mod new_class;
+mod model;
 mod none;
 mod nullable;
 mod recursive;
@@ -333,7 +333,7 @@ pub fn build_validator<'a>(
         // nullables
         nullable::NullableValidator,
         // model classes
-        new_class::NewClassValidator,
+        model::ModelValidator,
         // strings
         string::StrValidator,
         // integers
@@ -445,7 +445,7 @@ pub enum CombinedValidator {
     // nullables
     Nullable(nullable::NullableValidator),
     // create new model classes
-    NewClass(new_class::NewClassValidator),
+    Model(model::ModelValidator),
     // strings
     Str(string::StrValidator),
     StrConstrained(string::StrConstrainedValidator),

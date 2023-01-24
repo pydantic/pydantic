@@ -51,7 +51,7 @@ def test_isinstance_json():
 def test_internal_error():
     v = SchemaValidator(
         {
-            'type': 'new-class',
+            'type': 'model',
             'cls': int,
             'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'int'}}}},
         }

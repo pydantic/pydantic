@@ -216,7 +216,7 @@ class FieldsSetModel:
 
 
 def test_exclude_unset(any_serializer):
-    # copied from test of the same name in test_new_class.py
+    # copied from test of the same name in test_model.py
     m = FieldsSetModel(foo=1, bar=2, spam=3, __fields_set__={'bar', 'spam'})
     assert any_serializer.to_python(m) == {'foo': 1, 'bar': 2, 'spam': 3}
     assert any_serializer.to_python(m, exclude_unset=True) == {'bar': 2, 'spam': 3}

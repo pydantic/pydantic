@@ -116,13 +116,13 @@ def format_ser_schema(formatting_string: str) -> FormatSerSchema:
     return FormatSerSchema(type='format', formatting_string=formatting_string)
 
 
-class NewClassSerSchema(TypedDict, total=False):
-    type: Required[Literal['new-class']]
+class ModelSerSchema(TypedDict, total=False):
+    type: Required[Literal['model']]
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
 
 
-SerSchema = Union[AltTypeSerSchema, FunctionSerSchema, FormatSerSchema, NewClassSerSchema]
+SerSchema = Union[AltTypeSerSchema, FunctionSerSchema, FormatSerSchema, ModelSerSchema]
 
 
 class AnySchema(TypedDict, total=False):
@@ -1907,8 +1907,8 @@ def typed_dict_schema(
     )
 
 
-class NewClassSchema(TypedDict, total=False):
-    type: Required[Literal['new-class']]
+class ModelSchema(TypedDict, total=False):
+    type: Required[Literal['model']]
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
     call_after_init: str
@@ -1919,7 +1919,7 @@ class NewClassSchema(TypedDict, total=False):
     serialization: SerSchema
 
 
-def new_class_schema(
+def model_schema(
     cls: Type[Any],
     schema: CoreSchema,
     *,
@@ -1929,9 +1929,14 @@ def new_class_schema(
     ref: str | None = None,
     extra: Any = None,
     serialization: SerSchema | None = None,
-) -> NewClassSchema:
+) -> ModelSchema:
     """
-    Returns a schema that matches a new class, e.g.:
+    A model schema generally contains a typed-dict schema.
+    It will run the typed dict validator, then create a new class
+    and set the dict and fields set returned from the typed dict validator
+    to `__dict__` and `__fields_set__` respectively.
+
+    Example:
 
     ```py
     from pydantic_core import CoreConfig, SchemaValidator, core_schema
@@ -1939,7 +1944,7 @@ def new_class_schema(
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
 
-    schema = core_schema.new_class_schema(
+    schema = core_schema.model_schema(
         cls=MyModel,
         config=CoreConfig(str_max_length=5),
         schema=core_schema.typed_dict_schema(
@@ -1952,16 +1957,17 @@ def new_class_schema(
     ```
 
     Args:
-        cls: The class to use for the new class
-        schema: The schema to use for the new class
-        call_after_init: The call after init to use for the new class
-        strict: Whether the new class is strict
+        cls: The class to use for the model
+        schema: The schema to use for the model
+        call_after_init: The call after init to use for the model
+        strict: Whether the model is strict
+        config: The config to use for the model
         ref: See [TODO] for details
         extra: See [TODO] for details
-        config: The config to use for the new class
+        serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='new-class',
+        type='model',
         cls=cls,
         schema=schema,
         call_after_init=call_after_init,
@@ -2223,7 +2229,7 @@ def json_schema(
         field_b: bool
 
     json_schema = core_schema.json_schema(schema=dict_schema)
-    schema = core_schema.new_class_schema(cls=MyModel, schema=json_schema)
+    schema = core_schema.model_schema(cls=MyModel, schema=json_schema)
     v = SchemaValidator(schema)
     m = v.validate_python('{"field_a": "hello", "field_b": true}')
     assert isinstance(m, MyModel)
@@ -2401,7 +2407,7 @@ CoreSchema = Union[
     ChainSchema,
     LaxOrStrictSchema,
     TypedDictSchema,
-    NewClassSchema,
+    ModelSchema,
     ArgumentsSchema,
     CallSchema,
     RecursiveReferenceSchema,
