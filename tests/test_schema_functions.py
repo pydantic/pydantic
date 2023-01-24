@@ -61,6 +61,7 @@ all_schema_functions = [
         args({'type': 'int'}),
         {'type': 'tuple', 'mode': 'positional', 'items_schema': ({'type': 'int'},)},
     ),
+    (core_schema.tuple_positional_schema, args(), {'type': 'tuple', 'mode': 'positional', 'items_schema': ()}),
     (
         core_schema.tuple_variable_schema,
         args({'type': 'int'}),
