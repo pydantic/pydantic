@@ -40,7 +40,7 @@ def model_serializer() -> SchemaSerializer:
             'type': 'union',
             'choices': [
                 {
-                    'type': 'new-class',
+                    'type': 'model',
                     'cls': ModelA,
                     'schema': {
                         'type': 'typed-dict',
@@ -57,7 +57,7 @@ def model_serializer() -> SchemaSerializer:
                     },
                 },
                 {
-                    'type': 'new-class',
+                    'type': 'model',
                     'cls': ModelB,
                     'schema': {
                         'type': 'typed-dict',

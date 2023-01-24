@@ -194,7 +194,7 @@ def test_model_class():
 
     v = SchemaValidator(
         {
-            'type': 'new-class',
+            'type': 'model',
             'ref': 'Branch',
             'cls': Branch,
             'schema': {
@@ -721,7 +721,7 @@ def test_error_inside_recursive_wrapper():
     )
 
 
-def test_new_class_td_recursive():
+def test_model_td_recursive():
     class Foobar:
         __slots__ = '__dict__', '__fields_set__'
 
@@ -739,7 +739,7 @@ def test_new_class_td_recursive():
                             'type': 'union',
                             'choices': [
                                 {
-                                    'type': 'new-class',
+                                    'type': 'model',
                                     'cls': Foobar,
                                     'schema': {'type': 'recursive-ref', 'schema_ref': '__main__.Foobar'},
                                 },

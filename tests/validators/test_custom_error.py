@@ -51,7 +51,7 @@ def test_ask():
 
     v = SchemaValidator(
         {
-            'type': 'new-class',
+            'type': 'model',
             'cls': MyModel,
             'schema': {
                 'type': 'custom-error',

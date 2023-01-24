@@ -8,7 +8,7 @@ pub mod generator;
 pub mod json;
 pub mod list;
 pub mod literal;
-pub mod new_class;
+pub mod model;
 pub mod nullable;
 pub mod other;
 pub mod recursive;
