@@ -62,6 +62,25 @@ def test_tuple_strict_passes_with_tuple(mode, items, input_value, expected):
     assert v.validate_python(input_value) == expected
 
 
+def test_empty_positional_tuple():
+    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': []})
+    assert v.validate_python(()) == ()
+    assert v.validate_python([]) == ()
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python((1,))
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'too_long',
+            'loc': (),
+            'msg': 'Tuple should have at most 0 items after validation, not 1',
+            'input': (1,),
+            'ctx': {'field_type': 'Tuple', 'max_length': 0, 'actual_length': 1},
+        }
+    ]
+
+
 @pytest.mark.parametrize(
     'mode,items', [('variable', {'type': 'int'}), ('positional', [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}])]
 )
