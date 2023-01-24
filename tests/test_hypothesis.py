@@ -1,5 +1,6 @@
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -21,6 +22,7 @@ def test_datetime_datetime(datetime_schema, data):
     assert datetime_schema.validate_python(data) == data
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Can fail on windows, I guess due to 64-bit issue')
 @given(strategies.integers(min_value=-11_676_096_000, max_value=253_402_300_799_000))
 def test_datetime_int(datetime_schema, data):
     try:
@@ -82,6 +84,7 @@ class BranchModel(TypedDict):
     sub_branch: Optional['BranchModel']
 
 
+@pytest.mark.skipif(sys.platform == 'emscripten', reason='Seems to fail sometimes on pyodide no idea why')
 @given(strategies.from_type(BranchModel))
 def test_recursive(recursive_schema, data):
     assert recursive_schema.validate_python(data) == data

@@ -453,7 +453,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [aarch64, armv7, s390x]
+        target: [aarch64, armv7, s390x, ppc64le]
         distro: ['ubuntu22.04']
         include:
           - target: aarch64
@@ -469,38 +469,32 @@ jobs:
           path: dist
 
       - uses: uraimo/run-on-arch-action@v2.5.0
-        if: matrix.distro == 'ubuntu22.04'
-        name: Install & test on Ubuntu
+        name: install & test
         with:
           arch: ${{ matrix.target }}
           distro: ${{ matrix.distro }}
           githubToken: ${{ github.token }}
           install: |
-            apt-get update
-            apt-get install -y --no-install-recommends python3 python3-pip
+            set -x
+            if command -v apt-get &> /dev/null; then
+              echo "installing python & pip with apt-get..."
+              apt-get update
+              apt-get install -y --no-install-recommends python3 python3-pip
+            else
+              echo "installing python & pip with apk..."
+              apk update
+              apk add python3 py3-pip
+            fi
           run: |
+            set -x
+            # this is required so that pytest uses the installed pydantic-core package
             rm -r pydantic_core
-            pip install -U pip typing-extensions
-            pip install -r tests/requirements.txt
-            pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-            pytest
-
-      - uses: uraimo/run-on-arch-action@v2.5.0
-        if: matrix.distro == 'alpine_latest'
-        name: Install & test on Alpine
-        with:
-          arch: ${{ matrix.target }}
-          distro: ${{ matrix.distro }}
-          githubToken: ${{ github.token }}
-          install: |
-            apk update
-            apk add python3 py3-pip
-          run: |
-            rm -r pydantic_core
-            pip install -U pip typing-extensions
-            pip install -r tests/requirements.txt
-            pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-            pytest
+            # typing-extensions isn't automatically installed because of `--no-index --no-deps`
+            python3 -m pip install -U pip typing-extensions
+            python3 -m pip install -r tests/requirements.txt
+            python3 -m pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
+            python3 -m pytest
+            python3 -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
 
   test-builds-os:
     name: test build on ${{ matrix.os }}
