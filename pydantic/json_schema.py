@@ -168,28 +168,25 @@ def get_schema_property_json(field_name: str, inner_schema_field: Dict[str, Any]
 
 
 
+# TODO: ref prefix from config
 # ref_template='foobar/{model}.json'
-def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=DEFAULT_JSON_SCHEMA_REF_PREFIX,  ref_template=DEFAULT_JSON_SCHEMA_REF_TEMPLATE) -> Dict[str, Any]:
+def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, config, ref_prefix=DEFAULT_JSON_SCHEMA_REF_PREFIX,  ref_template=DEFAULT_JSON_SCHEMA_REF_TEMPLATE) -> Dict[str, Any]:
     """Returns a JSON Schema document, compatible with draft 2020-12."""
 
     # Sanity check.
     assert inner_schema['type'] == 'typed-dict'
 
     model_name = normalize_name(inner_schema['ref'].split('.')[-1])
-    model_title = normalize_name(inner_schema['ref'].title())
 
     # Set the reference prefix.
     schema = DEFAULT_JSON_SCHEMA_URI
     ref = ref_prefix + ref_template.format(model=model_name)
 
-    # looking for the title in the schema
-    if 'title' in inner_schema:
-        print('yay')
     # Start the JSON Schema document.
     json_schema_doc = {
         '$schema': schema,
         "$ref": ref,
-        'title': model_title,
+        'title': config.title,
         'type': 'object',
         'properties': {},
         'required': [],
@@ -220,7 +217,7 @@ def internal_to_json_schema(inner_schema: Dict[str, Any], fields, *, ref_prefix=
             class_ref = inner_schema_field['schema']['cls']
 
             json_schema_defines[class_name] = class_ref
-            json_schema_defines[class_name] = 'hi'
+            json_schema_defines[class_name] = get_schema_property_json(field_name, inner_schema_field=inner_schema_field, ref_prefix=ref_prefix, ref_template=ref_template)
 
     # if json_schema_defines:
     json_schema_doc['definitions'] = json_schema_defines

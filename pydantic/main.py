@@ -20,7 +20,7 @@ from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .json_schema import internal_to_json_schema
+from .json_schema import internal_to_json_schema, DEFAULT_JSON_SCHEMA_REF_PREFIX, DEFAULT_JSON_SCHEMA_REF_TEMPLATE
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -124,7 +124,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
-        __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
+        # __json_schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
@@ -369,7 +369,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     # def model_json_schema(
     #     cls, by_alias: bool = True, ref_template: str = default_ref_template
     # ) -> typing.Dict[str, Any]:
-    #     cached = cls.__schema_cache__.get((by_alias, ref_template))
+    #
     #     if cached is not None:
     #         return cached
     #     s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
@@ -377,11 +377,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     #     return s
 
     @classmethod
-    def model_json_schema(cls, *, ref_template=None) -> typing.Dict[str, Any]:
+    def model_json_schema(cls, *, by_alias=True,  **kwargs) -> typing.Dict[str, Any]:
+
+        ref_prefix = kwargs.get('ref_prefix', DEFAULT_JSON_SCHEMA_REF_PREFIX)
+        ref_template = kwargs.get('ref_template', DEFAULT_JSON_SCHEMA_REF_TEMPLATE)
+
+        # cached = cls.__json_schema_cache__.get((by_alias, ref_template))
+        # if cached is not None:
+        #     return cached
 
         types_namespace = None
-
-        # cls.model_rebuild()
         inner_schema, fields = _model_construction.build_inner_schema(
             cls,
             cls.__name__,
@@ -390,7 +395,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             types_namespace,
         )
 
-        return internal_to_json_schema(inner_schema, fields)
+        config = cls.Config
+        return internal_to_json_schema(inner_schema, fields, config=config, ref_prefix=ref_prefix, ref_template=ref_template)
 
     @classmethod
     @typing.no_type_check
