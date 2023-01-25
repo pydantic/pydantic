@@ -27,6 +27,7 @@ def test_format(value, formatting_string, expected_python, expected_json):
 
 def test_format_error():
     s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.format_ser_schema('^5d')))
+    assert s.to_python(123) == ' 123 '
 
     # the actual error message differs slightly between cpython and pypy
     msg = "Error calling `format(value, '^5d')`: ValueError:"
@@ -42,3 +43,14 @@ def test_dict_keys():
         core_schema.dict_schema(core_schema.float_schema(serialization=core_schema.format_ser_schema('0.4f')))
     )
     assert s.to_python({1: True}) == {'1.0000': True}
+
+
+def test_format_fallback():
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.format_ser_schema('^5s')))
+    assert s.to_python('abc') == ' abc '
+    assert s.to_python('abc', mode='json') == ' abc '
+    assert s.to_json('abc') == b'" abc "'
+
+    assert s.to_python(None) is None
+    assert s.to_python(None, mode='json') is None
+    assert s.to_json(None) == b'null'

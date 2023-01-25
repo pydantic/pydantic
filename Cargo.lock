@@ -225,7 +225,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "ahash",
  "base64",
@@ -248,8 +248,7 @@ dependencies = [
 [[package]]
 name = "pyo3"
 version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccd4149c8c3975099622b4e1962dac27565cf5663b76452c3e2b66e0b6824277"
+source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "cfg-if",
  "indoc",
@@ -265,8 +264,7 @@ dependencies = [
 [[package]]
 name = "pyo3-build-config"
 version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cd09fe469834db21ee60e0051030339e5d361293d8cb5ec02facf7fdcf52dbf"
+source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "once_cell",
  "target-lexicon",
@@ -275,8 +273,7 @@ dependencies = [
 [[package]]
 name = "pyo3-ffi"
 version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c427c9a96b9c5b12156dbc11f76b14f49e9aae8905ca783ea87c249044ef137"
+source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -285,8 +282,7 @@ dependencies = [
 [[package]]
 name = "pyo3-macros"
 version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b822bbba9d60630a44d2109bc410489bb2f439b33e3a14ddeb8a40b378a7c4"
+source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
@@ -297,8 +293,7 @@ dependencies = [
 [[package]]
 name = "pyo3-macros-backend"
 version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84ae898104f7c99db06231160770f3e40dad6eb9021daddc0fedfa3e41dff10a"
+source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "proc-macro2",
  "quote",

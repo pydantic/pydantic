@@ -4,7 +4,7 @@ use std::hash::Hash;
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PySet, PyString};
+use pyo3::types::{PyBool, PyDict, PySet, PyString};
 
 use crate::build_tools::SchemaDict;
 
@@ -125,9 +125,10 @@ trait FilterLogic<T: Eq + Copy> {
         let mut next_exclude: Option<&PyAny> = None;
         if let Some(exclude) = exclude {
             if let Ok(exclude_dict) = exclude.downcast::<PyDict>() {
-                if let Some(exc_value) = exclude_dict.get_item(py_key) {
-                    if exc_value.is_none() {
-                        // if the index is in exclude, and the exclude value is `None`, we want to omit this index
+                let op_exc_value = merge_all_value(exclude_dict, py_key)?;
+                if let Some(exc_value) = op_exc_value {
+                    if is_ellipsis_like(exc_value) {
+                        // if the index is in exclude, and the exclude value is `None`, we want to omit this index/item
                         return Ok(None);
                     } else {
                         // if the index is in exclude, and the exclude-value is not `None`,
@@ -136,8 +137,7 @@ trait FilterLogic<T: Eq + Copy> {
                     }
                 }
             } else if let Ok(exclude_set) = exclude.downcast::<PySet>() {
-                // question: should we `unwrap_or(false)` instead of raise an error here?
-                if exclude_set.contains(py_key)? {
+                if exclude_set.contains(py_key)? || exclude_set.contains(intern!(exclude_set.py(), "__all__"))? {
                     // index is in the exclude set, we return Ok(None) to omit this index
                     return Ok(None);
                 }
@@ -148,9 +148,11 @@ trait FilterLogic<T: Eq + Copy> {
 
         if let Some(include) = include {
             if let Ok(include_dict) = include.downcast::<PyDict>() {
-                if let Some(inc_value) = include_dict.get_item(py_key) {
+                let op_inc_value = merge_all_value(include_dict, py_key)?;
+
+                if let Some(inc_value) = op_inc_value {
                     // if the index is in include, we definitely want to include this index
-                    return if inc_value.is_none() {
+                    return if is_ellipsis_like(inc_value) {
                         Ok(Some((None, next_exclude)))
                     } else {
                         Ok(Some((Some(inc_value), next_exclude)))
@@ -161,8 +163,7 @@ trait FilterLogic<T: Eq + Copy> {
                     return Ok(None);
                 }
             } else if let Ok(include_set) = include.downcast::<PySet>() {
-                // question: as above
-                if include_set.contains(py_key)? {
+                if include_set.contains(py_key)? || include_set.contains(intern!(include_set.py(), "__all__"))? {
                     return Ok(Some((None, next_exclude)));
                 } else if !self.explicit_include(int_key) {
                     // if the index is not in include, include exists, AND it's not in schema include,
@@ -244,4 +245,83 @@ where
     fn default_filter(&self, _value: T) -> bool {
         true
     }
+}
+
+/// detect both ellipsis and `True` to be compatible with pydantic V1
+fn is_ellipsis_like(v: &PyAny) -> bool {
+    v.is_ellipsis()
+        || match v.downcast::<PyBool>() {
+            Ok(b) => b.is_true(),
+            Err(_) => false,
+        }
+}
+
+/// lookup the dict, for the key and "__all__" key, and merge them following the same rules as pydantic V1
+fn merge_all_value(dict: &PyDict, py_key: impl ToPyObject + Copy) -> PyResult<Option<&PyAny>> {
+    let op_item_value = dict.get_item(py_key);
+    let op_all_value = dict.get_item(intern!(dict.py(), "__all__"));
+
+    match (op_item_value, op_all_value) {
+        (Some(item_value), Some(all_value)) => {
+            if is_ellipsis_like(item_value) || is_ellipsis_like(all_value) {
+                Ok(op_item_value)
+            } else {
+                let item_dict = as_dict(item_value)?;
+                let item_dict_merged = merge_dicts(item_dict, all_value)?;
+                Ok(Some(item_dict_merged))
+            }
+        }
+        (Some(_), None) => Ok(op_item_value),
+        (None, Some(_)) => Ok(op_all_value),
+        (None, None) => Ok(None),
+    }
+}
+
+fn as_dict(value: &PyAny) -> PyResult<&PyDict> {
+    if let Ok(dict) = value.downcast::<PyDict>() {
+        dict.copy()
+    } else if let Ok(set) = value.downcast::<PySet>() {
+        let py = value.py();
+        let dict = PyDict::new(py);
+        for item in set {
+            dict.set_item(item, py.Ellipsis())?;
+        }
+        Ok(dict)
+    } else {
+        Err(PyTypeError::new_err(
+            "`include` and `exclude` must be of type `dict[str | int, <recursive> | ...] | set[str | int | ...]`",
+        ))
+    }
+}
+
+fn merge_dicts<'py>(item_dict: &'py PyDict, all_value: &'py PyAny) -> PyResult<&'py PyDict> {
+    let item_dict = item_dict.copy()?;
+    if let Ok(all_dict) = all_value.downcast::<PyDict>() {
+        for (all_key, all_value) in all_dict {
+            if let Some(item_value) = item_dict.get_item(all_key) {
+                if is_ellipsis_like(item_value) {
+                    continue;
+                } else {
+                    let item_value_dict = as_dict(item_value)?;
+                    // if the all value is an ellipsis, we don't overwrite the item value
+                    if !is_ellipsis_like(all_value) {
+                        item_dict.set_item(all_key, merge_dicts(item_value_dict, all_value)?)?;
+                    }
+                }
+            } else {
+                item_dict.set_item(all_key, all_value)?;
+            }
+        }
+    } else if let Ok(set) = all_value.downcast::<PySet>() {
+        for item in set {
+            if !item_dict.contains(item)? {
+                item_dict.set_item(item, set.py().Ellipsis())?;
+            }
+        }
+    } else {
+        return Err(PyTypeError::new_err(
+            "'__all__' key of `include` and `exclude` must be of type `dict[str | int, <recursive> | ...] | set[str | int | ...]`",
+        ));
+    }
+    Ok(item_dict)
 }

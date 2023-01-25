@@ -25,6 +25,9 @@ def test_str():
 
 def test_str_fallback():
     s = SchemaSerializer(core_schema.string_schema())
+    assert s.to_python(None) is None
+    assert s.to_python(None, mode='json') is None
+    assert s.to_json(None) == b'null'
     with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
         assert s.to_python(123) == 123
     with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
