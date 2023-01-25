@@ -969,7 +969,7 @@ def test_model_iteration():
         ),
         pytest.param(
             {'foos': {0: {'b'}, '__all__': {'a'}}},
-            {'c': 3, 'foos': [{'a': 1}, {'b': 4}]},
+            {'c': 3, 'foos': [{}, {'b': 4}]},
             None,
             id='using "__all__" to exclude specific nested field in combination with more specific exclude',
         ),
