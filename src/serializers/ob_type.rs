@@ -37,6 +37,8 @@ pub struct ObTypeLookup {
     // types from this package
     url: usize,
     multi_host_url: usize,
+    // enum type
+    enum_type: usize,
 }
 
 static TYPE_LOOKUP: GILOnceCell<ObTypeLookup> = GILOnceCell::new();
@@ -77,6 +79,7 @@ impl ObTypeLookup {
             // types from this package
             url: PyUrl::new(lib_url.clone()).into_py(py).as_ref(py).get_type_ptr() as usize,
             multi_host_url: PyMultiHostUrl::new(lib_url, None).into_py(py).as_ref(py).get_type_ptr() as usize,
+            enum_type: py.import("enum").unwrap().getattr("Enum").unwrap().get_type_ptr() as usize,
         }
     }
 
@@ -120,6 +123,7 @@ impl ObTypeLookup {
             ObType::MultiHostUrl => self.multi_host_url == ob_type,
             ObType::Dataclass => is_dataclass(op_value),
             ObType::PydanticModel => is_pydantic_model(op_value),
+            ObType::Enum => self.enum_type == ob_type,
             ObType::Unknown => false,
         };
 
@@ -200,6 +204,8 @@ impl ObTypeLookup {
             ObType::Dataclass
         } else if is_pydantic_model(op_value) {
             ObType::PydanticModel
+        } else if self.is_enum(op_value) {
+            ObType::Enum
         } else {
             // this allows for subtypes of the supported class types,
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
@@ -210,6 +216,15 @@ impl ObTypeLookup {
                 // we don't want to tests for dataclass etc. again, so we pass None as op_value
                 self.lookup_by_ob_type(None, base_type_ptr)
             }
+        }
+    }
+
+    fn is_enum(&self, op_value: Option<&PyAny>) -> bool {
+        // waiting for https://github.com/PyO3/pyo3/issues/2905 to be resolved when we should be able to use
+        // `let meta_type = unsafe { (*type_ptr).ob_type };`
+        match op_value {
+            Some(value) => value.get_type().get_type_ptr() as usize == self.enum_type,
+            None => false,
         }
     }
 }
@@ -267,6 +282,8 @@ pub enum ObType {
     // dataclasses and pydantic models
     Dataclass,
     PydanticModel,
+    // enum type
+    Enum,
     // unknown type
     Unknown,
 }

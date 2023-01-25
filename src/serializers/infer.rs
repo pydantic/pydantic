@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::str::from_utf8;
 
 use pyo3::exceptions::PyTypeError;
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTime, PyTuple,
@@ -18,7 +19,6 @@ use super::extra::{Extra, SerMode};
 use super::filter::AnyFilter;
 use super::ob_type::ObType;
 use super::shared::object_to_dict;
-use super::type_serializers::tuple::KeyBuilder;
 
 pub(crate) fn infer_to_python(
     value: &PyAny,
@@ -53,7 +53,7 @@ pub(crate) fn infer_to_python_known(
             value
                 .downcast::<$t>()?
                 .iter()
-                .map(|v| infer_to_python(v, include, exclude, extra))
+                .map(|v| infer_to_python(v, None, None, extra))
                 .collect::<PyResult<Vec<PyObject>>>()?
         };
     }
@@ -159,6 +159,10 @@ pub(crate) fn infer_to_python_known(
             }
             ObType::Dataclass => serialize_dict(object_to_dict(value, false, extra)?)?,
             ObType::PydanticModel => serialize_dict(object_to_dict(value, true, extra)?)?,
+            ObType::Enum => {
+                let v = value.getattr(intern!(py, "value"))?;
+                infer_to_python(v, include, exclude, extra)?.into_py(py)
+            }
             ObType::Unknown => return Err(unknown_type_error(value)),
         },
         _ => match ob_type {
@@ -370,6 +374,10 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         }
         ObType::Dataclass => serialize_dict!(object_to_dict(value, false, extra).map_err(py_err_se_err)?),
         ObType::PydanticModel => serialize_dict!(object_to_dict(value, true, extra).map_err(py_err_se_err)?),
+        ObType::Enum => {
+            let v = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
+            infer_serialize(v, serializer, include, exclude, extra)
+        }
         ObType::Unknown => return Err(py_err_se_err(unknown_type_error(value))),
     };
     extra.rec_guard.pop(value_id);
@@ -387,16 +395,11 @@ pub(crate) fn infer_json_key<'py>(key: &'py PyAny, extra: &Extra) -> PyResult<Co
 
 pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
     match ob_type {
-        ObType::None => Ok(Cow::Borrowed("None")),
-        ObType::Int | ObType::IntSubclass | ObType::Float | ObType::FloatSubclass => Ok(key.str()?.to_string_lossy()),
-        ObType::Bool => {
-            let v = if key.is_true().unwrap_or(false) {
-                "true"
-            } else {
-                "false"
-            };
-            Ok(Cow::Borrowed(v))
+        ObType::None => super::type_serializers::simple::none_json_key(),
+        ObType::Int | ObType::IntSubclass | ObType::Float | ObType::FloatSubclass => {
+            super::type_serializers::simple::to_str_json_key(key)
         }
+        ObType::Bool => super::type_serializers::simple::bool_json_key(key),
         ObType::Str | ObType::StrSubclass => {
             let py_str: &PyString = key.downcast()?;
             Ok(Cow::Borrowed(py_str.to_str()?))
@@ -438,7 +441,7 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             Ok(Cow::Owned(py_url.__str__()))
         }
         ObType::Tuple => {
-            let mut key_build = KeyBuilder::new();
+            let mut key_build = super::type_serializers::tuple::KeyBuilder::new();
             for element in key.downcast::<PyTuple>()?.iter() {
                 key_build.push(&infer_json_key(element, extra)?);
             }
@@ -452,6 +455,10 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             key.hash()?;
             let key = key.str()?.to_string();
             Ok(Cow::Owned(key))
+        }
+        ObType::Enum => {
+            let k = key.getattr(intern!(key.py(), "value"))?;
+            infer_json_key(k, extra)
         }
         ObType::Unknown => Err(unknown_type_error(key)),
     }

@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from enum import Enum
 
 import pytest
 from dirty_equals import IsList
@@ -222,12 +223,12 @@ def test_exclude_unset(any_serializer):
     assert any_serializer.to_python(m, exclude_unset=True) == {'bar': 2, 'spam': 3}
     assert any_serializer.to_python(m, exclude=None, exclude_unset=True) == {'bar': 2, 'spam': 3}
     assert any_serializer.to_python(m, exclude={'bar'}, exclude_unset=True) == {'spam': 3}
-    assert any_serializer.to_python(m, exclude={'bar': None}, exclude_unset=True) == {'spam': 3}
+    assert any_serializer.to_python(m, exclude={'bar': ...}, exclude_unset=True) == {'spam': 3}
     assert any_serializer.to_python(m, exclude={'bar': {}}, exclude_unset=True) == {'bar': 2, 'spam': 3}
 
     assert any_serializer.to_json(m, exclude=None, exclude_unset=True) == b'{"bar":2,"spam":3}'
     assert any_serializer.to_json(m, exclude={'bar'}, exclude_unset=True) == b'{"spam":3}'
-    assert any_serializer.to_json(m, exclude={'bar': None}, exclude_unset=True) == b'{"spam":3}'
+    assert any_serializer.to_json(m, exclude={'bar': ...}, exclude_unset=True) == b'{"spam":3}'
     assert any_serializer.to_json(m, exclude={'bar': {}}, exclude_unset=True) == b'{"bar":2,"spam":3}'
 
     m2 = FieldsSetModel(foo=1, bar=2, spam=3, __fields_set__={'bar', 'spam', 'missing'})
@@ -248,3 +249,24 @@ def test_unknown_type(any_serializer):
 
     with pytest.raises(PydanticSerializationError, match='Unable to serialize unknown type: <Foobar repr>'):
         any_serializer.to_json(f)
+
+
+def test_enum(any_serializer):
+    class MyEnum(Enum):
+        a = 1
+        b = 'b'
+
+    assert any_serializer.to_python(MyEnum.a) == MyEnum.a
+    assert any_serializer.to_python(MyEnum.b) == MyEnum.b
+    assert any_serializer.to_python({MyEnum.a: 42}) == {MyEnum.a: 42}
+    assert any_serializer.to_python({MyEnum.b: 42}) == {MyEnum.b: 42}
+
+    assert any_serializer.to_python(MyEnum.a, mode='json') == 1
+    assert any_serializer.to_python(MyEnum.b, mode='json') == 'b'
+    assert any_serializer.to_python({MyEnum.a: 42}, mode='json') == {'1': 42}
+    assert any_serializer.to_python({MyEnum.b: 42}, mode='json') == {'b': 42}
+
+    assert any_serializer.to_json(MyEnum.a) == b'1'
+    assert any_serializer.to_json(MyEnum.b) == b'"b"'
+    assert any_serializer.to_json({MyEnum.a: 42}) == b'{"1":42}'
+    assert any_serializer.to_json({MyEnum.b: 42}) == b'{"b":42}'
