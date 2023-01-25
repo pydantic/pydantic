@@ -7,8 +7,8 @@ use serde::Serialize;
 use crate::build_context::BuildContext;
 
 use super::{
-    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra,
-    IsType, ObType, SerMode, TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, IsType, ObType,
+    SerMode, TypeSerializer,
 };
 
 #[derive(Debug, Clone)]
@@ -24,6 +24,10 @@ impl BuildSerializer for NoneSerializer {
     ) -> PyResult<CombinedSerializer> {
         Ok(Self {}.into())
     }
+}
+
+pub(crate) fn none_json_key() -> PyResult<Cow<'static, str>> {
+    Ok(Cow::Borrowed("None"))
 }
 
 impl TypeSerializer for NoneSerializer {
@@ -47,7 +51,7 @@ impl TypeSerializer for NoneSerializer {
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::None) {
-            IsType::Exact => infer_json_key_known(&ObType::None, key, extra),
+            IsType::Exact => none_json_key(),
             _ => {
                 extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, extra)
@@ -78,7 +82,7 @@ impl TypeSerializer for NoneSerializer {
 }
 
 macro_rules! build_simple_serializer {
-    ($struct_name:ident, $expected_type:literal, $rust_type:ty, $ob_type:expr) => {
+    ($struct_name:ident, $expected_type:literal, $rust_type:ty, $ob_type:expr, $key_method:ident) => {
         #[derive(Debug, Clone)]
         pub struct $struct_name;
 
@@ -121,7 +125,7 @@ macro_rules! build_simple_serializer {
 
             fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
                 match extra.ob_type_lookup.is_type(key, $ob_type) {
-                    IsType::Exact | IsType::Subclass => infer_json_key_known(&$ob_type, key, extra),
+                    IsType::Exact | IsType::Subclass => $key_method(key),
                     IsType::False => {
                         extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                         infer_json_key(key, extra)
@@ -155,6 +159,20 @@ macro_rules! build_simple_serializer {
     };
 }
 
-build_simple_serializer!(IntSerializer, "int", i64, ObType::Int);
-build_simple_serializer!(BoolSerializer, "bool", bool, ObType::Bool);
-build_simple_serializer!(FloatSerializer, "float", f64, ObType::Float);
+pub(crate) fn to_str_json_key(key: &PyAny) -> PyResult<Cow<str>> {
+    Ok(key.str()?.to_string_lossy())
+}
+
+build_simple_serializer!(IntSerializer, "int", i64, ObType::Int, to_str_json_key);
+
+pub(crate) fn bool_json_key(key: &PyAny) -> PyResult<Cow<str>> {
+    let v = if key.is_true().unwrap_or(false) {
+        "true"
+    } else {
+        "false"
+    };
+    Ok(Cow::Borrowed(v))
+}
+
+build_simple_serializer!(BoolSerializer, "bool", bool, ObType::Bool, bool_json_key);
+build_simple_serializer!(FloatSerializer, "float", f64, ObType::Float, to_str_json_key);

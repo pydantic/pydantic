@@ -184,7 +184,10 @@ impl CollectWarnings {
     }
 
     pub fn on_fallback_py(&self, field_type: &str, value: &PyAny, extra: &Extra) -> PyResult<()> {
-        if extra.check.enabled() {
+        // special case for None as it's very common e.g. as a default value
+        if value.is_none() {
+            Ok(())
+        } else if extra.check.enabled() {
             Err(PydanticSerializationUnexpectedValue::new_err(None))
         } else {
             self.fallback_warning(field_type, value);
@@ -198,7 +201,10 @@ impl CollectWarnings {
         value: &PyAny,
         extra: &Extra,
     ) -> Result<(), S::Error> {
-        if extra.check.enabled() {
+        // special case for None as it's very common e.g. as a default value
+        if value.is_none() {
+            Ok(())
+        } else if extra.check.enabled() {
             // note: I think this should never actually happen since we use `to_python(..., mode='json')` during
             // JSON serialisation to "try" union branches, but it's here for completeness/correctness
             // in particular, in future we could allow errors instead of warnings on fallback

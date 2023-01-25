@@ -9,6 +9,7 @@ use serde::ser::Error;
 use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
 
+use super::simple::none_json_key;
 use super::string::serialize_py_str;
 use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, PydanticSerializationError, TypeSerializer};
 
@@ -63,13 +64,21 @@ impl TypeSerializer for FunctionSerializer {
         _exclude: Option<&PyAny>,
         _extra: &Extra,
     ) -> PyResult<PyObject> {
-        self.call(value).map_err(PydanticSerializationError::new_err)
+        if value.is_none() {
+            Ok(value.into_py(value.py()))
+        } else {
+            self.call(value).map_err(PydanticSerializationError::new_err)
+        }
     }
 
     fn json_key<'py>(&self, key: &'py PyAny, _extra: &Extra) -> PyResult<Cow<'py, str>> {
-        let v = self.call(key).map_err(PydanticSerializationError::new_err)?;
-        let py_str: &PyString = v.into_ref(key.py()).downcast()?;
-        Ok(Cow::Borrowed(py_str.to_str()?))
+        if key.is_none() {
+            none_json_key()
+        } else {
+            let v = self.call(key).map_err(PydanticSerializationError::new_err)?;
+            let py_str: &PyString = v.into_ref(key.py()).downcast()?;
+            Ok(Cow::Borrowed(py_str.to_str()?))
+        }
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(
@@ -80,12 +89,16 @@ impl TypeSerializer for FunctionSerializer {
         _exclude: Option<&PyAny>,
         _extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        match self.call(value) {
-            Ok(v) => {
-                let py_str: &PyString = v.downcast(value.py()).map_err(py_err_se_err)?;
-                serialize_py_str(py_str, serializer)
+        if value.is_none() {
+            serializer.serialize_none()
+        } else {
+            match self.call(value) {
+                Ok(v) => {
+                    let py_str: &PyString = v.downcast(value.py()).map_err(py_err_se_err)?;
+                    serialize_py_str(py_str, serializer)
+                }
+                Err(e) => Err(S::Error::custom(e)),
             }
-            Err(e) => Err(S::Error::custom(e)),
         }
     }
 

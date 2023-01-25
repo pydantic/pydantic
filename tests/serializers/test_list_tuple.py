@@ -118,7 +118,7 @@ def test_exclude(schema_func, seq_f):
     assert v.to_json(seq_f('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'), exclude={6}) == b'["a","c","e","h"]'
 
 
-def test_include_exclude():
+def test_filter():
     v = SchemaSerializer(
         core_schema.list_schema(
             core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include={1, 3, 5}, exclude={5, 6})
@@ -127,7 +127,7 @@ def test_include_exclude():
     assert v.to_python([0, 1, 2, 3, 4, 5, 6, 7]) == [1, 3]
 
 
-def test_include_exclude_runtime():
+def test_filter_runtime():
     v = SchemaSerializer(
         core_schema.list_schema(core_schema.any_schema(), serialization=core_schema.filter_seq_schema(exclude={0, 1}))
     )
@@ -192,18 +192,24 @@ def test_tuple_fallback():
     [
         dict(include=None, exclude=None, expected=['0', '1', '2', '3']),
         dict(include={0, 1}, exclude=None, expected=['0', '1']),
-        dict(include={0: None, 1: None}, exclude=None, expected=['0', '1']),
+        dict(include={0: ..., 1: ...}, exclude=None, expected=['0', '1']),
+        dict(include={0: True, 1: True}, exclude=None, expected=['0', '1']),
         dict(include={0: {1}, 1: {1}}, exclude=None, expected=['0', '1']),
         dict(include=None, exclude={0, 1}, expected=['2', '3']),
-        dict(include=None, exclude={0: None, 1: None}, expected=['2', '3']),
+        dict(include=None, exclude={0: ..., 1: ...}, expected=['2', '3']),
         dict(include={0, 1}, exclude={1, 2}, expected=['0']),
         dict(include=None, exclude={3: {1}}, expected=['0', '1', '2', '3']),
         dict(include={0, 1}, exclude={3: {1}}, expected=['0', '1']),
         dict(include={0, 1}, exclude={1: {1}}, expected=['0', '1']),
-        dict(include={0, 1}, exclude={1: None}, expected=['0']),
+        dict(include={0, 1}, exclude={1: ...}, expected=['0']),
+        dict(include={1}, exclude={1}, expected=[]),
+        dict(include={0}, exclude={1}, expected=['0']),
+        dict(include={'__all__'}, exclude={1}, expected=['0', '2', '3']),
+        dict(include=None, exclude={1}, expected=['0', '2', '3']),
+        dict(include=None, exclude={'__all__'}, expected=[]),
     ],
 )
-def test_include_exclude_args(params):
+def test_filter_args(params):
     s = SchemaSerializer(core_schema.list_schema())
 
     include, exclude, expected = params['include'], params['exclude'], params['expected']
@@ -218,10 +224,12 @@ def test_include_exclude_args(params):
     [
         dict(include=None, exclude=None, expected=[[0], [0, 1], [0, 1, 2], [0, 1, 2, 3]]),
         dict(include=None, exclude={1: {0}}, expected=[[0], [1], [0, 1, 2], [0, 1, 2, 3]]),
+        dict(include=None, exclude={1: {0}, 2: ...}, expected=[[0], [1], [0, 1, 2, 3]]),
+        dict(include=None, exclude={1: {0}, 2: True}, expected=[[0], [1], [0, 1, 2, 3]]),
         dict(include={1: {0}}, exclude=None, expected=[[0]]),
     ],
 )
-def test_include_exclude_args_nested(params):
+def test_filter_args_nested(params):
     s = SchemaSerializer(core_schema.list_schema(core_schema.list_schema()))
 
     include, exclude, expected = params['include'], params['exclude'], params['expected']
@@ -229,6 +237,26 @@ def test_include_exclude_args_nested(params):
     assert s.to_python(value, include=include, exclude=exclude) == expected
     assert s.to_python(value, mode='json', include=include, exclude=exclude) == expected
     assert json.loads(s.to_json(value, include=include, exclude=exclude)) == expected
+
+
+def test_filter_list_of_dicts():
+    s = SchemaSerializer(core_schema.list_schema(core_schema.dict_schema()))
+    v = [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]
+    assert s.to_python(v) == v
+    assert s.to_python(v, exclude={0: {'a'}}) == [{'b': 2}, {'a': 3, 'b': 4}]
+    assert s.to_python(v, exclude={0: {'__all__'}}) == [{}, {'a': 3, 'b': 4}]
+    assert s.to_python(v, exclude={'__all__': {'a'}}) == [{'b': 2}, {'b': 4}]
+
+    assert s.to_json(v) == b'[{"a":1,"b":2},{"a":3,"b":4}]'
+    assert s.to_json(v, exclude={0: {'a'}}) == b'[{"b":2},{"a":3,"b":4}]'
+    assert s.to_json(v, exclude={0: {'__all__'}}) == b'[{},{"a":3,"b":4}]'
+    assert s.to_json(v, exclude={'__all__': {'a'}}) == b'[{"b":2},{"b":4}]'
+
+    assert s.to_python(v, include={0: {'a'}, 1: None}) == [{'a': 1}, {'a': 3, 'b': 4}]
+    assert s.to_python(v, include={'__all__': {'a'}}) == [{'a': 1}, {'a': 3}]
+
+    assert s.to_json(v, include={0: {'a'}, 1: None}) == b'[{"a":1},{"a":3,"b":4}]'
+    assert s.to_json(v, include={'__all__': {'a'}}) == b'[{"a":1},{"a":3}]'
 
 
 def test_positional_tuple():
