@@ -315,9 +315,7 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     if isinstance(v, TypeVar):
         yield v
     elif (
-        hasattr(v, '__parameters__')
-        and not typing_extensions.get_origin(v)
-        and _utils.lenient_issubclass(v, GenericModel)
+        hasattr(v, '__parameters__') and not typing_extensions.get_origin(v) and _utils.lenient_issubclass(v, BaseModel)
     ):
         yield from v.__parameters__
     elif isinstance(v, (DictValues, list)):

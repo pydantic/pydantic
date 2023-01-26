@@ -14,6 +14,9 @@ if typing.TYPE_CHECKING:
 
     class GenericBaseModel(BaseModel):
         __parameters__: typing.ClassVar[tuple[TypeVarType, ...]]
+        __pydantic_generic_alias__: typing.ClassVar[Any]
+        __pydantic_generic_parent__: typing.ClassVar[type[GenericBaseModel]]
+        __pydantic_generic_typevars_map__: dict[Any, type[Any]]
 
 
 def create_generic_submodel(model_name: str, base: type[GenericBaseModel]) -> type[GenericBaseModel]:

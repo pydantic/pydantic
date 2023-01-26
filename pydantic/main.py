@@ -103,6 +103,7 @@ class ModelMetaclass(ABCMeta):
                 types_namespace=_typing_extra.parent_frame_namespace(),
                 raise_errors=False,
             )
+            cls.__pydantic_generic_parent__ = None
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
@@ -131,6 +132,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
+        __pydantic_generic_parent__: typing.ClassVar[typing.Optional[type[BaseModel]]] = None
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -621,14 +623,34 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
 
-        generic_alias = super().__class_getitem__(typevar_values)  # type: ignore[misc]
+        if hasattr(cls, '__pydantic_generic_alias__'):
+            try:
+                generic_alias = getattr(cls, '__pydantic_generic_alias__')[typevar_values]
+            except TypeError:
+                generic_alias = super().__class_getitem__(typevar_values)  # type: ignore[misc]
+        else:
+            generic_alias = super().__class_getitem__(typevar_values)  # type: ignore[misc]
 
-        model_name = cls.model_concrete_name(typevar_values)
-        submodel = _generics.create_generic_submodel(model_name, cls)
+        # generic_parent_class is used to ensure all parametrizations of a model are subclasses
+        # of the same model (i.e., the generic_parent_class). This is reset any time you do a proper subclass, i.e.,
+        # a call to ModelMetaclass.__new__
+        generic_parent_class = getattr(cls, '__pydantic_generic_parent__', None) or cls
+        typevars_map = dict(getattr(cls, '__pydantic_generic_typevars_map__', {}))
+        typevars_map.update(dict(zip(cls.__parameters__, typevar_values)))
 
-        typevars_map = dict(zip(submodel.__parameters__, typevar_values))
-        submodel.model_rebuild(force=True, typevars_map=typevars_map)
-        submodel.__parameters__ = generic_alias.__parameters__
+        if typevars_map == {k: k for k in typevars_map}:
+            submodel = cls  # Don't actually produce a submodel if no substitutions have been made
+        else:
+            all_typevar_values = tuple(typevars_map[x] for x in generic_parent_class.__parameters__)
+
+            model_name = generic_parent_class.model_concrete_name(all_typevar_values)
+            submodel = _generics.create_generic_submodel(model_name, generic_parent_class)
+
+            submodel.model_rebuild(force=True, typevars_map=typevars_map)
+            submodel.__parameters__ = generic_alias.__parameters__
+            submodel.__pydantic_generic_alias__ = generic_alias
+            submodel.__pydantic_generic_parent__ = generic_parent_class
+            submodel.__pydantic_generic_typevars_map__ = typevars_map
 
         _generic_types_cache[_cache_key(typevar_values)] = submodel
         if len(typevar_values) == 1:

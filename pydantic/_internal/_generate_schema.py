@@ -88,6 +88,14 @@ class GenerateSchema:
 
         schema_property = getattr(obj, '__pydantic_validation_schema__', None)
         if schema_property is not None:
+            # TODO: Probably need to add a recursion depth check here too
+            if (
+                self.typevars_map
+                and getattr(obj, '__parameters__', None)
+                and any(self.typevars_map.get(x, x) is not x for x in obj.__parameters__)
+            ):
+                # Perform substitution of the typevars
+                return self.generate_schema(obj[tuple(self.typevars_map.get(x, x) for x in obj.__parameters__)])
             return schema_property
 
         get_schema = getattr(obj, '__get_pydantic_validation_schema__', None)
@@ -440,6 +448,15 @@ class GenerateSchema:
         type_param = get_first_arg(type_)
         if type_param == Any:
             return self._type_schema()
+        elif isinstance(type_param, typing.TypeVar):
+            if type_param.__bound__:
+                return core_schema.is_subclass_schema(type_param.__bound__)
+            elif type_param.__constraints__:
+                return core_schema.union_schema(
+                    *[self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
+                )
+            else:
+                return self._type_schema()
         else:
             return core_schema.is_subclass_schema(type_param)
 
