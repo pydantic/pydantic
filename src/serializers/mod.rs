@@ -135,3 +135,39 @@ impl SchemaSerializer {
         )
     }
 }
+
+#[allow(clippy::too_many_arguments)]
+#[pyfunction]
+pub fn to_json(
+    py: Python,
+    value: &PyAny,
+    indent: Option<usize>,
+    include: Option<&PyAny>,
+    exclude: Option<&PyAny>,
+    exclude_none: Option<bool>,
+    round_trip: Option<bool>,
+    timedelta_mode: Option<&str>,
+    bytes_mode: Option<&str>,
+) -> PyResult<PyObject> {
+    let warnings = CollectWarnings::new(None);
+    let rec_guard = SerRecursionGuard::default();
+    let config = SerializationConfig::from_args(timedelta_mode, bytes_mode)?;
+    let extra = Extra::new(
+        py,
+        &SerMode::Json,
+        &[],
+        None,
+        &warnings,
+        None,
+        None,
+        exclude_none,
+        round_trip,
+        &config,
+        &rec_guard,
+    );
+    let serializer = type_serializers::any::AnySerializer::default().into();
+    let bytes = to_json_bytes(value, &serializer, include, exclude, &extra, indent, 1024)?;
+    warnings.final_check(py)?;
+    let py_bytes = PyBytes::new(py, &bytes);
+    Ok(py_bytes.into())
+}

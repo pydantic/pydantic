@@ -50,7 +50,7 @@ impl TypeSerializer for GeneratorSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
-        match value.iter() {
+        match value.downcast::<PyIterator>() {
             Ok(py_iter) => {
                 let py = value.py();
                 match extra.mode {
@@ -71,15 +71,14 @@ impl TypeSerializer for GeneratorSerializer {
                         Ok(items.into_py(py))
                     }
                     _ => {
-                        let iter = SerializationIterator {
-                            iterator: py_iter.into_py(py),
-                            index: 0,
-                            item_serializer: self.item_serializer.as_ref().clone(),
-                            extra_owned: ExtraOwned::new(extra),
-                            filter: self.filter.clone(),
-                            include_arg: include.map(|v| v.into_py(py)),
-                            exclude_arg: exclude.map(|v| v.into_py(py)),
-                        };
+                        let iter = SerializationIterator::new(
+                            py_iter,
+                            self.item_serializer.as_ref().clone(),
+                            self.filter.clone(),
+                            include,
+                            exclude,
+                            extra,
+                        );
                         Ok(iter.into_py(py))
                     }
                 }
@@ -103,7 +102,7 @@ impl TypeSerializer for GeneratorSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        match value.iter() {
+        match value.downcast::<PyIterator>() {
             Ok(py_iter) => {
                 let len = match value.len() {
                     Ok(len) => Some(len),
@@ -141,7 +140,7 @@ impl TypeSerializer for GeneratorSerializer {
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
-struct SerializationIterator {
+pub(crate) struct SerializationIterator {
     iterator: Py<PyIterator>,
     #[pyo3(get)]
     index: usize,
@@ -150,6 +149,28 @@ struct SerializationIterator {
     filter: SchemaFilter<usize>,
     include_arg: Option<PyObject>,
     exclude_arg: Option<PyObject>,
+}
+
+impl SerializationIterator {
+    pub fn new(
+        py_iter: &PyIterator,
+        item_serializer: CombinedSerializer,
+        filter: SchemaFilter<usize>,
+        include: Option<&PyAny>,
+        exclude: Option<&PyAny>,
+        extra: &Extra,
+    ) -> Self {
+        let py = py_iter.py();
+        Self {
+            iterator: py_iter.into_py(py),
+            index: 0,
+            item_serializer,
+            extra_owned: ExtraOwned::new(extra),
+            filter,
+            include_arg: include.map(|v| v.into_py(py)),
+            exclude_arg: exclude.map(|v| v.into_py(py)),
+        }
+    }
 }
 
 #[pymethods]

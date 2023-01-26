@@ -1,10 +1,11 @@
 use pyo3::ffi::PyTypeObject;
-use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTime, PyTuple,
+    PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString,
+    PyTime, PyTuple,
 };
+use pyo3::{intern, AsPyPointer};
 
 use strum::Display;
 use strum_macros::EnumString;
@@ -13,19 +14,20 @@ use crate::url::{PyMultiHostUrl, PyUrl};
 
 #[derive(Debug, Clone)]
 pub struct ObTypeLookup {
+    // valid JSON types
     none: usize,
-    // numeric types
     int: usize,
     bool: usize,
     float: usize,
-    // string types
     string: usize,
+    list: usize,
+    dict: usize,
+    // other numeric types
+    decimal: usize,
+    // other string types
     bytes: usize,
     bytearray: usize,
-    // mapping types
-    dict: usize,
-    // sequence types
-    list: usize,
+    // other sequence types
     tuple: usize,
     set: usize,
     frozenset: usize,
@@ -39,6 +41,8 @@ pub struct ObTypeLookup {
     multi_host_url: usize,
     // enum type
     enum_type: usize,
+    // generator
+    generator: usize,
 }
 
 static TYPE_LOOKUP: GILOnceCell<ObTypeLookup> = GILOnceCell::new();
@@ -54,32 +58,28 @@ impl ObTypeLookup {
         let lib_url = url::Url::parse("https://example.com").unwrap();
         Self {
             none: py.None().as_ref(py).get_type_ptr() as usize,
-            // numeric types
             int: 0i32.into_py(py).as_ref(py).get_type_ptr() as usize,
             bool: true.into_py(py).as_ref(py).get_type_ptr() as usize,
             float: 0f32.into_py(py).as_ref(py).get_type_ptr() as usize,
-            // string types
+            list: PyList::empty(py).get_type_ptr() as usize,
+            dict: PyDict::new(py).get_type_ptr() as usize,
+            decimal: py.import("decimal").unwrap().getattr("Decimal").unwrap().as_ptr() as usize,
             string: PyString::new(py, "s").get_type_ptr() as usize,
             bytes: PyBytes::new(py, b"s").get_type_ptr() as usize,
             bytearray: PyByteArray::new(py, b"s").get_type_ptr() as usize,
-            // sequence types
-            list: PyList::empty(py).get_type_ptr() as usize,
             tuple: PyTuple::empty(py).get_type_ptr() as usize,
             set: PySet::empty(py).unwrap().get_type_ptr() as usize,
             frozenset: PyFrozenSet::empty(py).unwrap().get_type_ptr() as usize,
-            // mapping types
-            dict: PyDict::new(py).get_type_ptr() as usize,
-            // datetime types
             datetime: PyDateTime::new(py, 2000, 1, 1, 0, 0, 0, 0, None)
                 .unwrap()
                 .get_type_ptr() as usize,
             date: PyDate::new(py, 2000, 1, 1).unwrap().get_type_ptr() as usize,
             time: PyTime::new(py, 0, 0, 0, 0, None).unwrap().get_type_ptr() as usize,
             timedelta: PyDelta::new(py, 0, 0, 0, false).unwrap().get_type_ptr() as usize,
-            // types from this package
             url: PyUrl::new(lib_url.clone()).into_py(py).as_ref(py).get_type_ptr() as usize,
             multi_host_url: PyMultiHostUrl::new(lib_url, None).into_py(py).as_ref(py).get_type_ptr() as usize,
             enum_type: py.import("enum").unwrap().getattr("Enum").unwrap().get_type_ptr() as usize,
+            generator: py.import("types").unwrap().getattr("GeneratorType").unwrap().as_ptr() as usize,
         }
     }
 
@@ -107,9 +107,10 @@ impl ObTypeLookup {
             ObType::Float => self.float == ob_type,
             ObType::FloatSubclass => self.float == ob_type && op_value.is_none(),
             ObType::Str => self.string == ob_type,
-            ObType::StrSubclass => self.string == ob_type && op_value.is_none(),
-            ObType::Dict => self.dict == ob_type,
             ObType::List => self.list == ob_type,
+            ObType::Dict => self.dict == ob_type,
+            ObType::Decimal => self.decimal == ob_type,
+            ObType::StrSubclass => self.string == ob_type && op_value.is_none(),
             ObType::Tuple => self.tuple == ob_type,
             ObType::Set => self.set == ob_type,
             ObType::Frozenset => self.frozenset == ob_type,
@@ -124,6 +125,7 @@ impl ObTypeLookup {
             ObType::Dataclass => is_dataclass(op_value),
             ObType::PydanticModel => is_pydantic_model(op_value),
             ObType::Enum => self.enum_type == ob_type,
+            ObType::Generator => self.generator == ob_type,
             ObType::Unknown => false,
         };
 
@@ -174,18 +176,20 @@ impl ObTypeLookup {
                 Some(_) => ObType::Str,
                 None => ObType::StrSubclass,
             }
-        } else if ob_type == self.dict {
-            ObType::Dict
         } else if ob_type == self.list {
             ObType::List
+        } else if ob_type == self.dict {
+            ObType::Dict
+        } else if ob_type == self.decimal {
+            ObType::Decimal
+        } else if ob_type == self.bytes {
+            ObType::Bytes
         } else if ob_type == self.tuple {
             ObType::Tuple
         } else if ob_type == self.set {
             ObType::Set
         } else if ob_type == self.frozenset {
             ObType::Frozenset
-        } else if ob_type == self.bytes {
-            ObType::Bytes
         } else if ob_type == self.datetime {
             ObType::Datetime
         } else if ob_type == self.date {
@@ -206,6 +210,8 @@ impl ObTypeLookup {
             ObType::PydanticModel
         } else if self.is_enum(op_value, type_ptr) {
             ObType::Enum
+        } else if ob_type == self.generator || is_generator(op_value) {
+            ObType::Generator
         } else {
             // this allows for subtypes of the supported class types,
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
@@ -254,6 +260,14 @@ fn is_pydantic_model(op_value: Option<&PyAny>) -> bool {
     }
 }
 
+fn is_generator(op_value: Option<&PyAny>) -> bool {
+    if let Some(value) = op_value {
+        value.downcast::<PyIterator>().is_ok()
+    } else {
+        false
+    }
+}
+
 #[derive(Debug, Clone, EnumString, Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum ObType {
@@ -264,6 +278,7 @@ pub enum ObType {
     Bool,
     Float,
     FloatSubclass,
+    Decimal,
     // string types
     Str,
     StrSubclass,
@@ -289,6 +304,8 @@ pub enum ObType {
     PydanticModel,
     // enum type
     Enum,
+    // generator type
+    Generator,
     // unknown type
     Unknown,
 }

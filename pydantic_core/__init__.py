@@ -11,6 +11,7 @@ from ._pydantic_core import (
     Url,
     ValidationError,
     __version__,
+    to_json,
 )
 from .core_schema import CoreConfig, CoreSchema
 
@@ -29,4 +30,5 @@ __all__ = (
     'PydanticOmit',
     'PydanticSerializationError',
     'PydanticSerializationUnexpectedValue',
+    'to_json',
 )

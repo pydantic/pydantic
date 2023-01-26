@@ -9,7 +9,7 @@ on:
   pull_request: {}
 
 env:
-  COLUMNS: 120
+  COLUMNS: 150
 
 jobs:
   test-cpython:
