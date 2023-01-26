@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::str::{from_utf8, Utf8Error};
 
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDelta, PyDict};
+use pyo3::types::{PyDelta, PyDict};
 use pyo3::{intern, PyNativeType};
 
 use serde::ser::Error;
@@ -27,6 +27,15 @@ impl SerializationConfig {
             bytes_mode,
         })
     }
+
+    pub fn from_args(timedelta_mode: Option<&str>, bytes_mode: Option<&str>) -> PyResult<Self> {
+        let timedelta_mode = TimedeltaMode::from_str(timedelta_mode)?;
+        let bytes_mode = BytesMode::from_str(bytes_mode)?;
+        Ok(Self {
+            timedelta_mode,
+            bytes_mode,
+        })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +50,11 @@ impl TimedeltaMode {
             Some(c) => c.get_as::<&str>(intern!(c.py(), "ser_json_timedelta"))?,
             None => None,
         };
-        match raw_mode {
+        Self::from_str(raw_mode)
+    }
+
+    pub fn from_str(s: Option<&str>) -> PyResult<Self> {
+        match s {
             Some("iso8601") => Ok(Self::Iso8601),
             Some("float") => Ok(Self::Float),
             Some(s) => py_err!(
@@ -113,7 +126,11 @@ impl BytesMode {
             Some(c) => c.get_as::<&str>(intern!(c.py(), "ser_json_bytes"))?,
             None => None,
         };
-        let base64_config = match raw_mode {
+        Self::from_str(raw_mode)
+    }
+
+    pub fn from_str(s: Option<&str>) -> PyResult<Self> {
+        let base64_config = match s {
             Some("utf8") => None,
             Some("base64") => Some(base64::Config::new(base64::CharacterSet::UrlSafe, true)),
             Some(s) => return py_err!("Invalid bytes serialization mode: `{}`, expected `utf8` or `base64`", s),
@@ -122,23 +139,21 @@ impl BytesMode {
         Ok(Self { base64_config })
     }
 
-    pub fn bytes_to_string<'py>(&self, py_bytes: &'py PyBytes) -> PyResult<Cow<'py, str>> {
+    pub fn bytes_to_string<'py>(&self, py: Python, bytes: &'py [u8]) -> PyResult<Cow<'py, str>> {
         if let Some(config) = self.base64_config {
-            Ok(Cow::Owned(base64::encode_config(py_bytes.as_bytes(), config)))
+            Ok(Cow::Owned(base64::encode_config(bytes, config)))
         } else {
-            py_bytes_to_str(py_bytes).map(Cow::Borrowed)
+            from_utf8(bytes)
+                .map_err(|err| utf8_py_error(py, err, bytes))
+                .map(Cow::Borrowed)
         }
     }
 
-    pub fn serialize_bytes<S: serde::ser::Serializer>(
-        &self,
-        py_bytes: &PyBytes,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
+    pub fn serialize_bytes<S: serde::ser::Serializer>(&self, bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
         if let Some(config) = self.base64_config {
-            serializer.serialize_str(&base64::encode_config(py_bytes.as_bytes(), config))
+            serializer.serialize_str(&base64::encode_config(bytes, config))
         } else {
-            match from_utf8(py_bytes.as_bytes()) {
+            match from_utf8(bytes) {
                 Ok(s) => serializer.serialize_str(s),
                 Err(e) => Err(Error::custom(e.to_string())),
             }
@@ -151,10 +166,4 @@ pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
         Ok(decode_err) => PyErr::from_value(decode_err),
         Err(err) => err,
     }
-}
-
-fn py_bytes_to_str(py_bytes: &PyBytes) -> PyResult<&str> {
-    let py = py_bytes.py();
-    let data = py_bytes.as_bytes();
-    from_utf8(data).map_err(|err| utf8_py_error(py, err, data))
 }

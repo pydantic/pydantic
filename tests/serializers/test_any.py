@@ -1,12 +1,14 @@
 import json
+import sys
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
+from decimal import Decimal
 from enum import Enum
 
 import pytest
 from dirty_equals import IsList
 
-from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema
+from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema, to_json
 
 from ..conftest import plain_repr
 from .test_list_tuple import as_list, as_tuple
@@ -71,6 +73,7 @@ def test_set_member_db(any_serializer):
     [
         (None, b'null'),
         (1, b'1'),
+        (Decimal('1.123'), b'"1.123"'),
         (b'foobar', b'"foobar"'),
         (bytearray(b'foobar'), b'"foobar"'),
         ((1, 2, 3), b'[1,2,3]'),
@@ -78,6 +81,7 @@ def test_set_member_db(any_serializer):
         ({(1, 'a', 2): 3}, b'{"1,a,2":3}'),
         ({(1,): 3}, b'{"1":3}'),
         (datetime(2022, 12, 3, 12, 30, 45), b'"2022-12-03T12:30:45"'),
+        (datetime(2032, 1, 1, 1, 1), b'"2032-01-01T01:01:00"'),
         (date(2022, 12, 3), b'"2022-12-03"'),
         (time(12, 30, 45), b'"12:30:45"'),
         (timedelta(hours=2), b'"PT7200S"'),
@@ -187,6 +191,19 @@ def test_include_list_tuple(any_serializer, seq_f):
     assert any_serializer.to_json(seq_f('a', 'b', 'c', 'd'), include={1, 2}) == b'["b","c"]'
 
 
+def as_generator(*items):
+    return (v for v in items)
+
+
+def test_include_generator(any_serializer):
+    assert any_serializer.to_python(as_generator('a', 'b', 'c'), mode='json') == ['a', 'b', 'c']
+    assert any_serializer.to_json(as_generator('a', 'b', 'c')) == b'["a","b","c"]'
+
+    assert any_serializer.to_python(as_generator(0, 1, 2, 3), include={1, 2}, mode='json') == [1, 2]
+    assert any_serializer.to_python(as_generator('a', 'b', 'c', 'd'), include={1, 2}, mode='json') == ['b', 'c']
+    assert any_serializer.to_json(as_generator('a', 'b', 'c', 'd'), include={1, 2}) == b'["b","c"]'
+
+
 def test_include_dict(any_serializer):
     assert any_serializer.to_python({1: 2, '3': 4}) == {1: 2, '3': 4}
     assert any_serializer.to_python(MyDataclass(a=1, b='foo')) == {'a': 1, 'b': 'foo'}
@@ -236,6 +253,7 @@ def test_exclude_unset(any_serializer):
     assert any_serializer.to_python(m2, exclude_unset=True) == {'bar': 2, 'spam': 3}
 
 
+@pytest.mark.xfail(sys.platform == 'win32', reason='https://github.com/PyO3/pyo3/issues/2913')
 def test_unknown_type(any_serializer):
     class Foobar:
         def __repr__(self):
@@ -251,10 +269,12 @@ def test_unknown_type(any_serializer):
         any_serializer.to_json(f)
 
 
+class MyEnum(Enum):
+    a = 1
+    b = 'b'
+
+
 def test_enum(any_serializer):
-    class MyEnum(Enum):
-        a = 1
-        b = 'b'
 
     assert any_serializer.to_python(MyEnum.a) == MyEnum.a
     assert any_serializer.to_python(MyEnum.b) == MyEnum.b
@@ -270,3 +290,49 @@ def test_enum(any_serializer):
     assert any_serializer.to_json(MyEnum.b) == b'"b"'
     assert any_serializer.to_json({MyEnum.a: 42}) == b'{"1":42}'
     assert any_serializer.to_json({MyEnum.b: 42}) == b'{"b":42}'
+
+
+def test_base64():
+    s = SchemaSerializer(core_schema.any_schema(), core_schema.CoreConfig(ser_json_bytes='base64'))
+    assert s.to_python(b'foo') == b'foo'
+    assert s.to_python(b'foo', mode='json') == 'Zm9v'
+    assert s.to_json(b'foo') == b'"Zm9v"'
+    assert s.to_python(bytearray(b'foo')) == b'foo'
+    assert s.to_python(bytearray(b'foo'), mode='json') == 'Zm9v'
+    assert s.to_json(bytearray(b'foo')) == b'"Zm9v"'
+
+
+@pytest.mark.parametrize(
+    'gen_input,kwargs,expected_json',
+    [
+        # (lambda: UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), '"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
+        (lambda: datetime(2032, 1, 1, 1, 1), {}, b'"2032-01-01T01:01:00"'),
+        (lambda: datetime(2032, 1, 1, 1, 1, tzinfo=timezone.utc), {}, b'"2032-01-01T01:01:00Z"'),
+        (lambda: datetime(2032, 1, 1, 1, 1, tzinfo=timezone(timedelta(hours=2))), {}, b'"2032-01-01T01:01:00+02:00"'),
+        (lambda: datetime(2032, 1, 1), {}, b'"2032-01-01T00:00:00"'),
+        (lambda: time(12, 34, 56), {}, b'"12:34:56"'),
+        (lambda: timedelta(days=12, seconds=34, microseconds=56), {}, b'"P12DT34.000056S"'),
+        (lambda: timedelta(days=12, seconds=34, microseconds=56), dict(timedelta_mode='float'), b'1036834.000056'),
+        (lambda: timedelta(seconds=-1), {}, b'"-PT1S"'),
+        (lambda: timedelta(seconds=-1), dict(timedelta_mode='float'), b'-1.0'),
+        (lambda: {1, 2, 3}, {}, b'[1,2,3]'),
+        (lambda: frozenset([1, 2, 3]), {}, b'[1,2,3]'),
+        (lambda: (v for v in range(4)), {}, b'[0,1,2,3]'),
+        (lambda: iter([0, 1, 2, 3]), {}, b'[0,1,2,3]'),
+        (lambda: iter((0, 1, 2, 3)), {}, b'[0,1,2,3]'),
+        (lambda: iter(range(4)), {}, b'[0,1,2,3]'),
+        (lambda: b'this is bytes', {}, b'"this is bytes"'),
+        (lambda: b'this is bytes', dict(bytes_mode='base64'), b'"dGhpcyBpcyBieXRlcw=="'),
+        (lambda: bytearray(b'this is bytes'), {}, b'"this is bytes"'),
+        (lambda: bytearray(b'this is bytes'), dict(bytes_mode='base64'), b'"dGhpcyBpcyBieXRlcw=="'),
+        (lambda: Decimal('12.34'), {}, b'"12.34"'),
+        (lambda: MyEnum.a, {}, b'1'),
+        (lambda: MyEnum.b, {}, b'"b"'),
+        (lambda: [MyDataclass(1, 'a'), MyModel(a=2, b='b')], {}, b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
+        # # (lambda: re.compile('^regex$'), b'"^regex$"'),
+    ],
+)
+def test_encoding(any_serializer, gen_input, kwargs, expected_json):
+    assert to_json(gen_input(), **kwargs) == expected_json
+    if not kwargs:
+        assert any_serializer.to_python(gen_input(), mode='json') == json.loads(expected_json)

@@ -9,7 +9,7 @@ use pyo3::types::{PyBool, PyDict, PySet, PyString};
 use crate::build_tools::SchemaDict;
 
 #[derive(Debug, Clone, Default)]
-pub(super) struct SchemaFilter<T> {
+pub(crate) struct SchemaFilter<T> {
     include: Option<AHashSet<T>>,
     exclude: Option<AHashSet<T>>,
 }
