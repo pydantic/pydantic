@@ -248,7 +248,7 @@ dependencies = [
 [[package]]
 name = "pyo3"
 version = "0.18.0"
-source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "cfg-if",
  "indoc",
@@ -264,7 +264,7 @@ dependencies = [
 [[package]]
 name = "pyo3-build-config"
 version = "0.18.0"
-source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "once_cell",
  "target-lexicon",
@@ -273,7 +273,7 @@ dependencies = [
 [[package]]
 name = "pyo3-ffi"
 version = "0.18.0"
-source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -282,7 +282,7 @@ dependencies = [
 [[package]]
 name = "pyo3-macros"
 version = "0.18.0"
-source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
@@ -293,7 +293,7 @@ dependencies = [
 [[package]]
 name = "pyo3-macros-backend"
 version = "0.18.0"
-source = "git+ssh://git@github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
 dependencies = [
  "proc-macro2",
  "quote",
