@@ -125,18 +125,16 @@ class GenerateSchema:
                 return self._dict_subclass_schema(obj)
             # probably need to take care of other subclasses here
         elif isinstance(obj, typing.TypeVar):
-            if self.typevars_map is not None and obj in self.typevars_map:
-                mapped = self.typevars_map[obj]
-                if mapped is not obj:
-                    try:
-                        return self.generate_schema(mapped)
-                    except RecursionError as exc:
-                        raise TypeError(
-                            f'The maximum recursion depth was exceeded while generating the schema for a TypeVar. '
-                            f'This likely indicates a cycle in the TypeVar substitutions map '
-                            f'(self.typevars_map={self.typevars_map}). This may be resolved by using the TypeVars in '
-                            'the same order as the original parameterization, or by using entirely new ones.'
-                        ) from exc
+            if self.typevars_map is not None and obj in self.typevars_map and self.typevars_map[obj] is not obj:
+                try:
+                    return self.generate_schema(self.typevars_map[obj])
+                except RecursionError as exc:
+                    raise TypeError(
+                        f'The maximum recursion depth was exceeded while generating the schema for a TypeVar. '
+                        f'This likely indicates a cycle in the TypeVar substitutions map '
+                        f'(self.typevars_map={self.typevars_map}). This may be resolved by using the TypeVars in '
+                        'the same order as the original parameterization, or by using entirely new ones.'
+                    ) from exc
             elif obj.__bound__:
                 return self.generate_schema(obj.__bound__)
             elif obj.__constraints__:

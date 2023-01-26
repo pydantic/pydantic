@@ -613,7 +613,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return cached
 
         if not _generics.is_generic_model(cls):
-            raise TypeError('Cannot parameterize a non-generic BaseModel subclass')
+            if cls is BaseModel:
+                raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
+            else:
+                raise TypeError('A BaseModel subclass can only be parametrized if it also inherits from typing.Generic')
 
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
