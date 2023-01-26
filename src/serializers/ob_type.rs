@@ -204,7 +204,7 @@ impl ObTypeLookup {
             ObType::Dataclass
         } else if is_pydantic_model(op_value) {
             ObType::PydanticModel
-        } else if self.is_enum(op_value) {
+        } else if self.is_enum(op_value, type_ptr) {
             ObType::Enum
         } else {
             // this allows for subtypes of the supported class types,
@@ -219,12 +219,17 @@ impl ObTypeLookup {
         }
     }
 
-    fn is_enum(&self, op_value: Option<&PyAny>) -> bool {
-        // waiting for https://github.com/PyO3/pyo3/issues/2905 to be resolved when we should be able to use
-        // `let meta_type = unsafe { (*type_ptr).ob_type };`
-        match op_value {
-            Some(value) => value.get_type().get_type_ptr() as usize == self.enum_type,
-            None => false,
+    fn is_enum(&self, op_value: Option<&PyAny>, type_ptr: *mut PyTypeObject) -> bool {
+        // only test on the type itself, not base types
+        if op_value.is_some() {
+            // see https://github.com/PyO3/pyo3/issues/2905 for details
+            #[cfg(all(PyPy, not(Py_3_9)))]
+            let meta_type = unsafe { (*type_ptr).ob_type };
+            #[cfg(any(not(PyPy), Py_3_9))]
+            let meta_type = unsafe { (*type_ptr).ob_base.ob_base.ob_type };
+            meta_type as usize == self.enum_type
+        } else {
+            false
         }
     }
 }
