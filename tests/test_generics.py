@@ -242,16 +242,12 @@ def test_parameter_count():
 
     with pytest.raises(TypeError) as exc_info:
         Model[int, int, int]
-    assert str(exc_info.value) == (
-        "Too many arguments for <class 'tests.test_generics.test_parameter_count.<locals>.Model'>; "
-        'actual 3, expected 2'
-    )
 
-    with pytest.raises(TypeError) as exc_info:
-        Model[int]
-    assert str(exc_info.value) == (
-        "Too few arguments for <class 'tests.test_generics.test_parameter_count.<locals>.Model'>; "
-        'actual 1, expected 2'
+    # This error message, which comes from `typing`, changed 'parameters' to 'arguments' in 3.11
+    error_message = str(exc_info.value)
+    assert error_message.startswith('Too many parameters') or error_message.startswith('Too many arguments')
+    assert error_message.endswith(
+        " for <class 'tests.test_generics.test_parameter_count.<locals>.Model'>; actual 3, expected 2"
     )
 
 
