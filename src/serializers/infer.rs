@@ -1,19 +1,19 @@
 use std::borrow::Cow;
-use std::str::from_utf8;
 
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyList, PySet, PyString, PyTime, PyTuple,
+    PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString,
+    PyTime, PyTuple,
 };
 
 use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::build_tools::{py_err, safe_repr};
+use crate::serializers::filter::SchemaFilter;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
-use super::config::utf8_py_error;
 use super::errors::{py_err_se_err, PydanticSerializationError};
 use super::extra::{Extra, SerMode};
 use super::filter::AnyFilter;
@@ -97,21 +97,23 @@ pub(crate) fn infer_to_python_known(
             // have to do this to make sure subclasses of for example str are upcast to `str`
             ObType::IntSubclass => value.extract::<i64>()?.into_py(py),
             ObType::FloatSubclass => value.extract::<f64>()?.into_py(py),
+            ObType::Decimal => value.to_string().into_py(py),
             ObType::StrSubclass => value.extract::<&str>()?.into_py(py),
             ObType::Bytes => extra
                 .config
                 .bytes_mode
-                .bytes_to_string(value.downcast()?)
+                .bytes_to_string(py, value.downcast::<PyBytes>()?.as_bytes())
                 .map(|s| s.into_py(py))?,
             ObType::Bytearray => {
                 let py_byte_array: &PyByteArray = value.downcast()?;
                 // see https://docs.rs/pyo3/latest/pyo3/types/struct.PyByteArray.html#method.as_bytes
                 // for why this is marked unsafe
                 let bytes = unsafe { py_byte_array.as_bytes() };
-                match from_utf8(bytes) {
-                    Ok(s) => s.into_py(py),
-                    Err(err) => return Err(utf8_py_error(py, err, bytes)),
-                }
+                extra
+                    .config
+                    .bytes_mode
+                    .bytes_to_string(py, bytes)
+                    .map(|s| s.into_py(py))?
             }
             ObType::Tuple => {
                 let elements = serialize_seq_filter!(PyTuple);
@@ -163,6 +165,20 @@ pub(crate) fn infer_to_python_known(
                 let v = value.getattr(intern!(py, "value"))?;
                 infer_to_python(v, include, exclude, extra)?.into_py(py)
             }
+            ObType::Generator => {
+                let py_seq: &PyIterator = value.downcast()?;
+                let mut items = Vec::new();
+                let filter = AnyFilter::new();
+
+                for (index, r) in py_seq.iter()?.enumerate() {
+                    let element = r?;
+                    let op_next = filter.value_filter(index, include, exclude)?;
+                    if let Some((next_include, next_exclude)) = op_next {
+                        items.push(infer_to_python(element, next_include, next_exclude, extra)?);
+                    }
+                }
+                PyList::new(py, items).into_py(py)
+            }
             ObType::Unknown => return Err(unknown_type_error(value)),
         },
         _ => match ob_type {
@@ -199,6 +215,17 @@ pub(crate) fn infer_to_python_known(
             }
             ObType::Dataclass => serialize_dict(object_to_dict(value, false, extra)?)?,
             ObType::PydanticModel => serialize_dict(object_to_dict(value, true, extra)?)?,
+            ObType::Generator => {
+                let iter = super::type_serializers::generator::SerializationIterator::new(
+                    value.downcast()?,
+                    super::type_serializers::any::AnySerializer::default().into(),
+                    SchemaFilter::default(),
+                    include,
+                    exclude,
+                    extra,
+                );
+                iter.into_py(py)
+            }
             _ => value.into_py(py),
         },
     };
@@ -321,21 +348,19 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         ObType::Int | ObType::IntSubclass => serialize!(i64),
         ObType::Bool => serialize!(bool),
         ObType::Float | ObType::FloatSubclass => serialize!(f64),
+        ObType::Decimal => value.to_string().serialize(serializer),
         ObType::Str | ObType::StrSubclass => {
             let py_str: &PyString = value.downcast().map_err(py_err_se_err)?;
             super::type_serializers::string::serialize_py_str(py_str, serializer)
         }
         ObType::Bytes => {
             let py_bytes: &PyBytes = value.downcast().map_err(py_err_se_err)?;
-            extra.config.bytes_mode.serialize_bytes(py_bytes, serializer)
+            extra.config.bytes_mode.serialize_bytes(py_bytes.as_bytes(), serializer)
         }
         ObType::Bytearray => {
             let py_byte_array: &PyByteArray = value.downcast().map_err(py_err_se_err)?;
             let bytes = unsafe { py_byte_array.as_bytes() };
-            match from_utf8(bytes) {
-                Ok(s) => serializer.serialize_str(s),
-                Err(e) => Err(py_err_se_err(e)),
-            }
+            extra.config.bytes_mode.serialize_bytes(bytes, serializer)
         }
         ObType::Dict => serialize_dict!(value.downcast::<PyDict>().map_err(py_err_se_err)?),
         ObType::List => serialize_seq_filter!(PyList),
@@ -378,6 +403,20 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let v = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
             infer_serialize(v, serializer, include, exclude, extra)
         }
+        ObType::Generator => {
+            let py_seq: &PyIterator = value.downcast().map_err(py_err_se_err)?;
+            let mut seq = serializer.serialize_seq(None)?;
+            let filter = AnyFilter::new();
+            for (index, r) in py_seq.iter().map_err(py_err_se_err)?.enumerate() {
+                let element = r.map_err(py_err_se_err)?;
+                let op_next = filter.value_filter(index, include, exclude).map_err(py_err_se_err)?;
+                if let Some((next_include, next_exclude)) = op_next {
+                    let item_serializer = SerializeInfer::new(element, next_include, next_exclude, extra);
+                    seq.serialize_element(&item_serializer)?
+                }
+            }
+            seq.end()
+        }
         ObType::Unknown => return Err(py_err_se_err(unknown_type_error(value))),
     };
     extra.rec_guard.pop(value_id);
@@ -399,19 +438,20 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
         ObType::Int | ObType::IntSubclass | ObType::Float | ObType::FloatSubclass => {
             super::type_serializers::simple::to_str_json_key(key)
         }
+        ObType::Decimal => Ok(Cow::Owned(key.to_string())),
         ObType::Bool => super::type_serializers::simple::bool_json_key(key),
         ObType::Str | ObType::StrSubclass => {
             let py_str: &PyString = key.downcast()?;
             Ok(Cow::Borrowed(py_str.to_str()?))
         }
-        ObType::Bytes => extra.config.bytes_mode.bytes_to_string(key.downcast()?),
+        ObType::Bytes => extra
+            .config
+            .bytes_mode
+            .bytes_to_string(key.py(), key.downcast::<PyBytes>()?.as_bytes()),
         ObType::Bytearray => {
             let py_byte_array: &PyByteArray = key.downcast()?;
             let bytes = unsafe { py_byte_array.as_bytes() };
-            match from_utf8(bytes) {
-                Ok(s) => Ok(Cow::Borrowed(s)),
-                Err(err) => Err(utf8_py_error(key.py(), err, bytes)),
-            }
+            extra.config.bytes_mode.bytes_to_string(key.py(), bytes)
         }
         ObType::Datetime => {
             let py_dt: &PyDateTime = key.downcast()?;
@@ -447,7 +487,7 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             }
             Ok(Cow::Owned(key_build.finish()))
         }
-        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict => {
+        ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
             py_err!(PyTypeError; "`{}` not valid as object key", ob_type)
         }
         ObType::Dataclass | ObType::PydanticModel => {

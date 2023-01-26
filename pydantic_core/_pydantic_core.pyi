@@ -5,9 +5,9 @@ from typing import Any, TypedDict
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
 if sys.version_info < (3, 11):
-    from typing_extensions import NotRequired, TypeAlias
+    from typing_extensions import Literal, NotRequired, TypeAlias
 else:
-    from typing import NotRequired, TypeAlias
+    from typing import Literal, NotRequired, TypeAlias
 
 __all__ = (
     '__version__',
@@ -74,6 +74,17 @@ class SchemaSerializer:
         round_trip: bool = False,
         warnings: bool = True,
     ) -> bytes: ...
+
+def to_json(
+    value: Any,
+    indent: int | None = None,
+    include: IncEx = None,
+    exclude: IncEx = None,
+    exclude_none: bool = False,
+    round_trip: bool = False,
+    timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
+    bytes_mode: Literal['utf8', 'base64'] = 'utf8',
+) -> bytes: ...
 
 class Url:
     scheme: str

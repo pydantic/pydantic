@@ -11,7 +11,7 @@ use super::{
     infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, TypeSerializer,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AnySerializer;
 
 impl BuildSerializer for AnySerializer {

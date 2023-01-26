@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import date
+from uuid import UUID
 
 import pytest
 
@@ -16,6 +17,12 @@ from pydantic_core import PydanticSerializationError, SchemaSerializer, core_sch
         (42.1234567, '', '42.1234567', b'"42.1234567"'),
         (date(2022, 11, 20), '%Y-%m-%d', '2022-11-20', b'"2022-11-20"'),
         ('foo', '^5s', ' foo ', b'" foo "'),
+        (
+            UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'),
+            '',
+            'ebcdab58-6eb8-46fb-a190-d07a33e9eac8',
+            b'"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"',
+        ),
     ],
 )
 def test_format(value, formatting_string, expected_python, expected_json):
