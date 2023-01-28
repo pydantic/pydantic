@@ -6,7 +6,8 @@ from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union
 from dirty_equals import HasRepr
 
 from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, PydanticSchemaGenerationError, ValidationError
-from pydantic.config import _default_config
+from pydantic.config import ConfigDict, _default_config
+from pydantic.errors import PydanticUserError
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -51,6 +52,15 @@ class TestsBaseConfig:
         for key, value in _default_config.items():
             assert getattr(BaseConfig, key) == value
         assert _default_config.keys() == {k for k in dir(BaseConfig) if not k.startswith('__')}
+
+    def test_Config_and_module_config_cannot_be_used_together(self):
+        with pytest.raises(PydanticUserError):
+
+            class MyModel(BaseModel):
+                model_config = ConfigDict(title='MyTitle')
+
+                class Config:
+                    title = 'MyTitleConfig'
 
     def test_baseConfig_properly_converted_to_dict(self):
         class MyConfig(BaseConfig):

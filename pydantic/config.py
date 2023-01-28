@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tup
 
 from typing_extensions import Literal, Protocol, TypedDict
 
+from pydantic.errors import PydanticUserError
+
 if TYPE_CHECKING:
     from typing import overload
 
@@ -173,10 +175,13 @@ def build_config(
     config_new = dict(config_bases.items())
 
     config_class_from_namespace = namespace.get('Config')
+    config_dict_from_namespace = namespace.get('model_config')
 
-    config_from_namespace = (
-        get_config(config_class_from_namespace) if config_class_from_namespace else namespace.get('model_config')
-    )
+    if config_class_from_namespace and config_dict_from_namespace:
+        raise PydanticUserError('"Config" and "model_config" cannot be used together')
+
+    config_from_namespace = config_dict_from_namespace or get_config(config_class_from_namespace)
+
     if config_from_namespace:
         configs_ordered.append(config_from_namespace)
         config_new.update(config_from_namespace)
