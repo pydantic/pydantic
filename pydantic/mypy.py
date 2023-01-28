@@ -304,11 +304,28 @@ class PydanticModelTransformer:
                 config.update(config_data)
 
         for stmt in cls.defs.body:
-            if not isinstance(stmt, AssignmentStmt):
+            if not isinstance(stmt, (AssignmentStmt, ClassDef)):
                 continue
-            lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr) or lhs.name != 'model_config' or not isinstance(stmt.rvalue, CallExpr):
-                continue
+
+            if isinstance(stmt, AssignmentStmt):
+                lhs = stmt.lvalues[0]
+                if not isinstance(lhs, NameExpr) or lhs.name != 'model_config' or not isinstance(stmt.rvalue, CallExpr):
+                    continue
+                for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
+                    if arg_name is None:
+                        continue
+                    config.update(self.get_config_update(arg_name, arg))
+
+            if isinstance(stmt, ClassDef):
+                if stmt.name != 'Config':  # 'deprecated' Config-class
+                    continue
+                for substmt in stmt.defs.body:
+                    if not isinstance(substmt, AssignmentStmt):
+                        continue
+                    lhs = substmt.lvalues[0]
+                    if not isinstance(lhs, NameExpr):
+                        continue
+                    config.update(self.get_config_update(lhs.name, substmt.rvalue))
 
             if has_config_kwargs:
                 ctx.api.fail(
@@ -318,11 +335,6 @@ class PydanticModelTransformer:
                 break
 
             has_config_from_namespace = True
-
-            for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
-                if arg_name is None:
-                    continue
-                config.update(self.get_config_update(arg_name, arg))
 
         if has_config_kwargs or has_config_from_namespace:
             if (
