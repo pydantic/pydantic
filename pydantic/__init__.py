@@ -2,7 +2,7 @@
 from pydantic_core import ValidationError
 
 from . import dataclasses
-from .config import ConfigDict, Extra
+from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .errors import *
 from .fields import Field, PrivateAttr
@@ -24,6 +24,7 @@ __all__ = [
     'root_validator',
     'validator',
     # config
+    'BaseConfig',
     'ConfigDict',
     'Extra',
     # decorator

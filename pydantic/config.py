@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 import json
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
+import warnings
 
 from typing_extensions import Literal, Protocol, TypedDict
 
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'ConfigDict', 'Extra', 'build_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'Extra', 'build_config', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -103,7 +104,51 @@ _default_config = ConfigDict(
     allow_inf_nan=True,
     strict=False,
     copy_on_model_validation='shallow',
+    post_init_call='before_validation',
 )
+
+
+class BaseConfig:
+    title: Optional[str] = None
+    str_to_lower: bool = False
+    str_to_upper: bool = False
+    str_strip_whitespace: bool = False
+    str_min_length: int = 0
+    str_max_length: Optional[int] = None
+    extra: Extra = Extra.ignore
+    frozen: bool = False
+    populate_by_name: bool = False
+    use_enum_values: bool = False
+    validate_assignment: bool = False
+    arbitrary_types_allowed: bool = False
+    undefined_types_warning: bool = True
+    from_attributes: bool = False
+    alias_generator: Optional[Callable[[str], str]] = None
+    keep_untouched: Tuple[type, ...] = ()
+    json_loads: Callable[[str], Any] = json.loads
+    json_dumps: Callable[..., str] = json.dumps
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]] = {}
+    allow_inf_nan: bool = True
+    strict: bool = False
+    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
+    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
+
+
+def get_config(config: Union[ConfigDict, Type[object], None]) -> ConfigDict:
+    if config is None:
+        return ConfigDict()
+
+    if not isinstance(config, dict):
+        warnings.warn(
+            f'Support for "config" as "{type(config)}" is deprecated' ' and will be removed in a future version"',
+            DeprecationWarning,
+        )
+
+    config_dict = (
+        config if isinstance(config, dict) else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
+    )
+
+    return config_dict  # type: ignore
 
 
 def build_config(
@@ -127,7 +172,11 @@ def build_config(
             config_bases.update({key: value for key, value in config.items()})
     config_new = dict(config_bases.items())
 
-    config_from_namespace = namespace.get('model_config')
+    config_class_from_namespace = namespace.get('Config')
+
+    config_from_namespace = (
+        get_config(config_class_from_namespace) if config_class_from_namespace else namespace.get('model_config')
+    )
     if config_from_namespace:
         configs_ordered.append(config_from_namespace)
         config_new.update(config_from_namespace)

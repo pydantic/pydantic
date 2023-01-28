@@ -16,7 +16,7 @@ import typing_extensions
 
 from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
 from ._internal._fields import Undefined
-from .config import ConfigDict, Extra, build_config
+from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
@@ -596,7 +596,7 @@ _base_class_defined = True
 def create_model(
     __model_name: str,
     *,
-    __config__: ConfigDict | None = None,
+    __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -610,7 +610,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: ConfigDict | None = None,
+    __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -623,7 +623,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: ConfigDict | None = None,
+    __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -634,7 +634,7 @@ def create_model(
     """
     Dynamically create a model.
     :param __model_name: name of the created model
-    :param __config__: config dict to use for the new model
+    :param __config__: config dict/class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
@@ -688,7 +688,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = __config__
+        namespace['model_config'] = get_config(__config__)
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:
