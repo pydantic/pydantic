@@ -178,11 +178,7 @@ class EnvSettingsSource:
             env_vars = {**dotenv_vars, **env_vars}
 
         for field in settings.__fields__.values():
-            env_val: Optional[str] = None
-            for env_name in field.field_info.extra['env_names']:
-                env_val = env_vars.get(env_name)
-                if env_val is not None:
-                    break
+            env_val, env_name = self._get_env_values_recursive(field, env_vars)
 
             is_complex, allow_parse_failure = self.field_is_complex(field)
             if is_complex:
@@ -191,6 +187,9 @@ class EnvSettingsSource:
                     env_val_built = self.explode_env_vars(field, env_vars)
                     if env_val_built:
                         d[field.alias] = env_val_built
+                elif isinstance(env_val, dict):
+                    # field is complex but nested env values where found
+                    d[field.alias] = env_val
                 else:
                     # field is complex and there's a value, decode that as JSON, then add explode_env_vars
                     try:
@@ -208,6 +207,28 @@ class EnvSettingsSource:
                 d[field.alias] = env_val
 
         return d
+
+    def _get_env_values_recursive(
+        self, field: ModelField, env_vars: Mapping[str, Optional[str]]
+    ) -> Tuple[Union[str, Optional[Dict[str, Any]]], Optional[str]]:
+        # First check whether the top level field as already an env value and return it if was found
+        for env_name in field.field_info.extra.get('env_names', []):
+            env_val = env_vars.get(env_name)
+            if env_val is not None:
+                return env_val, env_name
+
+        if issubclass(field.type_, BaseModel):
+            # If the field type is a BaseModel, recurse into the fields of the BaseModel
+            d = {}
+            for name, subfield in field.type_.__fields__.items():
+                env_values, _ = self._get_env_values_recursive(subfield, env_vars)
+                if env_values is not None:
+                    d[subfield.alias] = env_values
+            # Return None instead of an empty dict for the outer flow to work; env_name is not needed if it was nested
+            return d or None, None
+
+        # No env variables where found
+        return None, None
 
     def _read_env_files(self, case_sensitive: bool) -> Dict[str, Optional[str]]:
         env_files = self.env_file

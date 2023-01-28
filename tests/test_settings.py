@@ -278,6 +278,37 @@ def test_env_list_field(env):
     assert s.foobar == 'env value'
 
 
+def test_env_list_field_nested(env):
+    class SubSub(BaseSettings):
+        baz: str = Field(..., env='baz')
+
+    class Sub(BaseSettings):
+        bar: str = Field(..., env='bar')
+        sub_sub: SubSub
+
+    class Settings(BaseSettings):
+        foo: str = Field(..., env='foo')
+        sub: Sub
+
+    env.set('FOO', 'foo!')
+    env.set('BAR', 'bar!')
+    env.set('BAZ', 'baz!')
+    s = Settings()
+    assert s.foo == 'foo!'
+    assert s.sub.bar == 'bar!'
+    assert s.sub.sub_sub.baz == 'baz!'
+
+    env.clear()
+    env.set('FOO', 'foo!')
+    env.set('SUB', '{"bar": "secret_bar", "sub_sub": {"baz": "secret_baz"}}')  # takes precedence
+    env.set('BAR', 'bar!')
+    env.set('BAZ', 'baz!')
+    s = Settings()
+    assert s.foo == 'foo!'
+    assert s.sub.bar == 'secret_bar'
+    assert s.sub.sub_sub.baz == 'secret_baz'
+
+
 def test_env_list_last(env):
     class Settings(BaseSettings):
         foobar: str
