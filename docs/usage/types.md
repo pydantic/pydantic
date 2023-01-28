@@ -459,9 +459,10 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
   for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
 
 
-`PyObject`
-: expects a string and loads the Python object importable at that dotted path;
-  e.g. if `'math.cos'` was provided, the resulting field value would be the function `cos`
+`ImportString`
+: expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'` was provided,
+the resulting field value would be the function `cos`; see [ImportString](#importstring)
+
 
 `Color`
 : for parsing HTML and CSS colors; see [Color Type](#color-type)
@@ -583,6 +584,25 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 `constr`
 : type method for constraining strs;
   see [Constrained Types](#constrained-types)
+
+### Exotic Types
+Pydantic also supports exotic types, which are described in detail below:
+
+#### ImportString
+On model instantiation, pointers will be evaluated and imported. There is
+some nuance to this behavior, demonstrated in the examples below.
+
+> A known limitation: setting a default value to a string
+> won't result in validation (thus evaluation). This is actively
+> being worked on.
+
+**Good behavior:**
+{!.tmp_examples/types_import_string_usage.md!}
+
+**Serializing an `ImportString` type to json is possible with a
+[custom encoder](exporting_models.md#json_encoders) which accounts for
+the evaluated object:**
+{!.tmp_examples/types_import_string_serialization.md!}
 
 ### URLs
 

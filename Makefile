@@ -30,10 +30,6 @@ lint:
 	isort $(sources) --check-only --df
 	black $(sources) --check --diff
 
-.PHONY: lint-flake8
-lint-flake8:
-	flake8 $(sources)
-
 .PHONY: mypy
 mypy:
 	mypy pydantic docs/build --disable-recursive-aliases
@@ -97,7 +93,7 @@ clean:
 
 .PHONY: docs
 docs:
-	flake8 --max-line-length=80 docs/examples/
+	ruff docs/examples/
 	python docs/build/main.py
 	mkdocs build
 
