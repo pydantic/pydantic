@@ -492,7 +492,6 @@ def test_custom_generic_naming():
     assert repr(MyModel[str](value=None)) == 'OptionalStrWrapper(value=None)'
 
 
-@pytest.mark.xfail(reason='working on V2 - generics')
 def test_nested():
     AT = TypeVar('AT')
 
@@ -507,21 +506,44 @@ def test_nested():
     class OuterT_SameType(BaseModel, Generic[AT]):
         i: InnerT[AT]
 
-    # TODO: Fixing the following will require regenerating schemas recursively.
     OuterT_SameType[int](i=inner_int)
     OuterT_SameType[str](i=inner_str)
-    OuterT_SameType[int](i=inner_int_any)  # ensure parsing the broader inner type works
+
+    # TODO: Problem?: Validation of (generic) models relies on subclass checks, but __class_getitem__ makes new classes
+    #   * Right now, it seems to fail due to the fact that InnerT[Any] is not a subclass of InnerT[int].
+    #   I'm not sure that we should change that behavior though. If we do, I think it may open a can of worms related
+    #   to multiple typevars. E.g., is MyGeneric[T, Any] a subclass of MyGeneric[Any, S]? What is the right logic?
+    #   * Either way, I think it may make sense to change the validation logic when dealing with generic Any's;
+    #   In particular, I'm thinking it might make the most sense to not go out of our way to
+    #   validate MyGeneric[Any] as MyGeneric[T] for all T.
+    #   * I have commented out the affected lines below
+    #
+    # Some options for addressing this:
+    #   * Option 1: Ignore the problem; treat generics as primarily a shorthand for declaring similar types.
+    #       * In particular, `MyGenericModel[Any]` should be treated as more of a shorthand for declaring a class
+    #       than as an escape-hatch from the type system.
+    #       * Users can use `.model_dump()` as a way to convert between "compatible" generic parameterizations
+    #   * Option 2: In pydantic-core, do more to dump the model to a dict if the generic "origin" type is compatible
+    #   * Option 3: Override __subclasscheck__ or similar (even if only for generics)
+    #
+    # For now, I have taken approach 1 and modified the test to call `.model_dump()` for compatibility between types
+    OuterT_SameType[int](i=inner_int_any.model_dump())
 
     with pytest.raises(ValidationError) as exc_info:
-        OuterT_SameType[int](i=inner_str)
+        OuterT_SameType[int](i=inner_str.model_dump())
     assert exc_info.value.errors() == [
-        {'loc': ('i', 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('i', 'a'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'ate',
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        OuterT_SameType[int](i=inner_dict_any)
+        OuterT_SameType[int](i=inner_dict_any.model_dump())
     assert exc_info.value.errors() == [
-        {'loc': ('i', 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'type': 'int_type', 'loc': ('i', 'a'), 'msg': 'Input should be a valid integer', 'input': {}}
     ]
 
 
@@ -766,7 +788,6 @@ def test_generic_model_from_function_pickle_fail(create_module):
 
 
 def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
-
     # match identity checker otherwise we never get to the redefinition check
     monkeypatch.setattr('pydantic._internal._utils.all_identical', lambda left, right: False)
 
@@ -1101,8 +1122,9 @@ def test_generic_with_partial_callable():
     assert not Model[str, int].__parameters__
 
 
-@pytest.mark.xfail(reason='working on V2 - generics')
+@pytest.mark.xfail(reason='working on V2 - recursive models')
 def test_generic_recursive_models(create_module):
+    # (the current failure of this test is not specific to *generic* recursive models)
     @create_module
     def module():
         from typing import Generic, TypeVar, Union
@@ -1183,7 +1205,6 @@ def test_generic_with_user_defined_generic_field():
         pass
 
     class Model(BaseModel, Generic[T]):
-
         field: GenericList[T]
 
     model = Model[int](field=[5])
