@@ -9,6 +9,7 @@ import pytest
 
 from pydantic import BaseModel, ConfigDict, Extra, ValidationError, constr, errors, validator
 from pydantic._internal._fields import PydanticGeneralMetadata
+from pydantic.config import get_config
 from pydantic.fields import Field
 
 
@@ -2094,3 +2095,23 @@ def test_parent_field_with_default():
     assert c.a == 1
     assert c.b == 2
     assert c.c == 3
+
+
+def test_get_config():
+    ret = get_config(None)
+    assert ret == {}
+    assert isinstance(ret, ConfigDict)
+
+    ret = get_config(ConfigDict(title='1234', extra=Extra.allow))
+    assert ret == {'title': '1234', 'extra': Extra.allow}
+    assert isinstance(ret, ConfigDict)
+
+    class Config:
+        title = '1234'
+        random_option = True
+        strict = True
+
+    with pytest.warns(DeprecationWarning, match='is deprecated'):
+        ret = get_config(Config)
+        assert ret == {'title': '1234', 'random_option': True, 'strict': True}
+        assert isinstance(ret, ConfigDict)

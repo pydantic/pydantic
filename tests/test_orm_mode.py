@@ -248,7 +248,7 @@ def test_custom_getter_dict():
         y: int
 
         class Config:
-            orm_mofrom_attributesde = True
+            from_attributes = True
             getter_dict = custom_getter_dict
 
     model = Model.from_orm(TestCls())

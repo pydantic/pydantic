@@ -1563,4 +1563,4 @@ def test_config_as_type_deprecated():
         class MyDataclass:
             a: int
 
-        assert MyDataclass.__pydantic_model__.module_config == ConfigDict(validate_assignment=True)
+        assert MyDataclass.__pydantic_model__.model_config == ConfigDict(validate_assignment=True)
