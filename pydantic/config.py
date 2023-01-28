@@ -1,9 +1,9 @@
 from __future__ import annotations as _annotations
 
 import json
+import warnings
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
-import warnings
 
 from typing_extensions import Literal, Protocol, TypedDict
 
@@ -134,13 +134,13 @@ class BaseConfig:
     post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
 
 
-def get_config(config: Union[ConfigDict, Type[object], None]) -> ConfigDict:
+def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> ConfigDict:
     if config is None:
         return ConfigDict()
 
     if not isinstance(config, dict):
         warnings.warn(
-            f'Support for "config" as "{type(config)}" is deprecated' ' and will be removed in a future version"',
+            f'Support for "config" as "{type(config)}" is deprecated and will be removed in a future version"',
             DeprecationWarning,
         )
 
@@ -148,7 +148,7 @@ def get_config(config: Union[ConfigDict, Type[object], None]) -> ConfigDict:
         config if isinstance(config, dict) else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
     )
 
-    return config_dict  # type: ignore
+    return ConfigDict(config_dict)  # type: ignore
 
 
 def build_config(

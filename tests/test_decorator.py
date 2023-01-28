@@ -448,7 +448,6 @@ def test_use_of_alias():
     assert foo(b=10) == 30
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_populate_by_name():
     @validate_arguments(config=dict(populate_by_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
