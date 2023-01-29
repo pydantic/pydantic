@@ -91,12 +91,8 @@ class BaseSettings(BaseModel):
 
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
-            # Set 'env_names' for nested sub models of type 'BaseModel'
-            if (
-                isinstance(field.type_, type)
-                and issubclass(field.type_, BaseModel)
-                and not issubclass(field.type_, BaseSettings)
-            ):
+            # Set 'env_names' for nested sub models of type 'BaseModel' (except 'BaseSettings')
+            if type(field.type_) == type(BaseModel) and not issubclass(field.type_, BaseSettings):
                 for name, subfield in field.type_.__fields__.items():
                     cls.prepare_field(subfield)
 
@@ -226,7 +222,7 @@ class EnvSettingsSource:
             if env_val is not None:
                 return env_val, env_name
 
-        if issubclass(field.type_, BaseModel):
+        if type(field.type_) == type(BaseModel):
             # If the field type is a BaseModel, recurse into the fields of the BaseModel
             d = {}
             for name, subfield in field.type_.__fields__.items():
