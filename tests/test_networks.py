@@ -10,7 +10,9 @@ from pydantic import (
     FileUrl,
     HttpUrl,
     KafkaDsn,
+    MariaDBDsn,
     MongoDsn,
+    MySQLDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
@@ -42,6 +44,17 @@ except ImportError:
         'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
         'postgresql+py-postgresql://user:pass@localhost:5432/app',
         'postgresql+pygresql://user:pass@localhost:5432/app',
+        'mysql://user:pass@localhost:3306/app',
+        'mysql+mysqlconnector://user:pass@localhost:3306/app',
+        'mysql+aiomysql://user:pass@localhost:3306/app',
+        'mysql+asyncmy://user:pass@localhost:3306/app',
+        'mysql+mysqldb://user:pass@localhost:3306/app',
+        'mysql+pymysql://user:pass@localhost:3306/app?charset=utf8mb4',
+        'mysql+cymysql://user:pass@localhost:3306/app',
+        'mysql+pyodbc://user:pass@localhost:3306/app',
+        'mariadb://user:pass@localhost:3306/app',
+        'mariadb+mariadbconnector://user:pass@localhost:3306/app',
+        'mariadb+pymysql://user:pass@localhost:3306/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -359,6 +372,41 @@ def test_postgres_dsns(dsn):
 
 
 @pytest.mark.parametrize(
+    'dsn',
+    [
+        'mysql://user:pass@localhost:3306/app',
+        'mysql+mysqlconnector://user:pass@localhost:3306/app',
+        'mysql+aiomysql://user:pass@localhost:3306/app',
+        'mysql+asyncmy://user:pass@localhost:3306/app',
+        'mysql+mysqldb://user:pass@localhost:3306/app',
+        'mysql+pymysql://user:pass@localhost:3306/app?charset=utf8mb4',
+        'mysql+cymysql://user:pass@localhost:3306/app',
+        'mysql+pyodbc://user:pass@localhost:3306/app',
+    ],
+)
+def test_mysql_dsns(dsn):
+    class Model(BaseModel):
+        a: MySQLDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'mariadb://user:pass@localhost:3306/app',
+        'mariadb+mariadbconnector://user:pass@localhost:3306/app',
+        'mariadb+pymysql://user:pass@localhost:3306/app',
+    ],
+)
+def test_mariadb_dsns(dsn):
+    class Model(BaseModel):
+        a: MariaDBDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
     'dsn,error_message',
     (
         (
@@ -423,6 +471,131 @@ def test_postgres_dsns_validation_error(dsn, error_message):
     assert error == error_message
 
 
+@pytest.mark.parametrize(
+    'dsn,error_message',
+    (
+        (
+            'mysql://user:pass@host1.db.net:3306,/foo/bar:3306/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mysql://user:pass@host1.db.net:3306,/foo/bar:3306/app',
+            },
+        ),
+        (
+            'mysql://user:pass@host1.db.net,/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mysql://user:pass@host1.db.net,/app',
+            },
+        ),
+        (
+            'mysql://user:pass@/foo/bar:3306,host1.db.net:3306/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mysql://user:pass@/foo/bar:3306,host1.db.net:3306/app',
+            },
+        ),
+        (
+            'mysql://user@/foo/bar:3306/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mysql://user@/foo/bar:3306/app',
+            },
+        ),
+        (
+            'http://example.org',
+            {
+                'type': 'url_scheme',
+                'loc': ('a',),
+                'msg': (
+                    "URL scheme should be 'mysql', 'mysql+mysqlconnector', 'mysql+aiomysql', 'mysql+asyncmy', "
+                    "'mysql+mysqldb', 'mysql+pymysql', 'mysql+cymysql', or 'mysql+pyodbc'"
+                ),
+                'input': 'http://example.org',
+            },
+        ),
+    ),
+)
+def test_mysql_dsns_validation_error(dsn, error_message):
+    class Model(BaseModel):
+        a: MySQLDsn
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=dsn)
+    error = exc_info.value.errors()[0]
+    error.pop('ctx', None)
+    assert error == error_message
+
+
+@pytest.mark.parametrize(
+    'dsn,error_message',
+    (
+        (
+            'mariadb://user:pass@host1.db.net:3306,/foo/bar:3306/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'postgres://user:pass@host1.db.net:3306,/foo/bar:3306/app',
+            },
+        ),
+        (
+            'mariadb://user:pass@host1.db.net,/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mariadb://user:pass@host1.db.net,/app',
+            },
+        ),
+        (
+            'mariadb://user:pass@/foo/bar:3306,host1.db.net:3306/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mariadb://user:pass@/foo/bar:3306,host1.db.net:3306/app',
+            },
+        ),
+        (
+            'mariadb://user@/foo/bar:3306/app',
+            {
+                'type': 'url_parsing',
+                'loc': ('a',),
+                'msg': 'Input should be a valid URL, empty host',
+                'input': 'mariadb://user@/foo/bar:3306/app',
+            },
+        ),
+        (
+            'http://example.org',
+            {
+                'type': 'url_scheme',
+                'loc': ('a',),
+                'msg': ("URL scheme should be 'mariadb', 'mariadb+mariadbconnector', 'mariadb+pymysql'"),
+                'input': 'http://example.org',
+            },
+        ),
+    ),
+)
+def test_maria_dsns_validation_error(dsn, error_message):
+    class Model(BaseModel):
+        a: MariaDBDsn
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=dsn)
+    error = exc_info.value.errors()[0]
+    error.pop('ctx', None)
+    assert error == error_message
+
+
 def test_multihost_postgres_dsns():
     class Model(BaseModel):
         a: PostgresDsn
@@ -443,6 +616,50 @@ def test_multihost_postgres_dsns():
     assert any_multihost_url.path == '/app'
     # insert_assert(any_multihost_url.hosts())
     assert any_multihost_url.hosts() == [{'username': 'user', 'password': 'pass', 'host': 'host.db.net', 'port': 4321}]
+
+
+def test_multihost_mysql_dsns():
+    class Model(BaseModel):
+        a: MySQLDsn
+
+    any_multihost_url = Model(a='mysql://user:pass@host1.db.net:3306,host2.db.net:3307/app').a
+    assert str(any_multihost_url) == 'mysql://user:pass@host1.db.net:3306,host2.db.net:3307/app'
+    assert any_multihost_url.scheme == 'mysql'
+    assert any_multihost_url.path == '/app'
+    # insert_assert(any_multihost_url.hosts())
+    assert any_multihost_url.hosts() == [
+        {'username': 'user', 'password': 'pass', 'host': 'host1.db.net', 'port': 3306},
+        {'username': None, 'password': None, 'host': 'host2.db.net', 'port': 3307},
+    ]
+
+    any_multihost_url = Model(a='mysql://user:pass@host.db.net:3306/app').a
+    assert any_multihost_url.scheme == 'mysql'
+    assert str(any_multihost_url) == 'mysql://user:pass@host.db.net:3306/app'
+    assert any_multihost_url.path == '/app'
+    # insert_assert(any_multihost_url.hosts())
+    assert any_multihost_url.hosts() == [{'username': 'user', 'password': 'pass', 'host': 'host.db.net', 'port': 3306}]
+
+
+def test_multihost_mariadb_dsns():
+    class Model(BaseModel):
+        a: MariaDBDsn
+
+    any_multihost_url = Model(a='mariadb://user:pass@host1.db.net:3306,host2.db.net:3307/app').a
+    assert str(any_multihost_url) == 'mariadb://user:pass@host1.db.net:3306,host2.db.net:3307/app'
+    assert any_multihost_url.scheme == 'mariadb'
+    assert any_multihost_url.path == '/app'
+    # insert_assert(any_multihost_url.hosts())
+    assert any_multihost_url.hosts() == [
+        {'username': 'user', 'password': 'pass', 'host': 'host1.db.net', 'port': 3306},
+        {'username': None, 'password': None, 'host': 'host2.db.net', 'port': 3307},
+    ]
+
+    any_multihost_url = Model(a='mariadb://user:pass@host.db.net:3306/app').a
+    assert any_multihost_url.scheme == 'mariadb'
+    assert str(any_multihost_url) == 'mariadb://user:pass@host.db.net:3306/app'
+    assert any_multihost_url.path == '/app'
+    # insert_assert(any_multihost_url.hosts())
+    assert any_multihost_url.hosts() == [{'username': 'user', 'password': 'pass', 'host': 'host.db.net', 'port': 3306}]
 
 
 def test_cockroach_dsns():
