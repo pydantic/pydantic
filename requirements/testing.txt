@@ -4,27 +4,25 @@
 #
 #    pip-compile --output-file=requirements/testing.txt --resolver=backtracking requirements/testing.in
 #
-attrs==22.1.0
+attrs==22.2.0
     # via pytest
 commonmark==0.9.1
     # via rich
-coverage[toml]==6.5.0
+coverage[toml]==7.0.5
     # via -r requirements/testing.in
 dirty-equals==0.5.0
     # via -r requirements/testing.in
-exceptiongroup==1.0.1
+exceptiongroup==1.1.0
     # via pytest
-iniconfig==1.1.1
+iniconfig==2.0.0
     # via pytest
-packaging==21.3
+packaging==23.0
     # via pytest
 pluggy==1.0.0
     # via pytest
-pygments==2.13.0
+pygments==2.14.0
     # via rich
-pyparsing==3.0.9
-    # via packaging
-pytest==7.2.0
+pytest==7.2.1
     # via
     #   -r requirements/testing.in
     #   pytest-mock
@@ -33,9 +31,9 @@ pytest-mock==3.10.0
     # via -r requirements/testing.in
 pytest-pretty==0.0.1
     # via -r requirements/testing.in
-pytz==2022.6
+pytz==2022.7.1
     # via dirty-equals
-rich==12.6.0
+rich==13.1.0
     # via pytest-pretty
 tomli==2.0.1
     # via
