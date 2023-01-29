@@ -91,6 +91,15 @@ class BaseSettings(BaseModel):
 
         @classmethod
         def prepare_field(cls, field: ModelField) -> None:
+            # Set 'env_names' for nested sub models of type 'BaseModel'
+            if (
+                isinstance(field.type_, type)
+                and issubclass(field.type_, BaseModel)
+                and not issubclass(field.type_, BaseSettings)
+            ):
+                for name, subfield in field.type_.__fields__.items():
+                    cls.prepare_field(subfield)
+
             env_names: Union[List[str], AbstractSet[str]]
             field_info_from_config = cls.get_field_info(field.name)
 

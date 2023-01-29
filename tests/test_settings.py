@@ -279,10 +279,10 @@ def test_env_list_field(env):
 
 
 def test_env_list_field_nested(env):
-    class SubSub(BaseSettings):
+    class SubSub(BaseModel):
         baz: str = Field(..., env='baz')
 
-    class Sub(BaseSettings):
+    class Sub(BaseModel):
         bar: str = Field(..., env='bar')
         sub_sub: SubSub
 
