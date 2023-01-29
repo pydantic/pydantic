@@ -1,11 +1,8 @@
 from __future__ import annotations as _annotations
 
-from typing import Dict, Optional
+from typing import Optional
 
 __all__ = 'PydanticUserError', 'PydanticSchemaGenerationError'
-
-# TODO add specific error codes.
-ErrorCodes = {}
 
 
 class PydanticErrorMixin:
@@ -19,7 +16,7 @@ class PydanticErrorMixin:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __init__(self, code: Dict[str, str], *, message: Optional[str] = None) -> None:
+    def __init__(self, code: str, *, message: Optional[str] = None) -> None:
         self.code = code
         self.message = message
         print(self.__class__.mro())
