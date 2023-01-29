@@ -54,7 +54,7 @@ dependencies = [
     'pydantic-core>=0.7.1',
     'annotated-types>=0.4.0',
 ]
-optional-dependencies = { email = ['email-validator>=1.0.3'] }
+optional-dependencies = { email = ['email-validator>=1.3.0'] }
 dynamic = ['version', 'readme']
 
 entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
@@ -92,20 +92,8 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani']
+reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani', 'kennethreitz']
 require_change_file = false
-
-[tool.flake8]
-max_line_length = 120
-max_complexity = 14
-inline_quotes = 'single'
-multiline_quotes = 'double'
-ignore = ['E203', 'W503']
-per_file_ignores = [
-    'docs/examples/schema_unenforced_constraints.py:F811',
-    'docs/examples/validation_decorator_async.py:E402',
-    'docs/examples/types_constrained.py:F722',
-]
 
 [tool.ruff]
 line-length = 120

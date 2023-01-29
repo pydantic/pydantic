@@ -298,7 +298,7 @@ def Field(
     :param max_items: only applies to lists, requires the field to have a maximum number of
       elements. The schema will have a ``maxItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
-      schema will have a ``maximum`` validation keyword
+      schema will have a ``minLength`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
       schema will have a ``maxLength`` validation keyword
     :param frozen: a boolean which defaults to True. When False, the field raises a TypeError if the field is

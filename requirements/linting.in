@@ -1,14 +1,10 @@
 annotated-types
 black
-flake8
-flake8-quotes
-flake8-pyproject
 hypothesis
 isort
 # pydantic-core is required for mypy
 pydantic-core
 pyupgrade
-# pinned, see #4735
-mypy==0.982
+mypy
 pre-commit
 ruff
