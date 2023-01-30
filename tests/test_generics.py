@@ -862,6 +862,7 @@ def test_replace_types_with_pep_604_syntax() -> None:
         a: T
 
     assert replace_types(T | None, {T: int}) == int | None
+    assert replace_types(T | int | str, {T: float}) == float | int | str
     assert replace_types(list[T] | None, {T: int}) == list[int] | None
     assert replace_types(List[str | list | T], {T: int}) == List[str | list | int]
     assert replace_types(list[str | list | T], {T: int}) == list[str | list | int]
