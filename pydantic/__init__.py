@@ -52,6 +52,8 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'MySQLDsn',
+    'MariaDBDsn',
     'validate_email',
     # parse
     # tools

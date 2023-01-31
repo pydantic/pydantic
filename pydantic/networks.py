@@ -37,6 +37,8 @@ __all__ = [
     'MongoDsn',
     'KafkaDsn',
     'validate_email',
+    'MySQLDsn',
+    'MariaDBDsn',
 ]
 
 
@@ -91,6 +93,29 @@ RedisDsn = Annotated[
 ]
 MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
+MySQLDsn = Annotated[
+    Url,
+    UrlConstraints(
+        allowed_schemes=[
+            'mysql',
+            'mysql+mysqlconnector',
+            'mysql+aiomysql',
+            'mysql+asyncmy',
+            'mysql+mysqldb',
+            'mysql+pymysql',
+            'mysql+cymysql',
+            'mysql+pyodbc',
+        ],
+        default_port=3306,
+    ),
+]
+MariaDBDsn = Annotated[
+    Url,
+    UrlConstraints(
+        allowed_schemes=['mariadb', 'mariadb+mariadbconnector', 'mariadb+pymysql'],
+        default_port=3306,
+    ),
+]
 
 
 def import_email_validator() -> None:
