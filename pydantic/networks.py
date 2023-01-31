@@ -148,11 +148,12 @@ class NameEmail(_repr.Representation):
                 core_schema.is_instance_schema(cls),
                 core_schema.string_schema(),
             ),
-            cls.validate,
+            cls._validate,
+            serialization=core_schema.simple_ser_schema('to-string'),
         )
 
     @classmethod
-    def validate(cls, __input_value: NameEmail | str, **_kwargs: Any) -> NameEmail:
+    def _validate(cls, __input_value: NameEmail | str, **_kwargs: Any) -> NameEmail:
         if isinstance(__input_value, cls):
             return __input_value
         else:

@@ -39,11 +39,23 @@ def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaF
 
 
 @schema_function(date)
+def date_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.DateSchema:
+    return core_schema.DateSchema(type='date')
+
+
 @schema_function(datetime)
+def datetime_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.DatetimeSchema:
+    return core_schema.DatetimeSchema(type='datetime')
+
+
 @schema_function(time)
+def time_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.TimeSchema:
+    return core_schema.TimeSchema(type='time')
+
+
 @schema_function(timedelta)
-def name_as_schema(_schema_generator: GenerateSchema, t: type[Any]) -> core_schema.CoreSchema:
-    return {'type': t.__name__}  # type: ignore[return-value,misc]
+def timedelta_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.TimedeltaSchema:
+    return core_schema.TimedeltaSchema(type='timedelta')
 
 
 @schema_function(Enum)
@@ -178,32 +190,44 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
 
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v4_address_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v4_address_validator, serialization=core_schema.simple_ser_schema('to-string')
+    )
 
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v4_interface_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v4_interface_validator, serialization=core_schema.simple_ser_schema('to-string')
+    )
 
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v4_network_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v4_network_validator, serialization=core_schema.simple_ser_schema('to-string')
+    )
 
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v6_address_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v6_address_validator, serialization=core_schema.simple_ser_schema('to-string')
+    )
 
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v6_interface_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v6_interface_validator, serialization=core_schema.simple_ser_schema('to-string')
+    )
 
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v6_network_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v6_network_validator, serialization=core_schema.simple_ser_schema('to-string')
+    )
 
 
 @schema_function(Url)

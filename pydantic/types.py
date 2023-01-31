@@ -426,7 +426,19 @@ class SecretField(abc.ABC, Generic[SecretType]):
             ),
             validator,
             extra=validator,
+            serialization=core_schema.function_ser_schema(cls._serialize, json_return_type='str'),
         )
+
+    @classmethod
+    def _serialize(
+        cls, value: SecretField[SecretType], info: core_schema.SerializationInfo
+    ) -> str | SecretField[SecretType]:
+        if info.mode == 'json':
+            # we want the output to always be string without the `b'` prefix for byties,
+            # hence we just use `secret_display`
+            return secret_display(value)
+        else:
+            return value
 
     @classmethod
     @abc.abstractmethod
