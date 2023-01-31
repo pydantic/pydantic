@@ -735,6 +735,27 @@ def test_generic_model_caching_detect_order_of_union_args_basic(create_module):
         assert type(float_or_int_model(data='1').data) is float
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='pep-604 syntax (Ex.: list | int) was added in python3.10')
+def test_generic_model_caching_detect_order_of_union_args_basic_with_pep_604_syntax(create_module):
+    # Basic variant of https://github.com/pydantic/pydantic/issues/4474 with pep-604 syntax.
+    @create_module
+    def module():
+        from typing import Generic, TypeVar
+
+        from pydantic.generics import GenericModel
+
+        t = TypeVar('t')
+
+        class Model(GenericModel, Generic[t]):
+            data: t
+
+        int_or_float_model = Model[int | float]
+        float_or_int_model = Model[float | int]
+
+        assert type(int_or_float_model(data='1').data) is int
+        assert type(float_or_int_model(data='1').data) is float
+
+
 @pytest.mark.skip(
     reason="""
 Depends on similar issue in CPython itself: https://github.com/python/cpython/issues/86483
