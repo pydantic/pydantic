@@ -4,7 +4,7 @@ from . import dataclasses
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .errors import *
-from .fields import Field, PrivateAttr
+from .fields import PrivateAttr
 from .main import *
 from .networks import *
 from .tools import *
@@ -30,6 +30,9 @@ __all__ = [
     'validate_arguments',
     # error_wrappers
     'ValidationError',
+    'PydanticUserError',
+    'PydanticSchemaGenerationError',
+    'PydanticUndefinedAnnotation'
     # fields
     'Field',
     # main
