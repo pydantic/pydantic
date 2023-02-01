@@ -4,7 +4,7 @@ from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 
 def test_lax_or_strict():
-    v = SchemaValidator(core_schema.lax_or_strict_schema(core_schema.string_schema(), core_schema.int_schema()))
+    v = SchemaValidator(core_schema.lax_or_strict_schema(core_schema.str_schema(), core_schema.int_schema()))
     # validator is default - lax so with no runtime arg, we're in lax mode, and we use the string validator
     assert v.validate_python('aaa') == 'aaa'
     # the strict validator is itself lax
@@ -23,7 +23,7 @@ def test_lax_or_strict():
 
 def test_lax_or_strict_default_strict():
     v = SchemaValidator(
-        core_schema.lax_or_strict_schema(core_schema.string_schema(), core_schema.int_schema(), strict=True)
+        core_schema.lax_or_strict_schema(core_schema.str_schema(), core_schema.int_schema(), strict=True)
     )
     assert v.validate_python('aaa', strict=False) == 'aaa'
     assert v.validate_python(b'aaa', strict=False) == 'aaa'

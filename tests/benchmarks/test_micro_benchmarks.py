@@ -255,7 +255,7 @@ def test_small_class_core_model(benchmark):
 
 @pytest.mark.benchmark(group='string')
 def test_core_string_lax(benchmark):
-    validator = SchemaValidator(core_schema.string_schema())
+    validator = SchemaValidator(core_schema.str_schema())
     input_str = 'Hello ' * 20
 
     assert validator.validate_python(input_str) == input_str
@@ -265,7 +265,7 @@ def test_core_string_lax(benchmark):
 
 @pytest.mark.benchmark(group='string')
 def test_core_string_strict(benchmark):
-    validator = SchemaValidator(core_schema.string_schema(strict=True))
+    validator = SchemaValidator(core_schema.str_schema(strict=True))
     input_str = 'Hello ' * 20
 
     assert validator.validate_python(input_str) == input_str

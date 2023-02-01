@@ -43,7 +43,7 @@ def test_list_fallback():
 
 
 def test_list_str_fallback():
-    v = SchemaSerializer(core_schema.list_schema(core_schema.string_schema()))
+    v = SchemaSerializer(core_schema.list_schema(core_schema.str_schema()))
     with pytest.warns(UserWarning) as warning_info:
         assert v.to_json([1, 2, 3]) == b'[1,2,3]'
     assert [w.message.args[0] for w in warning_info.list] == [
@@ -324,7 +324,7 @@ def test_tuple_pos_dict_key():
     s = SchemaSerializer(
         core_schema.dict_schema(
             core_schema.tuple_positional_schema(
-                core_schema.int_schema(), core_schema.string_schema(), extra_schema=core_schema.int_schema()
+                core_schema.int_schema(), core_schema.str_schema(), extra_schema=core_schema.int_schema()
             ),
             core_schema.int_schema(),
         )
