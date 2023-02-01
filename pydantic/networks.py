@@ -112,7 +112,7 @@ else:
         ) -> core_schema.CoreSchema:
             import_email_validator()
             if schema is None:
-                return core_schema.function_after_schema(core_schema.string_schema(), cls.validate)
+                return core_schema.function_after_schema(core_schema.str_schema(), cls.validate)
             else:
                 assert schema['type'] == 'str', 'EmailStr must be used with string fields'
                 return core_schema.function_after_schema(schema, cls.validate)
@@ -146,10 +146,10 @@ class NameEmail(_repr.Representation):
         return core_schema.function_after_schema(
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
-                core_schema.string_schema(),
+                core_schema.str_schema(),
             ),
             cls._validate,
-            serialization=core_schema.simple_ser_schema('to-string'),
+            serialization=core_schema.to_string_ser_schema(),
         )
 
     @classmethod

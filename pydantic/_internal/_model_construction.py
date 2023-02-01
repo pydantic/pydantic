@@ -17,10 +17,10 @@ from typing_extensions import Annotated
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
+from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import SchemaRef, SelfType, Undefined
 from ._generate_schema import generate_config, model_fields_schema
 from ._utils import ClassAttribute, is_valid_identifier
-from ._validation_functions import ValidationFunctions
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -104,6 +104,7 @@ def deferred_model_get_pydantic_validation_schema(
         cls,
         cls.__name__,
         cls.__pydantic_validator_functions__,
+        cls.__pydantic_serializer_functions__,
         cls.__bases__,
         types_namespace,
     )
@@ -119,6 +120,7 @@ def complete_model_class(
     cls: type[BaseModel],
     name: str,
     validator_functions: ValidationFunctions,
+    serialization_functions: SerializationFunctions,
     bases: tuple[type[Any], ...],
     *,
     raise_errors: bool = True,
@@ -133,9 +135,12 @@ def complete_model_class(
     and `get_type_hints` requires a class object.
     """
     validator_functions.set_bound_functions(cls)
+    serialization_functions.set_bound_functions(cls)
 
     try:
-        inner_schema, fields = build_inner_schema(cls, name, validator_functions, bases, types_namespace)
+        inner_schema, fields = build_inner_schema(
+            cls, name, validator_functions, serialization_functions, bases, types_namespace
+        )
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -150,6 +155,7 @@ def complete_model_class(
         return False
 
     validator_functions.check_for_unused()
+    serialization_functions.check_for_unused()
 
     core_config = generate_config(cls)
     cls.model_fields = fields
@@ -170,6 +176,7 @@ def build_inner_schema(  # noqa: C901
     cls: type[BaseModel],
     name: str,
     validator_functions: ValidationFunctions,
+    serialization_functions: SerializationFunctions,
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
 ) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
@@ -242,7 +249,12 @@ def build_inner_schema(  # noqa: C901
             delattr(cls, ann_name)
 
     schema = model_fields_schema(
-        model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed, local_ns
+        model_ref,
+        fields,
+        validator_functions,
+        serialization_functions,
+        cls.__config__.arbitrary_types_allowed,
+        local_ns,
     )
     return schema, fields
 

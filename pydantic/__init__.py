@@ -3,13 +3,13 @@ from pydantic_core import ValidationError
 from . import dataclasses
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
+from .decorators import root_validator, serializer, validator
 from .errors import *
 from .fields import Field, PrivateAttr
 from .main import *
 from .networks import *
 from .tools import *
 from .types import *
-from .validator_functions import root_validator, validator
 from .version import VERSION
 
 __version__ = VERSION
@@ -22,6 +22,7 @@ __all__ = [
     # class_validators
     'root_validator',
     'validator',
+    'serializer',
     # config
     'BaseConfig',
     'ConfigDict',

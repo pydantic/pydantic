@@ -74,7 +74,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         )
     elif issubclass(enum_type, str):
         return core_schema.chain_schema(
-            core_schema.string_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
+            core_schema.str_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
         )
     else:
         return core_schema.function_after_schema(
@@ -91,7 +91,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
             core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
             core_schema.int_schema(),
             core_schema.float_schema(),
-            core_schema.string_schema(strip_whitespace=True),
+            core_schema.str_schema(strip_whitespace=True),
             strict=True,
         ),
         decimal_validator,
@@ -106,7 +106,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
         core_schema.is_instance_schema(uuid_type),
         core_schema.function_after_schema(
             core_schema.union_schema(
-                core_schema.string_schema(),
+                core_schema.str_schema(),
                 core_schema.bytes_schema(),
             ),
             _validators.uuid_validator,
@@ -123,7 +123,7 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
     return core_schema.union_schema(
         core_schema.is_instance_schema(path_type),
         core_schema.function_after_schema(
-            core_schema.string_schema(),
+            core_schema.str_schema(),
             _validators.path_validator,
         ),
         custom_error_type='path_type',
@@ -191,42 +191,42 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(
-        _validators.ip_v4_address_validator, serialization=core_schema.simple_ser_schema('to-string')
+        _validators.ip_v4_address_validator, serialization=core_schema.to_string_ser_schema()
     )
 
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(
-        _validators.ip_v4_interface_validator, serialization=core_schema.simple_ser_schema('to-string')
+        _validators.ip_v4_interface_validator, serialization=core_schema.to_string_ser_schema()
     )
 
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(
-        _validators.ip_v4_network_validator, serialization=core_schema.simple_ser_schema('to-string')
+        _validators.ip_v4_network_validator, serialization=core_schema.to_string_ser_schema()
     )
 
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(
-        _validators.ip_v6_address_validator, serialization=core_schema.simple_ser_schema('to-string')
+        _validators.ip_v6_address_validator, serialization=core_schema.to_string_ser_schema()
     )
 
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(
-        _validators.ip_v6_interface_validator, serialization=core_schema.simple_ser_schema('to-string')
+        _validators.ip_v6_interface_validator, serialization=core_schema.to_string_ser_schema()
     )
 
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
     return core_schema.function_plain_schema(
-        _validators.ip_v6_network_validator, serialization=core_schema.simple_ser_schema('to-string')
+        _validators.ip_v6_network_validator, serialization=core_schema.to_string_ser_schema()
     )
 
 

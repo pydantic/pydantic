@@ -14,7 +14,7 @@ from typing import Any
 
 import typing_extensions
 
-from ._internal import _model_construction, _repr, _typing_extra, _utils, _validation_functions
+from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
@@ -74,11 +74,16 @@ class ModelMetaclass(ABCMeta):
             elif 'model_post_init' in namespace:
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
-            validator_functions = _validation_functions.ValidationFunctions(bases)
-            namespace['__pydantic_validator_functions__'] = validator_functions
+            validator_functions = _decorators.ValidationFunctions(bases)
+            namespace[validator_functions.model_attribute] = validator_functions
+
+            serializer_functions = _decorators.SerializationFunctions(bases)
+            namespace[serializer_functions.model_attribute] = serializer_functions
 
             for name, value in namespace.items():
-                validator_functions.extract_validator(name, value)
+                found_validator = validator_functions.extract_decorator(name, value)
+                if not found_validator:
+                    serializer_functions.extract_decorator(name, value)
 
             if __config__.json_encoders:
                 json_encoder = partial(custom_pydantic_encoder, __config__.json_encoders)
@@ -99,6 +104,7 @@ class ModelMetaclass(ABCMeta):
                 cls,
                 cls_name,
                 validator_functions,
+                serializer_functions,
                 bases,
                 types_namespace=_typing_extra.parent_frame_namespace(),
                 raise_errors=False,
@@ -123,7 +129,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
-        __pydantic_validator_functions__: typing.ClassVar[_validation_functions.ValidationFunctions]
+        __pydantic_validator_functions__: typing.ClassVar[_decorators.ValidationFunctions]
+        __pydantic_serializer_functions__: typing.ClassVar[_decorators.SerializationFunctions]
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
@@ -472,6 +479,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 cls,
                 cls.__name__,
                 cls.__pydantic_validator_functions__,
+                cls.__pydantic_serializer_functions__,
                 cls.__bases__,
                 raise_errors=raise_errors,
                 types_namespace=types_namespace,

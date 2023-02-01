@@ -511,7 +511,7 @@ class SecretStr(SecretField[str]):
 
     @classmethod
     def _pre_core_schema(cls) -> core_schema.CoreSchema:
-        return core_schema.string_schema()
+        return core_schema.str_schema()
 
     def _display(self) -> str:
         return secret_display(self)
@@ -567,7 +567,7 @@ class PaymentCardNumber(str):
     @classmethod
     def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(
-            core_schema.string_schema(
+            core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
             ),
             cls.validate,

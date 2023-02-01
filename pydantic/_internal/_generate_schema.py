@@ -16,7 +16,7 @@ from typing_extensions import Annotated, Literal, get_args, get_origin, is_typed
 from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
 from . import _fields, _typing_extra
-from ._validation_functions import ValidationFunctions, Validator
+from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -28,6 +28,7 @@ def model_fields_schema(
     ref: str,
     fields: dict[str, FieldInfo],
     validator_functions: ValidationFunctions,
+    serialization_functions: SerializationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
@@ -37,11 +38,14 @@ def model_fields_schema(
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-        {k: schema_generator.generate_field_schema(k, v, validator_functions) for k, v in fields.items()},
+        {
+            k: schema_generator.generate_field_schema(k, v, validator_functions, serialization_functions)
+            for k, v in fields.items()
+        },
         ref=ref,
         return_fields_set=True,
     )
-    schema = apply_validators(schema, validator_functions.get_root_validators())
+    schema = apply_validators(schema, validator_functions.get_root_decorators())
     return schema
 
 
@@ -59,6 +63,8 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
         str_to_lower=config.anystr_lower,
         str_to_upper=config.anystr_upper,
         strict=config.strict,
+        ser_json_timedelta=config.ser_json_timedelta,
+        ser_json_bytes=config.ser_json_bytes,
     )
 
 
@@ -170,7 +176,13 @@ class GenerateSchema:
             )
 
     def generate_field_schema(
-        self, name: str, field: FieldInfo, validator_functions: ValidationFunctions, *, required: bool = True
+        self,
+        name: str,
+        field: FieldInfo,
+        validator_functions: ValidationFunctions,
+        serializer_functions: SerializationFunctions,
+        *,
+        required: bool = True,
     ) -> core_schema.TypedDictField:
         """
         Prepare a TypedDictField to represent a model or typeddict field.
@@ -183,7 +195,8 @@ class GenerateSchema:
             required = False
             schema = wrap_default(field, schema)
 
-        schema = apply_validators(schema, validator_functions.get_field_validators(name))
+        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
+        schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
         field_schema = core_schema.typed_dict_field(schema, required=required)
         if field.alias is not None:
             field_schema['validation_alias'] = field.alias
@@ -241,6 +254,7 @@ class GenerateSchema:
 
         fields: typing.Dict[str, core_schema.TypedDictField] = {}
         validation_functions = ValidationFunctions(())
+        serialization_functions = SerializationFunctions(())
 
         for field_name, annotation in _typing_extra.get_type_hints(typed_dict_cls, include_extras=True).items():
             required = field_name in required_keys
@@ -254,7 +268,7 @@ class GenerateSchema:
 
             field_info = FieldInfo.from_annotation(annotation)
             fields[field_name] = self.generate_field_schema(
-                field_name, field_info, validation_functions, required=required
+                field_name, field_info, validation_functions, serialization_functions, required=required
             )
 
         return core_schema.typed_dict_schema(fields, extra_behavior='forbid')
@@ -517,6 +531,21 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     return schema
 
 
+def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializer]) -> core_schema.CoreSchema:
+    """
+    Apply serializers to a schema.
+    """
+    if serializers:
+        # user the last serializser to make it easy to override a serializer set on a parent model
+        serializer = serializers[-1]
+        assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
+        function = typing.cast(typing.Callable[..., Any], serializer.function)
+        schema['serialization'] = core_schema.function_ser_schema(
+            function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
+        )
+    return schema
+
+
 def apply_metadata(  # noqa: C901
     schema: core_schema.CoreSchema, annotations: typing.Iterable[Any]
 ) -> core_schema.CoreSchema:
@@ -565,7 +594,7 @@ def apply_metadata(  # noqa: C901
         if not metadata_dict:
             continue
 
-        extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')  # type: ignore[assignment]
+        extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')
         if extra is None:
             if schema['type'] == 'nullable':
                 # for nullable schemas, metadata is automatically applied to the inner schema

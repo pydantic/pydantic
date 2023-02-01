@@ -1,11 +1,14 @@
+"""
+TODO this should be removed when we implement `validate` #4669
+"""
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
 from ._internal import _typing_extra, _utils
 from .config import Extra
+from .decorators import validator
 from .errors import PydanticUserError
 from .main import BaseModel, create_model
-from .validator_functions import validator
 
 __all__ = ('validate_arguments',)
 
