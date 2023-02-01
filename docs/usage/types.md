@@ -488,6 +488,12 @@ the resulting field value would be the function `cos`; see [ImportString](#impor
 `PostgresDsn`
 : a postgres DSN style URL; see [URLs](#urls)
 
+`MysqlDsn`
+: a mysql DSN style URL; see [URLs](#urls)
+
+`MariaDsn`
+: a mariadb DSN style URL; see [URLs](#urls)
+
 `CockroachDsn`
 : a cockroachdb DSN style URL; see [URLs](#urls)
 
@@ -623,6 +629,19 @@ For URI/URL validation the following types are available:
   - `postgresql+psycopg2cffi`
   - `postgresql+py-postgresql`
   - `postgresql+pygresql`
+- `MySQLDsn`: scheme `mysql`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `mysql`
+  - `mysql+mysqlconnector`
+  - `mysql+aiomysql`
+  - `mysql+asyncmy`
+  - `mysql+mysqldb`
+  - `mysql+pymysql`
+  - `mysql+cymysql`
+  - `mysql+pyodbc`
+- `MariaDBDsn`: scheme `mariadb`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
+  - `mariadb`
+  - `mariadb+mariadbconnector`
+  - `mariadb+pymysql`
 - `CockroachDsn`: scheme `cockroachdb`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
   - `cockroachdb+asyncpg`
   - `cockroachdb+psycopg2`
