@@ -93,7 +93,6 @@ ExpectedSerializationTypes = Literal[
     'url',
     'multi-host-url',
     'json',
-    'to-string',
 ]
 
 
@@ -194,6 +193,25 @@ def format_ser_schema(formatting_string: str, *, when_used: WhenUsed = 'json-unl
     return dict_not_none(type='format', formatting_string=formatting_string, when_used=when_used)
 
 
+class ToStringSerSchema(TypedDict, total=False):
+    type: Required[Literal['to-string']]
+    when_used: WhenUsed  # default: 'json-unless-none'
+
+
+def to_string_ser_schema(*, when_used: WhenUsed = 'json-unless-none') -> ToStringSerSchema:
+    """
+    Returns a schema for serialization using python's `str()` / `__str__` method.
+
+    Args:
+        when_used: Same meaning as for [function_ser_schema], but with a different default
+    """
+    s = dict(type='to-string')
+    if when_used != 'json-unless-none':
+        # just to avoid extra elements in schema, and to use the actual default defined in rust
+        s['when_used'] = when_used
+    return s  # type: ignore
+
+
 class ModelSerSchema(TypedDict, total=False):
     type: Required[Literal['model']]
     cls: Required[Type[Any]]
@@ -211,7 +229,7 @@ def model_ser_schema(cls: Type[Any], schema: CoreSchema) -> ModelSerSchema:
     return ModelSerSchema(type='model', cls=cls, schema=schema)
 
 
-SerSchema = Union[SimpleSerSchema, FunctionSerSchema, FormatSerSchema, ModelSerSchema]
+SerSchema = Union[SimpleSerSchema, FunctionSerSchema, FormatSerSchema, ToStringSerSchema, ModelSerSchema]
 
 
 class AnySchema(TypedDict, total=False):
@@ -1839,6 +1857,7 @@ class LaxOrStrictSchema(TypedDict, total=False):
     strict: bool
     ref: str
     extra: Any
+    serialization: SerSchema
 
 
 def lax_or_strict_schema(
@@ -1848,6 +1867,7 @@ def lax_or_strict_schema(
     strict: bool | None = None,
     ref: str | None = None,
     extra: Any = None,
+    serialization: SerSchema | None = None,
 ) -> LaxOrStrictSchema:
     """
     Returns a schema that uses the lax or strict schema, e.g.:
@@ -1880,7 +1900,13 @@ def lax_or_strict_schema(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='lax-or-strict', lax_schema=lax_schema, strict_schema=strict_schema, strict=strict, ref=ref, extra=extra
+        type='lax-or-strict',
+        lax_schema=lax_schema,
+        strict_schema=strict_schema,
+        strict=strict,
+        ref=ref,
+        extra=extra,
+        serialization=serialization,
     )
 
 
@@ -2211,9 +2237,13 @@ def call_schema(
 class RecursiveReferenceSchema(TypedDict, total=False):
     type: Required[Literal['recursive-ref']]
     schema_ref: Required[str]
+    extra: Any
+    serialization: SerSchema
 
 
-def recursive_reference_schema(schema_ref: str) -> RecursiveReferenceSchema:
+def recursive_reference_schema(
+    schema_ref: str, extra: Any = None, serialization: SerSchema | None = None
+) -> RecursiveReferenceSchema:
     """
     Returns a schema that matches a recursive reference value, e.g.:
 
@@ -2227,8 +2257,10 @@ def recursive_reference_schema(schema_ref: str) -> RecursiveReferenceSchema:
 
     Args:
         schema_ref: The schema ref to use for the recursive reference schema
+        extra: See [TODO] for details
+        serialization: Custom serialization schema
     """
-    return {'type': 'recursive-ref', 'schema_ref': schema_ref}
+    return dict_not_none(type='recursive-ref', schema_ref=schema_ref, extra=extra, serialization=serialization)
 
 
 class CustomErrorSchema(TypedDict, total=False):

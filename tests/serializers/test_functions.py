@@ -5,14 +5,15 @@ import pytest
 from pydantic_core import PydanticSerializationError, SchemaError, SchemaSerializer, core_schema
 
 
+def repr_function(value, _info):
+    return repr(value)
+
+
 @pytest.mark.parametrize(
     'value,expected_python,expected_json',
     [(None, 'None', b'"None"'), (1, '1', b'"1"'), ([1, 2, 3], '[1, 2, 3]', b'"[1, 2, 3]"')],
 )
 def test_function(value, expected_python, expected_json):
-    def repr_function(value, _info):
-        return repr(value)
-
     s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.function_ser_schema(repr_function)))
     assert s.to_python(value) == expected_python
     assert s.to_json(value) == expected_json
@@ -201,8 +202,6 @@ def test_dict_keys():
 
 
 def test_function_as_key():
-    def repr_function(value, _info):
-        return repr(value)
 
     s = SchemaSerializer(
         core_schema.dict_schema(
@@ -230,11 +229,9 @@ def test_function_only_json():
 
 
 def test_function_unless_none():
-    def to_repr(value, _):
-        return repr(value)
 
     s = SchemaSerializer(
-        core_schema.any_schema(serialization=core_schema.function_ser_schema(to_repr, when_used='unless-none'))
+        core_schema.any_schema(serialization=core_schema.function_ser_schema(repr_function, when_used='unless-none'))
     )
     assert s.to_python(4) == '4'
     assert s.to_python(None) is None
@@ -243,3 +240,15 @@ def test_function_unless_none():
     assert s.to_python(None, mode='json') is None
     assert s.to_json(4) == b'"4"'
     assert s.to_json(None) == b'null'
+
+
+def test_wrong_return_type():
+    s = SchemaSerializer(
+        core_schema.any_schema(serialization=core_schema.function_ser_schema(repr_function, json_return_type='int'))
+    )
+    assert s.to_python(123) == '123'
+    assert s.to_python(123, mode='json') == '123'
+
+    msg = "Error serializing to JSON: TypeError: 'str' object cannot be interpreted as an integer"
+    with pytest.raises(PydanticSerializationError, match=msg):
+        s.to_json(123)
