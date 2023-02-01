@@ -35,7 +35,7 @@ def test_function_after():
 
 
 def test_lax_or_strict():
-    s = SchemaSerializer(core_schema.lax_or_strict_schema(core_schema.int_schema(), core_schema.string_schema()))
+    s = SchemaSerializer(core_schema.lax_or_strict_schema(core_schema.int_schema(), core_schema.str_schema()))
     # insert_assert(plain_repr(s))
     assert plain_repr(s) == 'SchemaSerializer(serializer=Str(StrSerializer),slots=[])'
 
@@ -48,7 +48,7 @@ def test_lax_or_strict_custom_ser():
     s = SchemaSerializer(
         core_schema.lax_or_strict_schema(
             core_schema.int_schema(),
-            core_schema.string_schema(),
+            core_schema.str_schema(),
             serialization=core_schema.format_ser_schema('^5s', when_used='always'),
         )
     )
