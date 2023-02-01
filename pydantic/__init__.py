@@ -32,7 +32,7 @@ __all__ = [
     'ValidationError',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
-    'PydanticUndefinedAnnotation'
+    'PydanticUndefinedAnnotation',
     # fields
     'Field',
     # main
