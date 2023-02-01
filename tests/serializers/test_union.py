@@ -50,7 +50,11 @@ def model_serializer() -> SchemaSerializer:
                             'b': {
                                 'schema': {
                                     'type': 'float',
-                                    'serialization': {'type': 'format', 'formatting_string': '0.1f'},
+                                    'serialization': {
+                                        'type': 'format',
+                                        'formatting_string': '0.1f',
+                                        'when_used': 'unless-none',
+                                    },
                                 }
                             },
                         },
@@ -67,7 +71,11 @@ def model_serializer() -> SchemaSerializer:
                             'd': {
                                 'schema': {
                                     'type': 'float',
-                                    'serialization': {'type': 'format', 'formatting_string': '0.2f'},
+                                    'serialization': {
+                                        'type': 'format',
+                                        'formatting_string': '0.2f',
+                                        'when_used': 'unless-none',
+                                    },
                                 }
                             },
                         },
@@ -109,13 +117,13 @@ def test_keys():
             core_schema.int_schema(),
         )
     )
-    assert s.to_python({1: 2, 2.111: 3}) == {1: 2, '2': 3}
+    assert s.to_python({1: 2, 2.111: 3}) == {1: 2, 2.111: 3}
     assert s.to_python({1: 2, 2.111: 3}, mode='json') == {'1': 2, '2': 3}
     assert s.to_json({1: 2, 2.111: 3}) == b'{"1":2,"2":3}'
 
 
 def test_union_of_functions():
-    def repr_function(value, **kwargs):
+    def repr_function(value, _info):
         if value == 'unexpected':
             raise PydanticSerializationUnexpectedValue()
         return f'func: {value!r}'
@@ -130,7 +138,7 @@ def test_union_of_functions():
     assert s.to_python('foobar', mode='json') == "func: 'foobar'"
     assert s.to_json('foobar') == b'"func: \'foobar\'"'
 
-    assert s.to_python('unexpected') == '__unexpected__'
+    assert s.to_python('unexpected') == 'unexpected'
     assert s.to_python('unexpected', mode='json') == '__unexpected__'
     assert s.to_json('unexpected') == b'"__unexpected__"'
 
@@ -157,8 +165,8 @@ def test_typed_dict_literal():
         )
     )
 
-    assert s.to_python(dict(pet_type='cat', sound=3)) == {'pet_type': 'cat', 'sound': '0003'}
-    assert s.to_python(dict(pet_type='dog', sound=3)) == {'pet_type': 'dog', 'sound': '3.000'}
+    assert s.to_python(dict(pet_type='cat', sound=3), mode='json') == {'pet_type': 'cat', 'sound': '0003'}
+    assert s.to_python(dict(pet_type='dog', sound=3), mode='json') == {'pet_type': 'dog', 'sound': '3.000'}
 
 
 def test_typed_dict_missing():
@@ -182,7 +190,7 @@ def test_typed_dict_missing():
     assert s.to_python(dict(foo=1)) == {'foo': 1}
     assert s.to_python(dict(foo=1), mode='json') == {'foo': 1}
     assert s.to_json(dict(foo=1)) == b'{"foo":1}'
-    assert s.to_python(dict(foo=1, bar=2)) == {'foo': '0001', 'bar': 2}
+    assert s.to_python(dict(foo=1, bar=2)) == {'foo': 1, 'bar': 2}
     assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': '0001', 'bar': 2}
     assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":"0001","bar":2}'
 
@@ -212,7 +220,7 @@ def test_typed_dict_extra():
     assert s.to_python(dict(foo=1, bar=2)) == {'foo': 1, 'bar': 2}
     assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': 1, 'bar': 2}
     assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":1,"bar":2}'
-    assert s.to_python(dict(foo=1)) == {'foo': '0001'}
+    assert s.to_python(dict(foo=1)) == {'foo': 1}
     assert s.to_python(dict(foo=1), mode='json') == {'foo': '0001'}
     assert s.to_json(dict(foo=1)) == b'{"foo":"0001"}'
 
@@ -243,6 +251,6 @@ def test_typed_dict_different_fields():
     assert s.to_python(dict(foo=1, bar=2)) == {'foo': 1, 'bar': 2}
     assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': 1, 'bar': 2}
     assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":1,"bar":2}'
-    assert s.to_python(dict(spam=1, ham=2)) == {'spam': 1, 'ham': '0002'}
+    assert s.to_python(dict(spam=1, ham=2)) == {'spam': 1, 'ham': 2}
     assert s.to_python(dict(spam=1, ham=2), mode='json') == {'spam': 1, 'ham': '0002'}
     assert s.to_json(dict(spam=1, ham=2)) == b'{"spam":1,"ham":"0002"}'

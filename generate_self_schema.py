@@ -105,7 +105,7 @@ def tagged_union(std_union_schema: Dict[str, Any], discriminator_key: str, ref: 
 defined_ser_schema = False
 
 
-def type_dict_schema(typed_dict) -> dict[str, Any]:
+def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
     global defined_ser_schema
 
     required_keys = getattr(typed_dict, '__required_keys__', set())

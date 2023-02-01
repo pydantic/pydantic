@@ -123,7 +123,7 @@ impl ObTypeLookup {
             ObType::Url => self.url == ob_type,
             ObType::MultiHostUrl => self.multi_host_url == ob_type,
             ObType::Dataclass => is_dataclass(op_value),
-            ObType::PydanticModel => is_pydantic_model(op_value),
+            ObType::Model => is_pydantic_model(op_value),
             ObType::Enum => self.enum_type == ob_type,
             ObType::Generator => self.generator == ob_type,
             ObType::Unknown => false,
@@ -207,7 +207,7 @@ impl ObTypeLookup {
         } else if is_dataclass(op_value) {
             ObType::Dataclass
         } else if is_pydantic_model(op_value) {
-            ObType::PydanticModel
+            ObType::Model
         } else if self.is_enum(op_value, type_ptr) {
             ObType::Enum
         } else if ob_type == self.generator || is_generator(op_value) {
@@ -301,7 +301,7 @@ pub enum ObType {
     MultiHostUrl,
     // dataclasses and pydantic models
     Dataclass,
-    PydanticModel,
+    Model,
     // enum type
     Enum,
     // generator type

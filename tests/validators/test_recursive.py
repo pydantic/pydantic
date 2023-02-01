@@ -190,7 +190,7 @@ def test_model_class():
         __slots__ = '__dict__', '__fields_set__'
         # these are here just as decoration
         width: int
-        branch: Optional['Branch']  # noqa F821
+        branch: Optional['Branch']
 
     v = SchemaValidator(
         {
