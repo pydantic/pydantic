@@ -4,7 +4,7 @@ from . import dataclasses
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .errors import *
-from .fields import PrivateAttr
+from .fields import Field, PrivateAttr
 from .main import *
 from .networks import *
 from .tools import *
