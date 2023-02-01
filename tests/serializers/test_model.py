@@ -63,7 +63,7 @@ def test_dataclass():
     schema = core_schema.call_schema(
         core_schema.arguments_schema(
             core_schema.arguments_parameter('foo', core_schema.int_schema()),
-            core_schema.arguments_parameter('bar', core_schema.string_schema()),
+            core_schema.arguments_parameter('bar', core_schema.str_schema()),
             core_schema.arguments_parameter('spam', core_schema.bytes_schema(), mode='keyword_only'),
         ),
         DataClass,
@@ -73,7 +73,7 @@ def test_dataclass():
             'schema': core_schema.typed_dict_schema(
                 {
                     'foo': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'bar': core_schema.typed_dict_field(core_schema.string_schema()),
+                    'bar': core_schema.typed_dict_field(core_schema.str_schema()),
                     'spam': core_schema.typed_dict_field(core_schema.bytes_schema()),
                 }
             ),

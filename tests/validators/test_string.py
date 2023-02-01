@@ -184,7 +184,7 @@ def test_regex_error():
 
 
 def test_default_validator():
-    v = SchemaValidator(core_schema.string_schema(strict=True, to_lower=False), {'str_strip_whitespace': False})
+    v = SchemaValidator(core_schema.str_schema(strict=True, to_lower=False), {'str_strip_whitespace': False})
     assert plain_repr(v) == 'SchemaValidator(name="str",validator=Str(StrValidator{strict:true}),slots=[])'
 
 
@@ -201,7 +201,7 @@ def fruit_enum_fixture():
 
 @pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)
 def test_strict_subclass(FruitEnum, kwargs):
-    v = SchemaValidator(core_schema.string_schema(strict=True, **kwargs))
+    v = SchemaValidator(core_schema.str_schema(strict=True, **kwargs))
     assert v.validate_python('foobar') == 'foobar'
     with pytest.raises(ValidationError, match='type=string_type,'):
         v.validate_python(b'foobar')
@@ -220,7 +220,7 @@ def test_strict_subclass(FruitEnum, kwargs):
 
 @pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)
 def test_lax_subclass(FruitEnum, kwargs):
-    v = SchemaValidator(core_schema.string_schema(**kwargs))
+    v = SchemaValidator(core_schema.str_schema(**kwargs))
     assert v.validate_python('foobar') == 'foobar'
     assert v.validate_python(b'foobar') == 'foobar'
     p = v.validate_python(FruitEnum.pear)

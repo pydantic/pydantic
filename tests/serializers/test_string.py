@@ -8,7 +8,7 @@ from pydantic_core import SchemaSerializer, core_schema
 
 
 def test_str():
-    v = SchemaSerializer(core_schema.string_schema())
+    v = SchemaSerializer(core_schema.str_schema())
     assert v.to_python('foobar') == 'foobar'
     assert v.to_python('emoji 💩') == 'emoji 💩'
     assert v.to_json('foobar') == b'"foobar"'
@@ -25,7 +25,7 @@ def test_str():
 
 
 def test_str_fallback():
-    s = SchemaSerializer(core_schema.string_schema())
+    s = SchemaSerializer(core_schema.str_schema())
     assert s.to_python(None) is None
     assert s.to_python(None, mode='json') is None
     assert s.to_json(None) == b'null'
@@ -38,7 +38,7 @@ def test_str_fallback():
 
 
 def test_str_no_warnings():
-    s = SchemaSerializer(core_schema.string_schema())
+    s = SchemaSerializer(core_schema.str_schema())
     assert s.to_python(123, warnings=False) == 123
     assert s.to_python(123, mode='json', warnings=False) == 123
     assert s.to_json(123, warnings=False) == b'123'

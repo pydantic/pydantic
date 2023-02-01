@@ -7,7 +7,7 @@ from pydantic_core import SchemaError, SchemaSerializer, core_schema
 
 
 def test_dict_str_int():
-    v = SchemaSerializer(core_schema.dict_schema(core_schema.string_schema(), core_schema.int_schema()))
+    v = SchemaSerializer(core_schema.dict_schema(core_schema.str_schema(), core_schema.int_schema()))
     assert v.to_python({'a': 1, 'b': 2, 'c': 3}) == {'a': 1, 'b': 2, 'c': 3}
     assert v.to_python({'a': 1, 'b': 2, 'c': 3}, mode='json') == {'a': 1, 'b': 2, 'c': 3}
     assert v.to_json({'a': 1, 'b': 2, 'c': 3}) == b'{"a":1,"b":2,"c":3}'
@@ -109,7 +109,7 @@ def test_filter_args(params):
     ],
 )
 def test_filter_args_nested(params):
-    s = SchemaSerializer(core_schema.dict_schema(core_schema.string_schema(), core_schema.list_schema()))
+    s = SchemaSerializer(core_schema.dict_schema(core_schema.str_schema(), core_schema.list_schema()))
 
     include, exclude, expected = params['include'], params['exclude'], params['expected']
     value = {'0': [0], '1': [0, 1], '2': [0, 1, 2], '3': [0, 1, 2, 3]}
