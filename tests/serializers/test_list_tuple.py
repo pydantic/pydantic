@@ -277,7 +277,7 @@ def test_positional_tuple():
 
 
 def test_function_positional_tuple():
-    def f(prefix, value, **kwargs):
+    def f(prefix, value, _info):
         return f'{prefix}{value}'
 
     s = SchemaSerializer(

@@ -225,7 +225,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "ahash",
  "base64",
@@ -247,8 +247,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.18.0"
-source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+version = "0.18.1"
+source = "git+https://github.com/PyO3/pyo3?rev=ec2485bb7dadbed602f286efba9e0900bbcbd50d#ec2485bb7dadbed602f286efba9e0900bbcbd50d"
 dependencies = [
  "cfg-if",
  "indoc",
@@ -263,8 +263,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3-build-config"
-version = "0.18.0"
-source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+version = "0.18.1"
+source = "git+https://github.com/PyO3/pyo3?rev=ec2485bb7dadbed602f286efba9e0900bbcbd50d#ec2485bb7dadbed602f286efba9e0900bbcbd50d"
 dependencies = [
  "once_cell",
  "target-lexicon",
@@ -272,8 +272,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3-ffi"
-version = "0.18.0"
-source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+version = "0.18.1"
+source = "git+https://github.com/PyO3/pyo3?rev=ec2485bb7dadbed602f286efba9e0900bbcbd50d#ec2485bb7dadbed602f286efba9e0900bbcbd50d"
 dependencies = [
  "libc",
  "pyo3-build-config",
@@ -281,8 +281,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros"
-version = "0.18.0"
-source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+version = "0.18.1"
+source = "git+https://github.com/PyO3/pyo3?rev=ec2485bb7dadbed602f286efba9e0900bbcbd50d#ec2485bb7dadbed602f286efba9e0900bbcbd50d"
 dependencies = [
  "proc-macro2",
  "pyo3-macros-backend",
@@ -292,8 +292,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros-backend"
-version = "0.18.0"
-source = "git+https://github.com/samuelcolvin/pyo3?branch=ellipsis#f328679d77cbfc5888887d6c6ba05fd7b2314e66"
+version = "0.18.1"
+source = "git+https://github.com/PyO3/pyo3?rev=ec2485bb7dadbed602f286efba9e0900bbcbd50d#ec2485bb7dadbed602f286efba9e0900bbcbd50d"
 dependencies = [
  "proc-macro2",
  "quote",

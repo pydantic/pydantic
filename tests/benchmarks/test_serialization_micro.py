@@ -82,7 +82,9 @@ def test_python_json_list_none(benchmark):
 
 @pytest.mark.benchmark(group='date-format')
 def test_date_format(benchmark):
-    serializer = SchemaSerializer({'type': 'any', 'serialization': {'type': 'format', 'formatting_string': '%Y-%m-%d'}})
+    serializer = SchemaSerializer(
+        {'type': 'any', 'serialization': {'type': 'format', 'formatting_string': '%Y-%m-%d', 'when_used': 'always'}}
+    )
     d = date(2022, 11, 20)
     assert serializer.to_python(d) == '2022-11-20'
 
@@ -91,11 +93,11 @@ def test_date_format(benchmark):
 
 @pytest.mark.benchmark(group='date-format')
 def test_date_format_function(benchmark):
-    def fmt(value, **kwargs):
+    def fmt(value, info):
         return value.strftime('%Y-%m-%d')
 
     serializer = SchemaSerializer(
-        {'type': 'any', 'serialization': {'type': 'function', 'function': fmt, 'return_type': 'str'}}
+        {'type': 'any', 'serialization': {'type': 'function', 'function': fmt, 'json_return_type': 'str'}}
     )
     d = date(2022, 11, 20)
     assert serializer.to_python(d) == '2022-11-20'
@@ -284,3 +286,19 @@ def test_datetime(benchmark):
     @benchmark
     def r():
         v.to_python(d, mode='json')
+
+
+@pytest.mark.benchmark(group='to-string')
+def test_to_string_format(benchmark):
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.format_ser_schema('d')))
+    assert s.to_json(123) == b'"123"'
+
+    benchmark(s.to_json, 123)
+
+
+@pytest.mark.benchmark(group='to-string')
+def test_to_string_direct(benchmark):
+    s = SchemaSerializer(core_schema.any_schema(serialization={'type': 'to-string'}))
+    assert s.to_json(123) == b'"123"'
+
+    benchmark(s.to_json, 123)

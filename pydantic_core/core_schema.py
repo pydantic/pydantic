@@ -50,8 +50,25 @@ class CoreConfig(TypedDict, total=False):
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
 
 
+class SerializationInfo(Protocol):
+    include: IncExCall
+    exclude: IncExCall
+    mode: str
+    by_alias: bool
+    exclude_unset: bool
+    exclude_defaults: bool
+    exclude_none: bool
+    round_trip: bool
+
+    def __str__(self) -> str:
+        ...
+
+    def __repr__(self) -> str:
+        ...
+
+
 class SerializeFunction(Protocol):  # pragma: no cover
-    def __call__(self, __input_value: Any, *, format: str, include: IncExCall | None, exclude: IncExCall | None) -> Any:
+    def __call__(self, __input_value: Any, __info: SerializationInfo) -> Any:
         ...
 
 
@@ -67,6 +84,50 @@ ExpectedSerializationTypes = Literal[
     'tuple',
     'set',
     'frozenset',
+    'generator',
+    'dict',
+    'datetime',
+    'date',
+    'time',
+    'timedelta',
+    'url',
+    'multi-host-url',
+    'json',
+    'to-string',
+]
+
+
+class SimpleSerSchema(TypedDict, total=False):
+    type: Required[ExpectedSerializationTypes]
+
+
+def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
+    """
+    Returns a schema for serialization with a custom type.
+
+    Args:
+        type: The type to use for serialization
+    """
+    return SimpleSerSchema(type=type)
+
+
+# must match `src/serializers/ob_type.rs::ObType`
+JsonReturnTypes = Literal[
+    'int',
+    'int_subclass',
+    'bool',
+    'float',
+    'float_subclass',
+    'decimal',
+    'str',
+    'str_subclass',
+    'bytes',
+    'bytearray',
+    'list',
+    'tuple',
+    'set',
+    'frozenset',
+    'generator',
     'dict',
     'datetime',
     'date',
@@ -74,46 +135,63 @@ ExpectedSerializationTypes = Literal[
     'timedelta',
     'url',
     'multi_host_url',
-    'json',
+    'dataclass',
+    'model',
+    'enum',
 ]
 
-
-class AltTypeSerSchema(TypedDict, total=False):
-    type: Required[ExpectedSerializationTypes]
+WhenUsed = Literal['always', 'unless-none', 'json', 'json-unless-none']
+"""
+Values have the following meanings:
+* `'always'` means always use
+* `'unless-none'` means use unless the value is `None`
+* `'json'` means use when serializing to JSON
+* `'json-unless-none'` means use when serializing to JSON and the value is not `None`
+"""
 
 
 class FunctionSerSchema(TypedDict, total=False):
     type: Required[Literal['function']]
     function: Required[SerializeFunction]
-    return_type: ExpectedSerializationTypes
+    json_return_type: JsonReturnTypes
+    when_used: WhenUsed  # default: 'always'
 
 
 def function_ser_schema(
-    function: SerializeFunction, return_type: ExpectedSerializationTypes | None = None
+    function: SerializeFunction, json_return_type: JsonReturnTypes | None = None, when_used: WhenUsed = 'always'
 ) -> FunctionSerSchema:
     """
     Returns a schema for serialization with a function.
 
     Args:
         function: The function to use for serialization
-        return_type: The type that the function returns
+        json_return_type: The type that the function returns if `mode='json'`
+        when_used: When the function should be called
     """
-    return dict_not_none(type='function', function=function, return_type=return_type)
+    if when_used == 'always':
+        # just to avoid extra elements in schema, and to use the actual default defined in rust
+        when_used = None  # type: ignore
+    return dict_not_none(type='function', function=function, json_return_type=json_return_type, when_used=when_used)
 
 
 class FormatSerSchema(TypedDict, total=False):
     type: Required[Literal['format']]
     formatting_string: Required[str]
+    when_used: WhenUsed  # default: 'json-unless-none'
 
 
-def format_ser_schema(formatting_string: str) -> FormatSerSchema:
+def format_ser_schema(formatting_string: str, *, when_used: WhenUsed = 'json-unless-none') -> FormatSerSchema:
     """
     Returns a schema for serialization using python's `format` method.
 
     Args:
         formatting_string: String defining the format to use
+        when_used: Same meaning as for [function_ser_schema], but with a different default
     """
-    return FormatSerSchema(type='format', formatting_string=formatting_string)
+    if when_used == 'json-unless-none':
+        # just to avoid extra elements in schema, and to use the actual default defined in rust
+        when_used = None  # type: ignore
+    return dict_not_none(type='format', formatting_string=formatting_string, when_used=when_used)
 
 
 class ModelSerSchema(TypedDict, total=False):
@@ -122,7 +200,18 @@ class ModelSerSchema(TypedDict, total=False):
     schema: Required[CoreSchema]
 
 
-SerSchema = Union[AltTypeSerSchema, FunctionSerSchema, FormatSerSchema, ModelSerSchema]
+def model_ser_schema(cls: Type[Any], schema: CoreSchema) -> ModelSerSchema:
+    """
+    Returns a schema for serialization using a model.
+
+    Args:
+        cls: The expected class type, used to generate warnings if the wrong type is passed
+        schema: Internal schema to use to serialize the model dict
+    """
+    return ModelSerSchema(type='model', cls=cls, schema=schema)
+
+
+SerSchema = Union[SimpleSerSchema, FunctionSerSchema, FormatSerSchema, ModelSerSchema]
 
 
 class AnySchema(TypedDict, total=False):

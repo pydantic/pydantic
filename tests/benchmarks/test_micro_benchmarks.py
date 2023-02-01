@@ -290,7 +290,7 @@ def recursive_model_data():
 def test_recursive_model_pyd(recursive_model_data, benchmark):
     class PydanticBranch(BaseModel):
         width: int
-        branch: Optional['PydanticBranch'] = None  # noqa: F821
+        branch: Optional['PydanticBranch'] = None
 
     benchmark(PydanticBranch.parse_obj, recursive_model_data)
 

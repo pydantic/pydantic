@@ -160,7 +160,7 @@ pub(crate) fn infer_to_python_known(
                 py_url.__str__().into_py(py)
             }
             ObType::Dataclass => serialize_dict(object_to_dict(value, false, extra)?)?,
-            ObType::PydanticModel => serialize_dict(object_to_dict(value, true, extra)?)?,
+            ObType::Model => serialize_dict(object_to_dict(value, true, extra)?)?,
             ObType::Enum => {
                 let v = value.getattr(intern!(py, "value"))?;
                 infer_to_python(v, include, exclude, extra)?.into_py(py)
@@ -214,7 +214,7 @@ pub(crate) fn infer_to_python_known(
                 new_dict.into_py(py)
             }
             ObType::Dataclass => serialize_dict(object_to_dict(value, false, extra)?)?,
-            ObType::PydanticModel => serialize_dict(object_to_dict(value, true, extra)?)?,
+            ObType::Model => serialize_dict(object_to_dict(value, true, extra)?)?,
             ObType::Generator => {
                 let iter = super::type_serializers::generator::SerializationIterator::new(
                     value.downcast()?,
@@ -398,7 +398,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             serializer.serialize_str(&py_url.__str__())
         }
         ObType::Dataclass => serialize_dict!(object_to_dict(value, false, extra).map_err(py_err_se_err)?),
-        ObType::PydanticModel => serialize_dict!(object_to_dict(value, true, extra).map_err(py_err_se_err)?),
+        ObType::Model => serialize_dict!(object_to_dict(value, true, extra).map_err(py_err_se_err)?),
         ObType::Enum => {
             let v = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
             infer_serialize(v, serializer, include, exclude, extra)
@@ -490,7 +490,7 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
         ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
             py_err!(PyTypeError; "`{}` not valid as object key", ob_type)
         }
-        ObType::Dataclass | ObType::PydanticModel => {
+        ObType::Dataclass | ObType::Model => {
             // check that the instance is hashable
             key.hash()?;
             let key = key.str()?.to_string();

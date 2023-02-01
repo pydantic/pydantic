@@ -117,11 +117,12 @@ combined_serializer! {
         Generator: super::type_serializers::generator::GeneratorSerializer;
         Dict: super::type_serializers::dict::DictSerializer;
         TypedDict: super::type_serializers::typed_dict::TypedDictSerializer;
-        ModelDict: super::type_serializers::model::ModelSerializer;
+        Model: super::type_serializers::model::ModelSerializer;
         Url: super::type_serializers::url::UrlSerializer;
         MultiHostUrl: super::type_serializers::url::MultiHostUrlSerializer;
         Any: super::type_serializers::any::AnySerializer;
-        Format: super::type_serializers::format::FunctionSerializer;
+        Format: super::type_serializers::format::FormatSerializer;
+        ToString: super::type_serializers::format::ToStringSerializer;
         WithDefault: super::type_serializers::with_default::WithDefaultSerializer;
         Json: super::type_serializers::json::JsonSerializer;
         Recursive: super::type_serializers::recursive::RecursiveRefSerializer;

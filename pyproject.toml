@@ -49,9 +49,9 @@ bindings = 'pyo3'
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q']
+extend-select = ['Q', 'RUF100', 'C90']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
-update-check = false
+mccabe = { max-complexity = 13 }
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
