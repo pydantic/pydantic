@@ -162,7 +162,7 @@ all_schema_functions = [
         args(
             core_schema.arguments_parameter('foo', {'type': 'int'}),
             core_schema.arguments_parameter('bar', {'type': 'str'}),
-            serialization=core_schema.format_ser_schema('s'),
+            serialization=core_schema.format_ser_schema('d'),
         ),
         {
             'type': 'arguments',
@@ -170,7 +170,7 @@ all_schema_functions = [
                 {'name': 'foo', 'schema': {'type': 'int'}},
                 {'name': 'bar', 'schema': {'type': 'str'}},
             ),
-            'serialization': {'type': 'format', 'formatting_string': 's'},
+            'serialization': {'type': 'format', 'formatting_string': 'd'},
         },
     ),
     (
@@ -249,3 +249,16 @@ def test_invalid_custom_error_type():
     msg = "custom_error.message should not be provided if 'custom_error_type' matches a known error"
     with pytest.raises(SchemaError, match=msg):
         SchemaValidator(s)
+
+
+def repr_function(value, _info):
+    return repr(value)
+
+
+@pytest.mark.parametrize('json_return_type', core_schema.JsonReturnTypes.__args__)
+def test_expected_serialization_types(json_return_type):
+    SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.function_ser_schema(repr_function, json_return_type=json_return_type)
+        )
+    )

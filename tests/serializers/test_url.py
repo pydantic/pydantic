@@ -60,15 +60,14 @@ def test_multi_host_url_dict_keys():
 
 
 def test_any():
-    v_url = SchemaValidator(core_schema.url_schema())
-    v_multi_host_url = SchemaValidator(core_schema.multi_host_url_schema())
-
-    url = v_url.validate_python('https://ex.com')
-    multi_host_url = v_multi_host_url.validate_python('https://ex.com,ex.org/path')
+    url = Url('https://ex.com')
+    multi_host_url = MultiHostUrl('https://ex.com,ex.org/path')
 
     s = SchemaSerializer(core_schema.any_schema())
     assert s.to_python(url) == url
+    assert type(s.to_python(url)) == Url
     assert s.to_python(multi_host_url) == multi_host_url
+    assert type(s.to_python(multi_host_url)) == MultiHostUrl
     assert s.to_python(url, mode='json') == 'https://ex.com/'
     assert s.to_python(multi_host_url, mode='json') == 'https://ex.com,ex.org/path'
     assert s.to_json(url) == b'"https://ex.com/"'
@@ -80,3 +79,10 @@ def test_any():
         'https://ex.com,ex.org/path': 2,
     }
     assert s.to_json({url: 1, multi_host_url: 2}) == b'{"https://ex.com/":1,"https://ex.com,ex.org/path":2}'
+
+
+def test_custom_serializer():
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.simple_ser_schema('multi-host-url')))
+
+    multi_host_url = MultiHostUrl('https://ex.com,ex.org/path')
+    assert s.to_python(multi_host_url) == multi_host_url

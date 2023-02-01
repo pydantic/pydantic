@@ -36,3 +36,12 @@ def test_dict_key_json():
 
     assert s.to_json(v) == b'{"1,2":3,"4,5":9}'
     assert s.to_json(v, round_trip=True) == b'{"[1,2]":3,"[4,5]":9}'
+
+
+def test_custom_serializer():
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.simple_ser_schema('json')))
+    assert s.to_python({1: 2}) == {1: 2}
+    assert s.to_python({1: 2}, mode='json') == {'1': 2}
+    assert s.to_python({1: 2}, mode='json', round_trip=True) == '{"1":2}'
+    assert s.to_json({1: 2}) == b'{"1":2}'
+    assert s.to_json({1: 2}, round_trip=True) == b'"{\\"1\\":2}"'

@@ -3,8 +3,8 @@ from __future__ import annotations as _annotations
 from datetime import date, datetime, time
 from typing import Any
 
-from pydantic_core import PydanticKnownError, SchemaError, SchemaValidator
-from pydantic_core.core_schema import CoreConfig, CoreSchema, function_plain_schema
+from pydantic_core import PydanticKnownError, SchemaError, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core.core_schema import CoreConfig, CoreSchema
 
 
 class Foo:
@@ -149,7 +149,7 @@ def test_correct_function_signature() -> None:
     def my_validator(value: Any, *, data: Any, config: CoreConfig | None, context: Any, **future_kwargs: Any) -> str:
         return str(value)
 
-    v = SchemaValidator(function_plain_schema(my_validator))
+    v = SchemaValidator(core_schema.function_plain_schema(my_validator))
     assert v.validate_python(1) == '1'
 
 
@@ -157,7 +157,7 @@ def test_wrong_function_signature() -> None:
     def wrong_validator(value: Any) -> Any:
         return value
 
-    v = SchemaValidator(function_plain_schema(wrong_validator))  # type: ignore
+    v = SchemaValidator(core_schema.function_plain_schema(wrong_validator))  # type: ignore
 
     # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
     try:
@@ -178,3 +178,16 @@ def test_type_error():
 
     e = PydanticKnownError('recursion_loop')
     assert isinstance(e, PydanticKnownError)
+
+
+def test_ser_function():
+    def f(__input: Any, __info: core_schema.SerializationInfo) -> str:
+        return str(__info)
+
+    s = SchemaSerializer(
+        core_schema.any_schema(serialization=core_schema.function_ser_schema(f, json_return_type='str'))
+    )
+    assert s.to_python(123) == (
+        "SerializationInfo(include=None, exclude=None, mode='python', by_alias=True, exclude_unset=False, "
+        "exclude_defaults=False, exclude_none=False, round_trip=False)"
+    )

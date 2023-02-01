@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "0.8.1"
+version = "0.8.2"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
@@ -27,7 +27,7 @@ include = [
 
 [dependencies]
 # required since `Py_Ellipsis` fails on windows, see https://github.com/PyO3/pyo3/pull/2911
-pyo3 = { git = "https://github.com/samuelcolvin/pyo3", branch = "ellipsis" }
+pyo3 = { git = "https://github.com/PyO3/pyo3", rev = "ec2485bb7dadbed602f286efba9e0900bbcbd50d" }
 #pyo3 = "0.18.0"
 regex = "1.6.0"
 strum = { version = "0.24.1", features = ["derive"] }
@@ -68,5 +68,5 @@ strip = true
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
 # FIXME change when `pyo3` above is updated
-pyo3-build-config = { git = "https://github.com/samuelcolvin/pyo3", branch = "ellipsis" }
+pyo3-build-config = { git = "https://github.com/PyO3/pyo3", rev = "ec2485bb7dadbed602f286efba9e0900bbcbd50d" }
 #pyo3 = "0.18.0"

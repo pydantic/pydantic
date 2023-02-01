@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt;
 
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -139,6 +140,22 @@ pub(crate) enum SerMode {
     Python,
     Json,
     Other(String),
+}
+
+impl fmt::Display for SerMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SerMode::Python => write!(f, "python"),
+            SerMode::Json => write!(f, "json"),
+            SerMode::Other(s) => write!(f, "{s}"),
+        }
+    }
+}
+
+impl SerMode {
+    pub fn is_json(&self) -> bool {
+        matches!(self, SerMode::Json)
+    }
 }
 
 impl From<Option<&str>> for SerMode {

@@ -67,17 +67,16 @@ def test_dataclass():
             core_schema.arguments_parameter('spam', core_schema.bytes_schema(), mode='keyword_only'),
         ),
         DataClass,
-        serialization={
-            'type': 'model',
-            'cls': DataClass,
-            'schema': core_schema.typed_dict_schema(
+        serialization=core_schema.model_ser_schema(
+            DataClass,
+            core_schema.typed_dict_schema(
                 {
                     'foo': core_schema.typed_dict_field(core_schema.int_schema()),
                     'bar': core_schema.typed_dict_field(core_schema.str_schema()),
                     'spam': core_schema.typed_dict_field(core_schema.bytes_schema()),
                 }
             ),
-        },
+        ),
     )
     # just check validation works as expected
     v = SchemaValidator(schema)

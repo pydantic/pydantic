@@ -122,3 +122,9 @@ def test_include():
         'f',
         'g',
     ]
+
+
+def test_custom_serializer():
+    s = SchemaSerializer(core_schema.any_schema(serialization=core_schema.simple_ser_schema('generator')))
+    assert s.to_python(gen_ok(1, 2), mode='json') == [1, 2]
+    assert s.to_json(gen_ok(1, 2)) == b'[1,2]'
