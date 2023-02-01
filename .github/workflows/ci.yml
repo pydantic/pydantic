@@ -521,7 +521,7 @@ jobs:
           path: dist
 
       - run: rm -r pydantic_core
-      - run: pip install -U pip typing-extensions
+      - run: pip install typing-extensions
       - run: pip install -r tests/requirements.txt
       - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
       - run: pytest
