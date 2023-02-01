@@ -19,12 +19,7 @@ class PydanticErrorMixin:
     def __init__(self, code: str, *, message: Optional[str] = None) -> None:
         self.code = code
         self.message = message
-        print(self.__class__.mro())
-        # If using mixin directly
-        if PydanticErrorMixin in self.__class__.mro():
-            super(self.__class__.mro()[2], self).__init__(message)
-        else:
-            super(self.__class__.mro()[3], self).__init__(message)
+        super().__init__()
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
