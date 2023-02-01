@@ -10,16 +10,16 @@ class PydanticErrorMixin:
     Pydantic Error Mixin for common functions
     """
 
+    def __init__(self, code: str, *, message: Optional[str] = None) -> None:
+        self.code = code
+        self.message = message
+        super().__init__()
+
     def __str__(self) -> str:
         return f'{self.__class__.__name__}(code={self.code!r}, message={self.message!r})'
 
     def __repr__(self) -> str:
         return self.__str__()
-
-    def __init__(self, code: str, *, message: Optional[str] = None) -> None:
-        self.code = code
-        self.message = message
-        super().__init__()
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
