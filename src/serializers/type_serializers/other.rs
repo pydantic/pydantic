@@ -96,7 +96,7 @@ impl BuildSerializer for LaxOrStrictBuilder {
         config: Option<&PyDict>,
         build_context: &mut BuildContext<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let lax_schema: &PyDict = schema.get_as_req(intern!(schema.py(), "lax_schema"))?;
+        let lax_schema: &PyDict = schema.get_as_req(intern!(schema.py(), "strict_schema"))?;
         CombinedSerializer::build(lax_schema, config, build_context)
     }
 }

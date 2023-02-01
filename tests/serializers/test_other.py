@@ -1,3 +1,5 @@
+import pytest
+
 from pydantic_core import SchemaSerializer, core_schema
 
 from ..conftest import plain_repr
@@ -30,3 +32,27 @@ def test_function_after():
     s = SchemaSerializer(core_schema.function_after_schema(core_schema.int_schema(), lambda v, **kwargs: v + 1))
     # insert_assert(plain_repr(s))
     assert plain_repr(s) == 'SchemaSerializer(serializer=Int(IntSerializer),slots=[])'
+
+
+def test_lax_or_strict():
+    s = SchemaSerializer(core_schema.lax_or_strict_schema(core_schema.int_schema(), core_schema.string_schema()))
+    # insert_assert(plain_repr(s))
+    assert plain_repr(s) == 'SchemaSerializer(serializer=Str(StrSerializer),slots=[])'
+
+    assert s.to_json('abc') == b'"abc"'
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_json(123) == b'123'
+
+
+def test_lax_or_strict_custom_ser():
+    s = SchemaSerializer(
+        core_schema.lax_or_strict_schema(
+            core_schema.int_schema(),
+            core_schema.string_schema(),
+            serialization=core_schema.format_ser_schema('^5s', when_used='always'),
+        )
+    )
+
+    assert s.to_python('abc') == ' abc '
+    assert s.to_python('abc', mode='json') == ' abc '
+    assert s.to_json('abc') == b'" abc "'
