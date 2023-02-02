@@ -66,17 +66,8 @@ impl FunctionSerializer {
     ) -> PyResult<PyObject> {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
-            let info = SerializationInfo {
-                include: include.map(|i| i.into_py(py)),
-                exclude: exclude.map(|e| e.into_py(py)),
-                _mode: extra.mode.clone(),
-                by_alias: extra.by_alias,
-                exclude_unset: extra.exclude_unset,
-                exclude_defaults: extra.exclude_defaults,
-                exclude_none: extra.exclude_none,
-                round_trip: extra.round_trip,
-            };
-            self.func.call1(py, (value, info))
+            self.func
+                .call1(py, (value, SerializationInfo::new(py, include, exclude, extra)))
         } else {
             Ok(value.into_py(py))
         }
@@ -208,6 +199,21 @@ struct SerializationInfo {
     exclude_none: bool,
     #[pyo3(get)]
     round_trip: bool,
+}
+
+impl SerializationInfo {
+    fn new(py: Python, include: Option<&PyAny>, exclude: Option<&PyAny>, extra: &Extra) -> Self {
+        Self {
+            include: include.map(|i| i.into_py(py)),
+            exclude: exclude.map(|e| e.into_py(py)),
+            _mode: extra.mode.clone(),
+            by_alias: extra.by_alias,
+            exclude_unset: extra.exclude_unset,
+            exclude_defaults: extra.exclude_defaults,
+            exclude_none: extra.exclude_none,
+            round_trip: extra.round_trip,
+        }
+    }
 }
 
 #[pymethods]
