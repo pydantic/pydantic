@@ -46,7 +46,7 @@ impl SchemaFilter<usize> {
         }
     }
 
-    pub fn value_filter<'py>(
+    pub fn index_filter<'py>(
         &self,
         index: usize,
         include: Option<&'py PyAny>,
@@ -224,7 +224,7 @@ impl AnyFilter {
         self.filter(key, 0, include, exclude)
     }
 
-    pub fn value_filter<'py>(
+    pub fn index_filter<'py>(
         &self,
         index: usize,
         include: Option<&'py PyAny>,

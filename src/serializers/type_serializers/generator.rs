@@ -63,7 +63,7 @@ impl TypeSerializer for GeneratorSerializer {
                         };
                         for (index, iter_result) in py_iter.enumerate() {
                             let element = iter_result?;
-                            let op_next = self.filter.value_filter(index, include, exclude)?;
+                            let op_next = self.filter.index_filter(index, include, exclude)?;
                             if let Some((next_include, next_exclude)) = op_next {
                                 items.push(item_serializer.to_python(element, next_include, next_exclude, extra)?);
                             }
@@ -115,7 +115,7 @@ impl TypeSerializer for GeneratorSerializer {
                     let element = iter_result.map_err(py_err_se_err)?;
                     let op_next = self
                         .filter
-                        .value_filter(index, include, exclude)
+                        .index_filter(index, include, exclude)
                         .map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let item_serialize =
@@ -187,7 +187,7 @@ impl SerializationIterator {
 
         for iter_result in iterator {
             let element = iter_result?;
-            let filter = self.filter.value_filter(self.index, include, exclude)?;
+            let filter = self.filter.index_filter(self.index, include, exclude)?;
             self.index += 1;
             if let Some((next_include, next_exclude)) = filter {
                 let v = self
