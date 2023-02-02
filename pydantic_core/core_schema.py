@@ -178,16 +178,26 @@ def function_plain_ser_schema(
     )
 
 
+class SerializeWrapHandler(Protocol):  # pragma: no cover
+    def __call__(self, __input_value: Any, __index_key: int | str | None = None) -> Any:
+        ...
+
+
+class SerializeWrapFunction(Protocol):  # pragma: no cover
+    def __call__(self, __input_value: Any, __serializer: SerializeWrapHandler, __info: SerializationInfo) -> Any:
+        ...
+
+
 class FunctionWrapSerSchema(TypedDict, total=False):
     type: Required[Literal['function-wrap']]
-    function: Required[SerializePlainFunction]
+    function: Required[SerializeWrapFunction]
     schema: Required[CoreSchema]
     json_return_type: JsonReturnTypes
     when_used: WhenUsed  # default: 'always'
 
 
 def function_wrap_ser_schema(
-    function: SerializePlainFunction,
+    function: SerializeWrapFunction,
     schema: CoreSchema,
     *,
     json_return_type: JsonReturnTypes | None = None,

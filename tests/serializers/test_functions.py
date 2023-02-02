@@ -267,9 +267,9 @@ def test_function_wrap():
     s = SchemaSerializer(
         core_schema.any_schema(serialization=core_schema.function_wrap_ser_schema(f, core_schema.int_schema()))
     )
-    assert s.to_python('foo') == 'result=3 repr=SerializationCallable(serializer=Int(IntSerializer))'
-    assert s.to_python('foo', mode='json') == 'result=3 repr=SerializationCallable(serializer=Int(IntSerializer))'
-    assert s.to_json('foo') == b'"result=3 repr=SerializationCallable(serializer=Int(IntSerializer))"'
+    assert s.to_python('foo') == 'result=3 repr=SerializationCallable(serializer=int)'
+    assert s.to_python('foo', mode='json') == 'result=3 repr=SerializationCallable(serializer=int)'
+    assert s.to_json('foo') == b'"result=3 repr=SerializationCallable(serializer=int)"'
 
 
 def test_deque():

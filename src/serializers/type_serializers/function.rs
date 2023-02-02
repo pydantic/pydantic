@@ -289,7 +289,10 @@ impl SerializationCallable {
     }
 
     fn __repr__(&self) -> PyResult<String> {
-        Ok(format!("SerializationCallable(serializer={:?})", self.serializer))
+        Ok(format!(
+            "SerializationCallable(serializer={})",
+            self.serializer.get_name()
+        ))
     }
 
     fn __str__(&self) -> PyResult<String> {

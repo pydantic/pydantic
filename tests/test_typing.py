@@ -180,7 +180,7 @@ def test_type_error():
     assert isinstance(e, PydanticKnownError)
 
 
-def test_ser_function():
+def test_ser_function_plain():
     def f(__input: Any, __info: core_schema.SerializationInfo) -> str:
         return str(__info)
 
@@ -189,5 +189,22 @@ def test_ser_function():
     )
     assert s.to_python(123) == (
         "SerializationInfo(include=None, exclude=None, mode='python', by_alias=True, exclude_unset=False, "
+        "exclude_defaults=False, exclude_none=False, round_trip=False)"
+    )
+
+
+def test_ser_function_wrap():
+    def f(__input: Any, __serialize: core_schema.SerializeWrapHandler, __info: core_schema.SerializationInfo) -> str:
+        return f'{__serialize} {__info}'
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.function_wrap_ser_schema(f, core_schema.str_schema(), when_used='json')
+        )
+    )
+    # insert_assert(s.to_python(123, mode='json'))
+    assert s.to_python(123, mode='json') == (
+        "SerializationCallable(serializer=str) "
+        "SerializationInfo(include=None, exclude=None, mode='json', by_alias=True, exclude_unset=False, "
         "exclude_defaults=False, exclude_none=False, round_trip=False)"
     )
