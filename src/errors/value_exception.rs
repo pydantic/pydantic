@@ -10,6 +10,12 @@ use super::{ErrorType, ValError};
 #[derive(Debug, Clone)]
 pub struct PydanticOmit {}
 
+impl PydanticOmit {
+    pub(crate) fn new_err() -> PyErr {
+        PyErr::new::<Self, ()>(())
+    }
+}
+
 #[pymethods]
 impl PydanticOmit {
     #[new]

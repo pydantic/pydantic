@@ -147,8 +147,8 @@ pub(crate) struct SerializationIterator {
     item_serializer: CombinedSerializer,
     extra_owned: ExtraOwned,
     filter: SchemaFilter<usize>,
-    include_arg: Option<PyObject>,
-    exclude_arg: Option<PyObject>,
+    include: Option<PyObject>,
+    exclude: Option<PyObject>,
 }
 
 impl SerializationIterator {
@@ -167,8 +167,8 @@ impl SerializationIterator {
             item_serializer,
             extra_owned: ExtraOwned::new(extra),
             filter,
-            include_arg: include.map(|v| v.into_py(py)),
-            exclude_arg: exclude.map(|v| v.into_py(py)),
+            include: include.map(|v| v.into_py(py)),
+            exclude: exclude.map(|v| v.into_py(py)),
         }
     }
 }
@@ -181,8 +181,8 @@ impl SerializationIterator {
 
     fn __next__(&mut self, py: Python) -> PyResult<Option<PyObject>> {
         let iterator = self.iterator.as_ref(py);
-        let include = self.include_arg.as_ref().map(|o| o.as_ref(py));
-        let exclude = self.exclude_arg.as_ref().map(|o| o.as_ref(py));
+        let include = self.include.as_ref().map(|o| o.as_ref(py));
+        let exclude = self.exclude.as_ref().map(|o| o.as_ref(py));
         let extra = self.extra_owned.to_extra(py);
 
         for iter_result in iterator {

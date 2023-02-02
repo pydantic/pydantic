@@ -60,15 +60,13 @@ class SerializationInfo(Protocol):
     exclude_none: bool
     round_trip: bool
 
+    def mode_is_json(self) -> bool:
+        ...
+
     def __str__(self) -> str:
         ...
 
     def __repr__(self) -> str:
-        ...
-
-
-class SerializeFunction(Protocol):  # pragma: no cover
-    def __call__(self, __input_value: Any, __info: SerializationInfo) -> Any:
         ...
 
 
@@ -110,6 +108,11 @@ def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
     return SimpleSerSchema(type=type)
 
 
+class SerializePlainFunction(Protocol):  # pragma: no cover
+    def __call__(self, __input_value: Any, __info: SerializationInfo) -> Any:
+        ...
+
+
 # must match `src/serializers/ob_type.rs::ObType`
 JsonReturnTypes = Literal[
     'int',
@@ -149,16 +152,16 @@ Values have the following meanings:
 """
 
 
-class FunctionSerSchema(TypedDict, total=False):
-    type: Required[Literal['function']]
-    function: Required[SerializeFunction]
+class FunctionPlainSerSchema(TypedDict, total=False):
+    type: Required[Literal['function-plain']]
+    function: Required[SerializePlainFunction]
     json_return_type: JsonReturnTypes
     when_used: WhenUsed  # default: 'always'
 
 
-def function_ser_schema(
-    function: SerializeFunction, json_return_type: JsonReturnTypes | None = None, when_used: WhenUsed = 'always'
-) -> FunctionSerSchema:
+def function_plain_ser_schema(
+    function: SerializePlainFunction, *, json_return_type: JsonReturnTypes | None = None, when_used: WhenUsed = 'always'
+) -> FunctionPlainSerSchema:
     """
     Returns a schema for serialization with a function.
 
@@ -170,7 +173,41 @@ def function_ser_schema(
     if when_used == 'always':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
         when_used = None  # type: ignore
-    return dict_not_none(type='function', function=function, json_return_type=json_return_type, when_used=when_used)
+    return dict_not_none(
+        type='function-plain', function=function, json_return_type=json_return_type, when_used=when_used
+    )
+
+
+class FunctionWrapSerSchema(TypedDict, total=False):
+    type: Required[Literal['function-wrap']]
+    function: Required[SerializePlainFunction]
+    schema: Required[CoreSchema]
+    json_return_type: JsonReturnTypes
+    when_used: WhenUsed  # default: 'always'
+
+
+def function_wrap_ser_schema(
+    function: SerializePlainFunction,
+    schema: CoreSchema,
+    *,
+    json_return_type: JsonReturnTypes | None = None,
+    when_used: WhenUsed = 'always',
+) -> FunctionPlainSerSchema:
+    """
+    Returns a schema for serialization with a function.
+
+    Args:
+        function: The function to use for serialization
+        schema: The schema to use for the inner serialization
+        json_return_type: The type that the function returns if `mode='json'`
+        when_used: When the function should be called
+    """
+    if when_used == 'always':
+        # just to avoid extra elements in schema, and to use the actual default defined in rust
+        when_used = None  # type: ignore
+    return dict_not_none(
+        type='function-wrap', schema=schema, function=function, json_return_type=json_return_type, when_used=when_used
+    )
 
 
 class FormatSerSchema(TypedDict, total=False):
@@ -185,7 +222,7 @@ def format_ser_schema(formatting_string: str, *, when_used: WhenUsed = 'json-unl
 
     Args:
         formatting_string: String defining the format to use
-        when_used: Same meaning as for [function_ser_schema], but with a different default
+        when_used: Same meaning as for [function_plain_ser_schema], but with a different default
     """
     if when_used == 'json-unless-none':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
@@ -203,7 +240,7 @@ def to_string_ser_schema(*, when_used: WhenUsed = 'json-unless-none') -> ToStrin
     Returns a schema for serialization using python's `str()` / `__str__` method.
 
     Args:
-        when_used: Same meaning as for [function_ser_schema], but with a different default
+        when_used: Same meaning as for [function_plain_ser_schema], but with a different default
     """
     s = dict(type='to-string')
     if when_used != 'json-unless-none':
@@ -229,7 +266,9 @@ def model_ser_schema(cls: Type[Any], schema: CoreSchema) -> ModelSerSchema:
     return ModelSerSchema(type='model', cls=cls, schema=schema)
 
 
-SerSchema = Union[SimpleSerSchema, FunctionSerSchema, FormatSerSchema, ToStringSerSchema, ModelSerSchema]
+SerSchema = Union[
+    SimpleSerSchema, FunctionPlainSerSchema, FunctionWrapSerSchema, FormatSerSchema, ToStringSerSchema, ModelSerSchema
+]
 
 
 class AnySchema(TypedDict, total=False):

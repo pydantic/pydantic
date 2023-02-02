@@ -76,7 +76,8 @@ combined_serializer! {
     enum_only: {
         // function type_serializers cannot be defined by type lookup, but must be members of `CombinedSerializer`,
         // hence they're here.
-        Function: super::type_serializers::function::FunctionSerializer;
+        Function: super::type_serializers::function::FunctionPlainSerializer;
+        FunctionWrap: super::type_serializers::function::FunctionWrapSerializer;
         // `TuplePositionalSerializer` & `TupleVariableSerializer` are created by
         // `TupleBuilder` based on the `mode` parameter.
         TuplePositional: super::type_serializers::tuple::TuplePositionalSerializer;
@@ -143,15 +144,19 @@ impl CombinedSerializer {
         if let Some(ser_schema) = schema.get_as::<&PyDict>(intern!(py, "serialization"))? {
             let op_ser_type: Option<&str> = ser_schema.get_as(type_key)?;
             match op_ser_type {
-                Some("function") => {
+                Some("function-plain") => {
                     // `function` is a special case, not included in `find_serializer` since it means something
                     // different in `schema.type`
-                    return super::type_serializers::function::FunctionSerializer::build(
+                    return super::type_serializers::function::FunctionPlainSerializer::new_combined(ser_schema)
+                        .map_err(|err| py_error_type!("Error building `function-plain` serializer:\n  {}", err));
+                }
+                Some("function-wrap") => {
+                    return super::type_serializers::function::FunctionWrapSerializer::new_combined(
                         ser_schema,
                         config,
                         build_context,
                     )
-                    .map_err(|err| py_error_type!("Error building `function` serializer:\n  {}", err));
+                    .map_err(|err| py_error_type!("Error building `function-wrap` serializer:\n  {}", err));
                 }
                 // applies to lists tuples and dicts, does not override the main schema `type`
                 Some("include-exclude-sequence") | Some("include-exclude-dict") => (),
