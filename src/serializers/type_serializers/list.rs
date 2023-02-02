@@ -60,7 +60,7 @@ impl TypeSerializer for ListSerializer {
 
                 let mut items = Vec::with_capacity(py_list.len());
                 for (index, element) in py_list.iter().enumerate() {
-                    let op_next = self.filter.value_filter(index, include, exclude)?;
+                    let op_next = self.filter.index_filter(index, include, exclude)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         items.push(item_serializer.to_python(element, next_include, next_exclude, extra)?);
                     }
@@ -94,7 +94,7 @@ impl TypeSerializer for ListSerializer {
                 for (index, element) in py_list.iter().enumerate() {
                     let op_next = self
                         .filter
-                        .value_filter(index, include, exclude)
+                        .index_filter(index, include, exclude)
                         .map_err(py_err_se_err)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         let item_serialize =
