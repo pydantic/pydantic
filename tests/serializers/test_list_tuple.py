@@ -285,10 +285,12 @@ def test_function_positional_tuple():
             'type': 'tuple',
             'mode': 'positional',
             'items_schema': [
-                core_schema.any_schema(serialization={'type': 'function', 'function': partial(f, 'a')}),
-                core_schema.any_schema(serialization={'type': 'function', 'function': partial(f, 'b')}),
+                core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(partial(f, 'a'))),
+                core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(partial(f, 'b'))),
             ],
-            'extra_schema': core_schema.any_schema(serialization={'type': 'function', 'function': partial(f, 'extra')}),
+            'extra_schema': core_schema.any_schema(
+                serialization=core_schema.function_plain_ser_schema(partial(f, 'extra'))
+            ),
         }
     )
     assert s.to_python((1,)) == ('a1',)
