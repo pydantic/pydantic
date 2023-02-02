@@ -120,14 +120,14 @@ class ModelMetaclass(ABCMeta):
 
         See #3829 and python/cpython#92810
         """
-        return hasattr(instance, 'model_fields') and super().__instancecheck__(instance)
+        return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
 
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     if typing.TYPE_CHECKING:
         # populated by the metaclass, defined here to help IDEs only
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
-        __pydantic_validation_schema__: typing.ClassVar[CoreSchema]
+        __pydantic_core_schema__: typing.ClassVar[CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
         __pydantic_validator_functions__: typing.ClassVar[_decorators.ValidationFunctions]
         __pydantic_serializer_functions__: typing.ClassVar[_decorators.SerializationFunctions]

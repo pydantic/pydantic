@@ -161,7 +161,7 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    cls.__pydantic_validation_schema__ = outer_schema = core_schema.model_schema(
+    cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls, inner_schema, config=core_config, call_after_init=model_post_init
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)

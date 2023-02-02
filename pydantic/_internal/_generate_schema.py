@@ -85,7 +85,7 @@ class GenerateSchema:
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
 
-        schema_property = getattr(obj, '__pydantic_validation_schema__', None)
+        schema_property = getattr(obj, '__pydantic_core_schema__', None)
         if schema_property is not None:
             return schema_property
 
@@ -556,7 +556,7 @@ def apply_metadata(  # noqa: C901
         if metadata is None:
             continue
 
-        metadata_schema = getattr(metadata, '__pydantic_validation_schema__', None)
+        metadata_schema = getattr(metadata, '__pydantic_core_schema__', None)
         if metadata_schema is not None:
             schema = metadata_schema
             continue

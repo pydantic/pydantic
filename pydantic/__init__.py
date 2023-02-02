@@ -19,7 +19,7 @@ __version__ = VERSION
 __all__ = [
     # dataclasses
     'dataclasses',
-    # class_validators
+    # decorators
     'root_validator',
     'validator',
     'serializer',

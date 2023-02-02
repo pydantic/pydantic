@@ -61,7 +61,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     # __field__ is complete on Foo
     assert repr(module.Foo.model_fields['a']).startswith(
-        'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_validation_schema__'
+        'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_core_schema__'
     )
     # but Foo is not ready to use
     with pytest.raises(PydanticUserError, match='`Foo` is not fully defined, you should define `Bar`,'):
