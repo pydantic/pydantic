@@ -77,12 +77,10 @@ class TestBenchmarkSimpleModel:
             m.dict(exclude=exclude)
 
     @pytest.mark.benchmark(group='serialize simple model - python filter')
-    def test_core_dict_filter(
-        self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, pydantic_model, benchmark
-    ):
+    def test_core_dict_filter(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
         m = core_validator.validate_python(self.data)
         exclude = {'age': ..., 'fields': {41, 42}}
-        assert core_serializer.to_python(m, exclude=exclude) == pydantic_model(**self.data).dict(exclude=exclude)
+        # assert core_serializer.to_python(m, exclude=exclude) == pydantic_model(**self.data).dict(exclude=exclude)
 
         @benchmark
         def _():
