@@ -3427,7 +3427,7 @@ def test_deque_json():
     class Model(BaseModel):
         v: Deque[int]
 
-    assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v": [1, 2, 3]}'
+    assert Model(v=deque((1, 2, 3))).model_dump_json() == b'{"v":[1,2,3]}'
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))

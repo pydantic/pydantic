@@ -55,20 +55,22 @@ class Serializer:
     Store information about field serializers.
     """
 
-    __slots__ = 'function', 'sub_path', 'json_return_type', 'when_used', 'check_fields'
+    __slots__ = 'function', 'sub_path', 'wrap', 'json_return_type', 'when_used', 'check_fields'
 
     def __init__(
         self,
         *,
+        wrap: bool = False,
         json_return_type: JsonReturnTypes | None = None,
         when_used: WhenUsed = 'always',
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ):
-        # arguments match core_schema.function_ser_schema
+        # arguments match core_schema.function_plain_ser_schema or core_schema.function_wrap_ser_schema
         # function is set later after the class is created and functions are bound
         self.function: Callable[..., Any] | None = None
         self.sub_path = sub_path
+        self.wrap = wrap
         self.json_return_type = json_return_type
         self.when_used = when_used
         self.check_fields = check_fields

@@ -94,7 +94,7 @@ def deferred_model_get_pydantic_validation_schema(
     cls: type[BaseModel], types_namespace: dict[str, Any] | None, **_kwargs: Any
 ) -> core_schema.CoreSchema:
     """
-    Used on model as `__get_pydantic_validation_schema__` if not all type hints are available.
+    Used on model as `__get_pydantic_core_schema__` if not all type hints are available.
 
     This method generates the schema for the model and also sets `model_fields`, but it does NOT build
     the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
@@ -148,8 +148,8 @@ def complete_model_class(
         if cls.__config__.undefined_types_warning:
             raise UserWarning(warning_string)
         cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
-        # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
-        cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
+        # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
+        cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
         )
         return False

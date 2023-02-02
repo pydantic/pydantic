@@ -18,7 +18,7 @@ from uuid import UUID
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import get_args
 
-from . import _validators
+from . import _serializers, _validators
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -132,8 +132,14 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
     )
 
 
+def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> core_schema.FunctionWrapSerSchema:
+    return core_schema.function_wrap_ser_schema(_serializers.serialize_deque, inner_schema or core_schema.any_schema())
+
+
 def _deque_any_schema() -> core_schema.FunctionWrapSchema:
-    return core_schema.function_wrap_schema(_validators.deque_any_validator, core_schema.list_schema())
+    return core_schema.function_wrap_schema(
+        _validators.deque_any_validator, core_schema.list_schema(), serialization=_deque_ser_schema()
+    )
 
 
 @schema_function(deque)
@@ -153,9 +159,11 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
         return _deque_any_schema()
     else:
         # `Deque[Something]`
+        inner_schema = schema_generator.generate_schema(arg)
         return core_schema.function_after_schema(
-            core_schema.list_schema(schema_generator.generate_schema(arg)),
+            core_schema.list_schema(inner_schema),
             _validators.deque_typed_validator,
+            serialization=_deque_ser_schema(inner_schema),
         )
 
 

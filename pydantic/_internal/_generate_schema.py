@@ -89,7 +89,7 @@ class GenerateSchema:
         if schema_property is not None:
             return schema_property
 
-        get_schema = getattr(obj, '__get_pydantic_validation_schema__', None)
+        get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is not None:
             return get_schema(types_namespace=self.types_namespace)
 
@@ -475,7 +475,7 @@ class GenerateSchema:
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
         from . import _serializers, _validators
 
-        ser = core_schema.function_ser_schema(_serializers.pattern_serializer, json_return_type='str')
+        ser = core_schema.function_plain_ser_schema(_serializers.pattern_serializer, json_return_type='str')
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
             return core_schema.function_plain_schema(_validators.pattern_either_validator, serialization=ser)
@@ -540,9 +540,14 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
         serializer = serializers[-1]
         assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], serializer.function)
-        schema['serialization'] = core_schema.function_ser_schema(
-            function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
-        )
+        if serializer.wrap:
+            schema['serialization'] = core_schema.function_wrap_ser_schema(
+                function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
+            )
+        else:
+            schema['serialization'] = core_schema.function_plain_ser_schema(
+                function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
+            )
     return schema
 
 
@@ -560,7 +565,7 @@ def apply_metadata(  # noqa: C901
         if metadata_schema is not None:
             schema = metadata_schema
             continue
-        metadata_get_schema = getattr(metadata, '__get_pydantic_validation_schema__', None)
+        metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None)
         if metadata_get_schema is not None:
             schema = metadata_get_schema(schema)
             continue
