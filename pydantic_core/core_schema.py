@@ -202,7 +202,7 @@ def function_wrap_ser_schema(
     *,
     json_return_type: JsonReturnTypes | None = None,
     when_used: WhenUsed = 'always',
-) -> FunctionPlainSerSchema:
+) -> FunctionWrapSerSchema:
     """
     Returns a schema for serialization with a function.
 
