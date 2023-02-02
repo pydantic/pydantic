@@ -1,4 +1,3 @@
 devtools
 hypothesis
-# pinned, see #4735
-mypy==0.982
+mypy

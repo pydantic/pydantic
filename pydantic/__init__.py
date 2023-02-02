@@ -1,4 +1,3 @@
-# flake8: noqa
 from pydantic_core import ValidationError
 
 from . import dataclasses
@@ -53,6 +52,8 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'MySQLDsn',
+    'MariaDBDsn',
     'validate_email',
     # parse
     # tools
