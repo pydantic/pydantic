@@ -1,11 +1,105 @@
+import json
 from datetime import date, datetime
-from typing import List
+from typing import Dict, List
 
 import pytest
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from .test_micro_benchmarks import BaseModel, skip_pydantic
+
+
+class TestBenchmarkSimpleModel:
+    @pytest.fixture(scope='class')
+    def pydantic_model(self):
+        class PydanticModel(BaseModel):
+            name: str
+            age: int
+            friends: List[int]
+            settings: Dict[str, float]
+
+        return PydanticModel
+
+    @pytest.fixture(scope='class')
+    def core_schema(self):
+        class CoreModel:
+            __slots__ = '__dict__', '__fields_set__'
+
+        return {
+            'type': 'model',
+            'cls': CoreModel,
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {
+                    'name': {'schema': {'type': 'str'}},
+                    'age': {'schema': {'type': 'int'}},
+                    'friends': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    'settings': {
+                        'schema': {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'float'}}
+                    },
+                },
+            },
+        }
+
+    @pytest.fixture(scope='class')
+    def core_validator(self, core_schema):
+        return SchemaValidator(core_schema)
+
+    @pytest.fixture(scope='class')
+    def core_serializer(self, core_schema):
+        return SchemaSerializer(core_schema)
+
+    data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='serialize simple model - python')
+    def test_v1_dict(self, pydantic_model, benchmark):
+        m = pydantic_model(**self.data)
+        assert m.dict() == self.data
+        benchmark(m.dict)
+
+    @pytest.mark.benchmark(group='serialize simple model - python')
+    def test_core_dict(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
+        m = core_validator.validate_python(self.data)
+        assert core_serializer.to_python(m) == self.data
+        benchmark(core_serializer.to_python, m)
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='serialize simple model - python filter')
+    def test_v1_dict_filter(self, pydantic_model, benchmark):
+        m = pydantic_model(**self.data)
+        assert m.dict() == self.data
+        exclude = {'age': ..., 'fields': {41, 42}}
+
+        @benchmark
+        def _():
+            m.dict(exclude=exclude)
+
+    @pytest.mark.benchmark(group='serialize simple model - python filter')
+    def test_core_dict_filter(
+        self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, pydantic_model, benchmark
+    ):
+        m = core_validator.validate_python(self.data)
+        exclude = {'age': ..., 'fields': {41, 42}}
+        assert core_serializer.to_python(m, exclude=exclude) == pydantic_model(**self.data).dict(exclude=exclude)
+
+        @benchmark
+        def _():
+            core_serializer.to_python(m, exclude=exclude)
+
+    @skip_pydantic
+    @pytest.mark.benchmark(group='serialize simple model - JSON')
+    def test_v1_json(self, pydantic_model, benchmark):
+        m = pydantic_model(**self.data)
+        assert json.loads(m.json()) == self.data
+        benchmark(m.json)
+
+    @pytest.mark.benchmark(group='serialize simple model - JSON')
+    def test_core_json(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
+        m = core_validator.validate_python(self.data)
+        assert json.loads(core_serializer.to_json(m)) == self.data
+        benchmark(core_serializer.to_json, m)
 
 
 @pytest.mark.benchmark(group='list-of-str')
