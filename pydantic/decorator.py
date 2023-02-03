@@ -1,11 +1,14 @@
+"""
+TODO this should be removed when we implement `validate` #4669
+"""
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
 from ._internal import _typing_extra, _utils
 from .config import Extra
+from .decorators import validator
 from .errors import PydanticUserError
 from .main import BaseModel, create_model
-from .validator_functions import validator
 
 __all__ = ('validate_arguments',)
 
@@ -57,7 +60,7 @@ V_DUPLICATE_KWARGS = 'v__duplicate_kwargs'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):  # noqa C901
+    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):
         from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -214,7 +217,7 @@ class ValidatedFunction:
             if isinstance(config, dict):
                 CustomConfig = type('Config', (), config)  # noqa: F811
             elif config is not None:
-                CustomConfig = config  # noqa: F811
+                CustomConfig = config
 
         if hasattr(CustomConfig, 'fields') or hasattr(CustomConfig, 'alias_generator'):
             raise PydanticUserError(

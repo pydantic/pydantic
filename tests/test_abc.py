@@ -42,5 +42,5 @@ def test_model_subclassing_abstract_base_classes_without_implementation_raises_e
         Model(some_field='some_value')
     assert str(excinfo.value) == (
         "Can't instantiate abstract class Model with abstract methods "
-        "my_abstract_classmethod, my_abstract_method, my_abstract_property, my_abstract_staticmethod"  # noqa: Q000
+        "my_abstract_classmethod, my_abstract_method, my_abstract_property, my_abstract_staticmethod"
     )

@@ -56,10 +56,10 @@ class SchemaRef(Representation):
     Holds a reference to another schema.
     """
 
-    __slots__ = ('__pydantic_validation_schema__',)
+    __slots__ = ('__pydantic_core_schema__',)
 
     def __init__(self, schema: core_schema.CoreSchema):
-        self.__pydantic_validation_schema__ = schema
+        self.__pydantic_core_schema__ = schema
 
 
 class CustomValidator(ABC):

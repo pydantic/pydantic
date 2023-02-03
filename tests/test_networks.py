@@ -362,6 +362,7 @@ def test_http_urls_default_port(url, expected_port, expected_str):
         'postgresql://user:pass@localhost:5432/app',
         'postgresql+asyncpg://user:pass@localhost:5432/app',
         'postgres://user:pass@host1.db.net,host2.db.net:6432/app',
+        'postgres://user:pass@%2Fvar%2Flib%2Fpostgresql/dbname',
     ],
 )
 def test_postgres_dsns(dsn):

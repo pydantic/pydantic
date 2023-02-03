@@ -213,7 +213,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
         return frame.f_locals
 
 
-if sys.version_info >= (3, 10):  # noqa C901
+if sys.version_info >= (3, 10):
     get_type_hints = typing.get_type_hints
 
 else:
@@ -244,7 +244,7 @@ else:
             return typing.ForwardRef(arg, is_argument)
 
     @typing.no_type_check
-    def get_type_hints(
+    def get_type_hints(  # noqa: C901
         obj: Any,
         globalns: dict[str, Any] | None = None,
         localns: dict[str, Any] | None = None,
@@ -319,7 +319,6 @@ else:
                     if value is None:
                         value = type(None)
                     if isinstance(value, str):
-
                         # CHANGED IN PYDANTIC, using ForwardRefWrapper
                         value = ForwardRefWrapper(value, is_argument=False, is_class=True)
 
