@@ -13,13 +13,6 @@ class PydanticErrorMixin:
     def __init__(self, code: str, *, message: Optional[str] = None) -> None:
         self.code = code
         self.message = message
-        super().__init__()
-
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}(code={self.code!r}, message={self.message!r})'
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
@@ -35,12 +28,12 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     Error occurs when annotations are not yet defined
     """
 
-    pass
+    def __init__(self, name: str, *, message: Optional[str] = None) -> None:
+        self.name = name
+        super().__init__(code=name, message=message)
 
 
 class PydanticSchemaGenerationError(PydanticUserError):
     """
     Error occurs when schema has not been generated correctly.
     """
-
-    pass
