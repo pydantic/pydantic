@@ -10,7 +10,6 @@ authors = [
 ]
 classifiers = [
     'Development Status :: 3 - Alpha',
-    'Environment :: Console',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3 :: Only',
@@ -19,15 +18,15 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Rust',
+    'Framework :: Pydantic',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'Intended Audience :: System Administrators',
     'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
     'Operating System :: Microsoft :: Windows',
     'Operating System :: MacOS',
-    'Environment :: MacOS X',
-    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Typing :: Typed',
 ]
 dependencies = [
     'typing_extensions; python_version < "3.11.0"'
