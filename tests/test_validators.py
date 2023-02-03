@@ -8,7 +8,7 @@ import pytest
 from typing_extensions import Literal
 
 from pydantic import BaseModel, Extra, Field, PydanticUserError, ValidationError, errors, validator
-from pydantic.validator_functions import root_validator
+from pydantic.decorators import root_validator
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1041,7 +1041,7 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
 
 @pytest.fixture
 def reset_tracked_validators():
-    from pydantic.validator_functions import _FUNCS
+    from pydantic.decorators import _FUNCS
 
     original_tracked_validators = set(_FUNCS)
     yield
