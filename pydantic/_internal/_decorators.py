@@ -153,7 +153,7 @@ class DecoratorFunctions(Generic[DecFunc]):
         if unused_decorators:
             fn = ', '.join(unused_decorators)
             raise PydanticUserError(
-                f"Decorator defined with incorrect fields: {fn} "  # noqa: Q000
+                f"Decorator defined with incorrect fields: {fn} "
                 f"(use check_fields=False if you're inheriting from the model and intended this)"
             )
 

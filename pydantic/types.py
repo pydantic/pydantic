@@ -715,7 +715,6 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:

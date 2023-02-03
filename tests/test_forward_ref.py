@@ -82,7 +82,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
 
         class Foo(BaseModel):
             foo: 'Foo'
-            bar: 'Bar'  # noqa: F821
+            bar: 'Bar'
 
             class Config:
                 undefined_types_warning = False
@@ -129,7 +129,7 @@ def test_self_forward_ref_module(create_module):
 def test_self_forward_ref_collection(create_module):
     @create_module
     def module():
-        from typing import Dict, List  # noqa: F401
+        from typing import Dict, List
 
         from pydantic import BaseModel
 
@@ -533,7 +533,7 @@ class What(BaseModel):
 
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
-        x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
+        x: Tuple[int, Optional['NestedTuple']]
 
     obj = NestedTuple.model_validate({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
@@ -550,7 +550,7 @@ def test_discriminated_union_forward_ref(create_module):
         from pydantic import BaseModel, Field
 
         class Pet(BaseModel):
-            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')  # noqa: F821
+            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')
 
         class Cat(BaseModel):
             type: Literal['cat']
@@ -701,7 +701,7 @@ def test_pep585_recursive_generics(create_module):
 
         class Team(BaseModel):
             name: str
-            heroes: list[HeroRef]  # noqa: F821
+            heroes: list[HeroRef]
 
             class Config:
                 undefined_types_warning = False

@@ -162,7 +162,6 @@ def model_schema(
 
 
 def get_field_info_schema(field: ModelField, schema_overrides: bool = False) -> Tuple[Dict[str, Any], bool]:
-
     # If no title is explicitly set, we don't set title in the schema for enums.
     # The behaviour is the same as `BaseModel` reference, where the default title
     # is in the definitions part of the schema.
@@ -410,7 +409,7 @@ def field_type_schema(
     Take a single ``field`` and generate the schema for its type only, not including additional
     information as title, etc. Also return additional schema definitions, from sub-models.
     """
-    from .main import BaseModel  # noqa: F811
+    from .main import BaseModel
 
     definitions = {}
     nested_models: Set[str] = set()
@@ -995,7 +994,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
     """
     used_constraints: Set[str] = set()
 
-    def go(type_: Any) -> Type[Any]:
+    def go(type_: Any) -> Type[Any]:  # noqa: C901
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)

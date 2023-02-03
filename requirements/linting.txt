@@ -8,7 +8,7 @@ annotated-types==0.4.0
     # via -r requirements/linting.in
 attrs==22.2.0
     # via hypothesis
-black==22.12.0
+black==23.1.0
     # via -r requirements/linting.in
 cfgv==3.3.1
     # via pre-commit
@@ -20,11 +20,11 @@ exceptiongroup==1.1.0
     # via hypothesis
 filelock==3.9.0
     # via virtualenv
-hypothesis==6.62.1
+hypothesis==6.66.0
     # via -r requirements/linting.in
-identify==2.5.13
+identify==2.5.17
     # via pre-commit
-isort==5.11.4
+isort==5.12.0
     # via -r requirements/linting.in
 mypy==0.991
     # via -r requirements/linting.in
@@ -34,13 +34,15 @@ mypy-extensions==0.4.3
     #   mypy
 nodeenv==1.7.0
     # via pre-commit
-pathspec==0.10.3
+packaging==23.0
+    # via black
+pathspec==0.11.0
     # via black
 platformdirs==2.6.2
     # via
     #   black
     #   virtualenv
-pre-commit==2.21.0
+pre-commit==3.0.3
     # via -r requirements/linting.in
 pydantic-core==0.8.2
     # via -r requirements/linting.in
@@ -48,7 +50,7 @@ pyupgrade==3.3.1
     # via -r requirements/linting.in
 pyyaml==6.0
     # via pre-commit
-ruff==0.0.222
+ruff==0.0.240
     # via -r requirements/linting.in
 sortedcontainers==2.4.0
     # via hypothesis

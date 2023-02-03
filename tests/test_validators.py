@@ -304,7 +304,7 @@ def test_duplicates():
             def duplicate_name(cls, v):
                 return v
 
-            @validator('b')  # noqa
+            @validator('b')
             def duplicate_name(cls, v):  # noqa
                 return v
 
@@ -455,7 +455,7 @@ def test_invalid_field():
                 return v
 
     assert str(exc_info.value) == (
-        "Validators defined with incorrect fields: check_b "  # noqa: Q000
+        "Validators defined with incorrect fields: check_b "
         "(use check_fields=False if you're inheriting from the model and intended this)"
     )
 
@@ -889,7 +889,7 @@ def test_root_validator_repeat():
             def root_validator_repeated(cls, values):
                 return values
 
-            @root_validator  # noqa: F811
+            @root_validator
             def root_validator_repeated(cls, values):  # noqa: F811
                 return values
 
@@ -905,7 +905,7 @@ def test_root_validator_repeat2():
             def repeat_validator(cls, v):
                 return v
 
-            @root_validator(pre=True)  # noqa: F811
+            @root_validator(pre=True)
             def repeat_validator(cls, values):  # noqa: F811
                 return values
 
@@ -1028,13 +1028,13 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
         def duplicate_name(cls, v):
             return v
 
-        @validator('b', allow_reuse=allow_2)  # noqa F811
+        @validator('b', allow_reuse=allow_2)
         def duplicate_name(cls, v):  # noqa F811
             return v
 
         if include_root:
 
-            @root_validator(allow_reuse=allow_3)  # noqa F811
+            @root_validator(allow_reuse=allow_3)
             def duplicate_name(cls, values):  # noqa F811
                 return values
 
