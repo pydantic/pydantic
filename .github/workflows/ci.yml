@@ -166,8 +166,7 @@ jobs:
           ${{ runner.os }}
           ${{ env.pythonLocation }}
           ${{ hashFiles('pyproject.toml') }}
-          ${{ hashFiles('requirements/pyproject-min.txt') }}
-          ${{ hashFiles('requirements/testing.txt') }}
+          ${{ hashFiles('requirements/*') }}
           ${{ matrix.mypy-version }}
 
     - name: install
