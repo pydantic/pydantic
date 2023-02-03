@@ -319,7 +319,6 @@ else:
                     if value is None:
                         value = type(None)
                     if isinstance(value, str):
-
                         # CHANGED IN PYDANTIC, using ForwardRefWrapper
                         value = ForwardRefWrapper(value, is_argument=False, is_class=True)
 
