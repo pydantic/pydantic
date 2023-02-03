@@ -1426,7 +1426,7 @@ def test_post_init_allow_extra():
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
-        self_reference: 'MyDataclass'  # noqa: F821
+        self_reference: 'MyDataclass'
 
     assert MyDataclass.__pydantic_model__.model_fields['self_reference'].type_ is MyDataclass
 

@@ -6,31 +6,32 @@ from enum import Enum
 from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
+from dirty_equals import HasRepr, IsStr
 
 from pydantic import BaseModel, Extra, ValidationError, constr, errors, validator
 from pydantic.fields import Field
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_str_bytes():
     class Model(BaseModel):
         v: Union[str, bytes] = ...
 
     m = Model(v='s')
     assert m.v == 's'
-    assert repr(m.model_fields['v']) == "ModelField(name='v', type=Union[str, bytes], required=True)"
+    assert repr(m.model_fields['v']) == 'FieldInfo(annotation=Union[str, bytes], required=True)'
 
     m = Model(v=b'b')
-    assert m.v == 'b'
+    assert m.v == b'b'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
+        {'type': 'string_type', 'loc': ('v', 'str'), 'msg': 'Input should be a valid string', 'input': None},
+        {'type': 'bytes_type', 'loc': ('v', 'bytes'), 'msg': 'Input should be a valid bytes', 'input': None},
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_str_bytes_none():
     class Model(BaseModel):
         v: Union[None, str, bytes] = ...
@@ -39,13 +40,12 @@ def test_str_bytes_none():
     assert m.v == 's'
 
     m = Model(v=b'b')
-    assert m.v == 'b'
+    assert m.v == b'b'
 
     m = Model(v=None)
     assert m.v is None
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_union_int_str():
     class Model(BaseModel):
         v: Union[int, str] = ...
@@ -54,23 +54,23 @@ def test_union_int_str():
     assert m.v == 123
 
     m = Model(v='123')
-    assert m.v == 123
+    assert m.v == '123'
 
     m = Model(v=b'foobar')
     assert m.v == 'foobar'
 
-    # here both validators work and it's impossible to work out which value "closer"
-    m = Model(v=12.2)
+    m = Model(v=12.0)
     assert m.v == 12
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'none is not an allowed value', 'type': 'type_error.none.not_allowed'}
+        {'type': 'int_type', 'loc': ('v', 'int'), 'msg': 'Input should be a valid integer', 'input': None},
+        {'type': 'string_type', 'loc': ('v', 'str'), 'msg': 'Input should be a valid string', 'input': None},
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_union_int_any():
     class Model(BaseModel):
         v: Union[int, Any]
@@ -79,7 +79,7 @@ def test_union_int_any():
     assert m.v == 123
 
     m = Model(v='123')
-    assert m.v == 123
+    assert m.v == '123'
 
     m = Model(v='foobar')
     assert m.v == 'foobar'
@@ -88,19 +88,6 @@ def test_union_int_any():
     assert m.v is None
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_union_priority():
-    class ModelOne(BaseModel):
-        v: Union[int, str] = ...
-
-    class ModelTwo(BaseModel):
-        v: Union[str, int] = ...
-
-    assert ModelOne(v='123').v == 123
-    assert ModelTwo(v='123').v == '123'
-
-
-@pytest.mark.xfail(reason='working on V2')
 def test_typed_list():
     class Model(BaseModel):
         v: List[int] = ...
@@ -110,17 +97,30 @@ def test_typed_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x', 'y'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('v', 2), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1)
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid list', 'type': 'type_error.list'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+    ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_typed_set():
     class Model(BaseModel):
         v: Set[int] = ...
@@ -130,8 +130,14 @@ def test_typed_set():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 'x'])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', 1), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        }
     ]
 
 
@@ -154,13 +160,12 @@ def test_none_list():
     }
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'value,result',
     [
         ({'a': 2, 'b': 4}, {'a': 2, 'b': 4}),
-        ({1: '2', 'b': 4}, {'1': 2, 'b': 4}),
-        ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
+        ({b'a': '2', 'b': 4}, {'a': 2, 'b': 4}),
+        # ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
     ],
 )
 def test_typed_dict(value, result):
@@ -170,13 +175,25 @@ def test_typed_dict(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'value,errors',
     [
-        (1, [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]),
-        ({'a': 'b'}, [{'loc': ('v', 'a'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}]),
-        ([1, 2, 3], [{'loc': ('v',), 'msg': 'value is not a valid dict', 'type': 'type_error.dict'}]),
+        (1, [{'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': 1}]),
+        (
+            {'a': 'b'},
+            [
+                {
+                    'type': 'int_parsing',
+                    'loc': ('v', 'a'),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'b',
+                }
+            ],
+        ),
+        (
+            [1, 2, 3],
+            [{'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': [1, 2, 3]}],
+        ),
     ],
 )
 def test_typed_dict_error(value, errors):
@@ -188,7 +205,6 @@ def test_typed_dict_error(value, errors):
     assert exc_info.value.errors() == errors
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_dict_key_error():
     class Model(BaseModel):
         v: Dict[int, int] = ...
@@ -197,21 +213,25 @@ def test_dict_key_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v={'foo': 2, '3': '4'})
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('v', '__key__'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('v', 'foo', '[key]'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foo',
+        }
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_tuple():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
 
-    m = Model(v=[1.2, '2.2', 'true'])
+    m = Model(v=['1.0', '2.2', 'true'])
     assert m.v == (1, 2.2, True)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_tuple_more():
     class Model(BaseModel):
         empty_tuple: Tuple[()]
@@ -222,18 +242,17 @@ def test_tuple_more():
     m = Model(
         empty_tuple=[],
         simple_tuple=[1, 2, 3, 4],
-        tuple_of_different_types=[4, 3, 2, 1],
+        tuple_of_different_types=[4, 3.1, 'str', 1],
         tuple_of_single_tuples=(('1',), (2,)),
     )
     assert m.model_dump() == {
         'empty_tuple': (),
         'simple_tuple': (1, 2, 3, 4),
-        'tuple_of_different_types': (4, 3.0, '2', True),
+        'tuple_of_different_types': (4, 3.1, 'str', True),
         'tuple_of_single_tuples': ((1,), (2,)),
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'dict_cls,frozenset_cls,list_cls,set_cls,tuple_cls,type_cls',
     [
@@ -300,12 +319,14 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**(default_model_kwargs | {'e3': (1,)}))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'ctx': {'actual_length': 1, 'expected_length': 0},
+            'type': 'too_long',
             'loc': ('e3',),
-            'msg': 'wrong tuple length 1, expected 0',
-            'type': 'value_error.tuple.length',
+            'msg': 'Tuple should have at most 0 items after validation, not 1',
+            'input': (1,),
+            'ctx': {'field_type': 'Tuple', 'max_length': 0, 'actual_length': 1},
         }
     ]
 
@@ -313,17 +334,18 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**(default_model_kwargs | {'f1': Type2}))
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'ctx': {'expected_class': 'Type1'},
+            'type': 'is_subclass_of',
             'loc': ('f1',),
-            'msg': 'subclass of Type1 expected',
-            'type': 'type_error.subclass',
+            'msg': 'Input should be a subclass of test_pep585_generic_types.<locals>.Type1',
+            'input': HasRepr(IsStr(regex=r".+\.Type2'>")),
+            'ctx': {'class': 'test_pep585_generic_types.<locals>.Type1'},
         }
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_tuple_length_error():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
@@ -331,30 +353,28 @@ def test_tuple_length_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2], w=[1])
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
+        {'type': 'missing', 'loc': ('v', 2), 'msg': 'Field required', 'input': [1, 2]},
         {
-            'loc': ('v',),
-            'msg': 'wrong tuple length 2, expected 3',
-            'type': 'value_error.tuple.length',
-            'ctx': {'actual_length': 2, 'expected_length': 3},
-        },
-        {
+            'type': 'too_long',
             'loc': ('w',),
-            'msg': 'wrong tuple length 1, expected 0',
-            'type': 'value_error.tuple.length',
-            'ctx': {'actual_length': 1, 'expected_length': 0},
+            'msg': 'Tuple should have at most 0 items after validation, not 1',
+            'input': [1],
+            'ctx': {'field_type': 'Tuple', 'max_length': 0, 'actual_length': 1},
         },
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_tuple_invalid():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='xxx')
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'value is not a valid tuple', 'type': 'type_error.tuple'}]
+    assert exc_info.value.errors() == [
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': 'xxx'}
+    ]
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -463,7 +483,6 @@ def test_any_dict():
     assert Model(v={2: [1, 2, 3]}).model_dump() == {'v': {2: [1, 2, 3]}}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_success_values_include():
     class Model(BaseModel):
         a: int = 1
@@ -477,7 +496,6 @@ def test_success_values_include():
     assert m.model_dump(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_include_exclude_unset():
     class Model(BaseModel):
         a: int
@@ -532,25 +550,6 @@ def test_include_exclude_defaults():
 
     assert m.model_dump(include={'a': 1}.keys(), exclude_unset=True) == {'a': 1}
     assert m.model_dump(exclude={'a': 1}.keys(), exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
-
-
-def test_skip_defaults_deprecated():
-    class Model(BaseModel):
-        x: int
-        b: int = 2
-
-    m = Model(x=1)
-    match = r'Model.model_dump\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
-    with pytest.warns(DeprecationWarning, match=match):
-        assert m.model_dump(skip_defaults=True) == m.model_dump(exclude_unset=True)
-    with pytest.warns(DeprecationWarning, match=match):
-        assert m.model_dump(skip_defaults=False) == m.model_dump(exclude_unset=False)
-
-    match = r'Model.model_dump_json\(\): "skip_defaults" is deprecated and replaced by "exclude_unset"'
-    with pytest.warns(DeprecationWarning, match=match):
-        assert m.model_dump_json(skip_defaults=True) == m.model_dump_json(exclude_unset=True)
-    with pytest.warns(DeprecationWarning, match=match):
-        assert m.model_dump_json(skip_defaults=False) == m.model_dump_json(exclude_unset=False)
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -655,58 +654,74 @@ def test_advanced_value_exclude_include():
 @pytest.mark.parametrize(
     'exclude,expected',
     [
-        # Normal nested __all__
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{'j': 1}, {'j': 2}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='Normal nested __all__',
         ),
-        # Merge sub dicts
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{}, {}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='Merge sub dicts 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
+            # {'subs': [{'k': 1                                 }, {'k': 2}]}
+            id='Merge sub sets 2',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
             {'subs': [{'k': 1}, {'k': 2, 'subsubs': [{'i': 3}]}]},
+            id='Merge sub sets 3',
         ),
-        # Merge sub sets
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
             {'subs': [{'k': 1, 'subsubs': []}, {'k': 2, 'subsubs': []}]},
+            id='Merge sub sets 1',
         ),
-        # Merge sub dict-set
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
             {'subs': [{'k': 1, 'subsubs': [{'j': 1}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='Merge sub dict-set',
         ),
-        # Different keys
-        ({'subs': {'__all__': {'subsubs'}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}),
-        ({'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}),
-        ({'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}, {'subs': [{}, {'k': 2}]}),
-        # Nested different keys
-        (
+        pytest.param({'subs': {'__all__': {'subsubs'}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}, id='Different keys 1'),
+        pytest.param(
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}, id='Different keys 2'
+        ),
+        pytest.param(
+            {'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}, {'subs': [{}, {'k': 2}]}, id='Different keys 3'
+        ),
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+            id='Nested different keys 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+            id='Nested different keys 2',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
             {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+            id='Nested different keys 3',
         ),
-        # Ignore __all__ for index with defined exclude
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
+            id='Ignore __all__ for index with defined exclude 1',
         ),
-        ({'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}}, {'subs': [{'k': 2, 'subsubs': [{'i': 3}]}]}),
-        ({'subs': {'__all__': ..., 0: {'subsubs'}}}, {'subs': [{'k': 1}]}),
+        pytest.param(
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}},
+            {'subs': [{'k': 2, 'subsubs': [{'i': 3}]}]},
+            id='Ignore __all__ for index with defined exclude 2',
+        ),
+        pytest.param(
+            {'subs': {'__all__': ..., 0: {'subsubs'}}},
+            {'subs': [{'k': 1}]},
+            id='Ignore __all__ for index with defined exclude 3',
+        ),
     ],
 )
 def test_advanced_exclude_nested_lists(exclude, expected):
@@ -729,72 +744,80 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 @pytest.mark.parametrize(
     'include,expected',
     [
-        # Normal nested __all__
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
             {'subs': [{'subsubs': [{'i': 1}, {'i': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='Normal nested __all__',
         ),
-        # Merge sub dicts
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='Merge sub dicts 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Merge sub dicts 2',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
+            id='Merge sub dicts 3',
         ),
-        # Merge sub sets
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Merge sub sets',
         ),
-        # Merge sub dict-set
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
             {'subs': [{'subsubs': [{'i': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='Merge sub dict-set',
         ),
-        # Different keys
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs'}, 0: {'k'}}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 2',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 3',
         ),
-        # Nested different keys
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 2',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 3',
         ),
-        # Ignore __all__ for index with defined include
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
             {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Ignore __all__ for index with defined include 1',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}},
             {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
+            id='Ignore __all__ for index with defined include 2',
         ),
-        (
+        pytest.param(
             {'subs': {'__all__': ..., 0: {'subsubs'}}},
             {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2, 'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Ignore __all__ for index with defined include 3',
         ),
     ],
 )
@@ -924,18 +947,12 @@ class CustomStr(str):
         return 7
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'value,expected',
     [
         ('a string', 'a string'),
         (b'some bytes', 'some bytes'),
         (bytearray('foobar', encoding='utf8'), 'foobar'),
-        (123, '123'),
-        (123.45, '123.45'),
-        (Decimal('12.45'), '12.45'),
-        (True, 'True'),
-        (False, 'False'),
         (StrEnum.a, 'a10'),
         (CustomStr('whatever'), 'whatever'),
     ],
@@ -1557,7 +1574,7 @@ def test_exclude_none():
 
     m = MyModel(b=3)
     assert m.model_dump(exclude_none=True) == {'b': 3}
-    assert m.model_dump_json(exclude_none=True) == '{"b": 3}'
+    assert m.model_dump_json(exclude_none=True) == b'{"b":3}'
 
 
 def test_exclude_none_recursive():

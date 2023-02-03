@@ -14,7 +14,7 @@ exceptiongroup==1.1.0
     # via hypothesis
 executing==1.2.0
     # via devtools
-hypothesis==6.62.1
+hypothesis==6.66.0
     # via -r requirements/testing-extra.in
 mypy==0.991
     # via -r requirements/testing-extra.in
