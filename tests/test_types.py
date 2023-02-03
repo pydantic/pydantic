@@ -2,6 +2,7 @@ import itertools
 import math
 import os
 import re
+import sys
 import uuid
 from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
@@ -871,6 +872,7 @@ class BoolCastable:
         return True
 
 
+@pytest.mark.xfail(sys.platform.startswith('win'), reason='https://github.com/PyO3/pyo3/issues/2913', strict=False)
 @pytest.mark.parametrize(
     'field,value,result',
     [
@@ -2062,6 +2064,7 @@ def test_uuid_error():
         Model(v=None)
 
 
+@pytest.mark.xfail(sys.platform.startswith('win'), reason='https://github.com/PyO3/pyo3/issues/2913', strict=False)
 def test_uuid_validation():
     class UUIDModel(BaseModel):
         a: UUID1

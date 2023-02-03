@@ -130,7 +130,7 @@ def test_subclass_encoding():
     assert m.model_dump_json() == b'{"a":"2032-01-01T01:01:00","b":"2020-02-29T12:30:00"}'
 
 
-# @pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(sys.platform.startswith('win'), reason='https://github.com/PyO3/pyo3/issues/2913')
 def test_subclass_custom_encoding():
     class SubDt(datetime):
         pass
