@@ -20,6 +20,11 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
+try:
+    import email_validator
+except ImportError:
+    email_validator = None
+
 
 class MyEnum(Enum):
     foo = 'bar'
@@ -42,7 +47,6 @@ class MyModel(BaseModel):
         (SecretStr, lambda: SecretStr(''), b'""'),
         (SecretBytes, lambda: SecretBytes(b'xyz'), b'"**********"'),
         (SecretBytes, lambda: SecretBytes(b''), b'""'),
-        (NameEmail, lambda: NameEmail('foo bar', 'foobaR@example.com'), b'"foo bar <foobaR@example.com>"'),
         (IPv6Address, lambda: IPv6Address('::1:0:1'), b'"::1:0:1"'),
         (IPv4Interface, lambda: IPv4Interface('192.168.0.0/24'), b'"192.168.0.0/24"'),
         (IPv6Interface, lambda: IPv6Interface('2001:db00::/120'), b'"2001:db00::/120"'),
@@ -69,6 +73,14 @@ def test_json_serialization(ser_type, gen_value, json_output):
     schema = gen.generate_schema(ser_type)
     serializer = SchemaSerializer(schema)
     assert serializer.to_json(gen_value()) == json_output
+
+
+@pytest.mark.skipif(not email_validator, reason='email_validator not installed')
+def test_json_serialization_email():
+    gen = GenerateSchema(False, None)
+    schema = gen.generate_schema(NameEmail)
+    serializer = SchemaSerializer(schema)
+    assert serializer.to_json(NameEmail('foo bar', 'foobaR@example.com')) == b'"foo bar <foobaR@example.com>"'
 
 
 @pytest.mark.skipif(sys.platform.startswith('win'), reason='paths look different on windows')
@@ -181,7 +193,7 @@ def test_custom_encoder():
     assert Model(x=123, y=5, z='2032-06-01').model_dump_json() == b'{"x":"123.000s","y":"a decimal","z":"2032-06-01"}'
 
 
-def test_iso_timedelta():
+def test_iso_timedelta_simple():
     class Model(BaseModel):
         x: timedelta
 
