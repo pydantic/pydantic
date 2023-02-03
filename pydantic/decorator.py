@@ -60,7 +60,7 @@ V_DUPLICATE_KWARGS = 'v__duplicate_kwargs'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):  # noqa C901
+    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):
         from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -217,7 +217,7 @@ class ValidatedFunction:
             if isinstance(config, dict):
                 CustomConfig = type('Config', (), config)  # noqa: F811
             elif config is not None:
-                CustomConfig = config  # noqa: F811
+                CustomConfig = config
 
         if hasattr(CustomConfig, 'fields') or hasattr(CustomConfig, 'alias_generator'):
             raise PydanticUserError(

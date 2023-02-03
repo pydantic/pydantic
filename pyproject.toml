@@ -92,13 +92,14 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani', 'kennethreitz']
+reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani']
 require_change_file = false
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q']
+extend-select = ['Q', 'RUF100', 'C90']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+mccabe = { max-complexity = 14 }
 
 [tool.ruff.per-file-ignores]
 'pydantic/__init__.py' = ['F405', 'F403']

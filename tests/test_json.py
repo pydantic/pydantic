@@ -282,7 +282,7 @@ def test_json_nested_encode_models():
         SSN: int
         birthday: datetime
         phone: Phone
-        friend: Optional['User'] = None  # noqa: F821
+        friend: Optional['User'] = None
 
         @serializer('birthday')
         def serialize_birthday(self, v: datetime, _info):

@@ -1306,7 +1306,7 @@ def test_custom_init_subclass_params():
 
 def test_recursive_model():
     class MyModel(BaseModel):
-        field: Optional['MyModel']  # noqa: F821
+        field: Optional['MyModel']
 
     m = MyModel(field={'field': {'field': None}})
     assert m.model_dump() == {'field': {'field': {'field': None}}}

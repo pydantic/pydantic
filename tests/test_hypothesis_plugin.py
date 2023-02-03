@@ -12,7 +12,7 @@ except ImportError:
     from unittest import mock
 
     # pass-through decorator
-    given = settings = lambda *a, **kw: (lambda f: f)  # noqa: E731
+    given = settings = lambda *a, **kw: (lambda f: f)
     HealthCheck = st = mock.Mock()
 
     pytestmark = pytest.mark.skipif(True, reason='"hypothesis" not installed')

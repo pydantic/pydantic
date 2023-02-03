@@ -36,12 +36,12 @@ def validator(
         raise PydanticUserError('validator with no fields specified')
     elif isinstance(fields[0], FunctionType):
         raise PydanticUserError(
-            "validators should be used with fields and keyword arguments, not bare. "  # noqa: Q000
+            "validators should be used with fields and keyword arguments, not bare. "
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
     elif not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
-            "validator fields should be passed as separate string args. "  # noqa: Q000
+            "validator fields should be passed as separate string args. "
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
         )
 
@@ -119,12 +119,12 @@ def serializer(
         raise PydanticUserError('serializer with no fields specified')
     elif isinstance(fields[0], FunctionType):
         raise PydanticUserError(
-            "serializers should be used with fields and keyword arguments, not bare. "  # noqa: Q000
+            "serializers should be used with fields and keyword arguments, not bare. "
             "E.g. usage should be `@serializer('<field_name>', ...)`"
         )
     elif not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
-            "serializer fields should be passed as separate string args. "  # noqa: Q000
+            "serializer fields should be passed as separate string args. "
             "E.g. usage should be `@serializer('<field_name_1>', '<field_name_2>', ...)`"
         )
 
