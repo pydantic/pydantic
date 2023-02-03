@@ -10,7 +10,6 @@ from pydantic.errors import PydanticUserError
 from pydantic.generics import GenericModel
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_only_union():
     with pytest.raises(
         TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
@@ -20,7 +19,6 @@ def test_discriminated_union_only_union():
             x: str = Field(..., discriminator='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_single_variant():
     with pytest.raises(
         TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
@@ -30,7 +28,6 @@ def test_discriminated_union_single_variant():
             x: Union[str] = Field(..., discriminator='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_invalid_type():
     with pytest.raises(TypeError, match="Type 'str' is not a valid `BaseModel` or `dataclass`"):
 
@@ -38,7 +35,6 @@ def test_discriminated_union_invalid_type():
             x: Union[str, int] = Field(..., discriminator='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_defined_discriminator():
     class Cat(BaseModel):
         c: str
@@ -54,7 +50,6 @@ def test_discriminated_union_defined_discriminator():
             number: int
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_literal_discriminator():
     class Cat(BaseModel):
         pet_type: int
@@ -182,7 +177,6 @@ def test_discriminated_union_validation():
     assert isinstance(m.pet.__root__, WhiteCat)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_annotated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -293,7 +287,6 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
     assert Top(sub=B(literal='b')).sub.literal == 'b'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_int():
     class A(BaseModel):
         m: Literal[1]
@@ -302,7 +295,7 @@ def test_discriminated_union_int():
         m: Literal[2]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='l')
+        sub: Union[A, B] = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
@@ -317,7 +310,6 @@ def test_discriminated_union_int():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_enum():
     class EnumValue(Enum):
         a = 1
@@ -349,7 +341,6 @@ def test_discriminated_union_enum():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_alias_different():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='U')
@@ -404,7 +395,6 @@ def test_nested():
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_generic():
     T = TypeVar('T')
 

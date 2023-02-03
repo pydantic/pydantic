@@ -59,6 +59,7 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
         str_to_lower=config.anystr_lower,
         str_to_upper=config.anystr_upper,
         strict=config.strict,
+        from_attributes=True,  # TODO: make this configurable
     )
 
 
@@ -182,6 +183,9 @@ class GenerateSchema:
         if not field.is_required():
             required = False
             schema = wrap_default(field, schema)
+
+        if field.discriminator is not None:
+            schema = wrap_discriminator(field, schema)
 
         schema = apply_validators(schema, validator_functions.get_field_validators(name))
         field_schema = core_schema.typed_dict_field(schema, required=required)
@@ -582,6 +586,55 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
     else:
         return schema
 
+def wrap_discriminator(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    discriminator = field_info.discriminator
+    if discriminator is None:
+        return schema
+
+    if schema['type'] != 'union' or len(schema['choices']) < 2:
+        raise PydanticSchemaGenerationError(
+            '`discriminator` can only be used with `Union` type with more than one variant'
+        )
+ 
+    choices = {}
+    field_aliases = set()
+    for choice in schema['choices']:
+        if choice.get('type') not in {'new-class', 'dataclass'}:
+            raise PydanticSchemaGenerationError(
+                f"Type '{choice.get('type')}' is not a valid `BaseModel` or `dataclass`"
+            )
+        discriminator_field = choice.get('schema', {}).get('fields', {}).get(discriminator)
+        model_name = choice['cls'].__name__
+        if discriminator_field is None:
+            raise PydanticSchemaGenerationError(
+                f"Model '{model_name}' needs a discriminator field for key '{discriminator}'"
+            )
+        if discriminator_field.get('schema', {}).get('type') != 'literal':
+            raise PydanticSchemaGenerationError(
+                f"Field '{discriminator}' of model '{model_name}' needs to be a `Literal`"
+            )
+
+        field_aliases.add(discriminator_field.get('alias'))
+
+        discriminator_values = discriminator_field.get('schema').get('expected')
+        for value in discriminator_values:
+            if value in choices:
+                raise PydanticSchemaGenerationError(
+                    f"Discriminator values must be unique across all variants, but value '{value}' already exists."
+                )
+            choices[value] = choice
+    
+    if len(field_aliases) != 1:
+        raise PydanticSchemaGenerationError(
+            f"Aliases for discriminator '{discriminator}' must be the same (got {', '.join(sorted(field_aliases))})"
+        )
+
+    alias = field_aliases.pop()
+    if alias is not None:
+        discriminator = alias
+
+    new_schema = core_schema.tagged_union_schema(choices, discriminator)
+    return new_schema
 
 def get_first_arg(type_: Any) -> Any:
     """
