@@ -37,3 +37,5 @@ class PydanticSchemaGenerationError(PydanticUserError):
     """
     Error occurs when schema has not been generated correctly.
     """
+
+    pass
