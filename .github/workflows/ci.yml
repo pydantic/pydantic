@@ -30,6 +30,7 @@ jobs:
             lint
             ${{ runner.os }}
             ${{ env.pythonLocation }}
+            ${{ hashFiles('pyproject.toml') }}
             ${{ hashFiles('requirements/linting.txt') }}
 
       - name: install
@@ -70,6 +71,7 @@ jobs:
           docs-build-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('requirements/*') }}
 
     - name: install
@@ -163,6 +165,7 @@ jobs:
           test-mypy
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('requirements/pyproject-min.txt') }}
           ${{ hashFiles('requirements/testing.txt') }}
           ${{ matrix.mypy-version }}
