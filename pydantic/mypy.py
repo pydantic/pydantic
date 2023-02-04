@@ -269,24 +269,26 @@ class PydanticModelTransformer:
         }
 
     def adjust_validator_signatures(self) -> None:
-        """When we decorate a function `f` with `pydantic.validator(...), mypy sees
-        `f` as a regular method taking a `self` instance, even though pydantic
-        internally wraps `f` with `classmethod` if necessary.
-
-        Teach mypy this by marking any function whose outermost decorator is a
-        `validator()` call as a classmethod.
         """
+        When we decorate a function `f` with `pydantic.validator(...)` or `pydantic.serializer(...)`, mypy sees
+        `f` as a regular method taking a `self` instance, even though pydantic internally wraps `f`
+        with `classmethod` if necessary.
+
+        Teach mypy this by marking any function whose outermost decorator is a `validator()` or `serializer()`
+        call as a `classmethod`.
+        """
+        decorator_names = 'pydantic.decorators.validator', 'pydantic.decorators.serializer'
         for name, sym in self._ctx.cls.info.names.items():
             if isinstance(sym.node, Decorator):
                 first_dec = sym.node.original_decorators[0]
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname == 'pydantic.validator_functions.validator'
+                    and first_dec.callee.fullname in decorator_names
                 ):
                     sym.node.func.is_class = True
 
-    def collect_config(self) -> 'ModelConfigData':
+    def collect_config(self) -> 'ModelConfigData':  # noqa: C901 (ignore complexity)
         """
         Collects the values of the config attributes that are used by the plugin, accounting for parent classes.
         """

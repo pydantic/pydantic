@@ -52,13 +52,13 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert module.Bar.__pydantic_model_complete__ is True
     assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
-    # Bar should be complet and ready to use
+    # Bar should be complete and ready to use
     b = module.Bar(b={'a': {'b': {}}})
-    assert b == {'b': {'a': {'b': {'a': None}}}}
+    assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # __field__ is complete on Foo
     assert repr(module.Foo.model_fields['a']).startswith(
-        'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_validation_schema__'
+        'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_core_schema__'
     )
     # but Foo is not ready to use
     with pytest.raises(PydanticUserError, match='`Foo` is not fully defined, you should define `Bar`,'):
@@ -80,7 +80,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
         class Foo(BaseModel):
             model_config = ConfigDict(undefined_types_warning=False)
             foo: 'Foo'
-            bar: 'Bar'  # noqa: F821
+            bar: 'Bar'
 
     assert hasattr(module.Foo, 'model_fields') is False
 
@@ -124,7 +124,7 @@ def test_self_forward_ref_module(create_module):
 def test_self_forward_ref_collection(create_module):
     @create_module
     def module():
-        from typing import Dict, List  # noqa: F401
+        from typing import Dict, List
 
         from pydantic import BaseModel
 
@@ -526,7 +526,7 @@ class What(BaseModel):
 
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
-        x: Tuple[int, Optional['NestedTuple']]  # noqa: F821
+        x: Tuple[int, Optional['NestedTuple']]
 
     obj = NestedTuple.model_validate({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
@@ -543,7 +543,7 @@ def test_discriminated_union_forward_ref(create_module):
         from pydantic import BaseModel, Field
 
         class Pet(BaseModel):
-            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')  # noqa: F821
+            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')
 
         class Cat(BaseModel):
             type: Literal['cat']
@@ -693,7 +693,7 @@ def test_pep585_recursive_generics(create_module):
             model_config = ConfigDict(undefined_types_warning=False)
 
             name: str
-            heroes: list[HeroRef]  # noqa: F821
+            heroes: list[HeroRef]
 
         class Hero(BaseModel):
             name: str

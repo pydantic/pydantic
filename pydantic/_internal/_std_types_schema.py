@@ -18,7 +18,7 @@ from uuid import UUID
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import get_args
 
-from . import _validators
+from . import _serializers, _validators
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -39,11 +39,23 @@ def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaF
 
 
 @schema_function(date)
+def date_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.DateSchema:
+    return core_schema.DateSchema(type='date')
+
+
 @schema_function(datetime)
+def datetime_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.DatetimeSchema:
+    return core_schema.DatetimeSchema(type='datetime')
+
+
 @schema_function(time)
+def time_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.TimeSchema:
+    return core_schema.TimeSchema(type='time')
+
+
 @schema_function(timedelta)
-def name_as_schema(_schema_generator: GenerateSchema, t: type[Any]) -> core_schema.CoreSchema:
-    return {'type': t.__name__}  # type: ignore[return-value,misc]
+def timedelta_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.TimedeltaSchema:
+    return core_schema.TimedeltaSchema(type='timedelta')
 
 
 @schema_function(Enum)
@@ -62,7 +74,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         )
     elif issubclass(enum_type, str):
         return core_schema.chain_schema(
-            core_schema.string_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
+            core_schema.str_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
         )
     else:
         return core_schema.function_after_schema(
@@ -79,7 +91,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
             core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
             core_schema.int_schema(),
             core_schema.float_schema(),
-            core_schema.string_schema(strip_whitespace=True),
+            core_schema.str_schema(strip_whitespace=True),
             strict=True,
         ),
         decimal_validator,
@@ -94,7 +106,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
         core_schema.is_instance_schema(uuid_type),
         core_schema.function_after_schema(
             core_schema.union_schema(
-                core_schema.string_schema(),
+                core_schema.str_schema(),
                 core_schema.bytes_schema(),
             ),
             _validators.uuid_validator,
@@ -111,7 +123,7 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
     return core_schema.union_schema(
         core_schema.is_instance_schema(path_type),
         core_schema.function_after_schema(
-            core_schema.string_schema(),
+            core_schema.str_schema(),
             _validators.path_validator,
         ),
         custom_error_type='path_type',
@@ -120,8 +132,14 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
     )
 
 
+def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> core_schema.FunctionWrapSerSchema:
+    return core_schema.function_wrap_ser_schema(_serializers.serialize_deque, inner_schema or core_schema.any_schema())
+
+
 def _deque_any_schema() -> core_schema.FunctionWrapSchema:
-    return core_schema.function_wrap_schema(_validators.deque_any_validator, core_schema.list_schema())
+    return core_schema.function_wrap_schema(
+        _validators.deque_any_validator, core_schema.list_schema(), serialization=_deque_ser_schema()
+    )
 
 
 @schema_function(deque)
@@ -141,9 +159,11 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
         return _deque_any_schema()
     else:
         # `Deque[Something]`
+        inner_schema = schema_generator.generate_schema(arg)
         return core_schema.function_after_schema(
-            core_schema.list_schema(schema_generator.generate_schema(arg)),
+            core_schema.list_schema(inner_schema),
             _validators.deque_typed_validator,
+            serialization=_deque_ser_schema(inner_schema),
         )
 
 
@@ -178,32 +198,44 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
 
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v4_address_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v4_address_validator, serialization=core_schema.to_string_ser_schema()
+    )
 
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v4_interface_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v4_interface_validator, serialization=core_schema.to_string_ser_schema()
+    )
 
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v4_network_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v4_network_validator, serialization=core_schema.to_string_ser_schema()
+    )
 
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v6_address_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v6_address_validator, serialization=core_schema.to_string_ser_schema()
+    )
 
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v6_interface_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v6_interface_validator, serialization=core_schema.to_string_ser_schema()
+    )
 
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    return core_schema.function_plain_schema(_validators.ip_v6_network_validator)
+    return core_schema.function_plain_schema(
+        _validators.ip_v6_network_validator, serialization=core_schema.to_string_ser_schema()
+    )
 
 
 @schema_function(Url)

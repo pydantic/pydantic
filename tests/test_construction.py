@@ -23,7 +23,8 @@ def test_simple_construct():
 def test_construct_misuse():
     m = Model.model_construct(b='foobar')
     assert m.b == 'foobar'
-    assert m.model_dump() == {'b': 'foobar'}
+    with pytest.warns(UserWarning, match='Expected `int` but got `str`'):
+        assert m.model_dump() == {'b': 'foobar'}
     with pytest.raises(AttributeError, match="'Model' object has no attribute 'a'"):
         print(m.a)
 
@@ -39,7 +40,7 @@ def test_construct_fields_set():
 def test_construct_allow_extra():
     """model_construct() should allow extra fields"""
 
-    class Foo(BaseModel):
+    class Foo(BaseModel, extra='allow'):
         x: int
 
     assert Foo.model_construct(x=1, y=2).model_dump() == {'x': 1, 'y': 2}

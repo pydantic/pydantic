@@ -67,6 +67,10 @@ class _ConfigDict(TypedDict, total=False):
     # whether dataclass `__post_init__` should be run before or after validation
     post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
+    # new in V2
+    ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_bytes: Literal['utf8', 'base64']
+
 
 config_keys = set(_ConfigDict.__annotations__.keys())
 
@@ -107,6 +111,8 @@ _default_config = ConfigDict(
     strict=False,
     copy_on_model_validation='shallow',
     post_init_call='before_validation',
+    ser_json_timedelta='iso8601',
+    ser_json_bytes='utf8',
 )
 
 
@@ -134,6 +140,10 @@ class BaseConfig:
     strict: bool = False
     copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
     post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
+
+    # new in V2
+    ser_json_timedelta: Literal['iso8601', 'float'] = 'iso8601'
+    ser_json_bytes: Literal['utf8', 'base64'] = 'utf8'
 
 
 def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> ConfigDict:

@@ -79,7 +79,7 @@ def test_ultra_simple_repr():
     assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
-    assert m.model_dump_json() == '{"a": 10.2, "b": 10}'
+    assert m.model_dump_json() == b'{"a":10.2,"b":10}'
     assert str(m) == 'a=10.2 b=10'
 
 
@@ -94,7 +94,7 @@ def test_default_factory_field():
     assert str(m) == 'a=1'
     assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
-    assert m.model_dump_json() == '{"a": 1}'
+    assert m.model_dump_json() == b'{"a":1}'
 
 
 def test_comparing():
@@ -514,7 +514,6 @@ def test_enum_values():
     assert isinstance(m.foo, FooEnum)
 
 
-@pytest.mark.xfail(reason='fix mypy plugin?')
 def test_literal_enum_values():
     FooEnum = Enum('FooEnum', {'foo': 'foo_value', 'bar': 'bar_value'})
 
@@ -524,7 +523,8 @@ def test_literal_enum_values():
         model_config = ConfigDict(use_enum_values=True)
 
     m = Model(baz=FooEnum.foo)
-    assert m.model_dump() == {'baz': 'foo_value', 'boo': 'hoo'}
+    assert m.model_dump() == {'baz': FooEnum.foo, 'boo': 'hoo'}
+    assert m.model_dump(mode='json') == {'baz': 'foo_value', 'boo': 'hoo'}
     assert m.baz.value == 'foo_value'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -879,6 +879,12 @@ def test_model_iteration():
     'exclude,expected,raises_match',
     [
         pytest.param(
+            None,
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]},
+            None,
+            id='exclude nothing',
+        ),
+        pytest.param(
             {'foos': {0: {'a'}, 1: {'a'}}},
             {'c': 3, 'foos': [{'b': 2}, {'b': 4}]},
             None,
@@ -886,27 +892,27 @@ def test_model_iteration():
         ),
         pytest.param(
             {'foos': {'a'}},
-            TypeError,
-            'expected integer keys',
-            id='should fail trying to exclude string keys on list field (1).',
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]},
+            None,
+            id='Trying to exclude string keys on list field should be ignored (1)',
         ),
         pytest.param(
             {'foos': {0: ..., 'a': ...}},
-            TypeError,
-            'expected integer keys',
-            id='should fail trying to exclude string keys on list field (2).',
+            {'c': 3, 'foos': [{'a': 3, 'b': 4}]},
+            None,
+            id='Trying to exclude string keys on list field should be ignored (2)',
         ),
         pytest.param(
             {'foos': {0: 1}},
             TypeError,
-            'Unexpected type',
-            id='should fail using integer key to specify list item field name (1)',
+            '`exclude` argument must a set or dict',
+            id='value as int should be an error',
         ),
         pytest.param(
-            {'foos': {'__all__': 1}},
-            TypeError,
-            'Unexpected type',
-            id='should fail using integer key to specify list item field name (2)',
+            {'foos': {'__all__': {1}}},
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]},
+            None,
+            id='excluding int in dict should have no effect',
         ),
         pytest.param(
             {'foos': {'__all__': {'a'}}},
@@ -933,10 +939,10 @@ def test_model_iteration():
             id='using "__all__" and other items should get merged together, still excluding all list items',
         ),
         pytest.param(
-            {'foos': {1: {'a'}, -1: {'b'}}},
-            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {}]},
+            {'foos': {-1: {'b'}}},
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]},
             None,
-            id='using negative and positive indexes, referencing the same items should merge excludes',
+            id='negative indexes are ignored',
         ),
     ],
 )
@@ -951,7 +957,7 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 
     m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
 
-    if isinstance(expected, type) and issubclass(expected, Exception):
+    if raises_match is not None:
         with pytest.raises(expected, match=raises_match):
             m.model_dump(exclude=exclude)
     else:
@@ -988,45 +994,7 @@ def test_model_export_dict_exclusion(excludes, expected):
     assert excludes == original_excludes
 
 
-@pytest.mark.skip(reason='not implemented')
-def test_model_exclude_config_field_merging():
-    """Test merging field exclude values from config."""
-
-    class Model(BaseModel):
-        model_config = ConfigDict(
-            fields={
-                'b': {'exclude': ...},
-            }
-        )
-        b: int = Field(2, exclude=...)
-
-    assert Model.model_fields['b'].field_info.exclude is ...
-
-    class Model(BaseModel):
-        model_config = ConfigDict(
-            fields={
-                'b': {'exclude': ...},
-            }
-        )
-        b: int = Field(2, exclude={'a': {'test'}})
-
-    assert Model.model_fields['b'].field_info.exclude == {'a': {'test'}}
-
-    class Model(BaseModel):
-        model_config = ConfigDict(
-            fields={
-                'b': {'exclude': {'bar'}},
-            }
-        )
-        b: int = Field(2, exclude={'foo'})
-
-    assert Model.model_fields['b'].field_info.exclude == {'foo': ..., 'bar': ...}
-
-
-@pytest.mark.skip(reason='not implemented')
-def test_model_exclude_copy_on_model_validation():
-    """When `Config.copy_on_model_validation` is set, it should keep private attributes and excluded fields"""
-
+def test_field_exclude():
     class User(BaseModel):
         _priv: int = PrivateAttr()
         id: int
@@ -1040,25 +1008,6 @@ def test_model_exclude_copy_on_model_validation():
     assert my_user.id == 42
     assert my_user.password.get_secret_value() == 'hashedpassword'
     assert my_user.model_dump() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
-
-    class Transaction(BaseModel):
-        model_config = ConfigDict(fields={'value': {'exclude': True}})
-        id: str
-        user: User = Field(..., exclude={'username'})
-        value: int
-
-    t = Transaction(
-        id='1234567890',
-        user=my_user,
-        value=9876543210,
-    )
-
-    assert t.user is not my_user
-    assert t.user.hobbies == ['scuba diving']
-    assert t.user.hobbies is my_user.hobbies  # `Config.copy_on_model_validation` does a shallow copy
-    assert t.user._priv == 13
-    assert t.user.password.get_secret_value() == 'hashedpassword'
-    assert t.model_dump() == {'id': '1234567890', 'user': {'id': 42, 'hobbies': ['scuba diving']}}
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1298,7 +1247,7 @@ def test_custom_init_subclass_params():
 
 def test_recursive_model():
     class MyModel(BaseModel):
-        field: Optional['MyModel']  # noqa: F821
+        field: Optional['MyModel']
 
     m = MyModel(field={'field': {'field': None}})
     assert m.model_dump() == {'field': {'field': {'field': None}}}
@@ -1666,7 +1615,6 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-
     with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
 
         class Model(BaseModel, some_config='new_value'):

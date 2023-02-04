@@ -254,7 +254,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_validation_schema__(
+        def __get_pydantic_core_schema__(
             cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
@@ -302,7 +302,7 @@ class UuidVersion:
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
-    def __get_pydantic_validation_schema__(
+    def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(schema, cast(core_schema.ValidatorFunction, self.validate))
@@ -331,7 +331,7 @@ class PathType:
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(format='file-path')
 
-    def __get_pydantic_validation_schema__(
+    def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.FunctionSchema:
         function_lookup = {
@@ -387,7 +387,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_validation_schema__(
+        def __get_pydantic_core_schema__(
             cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.JsonSchema:
             return core_schema.json_schema(schema)
@@ -415,7 +415,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         validator = SecretFieldValidator(cls)
         return core_schema.function_after_schema(
             core_schema.union_schema(
@@ -426,7 +426,19 @@ class SecretField(abc.ABC, Generic[SecretType]):
             ),
             validator,
             extra=validator,
+            serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
         )
+
+    @classmethod
+    def _serialize(
+        cls, value: SecretField[SecretType], info: core_schema.SerializationInfo
+    ) -> str | SecretField[SecretType]:
+        if info.mode == 'json':
+            # we want the output to always be string without the `b'` prefix for byties,
+            # hence we just use `secret_display`
+            return secret_display(value)
+        else:
+            return value
 
     @classmethod
     @abc.abstractmethod
@@ -499,7 +511,7 @@ class SecretStr(SecretField[str]):
 
     @classmethod
     def _pre_core_schema(cls) -> core_schema.CoreSchema:
-        return core_schema.string_schema()
+        return core_schema.str_schema()
 
     def _display(self) -> str:
         return secret_display(self)
@@ -553,9 +565,9 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(
-            core_schema.string_schema(
+            core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
             ),
             cls.validate,
@@ -655,7 +667,7 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_validation_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
         # TODO better schema
         return core_schema.function_plain_schema(cls.validate)
 
@@ -703,7 +715,6 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:
@@ -721,7 +732,7 @@ else:
 
     class PastDate:
         @classmethod
-        def __get_pydantic_validation_schema__(
+        def __get_pydantic_core_schema__(
             cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if schema is None:
@@ -737,7 +748,7 @@ else:
 
     class FutureDate:
         @classmethod
-        def __get_pydantic_validation_schema__(
+        def __get_pydantic_core_schema__(
             cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if schema is None:

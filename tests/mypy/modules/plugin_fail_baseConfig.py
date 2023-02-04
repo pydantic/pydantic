@@ -25,7 +25,7 @@ model = Model(x=1, y='y', z='z')
 model = Model(x=1)
 model.y = 'a'
 Model.from_orm({})
-Model.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
+Model.from_orm({})  # type: ignore[pydantic-orm]
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -40,7 +40,7 @@ kwargs_model = KwargsModel(x=1, y='y', z='z')
 kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
 KwargsModel.from_orm({})
-KwargsModel.from_orm({})  # type: ignore[pydantic-orm]  # noqa F821
+KwargsModel.from_orm({})  # type: ignore[pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
@@ -60,7 +60,7 @@ KwargsForbidExtraModel(x=1)
 
 class BadExtraModel(BaseModel):
     class Config:
-        extra = 1  # type: ignore[pydantic-config]  # noqa F821
+        extra = 1  # type: ignore[pydantic-config]
         extra = 1
 
 
@@ -201,14 +201,14 @@ AliasGeneratorModel(z=1)
 class AliasGeneratorModel2(BaseModel):
     x: int = Field(..., alias='y')
 
-    class Config:  # type: ignore[pydantic-alias]  # noqa F821
+    class Config:  # type: ignore[pydantic-alias]
         alias_generator = lambda x: x + '_'  # noqa E731
 
 
 class UntypedFieldModel(BaseModel):
     x: int = 1
     y = 2
-    z = 2  # type: ignore[pydantic-field]  # noqa F821
+    z = 2  # type: ignore[pydantic-field]
 
 
 AliasGeneratorModel2(x=1)

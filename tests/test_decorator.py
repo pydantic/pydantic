@@ -118,7 +118,6 @@ def test_kwargs():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 def test_untyped():
     @validate_arguments
     def foo(a, b, c='x', *, d='y'):

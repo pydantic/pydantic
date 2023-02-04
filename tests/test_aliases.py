@@ -274,7 +274,6 @@ def test_alias_priority():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_empty_string_alias():
     class Model(BaseModel):
         empty_string_key: int = Field(alias='')

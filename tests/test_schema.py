@@ -2676,7 +2676,7 @@ def test_nested_generic():
             ...
 
     class Model(BaseModel):
-        ref: Ref['Model']  # noqa
+        ref: Ref['Model']
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -2741,9 +2741,9 @@ def test_complex_nested_generic():
 
     class Model(BaseModel):
         uuid: str
-        model: Union[Ref['Model'], 'Model']  # noqa
+        model: Union[Ref['Model'], 'Model']
 
-        def resolve(self) -> 'Model':  # noqa
+        def resolve(self) -> 'Model':
             ...
 
     Model.model_rebuild()
