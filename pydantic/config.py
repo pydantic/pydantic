@@ -140,15 +140,14 @@ def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> Co
     if config is None:
         return ConfigDict()
 
-    if not isinstance(config, dict):
+    if isinstance(config, dict):
+        config_dict = config
+    else:
         warnings.warn(
             f'Support for "config" as "{type(config)}" is deprecated and will be removed in a future version"',
             DeprecationWarning,
         )
-
-    config_dict = (
-        config if isinstance(config, dict) else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
-    )
+        config_dict = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     return ConfigDict(config_dict)  # type: ignore
 
