@@ -19,7 +19,7 @@ from . import _fields, _typing_extra
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 
 if TYPE_CHECKING:
-    from ..main import BaseModel
+    from ..config import BaseConfig
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -28,18 +28,19 @@ def model_fields_schema(
     ref: str,
     fields: dict[str, FieldInfo],
     validator_functions: ValidationFunctions,
-    serialization_functions: SerializationFunctions,
+    serializer_functions: SerializationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
     """
-    Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
-    since this is typed_dict schema which is used to create the model.
+    Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself.
+
+    This is typed_dict schema which is used to create the model.
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {
-            k: schema_generator.generate_field_schema(k, v, validator_functions, serialization_functions)
+            k: schema_generator.generate_td_field_schema(k, v, validator_functions, serializer_functions)
             for k, v in fields.items()
         },
         ref=ref,
@@ -49,12 +50,34 @@ def model_fields_schema(
     return schema
 
 
-def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
+def dataclass_fields_schema(
+    ref: str,
+    fields: dict[str, FieldInfo],
+    mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'],
+    validator_functions: ValidationFunctions,
+    serializer_functions: SerializationFunctions,
+    arbitrary_types: bool,
+    types_namespace: dict[str, Any] | None,
+) -> core_schema.CoreSchema:
+    """
+    Generate schema for the fields of a dataclass, this differs from a model since we use `arguments_schema`
+    not `typed_dict_schema` so unnamed arguments can be used.
+    """
+    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
+    args = [
+        schema_generator.generate_arg_param_schema(k, v, mode, validator_functions, serializer_functions)
+        for k, v in fields.items()
+    ]
+    schema: core_schema.CoreSchema = core_schema.arguments_schema(*args, ref=ref)
+    schema = apply_validators(schema, validator_functions.get_root_decorators())
+    return schema
+
+
+def generate_config(config: type[BaseConfig], cls: type[Any]) -> core_schema.CoreConfig:
     """
     Create a pydantic-core config from a pydantic config.
     """
-    config = cls.__config__
-    return core_schema.CoreConfig(
+    core_config = core_schema.CoreConfig(
         title=config.title or cls.__name__,
         typed_dict_extra_behavior=config.extra.value,
         allow_inf_nan=config.allow_inf_nan,
@@ -66,6 +89,12 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
         ser_json_timedelta=config.ser_json_timedelta,
         ser_json_bytes=config.ser_json_bytes,
     )
+    if config.max_anystr_length is not None:
+        core_config['str_max_length'] = config.max_anystr_length
+    if config.min_anystr_length is not None:
+        core_config['str_min_length'] = config.min_anystr_length
+
+    return core_config
 
 
 class GenerateSchema:
@@ -175,7 +204,7 @@ class GenerateSchema:
                 f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}).'
             )
 
-    def generate_field_schema(
+    def generate_td_field_schema(
         self,
         name: str,
         field: FieldInfo,
@@ -204,6 +233,31 @@ class GenerateSchema:
         if field.exclude:
             field_schema['serialization_exclude'] = True
         return field_schema
+
+    def generate_arg_param_schema(
+        self,
+        name: str,
+        field: FieldInfo,
+        mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'],
+        validator_functions: ValidationFunctions,
+        serializer_functions: SerializationFunctions,
+    ) -> core_schema.ArgumentsParameter:
+        """
+        Prepare a ArgumentsParameter to represent the parameter/field, e.g. of a dataclass
+        """
+        assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
+        schema = self.generate_schema(field.annotation)
+        schema = apply_metadata(schema, field.metadata)
+
+        if not field.is_required():
+            schema = wrap_default(field, schema)
+
+        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
+        schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
+        param_schema = core_schema.arguments_parameter(name, schema, mode=mode)
+        if field.alias is not None:
+            param_schema['alias'] = field.alias
+        return param_schema
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """
@@ -253,8 +307,8 @@ class GenerateSchema:
             raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.')
 
         fields: typing.Dict[str, core_schema.TypedDictField] = {}
-        validation_functions = ValidationFunctions(())
-        serialization_functions = SerializationFunctions(())
+        validator_functions = ValidationFunctions(())
+        serializer_functions = SerializationFunctions(())
 
         for field_name, annotation in _typing_extra.get_type_hints(typed_dict_cls, include_extras=True).items():
             required = field_name in required_keys
@@ -267,8 +321,8 @@ class GenerateSchema:
                 annotation = get_args(annotation)[0]
 
             field_info = FieldInfo.from_annotation(annotation)
-            fields[field_name] = self.generate_field_schema(
-                field_name, field_info, validation_functions, serialization_functions, required=required
+            fields[field_name] = self.generate_td_field_schema(
+                field_name, field_info, validator_functions, serializer_functions, required=required
             )
 
         return core_schema.typed_dict_schema(fields, extra_behavior='forbid')

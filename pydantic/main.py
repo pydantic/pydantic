@@ -74,11 +74,11 @@ class ModelMetaclass(ABCMeta):
             elif 'model_post_init' in namespace:
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
-            validator_functions = _decorators.ValidationFunctions(bases)
-            namespace[validator_functions.model_attribute] = validator_functions
+            namespace['__pydantic_validator_functions__'] = validator_functions = _decorators.ValidationFunctions(bases)
 
-            serializer_functions = _decorators.SerializationFunctions(bases)
-            namespace[serializer_functions.model_attribute] = serializer_functions
+            namespace['__pydantic_serializer_functions__'] = serializer_functions = _decorators.SerializationFunctions(
+                bases
+            )
 
             for name, value in namespace.items():
                 found_validator = validator_functions.extract_decorator(name, value)
@@ -103,8 +103,6 @@ class ModelMetaclass(ABCMeta):
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
-                validator_functions,
-                serializer_functions,
                 bases,
                 types_namespace=_typing_extra.parent_frame_namespace(),
                 raise_errors=False,
@@ -477,8 +475,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
-                cls.__pydantic_validator_functions__,
-                cls.__pydantic_serializer_functions__,
                 cls.__bases__,
                 raise_errors=raise_errors,
                 types_namespace=types_namespace,

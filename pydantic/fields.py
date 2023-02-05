@@ -85,7 +85,7 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
         """
-        Create `FieldInfo` with the `Field` function:
+        Create `FieldInfo` with the `Field` function, e.g.:
         >>> import pydantic
         >>> class MyModel(pydantic.BaseModel):
         >>>     foo: int = pydantic.Field(4, ...)  # <-- like this
@@ -126,9 +126,9 @@ class FieldInfo(_repr.Representation):
         Create `FieldInfo` from an annotation with a default value, e.g.:
         >>> import pydantic, annotated_types, typing
         >>> class MyModel(pydantic.BaseModel):
-        >>>     foo: int = 4
-        >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4
-        >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4
+        >>>     foo: int = 4  # <-- like this
+        >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
+        >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
         """
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)

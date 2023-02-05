@@ -74,12 +74,6 @@ __all__ = [
 
 from ._internal._utils import update_not_none
 
-if TYPE_CHECKING:
-    from .dataclasses import Dataclass
-    from .main import BaseModel
-
-    ModelOrDc = Type[Union[BaseModel, Dataclass]]
-
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):

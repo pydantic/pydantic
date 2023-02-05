@@ -39,7 +39,7 @@ from ._internal._typing_extra import (
     is_none_type,
     origin_is_union,
 )
-from ._internal._utils import ROOT_KEY, get_model, lenient_issubclass
+from ._internal._utils import ROOT_KEY, lenient_issubclass
 from .fields import FieldInfo
 from .json import pydantic_encoder
 from .networks import AnyUrl, EmailStr
@@ -55,6 +55,10 @@ default_ref_template = '#/definitions/{model}'
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
 ModelField = Any
+
+
+def get_model(x: Any) -> Any:
+    raise NotImplementedError('todo')
 
 
 def _apply_modify_schema(
