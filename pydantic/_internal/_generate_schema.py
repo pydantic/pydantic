@@ -589,10 +589,10 @@ def apply_metadata(  # noqa: C901
             # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
             metadata_dict = {k: v for k, v in vars(metadata).items() if not k.startswith('_')}
         else:
-            raise PydanticSchemaGenerationError(
-                'Metadata must be instances of annotated_types.BaseMetadata or PydanticMetadata '
-                'or a subclass of PydanticMetadata'
-            )
+            # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
+            # special logic for metadata x, it should ignore it and simply treat the type as T."
+            # Allow, but ignore, any unknown metadata.
+            continue
 
         # TODO we need a way to remove metadata which this line currently prevents
         metadata_dict = {k: v for k, v in metadata_dict.items() if v is not None}
