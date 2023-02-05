@@ -127,6 +127,10 @@ class PydanticPlugin(Plugin):
         return None
 
     def report_config_data(self, ctx: ReportConfigContext) -> Dict[str, Any]:
+        """Return all plugin config data.
+
+        Used by mypy to determine if cache needs to be discarded.
+        """
         return self._plugin_data
 
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
