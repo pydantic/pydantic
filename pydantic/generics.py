@@ -1,4 +1,5 @@
 import sys
+import types
 import typing
 from typing import (
     TYPE_CHECKING,
@@ -25,6 +26,9 @@ from .main import BaseModel, create_model
 from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .utils import LimitedDict, all_identical, lenient_issubclass
+
+if sys.version_info >= (3, 10):
+    from typing import _UnionGenericAlias
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -268,6 +272,10 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             # See: https://www.python.org/dev/peps/pep-0585
             origin_type = getattr(typing, type_._name)
         assert origin_type is not None
+        # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
+        # We also cannot use isinstance() since we have to compare types.
+        if sys.version_info >= (3, 10) and origin_type is types.UnionType:  # noqa: E721
+            return _UnionGenericAlias(origin_type, resolved_type_args)
         return origin_type[resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
