@@ -5,7 +5,6 @@ from typing import Optional, Tuple
 import pytest
 from dirty_equals import IsStr
 
-import pydantic.errors
 from pydantic import BaseModel, PydanticUserError, ValidationError
 
 
@@ -960,7 +959,7 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
 def test_undefined_types_warning_raised_by_usage(create_module):
     with pytest.raises(
-        pydantic.errors.PydanticUserError,
+        PydanticUserError,
         match=re.escape(
             '`Foobar` is not fully defined; you should define `UndefinedType`, '
             'then call `Foobar.model_rebuild()` before the first `Foobar` instance is created.',
