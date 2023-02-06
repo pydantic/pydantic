@@ -647,7 +647,7 @@ class PaymentCardNumber(str):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ OTP TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-OTP_ALPHABET = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+OTP_ALPHABET = '0123456789'
 
 
 class OTP(str):
