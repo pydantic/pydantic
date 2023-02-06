@@ -815,6 +815,16 @@ The actual validation verifies the card number is:
 * the correct length based on the BIN, if Amex, Mastercard or Visa, and between
   12 and 19 digits for all other brands
 
+### OTP
+
+The `OTP` type validates [one-time passwords](https://en.wikipedia.org/wiki/One-time_password) (such as a 2FA code).
+
+{!.tmp_examples/types_otp.md!}
+
+* `length: int = 6`: the length of the OTP.
+
+__Note__: `OTP` support only `numeric` OTPs, [read more](https://security.stackexchange.com/questions/243621/why-dont-otps-have-letters).
+
 ## Constrained Types
 
 The value of numerous common types can be restricted using `con*` type functions:
