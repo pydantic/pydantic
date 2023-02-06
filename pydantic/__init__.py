@@ -98,6 +98,7 @@ __all__ = [
     'StrictInt',
     'StrictFloat',
     'PaymentCardNumber',
+    'OTP',
     'PrivateAttr',
     'ByteSize',
     'PastDate',
