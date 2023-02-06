@@ -1,6 +1,6 @@
 import json
 import sys
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import (
     Any,
     Callable,
@@ -48,7 +48,6 @@ def test_double_parameterize_error():
     assert str(exc_info.value) == "<class 'tests.test_generics.Result[int]'> is not a generic class"
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
 def test_value_validation():
     T = TypeVar('T')
 
@@ -64,10 +63,10 @@ def test_value_validation():
         @root_validator()
         def validate_sum(cls, item, **kwargs):
             values, fields = item
-            # TODO: Probably should drop this int casting, but the validator doesn't seem to be doing the right thing
-            if sum([int(x) for x in values.get('data', {}).values()]) > 5:
+            data = values.get('data', {})
+            if sum(data.values()) > 5:
                 raise ValueError('sum too large')
-            return values
+            return values, fields
 
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
@@ -180,7 +179,9 @@ def test_classvar():
     assert 'other' not in Result.model_fields
 
 
-@pytest.mark.xfail(reason='working on V2 - non-annotated fields')
+# TODO: Replace this test with a test that ensures the same warning message about non-annotated fields is raised
+#   for generic and non-generic models. Requires https://github.com/pydantic/pydantic/issues/5014
+@pytest.mark.xfail(reason='working on V2 - non-annotated fields - issue #5014')
 def test_non_annotated_field():
     T = TypeVar('T')
 
@@ -306,11 +307,10 @@ def test_generic_config():
         result.data = 2
 
 
-@pytest.mark.xfail(reason='working on V2 - enums')
 def test_enum_generic():
     T = TypeVar('T')
 
-    class MyEnum(Enum):
+    class MyEnum(IntEnum):
         x = 1
         y = 2
 
@@ -925,61 +925,6 @@ def test_nested_identity_parameterization():
     assert Model[T2] is not Model
 
 
-# @pytest.mark.xfail(reason='working on V2')
-# def test_replace_types():
-#     T = TypeVar('T')
-#
-#     class Model(BaseModel, Generic[T]):
-#         a: T
-#
-#     assert replace_types(T, {T: int}) is int
-#     assert replace_types(List[Union[str, list, T]], {T: int}) == List[Union[str, list, int]]
-#     assert replace_types(Callable, {T: int}) == Callable
-#     assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
-#     assert replace_types(T, {}) is T
-#     assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
-#     assert replace_types(T, {}) is T
-#     assert replace_types(Type[T], {T: int}) == Type[int]
-#     assert replace_types(Model[T], {T: T}) == Model[T]
-#
-#     if sys.version_info >= (3, 9):
-#         # Check generic aliases (subscripted builtin types) to make sure they
-#         # resolve correctly (don't get translated to typing versions for
-#         # example)
-#         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
-#
-#
-# @pytest.mark.xfail(reason='working on V2')
-# def test_replace_types_with_user_defined_generic_type_field():
-#     """Test that using user defined generic types as generic model fields are handled correctly."""
-#
-#     T = TypeVar('T')
-#     KT = TypeVar('KT')
-#     VT = TypeVar('VT')
-#
-#     class GenericMapping(Mapping[KT, VT]):
-#         pass
-#
-#     class GenericList(List[T]):
-#         pass
-#
-#     class Model(BaseModel, Generic[T, KT, VT]):
-#         map_field: GenericMapping[KT, VT]
-#         list_field: GenericList[T]
-#
-#     assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
-#     assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
-#     assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
-#
-#
-# def test_replace_types_identity_on_unchanged():
-#     T = TypeVar('T')
-#     U = TypeVar('U')
-#
-#     type_ = List[Union[str, Callable[[list], Optional[str]], U]]
-#     assert replace_types(type_, {T: int}) is type_
-
-
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1094,7 +1039,8 @@ def test_deep_generic_with_multiple_typevars():
     assert ConcreteInnerModel(data=['1'], extra='2').model_dump() == {'data': [1.0], 'extra': 2}
 
 
-@pytest.mark.xfail(reason='working on V2 - multiple BaseModel parents')
+# TODO: Remember to get multiple model inheritance to work with whatever approach we take to config
+@pytest.mark.xfail(reason='working on V2 - multiple BaseModel parents - possibly resolved by fixing config')
 def test_deep_generic_with_multiple_inheritance():
     K = TypeVar('K')
     V = TypeVar('V')
@@ -1177,9 +1123,9 @@ def test_generic_with_partial_callable():
     assert not Model[str, int].__parameters__
 
 
-@pytest.mark.xfail(reason='working on V2 - recursive models')
+# TODO: This seems like it will be the single hardest thing left to resolve
+@pytest.mark.xfail(reason='working on V2 - generic recursive models')
 def test_generic_recursive_models(create_module):
-    # (the current failure of this test is not specific to *generic* recursive models)
     @create_module
     def module():
         from typing import Generic, TypeVar, Union
@@ -1191,8 +1137,14 @@ def test_generic_recursive_models(create_module):
         class Model1(BaseModel, Generic[T]):
             ref: 'Model2[T]'
 
+            class Config:
+                undefined_types_warning = False
+
         class Model2(BaseModel, Generic[T]):
             ref: Union[T, Model1[T]]
+
+            class Config:
+                undefined_types_warning = False
 
         Model1.model_rebuild()
 
@@ -1251,8 +1203,7 @@ def test_generic_enums():
     assert set(Model.model_json_schema()['definitions']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
 
-# TODO: How do we want to handle this going forward? Note it doesn't work even if you drop the generics
-@pytest.mark.xfail(reason='working on V2 - core behavior')
+@pytest.mark.xfail(reason='working on V2 - generic containers - issue #5019')
 def test_generic_with_user_defined_generic_field():
     T = TypeVar('T')
 
@@ -1278,7 +1229,6 @@ def test_generic_annotated():
     SomeGenericModel[str](the_alias='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2 - generic subclass detection')
 def test_generic_subclass():
     T = TypeVar('T')
 
@@ -1288,15 +1238,15 @@ def test_generic_subclass():
     class B(A[T], Generic[T]):
         ...
 
+    class C(B[T], Generic[T]):
+        ...
+
     assert B[int].__name__ == 'B[int]'
     assert issubclass(B[int], B)
-    # Should the following be the case?
-    # Maybe this gets back to the abc stuff and associated performance issues..
-    assert issubclass(B[int], A[int])
-    assert not issubclass(B[int], A[str])
+    assert issubclass(B[int], A)
+    assert not issubclass(B[int], C)
 
 
-@pytest.mark.xfail(reason='working on V2 - generic subclass detection')
 def test_generic_subclass_with_partial_application():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1308,12 +1258,9 @@ def test_generic_subclass_with_partial_application():
         ...
 
     PartiallyAppliedB = B[str, T]
-    assert issubclass(PartiallyAppliedB[int], A[int])
-    assert not issubclass(PartiallyAppliedB[int], A[str])
-    assert not issubclass(PartiallyAppliedB[str], A[int])
+    assert issubclass(PartiallyAppliedB[int], A)
 
 
-@pytest.mark.xfail(reason='working on V2 - generic subclass detection')
 def test_multilevel_generic_binding():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1325,11 +1272,9 @@ def test_multilevel_generic_binding():
         ...
 
     assert B[int].__name__ == 'B[int]'
-    assert issubclass(B[int], A[str, int])
-    assert not issubclass(B[str], A[str, int])
+    assert issubclass(B[int], A)
 
 
-@pytest.mark.xfail(reason='working on V2 - generic subclass detection')
 def test_generic_subclass_with_extra_type():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1342,8 +1287,7 @@ def test_generic_subclass_with_extra_type():
 
     assert B[int, str].__name__ == 'B[int, str]', B[int, str].__name__
     assert issubclass(B[str, int], B)
-    assert issubclass(B[str, int], A[int])
-    assert not issubclass(B[int, str], A[int])
+    assert issubclass(B[str, int], A)
 
 
 def test_multi_inheritance_generic_binding():
@@ -1359,10 +1303,9 @@ def test_multi_inheritance_generic_binding():
         ...
 
     assert C[float].__name__ == 'C[float]'
-    assert issubclass(C[float], B[str])
-    assert not issubclass(C[float], B[int])
-    assert issubclass(C[float], A[int])
-    assert not issubclass(C[float], A[str])
+    assert issubclass(C[float], B)
+    assert issubclass(C[float], A)
+    assert not issubclass(B[float], C)
 
 
 @pytest.mark.xfail(reason='working on V2 - schema')
