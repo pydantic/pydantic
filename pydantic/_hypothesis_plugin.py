@@ -94,9 +94,7 @@ _color_regexes = (
             pydantic.color.r_hex_short,
             pydantic.color.r_hex_long,
             pydantic.color.r_rgb,
-            pydantic.color.r_rgba,
             pydantic.color.r_hsl,
-            pydantic.color.r_hsla,
         )
     )
     # Use more precise regex patterns to avoid value-out-of-range errors

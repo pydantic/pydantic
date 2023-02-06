@@ -11,16 +11,16 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 from typing_extensions import Annotated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
+from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import SchemaRef, SelfType, Undefined
 from ._generate_schema import generate_config, model_fields_schema
 from ._utils import ClassAttribute, is_valid_identifier
-from ._validation_functions import ValidationFunctions
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -94,7 +94,7 @@ def deferred_model_get_pydantic_validation_schema(
     cls: type[BaseModel], types_namespace: dict[str, Any] | None, **_kwargs: Any
 ) -> core_schema.CoreSchema:
     """
-    Used on model as `__get_pydantic_validation_schema__` if not all type hints are available.
+    Used on model as `__get_pydantic_core_schema__` if not all type hints are available.
 
     This method generates the schema for the model and also sets `model_fields`, but it does NOT build
     the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
@@ -104,6 +104,7 @@ def deferred_model_get_pydantic_validation_schema(
         cls,
         cls.__name__,
         cls.__pydantic_validator_functions__,
+        cls.__pydantic_serializer_functions__,
         cls.__bases__,
         types_namespace,
     )
@@ -112,13 +113,14 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    return core_schema.new_class_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
+    return core_schema.model_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
 
 
 def complete_model_class(
     cls: type[BaseModel],
     name: str,
     validator_functions: ValidationFunctions,
+    serialization_functions: SerializationFunctions,
     bases: tuple[type[Any], ...],
     *,
     raise_errors: bool = True,
@@ -134,9 +136,12 @@ def complete_model_class(
     and `get_type_hints` requires a class object.
     """
     validator_functions.set_bound_functions(cls)
+    serialization_functions.set_bound_functions(cls)
 
     try:
-        inner_schema, fields = build_inner_schema(cls, name, validator_functions, bases, types_namespace, typevars_map)
+        inner_schema, fields = build_inner_schema(
+            cls, name, validator_functions, serialization_functions, bases, types_namespace, typevars_map
+        )
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -144,21 +149,23 @@ def complete_model_class(
         if cls.__config__.undefined_types_warning:
             raise UserWarning(warning_string)
         cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
-        # here we have to set __get_pydantic_validation_schema__ so we can try to rebuild the model later
-        cls.__get_pydantic_validation_schema__ = partial(  # type: ignore[attr-defined]
+        # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
+        cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
         )
         return False
 
     validator_functions.check_for_unused()
+    serialization_functions.check_for_unused()
 
     core_config = generate_config(cls)
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    cls.__pydantic_validation_schema__ = core_schema.new_class_schema(
+    cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls, inner_schema, config=core_config, call_after_init=model_post_init
     )
+    cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
@@ -170,6 +177,7 @@ def build_inner_schema(  # noqa: C901
     cls: type[BaseModel],
     name: str,
     validator_functions: ValidationFunctions,
+    serialization_functions: SerializationFunctions,
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
     typevars_map: dict[Any, type[Any]] | None = None,
@@ -189,7 +197,7 @@ def build_inner_schema(  # noqa: C901
                 global_ns = module.__dict__
 
     model_ref = f'{module_name}.{name}'
-    self_schema = core_schema.new_class_schema(cls, core_schema.recursive_reference_schema(model_ref))
+    self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(model_ref))
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
@@ -243,7 +251,13 @@ def build_inner_schema(  # noqa: C901
             delattr(cls, ann_name)
 
     schema = model_fields_schema(
-        model_ref, fields, validator_functions, cls.__config__.arbitrary_types_allowed, local_ns, typevars_map
+        model_ref,
+        fields,
+        validator_functions,
+        serialization_functions,
+        cls.__config__.arbitrary_types_allowed,
+        local_ns,
+        typevars_map,
     )
     return schema, fields
 

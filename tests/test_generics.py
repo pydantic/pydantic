@@ -925,6 +925,61 @@ def test_nested_identity_parameterization():
     assert Model[T2] is not Model
 
 
+# @pytest.mark.xfail(reason='working on V2')
+# def test_replace_types():
+#     T = TypeVar('T')
+#
+#     class Model(BaseModel, Generic[T]):
+#         a: T
+#
+#     assert replace_types(T, {T: int}) is int
+#     assert replace_types(List[Union[str, list, T]], {T: int}) == List[Union[str, list, int]]
+#     assert replace_types(Callable, {T: int}) == Callable
+#     assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
+#     assert replace_types(T, {}) is T
+#     assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
+#     assert replace_types(T, {}) is T
+#     assert replace_types(Type[T], {T: int}) == Type[int]
+#     assert replace_types(Model[T], {T: T}) == Model[T]
+#
+#     if sys.version_info >= (3, 9):
+#         # Check generic aliases (subscripted builtin types) to make sure they
+#         # resolve correctly (don't get translated to typing versions for
+#         # example)
+#         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+#
+#
+# @pytest.mark.xfail(reason='working on V2')
+# def test_replace_types_with_user_defined_generic_type_field():
+#     """Test that using user defined generic types as generic model fields are handled correctly."""
+#
+#     T = TypeVar('T')
+#     KT = TypeVar('KT')
+#     VT = TypeVar('VT')
+#
+#     class GenericMapping(Mapping[KT, VT]):
+#         pass
+#
+#     class GenericList(List[T]):
+#         pass
+#
+#     class Model(BaseModel, Generic[T, KT, VT]):
+#         map_field: GenericMapping[KT, VT]
+#         list_field: GenericList[T]
+#
+#     assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+#     assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
+#     assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
+#
+#
+# def test_replace_types_identity_on_unchanged():
+#     T = TypeVar('T')
+#     U = TypeVar('U')
+#
+#     type_ = List[Union[str, Callable[[list], Optional[str]], U]]
+#     assert replace_types(type_, {T: int}) is type_
+
+
 def test_deep_generic():
     T = TypeVar('T')
     S = TypeVar('S')
@@ -1134,7 +1189,7 @@ def test_generic_recursive_models(create_module):
         T = TypeVar('T')
 
         class Model1(BaseModel, Generic[T]):
-            ref: 'Model2[T]'  # noqa: F821
+            ref: 'Model2[T]'
 
         class Model2(BaseModel, Generic[T]):
             ref: Union[T, Model1[T]]

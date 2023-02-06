@@ -8,6 +8,9 @@ on:
       - '**'
   pull_request: {}
 
+env:
+  COLUMNS: 150
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -46,7 +49,7 @@ jobs:
       - name: install node for pyright
         uses: actions/setup-node@v3
         with:
-          node-version: '14'
+          node-version: '18'
 
       - run: npm install -g pyright
 
@@ -70,6 +73,7 @@ jobs:
           docs-build-v2
           ${{ runner.os }}
           ${{ env.pythonLocation }}
+          ${{ hashFiles('pyproject.toml') }}
           ${{ hashFiles('requirements/*') }}
 
     - name: install
@@ -163,8 +167,8 @@ jobs:
           test-mypy
           ${{ runner.os }}
           ${{ env.pythonLocation }}
-          ${{ hashFiles('requirements/pyproject-min.txt') }}
-          ${{ hashFiles('requirements/testing.txt') }}
+          ${{ hashFiles('pyproject.toml') }}
+          ${{ hashFiles('requirements/*') }}
           ${{ matrix.mypy-version }}
 
     - name: install

@@ -10,7 +10,9 @@ from pydantic import (
     FileUrl,
     HttpUrl,
     KafkaDsn,
+    MariaDBDsn,
     MongoDsn,
+    MySQLDsn,
     NameEmail,
     PostgresDsn,
     RedisDsn,
@@ -42,6 +44,17 @@ except ImportError:
         'postgresql+psycopg2cffi://user:pass@localhost:5432/app',
         'postgresql+py-postgresql://user:pass@localhost:5432/app',
         'postgresql+pygresql://user:pass@localhost:5432/app',
+        'mysql://user:pass@localhost:3306/app',
+        'mysql+mysqlconnector://user:pass@localhost:3306/app',
+        'mysql+aiomysql://user:pass@localhost:3306/app',
+        'mysql+asyncmy://user:pass@localhost:3306/app',
+        'mysql+mysqldb://user:pass@localhost:3306/app',
+        'mysql+pymysql://user:pass@localhost:3306/app?charset=utf8mb4',
+        'mysql+cymysql://user:pass@localhost:3306/app',
+        'mysql+pyodbc://user:pass@localhost:3306/app',
+        'mariadb://user:pass@localhost:3306/app',
+        'mariadb+mariadbconnector://user:pass@localhost:3306/app',
+        'mariadb+pymysql://user:pass@localhost:3306/app',
         'foo-bar://example.org',
         'foo.bar://example.org',
         'foo0bar://example.org',
@@ -349,11 +362,47 @@ def test_http_urls_default_port(url, expected_port, expected_str):
         'postgresql://user:pass@localhost:5432/app',
         'postgresql+asyncpg://user:pass@localhost:5432/app',
         'postgres://user:pass@host1.db.net,host2.db.net:6432/app',
+        'postgres://user:pass@%2Fvar%2Flib%2Fpostgresql/dbname',
     ],
 )
 def test_postgres_dsns(dsn):
     class Model(BaseModel):
         a: PostgresDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'mysql://user:pass@localhost:3306/app',
+        'mysql+mysqlconnector://user:pass@localhost:3306/app',
+        'mysql+aiomysql://user:pass@localhost:3306/app',
+        'mysql+asyncmy://user:pass@localhost:3306/app',
+        'mysql+mysqldb://user:pass@localhost:3306/app',
+        'mysql+pymysql://user:pass@localhost:3306/app?charset=utf8mb4',
+        'mysql+cymysql://user:pass@localhost:3306/app',
+        'mysql+pyodbc://user:pass@localhost:3306/app',
+    ],
+)
+def test_mysql_dsns(dsn):
+    class Model(BaseModel):
+        a: MySQLDsn
+
+    assert str(Model(a=dsn).a) == dsn
+
+
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'mariadb://user:pass@localhost:3306/app',
+        'mariadb+mariadbconnector://user:pass@localhost:3306/app',
+        'mariadb+pymysql://user:pass@localhost:3306/app',
+    ],
+)
+def test_mariadb_dsns(dsn):
+    class Model(BaseModel):
+        a: MariaDBDsn
 
     assert str(Model(a=dsn).a) == dsn
 

@@ -105,6 +105,10 @@ class BaseConfig:
     # whether dataclass `__post_init__` should be run before or after validation
     post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'  # TODO remove
 
+    # new in V2
+    ser_json_timedelta: Literal['iso8601', 'float'] = 'iso8601'
+    ser_json_bytes: Literal['utf8', 'base64'] = 'utf8'
+
     @classmethod
     def get_field_info(cls, name: str) -> Dict[str, Any]:
         """
