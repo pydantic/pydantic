@@ -139,7 +139,7 @@ class BaseConfig(metaclass=ConfigMetaclass):
 
     def __getattr__(self, item: str) -> Any:
         warnings.warn(
-            f'Support for "config" as "{type(self).__name__}" is deprecated and will be removed in a future version"',
+            f'Support for "config" as "{type(self).__name__}" is deprecated and will be removed in a future version',
             DeprecationWarning,
         )
         try:
@@ -167,7 +167,7 @@ def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> Co
         config_dict = config
     else:
         warnings.warn(
-            f'Support for "config" as "{type(config).__name__}" is deprecated and will be removed in a future version"',
+            f'Support for "config" as "{type(config).__name__}" is deprecated and will be removed in a future version',
             DeprecationWarning,
         )
         config_dict = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
