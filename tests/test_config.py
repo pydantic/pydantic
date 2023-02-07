@@ -46,6 +46,13 @@ def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
         raise TypeError(f'arguments must be both strings or both lists, not {type(a)}, {type(b)}')
 
 
+def test_config_dict_missing_keys():
+    assert ConfigDict().get('missing_property') is None
+
+    with pytest.raises(KeyError, match="'missing_property'"):
+        ConfigDict()['missing_property']
+
+
 @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
 class TestsBaseConfig:
     def test_base_config_equality_defaults_of_config_dict_class(self):
