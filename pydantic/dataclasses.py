@@ -31,6 +31,7 @@ This means we **don't want to create a new dataclass that inherits from it**
 The trick is to create a wrapper around `M` that will act as a proxy to trigger
 validation without altering default `M` behaviour.
 """
+import copy
 import sys
 from contextlib import contextmanager
 from functools import wraps
@@ -259,6 +260,12 @@ class DataclassProxy:
 
     def __instancecheck__(self, instance: Any) -> bool:
         return isinstance(instance, self.__dataclass__)
+
+    def __copy__(self) -> 'DataclassProxy':
+        return DataclassProxy(copy.copy(self.__dataclass__))
+
+    def __deepcopy__(self, memo: Any) -> 'DataclassProxy':
+        return DataclassProxy(copy.deepcopy(self.__dataclass__, memo))
 
 
 def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
