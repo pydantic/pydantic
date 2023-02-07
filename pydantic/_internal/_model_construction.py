@@ -144,10 +144,18 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
         if cls.__config__.undefined_types_warning:
-            raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
+            config_warning_string = (
+                f'`{name}` has an undefined annotation: `{e}`. '
+                f'It may be possible to resolve this by setting '
+                f'undefined_types_warning=False in the config for `{name}`.'
+            )
+            raise UserWarning(config_warning_string)
+        usage_warning_string = (
+            f'`{name}` is not fully defined; you should define `{e}`, then call `{name}.model_rebuild()` '
+            f'before the first `{name}` instance is created.'
+        )
+        cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
