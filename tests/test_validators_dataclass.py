@@ -7,32 +7,30 @@ from pydantic import ValidationError, root_validator, validator
 from pydantic.dataclasses import dataclass
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_simple():
     @dataclass
     class MyDataclass:
         a: str
 
         @validator('a')
-        def change_a(cls, v):
+        def change_a(cls, v, **kwargs):
             return v + ' changed'
 
     assert MyDataclass(a='this is foobar good').a == 'this is foobar good changed'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_pre():
     @dataclass
     class MyDataclass:
         a: List[int]
 
-        @validator('a', pre=True)
-        def check_a1(cls, v):
+        @validator('a', mode='before')
+        def check_a1(cls, v, **kwargs):
             v.append('123')
             return v
 
         @validator('a')
-        def check_a2(cls, v):
+        def check_a2(cls, v, **kwargs):
             v.append(456)
             return v
 
@@ -48,9 +46,9 @@ def test_validate_multiple():
         b: str
 
         @validator('a', 'b')
-        def check_a_and_b(cls, v, field, **kwargs):
+        def check_a_and_b(cls, v, **kwargs):
             if len(v) < 4:
-                raise TypeError(f'{field.alias} is too short')
+                raise TypeError(f'{kwargs.alias} is too short')
             return v + 'x'
 
     assert asdict(MyDataclass(a='1234', b='5678')) == {'a': '1234x', 'b': '5678x'}
@@ -63,14 +61,14 @@ def test_validate_multiple():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 def test_classmethod():
     @dataclass
     class MyDataclass:
         a: str
 
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v, **kwargs):
             assert cls is MyDataclass and is_dataclass(MyDataclass)
             return v
 
@@ -79,14 +77,13 @@ def test_classmethod():
     m.check_a('x')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent():
     @dataclass
     class Parent:
         a: str
 
         @validator('a')
-        def change_a(cls, v):
+        def change_a(cls, v, **kwargs):
             return v + ' changed'
 
     @dataclass
@@ -97,20 +94,20 @@ def test_validate_parent():
     assert Child(a='this is foobar good').a == 'this is foobar good changed'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='duplicate validators should override')
 def test_inheritance_replace():
     @dataclass
     class Parent:
         a: int
 
         @validator('a')
-        def add_to_a(cls, v):
+        def add_to_a(cls, v, **kwargs):
             return v + 1
 
     @dataclass
     class Child(Parent):
         @validator('a')
-        def add_to_a(cls, v):
+        def add_to_a(cls, v, **kwargs):
             return v + 5
 
     assert Child(a=0).a == 5
@@ -126,11 +123,11 @@ def test_root_validator():
         b: str
 
         @validator('b')
-        def repeat_b(cls, v):
+        def repeat_b(cls, v, **kwargs):
             return v * 2
 
         @root_validator
-        def root_validator(cls, values):
+        def root_validator(cls, values, **kwargs):
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
                 raise ValueError('foobar')

@@ -101,6 +101,12 @@ def prepare_dataclass(
 
     cls.__pydantic_validator_functions__ = validator_functions = ValidationFunctions(bases)
     cls.__pydantic_serializer_functions__ = serializer_functions = SerializationFunctions(bases)
+
+    for name, value in vars(cls).items():
+        found_validator = validator_functions.extract_decorator(name, value)
+        if not found_validator:
+            serializer_functions.extract_decorator(name, value)
+
     validator_functions.set_bound_functions(cls)
     serializer_functions.set_bound_functions(cls)
 

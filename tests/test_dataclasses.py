@@ -871,7 +871,6 @@ def test_forward_stdlib_dataclass_params():
         e.item.name = 'pika2'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_pydantic_callable_field():
     """pydantic callable fields behaviour should be the same as stdlib dataclass"""
 

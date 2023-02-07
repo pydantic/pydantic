@@ -19,7 +19,6 @@ from pydantic._internal._utils import (
     ValueItems,
     all_identical,
     deep_update,
-    get_model,
     lenient_issubclass,
     smart_deepcopy,
     to_lower_camel,
@@ -27,7 +26,6 @@ from pydantic._internal._utils import (
 )
 from pydantic._internal._validators import import_string
 from pydantic.color import Color
-from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 
 try:
@@ -341,26 +339,6 @@ def test_undefined_repr():
 def test_undefined_copy():
     assert copy(Undefined) is Undefined
     assert deepcopy(Undefined) is Undefined
-
-
-@pytest.mark.xfail(reason='not implemented')
-def test_get_model():
-    class A(BaseModel):
-        a: str
-
-    assert get_model(A) == A
-
-    @dataclass
-    class B:
-        a: str
-
-    assert get_model(B) == B.__pydantic_model__
-
-    class C:
-        pass
-
-    with pytest.raises(TypeError):
-        get_model(C)
 
 
 def test_class_attribute():
