@@ -116,34 +116,17 @@ _default_config = ConfigDict(
 )
 
 
-class BaseConfig:
-    title: Optional[str] = None
-    str_to_lower: bool = False
-    str_to_upper: bool = False
-    str_strip_whitespace: bool = False
-    str_min_length: int = 0
-    str_max_length: Optional[int] = None
-    extra: Extra = Extra.ignore
-    frozen: bool = False
-    populate_by_name: bool = False
-    use_enum_values: bool = False
-    validate_assignment: bool = False
-    arbitrary_types_allowed: bool = False
-    undefined_types_warning: bool = True
-    from_attributes: bool = False
-    alias_generator: Optional[Callable[[str], str]] = None
-    keep_untouched: Tuple[type, ...] = ()
-    json_loads: Callable[[str], Any] = json.loads
-    json_dumps: Callable[..., str] = json.dumps
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]] = {}
-    allow_inf_nan: bool = True
-    strict: bool = False
-    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'
-    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'
+class ConfigMetaclass(type):
+    def __getattr__(self, item: str) -> Any:
+        return _default_config.get(item)
 
-    # new in V2
-    ser_json_timedelta: Literal['iso8601', 'float'] = 'iso8601'
-    ser_json_bytes: Literal['utf8', 'base64'] = 'utf8'
+
+class BaseConfig(metaclass=ConfigMetaclass):
+    """
+    This class is only retained for backwards compatibility.
+
+    The preferred approach going forward is to assign a ConfigDict to the `model_config` attribute of the Model class.
+    """
 
 
 def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> ConfigDict:

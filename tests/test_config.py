@@ -18,7 +18,7 @@ import pytest
 
 
 @pytest.fixture(scope='session', name='BaseConfigModelWithStrictConfig')
-def model_with_strict_config_false():
+def model_with_strict_config():
     class ModelWithStrictConfig(BaseModel):
         a: int
         # strict=False overrides the Config
@@ -36,7 +36,7 @@ def model_with_strict_config_false():
 
 def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
     """
-    compare strings with spaces removed
+    Compare strings with spaces removed
     """
     if isinstance(a, str) and isinstance(b, str):
         return a.replace(' ', '') == b.replace(' ', '')
@@ -48,12 +48,11 @@ def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
 
 @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
 class TestsBaseConfig:
-    def test_baseConfig_equality_defaults_of_config_dict_class(self):
+    def test_base_config_equality_defaults_of_config_dict_class(self):
         for key, value in _default_config.items():
             assert getattr(BaseConfig, key) == value
-        assert _default_config.keys() == {k for k in dir(BaseConfig) if not k.startswith('__')}
 
-    def test_Config_and_module_config_cannot_be_used_together(self):
+    def test_config_and_module_config_cannot_be_used_together(self):
         with pytest.raises(PydanticUserError):
 
             class MyModel(BaseModel):
@@ -62,7 +61,7 @@ class TestsBaseConfig:
                 class Config:
                     title = 'MyTitleConfig'
 
-    def test_baseConfig_properly_converted_to_dict(self):
+    def test_base_config_properly_converted_to_dict(self):
         class MyConfig(BaseConfig):
             title = 'MyTitle'
             frozen = True
@@ -77,9 +76,10 @@ class TestsBaseConfig:
         expected = _default_config.copy()
         expected['title'] = 'MyTitle'
         expected['frozen'] = True
-        assert MyModel.model_config == expected
+        for k, v in expected.items():
+            assert MyModel.model_config[k] == v
 
-    def test_baseConfig_custom_init_signature(self):
+    def test_base_config_custom_init_signature(self):
         class MyModel(BaseModel):
             id: int
             name: str = 'John Doe'
@@ -100,7 +100,7 @@ class TestsBaseConfig:
         )
         assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
 
-    def test_baseConfig_custom_init_signature_with_no_var_kw(self):
+    def test_base_config_custom_init_signature_with_no_var_kw(self):
         class Model(BaseModel):
             a: float
             b: int = 2
@@ -114,7 +114,7 @@ class TestsBaseConfig:
 
         assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
-    def test_baseConfig_use_field_name(self):
+    def test_base_config_use_field_name(self):
         class Foo(BaseModel):
             foo: str = Field(..., alias='this is invalid')
 
@@ -123,7 +123,7 @@ class TestsBaseConfig:
 
         assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
-    def test_baseConfig_does_not_use_reserved_word(self):
+    def test_base_config_does_not_use_reserved_word(self):
         class Foo(BaseModel):
             from_: str = Field(..., alias='from')
 
@@ -132,7 +132,7 @@ class TestsBaseConfig:
 
         assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 
-    def test_baseConfig_extra_allow_no_conflict(self):
+    def test_base_config_extra_allow_no_conflict(self):
         class Model(BaseModel):
             spam: str
 
@@ -141,7 +141,7 @@ class TestsBaseConfig:
 
         assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
-    def test_baseConfig_extra_allow_conflict_twice(self):
+    def test_base_config_extra_allow_conflict_twice(self):
         class Model(BaseModel):
             extra_data: str
             extra_data_: str
@@ -151,7 +151,7 @@ class TestsBaseConfig:
 
         assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
-    def test_baseConfig_extra_allow_conflict_custom_signature(self):
+    def test_base_config_extra_allow_conflict_custom_signature(self):
         class Model(BaseModel):
             extra_data: int
 
@@ -163,7 +163,7 @@ class TestsBaseConfig:
 
         assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
 
-    def test_baseConfig_private_attribute_intersection_with_extra_field(self):
+    def test_base_config_private_attribute_intersection_with_extra_field(self):
         class Model(BaseModel):
             _foo = PrivateAttr('private_attribute')
 
@@ -178,7 +178,7 @@ class TestsBaseConfig:
         assert m._foo == 'still_private'
         assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
 
-    def test_baseConfig_parse_model_with_strict_config_disabled(
+    def test_base_config_parse_model_with_strict_config_disabled(
         self, BaseConfigModelWithStrictConfig: Type[BaseModel]
     ) -> None:
         class Model(BaseConfigModelWithStrictConfig):
