@@ -1553,9 +1553,7 @@ def test_config_as_type_deprecated():
     class Config:
         validate_assignment = True
 
-    match = (
-        'dataclass: support for "config" as "<class \'type\'>" is deprecated and will be removed in a future version'
-    )
+    match = 'dataclass: support for "config" as "type" is deprecated and will be removed in a future version'
 
     with pytest.warns(DeprecationWarning, match=match):
 

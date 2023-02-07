@@ -328,3 +328,55 @@ class TestsBaseConfig:
 
         m = Model(a=40, b=10)
         assert m == m.copy()
+
+    def test_config_class_is_deprecated(self):
+        with pytest.warns(
+            DeprecationWarning, match='`BaseConfig` is deprecated and will be removed in a future version'
+        ):
+
+            class Config(BaseConfig):
+                pass
+
+    def test_config_class_attributes_are_deprecated(self):
+        with pytest.warns(
+            DeprecationWarning,
+            match='Support for "config" as "BaseConfig" is deprecated and will be removed in a future version"',
+        ):
+            assert BaseConfig.validate_assignment is False
+
+        with pytest.warns(
+            DeprecationWarning,
+            match='Support for "config" as "BaseConfig" is deprecated and will be removed in a future version"',
+        ):
+            assert BaseConfig().validate_assignment is False
+
+        class Config(BaseConfig):
+            pass
+
+        with pytest.warns(
+            DeprecationWarning,
+            match='Support for "config" as "Config" is deprecated and will be removed in a future version"',
+        ):
+            assert Config.validate_assignment is False
+
+        with pytest.warns(
+            DeprecationWarning,
+            match='Support for "config" as "Config" is deprecated and will be removed in a future version"',
+        ):
+            assert Config().validate_assignment is False
+
+    def test_config_class_missing_attributes(self):
+        with pytest.raises(AttributeError, match="type object 'BaseConfig' has no attribute 'missing_attribute'"):
+            BaseConfig.missing_attribute
+
+        with pytest.raises(AttributeError, match="'BaseConfig' object has no attribute 'missing_attribute'"):
+            BaseConfig().missing_attribute
+
+        class Config(BaseConfig):
+            pass
+
+        with pytest.raises(AttributeError, match="type object 'Config' has no attribute 'missing_attribute'"):
+            Config.missing_attribute
+
+        with pytest.raises(AttributeError, match="'Config' object has no attribute 'missing_attribute'"):
+            Config().missing_attribute

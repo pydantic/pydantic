@@ -74,7 +74,6 @@ class _ConfigDict(TypedDict, total=False):
 
 config_keys = set(_ConfigDict.__annotations__.keys())
 
-
 if TYPE_CHECKING:
 
     class ConfigDict(_ConfigDict):
@@ -83,8 +82,10 @@ if TYPE_CHECKING:
 else:
 
     class ConfigDict(dict):
-        def __missing__(self, key):
-            return _default_config[key]
+        def __missing__(self, key: str) -> Any:
+            if key in _default_config:  # need this check to prevent a recursion error
+                return _default_config[key]
+            raise KeyError(key)
 
 
 _default_config = ConfigDict(
@@ -118,7 +119,15 @@ _default_config = ConfigDict(
 
 class ConfigMetaclass(type):
     def __getattr__(self, item: str) -> Any:
-        return _default_config.get(item)
+        warnings.warn(
+            f'Support for "config" as "{self.__name__}" is deprecated and will be removed in a future version"',
+            DeprecationWarning,
+        )
+
+        try:
+            return _default_config[item]  # type: ignore[literal-required]
+        except KeyError as exc:
+            raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}")
 
 
 class BaseConfig(metaclass=ConfigMetaclass):
@@ -127,6 +136,27 @@ class BaseConfig(metaclass=ConfigMetaclass):
 
     The preferred approach going forward is to assign a ConfigDict to the `model_config` attribute of the Model class.
     """
+
+    def __getattr__(self, item: str) -> Any:
+        warnings.warn(
+            f'Support for "config" as "{type(self).__name__}" is deprecated and will be removed in a future version"',
+            DeprecationWarning,
+        )
+        try:
+            return super().__getattribute__(item)
+        except AttributeError as exc:
+            try:
+                return getattr(type(self), item)
+            except AttributeError:
+                # reraising changes the displayed text to reflect that `self` is not a type
+                raise AttributeError(str(exc))
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        warnings.warn(
+            '`BaseConfig` is deprecated and will be removed in a future version',
+            DeprecationWarning,
+        )
+        return super().__init_subclass__(**kwargs)
 
 
 def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> ConfigDict:
@@ -137,7 +167,7 @@ def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> Co
         config_dict = config
     else:
         warnings.warn(
-            f'Support for "config" as "{type(config)}" is deprecated and will be removed in a future version"',
+            f'Support for "config" as "{type(config).__name__}" is deprecated and will be removed in a future version"',
             DeprecationWarning,
         )
         config_dict = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
