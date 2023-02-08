@@ -1,5 +1,4 @@
 import json
-import sys
 from enum import IntEnum
 
 import pytest
@@ -20,7 +19,6 @@ class FloatSubClass(float):
     pass
 
 
-@pytest.mark.xfail(sys.platform == 'win32', reason='https://github.com/PyO3/pyo3/issues/2913', strict=False)
 @pytest.mark.parametrize('custom_type_schema', [None, 'any'])
 @pytest.mark.parametrize(
     'schema_type,value,expected_python,expected_json',

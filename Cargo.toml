@@ -26,9 +26,7 @@ include = [
 ]
 
 [dependencies]
-# required since `Py_Ellipsis` fails on windows, see https://github.com/PyO3/pyo3/pull/2911
-pyo3 = { git = "https://github.com/PyO3/pyo3", branch = "release-0.18.1" }
-#pyo3 = "0.18.0"
+pyo3 = "0.18.1"
 regex = "1.6.0"
 strum = { version = "0.24.1", features = ["derive"] }
 strum_macros = "0.24.3"
@@ -67,6 +65,4 @@ strip = true
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
-# FIXME change when `pyo3` above is updated
-pyo3-build-config = { git = "https://github.com/PyO3/pyo3", branch = "release-0.18.1" }
-#pyo3 = "0.18.0"
+pyo3-build-config = "0.18.1"

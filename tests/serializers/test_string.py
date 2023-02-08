@@ -1,5 +1,4 @@
 import json
-import sys
 from enum import Enum
 
 import pytest
@@ -61,7 +60,6 @@ class StrEnum(str, Enum):
     bar = 'bar-value'
 
 
-@pytest.mark.xfail(sys.platform == 'win32', reason='https://github.com/PyO3/pyo3/issues/2913', strict=False)
 @pytest.mark.parametrize('schema_type', ['str', 'any'])
 @pytest.mark.parametrize(
     'input_value,expected', [(StrSubclass('foo'), 'foo'), (StrMixin('foo'), 'foo'), (StrEnum.foo, 'foo-value')]
