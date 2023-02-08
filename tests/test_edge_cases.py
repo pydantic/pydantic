@@ -8,7 +8,9 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 import pytest
 from dirty_equals import HasRepr, IsStr
 
-from pydantic import BaseModel, Extra, ValidationError, constr, errors, validator
+from pydantic import BaseModel, ConfigDict, Extra, ValidationError, constr, errors, validator
+from pydantic._internal._fields import PydanticGeneralMetadata
+from pydantic.config import get_config
 from pydantic.fields import Field
 
 
@@ -840,12 +842,10 @@ def test_advanced_include_nested_lists(include, expected):
 
 def test_field_set_ignore_extra():
     class Model(BaseModel):
+        model_config = ConfigDict(extra=Extra.ignore)
         a: int
         b: int
         c: int = 3
-
-        class Config:
-            extra = Extra.ignore
 
     m = Model(a=1, b=2)
     assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
@@ -860,12 +860,10 @@ def test_field_set_ignore_extra():
 
 def test_field_set_allow_extra():
     class Model(BaseModel):
+        model_config = ConfigDict(extra=Extra.allow)
         a: int
         b: int
         c: int = 3
-
-        class Config:
-            extra = Extra.allow
 
     m = Model(a=1, b=2)
     assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
@@ -983,14 +981,13 @@ def test_invalid_string_types(value, errors):
 
 @pytest.mark.xfail(reason='working on V2')
 def test_inheritance_config():
+    # TODO move alias from config to Field, possible on child level only?
     class Parent(BaseModel):
         a: int
 
     class Child(Parent):
+        model_config = ConfigDict(fields={'a': 'aaa', 'b': 'bbb'})
         b: str
-
-        class Config:
-            fields = {'a': 'aaa', 'b': 'bbb'}
 
     m = Child(aaa=1, bbb='s')
     assert repr(m) == "Child(a=1, b='s')"
@@ -1041,10 +1038,8 @@ def test_annotation_inheritance():
 @pytest.mark.xfail(reason='working on V2')
 def test_string_none():
     class Model(BaseModel):
+        model_config = ConfigDict(extra=Extra.ignore)
         a: constr(min_length=20, max_length=1000) = ...
-
-        class Config:
-            extra = Extra.ignore
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
@@ -1143,12 +1138,11 @@ def test_multiple_errors():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_validate_all():
+    # TODO remove or rename, validate_all doesn't exist anymore
     class Model(BaseModel):
+        model_config = ConfigDict(validate_all=True)
         a: int
         b: int
-
-        class Config:
-            validate_all = True
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1160,58 +1154,63 @@ def test_validate_all():
 
 def test_force_extra():
     class Model(BaseModel):
+        model_config = ConfigDict(extra='ignore')
         foo: int
 
-        class Config:
-            extra = 'ignore'
-
-    assert Model.__config__.extra is Extra.ignore
+    assert Model.model_config['extra'] is Extra.ignore
 
 
 def test_illegal_extra_value():
     with pytest.raises(ValueError, match='is not a valid value for "extra"'):
 
         class Model(BaseModel):
+            model_config = ConfigDict(extra='foo')
             foo: int
 
-            class Config:
-                extra = 'foo'
 
-
-@pytest.mark.xfail(reason='working on V2')
 def test_multiple_inheritance_config():
+    def int_encoder(x):
+        return x + 1
+
+    def int2_encoder(x):
+        return x + 2
+
+    def str_encoder(x):
+        return x.upper()
+
     class Parent(BaseModel):
-        class Config:
-            allow_mutation = False
-            extra = Extra.forbid
+        model_config = ConfigDict(frozen=True, extra=Extra.forbid, json_encoders={int: int_encoder})
 
     class Mixin(BaseModel):
-        class Config:
-            use_enum_values = True
+        model_config = ConfigDict(use_enum_values=True, json_encoders={int: int2_encoder})
 
-    class Child(Mixin, Parent):
-        class Config:
-            allow_population_by_field_name = True
+    class Child(Mixin, Parent, json_encoders={str: str_encoder}):
+        model_config = ConfigDict(populate_by_name=True)
 
-    assert BaseModel.__config__.allow_mutation is True
-    assert BaseModel.__config__.allow_population_by_field_name is False
-    assert BaseModel.__config__.extra is Extra.ignore
-    assert BaseModel.__config__.use_enum_values is False
+    assert BaseModel.model_config['frozen'] is False
+    assert BaseModel.model_config['populate_by_name'] is False
+    assert BaseModel.model_config['extra'] is Extra.ignore
+    assert BaseModel.model_config['use_enum_values'] is False
+    assert BaseModel.model_config['json_encoders'] == {}
 
-    assert Parent.__config__.allow_mutation is False
-    assert Parent.__config__.allow_population_by_field_name is False
-    assert Parent.__config__.extra is Extra.forbid
-    assert Parent.__config__.use_enum_values is False
+    assert Parent.model_config['frozen'] is True
+    assert Parent.model_config['populate_by_name'] is False
+    assert Parent.model_config['extra'] is Extra.forbid
+    assert Parent.model_config['use_enum_values'] is False
+    assert Parent.model_config['json_encoders'][int] is int_encoder
 
-    assert Mixin.__config__.allow_mutation is True
-    assert Mixin.__config__.allow_population_by_field_name is False
-    assert Mixin.__config__.extra is Extra.ignore
-    assert Mixin.__config__.use_enum_values is True
+    assert Mixin.model_config['frozen'] is False
+    assert Mixin.model_config['populate_by_name'] is False
+    assert Mixin.model_config['extra'] is Extra.ignore
+    assert Mixin.model_config['use_enum_values'] is True
+    assert Mixin.model_config['json_encoders'][int] is int2_encoder
 
-    assert Child.__config__.allow_mutation is False
-    assert Child.__config__.allow_population_by_field_name is True
-    assert Child.__config__.extra is Extra.forbid
-    assert Child.__config__.use_enum_values is True
+    assert Child.model_config['frozen'] is True
+    assert Child.model_config['populate_by_name'] is True
+    assert Child.model_config['extra'] is Extra.forbid
+    assert Child.model_config['use_enum_values'] is True
+    assert Child.model_config['json_encoders'][str] is str_encoder
+    assert Child.model_config['json_encoders'][int] is int_encoder
 
 
 def test_submodel_different_type():
@@ -1601,11 +1600,9 @@ def test_exclude_none_recursive():
 
 def test_exclude_none_with_extra():
     class MyModel(BaseModel):
+        model_config = ConfigDict(extra='allow')
         a: str = 'default'
         b: Optional[str] = None
-
-        class Config:
-            extra = 'allow'
 
     m = MyModel(a='a', c='c')
 
@@ -1893,19 +1890,15 @@ def test_default_factory_called_once():
         return v
 
     class MyModel(BaseModel):
+        model_config = ConfigDict(validate_all=True)
         id: int = Field(default_factory=factory)
-
-        class Config:
-            validate_all = True
 
     m1 = MyModel()
     assert m1.id == 1
 
     class MyBadModel(BaseModel):
+        model_config = ConfigDict(validate_all=True)
         id: List[str] = Field(default_factory=factory)
-
-        class Config:
-            validate_all = True
 
     with pytest.raises(ValidationError) as exc_info:
         MyBadModel()
@@ -1963,10 +1956,8 @@ def test_iter_coverage():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info():
     class Foo(BaseModel):
+        model_config = ConfigDict(fields={'a': {'description': 'descr'}})
         a: str = Field(...)
-
-        class Config:
-            fields = {'a': {'description': 'descr'}}
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
@@ -1976,10 +1967,8 @@ def test_config_field_info():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_alias():
     class Foo(BaseModel):
+        model_config = ConfigDict(fields={'a': {'alias': 'b'}})
         a: str = Field(...)
-
-        class Config:
-            fields = {'a': {'alias': 'b'}}
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
 
@@ -1987,10 +1976,8 @@ def test_config_field_info_alias():
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_merge():
     class Foo(BaseModel):
+        model_config = ConfigDict(fields={'a': {'bar': 'Bar'}})
         a: str = Field(..., foo='Foo')
-
-        class Config:
-            fields = {'a': {'bar': 'Bar'}}
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
         'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
@@ -1998,27 +1985,22 @@ def test_config_field_info_merge():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_config_field_info_allow_mutation():
+def test_config_field_info_frozen():
     class Foo(BaseModel):
+        model_config = ConfigDict(frozen=False, validate_assignment=True)
         a: str = Field(...)
 
-        class Config:
-            validate_assignment = True
-
-    assert Foo.model_fields['a'].field_info.allow_mutation is True
+    assert Foo.model_fields['a'].metadata == []
 
     f = Foo(a='x')
     f.a = 'y'
     assert f.model_dump() == {'a': 'y'}
 
     class Bar(BaseModel):
-        a: str = Field(...)
+        model_config = ConfigDict(validate_assignment=True)
+        a: str = Field(..., frozen=True)
 
-        class Config:
-            fields = {'a': {'allow_mutation': False}}
-            validate_assignment = True
-
-    assert Bar.model_fields['a'].field_info.allow_mutation is False
+    assert PydanticGeneralMetadata(frozen=True) in Bar.model_fields['a'].metadata
 
     b = Bar(a='x')
     with pytest.raises(TypeError):
@@ -2034,10 +2016,8 @@ def test_arbitrary_types_allowed_custom_eq():
             return True
 
     class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
         x: Foo = Foo()
-
-        class Config:
-            arbitrary_types_allowed = True
 
     assert Model().x == Foo()
 
@@ -2131,3 +2111,23 @@ def test_parent_field_with_default():
     assert c.a == 1
     assert c.b == 2
     assert c.c == 3
+
+
+def test_get_config():
+    ret = get_config(None)
+    assert ret == {}
+    assert isinstance(ret, ConfigDict)
+
+    ret = get_config(ConfigDict(title='1234', extra=Extra.allow))
+    assert ret == {'title': '1234', 'extra': Extra.allow}
+    assert isinstance(ret, ConfigDict)
+
+    class Config:
+        title = '1234'
+        random_option = True
+        strict = True
+
+    with pytest.warns(DeprecationWarning, match='is deprecated'):
+        ret = get_config(Config)
+        assert ret == {'title': '1234', 'random_option': True, 'strict': True}
+        assert isinstance(ret, ConfigDict)

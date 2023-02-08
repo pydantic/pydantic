@@ -170,11 +170,8 @@ def test_typeddict_extra(TypedDict):
         name: str
         age: int
 
-    class Model(BaseModel):
+    class Model(BaseModel, extra='forbid'):
         u: User
-
-        class Config:
-            extra = 'forbid'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(u={'name': 'pika', 'age': 7, 'rank': 1})

@@ -5,7 +5,7 @@ from typing import Any, Iterable, Optional, Union
 import pytest
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Extra, Field, create_model
+from pydantic import BaseModel, ConfigDict, Extra, Field, create_model
 from pydantic._internal._typing_extra import is_annotated
 
 
@@ -38,8 +38,7 @@ def test_custom_init_signature():
         name: str = 'John Doe'
         f__: str = Field(..., alias='foo')
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
         def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
             super().__init__(id=id, **data)
@@ -64,8 +63,7 @@ def test_custom_init_signature_with_no_var_kw():
         def __init__(self, a: float, b: int):
             super().__init__(a=a, b=b, c=1)
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
     assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
@@ -84,8 +82,7 @@ def test_use_field_name():
     class Foo(BaseModel):
         foo: str = Field(..., alias='this is invalid')
 
-        class Config:
-            allow_population_by_field_name = True
+        model_config = ConfigDict(populate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
@@ -94,8 +91,7 @@ def test_does_not_use_reserved_word():
     class Foo(BaseModel):
         from_: str = Field(..., alias='from')
 
-        class Config:
-            allow_population_by_field_name = True
+        model_config = ConfigDict(populate_by_name=True)
 
     assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 
@@ -104,8 +100,7 @@ def test_extra_allow_no_conflict():
     class Model(BaseModel):
         spam: str
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
     assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
@@ -114,8 +109,7 @@ def test_extra_allow_conflict():
     class Model(BaseModel):
         extra_data: str
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
     assert _equals(str(signature(Model)), '(*, extra_data: str, **extra_data_: Any) -> None')
 
@@ -125,8 +119,7 @@ def test_extra_allow_conflict_twice():
         extra_data: str
         extra_data_: str
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
     assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
@@ -138,8 +131,7 @@ def test_extra_allow_conflict_custom_signature():
         def __init__(self, extra_data: int = 1, **foobar: Any):
             super().__init__(extra_data=extra_data, **foobar)
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
     assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
 

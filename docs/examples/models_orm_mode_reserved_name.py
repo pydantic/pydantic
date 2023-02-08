@@ -9,7 +9,7 @@ class MyModel(BaseModel):
     metadata: typing.Dict[str, str] = Field(alias='metadata_')
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 Base = declarative_base()

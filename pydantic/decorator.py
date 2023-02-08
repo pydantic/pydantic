@@ -5,7 +5,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
 from ._internal import _typing_extra, _utils
-from .config import Extra
+from .config import Extra, get_config
 from .decorators import validator
 from .errors import PydanticUserError
 from .main import BaseModel, create_model
@@ -210,20 +210,15 @@ class ValidatedFunction:
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
-        class CustomConfig:
-            pass
+        config_dict = get_config(config)
 
-        if not TYPE_CHECKING:  # pragma: no branch
-            if isinstance(config, dict):
-                CustomConfig = type('Config', (), config)  # noqa: F811
-            elif config is not None:
-                CustomConfig = config
-
-        if hasattr(CustomConfig, 'fields') or hasattr(CustomConfig, 'alias_generator'):
+        if 'fields' in config_dict or 'alias_generator' in config_dict:
             raise PydanticUserError(
                 'Setting the "fields" and "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.'
             )
+        if 'extra' not in config_dict:
+            config_dict['extra'] = Extra.forbid
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)
@@ -260,7 +255,6 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'multiple values for argument{plural}: {keys}')
 
-            class Config(CustomConfig):
-                extra = getattr(CustomConfig, 'extra', Extra.forbid)
+            model_config = config_dict
 
         self.model = create_model(_utils.to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)

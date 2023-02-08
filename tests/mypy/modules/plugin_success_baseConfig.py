@@ -1,6 +1,6 @@
 from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, validator
+from pydantic import BaseModel, Field, create_model, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
@@ -9,9 +9,11 @@ class Model(BaseModel):
     x: float
     y: str
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True
 
-    not_config = ConfigDict(frozen=True)
+    class NotConfig:
+        frozen = True
 
 
 class SelfReferencingModel(BaseModel):
@@ -36,7 +38,8 @@ class KwargsModel(BaseModel, from_attributes=True):
     x: float
     y: str
 
-    not_config = ConfigDict(frozen=True)
+    class NotConfig:
+        frozen = True
 
 
 kwargs_model = KwargsModel(x=1, y='y')
@@ -68,13 +71,16 @@ forward_model = ForwardReferencingModel(x=1, y='a', future=future_model)
 class NoMutationModel(BaseModel):
     x: int
 
-    model_config = ConfigDict(frozen=True)
+    class Config:
+        frozen = True
 
 
 class MutationModel(NoMutationModel):
     a = 1
 
-    model_config = ConfigDict(frozen=False, from_attributes=True)
+    class Config:
+        frozen = False
+        from_attributes = True
 
 
 MutationModel(x=1).x = 2
@@ -165,13 +171,16 @@ dynamic_model.x = 2
 class FrozenModel(BaseModel):
     x: int
 
-    model_config = ConfigDict(frozen=True)
+    class Config:
+        frozen = True
 
 
 class NotFrozenModel(FrozenModel):
     a: int = 1
 
-    model_config = ConfigDict(frozen=False, from_attributes=True)
+    class Config:
+        frozen = False
+        from_attributes = True
 
 
 NotFrozenModel(x=1).x = 2

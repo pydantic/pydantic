@@ -13,19 +13,19 @@ Similarly, if using the `@dataclass` decorator:
 **`title`**
 : the title for the generated JSON Schema
 
-**`anystr_strip_whitespace`**
+**`str_strip_whitespace`**
 : whether to strip leading and trailing whitespace for str & byte types (default: `False`)
 
-**`anystr_upper`**
+**`str_to_upper`**
 : whether to make all characters uppercase for str & byte types (default: `False`)
 
-**`anystr_lower`**
+**`str_to_lower`**
 : whether to make all characters lowercase for str & byte types (default: `False`)
 
-**`min_anystr_length`**
+**`str_min_length`**
 : the min length for str & byte types (default: `0`)
 
-**`max_anystr_length`**
+**`str_max_length`**
 : the max length for str & byte types (default: `None`)
 
 **`validate_all`**
@@ -64,13 +64,13 @@ Similarly, if using the `@dataclass` decorator:
 **`validate_assignment`**
 : whether to perform validation on *assignment* to attributes (default: `False`)
 
-**`allow_population_by_field_name`**
+**`populate_by_name`**
 : whether an aliased field may be populated by its name as given by the model
   attribute, as well as the alias (default: `False`)
 
 !!! note
     The name of this configuration setting was changed in **v1.0** from
-    `allow_population_by_alias` to `allow_population_by_field_name`.
+    `allow_population_by_alias` to `populate_by_name`.
 
 **`error_msg_templates`**
 : a `dict` used to override the default error message templates.
@@ -87,12 +87,12 @@ Similarly, if using the `@dataclass` decorator:
   If `True`, `UserWarning` will be raised on model declaration (default: `True`).
   See an example in [Field Types](types.md#undefined_types_warning).
 
-**`orm_mode`**
+**`from_attributes`**
 : whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
 
 **`getter_dict`**
 : a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
-for validation, for use with `orm_mode`; see [Data binding](models.md#data-binding).
+for validation, for use with `from_attributes`; see [Data binding](models.md#data-binding).
 
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
