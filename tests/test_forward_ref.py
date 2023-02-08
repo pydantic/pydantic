@@ -957,7 +957,6 @@ def test_undefined_types_warning_raised_by_usage(create_module):
             class Foobar(BaseModel):
                 a: UndefinedType
 
-                class Config:
-                    undefined_types_warning = False
+                model_config = {'undefined_types_warning': False}
 
             Foobar(a=1)
