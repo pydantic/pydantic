@@ -120,6 +120,7 @@ def deferred_model_get_pydantic_validation_schema(
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
+        # TODO: Do we need to do a better job of allowing user-defined extra for the core_schema?
         extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
 

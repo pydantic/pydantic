@@ -7,11 +7,9 @@ I guess this means I have to figure out how to implement optional in a better wa
 from __future__ import annotations
 
 import re
-from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass, is_dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, cast
+from typing import Any, Callable, Dict, Optional, Set, cast
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Literal
@@ -74,7 +72,6 @@ def get_json_schema_extra(schema: CoreSchema) -> Optional[JsonSchemaExtra]:
     return json_schema_extra
 
 
-# TODO: Can we put this definition in pydantic-core?
 CoreSchemaType = Literal[
     'any',
     'none',
@@ -116,6 +113,24 @@ CoreSchemaType = Literal[
 ]
 
 
+def _get_json_refs(json_schema: JsonSchemaValue) -> Set[str]:
+    json_refs = set()
+
+    def _add_json_refs(schema: JsonSchemaValue) -> None:
+        if isinstance(schema, dict):
+            if '$ref' in schema:
+                json_refs.add(schema['$ref'])
+            for v in schema.values():
+                _add_json_refs(v)
+        elif isinstance(schema, list):
+            for v in schema:
+                _add_json_refs(v)
+
+    _add_json_refs(json_schema)
+    return json_refs
+
+
+# TODO: Probably want a public API for using a subclass of this so users can override their schema generation
 class GenerateJsonSchema:
     def __init__(self, by_alias: bool = True, ref_template: str = default_ref_template, strict: bool = True):
         self.by_alias = by_alias
@@ -124,24 +139,36 @@ class GenerateJsonSchema:
 
         self.definitions: Dict[str, JsonSchemaValue] = {}
 
+        # There are three types of references:
+        #   1. core_schema "ref" values; these are not exposed as part of the JSON schema
+        #       * these might look like the fully qualified path of a model, its id, or something similar
+        #       * I will use the term "core_ref" for these
+        #   2. keys of the "definitions" object that will eventually go into the JSON schema
+        #       * by default, these look like "MyModel", though may change in the presence of collisions
+        #       * eventually, we may want to make it easier to modify the way these names are generated
+        #       * I will use the term "defs_ref" for these
+        #   3. the values corresponding to the "$ref" key in the schema
+        #       * By default, these look like "#/definitions/MyModel", as in {"$ref": "#/definitions/MyModel"}
+        #       * I will use the term "json_ref" for these
         self.core_to_json_refs: Dict[str, str] = {}
         self.json_to_core_refs: Dict[str, str] = {}
-        self.rendered_template_sources: Dict[str, str] = {}
-
-        self.json_ref_counts: Dict[str, int] = defaultdict(int)
+        self.json_to_defs_refs: Dict[str, str] = {}
 
     def generate(self, schema: CoreSchema) -> JsonSchemaValue:
         json_schema = self._generate(schema)
 
-        # Remove the top-level $ref if present
+        # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
         if '$ref' in json_schema:
             json_schema_ref = json_schema['$ref']
             json_schema = self._get_referenced_schema(json_schema_ref)
-            self.json_ref_counts[json_schema_ref] -= 1
 
-        for k, v in self.json_ref_counts.items():
-            if v == 0:
-                del self.definitions[self.rendered_template_sources[k]]
+        # Remove any definitions that, thanks to $ref-substitution, are no longer present
+        # TODO: Add a unit test for this, ensuring that $ref substitution does in fact cause the removal of definitions
+        remaining_json_refs = _get_json_refs(json_schema)
+        all_json_refs = list(self.json_to_defs_refs.keys())
+        for k in all_json_refs:
+            if k not in remaining_json_refs:
+                del self.definitions[self.json_to_defs_refs[k]]
 
         if self.definitions:
             json_schema['definitions'] = self.definitions
@@ -181,7 +208,6 @@ class GenerateJsonSchema:
         if '$ref' in json_schema:
             json_schema_ref = json_schema['$ref']
             referenced_json_schema = self._get_referenced_schema(json_schema_ref)
-            print(f"{referenced_json_schema=}")
             overrides = False
             for k in json_schema:
                 if k == '$ref':
@@ -195,8 +221,8 @@ class GenerateJsonSchema:
             else:
                 json_schema = json_schema.copy()
                 json_schema_ref = json_schema.pop('$ref')
-                self.json_ref_counts[json_schema_ref] -= 1
                 for k, v in referenced_json_schema.items():
+                    # Use setdefault to treat the sibling keys of the '$ref' as "overrides"
                     json_schema.setdefault(k, v)
 
         if '$ref' in json_schema:
@@ -213,13 +239,20 @@ class GenerateJsonSchema:
         if maybe_json_ref is not None:
             return maybe_json_ref
 
+        # TODO: Note: core_refs are not _currently_ guaranteed to be different for different models,
+        #  we should change this; ideally, make core_ref <id(cls)>:<cls.__name__>
         json_ref = re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref.split('.')[-1])
         if self.json_to_core_refs.get(json_ref, core_ref) != core_ref:
             json_ref = re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref)
         while self.json_to_core_refs.get(json_ref, core_ref) != core_ref:
             # Hitting a collision; add trailing `_` until we don't hit a collision
             # TODO: Maybe add an incrementing counter to the end of the json_ref instead?
+            #   Probably safest to use the same approach as v1 (from perspective of people complaining)
+            # TODO: Note, if we load cached schemas from other models, may need to ensure refs are consistent
             json_ref += '_'
+            # possible improvement: AModel, AModel:2, AModel:3, AModel:4
+            # Other possibility: allow people to subclass this class for purposes of overriding
+            #   maybe start with all this stuff being private and expose it if people ask for it
 
         # populate the "caches"
         self.core_to_json_refs[core_ref] = json_ref
@@ -256,7 +289,6 @@ class GenerateJsonSchema:
         return json_schema
 
     def date_schema(self, schema: core_schema.DateSchema) -> JsonSchemaValue:
-        # TODO: do we want to handle the "pattern" field?
         return {'type': 'string', 'format': 'date'}
 
     def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
@@ -266,6 +298,10 @@ class GenerateJsonSchema:
         return {'type': 'string', 'format': 'date-time'}
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
+        # TODO: Add comment about why there is a format specified for 'type': 'number'
+        #  (Also consider changing to type string)
+        # TODO: Probably should just change this to str
+        #   (look at readme intro for speeddate)
         return {'type': 'number', 'format': 'time-delta'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
@@ -277,8 +313,10 @@ class GenerateJsonSchema:
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
         # TODO: Ask Samuel how to handle this
+        # TODO: Should we exclude cases like this from unions? Raise an error, catch it in unions
+        #   Otherwise, add any with a comment? Or return none?
         # raise ValueError('Cannot generate a JsonSchema for core_schema.IsInstanceSchema')
-        return {}
+        return {}  # TODO: add a $comment indicating info about the core schema?
 
     def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
         # TODO: Ask Samuel how to handle this
@@ -310,6 +348,7 @@ class GenerateJsonSchema:
             json_schema['minLength'] = len(schema['items_schema'])
             if 'extra_schema' in schema:
                 # TODO: What is schema['extra_schema'] meant to handle? I'm not sure this could arise from typing.Tuple
+                # TODO: Add a comment into core_schema about this, since typing.Tuple can't
                 json_schema['items'] = self._generate(schema['extra_schema'])
             else:
                 json_schema['maxLength'] = len(schema['items_schema'])
@@ -326,6 +365,8 @@ class GenerateJsonSchema:
 
     def _common_set_schema(self, schema: core_schema.SetSchema | core_schema.FrozenSetSchema) -> JsonSchemaValue:
         # TODO: what is schema['generator_max_length']?
+        # TODO: Add description of generator_max_length into core_schema --
+        #   idea: don't want to run a generator forever if it's not spitting out unique values
         items_schema = self._generate(schema['items_schema'])
         json_schema = {'type': 'array', 'uniqueItems': True, 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
@@ -333,6 +374,7 @@ class GenerateJsonSchema:
 
     def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
         # TODO: Why no min_length? Is max_length validated on ingestion?
+        #   -- yes, max_length is validated on ingestion; might make sense to add a min_length?
         items_schema = self._generate(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
@@ -342,7 +384,7 @@ class GenerateJsonSchema:
         values_schema = self._generate(schema['values_schema']).copy()
         values_schema.pop('title', None)  # don't give a title to the additionalProperties
 
-        json_schema = {'type': 'object'}
+        json_schema: JsonSchemaValue = {'type': 'object'}
         if values_schema:  # don't add additionalProperties if it's empty
             json_schema['additionalProperties'] = values_schema
 
@@ -357,6 +399,10 @@ class GenerateJsonSchema:
         json_schema = self._generate(schema['schema'])
         if 'default' in schema:
             json_schema['default'] = encode_default(schema['default'])
+        elif 'default_factory' in schema:
+            json_schema['default'] = encode_default(schema['default_factory']())
+        else:
+            raise ValueError('`schema` has neither default nor default_factory')
         return json_schema
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
@@ -367,25 +413,35 @@ class GenerateJsonSchema:
             return null_schema
         else:
             # TODO: Should this be oneOf instead? I think both would be valid here; not sure if one is better..
+            # TODO: Search for this in issues in v1, to see if we should change it to oneOf
             return {'anyOf': [null_schema, inner_json_schema]}
 
     def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
+        # TODO: Handle case where one of the union members should not be added to the JsonSchema (?)
+        #  if an error is raised or whatever
+        # TODO: Always unpack if there's just one item in the UnionSchema
+        # TODO: Figure out what to do if anyOf list is empty
         return {'anyOf': [self._generate(s) for s in schema['choices']]}
 
     def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
         # TODO: May want to add discriminator here; depends on dialect etc.
         # TODO: Do we need to do anything with custom_error_xxx?
         # TODO: Ask samuel what is going on with the different non-`str` variants of `schema.discriminator`
+        # TODO: Add note in pydantic_core explaining the choices; for list,
+        #  it goes deep; for list of lists, it has multiple options
+        #  Probably want to just ignore discriminator things when the discriminator is not a list
         return {'oneOf': [self._generate(s) for s in schema['choices'].values() if not isinstance(s, str)]}
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
-        if not schema['steps']:
-            # TODO: Ask Samuel -- what do we do if there are no items in the ChainSchema?
-            raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema')
-        return self._generate(schema['steps'][-1])
+        try:
+            # Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:
+            return self._generate(schema['steps'][0])
+        except IndexError as e:
+            raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema') from e
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel what `schema.strict` is meant to represent here
+        # TODO: How should `schema.strict` factor into this? Should it at all?
+        #   -- might be possible to drop it from core_schema.LaxOrStrictSchema
         if self.strict:
             return self._generate(schema['strict_schema'])
         else:
@@ -393,6 +449,9 @@ class GenerateJsonSchema:
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
         # TODO: Hitting an issue where it would be really helpful to have the 'title' when I have the ref.
+        # TODO: Create an issue to consider moving ref from the TypedDictSchema to the ModelSchema
+        #   In particular, explain why this is problematic during schema generation
+
         # Specifically, making it hard to get title set properly on the referenced schemas
         # Ideally, the ref would be on the ModelSchema, not on the TypedDictSchema
         properties: Dict[str, JsonSchemaValue] = {}
@@ -404,6 +463,8 @@ class GenerateJsonSchema:
                     name = alias
                 else:
                     # TODO: What should be done in this case?
+                    #   Maybe tell users to override this method if they want custom behavior here?
+                    #       (If populate by name is false)
                     pass
             field_schema = self._generate(field['schema']).copy()
             field_schema['title'] = name.title().replace('_', ' ')
@@ -416,15 +477,19 @@ class GenerateJsonSchema:
             json_schema['required'] = required
         return json_schema
 
-    def _get_referenced_schema(self, json_schema_ref: str) -> JsonSchemaValue:
-        return self.definitions[self.rendered_template_sources[json_schema_ref]]
+    def _get_referenced_schema(self, json_ref: str) -> JsonSchemaValue:
+        return self.definitions[self.json_to_defs_refs[json_ref]]
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
+        # TODO: -- Try to pull the schema off the schema.cls, and use the method to grab the value
+        #   Maybe: need to add cache keys related to parent class; maybe want to
+
         # TODO: Note the relationship between this and TypedDictSchema
         #   -- Should we do something similar with LiteralSchema and a possibly-new EnumSchema?
+        #   Main reason not to: Enums aren't special in C API, so maybe not appropriate in pydantic_core
+        #       However, we can introspect the FunctionSchema to see if it's an enum (or use extra),
+        #       and we _should_ put enums into the definitions
         json_schema = self._generate(schema['schema'])
-
-        # TODO: Store generated schema in the schema['cls'].__schema_cache__ or similar?
 
         # TODO: What should we do with schema['config'] (in particular, 'title')?
         #   Also, what is schema['call_after_init']?
@@ -438,14 +503,13 @@ class GenerateJsonSchema:
         return json_schema
 
     def arguments_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel how to handle this
+        # TODO: Need to figure out how to handle this
         # raise ValueError('Cannot generate a JsonSchema for core_schema.ArgumentsSchema')
-        return {}
+        raise NotImplementedError
+        # return {}
 
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel how to handle this
-        # raise ValueError('Cannot generate a JsonSchema for core_schema.CallSchema')
-        return {}
+        return self._generate(schema['arguments_schema'])
 
     def recursive_ref_schema(self, schema: core_schema.RecursiveReferenceSchema) -> JsonSchemaValue:
         json_ref = self.get_json_ref(schema['schema_ref'])
@@ -453,14 +517,11 @@ class GenerateJsonSchema:
 
     def _ref_json_schema(self, json_ref: str) -> JsonSchemaValue:
         rendered_template = self.ref_template.format(model=json_ref)
-        self.rendered_template_sources[rendered_template] = json_ref
-        self.json_ref_counts[rendered_template] += 1
+        self.json_to_defs_refs[rendered_template] = json_ref
         return {'$ref': rendered_template}
 
     def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel how to handle this
-        # raise ValueError('Cannot generate a JsonSchema for core_schema.CustomErrorSchema')
-        return {}
+        return self._generate(schema['schema'])
 
     def json_schema(self, schema: core_schema.JsonSchema) -> JsonSchemaValue:
         return {'type': 'string', 'format': 'json-string'}
@@ -471,8 +532,8 @@ class GenerateJsonSchema:
         return json_schema
 
     def multi_host_url_schema(self, schema: core_schema.MultiHostUrlSchema) -> JsonSchemaValue:
-        # TODO: Is 'format': 'uri' valid for MultiHostUrlSchema? I'm not sure
-        json_schema = {'type': 'string', 'format': 'uri', 'minLength': 1}
+        # Note: 'multi-host-uri' is a custom/pydantic-specific format, not part of the JSON Schema spec
+        json_schema = {'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}
         update_with_validations(json_schema, schema, ValidationsMapping.string)
         return json_schema
 
@@ -514,10 +575,17 @@ def update_with_validations(json_schema: JsonSchemaValue, core_schema: CoreSchem
 # We just need to make sure elsewhere that each callable only gets called on CoreSchema objects of
 # properly matched type.
 def _build_json_schema_method_mapping() -> Dict[str, Callable[[GenerateJsonSchema, CoreSchema], JsonSchemaValue]]:
+    # Convert this to a unit test that checks the methods are defined
     mapping: Dict[str, Callable[[GenerateJsonSchema, CoreSchema], JsonSchemaValue]] = {}
     for key in all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
-        method_key = key.replace('-', '_')
-        mapping[key] = getattr(GenerateJsonSchema, f'{method_key}_schema')
+        method_name = f"{key.replace('-', '_')}_schema"
+        try:
+            mapping[key] = getattr(GenerateJsonSchema, method_name)
+        except AttributeError:
+            raise TypeError(
+                f'No method for generating JsonSchema for core_schema.type={key!r} '
+                f'(expected: GenerateJsonSchema.{method_name})'
+            )
     return mapping
 
 

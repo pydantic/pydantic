@@ -972,6 +972,7 @@ def test_special_float_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
+    print(Model.__pydantic_core_schema__)
     base_schema = {
         'title': 'Model',
         'type': 'object',
@@ -1538,7 +1539,6 @@ def test_list_default():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_str_default():
     class MyEnum(str, Enum):
         FOO = 'foo'
@@ -1549,7 +1549,6 @@ def test_enum_str_default():
     assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_int_default():
     class MyEnum(IntEnum):
         FOO = 1

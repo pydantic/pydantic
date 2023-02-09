@@ -85,6 +85,8 @@ class GenerateSchema:
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
 
+        # TODO: Check for a json_schema modification method, and put it in `extra`
+
         schema_property = getattr(obj, '__pydantic_core_schema__', None)
         if schema_property is not None:
             return schema_property
