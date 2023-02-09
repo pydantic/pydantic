@@ -2587,6 +2587,48 @@ CoreSchema = Union[
     MultiHostUrlSchema,
 ]
 
+# to update this, call `pytest -k test_core_schema_type_literal` and copy the output
+CoreSchemaType = Literal[
+    'any',
+    'none',
+    'bool',
+    'int',
+    'float',
+    'str',
+    'bytes',
+    'date',
+    'time',
+    'datetime',
+    'timedelta',
+    'literal',
+    'is-instance',
+    'is-subclass',
+    'callable',
+    'list',
+    'tuple',
+    'set',
+    'frozenset',
+    'generator',
+    'dict',
+    'function',
+    'default',
+    'nullable',
+    'union',
+    'tagged-union',
+    'chain',
+    'lax-or-strict',
+    'typed-dict',
+    'model',
+    'arguments',
+    'call',
+    'recursive-ref',
+    'custom-error',
+    'json',
+    'url',
+    'multi-host-url',
+]
+
+
 # used in _pydantic_core.pyi::PydanticKnownError
 # to update this, call `pytest -k test_all_errors` and copy the output
 ErrorType = Literal[
