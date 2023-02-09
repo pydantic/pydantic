@@ -3,8 +3,9 @@ import sys
 from pathlib import Path
 
 import pytest
+from typing_extensions import get_args
 
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core._pydantic_core import (
     SchemaError,
     SchemaValidator,
@@ -178,3 +179,18 @@ def test_all_errors():
         literal = ''.join(f'\n    {e!r},' for e in error_types)
         print(f'python code (end of pydantic_core/core_schema.py):\n\nErrorType = Literal[{literal}\n]')
         pytest.fail('core_schema.ErrorType needs to be updated')
+
+
+def test_core_schema_type_literal():
+    def get_type_value(schema):
+        type_ = schema.__annotations__['type']
+        m = re.search(r"Literal\['(.+?)']", type_.__forward_arg__)
+        assert m, f'Unknown schema type: {type_}'
+        return m.group(1)
+
+    schema_types = tuple(get_type_value(x) for x in CoreSchema.__args__)
+    schema_types = tuple(dict.fromkeys(schema_types))  # remove duplicates while preserving order
+    if get_args(CoreSchemaType) != schema_types:
+        literal = ''.join(f'\n    {e!r},' for e in schema_types)
+        print(f'python code (near end of pydantic_core/core_schema.py):\n\nCoreSchemaType = Literal[{literal}\n]')
+        pytest.fail('core_schema.CoreSchemaType needs to be updated')
