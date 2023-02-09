@@ -577,9 +577,9 @@ class ConstrainedList(list):  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
-        yield cls.list_length_validator
         if cls.drop_duplicates:
             yield cls.drop_duplicates_validator
+        yield cls.list_length_validator
         if cls.unique_items:
             yield cls.unique_items_validator
 
