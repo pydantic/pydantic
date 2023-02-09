@@ -176,10 +176,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def _generate(self, schema: CoreSchema) -> JsonSchemaValue:
-        # TODO: Note: the approach to caching here only caches intermediate computations for *this* CoreSchema.
-        #   In particular, the schema for intermediate models will not be cached; this may be undesirable.
-        #   I'm not sure what the best way to handle this is; perhaps a global cache accounting
-        #   for the settings of the GenerateJsonSchema instance, perhaps not
+        # TODO: Should make sure model results are cached appropriately on the respective classes
 
         # Try to load from the "cache"
         if 'ref' in schema:
@@ -248,6 +245,7 @@ class GenerateJsonSchema:
             # Hitting a collision; add trailing `_` until we don't hit a collision
             # TODO: Maybe add an incrementing counter to the end of the json_ref instead?
             #   Probably safest to use the same approach as v1 (from perspective of people complaining)
+            #   (This might involve raising errors if there are conflicts..)
             # TODO: Note, if we load cached schemas from other models, may need to ensure refs are consistent
             json_ref += '_'
             # possible improvement: AModel, AModel:2, AModel:3, AModel:4
@@ -298,8 +296,8 @@ class GenerateJsonSchema:
         return {'type': 'string', 'format': 'date-time'}
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
-        # TODO: Add comment about why there is a format specified for 'type': 'number'
-        #  (Also consider changing to type string)
+        # TODO: Create issue about changing this to have type 'string'
+        #  or(?) Add comment about why there is a format specified for 'type': 'number'
         # TODO: Probably should just change this to str
         #   (look at readme intro for speeddate)
         return {'type': 'number', 'format': 'time-delta'}
@@ -312,19 +310,18 @@ class GenerateJsonSchema:
             return {'enum': expected}
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel how to handle this
         # TODO: Should we exclude cases like this from unions? Raise an error, catch it in unions
         #   Otherwise, add any with a comment? Or return none?
         # raise ValueError('Cannot generate a JsonSchema for core_schema.IsInstanceSchema')
         return {}  # TODO: add a $comment indicating info about the core schema?
 
     def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel how to handle this
+        # TODO: Handle the same as is_instance_schema
         # raise ValueError('Cannot generate a JsonSchema for core_schema.IsSubclassSchema')
         return {}
 
     def callable_schema(self, schema: core_schema.CallableSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel how to handle this
+        # TODO: Handle the same as is_instance_schema
         # raise ValueError('Cannot generate a JsonSchema for core_schema.CallableSchema')
         return {}
 
@@ -347,8 +344,6 @@ class GenerateJsonSchema:
             json_schema['prefixItems'] = [self._generate(item) for item in schema['items_schema']]
             json_schema['minLength'] = len(schema['items_schema'])
             if 'extra_schema' in schema:
-                # TODO: What is schema['extra_schema'] meant to handle? I'm not sure this could arise from typing.Tuple
-                # TODO: Add a comment into core_schema about this, since typing.Tuple can't
                 json_schema['items'] = self._generate(schema['extra_schema'])
             else:
                 json_schema['maxLength'] = len(schema['items_schema'])
@@ -364,17 +359,12 @@ class GenerateJsonSchema:
         return self._common_set_schema(schema)
 
     def _common_set_schema(self, schema: core_schema.SetSchema | core_schema.FrozenSetSchema) -> JsonSchemaValue:
-        # TODO: what is schema['generator_max_length']?
-        # TODO: Add description of generator_max_length into core_schema --
-        #   idea: don't want to run a generator forever if it's not spitting out unique values
         items_schema = self._generate(schema['items_schema'])
         json_schema = {'type': 'array', 'uniqueItems': True, 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
         return json_schema
 
     def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
-        # TODO: Why no min_length? Is max_length validated on ingestion?
-        #   -- yes, max_length is validated on ingestion; might make sense to add a min_length?
         items_schema = self._generate(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
@@ -392,7 +382,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
-        # TODO: Ask Samuel if this is right; I'm not sure if before vs. after affects things
+        # I'm not sure if this might need to be different if the function's mode is 'before'
         return self._generate(schema['schema'])
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
@@ -412,24 +402,21 @@ class GenerateJsonSchema:
         if inner_json_schema == null_schema:
             return null_schema
         else:
-            # TODO: Should this be oneOf instead? I think both would be valid here; not sure if one is better..
-            # TODO: Search for this in issues in v1, to see if we should change it to oneOf
+            # Thanks to the equality check against `null_schema` above, I think 'oneOf' would also be valid here;
+            # I'll use 'anyOf' for now, but it could be changed it if it would work better with some external tooling
             return {'anyOf': [null_schema, inner_json_schema]}
 
     def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
         # TODO: Handle case where one of the union members should not be added to the JsonSchema (?)
         #  if an error is raised or whatever
-        # TODO: Always unpack if there's just one item in the UnionSchema
-        # TODO: Figure out what to do if anyOf list is empty
-        return {'anyOf': [self._generate(s) for s in schema['choices']]}
+        schema_choices = [self._generate(s) for s in schema['choices']]
+        if len(schema_choices) == 1:
+            return schema_choices[0]
+        return {'anyOf': schema_choices}
 
     def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
-        # TODO: May want to add discriminator here; depends on dialect etc.
-        # TODO: Do we need to do anything with custom_error_xxx?
-        # TODO: Ask samuel what is going on with the different non-`str` variants of `schema.discriminator`
-        # TODO: Add note in pydantic_core explaining the choices; for list,
-        #  it goes deep; for list of lists, it has multiple options
-        #  Probably want to just ignore discriminator things when the discriminator is not a list
+        # TODO: May want to add discriminator to the generated schema; depends on dialect etc.
+        # TODO: How should we handle the discriminator when it is not a str? Does this matter for JSON Schema?
         return {'oneOf': [self._generate(s) for s in schema['choices'].values() if not isinstance(s, str)]}
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
@@ -440,8 +427,8 @@ class GenerateJsonSchema:
             raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema') from e
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
-        # TODO: How should `schema.strict` factor into this? Should it at all?
-        #   -- might be possible to drop it from core_schema.LaxOrStrictSchema
+        # TODO: Should `schema.strict` override self.strict?
+        #   Relevant issue: https://github.com/pydantic/pydantic-core/issues/393
         if self.strict:
             return self._generate(schema['strict_schema'])
         else:
@@ -486,13 +473,12 @@ class GenerateJsonSchema:
 
         # TODO: Note the relationship between this and TypedDictSchema
         #   -- Should we do something similar with LiteralSchema and a possibly-new EnumSchema?
-        #   Main reason not to: Enums aren't special in C API, so maybe not appropriate in pydantic_core
+        #   Main reason not to: Enums aren't special in C API, so maybe not appropriate in pydantic core
         #       However, we can introspect the FunctionSchema to see if it's an enum (or use extra),
-        #       and we _should_ put enums into the definitions
+        #       and ideally we _should_ put enums into the definitions
+        # TODO: try handling Enums via .extra
         json_schema = self._generate(schema['schema'])
 
-        # TODO: What should we do with schema['config'] (in particular, 'title')?
-        #   Also, what is schema['call_after_init']?
         if 'config' in schema and 'title' in schema['config']:
             title = schema['config']['title']
             if '$ref' in json_schema:
@@ -503,10 +489,8 @@ class GenerateJsonSchema:
         return json_schema
 
     def arguments_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
-        # TODO: Need to figure out how to handle this
-        # raise ValueError('Cannot generate a JsonSchema for core_schema.ArgumentsSchema')
+        # TODO: Need to figure out how to handle this...
         raise NotImplementedError
-        # return {}
 
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
         return self._generate(schema['arguments_schema'])
