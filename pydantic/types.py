@@ -475,6 +475,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 # This types superclass should be Set[T], but cython chokes on that...
 class ConstrainedSet(set):  # type: ignore
     # Needed for pydantic to detect that this is a set
@@ -561,6 +562,7 @@ def confrozenset(item_type: Type[T], *, min_items: int = None, max_items: int = 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LIST TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 # This types superclass should be List[T], but cython chokes on that...
 class ConstrainedList(list):  # type: ignore
     # Needed for pydantic to detect that this is a list
@@ -569,12 +571,15 @@ class ConstrainedList(list):  # type: ignore
 
     min_items: Optional[int] = None
     max_items: Optional[int] = None
+    drop_duplicates: Optional[bool] = None
     unique_items: Optional[bool] = None
     item_type: Type[T]  # type: ignore
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
         yield cls.list_length_validator
+        if cls.drop_duplicates:
+            yield cls.drop_duplicates_validator
         if cls.unique_items:
             yield cls.unique_items_validator
 
@@ -599,6 +604,10 @@ class ConstrainedList(list):  # type: ignore
         return v
 
     @classmethod
+    def drop_duplicates_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
+        return list(set(v))
+
+    @classmethod
     def unique_items_validator(cls, v: 'Optional[List[T]]') -> 'Optional[List[T]]':
         if v is None:
             return None
@@ -611,11 +620,21 @@ class ConstrainedList(list):  # type: ignore
 
 
 def conlist(
-    item_type: Type[T], *, min_items: int = None, max_items: int = None, unique_items: bool = None
+    item_type: Type[T],
+    *,
+    min_items: int = None,
+    max_items: int = None,
+    unique_items: bool = None,
+    drop_duplicates: bool = None,
 ) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
     namespace = dict(
-        min_items=min_items, max_items=max_items, unique_items=unique_items, item_type=item_type, __args__=(item_type,)
+        min_items=min_items,
+        max_items=max_items,
+        unique_items=unique_items,
+        drop_duplicates=drop_duplicates,
+        item_type=item_type,
+        __args__=(item_type,),
     )
     # We use new_class to be able to deal with Generic types
     return new_class('ConstrainedListValue', (ConstrainedList,), {}, lambda ns: ns.update(namespace))
@@ -1082,7 +1101,6 @@ class ByteSize(int):
 
     @classmethod
     def validate(cls, v: StrIntFloat) -> 'ByteSize':
-
         try:
             return cls(int(v))
         except ValueError:
@@ -1104,7 +1122,6 @@ class ByteSize(int):
         return cls(int(float(scalar) * unit_mult))
 
     def human_readable(self, decimal: bool = False) -> str:
-
         if decimal:
             divisor = 1000
             units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -1123,7 +1140,6 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
-
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:

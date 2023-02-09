@@ -680,7 +680,6 @@ def test_generic_model_from_function_pickle_fail(create_module):
 
 
 def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
-
     # match identity checker otherwise we never get to the redefinition check
     monkeypatch.setattr('pydantic.generics.all_identical', lambda left, right: False)
 
@@ -910,7 +909,6 @@ def test_replace_types_with_user_defined_generic_type_field():
         pass
 
     class Model(GenericModel, Generic[T, KT, VT]):
-
         map_field: GenericMapping[KT, VT]
         list_field: GenericList[T]
 
@@ -1258,7 +1256,6 @@ def test_generic_with_user_defined_generic_field():
         pass
 
     class Model(GenericModel, Generic[T]):
-
         field: GenericList[T]
 
     model = Model[int](field=[5])

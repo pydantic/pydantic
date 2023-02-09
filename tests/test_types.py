@@ -234,6 +234,13 @@ def test_constrained_list_too_short():
     ]
 
 
+def test_constrained_list_drop_duplicates_hashable_items():
+    class ConListModelDropDuplicates(BaseModel):
+        v: conlist(int, drop_duplicates=True)
+
+    assert ConListModelDropDuplicates(v=[1, 1, 2, 2, 2, 3]).v == [1, 2, 3]
+
+
 def test_constrained_list_not_unique_hashable_items():
     class ConListModelUnique(BaseModel):
         v: conlist(int, unique_items=True)

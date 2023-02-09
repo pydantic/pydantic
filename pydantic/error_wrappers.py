@@ -101,7 +101,6 @@ def flatten_errors(
 ) -> Generator['ErrorDict', None, None]:
     for error in errors:
         if isinstance(error, ErrorWrapper):
-
             if loc:
                 error_loc = loc + error.loc_tuple()
             else:

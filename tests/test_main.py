@@ -2186,7 +2186,6 @@ def test_class_kwargs_config_json_encoders():
 
 
 def test_class_kwargs_config_and_attr_conflict():
-
     with pytest.raises(
         TypeError, match='Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
     ):

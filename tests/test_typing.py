@@ -103,7 +103,6 @@ def test_convert_generics(type_, expectations):
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='NewType class was added in python 3.10.')
 def test_convert_generics_unsettable_args():
     class User(NewType):
-
         __origin__ = type(list[str])
         __args__ = (list['Hero'],)
 

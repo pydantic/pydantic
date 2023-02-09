@@ -120,6 +120,7 @@ class FieldInfo(Representation):
         'min_items',
         'max_items',
         'unique_items',
+        'drop_duplicates',
         'min_length',
         'max_length',
         'allow_mutation',
@@ -145,6 +146,7 @@ class FieldInfo(Representation):
         'min_items': None,
         'max_items': None,
         'unique_items': None,
+        'drop_duplicates': None,
         'allow_mutation': True,
     }
 
@@ -169,6 +171,7 @@ class FieldInfo(Representation):
         self.min_items = kwargs.pop('min_items', None)
         self.max_items = kwargs.pop('max_items', None)
         self.unique_items = kwargs.pop('unique_items', None)
+        self.drop_duplicates = kwargs.pop('drop_duplicates', None)
         self.min_length = kwargs.pop('min_length', None)
         self.max_length = kwargs.pop('max_length', None)
         self.allow_mutation = kwargs.pop('allow_mutation', True)
@@ -178,7 +181,6 @@ class FieldInfo(Representation):
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
-
         field_defaults_to_hide: Dict[str, Any] = {
             'repr': True,
             **self.__field_constraints__,
@@ -240,6 +242,7 @@ def Field(
     min_items: int = None,
     max_items: int = None,
     unique_items: bool = None,
+    drop_duplicates: bool = None,
     min_length: int = None,
     max_length: int = None,
     allow_mutation: bool = True,
@@ -286,6 +289,8 @@ def Field(
       elements. The schema will have a ``maxItems`` validation keyword
     :param unique_items: only applies to lists, requires the field not to have duplicated
       elements. The schema will have a ``uniqueItems`` validation keyword
+    :param drop_duplicates: only applies to lists, will drop duplicated from list
+      elements. The schema will have a ``dropDuplicates`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``minLength`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
@@ -319,6 +324,7 @@ def Field(
         min_items=min_items,
         max_items=max_items,
         unique_items=unique_items,
+        drop_duplicates=drop_duplicates,
         min_length=min_length,
         max_length=max_length,
         allow_mutation=allow_mutation,
@@ -405,7 +411,6 @@ class ModelField(Representation):
         alias: str = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
-
         self.name: str = name
         self.has_alias: bool = alias is not None
         self.alias: str = alias if alias is not None else name
@@ -852,7 +857,6 @@ class ModelField(Representation):
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
-
         assert self.type_.__class__ is not DeferredType
 
         if self.type_.__class__ is ForwardRef:

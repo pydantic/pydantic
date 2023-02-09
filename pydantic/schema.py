@@ -197,7 +197,6 @@ def model_schema(
 
 
 def get_field_info_schema(field: ModelField, schema_overrides: bool = False) -> Tuple[Dict[str, Any], bool]:
-
     # If no title is explicitly set, we don't set title in the schema for enums.
     # The behaviour is the same as `BaseModel` reference, where the default title
     # is in the definitions part of the schema.
@@ -1058,13 +1057,15 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
                 field_info.min_items is not None
                 or field_info.max_items is not None
                 or field_info.unique_items is not None
+                or field_info.drop_duplicates is not None
             ):
-                used_constraints.update({'min_items', 'max_items', 'unique_items'})
+                used_constraints.update({'min_items', 'max_items', 'unique_items', 'drop_duplicates'})
                 return conlist(
                     go(args[0]),
                     min_items=field_info.min_items,
                     max_items=field_info.max_items,
                     unique_items=field_info.unique_items,
+                    drop_duplicates=field_info.drop_duplicates,
                 )
 
             if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
