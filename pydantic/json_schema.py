@@ -24,8 +24,8 @@ default_ref_template = '#/definitions/{model}'
 class JsonSchemaExtra:
     # see https://json-schema.org/understanding-json-schema/reference/generic.html
 
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = None  # from model config
+    description: Optional[str] = None  # from model/enum docstring
     examples: Optional[list[JsonValue]] = None
 
     # 'default', which is included with these fields in the JsonSchema docs, is handled by CoreSchema
@@ -36,7 +36,7 @@ class JsonSchemaExtra:
     comment: Optional[str] = None
 
     # Note: modify_schema is called after the schema has been updated based on the contents of all other fields
-    modify_schema: Optional[Callable[[JsonSchemaValue, 'JsonSchemaExtra'], JsonSchemaValue]] = None
+    modify_schema: Optional[Callable[[JsonSchemaValue], JsonSchemaValue]] = None
 
     def update_schema(self, schema: JsonSchemaValue) -> JsonSchemaValue:
         if self.title is not None:
@@ -54,12 +54,15 @@ class JsonSchemaExtra:
         if self.comment is not None:
             schema['$comment'] = self.comment
         if self.modify_schema is not None:
-            schema = self.modify_schema(schema, self)
+            schema = self.modify_schema(schema)
         return schema
 
 
 def get_json_schema_extra(schema: CoreSchema) -> Optional[JsonSchemaExtra]:
-    json_schema_extra = schema.get('extra', {}).get(JSON_SCHEMA_EXTRA_FIELD_NAME)
+    extra = schema.get('extra', {})
+    if not isinstance(extra, dict):
+        return None
+    json_schema_extra = extra.get(JSON_SCHEMA_EXTRA_FIELD_NAME)
     if json_schema_extra is not None:
         assert isinstance(json_schema_extra, JsonSchemaExtra)
     return json_schema_extra
@@ -360,10 +363,13 @@ class GenerateJsonSchema:
                 else:
                     # TODO: What should be done in this case?
                     pass
-            properties[name] = self._generate(field['schema'])
+            field_schema = self._generate(field['schema'])
+            field_schema.setdefault('title', name.title().replace('_', ' '))
+            properties[name] = field_schema
 
-        json_schema = {'type': 'object', 'properties': properties, 'required': required}
-        # TODO: Should the 'ref' value be moved to the ModelSchema?
+        json_schema = {'type': 'object', 'properties': properties}
+        if required:
+            json_schema['required'] = required
         return json_schema
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:

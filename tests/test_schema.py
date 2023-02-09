@@ -2141,12 +2141,16 @@ def test_model_with_extra_forbidden():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
         (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
-        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (
+            Optional[int],
+            dict(gt=0),
+            {'title': 'A', 'anyOf': [{'type': 'null'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+        ),
         (
             Tuple[int, ...],
             dict(gt=0),

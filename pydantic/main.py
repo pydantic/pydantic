@@ -9,6 +9,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+from inspect import getdoc
 from types import prepare_class, resolve_bases
 from typing import Any
 
@@ -20,7 +21,7 @@ from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .json_schema import GenerateJsonSchema, default_ref_template
+from .json_schema import GenerateJsonSchema, JsonSchemaExtra, default_ref_template
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -375,6 +376,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         s = GenerateJsonSchema(by_alias, ref_template).generate(cls.__pydantic_core_schema__)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
+
+    @classmethod
+    def model_json_schema_extra(cls) -> typing.Optional[JsonSchemaExtra]:
+        """
+        Override this method to add extra information to the JSON schema.
+        """
+        return JsonSchemaExtra(
+            title=cls.__config__.title or cls.__name__,
+            description=getdoc(cls),
+        )
 
     @classmethod
     def schema_json(
