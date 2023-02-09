@@ -1,933 +1,468 @@
+from __future__ import annotations
+
 import re
-import warnings
 from collections import defaultdict
-from dataclasses import is_dataclass
-from datetime import date, datetime, time, timedelta
-from decimal import Decimal
+from copy import deepcopy
+from dataclasses import dataclass, is_dataclass
 from enum import Enum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    ForwardRef,
-    FrozenSet,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
-from uuid import UUID
+from typing import Any, Callable, Dict, Optional, cast
 
-from typing_extensions import Annotated, Literal, get_args, get_origin
+from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Literal
 
-from ._internal._typing_extra import (
-    all_literal_values,
-    is_callable_type,
-    is_literal_type,
-    is_namedtuple,
-    is_none_type,
-    origin_is_union,
-)
-from ._internal._utils import ROOT_KEY, get_model, lenient_issubclass
-from .fields import FieldInfo
-from .json import pydantic_encoder
-from .networks import AnyUrl, EmailStr
-from .types import SecretBytes, SecretStr, StrictBytes, StrictStr, conbytes, condecimal, confloat, conint, constr
+from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
+from pydantic.json import pydantic_encoder
 
-if TYPE_CHECKING:
-    from .dataclasses import Dataclass
-    from .main import BaseModel
+JsonSchemaValue = Dict[str, Any]
+JsonValue = Dict[str, Any]
 
-default_prefix = '#/definitions/'
+JSON_SCHEMA_EXTRA_FIELD_NAME = 'pydantic_json_schema_extra'
 default_ref_template = '#/definitions/{model}'
 
-TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
-TypeModelSet = Set[TypeModelOrEnum]
-ModelField = Any
+
+@dataclass
+class JsonSchemaExtra:
+    # see https://json-schema.org/understanding-json-schema/reference/generic.html
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    examples: Optional[list[JsonValue]] = None
+
+    # 'default', which is included with these fields in the JsonSchema docs, is handled by CoreSchema
+    deprecated: Optional[bool] = None
+    read_only: Optional[bool] = None
+    write_only: Optional[bool] = None
+
+    comment: Optional[str] = None
+
+    # Note: modify_schema is called after the schema has been updated based on the contents of all other fields
+    modify_schema: Optional[Callable[[JsonSchemaValue, 'JsonSchemaExtra'], JsonSchemaValue]] = None
+
+    def update_schema(self, schema: JsonSchemaValue) -> JsonSchemaValue:
+        if self.title is not None:
+            schema['title'] = self.title
+        if self.description is not None:
+            schema['description'] = self.description
+        if self.examples is not None:
+            schema['examples'] = self.examples
+        if self.deprecated is not None:
+            schema['deprecated'] = self.deprecated
+        if self.read_only is not None:
+            schema['readOnly'] = self.read_only
+        if self.write_only is not None:
+            schema['writeOnly'] = self.write_only
+        if self.comment is not None:
+            schema['$comment'] = self.comment
+        if self.modify_schema is not None:
+            schema = self.modify_schema(schema, self)
+        return schema
 
 
-def _apply_modify_schema(
-    modify_schema: Callable[..., None], field: Optional[ModelField], field_schema: Dict[str, Any]
-) -> None:
-    from inspect import signature
-
-    sig = signature(modify_schema)
-    args = set(sig.parameters.keys())
-    if 'field' in args or 'kwargs' in args:
-        modify_schema(field_schema, field=field)
-    else:
-        modify_schema(field_schema)
+def get_json_schema_extra(schema: CoreSchema) -> Optional[JsonSchemaExtra]:
+    json_schema_extra = schema.get('extra', {}).get(JSON_SCHEMA_EXTRA_FIELD_NAME)
+    if json_schema_extra is not None:
+        assert isinstance(json_schema_extra, JsonSchemaExtra)
+    return json_schema_extra
 
 
-def schema(
-    models: Sequence[Union[Type['BaseModel'], Type['Dataclass']]],
-    *,
-    by_alias: bool = True,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
-) -> Dict[str, Any]:
-    """
-    Process a list of models and generate a single JSON Schema with all of them defined in the ``definitions``
-    top-level JSON key, including their sub-models.
-
-    :param models: a list of models to include in the generated JSON Schema
-    :param by_alias: generate the schemas using the aliases defined, if any
-    :param title: title for the generated schema that includes the definitions
-    :param description: description for the generated schema
-    :param ref_prefix: the JSON Pointer prefix for schema references with ``$ref``, if None, will be set to the
-      default of ``#/definitions/``. Update it if you want the schemas to reference the definitions somewhere
-      else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
-      top-level key ``definitions``, so you can extract them from there. But all the references will have the set
-      prefix.
-    :param ref_template: Use a ``string.format()`` template for ``$ref`` instead of a prefix. This can be useful
-      for references that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For
-      a sibling json file in a ``/schemas`` directory use ``"/schemas/${model}.json#"``.
-    :return: dict with the JSON Schema with a ``definitions`` top-level key including the schema definitions for
-      the models and sub-models passed in ``models``.
-    """
-    clean_models = [get_model(model) for model in models]
-    flat_models = get_flat_models_from_models(clean_models)
-    model_name_map = get_model_name_map(flat_models)
-    definitions = {}
-    output_schema: Dict[str, Any] = {}
-    if title:
-        output_schema['title'] = title
-    if description:
-        output_schema['description'] = description
-    for model in clean_models:
-        m_schema, m_definitions, m_nested_models = model_process_schema(
-            model,
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-        )
-        definitions.update(m_definitions)
-        model_name = model_name_map[model]
-        definitions[model_name] = m_schema
-    if definitions:
-        output_schema['definitions'] = definitions
-    return output_schema
+# TODO: Can we put this definition in pydantic-core?
+CoreSchemaType = Literal[
+    'any',
+    'none',
+    'bool',
+    'int',
+    'float',
+    'str',
+    'bytes',
+    'date',
+    'time',
+    'datetime',
+    'timedelta',
+    'literal',
+    'is-instance',
+    'is-subclass',
+    'callable',
+    'list',
+    'tuple',
+    'set',
+    'frozenset',
+    'generator',
+    'dict',
+    'function',
+    'default',
+    'nullable',
+    'union',
+    'tagged-union',
+    'chain',
+    'lax-or-strict',
+    'typed-dict',
+    'model',
+    'arguments',
+    'call',
+    'recursive-ref',
+    'custom-error',
+    'json',
+    'url',
+    'multi-host-url',
+]
 
 
-def model_schema(
-    model: Union[Type['BaseModel'], Type['Dataclass']],
-    by_alias: bool = True,
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
-) -> Dict[str, Any]:
-    """
-    Generate a JSON Schema for one model. With all the sub-models defined in the ``definitions`` top-level
-    JSON key.
+class GenerateJsonSchema:
+    def __init__(self, by_alias: bool = True, ref_template: str = default_ref_template, strict: bool = True):
+        self.by_alias = by_alias
+        self.ref_template = ref_template
+        self.strict = strict  # if True, prefer the strict branch of LaxOrStrictSchema
 
-    :param model: a Pydantic model (a class that inherits from BaseModel)
-    :param by_alias: generate the schemas using the aliases defined, if any
-    :param ref_prefix: the JSON Pointer prefix for schema references with ``$ref``, if None, will be set to the
-      default of ``#/definitions/``. Update it if you want the schemas to reference the definitions somewhere
-      else, e.g. for OpenAPI use ``#/components/schemas/``. The resulting generated schemas will still be at the
-      top-level key ``definitions``, so you can extract them from there. But all the references will have the set
-      prefix.
-    :param ref_template: Use a ``string.format()`` template for ``$ref`` instead of a prefix. This can be useful for
-      references that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a
-      sibling json file in a ``/schemas`` directory use ``"/schemas/${model}.json#"``.
-    :return: dict with the JSON Schema for the passed ``model``
-    """
-    model = get_model(model)
-    flat_models = get_flat_models_from_model(model)
-    model_name_map = get_model_name_map(flat_models)
-    model_name = model_name_map[model]
-    m_schema, m_definitions, nested_models = model_process_schema(
-        model, by_alias=by_alias, model_name_map=model_name_map, ref_prefix=ref_prefix, ref_template=ref_template
-    )
-    if model_name in nested_models:
-        # model_name is in Nested models, it has circular references
-        m_definitions[model_name] = m_schema
-        m_schema = get_schema_ref(model_name, ref_prefix, ref_template, False)
-    if m_definitions:
-        m_schema.update({'definitions': m_definitions})
-    return m_schema
+        self.definitions: Dict[str, JsonSchemaValue] = {}
 
+        self.core_to_json_refs: Dict[str, str] = {}
+        self.json_to_core_refs: Dict[str, str] = {}
 
-def get_field_info_schema(field: ModelField, schema_overrides: bool = False) -> Tuple[Dict[str, Any], bool]:
-    # If no title is explicitly set, we don't set title in the schema for enums.
-    # The behaviour is the same as `BaseModel` reference, where the default title
-    # is in the definitions part of the schema.
-    schema_: Dict[str, Any] = {}
-    if field.field_info.title or not lenient_issubclass(field.type_, Enum):
-        schema_['title'] = field.field_info.title or field.alias.title().replace('_', ' ')
+        self.json_ref_counts: Dict[str, int] = defaultdict(int)
 
-    if field.field_info.title:
-        schema_overrides = True
+    def generate(self, schema: CoreSchema) -> JsonSchemaValue:
+        json_schema = self._generate(schema)
 
-    if field.field_info.description:
-        schema_['description'] = field.field_info.description
-        schema_overrides = True
+        # Remove top-level $ref if it isn't referenced elsewhere (i.e., not a recursive schema)
+        if '$ref' in json_schema:
+            json_schema_ref = json_schema['$ref']
+            if self.json_ref_counts[json_schema_ref] == 1:
+                ref_key = json_schema_ref.split('/')[-1]
+                if ref_key in self.definitions:
+                    del json_schema['$ref']
+                    json_schema.update(deepcopy(self.definitions[ref_key]))
+                    self.definitions.pop(ref_key)
 
-    if not field.required and field.default is not None and not is_callable_type(field.outer_type_):
-        schema_['default'] = encode_default(field.default)
-        schema_overrides = True
+        if self.definitions:
+            json_schema['definitions'] = self.definitions
+        return json_schema
 
-    return schema_, schema_overrides
+    def _generate(self, schema: CoreSchema) -> JsonSchemaValue:
+        # TODO: Note: the approach to caching here only caches intermediate computations for *this* CoreSchema.
+        #   In particular, the schema for intermediate models will not be cached; this may be undesirable.
+        #   I'm not sure what the best way to handle this is; perhaps a global cache accounting
+        #   for the settings of the GenerateJsonSchema instance, perhaps not
 
+        # Try to load from the "cache"
+        if 'ref' in schema:
+            core_ref: str = schema['ref']  # type: ignore[typeddict-item]
+            if core_ref in self.core_to_json_refs:
+                return self.definitions[self.core_to_json_refs[core_ref]]
 
-def field_schema(
-    field: ModelField,
-    *,
-    by_alias: bool = True,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
-    known_models: TypeModelSet = None,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
-    """
-    Process a Pydantic field and return a tuple with a JSON Schema for it as the first item.
-    Also return a dictionary of definitions with models as keys and their schemas as values. If the passed field
-    is a model and has sub-models, and those sub-models don't have overrides (as ``title``, ``default``, etc), they
-    will be included in the definitions and referenced in the schema instead of included recursively.
+        # Handle the type-specific bits of the schema generation
+        generate_for_schema_type = _JSON_SCHEMA_METHOD_MAPPING[schema['type']]
+        json_schema = generate_for_schema_type(self, schema)
 
-    :param field: a Pydantic ``ModelField``
-    :param by_alias: use the defined alias (if any) in the returned schema
-    :param model_name_map: used to generate the JSON Schema references to other models included in the definitions
-    :param ref_prefix: the JSON Pointer prefix to use for references to other schemas, if None, the default of
-      #/definitions/ will be used
-    :param ref_template: Use a ``string.format()`` template for ``$ref`` instead of a prefix. This can be useful for
-      references that cannot be represented by ``ref_prefix`` such as a definition stored in another file. For a
-      sibling json file in a ``/schemas`` directory use ``"/schemas/${model}.json#"``.
-    :param known_models: used to solve circular references
-    :return: tuple of the schema for this field and additional definitions
-    """
-    s, schema_overrides = get_field_info_schema(field)
+        # Handle the "generic" bits of the schema generation
+        extra = get_json_schema_extra(schema)
+        if extra is not None:
+            extra.update_schema(json_schema)
 
-    validation_schema = get_field_schema_validations(field)
-    if validation_schema:
-        s.update(validation_schema)
-        schema_overrides = True
+        # Populate the "cache"
+        if 'ref' in schema:
+            core_ref = schema['ref']  # type: ignore[typeddict-item]
+            json_ref = self.get_json_ref(core_ref)
+            self.definitions[json_ref] = json_schema
+            return self._ref_json_schema(json_ref)
 
-    f_schema, f_definitions, f_nested_models = field_type_schema(
-        field,
-        by_alias=by_alias,
-        model_name_map=model_name_map,
-        schema_overrides=schema_overrides,
-        ref_prefix=ref_prefix,
-        ref_template=ref_template,
-        known_models=known_models or set(),
-    )
+        return json_schema
 
-    # $ref will only be returned when there are no schema_overrides
-    if '$ref' in f_schema:
-        return f_schema, f_definitions, f_nested_models
-    else:
-        s.update(f_schema)
-        return s, f_definitions, f_nested_models
+    def get_json_ref(self, core_ref: str) -> str:
+        """
+        Note: we may want to make it easy to override this behavior; I'm not sure if the specific values matter
+        At the very least, someone may not want to leak the structure of their codebase via module names
+        """
+        # try reading from the "cache"
+        maybe_json_ref = self.core_to_json_refs.get(core_ref)
+        if maybe_json_ref is not None:
+            return maybe_json_ref
 
+        json_ref = re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref)
+        while self.json_to_core_refs.get(json_ref, core_ref) != core_ref:
+            # Hitting a collision; add trailing `_` until we don't hit a collision
+            # TODO: Maybe add an incrementing counter to the end of the json_ref instead?
+            json_ref += '_'
 
-numeric_types = (int, float, Decimal)
-_str_types_attrs: Tuple[Tuple[str, Union[type, Tuple[type, ...]], str], ...] = (
-    ('max_length', numeric_types, 'maxLength'),
-    ('min_length', numeric_types, 'minLength'),
-    ('regex', str, 'pattern'),
-)
+        # populate the "caches"
+        self.core_to_json_refs[core_ref] = json_ref
+        self.json_to_core_refs[json_ref] = core_ref
+        return json_ref
 
-_numeric_types_attrs: Tuple[Tuple[str, Union[type, Tuple[type, ...]], str], ...] = (
-    ('gt', numeric_types, 'exclusiveMinimum'),
-    ('lt', numeric_types, 'exclusiveMaximum'),
-    ('ge', numeric_types, 'minimum'),
-    ('le', numeric_types, 'maximum'),
-    ('multiple_of', numeric_types, 'multipleOf'),
-)
+    def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
+        return {}
 
+    def none_schema(self, schema: core_schema.NoneSchema) -> JsonSchemaValue:
+        return {'type': 'null'}
 
-def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
-    """
-    Get the JSON Schema validation keywords for a ``field`` with an annotation of
-    a Pydantic ``FieldInfo`` with validation arguments.
-    """
-    f_schema: Dict[str, Any] = {}
+    def bool_schema(self, schema: core_schema.BoolSchema) -> JsonSchemaValue:
+        return {'type': 'boolean'}
 
-    if lenient_issubclass(field.type_, Enum):
-        # schema is already updated by `enum_process_schema`; just update with field extra
-        if field.field_info.extra:
-            f_schema.update(field.field_info.extra)
-        return f_schema
+    def int_schema(self, schema: core_schema.IntSchema) -> JsonSchemaValue:
+        json_schema = {'type': 'integer'}
+        update_with_validations(json_schema, schema, ValidationsMapping.numeric)
+        return json_schema
 
-    if lenient_issubclass(field.type_, (str, bytes)):
-        for attr_name, t, keyword in _str_types_attrs:
-            attr = getattr(field.field_info, attr_name, None)
-            if isinstance(attr, t):
-                f_schema[keyword] = attr
-    if lenient_issubclass(field.type_, numeric_types) and not issubclass(field.type_, bool):
-        for attr_name, t, keyword in _numeric_types_attrs:
-            attr = getattr(field.field_info, attr_name, None)
-            if isinstance(attr, t):
-                f_schema[keyword] = attr
-    if field.field_info is not None and field.field_info.const:
-        f_schema['const'] = field.default
-    if field.field_info.extra:
-        f_schema.update(field.field_info.extra)
-    modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
-    if modify_schema:
-        _apply_modify_schema(modify_schema, field, f_schema)
-    return f_schema
+    def float_schema(self, schema: core_schema.FloatSchema) -> JsonSchemaValue:
+        json_schema = {'type': 'number'}
+        update_with_validations(json_schema, schema, ValidationsMapping.numeric)
+        return json_schema
 
+    def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
+        json_schema = {'type': 'string'}
+        update_with_validations(json_schema, schema, ValidationsMapping.string)
+        return json_schema
 
-def get_model_name_map(unique_models: TypeModelSet) -> Dict[TypeModelOrEnum, str]:
-    """
-    Process a set of models and generate unique names for them to be used as keys in the JSON Schema
-    definitions. By default the names are the same as the class name. But if two models in different Python
-    modules have the same name (e.g. "users.Model" and "items.Model"), the generated names will be
-    based on the Python module path for those conflicting models to prevent name collisions.
+    def bytes_schema(self, schema: core_schema.BytesSchema) -> JsonSchemaValue:
+        json_schema = {'type': 'string'}
+        update_with_validations(json_schema, schema, ValidationsMapping.bytes)
+        return json_schema
 
-    :param unique_models: a Python set of models
-    :return: dict mapping models to names
-    """
-    name_model_map = {}
-    conflicting_names: Set[str] = set()
-    for model in unique_models:
-        model_name = normalize_name(model.__name__)
-        if model_name in conflicting_names:
-            model_name = get_long_model_name(model)
-            name_model_map[model_name] = model
-        elif model_name in name_model_map:
-            conflicting_names.add(model_name)
-            conflicting_model = name_model_map.pop(model_name)
-            name_model_map[get_long_model_name(conflicting_model)] = conflicting_model
-            name_model_map[get_long_model_name(model)] = model
+    def date_schema(self, schema: core_schema.DateSchema) -> JsonSchemaValue:
+        # TODO: do we want to handle the "pattern" field?
+        return {'type': 'string', 'format': 'date'}
+
+    def time_schema(self, schema: core_schema.TimeSchema) -> JsonSchemaValue:
+        return {'type': 'string', 'format': 'time'}
+
+    def datetime_schema(self, schema: core_schema.DatetimeSchema) -> JsonSchemaValue:
+        return {'type': 'string', 'format': 'date-time'}
+
+    def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
+        return {'type': 'string', 'format': 'time-delta'}
+
+    def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
+        expected = schema['expected']
+        if len(expected) == 1:
+            return {'const': expected[0]}
         else:
-            name_model_map[model_name] = model
-    return {v: k for k, v in name_model_map.items()}
+            return {'enum': expected}
 
+    def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel how to handle this
+        # raise ValueError('Cannot generate a JsonSchema for core_schema.IsInstanceSchema')
+        return {}
 
-def get_flat_models_from_model(model: Type['BaseModel'], known_models: TypeModelSet = None) -> TypeModelSet:
-    """
-    Take a single ``model`` and generate a set with itself and all the sub-models in the tree. I.e. if you pass
-    model ``Foo`` (subclass of Pydantic ``BaseModel``) as ``model``, and it has a field of type ``Bar`` (also
-    subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also subclass of ``BaseModel``),
-    the return value will be ``set([Foo, Bar, Baz])``.
+    def is_subclass_schema(self, schema: core_schema.IsSubclassSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel how to handle this
+        # raise ValueError('Cannot generate a JsonSchema for core_schema.IsSubclassSchema')
+        return {}
 
-    :param model: a Pydantic ``BaseModel`` subclass
-    :param known_models: used to solve circular references
-    :return: a set with the initial model and all its sub-models
-    """
-    known_models = known_models or set()
-    flat_models: TypeModelSet = set()
-    flat_models.add(model)
-    known_models |= flat_models
-    fields = cast(Sequence[ModelField], model.model_fields.values())
-    flat_models |= get_flat_models_from_fields(fields, known_models=known_models)
-    return flat_models
+    def callable_schema(self, schema: core_schema.CallableSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel how to handle this
+        # raise ValueError('Cannot generate a JsonSchema for core_schema.CallableSchema')
+        return {}
 
+    def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
+        json_schema = {'type': 'array'}
+        update_with_validations(json_schema, schema, ValidationsMapping.array)
+        return json_schema
 
-def get_flat_models_from_field(field: ModelField, known_models: TypeModelSet) -> TypeModelSet:
-    """
-    Take a single Pydantic ``ModelField`` (from a model) that could have been declared as a sublcass of BaseModel
-    (so, it could be a submodel), and generate a set with its model and all the sub-models in the tree.
-    I.e. if you pass a field that was declared to be of type ``Foo`` (subclass of BaseModel) as ``field``, and that
-    model ``Foo`` has a field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of
-    type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
+    def tuple_schema(
+        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema
+    ) -> JsonSchemaValue:
+        json_schema = {'type': 'array'}
+        if schema['mode'] == 'tuple-variable':
+            json_schema['items'] = self._generate(schema['items_schema'])
+            update_with_validations(json_schema, schema, ValidationsMapping.array)
+            return json_schema
 
-    :param field: a Pydantic ``ModelField``
-    :param known_models: used to solve circular references
-    :return: a set with the model used in the declaration for this field, if any, and all its sub-models
-    """
-    from .main import BaseModel
+        elif schema['mode'] == 'tuple-positional':
+            json_schema['prefixItems'] = [self._generate(item) for item in schema['items_schema']]
+            json_schema['minLength'] = len(schema['items_schema'])
+            if 'extra_schema' in schema:
+                # TODO: What is schema['extra_schema'] meant to handle? I'm not sure this could arise from typing.Tuple
+                json_schema['items'] = self._generate(schema['extra_schema'])
+            else:
+                json_schema['maxLength'] = len(schema['items_schema'])
+            return json_schema
 
-    flat_models: TypeModelSet = set()
-
-    field_type = field.type_
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
-        field_type = field_type.__pydantic_model__
-
-    if field.sub_fields and not lenient_issubclass(field_type, BaseModel):
-        flat_models |= get_flat_models_from_fields(field.sub_fields, known_models=known_models)
-    elif lenient_issubclass(field_type, BaseModel) and field_type not in known_models:
-        flat_models |= get_flat_models_from_model(field_type, known_models=known_models)
-    elif lenient_issubclass(field_type, Enum):
-        flat_models.add(field_type)
-    return flat_models
-
-
-def get_flat_models_from_fields(fields: Sequence[ModelField], known_models: TypeModelSet) -> TypeModelSet:
-    """
-    Take a list of Pydantic  ``ModelField``s (from a model) that could have been declared as subclasses of ``BaseModel``
-    (so, any of them could be a submodel), and generate a set with their models and all the sub-models in the tree.
-    I.e. if you pass a the fields of a model ``Foo`` (subclass of ``BaseModel``) as ``fields``, and on of them has a
-    field of type ``Bar`` (also subclass of ``BaseModel``) and that model ``Bar`` has a field of type ``Baz`` (also
-    subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
-
-    :param fields: a list of Pydantic ``ModelField``s
-    :param known_models: used to solve circular references
-    :return: a set with any model declared in the fields, and all their sub-models
-    """
-    flat_models: TypeModelSet = set()
-    for field in fields:
-        flat_models |= get_flat_models_from_field(field, known_models=known_models)
-    return flat_models
-
-
-def get_flat_models_from_models(models: Sequence[Type['BaseModel']]) -> TypeModelSet:
-    """
-    Take a list of ``models`` and generate a set with them and all their sub-models in their trees. I.e. if you pass
-    a list of two models, ``Foo`` and ``Bar``, both subclasses of Pydantic ``BaseModel`` as models, and ``Bar`` has
-    a field of type ``Baz`` (also subclass of ``BaseModel``), the return value will be ``set([Foo, Bar, Baz])``.
-    """
-    flat_models: TypeModelSet = set()
-    for model in models:
-        flat_models |= get_flat_models_from_model(model)
-    return flat_models
-
-
-def get_long_model_name(model: TypeModelOrEnum) -> str:
-    return f'{model.__module__}__{model.__qualname__}'.replace('.', '__')
-
-
-def field_type_schema(
-    field: ModelField,
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    schema_overrides: bool = False,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
-    """
-    Used by ``field_schema()``, you probably should be using that function.
-
-    Take a single ``field`` and generate the schema for its type only, not including additional
-    information as title, etc. Also return additional schema definitions, from sub-models.
-    """
-    from .main import BaseModel
-
-    definitions = {}
-    nested_models: Set[str] = set()
-    f_schema: Dict[str, Any]
-    if field.shape in {'SHAPES_TODO'}:
-        items_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field,
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-            known_models=known_models,
-        )
-        definitions.update(f_definitions)
-        nested_models.update(f_nested_models)
-        f_schema = {'type': 'array', 'items': items_schema}
-        if field.shape in {'SHAPE_SET', 'SHAPE_FROZENSET'}:
-            f_schema['uniqueItems'] = True
-
-    elif field.shape in {'MAPPING_LIKE_SHAPES'}:
-        f_schema = {'type': 'object'}
-        key_field = cast(ModelField, field.key_field)
-        regex = getattr(key_field.type_, 'regex', None)
-        items_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field,
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-            known_models=known_models,
-        )
-        definitions.update(f_definitions)
-        nested_models.update(f_nested_models)
-        if regex:
-            # Dict keys have a regex pattern
-            # items_schema might be a schema or empty dict, add it either way
-            f_schema['patternProperties'] = {regex.pattern: items_schema}
-        elif items_schema:
-            # The dict values are not simply Any, so they need a schema
-            f_schema['additionalProperties'] = items_schema
-    elif field.shape == 'SHAPE_TUPLE' or (field.shape == 'SHAPE_GENERIC' and not issubclass(field.type_, BaseModel)):
-        sub_schema = []
-        sub_fields = cast(List[ModelField], field.sub_fields)
-        for sf in sub_fields:
-            sf_schema, sf_definitions, sf_nested_models = field_type_schema(
-                sf,
-                by_alias=by_alias,
-                model_name_map=model_name_map,
-                ref_prefix=ref_prefix,
-                ref_template=ref_template,
-                known_models=known_models,
-            )
-            definitions.update(sf_definitions)
-            nested_models.update(sf_nested_models)
-            sub_schema.append(sf_schema)
-
-        sub_fields_len = len(sub_fields)
-        if field.shape == 'SHAPE_GENERIC':
-            all_of_schemas = sub_schema[0] if sub_fields_len == 1 else {'type': 'array', 'items': sub_schema}
-            f_schema = {'allOf': [all_of_schemas]}
         else:
-            f_schema = {
-                'type': 'array',
-                'minItems': sub_fields_len,
-                'maxItems': sub_fields_len,
-            }
-            if sub_fields_len >= 1:
-                f_schema['items'] = sub_schema
-    else:
-        assert field.shape in {'SHAPE_SINGLETON', 'SHAPE_GENERIC'}, field.shape
-        f_schema, f_definitions, f_nested_models = field_singleton_schema(
-            field,
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            schema_overrides=schema_overrides,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-            known_models=known_models,
-        )
-        definitions.update(f_definitions)
-        nested_models.update(f_nested_models)
+            raise ValueError(f'Unknown tuple schema mode: {schema["mode"]}')
 
-    # check field type to avoid repeated calls to the same __modify_schema__ method
-    if field.type_ != field.outer_type_:
-        if field.shape == 'SHAPE_GENERIC':
-            field_type = field.type_
+    def set_schema(self, schema: core_schema.SetSchema) -> JsonSchemaValue:
+        return self._common_set_schema(schema)
+
+    def frozenset_schema(self, schema: core_schema.FrozenSetSchema) -> JsonSchemaValue:
+        return self._common_set_schema(schema)
+
+    def _common_set_schema(self, schema: core_schema.SetSchema | core_schema.FrozenSetSchema) -> JsonSchemaValue:
+        # TODO: what is schema['generator_max_length']?
+        items_schema = self._generate(schema['items_schema'])
+        json_schema = {'type': 'array', 'uniqueItems': True, 'items': items_schema}
+        update_with_validations(json_schema, schema, ValidationsMapping.array)
+        return json_schema
+
+    def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
+        # TODO: Why no min_length? Is max_length validated on ingestion?
+        items_schema = self._generate(schema['items_schema'])
+        json_schema = {'type': 'array', 'items': items_schema}
+        update_with_validations(json_schema, schema, ValidationsMapping.array)
+        return json_schema
+
+    def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
+        values_schema = self._generate(schema['values_schema'])
+        json_schema = {'type': 'object', 'additionalProperties': values_schema}
+        update_with_validations(json_schema, schema, ValidationsMapping.object)
+        return json_schema
+
+    def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel if this is right; I'm not sure if before vs. after affects things
+        return self._generate(schema['schema'])
+
+    def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
+        json_schema = self._generate(schema['schema'])
+        if 'default' in schema:
+            json_schema['default'] = encode_default(schema['default'])
+        return json_schema
+
+    def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
+        null_schema = {'type': 'null'}
+        inner_json_schema = self._generate(schema['schema'])
+
+        if inner_json_schema == null_schema:
+            return null_schema
         else:
-            field_type = field.outer_type_
-        modify_schema = getattr(field_type, '__modify_schema__', None)
-        if modify_schema:
-            _apply_modify_schema(modify_schema, field, f_schema)
-    return f_schema, definitions, nested_models
+            # TODO: Should this be oneOf instead? I think both would be valid here; not sure if one is better..
+            return {'anyOf': [null_schema, inner_json_schema]}
 
+    def union_schema(self, schema: core_schema.UnionSchema) -> JsonSchemaValue:
+        return {'anyOf': [self._generate(s) for s in schema['choices']]}
 
-def model_process_schema(
-    model: TypeModelOrEnum,
-    *,
-    by_alias: bool = True,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_prefix: Optional[str] = None,
-    ref_template: str = default_ref_template,
-    known_models: TypeModelSet = None,
-    field: Optional[ModelField] = None,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
-    """
-    Used by ``model_schema()``, you probably should be using that function.
+    def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
+        # TODO: May want to add discriminator here; depends on dialect etc.
+        # TODO: Do we need to do anything with custom_error_xxx?
+        # TODO: Ask samuel what is going on with the different non-`str` variants of `schema.discriminator`
+        return {'oneOf': [self._generate(s) for s in schema['choices'].values() if not isinstance(s, str)]}
 
-    Take a single ``model`` and generate its schema. Also return additional schema definitions, from sub-models. The
-    sub-models of the returned schema will be referenced, but their definitions will not be included in the schema. All
-    the definitions are returned as the second value.
-    """
-    from inspect import getdoc, signature
+    def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
+        if not schema['steps']:
+            # TODO: Ask Samuel -- what do we do if there are no items in the ChainSchema?
+            raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema')
+        return self._generate(schema['steps'][-1])
 
-    known_models = known_models or set()
-    if lenient_issubclass(model, Enum):
-        model = cast(Type[Enum], model)
-        s = enum_process_schema(model, field=field)
-        return s, {}, set()
-    model = cast(Type['BaseModel'], model)
-    s = {'title': model.__config__.title or model.__name__}
-    doc = getdoc(model)
-    if doc:
-        s['description'] = doc
-    known_models.add(model)
-    m_schema, m_definitions, nested_models = model_type_schema(
-        model,
-        by_alias=by_alias,
-        model_name_map=model_name_map,
-        ref_prefix=ref_prefix,
-        ref_template=ref_template,
-        known_models=known_models,
-    )
-    s.update(m_schema)
-    schema_extra = model.__config__.schema_extra
-    if callable(schema_extra):
-        if len(signature(schema_extra).parameters) == 1:
-            schema_extra(s)
+    def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel what `schema.strict` is meant to represent here
+        if self.strict:
+            return self._generate(schema['strict_schema'])
         else:
-            schema_extra(s, model)
-    else:
-        s.update(schema_extra)
-    return s, m_definitions, nested_models
+            return self._generate(schema['lax_schema'])
+
+    def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
+        properties: Dict[str, JsonSchemaValue] = {}
+        required: list[str] = []
+        for name, field in schema['fields'].items():
+            if field['required']:
+                required.append(name)
+            if self.by_alias:
+                alias = field.get('validation_alias', name)
+                if isinstance(alias, str):
+                    name = alias
+                else:
+                    # TODO: What should be done in this case?
+                    pass
+            properties[name] = self._generate(field['schema'])
+
+        json_schema = {'type': 'object', 'properties': properties, 'required': required}
+        # TODO: Should the 'ref' value be moved to the ModelSchema?
+        return json_schema
+
+    def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
+        # TODO: Note the relationship between this and TypedDictSchema
+        #   -- Should we do something similar with LiteralSchema and a possibly-new EnumSchema?
+        json_schema = self._generate(schema['schema'])
+
+        # TODO: Store generated schema in the schema['cls'].__schema_cache__ or similar?
+
+        # TODO: What should we do with schema['config'] (in particular, 'title')?
+        #   Also, what is schema['call_after_init']?
+        if 'config' in schema and 'title' in schema['config']:
+            json_schema.setdefault('title', schema['config']['title'])
+        return json_schema
+
+    def arguments_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel how to handle this
+        # raise ValueError('Cannot generate a JsonSchema for core_schema.ArgumentsSchema')
+        return {}
+
+    def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel how to handle this
+        # raise ValueError('Cannot generate a JsonSchema for core_schema.CallSchema')
+        return {}
+
+    def recursive_ref_schema(self, schema: core_schema.RecursiveReferenceSchema) -> JsonSchemaValue:
+        json_ref = self.get_json_ref(schema['schema_ref'])
+        return self._ref_json_schema(json_ref)
+
+    def _ref_json_schema(self, json_ref: str) -> JsonSchemaValue:
+        json_ref = self.ref_template.format(model=json_ref)
+        self.json_ref_counts[json_ref] += 1
+        return {'$ref': json_ref}
+
+    def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
+        # TODO: Ask Samuel how to handle this
+        # raise ValueError('Cannot generate a JsonSchema for core_schema.CustomErrorSchema')
+        return {}
+
+    def json_schema(self, schema: core_schema.JsonSchema) -> JsonSchemaValue:
+        return {'type': 'string', 'format': 'json-string'}
+
+    def url_schema(self, schema: core_schema.UrlSchema) -> JsonSchemaValue:
+        json_schema = {'type': 'string', 'format': 'uri', 'minLength': 1}
+        update_with_validations(json_schema, schema, ValidationsMapping.string)
+        return json_schema
+
+    def multi_host_url_schema(self, schema: core_schema.MultiHostUrlSchema) -> JsonSchemaValue:
+        # TODO: Is 'format': 'uri' valid for MultiHostUrlSchema? I'm not sure
+        json_schema = {'type': 'string', 'format': 'uri', 'minLength': 1}
+        update_with_validations(json_schema, schema, ValidationsMapping.string)
+        return json_schema
 
 
-def model_type_schema(
-    model: Type['BaseModel'],
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
-    """
-    You probably should be using ``model_schema()``, this function is indirectly used by that function.
-
-    Take a single ``model`` and generate the schema for its type only, not including additional
-    information as title, etc. Also return additional schema definitions, from sub-models.
-    """
-    properties = {}
-    required = []
-    definitions: Dict[str, Any] = {}
-    nested_models: Set[str] = set()
-    for k, f in model.model_fields.items():
-        try:
-            f_schema, f_definitions, f_nested_models = field_schema(
-                f,
-                by_alias=by_alias,
-                model_name_map=model_name_map,
-                ref_prefix=ref_prefix,
-                ref_template=ref_template,
-                known_models=known_models,
-            )
-        except SkipField as skip:
-            warnings.warn(skip.message, UserWarning)
-            continue
-        definitions.update(f_definitions)
-        nested_models.update(f_nested_models)
-        if by_alias:
-            properties[f.alias] = f_schema
-            if f.is_required():
-                required.append(f.alias)
-        else:
-            properties[k] = f_schema
-            if f.is_required():
-                required.append(k)
-    if ROOT_KEY in properties:
-        out_schema = properties[ROOT_KEY]
-        out_schema['title'] = model.__config__.title or model.__name__
-    else:
-        out_schema = {'type': 'object', 'properties': properties}
-        if required:
-            out_schema['required'] = required
-    if model.__config__.extra == 'forbid':
-        out_schema['additionalProperties'] = False
-    return out_schema, definitions, nested_models
-
-
-def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None) -> Dict[str, Any]:
-    """
-    Take a single `enum` and generate its schema.
-
-    This is similar to the `model_process_schema` function, but applies to ``Enum`` objects.
-    """
-    import inspect
-
-    schema_: Dict[str, Any] = {
-        'title': enum.__name__,
-        # Python assigns all enums a default docstring value of 'An enumeration', so
-        # all enums will have a description field even if not explicitly provided.
-        'description': inspect.cleandoc(enum.__doc__ or 'An enumeration.'),
-        # Add enum values and the enum field type to the schema.
-        'enum': [item.value for item in cast(Iterable[Enum], enum)],
+class ValidationsMapping:
+    numeric = {
+        'multiple_of': 'multipleOf',
+        'le': 'maximum',
+        'ge': 'minimum',
+        'lt': 'exclusiveMaximum',
+        'gt': 'exclusiveMinimum',
+    }
+    bytes = {
+        'min_length': 'minLength',
+        'max_length': 'maxLength',
+    }
+    string = {
+        'min_length': 'minLength',
+        'max_length': 'maxLength',
+        'regex': 'pattern',
+    }
+    array = {
+        'min_length': 'minItems',
+        'max_length': 'maxItems',
+    }
+    object = {
+        'min_length': 'minProperties',
+        'max_length': 'maxProperties',
     }
 
-    add_field_type_to_schema(enum, schema_)
 
-    modify_schema = getattr(enum, '__modify_schema__', None)
-    if modify_schema:
-        _apply_modify_schema(modify_schema, field, schema_)
-
-    return schema_
+def update_with_validations(json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: Dict[str, str]) -> None:
+    for core_key, json_schema_key in mapping.items():
+        if core_key in core_schema:
+            json_schema[json_schema_key] = core_schema[core_key]  # type: ignore[literal-required]
 
 
-def field_singleton_sub_fields_schema(
-    field: ModelField,
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    schema_overrides: bool = False,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
-    """
-    This function is indirectly used by ``field_schema()``, you probably should be using that function.
-
-    Take a list of Pydantic ``ModelField`` from the declaration of a type with parameters, and generate their
-    schema. I.e., fields used as "type parameters", like ``str`` and ``int`` in ``Tuple[str, int]``.
-    """
-    sub_fields = cast(List[ModelField], field.sub_fields)
-    definitions = {}
-    nested_models: Set[str] = set()
-    if len(sub_fields) == 1:
-        return field_type_schema(
-            sub_fields[0],
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            schema_overrides=schema_overrides,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-            known_models=known_models,
-        )
-    else:
-        s: Dict[str, Any] = {}
-        # https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminator-object
-        field_has_discriminator: bool = field.discriminator_key is not None
-        if field_has_discriminator:
-            assert field.sub_fields_mapping is not None
-
-            discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
-
-            for discriminator_value, sub_field in field.sub_fields_mapping.items():
-                # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
-                if origin_is_union(get_origin(sub_field.type_)):
-                    # this all needs rewriting to use the pydantic-core schema,
-                    # I'm just leaving something here to keep flake8 and mypy happy
-                    # sub_models = get_sub_types(sub_field.type_)
-                    sub_models = sub_field.type_
-                    discriminator_models_refs[discriminator_value] = {
-                        model_name_map[sub_model]: get_schema_ref(
-                            model_name_map[sub_model], ref_prefix, ref_template, False
-                        )
-                        for sub_model in sub_models
-                    }
-                else:
-                    sub_field_type = sub_field.type_
-                    if hasattr(sub_field_type, '__pydantic_model__'):
-                        sub_field_type = sub_field_type.__pydantic_model__
-
-                    discriminator_model_name = model_name_map[sub_field_type]
-                    discriminator_model_ref = get_schema_ref(discriminator_model_name, ref_prefix, ref_template, False)
-                    discriminator_models_refs[discriminator_value] = discriminator_model_ref['$ref']
-
-            s['discriminator'] = {
-                'propertyName': field.discriminator_alias,
-                'mapping': discriminator_models_refs,
-            }
-
-        sub_field_schemas = []
-        for sf in sub_fields:
-            sub_schema, sub_definitions, sub_nested_models = field_type_schema(
-                sf,
-                by_alias=by_alias,
-                model_name_map=model_name_map,
-                schema_overrides=schema_overrides,
-                ref_prefix=ref_prefix,
-                ref_template=ref_template,
-                known_models=known_models,
-            )
-            definitions.update(sub_definitions)
-            if schema_overrides and 'allOf' in sub_schema:
-                # if the sub_field is a referenced schema we only need the referenced
-                # object. Otherwise we will end up with several allOf inside anyOf/oneOf.
-                # See https://github.com/pydantic/pydantic/issues/1209
-                sub_schema = sub_schema['allOf'][0]
-
-            if sub_schema.keys() == {'discriminator', 'oneOf'}:
-                # we don't want discriminator information inside oneOf choices, this is dealt with elsewhere
-                sub_schema.pop('discriminator')
-            sub_field_schemas.append(sub_schema)
-            nested_models.update(sub_nested_models)
-        s['oneOf' if field_has_discriminator else 'anyOf'] = sub_field_schemas
-        return s, definitions, nested_models
+# Technically the second argument to the callables below will be a specific subtype of CoreSchema.
+# We just need to make sure elsewhere that each callable only gets called on CoreSchema objects of
+# properly matched type.
+def _build_json_schema_method_mapping() -> Dict[str, Callable[[GenerateJsonSchema, CoreSchema], JsonSchemaValue]]:
+    mapping: Dict[str, Callable[[GenerateJsonSchema, CoreSchema], JsonSchemaValue]] = {}
+    for key in all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
+        method_key = key.replace('-', '_')
+        mapping[key] = getattr(GenerateJsonSchema, f'{method_key}_schema')
+    return mapping
 
 
-# Order is important, e.g. subclasses of str must go before str
-# this is used only for standard library types, custom types should use __modify_schema__ instead
-field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
-    (Path, {'type': 'string', 'format': 'path'}),
-    (datetime, {'type': 'string', 'format': 'date-time'}),
-    (date, {'type': 'string', 'format': 'date'}),
-    (time, {'type': 'string', 'format': 'time'}),
-    (timedelta, {'type': 'number', 'format': 'time-delta'}),
-    (IPv4Network, {'type': 'string', 'format': 'ipv4network'}),
-    (IPv6Network, {'type': 'string', 'format': 'ipv6network'}),
-    (IPv4Interface, {'type': 'string', 'format': 'ipv4interface'}),
-    (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
-    (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
-    (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
-    (Pattern, {'type': 'string', 'format': 'regex'}),
-    (str, {'type': 'string'}),
-    (bytes, {'type': 'string', 'format': 'binary'}),
-    (bool, {'type': 'boolean'}),
-    (int, {'type': 'integer'}),
-    (float, {'type': 'number'}),
-    (Decimal, {'type': 'number'}),
-    (UUID, {'type': 'string', 'format': 'uuid'}),
-    (dict, {'type': 'object'}),
-    (list, {'type': 'array', 'items': {}}),
-    (tuple, {'type': 'array', 'items': {}}),
-    (set, {'type': 'array', 'items': {}, 'uniqueItems': True}),
-    (frozenset, {'type': 'array', 'items': {}, 'uniqueItems': True}),
-)
-
-json_scheme = {'type': 'string', 'format': 'json-string'}
-
-
-def add_field_type_to_schema(field_type: Any, schema_: Dict[str, Any]) -> None:
-    """
-    Update the given `schema` with the type-specific metadata for the given `field_type`.
-
-    This function looks through `field_class_to_schema` for a class that matches the given `field_type`,
-    and then modifies the given `schema` with the information from that type.
-    """
-    for type_, t_schema in field_class_to_schema:
-        # Fallback for `typing.Pattern` and `re.Pattern` as they are not a valid class
-        if lenient_issubclass(field_type, type_) or field_type is type_ is Pattern:
-            schema_.update(t_schema)
-            break
-
-
-def get_schema_ref(name: str, ref_prefix: Optional[str], ref_template: str, schema_overrides: bool) -> Dict[str, Any]:
-    if ref_prefix:
-        schema_ref = {'$ref': ref_prefix + name}
-    else:
-        schema_ref = {'$ref': ref_template.format(model=name)}
-    return {'allOf': [schema_ref]} if schema_overrides else schema_ref
-
-
-def field_singleton_schema(  # noqa: C901 (ignore complexity)
-    field: ModelField,
-    *,
-    by_alias: bool,
-    model_name_map: Dict[TypeModelOrEnum, str],
-    ref_template: str,
-    schema_overrides: bool = False,
-    ref_prefix: Optional[str] = None,
-    known_models: TypeModelSet,
-) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
-    """
-    This function is indirectly used by ``field_schema()``, you should probably be using that function.
-
-    Take a single Pydantic ``ModelField``, and return its schema and any additional definitions from sub-models.
-    """
-    from .main import BaseModel
-
-    definitions: Dict[str, Any] = {}
-    nested_models: Set[str] = set()
-    field_type = field.type_
-
-    # Recurse into this field if it contains sub_fields and is NOT a
-    # BaseModel OR that BaseModel is a const
-    if field.sub_fields and (
-        (field.field_info and field.field_info.const) or not lenient_issubclass(field_type, BaseModel)
-    ):
-        return field_singleton_sub_fields_schema(
-            field,
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            schema_overrides=schema_overrides,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-            known_models=known_models,
-        )
-    if field_type is Any or field_type is object or field_type.__class__ == TypeVar or get_origin(field_type) is type:
-        return {}, definitions, nested_models  # no restrictions
-    if is_none_type(field_type):
-        return {'type': 'null'}, definitions, nested_models
-    if is_callable_type(field_type):
-        raise SkipField(f'Callable {field.name} was excluded from schema since JSON schema has no equivalent type.')
-    f_schema: Dict[str, Any] = {}
-    if field.field_info is not None and field.field_info.const:
-        f_schema['const'] = field.default
-
-    if is_literal_type(field_type):
-        values = all_literal_values(field_type)
-
-        if len({v.__class__ for v in values}) > 1:
-            return field_schema(
-                multitypes_literal_field_for_schema(values, field),
-                by_alias=by_alias,
-                model_name_map=model_name_map,
-                ref_prefix=ref_prefix,
-                ref_template=ref_template,
-                known_models=known_models,
-            )
-
-        # All values have the same type
-        field_type = values[0].__class__
-        f_schema['enum'] = list(values)
-        add_field_type_to_schema(field_type, f_schema)
-    elif lenient_issubclass(field_type, Enum):
-        enum_name = model_name_map[field_type]
-        f_schema, schema_overrides = get_field_info_schema(field, schema_overrides)
-        f_schema.update(get_schema_ref(enum_name, ref_prefix, ref_template, schema_overrides))
-        definitions[enum_name] = enum_process_schema(field_type, field=field)
-    elif is_namedtuple(field_type):
-        sub_schema, *_ = model_process_schema(
-            field_type.__pydantic_model__,
-            by_alias=by_alias,
-            model_name_map=model_name_map,
-            ref_prefix=ref_prefix,
-            ref_template=ref_template,
-            known_models=known_models,
-            field=field,
-        )
-        items_schemas = list(sub_schema['properties'].values())
-        f_schema.update(
-            {
-                'type': 'array',
-                'items': items_schemas,
-                'minItems': len(items_schemas),
-                'maxItems': len(items_schemas),
-            }
-        )
-    elif not hasattr(field_type, '__pydantic_model__'):
-        add_field_type_to_schema(field_type, f_schema)
-
-        modify_schema = getattr(field_type, '__modify_schema__', None)
-        if modify_schema:
-            _apply_modify_schema(modify_schema, field, f_schema)
-
-    if f_schema:
-        return f_schema, definitions, nested_models
-
-    # Handle dataclass-based models
-    if lenient_issubclass(getattr(field_type, '__pydantic_model__', None), BaseModel):
-        field_type = field_type.__pydantic_model__
-
-    if issubclass(field_type, BaseModel):
-        model_name = model_name_map[field_type]
-        if field_type not in known_models:
-            sub_schema, sub_definitions, sub_nested_models = model_process_schema(
-                field_type,
-                by_alias=by_alias,
-                model_name_map=model_name_map,
-                ref_prefix=ref_prefix,
-                ref_template=ref_template,
-                known_models=known_models,
-                field=field,
-            )
-            definitions.update(sub_definitions)
-            definitions[model_name] = sub_schema
-            nested_models.update(sub_nested_models)
-        else:
-            nested_models.add(model_name)
-        schema_ref = get_schema_ref(model_name, ref_prefix, ref_template, schema_overrides)
-        return schema_ref, definitions, nested_models
-
-    # For generics with no args
-    args = get_args(field_type)
-    if args is not None and not args and Generic in field_type.__bases__:
-        return f_schema, definitions, nested_models
-
-    raise ValueError(f'Value not declarable with JSON Schema, field: {field}')
-
-
-def multitypes_literal_field_for_schema(values: Tuple[Any, ...], field: ModelField) -> ModelField:
-    """
-    To support `Literal` with values of different types, we split it into multiple `Literal` with same type
-    e.g. `Literal['qwe', 'asd', 1, 2]` becomes `Union[Literal['qwe', 'asd'], Literal[1, 2]]`
-    """
-    literal_distinct_types = defaultdict(list)
-    for v in values:
-        literal_distinct_types[v.__class__].append(v)
-    distinct_literals = (Literal[tuple(same_type_values)] for same_type_values in literal_distinct_types.values())
-
-    return ModelField(
-        name=field.name,
-        type_=Union[tuple(distinct_literals)],
-        class_validators=field.class_validators,
-        model_config=field.model_config,
-        default=field.default,
-        required=field.required,
-        alias=field.alias,
-        field_info=field.field_info,
-    )
+_JSON_SCHEMA_METHOD_MAPPING = _build_json_schema_method_mapping()
 
 
 def encode_default(dft: Any) -> Any:
@@ -950,171 +485,3 @@ def encode_default(dft: Any) -> Any:
         return None
     else:
         return pydantic_encoder(dft)
-
-
-_map_types_constraint: Dict[Any, Any] = {int: conint, float: confloat, Decimal: condecimal}
-
-
-def get_annotation_from_field_info(
-    annotation: Any, field_info: FieldInfo, field_name: str, validate_assignment: bool = False
-) -> Type[Any]:
-    """
-    Get an annotation with validation implemented for numbers and strings based on the field_info.
-    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
-    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
-    :param field_name: name of the field for use in error messages
-    :param validate_assignment: default False, flag for BaseModel Config value of validate_assignment
-    :return: the same ``annotation`` if unmodified or a new annotation with validation in place
-    """
-    constraints = field_info.get_constraints()
-    used_constraints: Set[str] = set()
-    if constraints:
-        annotation, used_constraints = get_annotation_with_constraints(annotation, field_info)
-    if validate_assignment:
-        used_constraints.add('allow_mutation')
-
-    unused_constraints = constraints - used_constraints
-    if unused_constraints:
-        raise ValueError(
-            f'On field "{field_name}" the following field constraints are set but not enforced: '
-            f'{", ".join(unused_constraints)}. '
-            f'\nFor more details see https://docs.pydantic.dev/usage/schema/#unenforced-field-constraints'
-        )
-
-    return annotation
-
-
-def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
-    """
-    Get an annotation with used constraints implemented for numbers and strings based on the field_info.
-
-    :param annotation: an annotation from a field specification, as ``str``, ``ConstrainedStr``
-    :param field_info: an instance of FieldInfo, possibly with declarations for validations and JSON Schema
-    :return: the same ``annotation`` if unmodified or a new annotation along with the used constraints.
-    """
-    used_constraints: Set[str] = set()
-
-    def go(type_: Any) -> Type[Any]:  # noqa: C901
-        if (
-            is_literal_type(type_)
-            or isinstance(type_, ForwardRef)
-            # or lenient_issubclass(type_, (ConstrainedList, ConstrainedSet, ConstrainedFrozenSet))
-        ):
-            return type_
-        origin = get_origin(type_)
-        if origin is not None:
-            args: Tuple[Any, ...] = get_args(type_)
-            if any(isinstance(a, ForwardRef) for a in args):
-                # forward refs cause infinite recursion below
-                return type_
-
-            if origin is Annotated:
-                return go(args[0])
-            if origin_is_union(origin):
-                return Union[tuple(go(a) for a in args)]  # type: ignore
-
-            # if issubclass(origin, List) and (
-            #     field_info.min_items is not None
-            #     or field_info.max_items is not None
-            #     or field_info.unique_items is not None
-            # ):
-            #     used_constraints.update({'min_items', 'max_items', 'unique_items'})
-            #     return conlist(
-            #         go(args[0]),
-            #         min_items=field_info.min_items,
-            #         max_items=field_info.max_items,
-            #         unique_items=field_info.unique_items,
-            #     )
-
-            # if issubclass(origin, Set) and (field_info.min_items is not None or field_info.max_items is not None):
-            #     used_constraints.update({'min_items', 'max_items'})
-            #     return conset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
-            #
-            # if issubclass(origin, FrozenSet) and (field_info.min_items is not None or field_info.max_items isnotNone):
-            #     used_constraints.update({'min_items', 'max_items'})
-            #     return confrozenset(go(args[0]), min_items=field_info.min_items, max_items=field_info.max_items)
-
-            for t in (Tuple, List, Set, FrozenSet, Sequence):
-                if issubclass(origin, t):  # type: ignore
-                    return t[tuple(go(a) for a in args)]  # type: ignore
-
-            if issubclass(origin, Dict):
-                return Dict[args[0], go(args[1])]  # type: ignore
-
-        attrs: Optional[Tuple[str, ...]] = None
-        constraint_func: Optional[Callable[..., type]] = None
-        if isinstance(type_, type):
-            if issubclass(type_, (SecretStr, SecretBytes)):
-                attrs = ('max_length', 'min_length')
-
-                def constraint_func(**kw: Any) -> Type[Any]:
-                    return type(type_.__name__, (type_,), kw)
-
-            elif issubclass(type_, str) and not issubclass(type_, (EmailStr, AnyUrl)):
-                attrs = ('max_length', 'min_length', 'regex')
-                if issubclass(type_, StrictStr):
-
-                    def constraint_func(**kw: Any) -> Type[Any]:
-                        return type(type_.__name__, (type_,), kw)
-
-                else:
-                    constraint_func = constr
-            elif issubclass(type_, bytes):
-                attrs = ('max_length', 'min_length', 'regex')
-                if issubclass(type_, StrictBytes):
-
-                    def constraint_func(**kw: Any) -> Type[Any]:
-                        return type(type_.__name__, (type_,), kw)
-
-                else:
-                    constraint_func = conbytes
-            elif issubclass(type_, numeric_types) and not issubclass(
-                type_,
-                (
-                    # ConstrainedInt,
-                    # ConstrainedFloat,
-                    # ConstrainedDecimal,
-                    # ConstrainedList,
-                    # ConstrainedSet,
-                    # ConstrainedFrozenSet,
-                    bool,
-                ),
-            ):
-                # Is numeric type
-                attrs = ('gt', 'lt', 'ge', 'le', 'multiple_of')
-                if issubclass(type_, float):
-                    attrs += ('allow_inf_nan',)
-                if issubclass(type_, Decimal):
-                    attrs += ('max_digits', 'decimal_places')
-                numeric_type = next(t for t in numeric_types if issubclass(type_, t))  # pragma: no branch
-                constraint_func = _map_types_constraint[numeric_type]
-
-        if attrs:
-            used_constraints.update(set(attrs))
-            kwargs = {
-                attr_name: attr
-                for attr_name, attr in ((attr_name, getattr(field_info, attr_name)) for attr_name in attrs)
-                if attr is not None
-            }
-            if kwargs:
-                constraint_func = cast(Callable[..., type], constraint_func)
-                return constraint_func(**kwargs)
-        return type_
-
-    return go(annotation), used_constraints
-
-
-def normalize_name(name: str) -> str:
-    """
-    Normalizes the given name. This can be applied to either a model *or* enum.
-    """
-    return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name)
-
-
-class SkipField(Exception):
-    """
-    Utility exception used to exclude fields from schema.
-    """
-
-    def __init__(self, message: str) -> None:
-        self.message = message

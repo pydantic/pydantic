@@ -20,7 +20,7 @@ from .config import BaseConfig, Extra, build_config, inherit_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .schema import default_ref_template, model_schema
+from .json_schema import GenerateJsonSchema, default_ref_template
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -90,6 +90,7 @@ class ModelMetaclass(ABCMeta):
             else:
                 json_encoder = pydantic_encoder  # type: ignore[assignment]
             namespace['__json_encoder__'] = staticmethod(json_encoder)
+            namespace['__schema_cache__'] = {}
 
             if '__hash__' not in namespace and __config__.frozen:
 
@@ -371,7 +372,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
+        s = GenerateJsonSchema(by_alias, ref_template).generate(cls.__pydantic_core_schema__)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 

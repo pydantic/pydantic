@@ -81,7 +81,7 @@ except ImportError:
 T = TypeVar('T')
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 def test_key():
     class ApplePie(BaseModel):
         """
@@ -186,7 +186,7 @@ def test_sub_model():
 
     class Bar(BaseModel):
         a: int
-        b: Foo = None
+        b: Optional[Foo] = None
 
     assert Bar.model_json_schema() == {
         'type': 'object',
@@ -235,11 +235,11 @@ def test_schema_repr():
     assert repr(s) == "FieldInfo(default=4, title='Foo is Great', extra={})"
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_class_by_alias():
     class Model(BaseModel):
         foo: int = Field(4, alias='foofoo')
 
+    print(Model.model_json_schema())
     assert list(Model.model_json_schema()['properties'].keys()) == ['foofoo']
     assert list(Model.model_json_schema(by_alias=False)['properties'].keys()) == ['foo']
 
