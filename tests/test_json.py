@@ -13,7 +13,7 @@ from uuid import UUID
 import pytest
 from pydantic_core import SchemaSerializer
 
-from pydantic import BaseModel, NameEmail, serializer
+from pydantic import BaseModel, ConfigDict, NameEmail, serializer
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -146,8 +146,7 @@ def test_subclass_custom_encoding():
         def serialize_a(self, v: SubDt, _info):
             return v.strftime('%a, %d %b %C %H:%M:%S')
 
-        class Config:
-            ser_json_timedelta = 'float'
+        model_config = ConfigDict(ser_json_timedelta='float')
 
     m = Model(a=SubDt(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
     assert m.model_dump() == {'a': SubDt(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
@@ -327,8 +326,7 @@ def test_custom_encode_fallback_basemodel():
         def serialize_x(self, _v: MyExoticType, _info):
             return 'exo'
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     class Bar(BaseModel):
         foo: Foo

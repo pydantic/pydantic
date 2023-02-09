@@ -118,7 +118,7 @@ class PydanticPlugin(Plugin):
 
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         if fullname.endswith('.from_orm'):
-            return from_orm_callback
+            return from_attributes_callback
         return None
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
@@ -217,9 +217,9 @@ class PydanticPluginConfig:
         return {key: getattr(self, key) for key in self.__slots__}
 
 
-def from_orm_callback(ctx: MethodContext) -> Type:
+def from_attributes_callback(ctx: MethodContext) -> Type:
     """
-    Raise an error if orm_mode is not enabled
+    Raise an error if from_attributes is not enabled
     """
     model_type: Instance
     if isinstance(ctx.type, CallableType) and isinstance(ctx.type.ret_type, Instance):
@@ -233,19 +233,18 @@ def from_orm_callback(ctx: MethodContext) -> Type:
     pydantic_metadata = model_type.type.metadata.get(METADATA_KEY)
     if pydantic_metadata is None:
         return ctx.default_return_type
-    orm_mode = pydantic_metadata.get('config', {}).get('orm_mode')
-    if orm_mode is not True:
-        error_from_orm(get_name(model_type.type), ctx.api, ctx.context)
+    from_attributes = pydantic_metadata.get('config', {}).get('from_attributes')
+    if from_attributes is not True:
+        error_from_attributes(get_name(model_type.type), ctx.api, ctx.context)
     return ctx.default_return_type
 
 
 class PydanticModelTransformer:
     tracked_config_fields: Set[str] = {
         'extra',
-        'allow_mutation',
         'frozen',
-        'orm_mode',
-        'allow_population_by_field_name',
+        'from_attributes',
+        'populate_by_name',
         'alias_generator',
     }
 
@@ -260,7 +259,7 @@ class PydanticModelTransformer:
         In particular:
         * determines the model config and fields,
         * adds a fields-aware signature for the initializer and construct methods
-        * freezes the class if allow_mutation = False or frozen = True
+        * freezes the class if frozen = True
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         ctx = self._ctx
@@ -275,7 +274,7 @@ class PydanticModelTransformer:
                     ctx.api.defer()
         self.add_initializer(fields, config)
         self.add_model_construct_method(fields)
-        self.set_frozen(fields, frozen=config.allow_mutation is False or config.frozen is True)
+        self.set_frozen(fields, frozen=config.frozen is True)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
             'config': config.set_values_dict(),
@@ -301,7 +300,7 @@ class PydanticModelTransformer:
                 ):
                     sym.node.func.is_class = True
 
-    def collect_config(self) -> 'ModelConfigData':
+    def collect_config(self) -> 'ModelConfigData':  # noqa: C901 (ignore complexity)
         """
         Collects the values of the config attributes that are used by the plugin, accounting for parent classes.
         """
@@ -319,10 +318,28 @@ class PydanticModelTransformer:
                 config.update(config_data)
 
         for stmt in cls.defs.body:
-            if not isinstance(stmt, ClassDef):
+            if not isinstance(stmt, (AssignmentStmt, ClassDef)):
                 continue
-            if stmt.name != 'Config':
-                continue
+
+            if isinstance(stmt, AssignmentStmt):
+                lhs = stmt.lvalues[0]
+                if not isinstance(lhs, NameExpr) or lhs.name != 'model_config' or not isinstance(stmt.rvalue, CallExpr):
+                    continue
+                for arg_name, arg in zip(stmt.rvalue.arg_names, stmt.rvalue.args):
+                    if arg_name is None:
+                        continue
+                    config.update(self.get_config_update(arg_name, arg))
+
+            if isinstance(stmt, ClassDef):
+                if stmt.name != 'Config':  # 'deprecated' Config-class
+                    continue
+                for substmt in stmt.defs.body:
+                    if not isinstance(substmt, AssignmentStmt):
+                        continue
+                    lhs = substmt.lvalues[0]
+                    if not isinstance(lhs, NameExpr):
+                        continue
+                    config.update(self.get_config_update(lhs.name, substmt.rvalue))
 
             if has_config_kwargs:
                 ctx.api.fail(
@@ -333,20 +350,13 @@ class PydanticModelTransformer:
 
             has_config_from_namespace = True
 
-            for substmt in stmt.defs.body:
-                if not isinstance(substmt, AssignmentStmt):
-                    continue
-                config.update(self.get_namespace_config_update(substmt))
-            break
-
         if has_config_kwargs or has_config_from_namespace:
             if (
                 config.has_alias_generator
-                and not config.allow_population_by_field_name
+                and not config.populate_by_name
                 and self.plugin_config.warn_required_dynamic_aliases
             ):
                 error_required_dynamic_aliases(ctx.api, stmt)
-
         for info in cls.info.mro[1:]:  # 0 is the current class
             if METADATA_KEY not in info.metadata:
                 continue
@@ -371,13 +381,13 @@ class PydanticModelTransformer:
                 continue
 
             lhs = stmt.lvalues[0]
-            if not isinstance(lhs, NameExpr) or lhs.name.startswith('_'):
+            if not isinstance(lhs, NameExpr) or lhs.name.startswith('_') or lhs.name == 'model_config':
                 continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
                 error_untyped_fields(ctx.api, stmt)
 
-            # if lhs.name == '__config__':  # BaseConfig not well handled; I'm not sure why yet
+            # if lhs.name == '__config__':  # ConfigDict not well handled; I'm not sure why yet
             #     continue
 
             sym = cls.info.names.get(lhs.name)
@@ -405,7 +415,7 @@ class PydanticModelTransformer:
             alias, has_dynamic_alias = self.get_alias_info(stmt)
             if (
                 has_dynamic_alias
-                and not model_config.allow_population_by_field_name
+                and not model_config.populate_by_name
                 and self.plugin_config.warn_required_dynamic_aliases
             ):
                 error_required_dynamic_aliases(ctx.api, stmt)
@@ -449,8 +459,8 @@ class PydanticModelTransformer:
         """
         ctx = self._ctx
         typed = self.plugin_config.init_typed
-        use_alias = config.allow_population_by_field_name is not True
-        force_all_optional = bool(config.has_alias_generator and not config.allow_population_by_field_name)
+        use_alias = config.populate_by_name is not True
+        force_all_optional = bool(config.has_alias_generator and not config.populate_by_name)
         init_arguments = self.get_field_arguments(
             fields, typed=typed, force_all_optional=force_all_optional, use_alias=use_alias
         )
@@ -513,38 +523,31 @@ class PydanticModelTransformer:
                 var._fullname = get_fullname(info) + '.' + get_name(var)
                 info.names[get_name(var)] = SymbolTableNode(MDEF, var)
 
-    def get_namespace_config_update(self, substmt: AssignmentStmt) -> Optional['ModelConfigData']:
+    def get_config_update(self, name: str, arg: Expression) -> Optional['ModelConfigData']:
         """
-        Determines the config update due to a single statement in the Config class definition.
+        Determines the config update due to a single kwarg in the ConfigDict definition.
 
         Warns if a tracked config attribute is set to a value the plugin doesn't know how to interpret (e.g., an int)
         """
-        lhs = substmt.lvalues[0]
-        if not isinstance(lhs, NameExpr):
-            return None
-        return self.get_config_update(lhs.name, substmt.rvalue)
-
-    def get_config_update(self, name: str, expr: Expression) -> Optional['ModelConfigData']:
         if name not in self.tracked_config_fields:
             return None
-
         if name == 'extra':
-            if isinstance(expr, StrExpr):
-                forbid_extra = expr.value == 'forbid'
-            elif isinstance(expr, MemberExpr):
-                forbid_extra = expr.name == 'forbid'
+            if isinstance(arg, StrExpr):
+                forbid_extra = arg.value == 'forbid'
+            elif isinstance(arg, MemberExpr):
+                forbid_extra = arg.name == 'forbid'
             else:
-                error_invalid_config_value(name, self._ctx.api, expr)
+                error_invalid_config_value(name, self._ctx.api, arg)
                 return None
             return ModelConfigData(forbid_extra=forbid_extra)
         if name == 'alias_generator':
             has_alias_generator = True
-            if isinstance(expr, NameExpr) and expr.fullname == 'builtins.None':
+            if isinstance(arg, NameExpr) and arg.fullname == 'builtins.None':
                 has_alias_generator = False
             return ModelConfigData(has_alias_generator=has_alias_generator)
-        if isinstance(expr, NameExpr) and expr.fullname in ('builtins.True', 'builtins.False'):
-            return ModelConfigData(**{name: expr.fullname == 'builtins.True'})
-        error_invalid_config_value(name, self._ctx.api, expr)
+        if isinstance(arg, NameExpr) and arg.fullname in ('builtins.True', 'builtins.False'):
+            return ModelConfigData(**{name: arg.fullname == 'builtins.True'})
+        error_invalid_config_value(name, self._ctx.api, arg)
         return None
 
     @staticmethod
@@ -626,7 +629,7 @@ class PydanticModelTransformer:
         We disallow arbitrary kwargs if the extra config setting is "forbid", or if the plugin config says to,
         *unless* a required dynamic alias is present (since then we can't determine a valid signature).
         """
-        if not config.allow_population_by_field_name:
+        if not config.populate_by_name:
             if self.is_dynamic_alias_present(fields, bool(config.has_alias_generator)):
                 return False
         if config.forbid_extra:
@@ -690,17 +693,15 @@ class ModelConfigData:
     def __init__(
         self,
         forbid_extra: Optional[bool] = None,
-        allow_mutation: Optional[bool] = None,
         frozen: Optional[bool] = None,
-        orm_mode: Optional[bool] = None,
-        allow_population_by_field_name: Optional[bool] = None,
+        from_attributes: Optional[bool] = None,
+        populate_by_name: Optional[bool] = None,
         has_alias_generator: Optional[bool] = None,
     ):
         self.forbid_extra = forbid_extra
-        self.allow_mutation = allow_mutation
         self.frozen = frozen
-        self.orm_mode = orm_mode
-        self.allow_population_by_field_name = allow_population_by_field_name
+        self.from_attributes = from_attributes
+        self.populate_by_name = populate_by_name
         self.has_alias_generator = has_alias_generator
 
     def set_values_dict(self) -> Dict[str, Any]:
@@ -717,7 +718,7 @@ class ModelConfigData:
             setattr(self, key, value)
 
 
-ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_orm call', 'Pydantic')
+ERROR_ORM = ErrorCode('pydantic-orm', 'Invalid from_attributes call', 'Pydantic')
 ERROR_CONFIG = ErrorCode('pydantic-config', 'Invalid config value', 'Pydantic')
 ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic')
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
@@ -725,8 +726,8 @@ ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydanti
 ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
 
 
-def error_from_orm(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
-    api.fail(f'"{model_name}" does not have orm_mode=True', context, code=ERROR_ORM)
+def error_from_attributes(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
+    api.fail(f'"{model_name}" does not have from_attributes=True', context, code=ERROR_ORM)
 
 
 def error_invalid_config_value(name: str, api: SemanticAnalyzerPluginInterface, context: Context) -> None:

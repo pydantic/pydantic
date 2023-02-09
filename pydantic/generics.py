@@ -122,7 +122,7 @@ class GenericModel(BaseModel):
                 object_by_reference = reference_module_globals.setdefault(reference_name, created_model)
                 reference_name += '_'
 
-        created_model.Config = cls.Config
+        created_model.Config = cls.model_config
 
         # Find any typevars that are still present in the model.
         # If none are left, the model is fully "concrete", otherwise the new

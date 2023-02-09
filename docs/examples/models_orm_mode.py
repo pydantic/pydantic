@@ -22,7 +22,7 @@ class CompanyModel(BaseModel):
     domains: List[constr(max_length=255)]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 co_orm = CompanyOrm(

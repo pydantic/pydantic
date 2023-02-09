@@ -42,11 +42,8 @@ def test_forward_ref_auto_update_no_model(create_module):
     def module():
         from pydantic import BaseModel
 
-        class Foo(BaseModel):
+        class Foo(BaseModel, undefined_types_warning=False):
             a: 'Bar' = None
-
-            class Config:
-                undefined_types_warning = False
 
         class Bar(BaseModel):
             b: 'Foo'
@@ -78,14 +75,12 @@ def test_forward_ref_auto_update_no_model(create_module):
 def test_forward_ref_one_of_fields_not_defined(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         class Foo(BaseModel):
+            model_config = ConfigDict(undefined_types_warning=False)
             foo: 'Foo'
             bar: 'Bar'
-
-            class Config:
-                undefined_types_warning = False
 
     assert hasattr(module.Foo, 'model_fields') is False
 
@@ -462,7 +457,7 @@ def test_forward_ref_optional(create_module):
         # language=Python
         """
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 
 
@@ -473,10 +468,8 @@ class Spec(BaseModel):
 
 
 class PSpec(Spec):
+    model_config = ConfigDict(undefined_types_warning = False)
     g: Optional[GSpec]
-
-    class Config:
-        undefined_types_warning = False
 
 
 class GSpec(Spec):
@@ -609,7 +602,7 @@ def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class User(BaseModel):
@@ -624,13 +617,10 @@ class User(BaseModel):
 
 
 class Model(BaseModel):
+    model_config=ConfigDict(json_encoders={ 'User': lambda v: f'User({v.y})'})
     foo_user: FooUser
     user: User
 
-    class Config:
-        json_encoders = {
-            'User': lambda v: f'User({v.y})',
-        }
 """
     )
 
@@ -643,17 +633,17 @@ def test_json_encoder_forward_ref(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import ForwardRef, List, Optional
 
 class User(BaseModel):
     name: str
     friends: Optional[List['User']] = None
 
-    class Config:
+    mdoel_config = ConfigDict(
         json_encoders = {
             ForwardRef('User'): lambda v: f'User({v.name})',
-        }
+        })
 """
     )
 
@@ -695,16 +685,15 @@ def test_pep585_recursive_generics(create_module):
     def module():
         from typing import ForwardRef
 
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         HeroRef = ForwardRef('Hero')
 
         class Team(BaseModel):
+            model_config = ConfigDict(undefined_types_warning=False)
+
             name: str
             heroes: list[HeroRef]
-
-            class Config:
-                undefined_types_warning = False
 
         class Hero(BaseModel):
             name: str
@@ -790,7 +779,7 @@ def nested():
 def test_nested_more_annotation(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         def nested():
             class Foo(BaseModel):
@@ -798,10 +787,8 @@ def test_nested_more_annotation(create_module):
 
             def more_nested():
                 class Bar(BaseModel):
+                    model_config = ConfigDict(undefined_types_warning=False)
                     b: 'Foo'
-
-                    class Config:
-                        undefined_types_warning = False
 
                 return Bar
 
@@ -840,14 +827,12 @@ def test_nested_annotation_priority(create_module):
 def test_nested_model_rebuild(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         def nested():
             class Bar(BaseModel):
+                model_config = ConfigDict(undefined_types_warning=False)
                 b: 'Foo'
-
-                class Config:
-                    undefined_types_warning = False
 
             class Foo(BaseModel):
                 a: int
@@ -924,11 +909,9 @@ def test_undefined_types_warning_1b_suppressed_via_config_2a_future_annotations(
 from __future__ import annotations
 from pydantic import BaseModel
 
-class Foobar(BaseModel):
+# Suppress the undefined_types_warning
+class Foobar(BaseModel, undefined_types_warning=False):
     a: UndefinedType
-    # Suppress the undefined_types_warning
-    class Config:
-        undefined_types_warning = False
 """
     )
     # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
@@ -945,12 +928,9 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
         UndefinedType = ForwardRef('UndefinedType')
 
-        class Foobar(BaseModel):
+        # Suppress the undefined_types_warning
+        class Foobar(BaseModel, undefined_types_warning=False):
             a: UndefinedType
-
-            # Suppress the undefined_types_warning
-            class Config:
-                undefined_types_warning = False
 
     # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
     # The presence of the `__pydantic_model_complete__` is a good indicator of this.
@@ -977,7 +957,6 @@ def test_undefined_types_warning_raised_by_usage(create_module):
             class Foobar(BaseModel):
                 a: UndefinedType
 
-                class Config:
-                    undefined_types_warning = False
+                model_config = {'undefined_types_warning': False}
 
             Foobar(a=1)

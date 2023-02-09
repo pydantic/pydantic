@@ -33,6 +33,7 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset, validator
 from pydantic.color import Color
+from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
@@ -107,12 +108,9 @@ def test_key():
 @pytest.mark.xfail(reason='working on V2')
 def test_by_alias():
     class ApplePie(BaseModel):
-        a: float
-        b: int = 10
-
-        class Config:
-            title = 'Apple Pie'
-            fields = {'a': 'Snap', 'b': 'Crackle'}
+        model_config = ConfigDict(title='Apple Pie')
+        a: float = Field(alias='Snap')
+        b: int = Field(10, alias='Crackle')
 
     assert ApplePie.model_json_schema() == {
         'type': 'object',
@@ -133,11 +131,9 @@ def test_ref_template():
         x: str = None
 
     class ApplePie(BaseModel):
+        model_config = ConfigDict(title='Apple Pie')
         a: float = None
         key_lime: KeyLimePie = None
-
-        class Config:
-            title = 'Apple Pie'
 
     assert ApplePie.model_json_schema(ref_template='foobar/{model}.json') == {
         'title': 'Apple Pie',
@@ -160,13 +156,9 @@ def test_ref_template():
 @pytest.mark.xfail(reason='working on V2')
 def test_by_alias_generator():
     class ApplePie(BaseModel):
+        model_config = ConfigDict(alias_generator=lambda x: x.upper())
         a: float
         b: int = 10
-
-        class Config:
-            @staticmethod
-            def alias_generator(x):
-                return x.upper()
 
     assert ApplePie.model_json_schema() == {
         'title': 'ApplePie',
@@ -1665,7 +1657,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'max_length': 5}, int),
         ({'min_length': 2}, float),
         ({'max_length': 5}, Decimal),
-        ({'allow_mutation': False}, bool),
+        ({'frozen': True}, bool),
         ({'regex': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),
@@ -2050,10 +2042,8 @@ def test_color_type():
 @pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra():
     class Model(BaseModel):
+        model_config = ConfigDict(schema_extra={'examples': [{'a': 'Foo'}]})
         a: str
-
-        class Config:
-            schema_extra = {'examples': [{'a': 'Foo'}]}
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -2066,29 +2056,27 @@ def test_model_with_schema_extra():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable():
-    class Model(BaseModel):
-        name: str = None
+    def schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
 
-        class Config:
-            @staticmethod
-            def schema_extra(schema, model_class):
-                schema.pop('properties')
-                schema['type'] = 'override'
-                assert model_class is Model
+    class Model(BaseModel):
+        model_config = ConfigDict(schema_extra=schema_extra)
+        name: str = None
 
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable_no_model_class():
-    class Model(BaseModel):
-        name: str = None
+    def schema_extra(schema):
+        schema.pop('properties')
+        schema['type'] = 'override'
 
-        class Config:
-            @staticmethod
-            def schema_extra(schema):
-                schema.pop('properties')
-                schema['type'] = 'override'
+    class Model(BaseModel):
+        model_config = ConfigDict(schema_extra=schema_extra)
+        name: str = None
 
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
@@ -2112,14 +2100,14 @@ def test_model_with_schema_extra_callable_classmethod():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra_callable_instance_method():
-    class Model(BaseModel):
-        name: str = None
+    def schema_extra(schema, model_class):
+        schema.pop('properties')
+        schema['type'] = 'override'
+        assert model_class is Model
 
-        class Config:
-            def schema_extra(schema, model_class):
-                schema.pop('properties')
-                schema['type'] = 'override'
-                assert model_class is Model
+    class Model(BaseModel):
+        model_config = ConfigDict(schema_extra=schema_extra)
+        name: str = None
 
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
 
@@ -2127,10 +2115,8 @@ def test_model_with_schema_extra_callable_instance_method():
 @pytest.mark.xfail(reason='working on V2')
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
+        model_config = ConfigDict(extra=Extra.forbid)
         a: str
-
-        class Config:
-            extra = Extra.forbid
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -2213,16 +2199,12 @@ def test_enforced_constraints(annotation, kwargs, field_schema):
 @pytest.mark.xfail(reason='working on V2')
 def test_real_vs_phony_constraints():
     class Model1(BaseModel):
+        model_config = ConfigDict(title='Test Model')
         foo: int = Field(..., gt=123)
 
-        class Config:
-            title = 'Test Model'
-
     class Model2(BaseModel):
+        model_config = ConfigDict(title='Test Model')
         foo: int = Field(..., exclusiveMinimum=123)
-
-        class Config:
-            title = 'Test Model'
 
     with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
         Model1(foo=122)

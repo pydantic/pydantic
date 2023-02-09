@@ -1,17 +1,24 @@
-from typing import Generic, List, Optional, Set, TypeVar, Union
+from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, validator
 from pydantic.dataclasses import dataclass
 from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
-    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
     x: int
     y: str
 
     def method(self) -> None:
         pass
+
+    class Config:
+        alias_generator = None
+        frozen = True
+        extra = Extra.forbid
+
+        def config_method(self) -> None:
+            ...
 
 
 model = Model(x=1, y='y', z='z')
@@ -37,7 +44,8 @@ KwargsModel.from_orm({})  # type: ignore[pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
-    model_config = ConfigDict(extra='forbid')  # type: ignore[typeddict-item]
+    class Config:
+        extra = 'forbid'
 
 
 ForbidExtraModel(x=1)
@@ -51,11 +59,9 @@ KwargsForbidExtraModel(x=1)
 
 
 class BadExtraModel(BaseModel):
-    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
-
-
-class BadExtraButIgnoredModel(BaseModel):
-    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item,pydantic-config]
+    class Config:
+        extra = 1  # type: ignore[pydantic-config]
+        extra = 1
 
 
 class KwargsBadExtraModel(BaseModel, extra=1):
@@ -63,7 +69,8 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 
 class BadConfig1(BaseModel):
-    model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
+    class Config:
+        from_attributes: Any = {}  # not sensible, but should still be handled gracefully
 
 
 class KwargsBadConfig1(BaseModel, from_attributes={}):
@@ -71,7 +78,8 @@ class KwargsBadConfig1(BaseModel, from_attributes={}):
 
 
 class BadConfig2(BaseModel):
-    model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
+    class Config:
+        from_attributes = list  # not sensible, but should still be handled gracefully
 
 
 class KwargsBadConfig2(BaseModel, from_attributes=list):
@@ -79,7 +87,8 @@ class KwargsBadConfig2(BaseModel, from_attributes=list):
 
 
 class InheritingModel(Model):
-    model_config = ConfigDict(frozen=False)
+    class Config:
+        frozen = False
 
 
 class KwargsInheritingModel(KwargsModel, frozen=False):
@@ -160,7 +169,8 @@ class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    model_config = ConfigDict(populate_by_name=True)
+    class Config:
+        populate_by_name = True
 
 
 DynamicAliasModel2(y='y', z=1)
@@ -179,7 +189,8 @@ KwargsDynamicAliasModel(x='y', z=1)
 class AliasGeneratorModel(BaseModel):
     x: int
 
-    model_config = ConfigDict(alias_generator=lambda x: x + '_')
+    class Config:
+        alias_generator = lambda x: x + '_'  # noqa E731
 
 
 AliasGeneratorModel(x=1)
@@ -190,7 +201,8 @@ AliasGeneratorModel(z=1)
 class AliasGeneratorModel2(BaseModel):
     x: int = Field(..., alias='y')
 
-    model_config = ConfigDict(alias_generator=lambda x: x + '_')  # type: ignore[pydantic-alias]
+    class Config:  # type: ignore[pydantic-alias]
+        alias_generator = lambda x: x + '_'  # noqa E731
 
 
 class UntypedFieldModel(BaseModel):
@@ -243,7 +255,10 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
+    class Config:
+        alias_generator = None
+        frozen = True
+        extra = Extra.forbid
 
 
 frozenmodel = FrozenModel(x=1, y='b')
@@ -251,7 +266,8 @@ frozenmodel.y = 'a'
 
 
 class InheritingModel2(FrozenModel):
-    model_config = ConfigDict(frozen=False)
+    class Config:
+        frozen = False
 
 
 inheriting2 = InheritingModel2(x=1, y='c')

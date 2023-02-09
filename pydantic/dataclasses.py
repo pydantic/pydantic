@@ -54,7 +54,7 @@ from typing_extensions import dataclass_transform
 from pydantic._internal._utils import ClassAttribute
 
 from ._internal import _fields
-from .config import BaseConfig, ConfigDict, Extra, get_config
+from .config import ConfigDict, Extra, get_config
 from .fields import Field, FieldInfo
 from .main import create_model
 
@@ -259,7 +259,7 @@ class DataclassProxy:
 
 def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     dc_cls: Type['Dataclass'],
-    config: Type[BaseConfig],
+    config: ConfigDict,
     validate_on_init: bool,
     dc_cls_doc: str,
 ) -> None:
@@ -272,10 +272,10 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
 
     @wraps(init)
     def handle_extra_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
-        if config.extra == Extra.ignore:
+        if config['extra'] == Extra.ignore:
             init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
 
-        elif config.extra == Extra.allow:
+        elif config['extra'] == Extra.allow:
             for k, v in kwargs.items():
                 self.__dict__.setdefault(k, v)
             init(self, *args, **{k: v for k, v in kwargs.items() if k in self.__dataclass_fields__})
@@ -288,7 +288,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
 
         @wraps(post_init)
         def new_post_init(self: 'Dataclass', *args: Any, **kwargs: Any) -> None:
-            if config.post_init_call == 'before_validation':
+            if config['post_init_call'] == 'before_validation':
                 post_init(self, *args, **kwargs)
 
             if self.__class__.__pydantic_run_validation__:
@@ -296,7 +296,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
                 if hasattr(self, '__post_init_post_parse__'):
                     self.__post_init_post_parse__(*args, **kwargs)
 
-            if config.post_init_call == 'after_validation':
+            if config['post_init_call'] == 'after_validation':
                 post_init(self, *args, **kwargs)
 
         setattr(dc_cls, '__init__', handle_extra_init)
@@ -337,7 +337,7 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
     setattr(dc_cls, '__validate__', classmethod(_validate_dataclass))
     setattr(dc_cls, '__get_validators__', classmethod(_get_validators))
 
-    if dc_cls.__pydantic_model__.__config__.validate_assignment and not dc_cls.__dataclass_params__.frozen:
+    if dc_cls.__pydantic_model__.model_config['validate_assignment'] and not dc_cls.__dataclass_params__.frozen:
         setattr(dc_cls, '__setattr__', _dataclass_validate_assignment_setattr)
 
 
@@ -361,10 +361,13 @@ def _validate_dataclass(cls: Type['DataclassT'], v: Any) -> 'DataclassT':
 
 def create_pydantic_model_from_dataclass(
     dc_cls: Type['Dataclass'],
-    config: Type[Any] = BaseConfig,
+    config: Optional[ConfigDict] = None,
     dc_cls_doc: Optional[str] = None,
 ) -> Type['BaseModel']:
     import dataclasses
+
+    if config is None:
+        config = ConfigDict()
 
     field_definitions: Dict[str, Any] = {}
     for field in dataclasses.fields(dc_cls):
@@ -473,7 +476,7 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     )
 
 
-def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type[BaseConfig]) -> 'CallableGenerator':
+def make_dataclass_validator(dc_cls: Type['Dataclass'], config: Type[ConfigDict]) -> 'CallableGenerator':
     """
     Create a pydantic.dataclass from a builtin dataclass to add type validation
     and yield the validators

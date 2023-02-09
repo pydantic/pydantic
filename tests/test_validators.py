@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, Extra, Field, PydanticUserError, ValidationError, errors, validator
+from pydantic import BaseModel, ConfigDict, Extra, Field, PydanticUserError, ValidationError, errors, validator
 from pydantic.decorators import root_validator
 
 
@@ -174,9 +174,7 @@ def validate_assignment_model_fixture():
         def double_c(cls, v):
             return v * 2
 
-        class Config:
-            validate_assignment = True
-            extra = Extra.allow
+        model_config = ConfigDict(validate_assignment=True, extra=Extra.allow)
 
     return ValidateAssignmentModel
 
@@ -245,8 +243,7 @@ def test_validating_assignment_values_dict():
             else:
                 return b
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
     model = ModelTwo(m=ModelOne(a=1), b=2)
     assert model.b == 3
@@ -954,8 +951,7 @@ def test_root_validator_types():
             root_val_values = cls, values
             return values
 
-        class Config:
-            extra = Extra.allow
+        model_config = ConfigDict(extra=Extra.allow)
 
     assert Model(b='bar', c='wobble').model_dump() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
 
@@ -1139,8 +1135,7 @@ def test_assignment_validator_cls():
     class Model(BaseModel):
         name: str
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
         @validator('name')
         def check_foo(cls, value):
@@ -1220,7 +1215,7 @@ def test_nested_literal_validator():
 @pytest.mark.xfail(reason='working on V2')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
-        x: Union[Literal[42], Literal['pika']] = Field(allow_mutation=False)
+        x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
 
     m = Model(x=42)
     with pytest.raises(TypeError):
@@ -1236,8 +1231,7 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker)
         bar: str = Field(alias='pika')
         baz: str
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
         @validator('foo')
         def validate_foo(cls, v, values):
@@ -1270,8 +1264,7 @@ def test_exceptions_in_field_validators_restore_original_field_value():
     class Model(BaseModel):
         foo: str
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
         @validator('foo')
         def validate_foo(cls, v):
@@ -1328,8 +1321,7 @@ def test_validating_assignment_pre_root_validator_fail():
         current_value: float = Field(..., alias='current')
         max_value: float
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
         @root_validator(pre=True)
         def values_are_not_string(cls, values):
@@ -1355,8 +1347,7 @@ def test_validating_assignment_post_root_validator_fail():
         current_value: float = Field(..., alias='current')
         max_value: float
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
         @root_validator
         def current_lessequal_max(cls, values):
@@ -1403,8 +1394,7 @@ def test_root_validator_many_values_change():
         height: float
         area: float = None
 
-        class Config:
-            validate_assignment = True
+        model_config = ConfigDict(validate_assignment=True)
 
         @root_validator
         def set_area(cls, values):

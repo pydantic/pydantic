@@ -14,8 +14,8 @@ from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     UUID1,
-    BaseConfig,
     BaseModel,
+    ConfigDict,
     DirectoryPath,
     Extra,
     FilePath,
@@ -261,10 +261,7 @@ obj: SomeDict = {
 }
 
 
-class Config(BaseConfig):
-    title = 'Record'
-    extra = Extra.ignore
-    max_anystr_length = 1234
+config = ConfigDict(title='Record', extra=Extra.ignore, str_max_length=1234)
 
 
 class CustomPath(PurePath):

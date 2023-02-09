@@ -103,9 +103,8 @@ def test_methods_are_inherited():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_config_is_inherited():
-    class CustomGenericModel(GenericModel):
-        class Config:
-            allow_mutation = False
+    class CustomGenericModel(GenericModel, frozen=True):
+        ...
 
     T = TypeVar('T')
 
@@ -249,11 +248,8 @@ def test_cover_cache():
 def test_generic_config():
     data_type = TypeVar('data_type')
 
-    class Result(GenericModel, Generic[data_type]):
+    class Result(GenericModel, Generic[data_type], frozen=True):
         data: data_type
-
-        class Config:
-            allow_mutation = False
 
     result = Result[int](data=1)
     assert result.data == 1

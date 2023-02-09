@@ -53,18 +53,18 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
     """
     Create a pydantic-core config from a pydantic config.
     """
-    config = cls.__config__
+    config = cls.model_config
     return core_schema.CoreConfig(
-        title=config.title or cls.__name__,
-        typed_dict_extra_behavior=config.extra.value,
-        allow_inf_nan=config.allow_inf_nan,
-        populate_by_name=config.allow_population_by_field_name,
-        str_strip_whitespace=config.anystr_strip_whitespace,
-        str_to_lower=config.anystr_lower,
-        str_to_upper=config.anystr_upper,
-        strict=config.strict,
-        ser_json_timedelta=config.ser_json_timedelta,
-        ser_json_bytes=config.ser_json_bytes,
+        title=config['title'] or cls.__name__,
+        typed_dict_extra_behavior=config['extra'].value,
+        allow_inf_nan=config['allow_inf_nan'],
+        populate_by_name=config['populate_by_name'],
+        str_strip_whitespace=config['str_strip_whitespace'],
+        str_to_lower=config['str_to_lower'],
+        str_to_upper=config['str_to_upper'],
+        strict=config['strict'],
+        ser_json_timedelta=config['ser_json_timedelta'],
+        ser_json_bytes=config['ser_json_bytes'],
     )
 
 

@@ -59,6 +59,16 @@ cases = [
     ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt'),
     ('pyproject-plugin-strict.toml', 'fail_defaults.py', 'fail_defaults.txt'),
     ('mypy-plugin-strict.ini', 'plugin_default_factory.py', 'plugin_default_factory.txt'),
+    # with Config-Class
+    ('mypy-plugin.ini', 'plugin_success_baseConfig.py', None),
+    ('mypy-plugin.ini', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
+    ('mypy-plugin-strict.ini', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
+    ('mypy-plugin-strict.ini', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
+    ('mypy-default.ini', 'plugin_success_baseConfig.py', 'plugin_success_baseConfig.txt'),
+    ('pyproject-plugin.toml', 'plugin_success_baseConfig.py', None),
+    ('pyproject-plugin.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
+    ('pyproject-plugin-strict.toml', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
+    ('pyproject-plugin-strict.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
 ]
 executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
