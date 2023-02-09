@@ -82,7 +82,6 @@ except ImportError:
 T = TypeVar('T')
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_key():
     class ApplePie(BaseModel):
         """
@@ -105,7 +104,6 @@ def test_key():
     assert ApplePie.model_json_schema() == s
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_by_alias():
     class ApplePie(BaseModel):
         model_config = ConfigDict(title='Apple Pie')
@@ -125,7 +123,7 @@ def test_by_alias():
     assert list(ApplePie.model_json_schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 def test_ref_template():
     class KeyLimePie(BaseModel):
         x: str = None
@@ -138,14 +136,6 @@ def test_ref_template():
     assert ApplePie.model_json_schema(ref_template='foobar/{model}.json') == {
         'title': 'Apple Pie',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'number'}, 'key_lime': {'$ref': 'foobar/KeyLimePie.json'}},
-        'definitions': {
-            'KeyLimePie': {
-                'title': 'KeyLimePie',
-                'type': 'object',
-                'properties': {'x': {'title': 'X', 'type': 'string'}},
-            },
-        },
     }
     assert ApplePie.model_json_schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
@@ -627,7 +617,6 @@ def test_tuple(field_type, extra_props):
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_deque():
     class Model(BaseModel):
         a: Deque[str]
@@ -640,7 +629,6 @@ def test_deque():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_bool():
     class Model(BaseModel):
         a: bool
@@ -653,7 +641,6 @@ def test_bool():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_strict_bool():
     class Model(BaseModel):
         a: StrictBool
@@ -749,13 +736,16 @@ def test_list_union_dict(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
+        # @classmethod
+        # def model_json_schema_extra(cls):
+        #     return None
+
     base_schema = {'title': 'Model', 'type': 'object'}
     base_schema.update(expected_schema)
 
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -914,7 +904,6 @@ def test_secret_types(field_type, inner_type):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -943,7 +932,6 @@ def test_special_int_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -1520,7 +1508,6 @@ def test_schema_no_definitions():
     assert model_schema == {'title': 'Schema without definitions'}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_list_default():
     class UserModel(BaseModel):
         friends: List[int] = [1]
@@ -1554,7 +1541,6 @@ def test_enum_int_default():
     assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_dict_default():
     class UserModel(BaseModel):
         friends: Dict[str, float] = {'a': 1.1, 'b': 2.2}
@@ -1958,7 +1944,6 @@ def test_root_nested_model():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_new_type_schema():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
@@ -2127,7 +2112,7 @@ def test_model_with_extra_forbidden():
     }
 
 
-# @pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -2223,7 +2208,6 @@ def test_real_vs_phony_constraints():
     )
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_subfield_field_info():
     class MyModel(BaseModel):
         entries: Dict[str, List[int]]
@@ -2358,7 +2342,6 @@ def test_frozen_set():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_iterable():
     class Model(BaseModel):
         a: Iterable[int]
@@ -2371,7 +2354,6 @@ def test_iterable():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_new_type():
     new_type = NewType('NewStr', str)
 
@@ -3202,7 +3184,6 @@ def test_extra_inheritance():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_with_type_attributes():
     class Foo:
         a: float

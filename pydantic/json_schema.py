@@ -120,6 +120,7 @@ class GenerateJsonSchema:
 
         self.core_to_json_refs: Dict[str, str] = {}
         self.json_to_core_refs: Dict[str, str] = {}
+        self.rendered_template_sources: Dict[str, str] = {}
 
         self.json_ref_counts: Dict[str, int] = defaultdict(int)
 
@@ -130,7 +131,7 @@ class GenerateJsonSchema:
         if '$ref' in json_schema:
             json_schema_ref = json_schema['$ref']
             if self.json_ref_counts[json_schema_ref] == 1:
-                ref_key = json_schema_ref.split('/')[-1]
+                ref_key = self.rendered_template_sources[json_schema_ref]
                 if ref_key in self.definitions:
                     del json_schema['$ref']
                     json_schema.update(deepcopy(self.definitions[ref_key]))
@@ -180,7 +181,9 @@ class GenerateJsonSchema:
         if maybe_json_ref is not None:
             return maybe_json_ref
 
-        json_ref = re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref)
+        json_ref = re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref.split('.')[-1])
+        if self.json_to_core_refs.get(json_ref, core_ref) != core_ref:
+            json_ref = re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref)
         while self.json_to_core_refs.get(json_ref, core_ref) != core_ref:
             # Hitting a collision; add trailing `_` until we don't hit a collision
             # TODO: Maybe add an incrementing counter to the end of the json_ref instead?
@@ -231,7 +234,7 @@ class GenerateJsonSchema:
         return {'type': 'string', 'format': 'date-time'}
 
     def timedelta_schema(self, schema: core_schema.TimedeltaSchema) -> JsonSchemaValue:
-        return {'type': 'string', 'format': 'time-delta'}
+        return {'type': 'number', 'format': 'time-delta'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         expected = schema['expected']
@@ -256,7 +259,8 @@ class GenerateJsonSchema:
         return {}
 
     def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
-        json_schema = {'type': 'array'}
+        items_schema = self._generate(schema['items_schema'])
+        json_schema = {'type': 'array', 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
         return json_schema
 
@@ -303,7 +307,9 @@ class GenerateJsonSchema:
         return json_schema
 
     def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
-        values_schema = self._generate(schema['values_schema'])
+        values_schema = self._generate(schema['values_schema']).copy()
+        values_schema.pop('title', None)  # don't give a title to the additionalProperties
+
         json_schema = {'type': 'object', 'additionalProperties': values_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.object)
         return json_schema
@@ -351,11 +357,12 @@ class GenerateJsonSchema:
             return self._generate(schema['lax_schema'])
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
+        # TODO: Hitting an issue where it would be really helpful to have the 'title' when I have the ref.
+        # Specifically, making it hard to get title set properly on the referenced schemas
+        # Ideally, the ref would be on the ModelSchema, not on the TypedDictSchema
         properties: Dict[str, JsonSchemaValue] = {}
         required: list[str] = []
         for name, field in schema['fields'].items():
-            if field['required']:
-                required.append(name)
             if self.by_alias:
                 alias = field.get('validation_alias', name)
                 if isinstance(alias, str):
@@ -363,9 +370,11 @@ class GenerateJsonSchema:
                 else:
                     # TODO: What should be done in this case?
                     pass
-            field_schema = self._generate(field['schema'])
+            field_schema = self._generate(field['schema']).copy()
             field_schema.setdefault('title', name.title().replace('_', ' '))
             properties[name] = field_schema
+            if field['required']:
+                required.append(name)
 
         json_schema = {'type': 'object', 'properties': properties}
         if required:
@@ -400,9 +409,10 @@ class GenerateJsonSchema:
         return self._ref_json_schema(json_ref)
 
     def _ref_json_schema(self, json_ref: str) -> JsonSchemaValue:
-        json_ref = self.ref_template.format(model=json_ref)
-        self.json_ref_counts[json_ref] += 1
-        return {'$ref': json_ref}
+        rendered_template = self.ref_template.format(model=json_ref)
+        self.rendered_template_sources[rendered_template] = json_ref
+        self.json_ref_counts[rendered_template] += 1
+        return {'$ref': rendered_template}
 
     def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
         # TODO: Ask Samuel how to handle this

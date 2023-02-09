@@ -379,8 +379,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         Override this method to add extra information to the JSON schema.
         """
         return JsonSchemaExtra(
-            title=cls.__config__.title or cls.__name__,
-            description=getdoc(cls),
+            title=cls.model_config['title'] or cls.__name__,
+            description=getdoc(cls) or None,
         )
 
     @classmethod

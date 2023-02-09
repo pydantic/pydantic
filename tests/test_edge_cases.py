@@ -1232,7 +1232,6 @@ def test_submodel_different_type():
         Spam(c=Bar(b='123'))
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_self():
     class Model(BaseModel):
         self: str

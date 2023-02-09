@@ -114,12 +114,13 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    json_schema_extra = cls.model_json_schema_extra()
     return core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: cls.model_json_schema_extra()},
+        extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
 
 
@@ -176,12 +177,13 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    json_schema_extra = cls.model_json_schema_extra()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: cls.model_json_schema_extra()},
+        extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -216,10 +218,11 @@ def build_inner_schema(  # noqa: C901
                 global_ns = module.__dict__
 
     model_ref = f'{module_name}.{name}'
+    json_schema_extra = cls.model_json_schema_extra()
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
-        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: cls.model_json_schema_extra()},
+        extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 
