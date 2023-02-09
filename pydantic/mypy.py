@@ -41,6 +41,7 @@ from mypy.plugin import (
     FunctionContext,
     MethodContext,
     Plugin,
+    ReportConfigContext,
     SemanticAnalyzerPluginInterface,
 )
 from mypy.plugins import dataclasses
@@ -100,6 +101,7 @@ def plugin(version: str) -> 'TypingType[Plugin]':
 class PydanticPlugin(Plugin):
     def __init__(self, options: Options) -> None:
         self.plugin_config = PydanticPluginConfig(options)
+        self._plugin_data = self.plugin_config.to_data()
         super().__init__(options)
 
     def get_base_class_hook(self, fullname: str) -> 'Optional[Callable[[ClassDefContext], None]]':
@@ -125,6 +127,13 @@ class PydanticPlugin(Plugin):
         if fullname == DATACLASS_FULLNAME:
             return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
         return None
+
+    def report_config_data(self, ctx: ReportConfigContext) -> Dict[str, Any]:
+        """Return all plugin config data.
+
+        Used by mypy to determine if cache needs to be discarded.
+        """
+        return self._plugin_data
 
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
         transformer = PydanticModelTransformer(ctx, self.plugin_config)
@@ -209,6 +218,9 @@ class PydanticPluginConfig:
             for key in self.__slots__:
                 setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
                 setattr(self, key, setting)
+
+    def to_data(self) -> Dict[str, Any]:
+        return {key: getattr(self, key) for key in self.__slots__}
 
 
 def from_orm_callback(ctx: MethodContext) -> Type:
