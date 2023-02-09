@@ -123,7 +123,6 @@ def test_by_alias():
     assert list(ApplePie.model_json_schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_ref_template():
     class KeyLimePie(BaseModel):
         x: str = None
@@ -131,13 +130,32 @@ def test_ref_template():
     class ApplePie(BaseModel):
         model_config = ConfigDict(title='Apple Pie')
         a: float = None
-        key_lime: KeyLimePie = None
+        key_lime: Optional[KeyLimePie] = None
 
     assert ApplePie.model_json_schema(ref_template='foobar/{model}.json') == {
+        'definitions': {
+            'KeyLimePie': {
+                'properties': {'x': {'default': None, 'title': 'X', 'type': 'string'}},
+                'title': 'KeyLimePie',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'a': {'default': None, 'title': 'A', 'type': 'number'},
+            'key_lime': {
+                'anyOf': [{'type': 'null'}, {'$ref': 'foobar/KeyLimePie.json'}],
+                'default': None,
+                'title': 'Key Lime',
+            },
+        },
         'title': 'Apple Pie',
         'type': 'object',
     }
-    assert ApplePie.model_json_schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
+    assert ApplePie.model_json_schema()['properties']['key_lime'] == {
+        'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}],
+        'default': None,
+        'title': 'Key Lime',
+    }
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
     assert 'foobar/KeyLimePie.json' in json_schema
     assert '#/definitions/KeyLimePie' not in json_schema
@@ -488,7 +506,6 @@ def test_json_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_list_sub_model():
     class Foo(BaseModel):
         a: float
@@ -683,7 +700,6 @@ class Foo(BaseModel):
     a: float
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -720,13 +736,16 @@ class Foo(BaseModel):
             {
                 'definitions': {
                     'Foo': {
-                        'title': 'Foo',
-                        'type': 'object',
                         'properties': {'a': {'title': 'A', 'type': 'number'}},
                         'required': ['a'],
+                        'title': 'Foo',
+                        'type': 'object',
                     }
                 },
-                'properties': {'a': {'$ref': '#/definitions/Foo'}},
+                'properties': {'a': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'title': 'A'}},
+                'required': ['a'],
+                'title': 'Model',
+                'type': 'object',
             },
         ),
         (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
@@ -1819,7 +1838,6 @@ def test_optional_validator():
     assert Model(something='hello').model_dump() == {'something': 'hello'}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_field_with_validator():
     class Model(BaseModel):
         something: Optional[int] = None
@@ -1829,9 +1847,11 @@ def test_field_with_validator():
             return v
 
     assert Model.model_json_schema() == {
+        'properties': {
+            'something': {'anyOf': [{'type': 'null'}, {'type': 'integer'}], 'default': None, 'title': 'Something'}
+        },
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'type': 'integer', 'title': 'Something'}},
     }
 
 

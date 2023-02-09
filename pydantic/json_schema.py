@@ -1,3 +1,9 @@
+"""
+Super annoying thing: changing the default value of a field means it can't use the same schema as a $ref...
+In particular, a default value of None for a required field means it can't be a $ref.
+
+I guess this means I have to figure out how to implement optional in a better way...?
+"""
 from __future__ import annotations
 
 import re
@@ -127,18 +133,19 @@ class GenerateJsonSchema:
     def generate(self, schema: CoreSchema) -> JsonSchemaValue:
         json_schema = self._generate(schema)
 
-        # Remove top-level $ref if it isn't referenced elsewhere (i.e., not a recursive schema)
+        # Remove the top-level $ref if present
         if '$ref' in json_schema:
             json_schema_ref = json_schema['$ref']
-            if self.json_ref_counts[json_schema_ref] == 1:
-                ref_key = self.rendered_template_sources[json_schema_ref]
-                if ref_key in self.definitions:
-                    del json_schema['$ref']
-                    json_schema.update(deepcopy(self.definitions[ref_key]))
-                    self.definitions.pop(ref_key)
+            json_schema = self._get_referenced_schema(json_schema_ref)
+            self.json_ref_counts[json_schema_ref] -= 1
+
+        for k, v in self.json_ref_counts.items():
+            if v == 0:
+                del self.definitions[self.rendered_template_sources[k]]
 
         if self.definitions:
             json_schema['definitions'] = self.definitions
+
         return json_schema
 
     def _generate(self, schema: CoreSchema) -> JsonSchemaValue:
@@ -155,7 +162,7 @@ class GenerateJsonSchema:
 
         # Handle the type-specific bits of the schema generation
         generate_for_schema_type = _JSON_SCHEMA_METHOD_MAPPING[schema['type']]
-        json_schema = generate_for_schema_type(self, schema)
+        json_schema: Dict[str, str] = generate_for_schema_type(self, schema)
 
         # Handle the "generic" bits of the schema generation
         extra = get_json_schema_extra(schema)
@@ -169,6 +176,31 @@ class GenerateJsonSchema:
             self.definitions[json_ref] = json_schema
             return self._ref_json_schema(json_ref)
 
+        # Remove top-level $ref if there are sibling keys -- this is necessary since $ref replaces all other keys
+        # (see bottom of https://swagger.io/docs/specification/using-ref/ for reference)
+        if '$ref' in json_schema:
+            json_schema_ref = json_schema['$ref']
+            referenced_json_schema = self._get_referenced_schema(json_schema_ref)
+            print(f"{referenced_json_schema=}")
+            overrides = False
+            for k in json_schema:
+                if k == '$ref':
+                    continue
+                if k not in referenced_json_schema or json_schema[k] != referenced_json_schema[k]:
+                    overrides = True
+                    break
+            if not overrides:
+                # All sibling keys were redundant, and therefore safe to remove
+                return {'$ref': json_schema_ref}
+            else:
+                json_schema = json_schema.copy()
+                json_schema_ref = json_schema.pop('$ref')
+                self.json_ref_counts[json_schema_ref] -= 1
+                for k, v in referenced_json_schema.items():
+                    json_schema.setdefault(k, v)
+
+        if '$ref' in json_schema:
+            assert len(json_schema) == 1
         return json_schema
 
     def get_json_ref(self, core_ref: str) -> str:
@@ -310,7 +342,10 @@ class GenerateJsonSchema:
         values_schema = self._generate(schema['values_schema']).copy()
         values_schema.pop('title', None)  # don't give a title to the additionalProperties
 
-        json_schema = {'type': 'object', 'additionalProperties': values_schema}
+        json_schema = {'type': 'object'}
+        if values_schema:  # don't add additionalProperties if it's empty
+            json_schema['additionalProperties'] = values_schema
+
         update_with_validations(json_schema, schema, ValidationsMapping.object)
         return json_schema
 
@@ -371,7 +406,7 @@ class GenerateJsonSchema:
                     # TODO: What should be done in this case?
                     pass
             field_schema = self._generate(field['schema']).copy()
-            field_schema.setdefault('title', name.title().replace('_', ' '))
+            field_schema['title'] = name.title().replace('_', ' ')
             properties[name] = field_schema
             if field['required']:
                 required.append(name)
@@ -380,6 +415,9 @@ class GenerateJsonSchema:
         if required:
             json_schema['required'] = required
         return json_schema
+
+    def _get_referenced_schema(self, json_schema_ref: str) -> JsonSchemaValue:
+        return self.definitions[self.rendered_template_sources[json_schema_ref]]
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
         # TODO: Note the relationship between this and TypedDictSchema
@@ -391,7 +429,12 @@ class GenerateJsonSchema:
         # TODO: What should we do with schema['config'] (in particular, 'title')?
         #   Also, what is schema['call_after_init']?
         if 'config' in schema and 'title' in schema['config']:
-            json_schema.setdefault('title', schema['config']['title'])
+            title = schema['config']['title']
+            if '$ref' in json_schema:
+                # hack: update the definition from the typed_dict_schema to include the title
+                self._get_referenced_schema(json_schema['$ref'])['title'] = title
+            else:
+                json_schema.setdefault('title', title)
         return json_schema
 
     def arguments_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
