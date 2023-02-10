@@ -1,3 +1,10 @@
+"""
+Major sources of failing tests
+* Not using alias_generator
+* Not grabbing title/description/etc. from FieldInfo (want to talk with Samuel about this)
+* Not handling enums properly (want to update core schema metadata)
+* ...
+"""
 import json
 import math
 import os
@@ -245,7 +252,7 @@ def test_schema_class_by_alias():
     assert list(Model.model_json_schema(by_alias=False)['properties'].keys()) == ['foo']
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 def test_choices():
     FooEnum = Enum('FooEnum', {'foo': 'f', 'bar': 'b'})
     BarEnum = IntEnum('BarEnum', {'foo': 1, 'bar': 2})
@@ -494,8 +501,12 @@ def test_enum_schema_cleandoc():
 @pytest.mark.xfail(reason='working on V2')
 def test_json_schema():
     class Model(BaseModel):
-        a = b'foobar'
-        b = Decimal('12.34')
+        a: bytes = b'foobar'
+        b: Decimal = Decimal('12.34')
+
+    # TODO: What do we want the generated schema to be for Decimal? I'm thinking 'integer', 'number', _or_ 'str'
+    #     Decision: What we have in v1 is not bad enough to be worth changing
+    #     (i.e., keep it as only 'number'; maybe add a comment that other things could be okay)
 
     assert json.loads(Model.schema_json(indent=2)) == {
         'title': 'Model',
@@ -530,16 +541,15 @@ def test_list_sub_model():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
     assert Model.model_json_schema() == {
+        'properties': {'a': {'anyOf': [{'type': 'null'}, {'type': 'string'}], 'title': 'A'}},
+        'required': ['a'],
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'type': 'string', 'title': 'A'}},
-        'required': ['a'],
     }
 
 
@@ -579,7 +589,10 @@ def test_set():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_const_str():
+    # TODO: What is supposed to happen with 'const'?
+    #   Investigate how it works in v1 and think about what should be done
     class Model(BaseModel):
+        # Should this become a: Literal['some string'] = 'some string'?
         a: str = Field('some string', const=True)
 
     assert Model.model_json_schema() == {
@@ -591,6 +604,7 @@ def test_const_str():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_const_false():
+    # TODO: What is supposed to happen with 'const'?
     class Model(BaseModel):
         a: str = Field('some string', const=False)
 
@@ -601,7 +615,6 @@ def test_const_false():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,extra_props',
     [
@@ -609,7 +622,7 @@ def test_const_false():
         (
             Tuple[str, int, Union[str, int, float], float],
             {
-                'items': [
+                'prefixItems': [
                     {'type': 'string'},
                     {'type': 'integer'},
                     {'anyOf': [{'type': 'string'}, {'type': 'integer'}, {'type': 'number'}]},
@@ -619,7 +632,7 @@ def test_const_false():
                 'maxItems': 4,
             },
         ),
-        (Tuple[str], {'items': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
+        (Tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
         (Tuple[()], {'maxItems': 0, 'minItems': 0}),
     ],
 )
@@ -671,7 +684,6 @@ def test_strict_bool():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_dict():
     class Model(BaseModel):
         a: dict
@@ -684,7 +696,6 @@ def test_dict():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_list():
     class Model(BaseModel):
         a: list
@@ -810,26 +821,30 @@ def test_date_constrained_types(field_type, expected_schema):
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (Optional[str], {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
-        (Optional[bytes], {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
+        (Optional[str], {'properties': {'a': {'anyOf': [{'type': 'null'}, {'type': 'string'}], 'title': 'A'}}}),
+        (
+            Optional[bytes],
+            {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'null'}, {'type': 'string', 'format': 'binary'}]}}},
+        ),
         (
             Union[str, bytes],
             {
                 'properties': {
                     'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
                 },
-                'required': ['a'],
             },
         ),
         (
             Union[None, str, bytes],
             {
                 'properties': {
-                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                    'a': {
+                        'title': 'A',
+                        'anyOf': [{'type': 'null'}, {'type': 'string'}, {'type': 'string', 'format': 'binary'}],
+                    }
                 }
             },
         ),
@@ -839,7 +854,7 @@ def test_str_basic_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    base_schema = {'title': 'Model', 'type': 'object'}
+    base_schema = {'title': 'Model', 'type': 'object', 'required': ['a']}
     base_schema.update(expected_schema)
     assert Model.model_json_schema() == base_schema
 
@@ -1178,6 +1193,16 @@ def test_ipvanynetwork_type():
     ),
 )
 def test_callable_type(type_, default_value):
+    # TODO: Is this still how we want to handle this?
+    #   With my current changes, it raises
+    #       InvalidForJsonSchema('Cannot generate a JsonSchema for core_schema.CallableSchema')
+    #   We could continue the practice of just not creating such fields,
+    #   but producing a UserWarning when a field is ignored
+    # TODO: If the default value is not JSON encodable, should we just not include it in the schema?
+    #   This seems preferable to me over erroring, but maybe we should also produce a UserWarning for that?
+
+    # Decision: Different user warning depending on if there's a default or not
+
     class Model(BaseModel):
         callback: type_ = default_value
         foo: int
@@ -1188,7 +1213,6 @@ def test_callable_type(type_, default_value):
     assert 'callback' not in model_schema['properties']
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_error_non_supported_types():
     class Model(BaseModel):
         a: ImportString
@@ -1686,7 +1710,7 @@ def test_unenforced_constraints_schema(kwargs, type_):
         ({'max_length': 5}, str, 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
-        ({'regex': '^foo$'}, str, 'foo'),
+        ({'pattern': '^foo$'}, str, 'foo'),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
         ({'ge': 2}, int, 3),
@@ -3241,3 +3265,43 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
         },
         'required': ['password'],
     }
+
+
+def test_definitions_are_cleared_on_substitution():
+    class ModelA(BaseModel):
+        a: float
+
+    class ModelB(BaseModel):
+        a: ModelA
+
+    assert ModelB.model_json_schema() == {}
+
+    # Setting a default value prevents the schema requires unpacking the ModelA definition,
+    # which will result in no references to ModelA in the generated schema, so ModelA gets removed.
+
+    default = ModelA(a=0.0)
+
+    class ModelC(BaseModel):
+        a: ModelA = default
+
+    assert ModelC.model_json_schema() == {}
+
+    class ApplePie(BaseModel):
+        """
+        This is a test.
+        """
+
+        a: float
+        b: int = 10
+
+    s = {
+        'type': 'object',
+        'properties': {'a': {'type': 'number', 'title': 'A'}, 'b': {'type': 'integer', 'title': 'B', 'default': 10}},
+        'required': ['a'],
+        'title': 'ApplePie',
+        'description': 'This is a test.',
+    }
+    assert ApplePie.__schema_cache__.keys() == set()
+    assert ApplePie.model_json_schema() == s
+    assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
+    assert ApplePie.model_json_schema() == s

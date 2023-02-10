@@ -121,7 +121,7 @@ def deferred_model_get_pydantic_validation_schema(
         config=core_config,
         call_after_init=model_post_init,
         # TODO: Do we need to do a better job of allowing user-defined extra for the core_schema?
-        extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
+        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
 
 
@@ -184,7 +184,7 @@ def complete_model_class(
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
+        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -223,7 +223,7 @@ def build_inner_schema(  # noqa: C901
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
-        extra=None if json_schema_extra is None else {JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
+        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 

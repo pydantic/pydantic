@@ -9,7 +9,7 @@ import typing
 from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from enum import Enum, IntEnum
+from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
 from typing import Any, Callable
@@ -68,11 +68,15 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 
     literal_schema = core_schema.literal_schema(*[m.value for m in enum_type.__members__.values()])
 
-    if issubclass(enum_type, IntEnum):
+    if issubclass(enum_type, int):
+        # this handles IntEnum
+        # TODO: Need to add something to "extra" to make sure the JSON schema reflect the enum
         return core_schema.chain_schema(
             core_schema.int_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
         )
     elif issubclass(enum_type, str):
+        # This _should_ handle 3.11's StrEnum --
+        # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
         return core_schema.chain_schema(
             core_schema.str_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
         )
