@@ -18,6 +18,7 @@ from uuid import UUID
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import get_args
 
+from ..json_schema import build_core_metadata_for_json_schema
 from . import _serializers, _validators
 
 if typing.TYPE_CHECKING:
@@ -66,25 +67,27 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         except ValueError:
             raise PydanticCustomError('enum', 'Input is not a valid enum member')
 
-    literal_schema = core_schema.literal_schema(*[m.value for m in enum_type.__members__.values()])
+    literal_schema = core_schema.literal_schema(*[m.value for m in enum_type.__members__.values()], ref=f'{getattr(enum_type, "__module__", None)}.{enum_type.__name__}')
+    metadata = build_core_metadata_for_json_schema(
+        override_core_schema=literal_schema,
+        source_class=enum_type,
+    )
+
 
     if issubclass(enum_type, int):
         # this handles IntEnum
         # TODO: Need to add something to "extra" to make sure the JSON schema reflect the enum
         return core_schema.chain_schema(
-            core_schema.int_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
+            core_schema.int_schema(), literal_schema, core_schema.function_plain_schema(to_enum), metadata=metadata
         )
     elif issubclass(enum_type, str):
         # This _should_ handle 3.11's StrEnum --
         # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
         return core_schema.chain_schema(
-            core_schema.str_schema(), literal_schema, core_schema.function_plain_schema(to_enum)
+            core_schema.str_schema(), literal_schema, core_schema.function_plain_schema(to_enum), metadata=metadata
         )
     else:
-        return core_schema.function_after_schema(
-            literal_schema,
-            to_enum,
-        )
+        return core_schema.function_after_schema(literal_schema, to_enum, metadata=metadata)
 
 
 @schema_function(Decimal)

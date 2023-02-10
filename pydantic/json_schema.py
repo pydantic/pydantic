@@ -7,12 +7,14 @@ I guess this means I have to figure out how to implement optional in a better wa
 from __future__ import annotations
 
 import re
+import warnings
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
 from functools import cached_property
+from types import EllipsisType
 from typing import Any, Callable, Dict, Optional, Set, cast
 
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from typing_extensions import Literal
 
 from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
@@ -21,8 +23,53 @@ from pydantic.json import pydantic_encoder
 JsonSchemaValue = Dict[str, Any]
 JsonValue = Dict[str, Any]
 
-JSON_SCHEMA_EXTRA_FIELD_NAME = 'pydantic_json_schema_extra'
 default_ref_template = '#/definitions/{model}'
+
+_JSON_SCHEMA_OVERRIDE_CORE_SCHEMA_FIELD = 'pydantic_json_schema_override_core_schema'
+_JSON_SCHEMA_EXTRA_FIELD = 'pydantic_json_schema_extra'
+_JSON_SCHEMA_SOURCE_CLASS_NAME_FIELD = 'pydantic_json_schema_source_class'
+
+
+def build_core_metadata_for_json_schema(
+    extra: 'JsonSchemaExtra' | None | EllipsisType = ...,
+    override_core_schema: CoreSchema | None | EllipsisType = ...,
+    source_class: type[Any] | None | EllipsisType = ...,
+    old_metadata: Optional[Any] = None,
+) -> Any:
+    if not isinstance(old_metadata, (dict, type(None))):
+        warnings.warn('CoreSchema metadata should be a dict or None; cannot update with json schema info.', UserWarning)
+        return old_metadata
+
+    metadata: dict[Any, Any] = {} if old_metadata is None else old_metadata.copy()
+
+    if extra is not ...:
+        metadata[_JSON_SCHEMA_EXTRA_FIELD] = extra
+
+    if override_core_schema is not ...:
+        metadata[_JSON_SCHEMA_OVERRIDE_CORE_SCHEMA_FIELD] = override_core_schema
+
+    if source_class is not ...:
+        metadata[_JSON_SCHEMA_SOURCE_CLASS_NAME_FIELD] = source_class
+
+    return metadata
+
+
+def get_core_metadata_json_schema_extra(metadata: Any) -> Optional[JsonSchemaExtra]:
+    if not isinstance(metadata, dict):
+        return None
+    return metadata.get(_JSON_SCHEMA_EXTRA_FIELD)
+
+
+def get_core_metadata_json_schema_override_core_schema(metadata: Any) -> Optional[CoreSchema]:
+    if not isinstance(metadata, dict):
+        return None
+    return metadata.get(_JSON_SCHEMA_OVERRIDE_CORE_SCHEMA_FIELD)
+
+
+def get_core_metadata_json_schema_source_class(metadata: Any) -> Optional[type[Any]]:
+    if not isinstance(metadata, dict):
+        return None
+    return metadata.get(_JSON_SCHEMA_SOURCE_CLASS_NAME_FIELD)
 
 
 @dataclass
@@ -73,58 +120,6 @@ class JsonSchemaExtra:
         if self.modify_schema is not None:
             schema = self.modify_schema(schema)
         return schema
-
-
-def get_json_schema_extra(schema: CoreSchema) -> Optional[JsonSchemaExtra]:
-    extra = schema.get('extra', {})
-    if not isinstance(extra, dict):
-        return None
-    json_schema_extra = extra.get(JSON_SCHEMA_EXTRA_FIELD_NAME)
-    # May want to remove the following check, but if this assumption is violated it could end up confusing..
-    if json_schema_extra is not None:
-        assert isinstance(json_schema_extra, (JsonSchemaExtra, type(None)))
-    return json_schema_extra
-
-
-CoreSchemaType = Literal[
-    'any',
-    'none',
-    'bool',
-    'int',
-    'float',
-    'str',
-    'bytes',
-    'date',
-    'time',
-    'datetime',
-    'timedelta',
-    'literal',
-    'is-instance',
-    'is-subclass',
-    'callable',
-    'list',
-    'tuple',
-    'set',
-    'frozenset',
-    'generator',
-    'dict',
-    'function',
-    'default',
-    'nullable',
-    'union',
-    'tagged-union',
-    'chain',
-    'lax-or-strict',
-    'typed-dict',
-    'model',
-    'arguments',
-    'call',
-    'recursive-ref',
-    'custom-error',
-    'json',
-    'url',
-    'multi-host-url',
-]
 
 
 def _get_json_refs(json_schema: JsonSchemaValue) -> Set[str]:
@@ -210,28 +205,32 @@ class GenerateJsonSchema:
 
     def _generate(self, schema: CoreSchema) -> JsonSchemaValue:
         # TODO: Should make sure model results are cached appropriately on the respective classes
-
         # Try to load from the "cache":
         if 'ref' in schema:
             core_ref: str = schema['ref']  # type: ignore[typeddict-item]
             if core_ref in self.core_to_json_refs:
                 return self.definitions[self.core_to_json_refs[core_ref]]
 
-        # Handle the core-schema-type-specific bits of the schema generation:
-        generate_for_schema_type = self._schema_type_to_method[schema['type']]
-        json_schema: JsonSchemaValue = generate_for_schema_type(schema)
+        # Check for an override core schema; if it exists, return it
+        override_core_schema = get_core_metadata_json_schema_override_core_schema(schema.get('metadata'))
+        if override_core_schema is not None:
+            json_schema = self._generate(override_core_schema)
+        else:
+            # Handle the core-schema-type-specific bits of the schema generation:
+            generate_for_schema_type = self._schema_type_to_method[schema['type']]
+            json_schema = generate_for_schema_type(schema)
 
-        # Handle the "generic" bits of the schema generation:
-        extra = get_json_schema_extra(schema)
-        if extra is not None:
-            if '$ref' in json_schema:
-                # This is a hack relating to the fact that the typed_dict_schema is where the ref is set
-                extra.update_json_schema(self._get_referenced_schema(json_schema['$ref']))
-            else:
-                extra.update_json_schema(json_schema)
+            # Handle the "generic" bits of the schema generation:
+            extra = get_core_metadata_json_schema_extra(schema.get('metadata'))
+            if extra is not None:
+                if '$ref' in json_schema:
+                    # This is a hack relating to the fact that the typed_dict_schema is where the ref is set
+                    extra.update_json_schema(self._get_referenced_schema(json_schema['$ref']))
+                else:
+                    extra.update_json_schema(json_schema)
 
-        # Resolve issues caused by sibling keys to a top-level $ref:
-        self._handle_ref_overrides(json_schema)
+            # Resolve issues caused by sibling keys to a top-level $ref:
+            self._handle_ref_overrides(json_schema)
 
         # Populate the "cache"
         if 'ref' in schema:
@@ -353,7 +352,7 @@ class GenerateJsonSchema:
         return {'type': 'number', 'format': 'time-delta'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
-        expected = schema['expected']
+        expected = list(schema['expected'])
         if len(expected) == 1:
             return {'const': expected[0]}
         else:

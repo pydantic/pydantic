@@ -16,7 +16,7 @@ from typing_extensions import Annotated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from ..json_schema import JSON_SCHEMA_EXTRA_FIELD_NAME
+from ..json_schema import build_core_metadata_for_json_schema
 from . import _typing_extra
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import SchemaRef, SelfType, Undefined
@@ -121,7 +121,7 @@ def deferred_model_get_pydantic_validation_schema(
         config=core_config,
         call_after_init=model_post_init,
         # TODO: Do we need to do a better job of allowing user-defined extra for the core_schema?
-        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
+        metadata=build_core_metadata_for_json_schema(extra=json_schema_extra),
     )
 
 
@@ -184,7 +184,7 @@ def complete_model_class(
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
+        metadata=build_core_metadata_for_json_schema(extra=json_schema_extra),
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -223,7 +223,7 @@ def build_inner_schema(  # noqa: C901
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
-        extra={JSON_SCHEMA_EXTRA_FIELD_NAME: json_schema_extra},
+        metadata=build_core_metadata_for_json_schema(extra=json_schema_extra),
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 

@@ -352,7 +352,6 @@ def test_enum_schema_custom_field():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_and_model_have_same_behaviour():
     class Names(str, Enum):
         rick = 'Rick'
