@@ -99,7 +99,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
             strict=True,
         ),
         decimal_validator,
-        extra=decimal_validator,
+        metadata=decimal_validator,
     )
 
 

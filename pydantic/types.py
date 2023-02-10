@@ -425,7 +425,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 custom_error_type=cls._error_kind,
             ),
             validator,
-            extra=validator,
+            metadata=validator,
             serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
         )
 

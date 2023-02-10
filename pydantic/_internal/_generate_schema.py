@@ -601,8 +601,8 @@ def apply_metadata(  # noqa: C901
         if not metadata_dict:
             continue
 
-        extra: _fields.CustomValidator | dict[str, Any] | None = schema.get('extra')
-        if extra is None:
+        schema_metadata: _fields.CustomValidator | dict[str, Any] | None = schema.get('metadata')
+        if schema_metadata is None:
             if schema['type'] == 'nullable':
                 # for nullable schemas, metadata is automatically applied to the inner schema
                 # TODO need to do the same for lists, tuples and more
@@ -610,10 +610,10 @@ def apply_metadata(  # noqa: C901
             else:
                 schema.update(metadata_dict)  # type: ignore[typeddict-item]
         else:
-            if isinstance(extra, dict):
-                update_schema_function = extra['__pydantic_update_schema__']
+            if isinstance(schema_metadata, dict):
+                update_schema_function = schema_metadata['__pydantic_update_schema__']
             else:
-                update_schema_function = extra.__pydantic_update_schema__
+                update_schema_function = schema_metadata.__pydantic_update_schema__
 
             new_schema = update_schema_function(schema, **metadata_dict)
             if new_schema is not None:
