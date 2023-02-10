@@ -12,10 +12,11 @@ from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
 from functools import cached_property
 from types import EllipsisType
-from typing import Any, Callable, Dict, Optional, Set, cast
+from typing import Any, Callable, Dict, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
-from typing_extensions import Literal
+from pydantic_core.core_schema import TypedDictField
+from typing_extensions import TypeGuard
 
 from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
 from pydantic.json import pydantic_encoder
@@ -31,10 +32,10 @@ _JSON_SCHEMA_SOURCE_CLASS_NAME_FIELD = 'pydantic_json_schema_source_class'
 
 
 def build_core_metadata_for_json_schema(
-    extra: 'JsonSchemaExtra' | None | EllipsisType = ...,
+    extra: JsonSchemaExtra | None | EllipsisType = ...,
     override_core_schema: CoreSchema | None | EllipsisType = ...,
     source_class: type[Any] | None | EllipsisType = ...,
-    old_metadata: Optional[Any] = None,
+    old_metadata: Any | None = None,
 ) -> Any:
     if not isinstance(old_metadata, (dict, type(None))):
         warnings.warn('CoreSchema metadata should be a dict or None; cannot update with json schema info.', UserWarning)
@@ -54,19 +55,19 @@ def build_core_metadata_for_json_schema(
     return metadata
 
 
-def get_core_metadata_json_schema_extra(metadata: Any) -> Optional[JsonSchemaExtra]:
+def get_core_metadata_json_schema_extra(metadata: Any) -> JsonSchemaExtra | None:
     if not isinstance(metadata, dict):
         return None
     return metadata.get(_JSON_SCHEMA_EXTRA_FIELD)
 
 
-def get_core_metadata_json_schema_override_core_schema(metadata: Any) -> Optional[CoreSchema]:
+def get_core_metadata_json_schema_override_core_schema(metadata: Any) -> CoreSchema | None:
     if not isinstance(metadata, dict):
         return None
     return metadata.get(_JSON_SCHEMA_OVERRIDE_CORE_SCHEMA_FIELD)
 
 
-def get_core_metadata_json_schema_source_class(metadata: Any) -> Optional[type[Any]]:
+def get_core_metadata_json_schema_source_class(metadata: Any) -> type[Any] | None:
     if not isinstance(metadata, dict):
         return None
     return metadata.get(_JSON_SCHEMA_SOURCE_CLASS_NAME_FIELD)
@@ -76,29 +77,29 @@ def get_core_metadata_json_schema_source_class(metadata: Any) -> Optional[type[A
 class JsonSchemaExtra:
     # see https://json-schema.org/understanding-json-schema/reference/generic.html
 
-    title: Optional[str] = None
-    description: Optional[str] = None
-    examples: Optional[list[JsonValue]] = None
+    title: str | None = None
+    description: str | None = None
+    examples: list[JsonValue] | None = None
 
     # 'default', which is included with these fields in the JsonSchema docs, is handled by CoreSchema
-    deprecated: Optional[bool] = None
-    read_only: Optional[bool] = None
-    write_only: Optional[bool] = None
+    deprecated: bool | None = None
+    read_only: bool | None = None
+    write_only: bool | None = None
 
-    comment: Optional[str] = None
+    comment: str | None = None
 
     # Note: modify_schema is called after the schema has been updated based on the contents of all other fields
-    modify_schema: Optional[Callable[[JsonSchemaValue], JsonSchemaValue]] = None
+    modify_schema: Callable[[JsonSchemaValue], JsonSchemaValue] | None = None
 
     @classmethod
-    def merge(cls, base: Optional[JsonSchemaExtra], overrides: Optional[JsonSchemaExtra]) -> Optional[JsonSchemaExtra]:
+    def merge(cls, base: JsonSchemaExtra | None, overrides: JsonSchemaExtra | None) -> JsonSchemaExtra | None:
         if base is None:
             return overrides
         if overrides is None:
             return base
         return base.with_updates(overrides)
 
-    def with_updates(self, other: 'JsonSchemaExtra') -> 'JsonSchemaExtra':
+    def with_updates(self, other: JsonSchemaExtra) -> JsonSchemaExtra:
         changes = {k: v for k, v in asdict(other).items() if v is not None}
         return replace(self, **changes)
 
@@ -122,7 +123,7 @@ class JsonSchemaExtra:
         return schema
 
 
-def _get_json_refs(json_schema: JsonSchemaValue) -> Set[str]:
+def _get_json_refs(json_schema: JsonSchemaValue) -> set[str]:
     json_refs = set()
 
     def _add_json_refs(schema: JsonSchemaValue) -> None:
@@ -150,7 +151,7 @@ class GenerateJsonSchema:
         self.ref_template = ref_template
         self.strict = strict  # if True, prefer the strict branch of LaxOrStrictSchema
 
-        self.definitions: Dict[str, JsonSchemaValue] = {}
+        self.definitions: dict[str, JsonSchemaValue] = {}
 
         # There are three types of references:
         #   1. core_schema "ref" values; these are not exposed as part of the JSON schema
@@ -163,13 +164,13 @@ class GenerateJsonSchema:
         #   3. the values corresponding to the "$ref" key in the schema
         #       * By default, these look like "#/definitions/MyModel", as in {"$ref": "#/definitions/MyModel"}
         #       * I will use the term "json_ref" for these
-        self.core_to_json_refs: Dict[str, str] = {}
-        self.json_to_core_refs: Dict[str, str] = {}
-        self.json_to_defs_refs: Dict[str, str] = {}
+        self.core_to_json_refs: dict[str, str] = {}
+        self.json_to_core_refs: dict[str, str] = {}
+        self.json_to_defs_refs: dict[str, str] = {}
 
     @cached_property
-    def _schema_type_to_method(self) -> Dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
-        mapping: Dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
+    def _schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
+        mapping: dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
         for key in all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
             method_name = f"{key.replace('-', '_')}_schema"
             try:
@@ -203,13 +204,13 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    def _generate(self, schema: CoreSchema) -> JsonSchemaValue:
+    def _generate(self, schema: CoreSchema | TypedDictField) -> JsonSchemaValue:
         # TODO: Should make sure model results are cached appropriately on the respective classes
         # Try to load from the "cache":
         if 'ref' in schema:
             core_ref: str = schema['ref']  # type: ignore[typeddict-item]
             if core_ref in self.core_to_json_refs:
-                return self.definitions[self.core_to_json_refs[core_ref]]
+                return self._ref_json_schema(self.core_to_json_refs[core_ref])
 
         # Check for an override core schema; if it exists, return it
         override_core_schema = get_core_metadata_json_schema_override_core_schema(schema.get('metadata'))
@@ -217,8 +218,11 @@ class GenerateJsonSchema:
             json_schema = self._generate(override_core_schema)
         else:
             # Handle the core-schema-type-specific bits of the schema generation:
-            generate_for_schema_type = self._schema_type_to_method[schema['type']]
-            json_schema = generate_for_schema_type(schema)
+            if _is_typed_dict_field(schema):
+                json_schema = self.typed_dict_field_schema(schema)
+            elif _is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
+                generate_for_schema_type = self._schema_type_to_method[schema['type']]
+                json_schema = generate_for_schema_type(schema)
 
             # Handle the "generic" bits of the schema generation:
             extra = get_core_metadata_json_schema_extra(schema.get('metadata'))
@@ -237,7 +241,7 @@ class GenerateJsonSchema:
             core_ref = schema['ref']  # type: ignore[typeddict-item]
             json_ref = self.get_json_ref(core_ref)
             self.definitions[json_ref] = json_schema
-            return self._ref_json_schema(json_ref)
+            json_schema = self._ref_json_schema(json_ref)
 
         return json_schema
 
@@ -434,7 +438,6 @@ class GenerateJsonSchema:
 
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
         # I'm not sure if this might need to be different if the function's mode is 'before'
-        print(schema)
         return self._generate(schema['schema'])
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
@@ -513,7 +516,7 @@ class GenerateJsonSchema:
             return self._generate(schema['lax_schema'])
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
-        properties: Dict[str, JsonSchemaValue] = {}
+        properties: dict[str, JsonSchemaValue] = {}
         required: list[str] = []
         for name, field in schema['fields'].items():
             # TODO: once more logic exists for alias handling, try to share it with _get_argument_name
@@ -526,8 +529,10 @@ class GenerateJsonSchema:
                     #   Maybe tell users to override this method if they want custom behavior here?
                     #       (If populate by name is false)
                     pass
-            field_schema = self._generate(field['schema']).copy()
-            field_schema['title'] = self._title_from_name(name)
+            field_schema = self._generate(field).copy()
+            title = self._title_from_name(name)
+            field_schema['title'] = title
+            field_schema = self._handle_ref_overrides(field_schema)
             properties[name] = field_schema
             if field['required']:
                 required.append(name)
@@ -536,6 +541,9 @@ class GenerateJsonSchema:
         if required:
             json_schema['required'] = required
         return json_schema
+
+    def typed_dict_field_schema(self, schema: core_schema.TypedDictField) -> JsonSchemaValue:
+        return self._generate(schema['schema'])
 
     def _get_referenced_schema(self, json_ref: str) -> JsonSchemaValue:
         return self.definitions[self.json_to_defs_refs[json_ref]]
@@ -588,9 +596,9 @@ class GenerateJsonSchema:
         }
 
     def _kw_arguments_schema(
-        self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: Optional[CoreSchema]
+        self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: CoreSchema | None
     ) -> JsonSchemaValue:
-        properties: Dict[str, JsonSchemaValue] = {}
+        properties: dict[str, JsonSchemaValue] = {}
         required: list[str] = []
         for argument in arguments:
             name = self._get_argument_name(argument)
@@ -617,7 +625,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def _p_arguments_schema(
-        self, arguments: list[core_schema.ArgumentsParameter], var_args_schema: Optional[CoreSchema]
+        self, arguments: list[core_schema.ArgumentsParameter], var_args_schema: CoreSchema | None
     ) -> JsonSchemaValue:
         prefix_items: list[JsonSchemaValue] = []
         min_items = 0
@@ -735,7 +743,7 @@ class ValidationsMapping:
     }
 
 
-def update_with_validations(json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: Dict[str, str]) -> None:
+def update_with_validations(json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]) -> None:
     for core_key, json_schema_key in mapping.items():
         if core_key in core_schema:
             json_schema[json_schema_key] = core_schema[core_key]  # type: ignore[literal-required]
@@ -761,3 +769,11 @@ def encode_default(dft: Any) -> Any:
         return None
     else:
         return pydantic_encoder(dft)
+
+
+def _is_typed_dict_field(schema: CoreSchema | TypedDictField) -> TypeGuard[TypedDictField]:
+    return 'type' not in schema
+
+
+def _is_core_schema(schema: CoreSchema | TypedDictField) -> TypeGuard[CoreSchema]:
+    return 'type' in schema

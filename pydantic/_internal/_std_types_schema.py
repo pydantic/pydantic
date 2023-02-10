@@ -5,6 +5,7 @@ Import of this module is deferred since it contains imports of many standard lib
 """
 from __future__ import annotations as _annotations
 
+import inspect
 import typing
 from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta
@@ -18,7 +19,7 @@ from uuid import UUID
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import get_args
 
-from ..json_schema import build_core_metadata_for_json_schema
+from ..json_schema import JsonSchemaExtra, build_core_metadata_for_json_schema
 from . import _serializers, _validators
 
 if typing.TYPE_CHECKING:
@@ -67,12 +68,18 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         except ValueError:
             raise PydanticCustomError('enum', 'Input is not a valid enum member')
 
-    literal_schema = core_schema.literal_schema(*[m.value for m in enum_type.__members__.values()], ref=f'{getattr(enum_type, "__module__", None)}.{enum_type.__name__}')
-    metadata = build_core_metadata_for_json_schema(
-        override_core_schema=literal_schema,
-        source_class=enum_type,
+    literal_schema = core_schema.literal_schema(
+        *[m.value for m in enum_type.__members__.values()],
+        ref=f'{getattr(enum_type, "__module__", None)}.{enum_type.__name__}',
     )
-
+    override = literal_schema.copy()
+    override['metadata'] = build_core_metadata_for_json_schema(
+        source_class=enum_type,
+        extra=JsonSchemaExtra(
+            title=enum_type.__name__, description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.')
+        ),
+    )
+    metadata = build_core_metadata_for_json_schema(override_core_schema=override)
 
     if issubclass(enum_type, int):
         # this handles IntEnum

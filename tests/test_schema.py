@@ -383,16 +383,11 @@ def test_enum_and_model_have_same_behaviour():
                 'title': 'Pika',
                 'type': 'object',
             },
-            'Names': {
-                'description': 'An enumeration.',
-                'enum': ['Rick', 'Morty', 'Summer'],
-                'title': 'Names',
-                'type': 'string',
-            },
+            'Names': {'description': 'An enumeration.', 'enum': ['Rick', 'Morty', 'Summer'], 'title': 'Names'},
         },
         'properties': {
-            'enum': {'$ref': '#/definitions/Names'},
-            'model': {'$ref': '#/definitions/Pika'},
+            'enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'title': 'Enum'},
+            'model': {'allOf': [{'$ref': '#/definitions/Pika'}], 'title': 'Model'},
             'titled_enum': {
                 'allOf': [{'$ref': '#/definitions/Names'}],
                 'description': 'Description of enum',
