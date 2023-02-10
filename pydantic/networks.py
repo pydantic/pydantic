@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import contextlib
 import dataclasses as _dataclasses
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -193,11 +194,8 @@ class IPvAnyAddress:
     __slots__ = ()
 
     def __new__(cls, value: Any) -> IPv4Address | IPv6Address:  # type: ignore[misc]
-        try:
+        with contextlib.suppress(ValueError):
             return IPv4Address(value)
-        except ValueError:
-            pass
-
         try:
             return IPv6Address(value)
         except ValueError:
@@ -220,11 +218,8 @@ class IPvAnyInterface:
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:  # type: ignore[misc]
-        try:
+        with contextlib.suppress(ValueError):
             return IPv4Interface(value)
-        except ValueError:
-            pass
-
         try:
             return IPv6Interface(value)
         except ValueError:
@@ -249,11 +244,8 @@ class IPvAnyNetwork:
     def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]
         # Assume IP Network is defined with a default value for ``strict`` argument.
         # Define your own class if you want to specify network address check strictness.
-        try:
+        with contextlib.suppress(ValueError):
             return IPv4Network(value)
-        except ValueError:
-            pass
-
         try:
             return IPv6Network(value)
         except ValueError:

@@ -3,8 +3,10 @@ Bucket of reusable internal utilities.
 
 This should be reduced as much as possible with functions only used in one place, moved to that place.
 """
+
 from __future__ import annotations as _annotations
 
+import contextlib
 import keyword
 import typing
 import weakref
@@ -368,14 +370,10 @@ def smart_deepcopy(obj: Obj) -> Obj:
     obj_type = obj.__class__
     if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
         return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
-    try:
+    with contextlib.suppress(TypeError, ValueError, RuntimeError):
         if not obj and obj_type in BUILTIN_COLLECTIONS:
             # faster way for empty collections, no need to copy its members
             return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
-    except (TypeError, ValueError, RuntimeError):
-        # do we really dare to catch ALL errors? Seems a bit risky
-        pass
-
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
 
 

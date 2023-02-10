@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import abc
+import contextlib
 import dataclasses as _dataclasses
 import re
 from datetime import date
@@ -673,11 +674,8 @@ class ByteSize(int):
 
     @classmethod
     def validate(cls, __input_value: Any, **_kwargs: Any) -> 'ByteSize':
-        try:
+        with contextlib.suppress(ValueError):
             return cls(int(__input_value))
-        except ValueError:
-            pass
-
         str_match = byte_string_re.match(str(__input_value))
         if str_match is None:
             raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
