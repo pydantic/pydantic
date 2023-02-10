@@ -369,7 +369,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = GenerateJsonSchema(by_alias, ref_template).generate(cls.__pydantic_core_schema__)
+        s = GenerateJsonSchema(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 

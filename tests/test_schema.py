@@ -177,7 +177,6 @@ def test_by_alias_generator():
     assert ApplePie.model_json_schema(by_alias=False)['properties'].keys() == {'a', 'b'}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_sub_model():
     class Foo(BaseModel):
         """hello"""
@@ -200,7 +199,10 @@ def test_sub_model():
                 'required': ['b'],
             }
         },
-        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'$ref': '#/definitions/Foo'}},
+        'properties': {
+            'a': {'title': 'A', 'type': 'integer'},
+            'b': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'default': None, 'title': 'B'},
+        },
         'required': ['a'],
     }
 
@@ -538,10 +540,10 @@ def test_optional():
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'type': 'string', 'title': 'A'}},
+        'required': ['a'],
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_any():
     class Model(BaseModel):
         a: Any
@@ -554,10 +556,10 @@ def test_any():
             'a': {'title': 'A'},
             'b': {'title': 'B'},
         },
+        'required': ['a', 'b'],
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_set():
     class Model(BaseModel):
         a: Set[int]
@@ -786,7 +788,6 @@ def test_date_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -844,7 +845,6 @@ def test_str_basic_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -2334,7 +2334,6 @@ def test_path_modify_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_frozen_set():
     class Model(BaseModel):
         a: FrozenSet[int] = frozenset({1, 2, 3})
@@ -2805,7 +2804,6 @@ def test_schema_with_field_parameter():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
