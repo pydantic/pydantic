@@ -216,7 +216,7 @@ def test_schema_class():
     with pytest.raises(ValidationError):
         Model()
 
-    m = Model(bar=123)
+    m = Model(bar='123')
     assert m.model_dump() == {'foo': 4, 'bar': '123'}
 
     assert Model.model_json_schema() == {
@@ -230,11 +230,10 @@ def test_schema_class():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_repr():
     s = Field(4, title='Foo is Great')
-    assert str(s) == "default=4 title='Foo is Great' extra={}"
-    assert repr(s) == "FieldInfo(default=4, title='Foo is Great', extra={})"
+    assert str(s) == "annotation=NoneType required=False default=4 title='Foo is Great'"
+    assert repr(s) == "FieldInfo(annotation=NoneType, required=False, default=4, title='Foo is Great')"
 
 
 def test_schema_class_by_alias():
@@ -1681,7 +1680,6 @@ def test_unenforced_constraints_schema(kwargs, type_):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [
@@ -1721,7 +1719,6 @@ def test_constraints_schema_validation(kwargs, type_, value):
     assert Foo(a=value)
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize(
     'kwargs,type_,value',
     [

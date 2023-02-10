@@ -331,7 +331,7 @@ class GenerateJsonSchema:
         raise InvalidForJsonSchema('Cannot generate a JsonSchema for core_schema.CallableSchema')
 
     def list_schema(self, schema: core_schema.ListSchema) -> JsonSchemaValue:
-        items_schema = self._generate(schema['items_schema'])
+        items_schema = {} if 'items_schema' not in schema else self._generate(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
         return json_schema
@@ -341,7 +341,8 @@ class GenerateJsonSchema:
     ) -> JsonSchemaValue:
         json_schema = {'type': 'array'}
         if schema['mode'] == 'tuple-variable':
-            json_schema['items'] = self._generate(schema['items_schema'])
+            if 'items_schema' in schema:
+                json_schema['items'] = self._generate(schema['items_schema'])
             update_with_validations(json_schema, schema, ValidationsMapping.array)
             return json_schema
 
@@ -370,7 +371,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
-        items_schema = self._generate(schema['items_schema'])
+        items_schema = {} if 'items_schema' not in schema else self._generate(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         update_with_validations(json_schema, schema, ValidationsMapping.array)
         return json_schema
