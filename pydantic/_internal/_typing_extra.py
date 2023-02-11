@@ -69,6 +69,7 @@ else:
 
 NoneType = None.__class__
 
+
 NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
 

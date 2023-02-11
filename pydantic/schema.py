@@ -49,6 +49,7 @@ if TYPE_CHECKING:
     from .dataclasses import Dataclass
     from .main import BaseModel
 
+default_prefix = '#/definitions/'
 default_ref_template = '#/definitions/{model}'
 
 TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]

@@ -1,9 +1,3 @@
-"""
-Super annoying thing: changing the default value of a field means it can't use the same schema as a $ref...
-In particular, a default value of None for a required field means it can't be a $ref.
-
-I guess this means I have to figure out how to implement optional in a better way...?
-"""
 from __future__ import annotations
 
 import re

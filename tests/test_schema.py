@@ -1,10 +1,3 @@
-"""
-Major sources of failing tests
-* Not using alias_generator
-* Not grabbing title/description/etc. from FieldInfo (want to talk with Samuel about this)
-* Not handling enums properly (want to update core schema metadata)
-* ...
-"""
 import json
 import math
 import os
@@ -140,13 +133,8 @@ def test_ref_template():
         key_lime: Optional[KeyLimePie] = None
 
     assert ApplePie.model_json_schema(ref_template='foobar/{model}.json') == {
-        'definitions': {
-            'KeyLimePie': {
-                'properties': {'x': {'default': None, 'title': 'X', 'type': 'string'}},
-                'title': 'KeyLimePie',
-                'type': 'object',
-            }
-        },
+        'title': 'Apple Pie',
+        'type': 'object',
         'properties': {
             'a': {'default': None, 'title': 'A', 'type': 'number'},
             'key_lime': {
@@ -154,8 +142,13 @@ def test_ref_template():
                 'default': None,
             },
         },
-        'title': 'Apple Pie',
-        'type': 'object',
+        'definitions': {
+            'KeyLimePie': {
+                'title': 'KeyLimePie',
+                'type': 'object',
+                'properties': {'x': {'default': None, 'title': 'X', 'type': 'string'}},
+            }
+        },
     }
     assert ApplePie.model_json_schema()['properties']['key_lime'] == {
         'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}],
@@ -205,7 +198,7 @@ def test_sub_model():
             }
         },
         'properties': {
-            'a': {'title': 'A', 'type': 'integer'},
+            'a': {'type': 'integer', 'title': 'A'},
             'b': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'default': None},
         },
         'required': ['a'],
@@ -245,7 +238,6 @@ def test_schema_class_by_alias():
     class Model(BaseModel):
         foo: int = Field(4, alias='foofoo')
 
-    print(Model.model_json_schema())
     assert list(Model.model_json_schema()['properties'].keys()) == ['foofoo']
     assert list(Model.model_json_schema(by_alias=False)['properties'].keys()) == ['foo']
 
@@ -425,7 +417,7 @@ def test_enum_includes_extra_without_other_params():
                 'enum': ['Rick', 'Morty', 'Summer'],
                 'title': 'Names',
                 'type': 'string',
-            }
+            },
         },
         'properties': {
             'enum': {'$ref': '#/definitions/Names'},
@@ -541,10 +533,10 @@ def test_optional():
         a: Optional[str]
 
     assert Model.model_json_schema() == {
-        'properties': {'a': {'anyOf': [{'type': 'null'}, {'type': 'string'}], 'title': 'A'}},
-        'required': ['a'],
         'title': 'Model',
         'type': 'object',
+        'properties': {'a': {'anyOf': [{'type': 'null'}, {'type': 'string'}], 'title': 'A'}},
+        'required': ['a'],
     }
 
 
@@ -743,10 +735,10 @@ class Foo(BaseModel):
             {
                 'definitions': {
                     'Foo': {
-                        'properties': {'a': {'title': 'A', 'type': 'number'}},
-                        'required': ['a'],
                         'title': 'Foo',
                         'type': 'object',
+                        'properties': {'a': {'title': 'A', 'type': 'number'}},
+                        'required': ['a'],
                     }
                 },
                 'properties': {'a': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}]}},
@@ -761,10 +753,6 @@ class Foo(BaseModel):
 def test_list_union_dict(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
-
-        # @classmethod
-        # def model_json_schema_extra(cls):
-        #     return None
 
     base_schema = {'title': 'Model', 'type': 'object'}
     base_schema.update(expected_schema)
@@ -987,9 +975,6 @@ def test_special_float_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    from pprint import pprint
-
-    pprint(Model.__pydantic_core_schema__)
     base_schema = {
         'title': 'Model',
         'type': 'object',
@@ -1712,6 +1697,7 @@ def test_unenforced_constraints_schema(kwargs, type_):
         ({'max_length': 5}, str, 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
+        # TODO: Do we want to support regex keyword? It seems it should be pattern now..
         ({'pattern': '^foo$'}, str, 'foo'),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
@@ -1869,11 +1855,11 @@ def test_field_with_validator():
             return v
 
     assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
         'properties': {
             'something': {'anyOf': [{'type': 'null'}, {'type': 'integer'}], 'default': None, 'title': 'Something'}
         },
-        'title': 'Model',
-        'type': 'object',
     }
 
 
@@ -3047,6 +3033,20 @@ def test_alias_same():
         number: int
 
     assert Model.model_json_schema() == {
+        'type': 'object',
+        'title': 'Model',
+        'properties': {
+            'number': {'title': 'Number', 'type': 'integer'},
+            'pet': {
+                'discriminator': {
+                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
+                    # TODO: This is the only thing not being handled correctly for the discriminator now:
+                    'propertyName': 'typeOfPet',
+                },
+                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'title': 'Pet',
+            },
+        },
         'definitions': {
             'Cat': {
                 'properties': {
@@ -3067,21 +3067,7 @@ def test_alias_same():
                 'type': 'object',
             },
         },
-        'properties': {
-            'number': {'title': 'Number', 'type': 'integer'},
-            'pet': {
-                'discriminator': {
-                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
-                    # TODO: This is the only thing not being handled correctly for the discriminator now:
-                    'propertyName': 'typeOfPet',
-                },
-                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
-                'title': 'Pet',
-            },
-        },
         'required': ['pet', 'number'],
-        'title': 'Model',
-        'type': 'object',
     }
 
 

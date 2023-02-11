@@ -282,7 +282,7 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> Type[Decimal]:
-    return Annotated[  # type: ignore[return-value]  # TODO: Figure out where extra is being used
+    return Annotated[  # type: ignore[return-value]
         Decimal,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
