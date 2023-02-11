@@ -88,6 +88,10 @@ class JsonSchemaExtra:
 
     comment: str | None = None
 
+    # extra_updates is a catch all for arbitrary data you want to add to the schema,
+    # as a simpler version of modify_schema
+    extra_updates: dict[str, Any] | None = None
+
     # Note: modify_schema is called after the schema has been updated based on the contents of all other fields
     modify_schema: Callable[[JsonSchemaValue], JsonSchemaValue] | None = None
 
@@ -118,6 +122,8 @@ class JsonSchemaExtra:
             schema['writeOnly'] = self.write_only
         if self.comment is not None:
             schema['$comment'] = self.comment
+        if self.extra_updates is not None:
+            schema.update(self.extra_updates)
         if self.modify_schema is not None:
             schema = self.modify_schema(schema)
         return schema
@@ -227,7 +233,7 @@ class GenerateJsonSchema:
             # Handle the "generic" bits of the schema generation:
             extra = get_core_metadata_json_schema_extra(schema.get('metadata'))
             if extra is not None:
-                if '$ref' in json_schema:
+                if '$ref' in json_schema and schema.get('type') == 'model':
                     # This is a hack relating to the fact that the typed_dict_schema is where the ref is set
                     extra.update_json_schema(self._get_referenced_schema(json_schema['$ref']))
                 else:
@@ -438,7 +444,13 @@ class GenerateJsonSchema:
 
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
         # I'm not sure if this might need to be different if the function's mode is 'before'
-        return self._generate(schema['schema'])
+        if schema['mode'] == 'plain':
+            # Note: If this behavior is not desirable, it might make sense to add an override_core_schema
+            # for json schema generation wherever we are generating 'plain' function schemas
+            raise InvalidForJsonSchema(f'Cannot generate a JsonSchema for function {schema["function"]}')
+        else:
+            # 'after', 'before', and 'wrap' functions all have a required 'schema' field
+            return self._generate(schema['schema'])
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
         if 'default' in schema:
@@ -485,7 +497,7 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if not isinstance(v, str):
                 try:
-                    generated[k] = self._generate(v)
+                    generated[k] = self._generate(v).copy()
                 except InvalidForJsonSchema:
                     pass
         json_schema: JsonSchemaValue = {'oneOf': list(generated.values())}
@@ -493,8 +505,15 @@ class GenerateJsonSchema:
         # This reflects the v1 behavior, but we may want to only include the discriminator based on dialect / etc.
         if 'discriminator' in schema and isinstance(schema['discriminator'], str):
             json_schema['discriminator'] = {
+                # TODO: Need to handle the case where the discriminator field has an alias
+                #   Note: Weird things would happen if the discriminator had a different alias for different choices
+                #   (This wouldn't make sense in OpenAPI)
+                # TODO: Probably want to create some convenience functions for resolving aliases,
+                #   and/or bake them more fully into the core schema.
+                # TODO: Confirm with samuel:
+                #   Does the current CoreSchema stuff enable us to handle TaggedUnions with aliases properly?
                 'propertyName': schema['discriminator'],
-                'mapping': generated,
+                'mapping': {k: v.get('$ref', v) for k, v in generated.items()},
             }
 
         return json_schema
@@ -529,11 +548,12 @@ class GenerateJsonSchema:
                     #   Maybe tell users to override this method if they want custom behavior here?
                     #       (If populate by name is false)
                     pass
-            field_schema = self._generate(field).copy()
-            title = self._title_from_name(name)
-            field_schema['title'] = title
-            field_schema = self._handle_ref_overrides(field_schema)
-            properties[name] = field_schema
+            field_json_schema = self._generate(field).copy()
+            if _should_set_field_title(field):
+                title = self._title_from_name(name)
+                field_json_schema['title'] = title
+            field_json_schema = self._handle_ref_overrides(field_json_schema)
+            properties[name] = field_json_schema
             if field['required']:
                 required.append(name)
 
@@ -543,7 +563,9 @@ class GenerateJsonSchema:
         return json_schema
 
     def typed_dict_field_schema(self, schema: core_schema.TypedDictField) -> JsonSchemaValue:
-        return self._generate(schema['schema'])
+        json_schema = self._generate(schema['schema'])
+
+        return json_schema
 
     def _get_referenced_schema(self, json_ref: str) -> JsonSchemaValue:
         return self.definitions[self.json_to_defs_refs[json_ref]]
@@ -777,3 +799,23 @@ def _is_typed_dict_field(schema: CoreSchema | TypedDictField) -> TypeGuard[Typed
 
 def _is_core_schema(schema: CoreSchema | TypedDictField) -> TypeGuard[CoreSchema]:
     return 'type' in schema
+
+
+def _should_set_field_title(schema: CoreSchema | TypedDictField) -> bool:
+    override = get_core_metadata_json_schema_override_core_schema(schema.get('metadata'))
+    if override:
+        return _should_set_field_title(override)
+
+    if _is_typed_dict_field(schema):
+        return _should_set_field_title(schema['schema'])
+
+    elif _is_core_schema(schema):
+        # TODO: This is probably not handling some schema types it should
+        if schema['type'] in {'default', 'nullable', 'model'}:
+            return _should_set_field_title(schema['schema'])  # type: ignore[typeddict-item]
+        if schema['type'] == 'function' and 'schema' in schema:
+            return _should_set_field_title(schema['schema'])  # type: ignore[typeddict-item]
+        return not schema.get('ref')  # models, enums should not have titles set
+
+    else:
+        raise ValueError(f'Unexpected schema type: {schema}')

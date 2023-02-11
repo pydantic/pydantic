@@ -416,7 +416,10 @@ class SecretField(abc.ABC, Generic[SecretType]):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+        from ._internal._generate_schema import build_core_metadata
+
         validator = SecretFieldValidator(cls)
+        metadata = build_core_metadata(update_schema=validator.__pydantic_update_schema__)
         return core_schema.function_after_schema(
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
@@ -425,7 +428,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 custom_error_type=cls._error_kind,
             ),
             validator,
-            metadata=validator,
+            metadata=metadata,
             serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
         )
 

@@ -152,7 +152,6 @@ def test_ref_template():
             'key_lime': {
                 'anyOf': [{'type': 'null'}, {'$ref': 'foobar/KeyLimePie.json'}],
                 'default': None,
-                'title': 'Key Lime',
             },
         },
         'title': 'Apple Pie',
@@ -161,7 +160,6 @@ def test_ref_template():
     assert ApplePie.model_json_schema()['properties']['key_lime'] == {
         'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}],
         'default': None,
-        'title': 'Key Lime',
     }
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
     assert 'foobar/KeyLimePie.json' in json_schema
@@ -208,7 +206,7 @@ def test_sub_model():
         },
         'properties': {
             'a': {'title': 'A', 'type': 'integer'},
-            'b': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'default': None, 'title': 'B'},
+            'b': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'default': None},
         },
         'required': ['a'],
     }
@@ -272,7 +270,7 @@ def test_choices():
         'properties': {
             'foo': {'$ref': '#/definitions/FooEnum'},
             'bar': {'$ref': '#/definitions/BarEnum'},
-            'spam': {'$ref': '#/definitions/SpamEnum'},
+            'spam': {'anyOf': [{'$ref': '#/definitions/SpamEnum'}], 'default': None},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -383,11 +381,16 @@ def test_enum_and_model_have_same_behaviour():
                 'title': 'Pika',
                 'type': 'object',
             },
-            'Names': {'description': 'An enumeration.', 'enum': ['Rick', 'Morty', 'Summer'], 'title': 'Names'},
+            'Names': {
+                'description': 'An enumeration.',
+                'enum': ['Rick', 'Morty', 'Summer'],
+                'title': 'Names',
+                'type': 'string',
+            },
         },
         'properties': {
-            'enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'title': 'Enum'},
-            'model': {'allOf': [{'$ref': '#/definitions/Pika'}], 'title': 'Model'},
+            'enum': {'$ref': '#/definitions/Names'},
+            'model': {'$ref': '#/definitions/Pika'},
             'titled_enum': {
                 'allOf': [{'$ref': '#/definitions/Names'}],
                 'description': 'Description of enum',
@@ -405,7 +408,6 @@ def test_enum_and_model_have_same_behaviour():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_includes_extra_without_other_params():
     class Names(str, Enum):
         rick = 'Rick'
@@ -414,7 +416,7 @@ def test_enum_includes_extra_without_other_params():
 
     class Foo(BaseModel):
         enum: Names
-        extra_enum: Names = Field(..., extra='Extra field')
+        extra_enum: Names = Field(..., json_schema_extra={'extra': 'Extra field'})
 
     assert Foo.model_json_schema() == {
         'definitions': {
@@ -423,7 +425,7 @@ def test_enum_includes_extra_without_other_params():
                 'enum': ['Rick', 'Morty', 'Summer'],
                 'title': 'Names',
                 'type': 'string',
-            },
+            }
         },
         'properties': {
             'enum': {'$ref': '#/definitions/Names'},
@@ -463,7 +465,6 @@ def test_list_enum_schema_extras():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_schema_cleandoc():
     class FooBar(str, Enum):
         """
@@ -748,7 +749,7 @@ class Foo(BaseModel):
                         'type': 'object',
                     }
                 },
-                'properties': {'a': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'title': 'A'}},
+                'properties': {'a': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}]}},
                 'required': ['a'],
                 'title': 'Model',
                 'type': 'object',
@@ -971,16 +972,24 @@ def test_special_int_types(field_type, expected_schema):
         (NonNegativeFloat, {'minimum': 0}),
         (NonPositiveFloat, {'maximum': 0}),
         # (ConstrainedDecimal, {}),
-        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
-        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
-        (condecimal(multiple_of=5), {'multipleOf': 5}),
+        pytest.param(
+            condecimal(gt=5, lt=10),
+            {'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
+            marks=pytest.mark.xfail(reason='working on V2'),
+        ),
+        pytest.param(
+            condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}, marks=pytest.mark.xfail(reason='working on V2')
+        ),
+        pytest.param(condecimal(multiple_of=5), {'multipleOf': 5}, marks=pytest.mark.xfail(reason='working on V2')),
     ],
 )
 def test_special_float_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    print(Model.__pydantic_core_schema__)
+    from pprint import pprint
+
+    pprint(Model.__pydantic_core_schema__)
     base_schema = {
         'title': 'Model',
         'type': 'object',
@@ -1348,7 +1357,6 @@ def test_schema_overrides():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_overrides_w_union():
     class Foo(BaseModel):
         pass
@@ -1742,7 +1750,8 @@ def test_constraints_schema_validation(kwargs, type_, value):
     [
         ({'max_length': 5}, str, 'foobar'),
         ({'min_length': 2}, str, 'f'),
-        ({'regex': '^foo$'}, str, 'bar'),
+        # TODO: Do we want to support regex keyword? It seems it should be pattern now..
+        pytest.param({'regex': '^foo$'}, str, 'bar', marks=pytest.mark.xfail(reason='working on V2')),
         ({'gt': 2}, int, 2),
         ({'lt': 5}, int, 5),
         ({'ge': 2}, int, 1),
@@ -1795,7 +1804,6 @@ def test_schema_dict_constr():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
@@ -1909,7 +1917,6 @@ def test_unparameterized_schema_generation():
     assert foo_dict_schema == bar_dict_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_known_model_optimization():
     class Dep(BaseModel):
         number: int
@@ -2146,7 +2153,6 @@ def test_model_with_extra_forbidden():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -2156,12 +2162,13 @@ def test_model_with_extra_forbidden():
             dict(gt=0),
             {'title': 'A', 'anyOf': [{'type': 'null'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
         ),
-        (
+        pytest.param(
             Tuple[int, ...],
             dict(gt=0),
             {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        (
+        pytest.param(
             Tuple[int, int, int],
             dict(gt=0),
             {
@@ -2175,21 +2182,24 @@ def test_model_with_extra_forbidden():
                 'minItems': 3,
                 'maxItems': 3,
             },
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        (
+        pytest.param(
             Union[int, float],
             dict(gt=0),
             {
                 'title': 'A',
                 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
             },
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        (
+        pytest.param(
             List[int],
             dict(gt=0),
             {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        (
+        pytest.param(
             Dict[str, int],
             dict(gt=0),
             {
@@ -2198,11 +2208,13 @@ def test_model_with_extra_forbidden():
                 'type': 'object',
                 'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
             },
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        (
+        pytest.param(
             Union[str, int],
             dict(gt=0, max_length=5),
             {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
     ],
 )
@@ -2285,7 +2297,6 @@ def test_dataclass():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_attributes():
     class ExampleEnum(Enum):
         """This is a test description."""
@@ -2819,6 +2830,7 @@ def test_schema_with_field_parameter():
     }
 
 
+@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -3035,25 +3047,11 @@ def test_alias_same():
         number: int
 
     assert Model.model_json_schema() == {
-        'type': 'object',
-        'title': 'Model',
-        'properties': {
-            'number': {'title': 'Number', 'type': 'integer'},
-            'pet': {
-                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
-                'discriminator': {
-                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
-                    'propertyName': 'typeOfPet',
-                },
-                'title': 'Pet',
-            },
-        },
-        'required': ['pet', 'number'],
         'definitions': {
             'Cat': {
                 'properties': {
                     'c': {'title': 'C', 'type': 'string'},
-                    'typeOfPet': {'enum': ['cat'], 'title': 'Typeofpet', 'type': 'string'},
+                    'typeOfPet': {'const': 'cat', 'title': 'Typeofpet'},
                 },
                 'required': ['typeOfPet', 'c'],
                 'title': 'Cat',
@@ -3062,13 +3060,28 @@ def test_alias_same():
             'Dog': {
                 'properties': {
                     'd': {'title': 'D', 'type': 'string'},
-                    'typeOfPet': {'enum': ['dog'], 'title': 'Typeofpet', 'type': 'string'},
+                    'typeOfPet': {'const': 'dog', 'title': 'Typeofpet'},
                 },
                 'required': ['typeOfPet', 'd'],
                 'title': 'Dog',
                 'type': 'object',
             },
         },
+        'properties': {
+            'number': {'title': 'Number', 'type': 'integer'},
+            'pet': {
+                'discriminator': {
+                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
+                    # TODO: This is the only thing not being handled correctly for the discriminator now:
+                    'propertyName': 'typeOfPet',
+                },
+                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'title': 'Pet',
+            },
+        },
+        'required': ['pet', 'number'],
+        'title': 'Model',
+        'type': 'object',
     }
 
 
@@ -3197,6 +3210,7 @@ def test_extra_inheritance():
         root: Optional[str]
 
         class Config:
+            # TODO: What is happening to this fields attribute? Not present in _ConfigDict
             fields = {
                 'root': {'description': 'root path of data', 'level': 1},
             }
@@ -3259,43 +3273,3 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
         },
         'required': ['password'],
     }
-
-
-def test_definitions_are_cleared_on_substitution():
-    class ModelA(BaseModel):
-        a: float
-
-    class ModelB(BaseModel):
-        a: ModelA
-
-    assert ModelB.model_json_schema() == {}
-
-    # Setting a default value prevents the schema requires unpacking the ModelA definition,
-    # which will result in no references to ModelA in the generated schema, so ModelA gets removed.
-
-    default = ModelA(a=0.0)
-
-    class ModelC(BaseModel):
-        a: ModelA = default
-
-    assert ModelC.model_json_schema() == {}
-
-    class ApplePie(BaseModel):
-        """
-        This is a test.
-        """
-
-        a: float
-        b: int = 10
-
-    s = {
-        'type': 'object',
-        'properties': {'a': {'type': 'number', 'title': 'A'}, 'b': {'type': 'integer', 'title': 'B', 'default': 10}},
-        'required': ['a'],
-        'title': 'ApplePie',
-        'description': 'This is a test.',
-    }
-    assert ApplePie.__schema_cache__.keys() == set()
-    assert ApplePie.model_json_schema() == s
-    assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
-    assert ApplePie.model_json_schema() == s

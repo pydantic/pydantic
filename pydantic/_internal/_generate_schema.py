@@ -7,7 +7,9 @@ import collections.abc
 import dataclasses
 import re
 import typing
-from typing import TYPE_CHECKING, Any
+import warnings
+from types import EllipsisType
+from typing import TYPE_CHECKING, Any, Callable
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import core_schema
@@ -15,6 +17,7 @@ from typing_extensions import Annotated, Literal, get_args, get_origin, is_typed
 
 from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
+from ..json_schema import JsonSchemaExtra, build_core_metadata_for_json_schema
 from . import _fields, _typing_extra
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 
@@ -191,6 +194,8 @@ class GenerateSchema:
         """
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
+        if field.discriminator is not None:
+            schema = apply_discriminator(schema, field.discriminator)
         schema = apply_metadata(schema, field.metadata)
 
         if not field.is_required():
@@ -199,7 +204,10 @@ class GenerateSchema:
 
         schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
-        field_schema = core_schema.typed_dict_field(schema, required=required)
+        extra = JsonSchemaExtra(title=field.title, description=field.description, extra_updates=field.json_schema_extra)
+        field_schema = core_schema.typed_dict_field(
+            schema, required=required, metadata=build_core_metadata_for_json_schema(extra=extra)
+        )
         if field.alias is not None:
             field_schema['validation_alias'] = field.alias
             field_schema['serialization_alias'] = field.alias
@@ -611,14 +619,56 @@ def apply_metadata(  # noqa: C901
                 schema.update(metadata_dict)  # type: ignore[typeddict-item]
         else:
             if isinstance(schema_metadata, dict):
-                update_schema_function = schema_metadata['__pydantic_update_schema__']
+                update_schema_function = get_core_metadata_update_schema(schema_metadata)
             else:
+                assert False, 'trying to eliminate this branch...'
                 update_schema_function = schema_metadata.__pydantic_update_schema__
 
-            new_schema = update_schema_function(schema, **metadata_dict)
-            if new_schema is not None:
-                schema = new_schema
+            if update_schema_function is not None:
+                new_schema = update_schema_function(schema, **metadata_dict)
+                if new_schema is not None:
+                    schema = new_schema
     return schema
+
+
+def apply_discriminator(
+    schema: core_schema.CoreSchema,
+    discriminator: str,
+) -> core_schema.CoreSchema:
+    # TODO: Probably want to add support for other discriminator types, and explicitly specified choices
+    if discriminator is None:
+        return schema
+    if schema['type'] != 'union':
+        return schema
+
+    choices = schema['choices']
+    inherited_schema: dict[str, Any] = schema.copy()  # type: ignore[assignment]
+    inherited_schema.pop('choices')
+    inherited_schema.pop('type')
+    inherited_schema.pop('auto_collapse', None)
+
+    # TODO: Need to make sure nullable unions are handled properly
+    tagged_union_choices = {}
+    for choice in choices:
+        discriminator_schema = choice
+        if discriminator_schema['type'] == 'model':
+            # Unpack ModelSchema into the inner TypedDictSchema
+            discriminator_schema = discriminator_schema['schema']
+        if discriminator not in discriminator_schema['fields']:
+            raise ValueError(f'Discriminator {discriminator} not found in choice {choice}')
+        discriminator_schema = discriminator_schema['fields'][discriminator]['schema']
+        if discriminator_schema['type'] == 'default':
+            # Ignore a wrapping default schema if present
+            discriminator_schema = discriminator_schema['schema']
+        if discriminator_schema['type'] == 'literal':
+            for value in discriminator_schema['expected']:
+                tagged_union_choices[value] = choice
+
+    return core_schema.tagged_union_schema(
+        choices=tagged_union_choices,
+        discriminator=discriminator,
+        **inherited_schema,
+    )
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -638,3 +688,28 @@ def get_first_arg(type_: Any) -> Any:
         return get_args(type_)[0]
     except IndexError:
         return Any
+
+
+_UPDATE_SCHEMA_FIELD = 'pydantic_update_schema'
+
+
+def build_core_metadata(
+    update_schema: Callable[[core_schema.CoreSchema], None] | None | EllipsisType = ...,
+    old_metadata: Any | None = None,
+) -> Any:
+    if not isinstance(old_metadata, (dict, type(None))):
+        warnings.warn('CoreSchema metadata should be a dict or None; cannot update.', UserWarning)
+        return old_metadata
+
+    metadata: dict[Any, Any] = {} if old_metadata is None else old_metadata.copy()
+
+    if update_schema is not ...:
+        metadata[_UPDATE_SCHEMA_FIELD] = update_schema
+
+    return metadata
+
+
+def get_core_metadata_update_schema(metadata: Any) -> Callable[[core_schema.CoreSchema], None] | None:
+    if not isinstance(metadata, dict):
+        return None
+    return metadata.get(_UPDATE_SCHEMA_FIELD)

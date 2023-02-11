@@ -21,6 +21,7 @@ from typing_extensions import get_args
 
 from ..json_schema import JsonSchemaExtra, build_core_metadata_for_json_schema
 from . import _serializers, _validators
+from ._generate_schema import build_core_metadata
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -73,23 +74,25 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         ref=f'{getattr(enum_type, "__module__", None)}.{enum_type.__name__}',
     )
     override = literal_schema.copy()
+    json_schema_extra = JsonSchemaExtra(
+        title=enum_type.__name__, description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.')
+    )
     override['metadata'] = build_core_metadata_for_json_schema(
         source_class=enum_type,
-        extra=JsonSchemaExtra(
-            title=enum_type.__name__, description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.')
-        ),
+        extra=json_schema_extra,
     )
     metadata = build_core_metadata_for_json_schema(override_core_schema=override)
 
     if issubclass(enum_type, int):
         # this handles IntEnum
-        # TODO: Need to add something to "extra" to make sure the JSON schema reflect the enum
+        json_schema_extra.extra_updates = {'type': 'integer'}
         return core_schema.chain_schema(
             core_schema.int_schema(), literal_schema, core_schema.function_plain_schema(to_enum), metadata=metadata
         )
     elif issubclass(enum_type, str):
         # This _should_ handle 3.11's StrEnum --
         # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
+        json_schema_extra.extra_updates = {'type': 'string'}
         return core_schema.chain_schema(
             core_schema.str_schema(), literal_schema, core_schema.function_plain_schema(to_enum), metadata=metadata
         )
@@ -100,6 +103,8 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 @schema_function(Decimal)
 def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     decimal_validator = _validators.DecimalValidator()
+    metadata = build_core_metadata(update_schema=decimal_validator.__pydantic_update_schema__)
+    metadata = build_core_metadata_for_json_schema(override_core_schema=core_schema.int_schema(), old_metadata=metadata)
     return core_schema.function_after_schema(
         core_schema.union_schema(
             core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
@@ -109,7 +114,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
             strict=True,
         ),
         decimal_validator,
-        metadata=decimal_validator,
+        metadata=metadata,
     )
 
 
