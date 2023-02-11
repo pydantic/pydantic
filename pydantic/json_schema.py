@@ -10,15 +10,13 @@ import re
 import warnings
 from dataclasses import asdict, dataclass, is_dataclass, replace
 from enum import Enum
-from functools import cached_property
-from types import EllipsisType
 from typing import Any, Callable, Dict, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
 from typing_extensions import TypeGuard
 
-from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
+from pydantic._internal._typing_extra import EllipsisType, all_literal_values, is_namedtuple
 from pydantic.json import pydantic_encoder
 
 JsonSchemaValue = Dict[str, Any]
@@ -174,8 +172,9 @@ class GenerateJsonSchema:
         self.json_to_core_refs: dict[str, str] = {}
         self.json_to_defs_refs: dict[str, str] = {}
 
-    @cached_property
-    def _schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
+        self._schema_type_to_method = self._build_schema_type_to_method()
+
+    def _build_schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
         mapping: dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
         for key in all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
             method_name = f"{key.replace('-', '_')}_schema"

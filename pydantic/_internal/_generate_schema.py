@@ -8,7 +8,6 @@ import dataclasses
 import re
 import typing
 import warnings
-from types import EllipsisType
 from typing import TYPE_CHECKING, Any, Callable
 
 from annotated_types import BaseMetadata, GroupedMetadata
@@ -20,6 +19,7 @@ from ..fields import FieldInfo
 from ..json_schema import JsonSchemaExtra, build_core_metadata_for_json_schema
 from . import _fields, _typing_extra
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._typing_extra import EllipsisType
 
 if TYPE_CHECKING:
     from ..main import BaseModel
