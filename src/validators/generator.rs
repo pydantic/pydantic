@@ -16,6 +16,7 @@ use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 #[derive(Debug, Clone)]
 pub struct GeneratorValidator {
     item_validator: Option<Box<CombinedValidator>>,
+    min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,
 }
@@ -36,6 +37,7 @@ impl BuildValidator for GeneratorValidator {
         Ok(Self {
             item_validator,
             name,
+            min_length: schema.get_as(pyo3::intern!(schema.py(), "min_length"))?,
             max_length: schema.get_as(pyo3::intern!(schema.py(), "max_length"))?,
         }
         .into())
@@ -60,6 +62,7 @@ impl Validator for GeneratorValidator {
         let v_iterator = ValidatorIterator {
             iterator,
             validator,
+            min_length: self.min_length,
             max_length: self.max_length,
         };
         Ok(v_iterator.into_py(py))
@@ -89,6 +92,7 @@ impl Validator for GeneratorValidator {
 struct ValidatorIterator {
     iterator: GenericIterator,
     validator: Option<InternalValidator>,
+    min_length: Option<usize>,
     max_length: Option<usize>,
 }
 
@@ -99,6 +103,7 @@ impl ValidatorIterator {
     }
 
     fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<PyObject>> {
+        let min_length = slf.min_length;
         let max_length = slf.max_length;
         let Self {
             validator, iterator, ..
@@ -130,7 +135,27 @@ impl ValidatorIterator {
                         }
                         None => Ok(Some(next.to_object(py))),
                     },
-                    None => Ok(None),
+                    None => {
+                        if let Some(min_length) = min_length {
+                            if $iter.index() < min_length {
+                                let val_error = ValError::new(
+                                    ErrorType::TooShort {
+                                        field_type: "Generator".to_string(),
+                                        min_length,
+                                        actual_length: $iter.index(),
+                                    },
+                                    $iter.input(py),
+                                );
+                                return Err(ValidationError::from_val_error(
+                                    py,
+                                    "ValidatorIterator".to_object(py),
+                                    val_error,
+                                    None,
+                                ));
+                            }
+                        }
+                        Ok(None)
+                    }
                 }
             };
         }

@@ -1,8 +1,9 @@
 import re
 
 import pytest
+from dirty_equals import HasRepr, IsStr
 
-from pydantic_core import ValidationError
+from pydantic_core import SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson
 
@@ -112,5 +113,78 @@ def test_too_long(py_and_json: PyAndJson):
             'msg': 'Generator should have at most 2 items after validation, not 3',
             'input': [1, 2, 3],
             'ctx': {'field_type': 'Generator', 'max_length': 2, 'actual_length': 3},
+        }
+    ]
+
+
+def test_too_short(py_and_json: PyAndJson):
+    v = py_and_json({'type': 'generator', 'items_schema': {'type': 'int'}, 'min_length': 2})
+    assert list(v.validate_test([1, 2, 3])) == [1, 2, 3]
+    assert list(v.validate_test([1, 2])) == [1, 2]
+    with pytest.raises(ValidationError) as exc_info:
+        list(v.validate_test([1]))
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'too_short',
+            'loc': (),
+            'msg': 'Generator should have at least 2 items after validation, not 1',
+            'input': [1],
+            'ctx': {'field_type': 'Generator', 'min_length': 2, 'actual_length': 1},
+        }
+    ]
+
+
+def gen():
+    yield 1
+    yield 2
+    yield 3
+
+
+def test_generator_too_long():
+    v = SchemaValidator({'type': 'generator', 'items_schema': {'type': 'int'}, 'max_length': 2})
+
+    validating_iterator = v.validate_python(gen())
+
+    # Ensure the error happens at exactly the right step:
+    assert next(validating_iterator) == 1
+    assert next(validating_iterator) == 2
+    with pytest.raises(ValidationError) as exc_info:
+        next(validating_iterator)
+
+    errors = exc_info.value.errors()
+    # insert_assert(errors)
+    assert errors == [
+        {
+            'type': 'too_long',
+            'loc': (),
+            'input': HasRepr(IsStr(regex='<generator object gen at .+>')),
+            'msg': 'Generator should have at most 2 items after validation, not 3',
+            'ctx': {'field_type': 'Generator', 'max_length': 2, 'actual_length': 3},
+        }
+    ]
+
+
+def test_generator_too_short():
+    v = SchemaValidator({'type': 'generator', 'items_schema': {'type': 'int'}, 'min_length': 4})
+
+    validating_iterator = v.validate_python(gen())
+
+    # Ensure the error happens at exactly the right step:
+    assert next(validating_iterator) == 1
+    assert next(validating_iterator) == 2
+    assert next(validating_iterator) == 3
+    with pytest.raises(ValidationError) as exc_info:
+        next(validating_iterator)
+
+    errors = exc_info.value.errors()
+    # insert_assert(errors)
+    assert errors == [
+        {
+            'type': 'too_short',
+            'input': HasRepr(IsStr(regex='<generator object gen at .+>')),
+            'loc': (),
+            'msg': 'Generator should have at least 4 items after validation, not 3',
+            'ctx': {'field_type': 'Generator', 'min_length': 4, 'actual_length': 3},
         }
     ]
