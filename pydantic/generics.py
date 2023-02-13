@@ -17,6 +17,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
 from typing_extensions import Annotated
 
@@ -25,7 +26,7 @@ from .fields import DeferredType
 from .main import BaseModel, create_model
 from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
-from .utils import LimitedDict, all_identical, lenient_issubclass
+from .utils import all_identical, lenient_issubclass
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias
@@ -35,13 +36,13 @@ TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
-_generic_types_cache: LimitedDict[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]] = LimitedDict()
+_generic_types_cache = WeakValueDictionary[Tuple[Type[Any], Union[Any, Tuple[Any, ...]]], Type[BaseModel]]()
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
-_assigned_parameters: LimitedDict[Type[Any], Parametrization] = LimitedDict()
+_assigned_parameters = WeakKeyDictionary[Type[Any], Parametrization]()
 
 
 class GenericModel(BaseModel):
