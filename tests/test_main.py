@@ -1253,6 +1253,27 @@ def test_recursive_model():
     assert m.model_dump() == {'field': {'field': {'field': None}}}
 
 
+def test_deeper_recursive_model():
+    class A(BaseModel):
+        b: 'B'
+        model_config = {'undefined_types_warning': False}
+
+    class B(BaseModel):
+        c: 'C'
+        model_config = {'undefined_types_warning': False}
+
+    class C(BaseModel):
+        a: Optional['A']
+        model_config = {'undefined_types_warning': False}
+
+    A.model_rebuild()
+    B.model_rebuild()
+    C.model_rebuild()
+
+    m = A(b=B(c=C(a=None)))
+    assert m.model_dump() == {'b': {'c': {'a': None}}}
+
+
 def test_two_defaults():
     with pytest.raises(ValueError, match='^cannot specify both default and default_factory$'):
 

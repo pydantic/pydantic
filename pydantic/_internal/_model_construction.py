@@ -206,7 +206,7 @@ def build_inner_schema(  # noqa: C901
 
     model_ref = f'{module_name}.{name}'
     self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(model_ref))
-    local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+    local_ns = {**(types_namespace or {}), name: Annotated[SelfType, SchemaRef(self_schema)]}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
