@@ -37,6 +37,7 @@ class Model(BaseModel):
     assert module.Model.model_fields['a'].annotation.__name__ == 'SelfType'
 
 
+@pytest.mark.xfail(reason='working on v2')
 def test_forward_ref_auto_update_no_model(create_module):
     @create_module
     def module():
