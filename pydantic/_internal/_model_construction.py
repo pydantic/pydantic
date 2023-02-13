@@ -141,6 +141,7 @@ def complete_model_class(
         inner_schema, fields = build_inner_schema(
             cls, name, validator_functions, serialization_functions, bases, types_namespace
         )
+        inner_schema = _simplify_recursive_schema(inner_schema)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -266,7 +267,29 @@ def build_inner_schema(  # noqa: C901
         cls.model_config['arbitrary_types_allowed'],
         local_ns,
     )
+
     return schema, fields
+
+
+def _simplify_recursive_schema(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    """
+    Walk the schema recursively and any time a reference is repeated, replace it with a recursive-ref
+    """
+    visited: set[str] = set()
+
+    def replace_duplicate_refs(s: Any) -> Any:
+        if isinstance(s, dict):
+            if 'ref' in s and s.get('type') == 'typed-dict':
+                if s['ref'] in visited:
+                    return {'schema_ref': s['ref'], 'type': 'recursive-ref'}
+                else:
+                    visited.add(s['ref'])
+            return {k: replace_duplicate_refs(v) for k, v in s.items()}
+        elif isinstance(s, list):
+            return [replace_duplicate_refs(v) for v in s]
+        return s
+
+    return replace_duplicate_refs(schema)
 
 
 def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:

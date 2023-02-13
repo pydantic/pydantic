@@ -20,6 +20,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
+from dirty_equals import HasRepr, IsStr
 from typing_extensions import Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
@@ -1269,6 +1270,108 @@ def test_deeper_recursive_model():
     A.model_rebuild()
     B.model_rebuild()
     C.model_rebuild()
+
+    assert A.__pydantic_core_schema__ == {
+        'cls': HasRepr(IsStr(regex=r".+\.A'>")),
+        'config': {
+            'allow_inf_nan': True,
+            'populate_by_name': False,
+            'ser_json_bytes': 'utf8',
+            'ser_json_timedelta': 'iso8601',
+            'str_strip_whitespace': False,
+            'str_to_lower': False,
+            'str_to_upper': False,
+            'strict': False,
+            'title': 'A',
+            'typed_dict_extra_behavior': 'ignore',
+        },
+        'schema': {
+            'fields': {
+                'b': {
+                    'required': True,
+                    'schema': {
+                        'cls': HasRepr(IsStr(regex=r".+\.B'>")),
+                        'config': {
+                            'allow_inf_nan': True,
+                            'populate_by_name': False,
+                            'ser_json_bytes': 'utf8',
+                            'ser_json_timedelta': 'iso8601',
+                            'str_strip_whitespace': False,
+                            'str_to_lower': False,
+                            'str_to_upper': False,
+                            'strict': False,
+                            'title': 'B',
+                            'typed_dict_extra_behavior': 'ignore',
+                        },
+                        'schema': {
+                            'fields': {
+                                'c': {
+                                    'required': True,
+                                    'schema': {
+                                        'cls': HasRepr(IsStr(regex=r".+\.C'>")),
+                                        'config': {
+                                            'allow_inf_nan': True,
+                                            'populate_by_name': False,
+                                            'ser_json_bytes': 'utf8',
+                                            'ser_json_timedelta': 'iso8601',
+                                            'str_strip_whitespace': False,
+                                            'str_to_lower': False,
+                                            'str_to_upper': False,
+                                            'strict': False,
+                                            'title': 'B',
+                                            'typed_dict_extra_behavior': 'ignore',
+                                        },
+                                        'schema': {
+                                            'fields': {
+                                                'a': {
+                                                    'required': True,
+                                                    'schema': {
+                                                        'schema': {
+                                                            'cls': HasRepr(IsStr(regex=r".+\.A'>")),
+                                                            'config': {
+                                                                'allow_inf_nan': True,
+                                                                'populate_by_name': False,
+                                                                'ser_json_bytes': 'utf8',
+                                                                'ser_json_timedelta': 'iso8601',
+                                                                'str_strip_whitespace': False,
+                                                                'str_to_lower': False,
+                                                                'str_to_upper': False,
+                                                                'strict': False,
+                                                                'title': 'A',
+                                                                'typed_dict_extra_behavior': 'ignore',
+                                                            },
+                                                            'schema': {
+                                                                'schema_ref': 'tests.test_main.A',
+                                                                'type': 'recursive-ref',
+                                                            },
+                                                            'type': 'model',
+                                                        },
+                                                        'type': 'nullable',
+                                                    },
+                                                }
+                                            },
+                                            'ref': 'tests.test_main.C',
+                                            'return_fields_set': True,
+                                            'type': 'typed-dict',
+                                        },
+                                        'type': 'model',
+                                    },
+                                }
+                            },
+                            'ref': 'tests.test_main.B',
+                            'return_fields_set': True,
+                            'type': 'typed-dict',
+                        },
+                        'type': 'model',
+                    },
+                }
+            },
+            'ref': 'tests.test_main.A',
+            'return_fields_set': True,
+            'type': 'typed-dict',
+        },
+        'type': 'model',
+    }
 
     m = A(b=B(c=C(a=None)))
     assert m.model_dump() == {'b': {'c': {'a': None}}}
