@@ -17,7 +17,7 @@ from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
 from ..json_schema_misc import JsonSchemaMisc
 from . import _fields, _typing_extra
-from ._core_metadata import HandleCoreMetadata
+from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 
 if TYPE_CHECKING:
@@ -202,7 +202,7 @@ class GenerateSchema:
         schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
         misc = JsonSchemaMisc(title=field.title, description=field.description, extra_updates=field.json_schema_extra)
-        metadata = HandleCoreMetadata.build(json_schema_misc=misc)
+        metadata = build_metadata_dict(json_schema_misc=misc)
         field_schema = core_schema.typed_dict_field(schema, required=required, metadata=metadata)
         if field.alias is not None:
             field_schema['validation_alias'] = field.alias
@@ -614,7 +614,7 @@ def apply_metadata(  # noqa: C901
             else:
                 schema.update(metadata_dict)  # type: ignore[typeddict-item]
         else:
-            update_schema_function = HandleCoreMetadata(schema).get_update_core_schema()
+            update_schema_function = CoreMetadataHandler(schema).update_core_schema
             if update_schema_function is not None:
                 new_schema = update_schema_function(schema, **metadata_dict)
                 if new_schema is not None:

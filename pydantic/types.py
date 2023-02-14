@@ -72,7 +72,7 @@ __all__ = [
     'condate',
 ]
 
-from ._internal._core_metadata import HandleCoreMetadata
+from ._internal._core_metadata import build_metadata_dict
 from ._internal._utils import update_not_none
 
 if TYPE_CHECKING:
@@ -418,7 +418,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         validator = SecretFieldValidator(cls)
-        metadata = HandleCoreMetadata.build(update_core_schema=validator.__pydantic_update_schema__)
+        metadata = build_metadata_dict(update_core_schema=validator.__pydantic_update_schema__)
         return core_schema.function_after_schema(
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),

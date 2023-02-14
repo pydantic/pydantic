@@ -9,7 +9,7 @@ from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
 from typing_extensions import TypeGuard
 
-from pydantic._internal._core_metadata import HandleCoreMetadata
+from pydantic._internal._core_metadata import CoreMetadataHandler
 from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
 from pydantic.json import pydantic_encoder
 from pydantic.json_schema_misc import JsonSchemaValue
@@ -97,8 +97,8 @@ class GenerateJsonSchema:
             if core_ref in self.core_to_json_refs:
                 return {'$ref': self.core_to_json_refs[core_ref]}
 
-        metadata_handler = HandleCoreMetadata(schema)
-        core_schema_override = metadata_handler.json_schema_core_schema_override()
+        metadata_handler = CoreMetadataHandler(schema)
+        core_schema_override = metadata_handler.get_json_schema_core_schema_override()
         if core_schema_override is not None:
             # If there is a core schema override, use it to generate the JSON schema
             return self._generate(core_schema_override)
@@ -113,7 +113,7 @@ class GenerateJsonSchema:
             raise TypeError(f'Unexpected schema type: schema={schema}')
 
         # Handle the miscellaneous properties and apply postprocessing:
-        misc = metadata_handler.get_json_schema_misc()
+        misc = metadata_handler.json_schema_misc
         if misc is not None:
             if '$ref' in json_schema and schema.get('type') == 'model':
                 # This is a hack relating to the fact that the typed_dict_schema is where the CoreRef is set,
@@ -685,7 +685,7 @@ class GenerateJsonSchema:
             return self._should_set_field_title(schema['schema'])
 
         elif _is_core_schema(schema):
-            override = HandleCoreMetadata(schema).json_schema_core_schema_override()
+            override = CoreMetadataHandler(schema).get_json_schema_core_schema_override()
             if override:
                 return self._should_set_field_title(override)
 

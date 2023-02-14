@@ -5,6 +5,8 @@ from typing import Any, Callable, Dict
 
 from pydantic_core import CoreSchema
 
+from pydantic._internal._utils import dict_not_none
+
 JsonSchemaValue = Dict[str, Any]
 JsonValue = Dict[str, Any]
 
@@ -36,24 +38,37 @@ class JsonSchemaMisc:
 
     @classmethod
     def merged(cls, base: JsonSchemaMisc | None, overrides: JsonSchemaMisc | None) -> JsonSchemaMisc | None:
+        """
+        Merge two JsonSchemaMisc objects, with the values from the second overriding the first.
+
+        Returns a new object, or None if both arguments are None. The provided objects are not modified.
+        """
         if base is None:
-            return overrides
+            return replace(overrides)
         if overrides is None:
-            return base
+            return replace(base)
         return base.with_updates(overrides)
 
     def with_updates(self, other: JsonSchemaMisc) -> JsonSchemaMisc:
-        changes = {k: v for k, v in asdict(other).items() if v is not None}
+        """
+        Replace the values in this object with the non-None values from the provided object.
+        A new object is returned, and neither input is modified.
+        """
+        changes = dict_not_none(asdict(other))
         return replace(self, **changes)
 
     def without_core_schema_override(self) -> JsonSchemaMisc:
+        """
+        Return a copy of this object without the core_schema_override; when handling the core_schema_override,
+        we need to remove it from the object so that the handler doesn't recurse infinitely.
+        """
         return replace(self, core_schema_override=None)
 
     def apply_updates(self, schema: JsonSchemaValue) -> JsonSchemaValue:
         """
         Update the provided JSON schema in-place with the values from this object.
 
-        Note that the "pre-processing" attributes are not used in this method.
+        Note that the "pre-processing" attributes are not used in this method and must be used separately.
         """
         if self.title is not None:
             schema['title'] = self.title

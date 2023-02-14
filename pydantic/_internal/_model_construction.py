@@ -17,7 +17,7 @@ from typing_extensions import Annotated
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
-from ._core_metadata import HandleCoreMetadata
+from ._core_metadata import build_metadata_dict
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import SchemaRef, SelfType, Undefined
 from ._generate_schema import generate_config, model_fields_schema
@@ -120,8 +120,7 @@ def deferred_model_get_pydantic_validation_schema(
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        # TODO: Do we need to do a better job of allowing user-defined extra for the core_schema?
-        metadata=HandleCoreMetadata.build(json_schema_misc=json_schema_misc),
+        metadata=build_metadata_dict(json_schema_misc=json_schema_misc),
     )
 
 
@@ -184,7 +183,7 @@ def complete_model_class(
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        metadata=HandleCoreMetadata.build(json_schema_misc=json_schema_misc),
+        metadata=build_metadata_dict(json_schema_misc=json_schema_misc),
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -223,7 +222,7 @@ def build_inner_schema(  # noqa: C901
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
-        metadata=HandleCoreMetadata.build(json_schema_misc=json_schema_misc),
+        metadata=build_metadata_dict(json_schema_misc=json_schema_misc),
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 

@@ -21,7 +21,7 @@ from typing_extensions import get_args
 
 from ..json_schema_misc import JsonSchemaMisc
 from . import _serializers, _validators
-from ._core_metadata import HandleCoreMetadata
+from ._core_metadata import build_metadata_dict
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -79,7 +79,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         title=enum_type.__name__,
         description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.'),
     )
-    metadata = HandleCoreMetadata.build(json_schema_misc=json_schema_misc)
+    metadata = build_metadata_dict(json_schema_misc=json_schema_misc)
 
     if issubclass(enum_type, int):
         # this handles IntEnum
@@ -101,7 +101,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 @schema_function(Decimal)
 def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     decimal_validator = _validators.DecimalValidator()
-    metadata = HandleCoreMetadata.build(
+    metadata = build_metadata_dict(
         update_core_schema=decimal_validator.__pydantic_update_schema__,
         json_schema_misc=JsonSchemaMisc(core_schema_override=core_schema.float_schema()),
     )
