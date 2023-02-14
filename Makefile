@@ -66,7 +66,7 @@ pyright:
 
 .PHONY: test
 test:
-	pytest --cov=pydantic --memray
+	pytest --cov=pydantic
 
 .PHONY: testcov
 testcov: test
