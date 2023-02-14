@@ -38,7 +38,7 @@ Parametrization = Mapping[TypeVarType, Type[Any]]
 
 if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
     GenericTypesCache = WeakValueDictionary[Tuple[Type[Any], Any, Tuple[Any, ...]], Type[BaseModel]]
-    AssignedParameters = WeakKeyDictionary[Type[Any], Parametrization]
+    AssignedParameters = WeakKeyDictionary[Type[BaseModel], Parametrization]
 else:
     GenericTypesCache = WeakValueDictionary
     AssignedParameters = WeakKeyDictionary
