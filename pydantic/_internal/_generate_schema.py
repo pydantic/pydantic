@@ -8,13 +8,14 @@ import dataclasses
 import re
 import typing
 import warnings
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ..errors import PydanticSchemaGenerationError
+from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
@@ -227,6 +228,8 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
+        if field_info.discriminator is not None:
+            schema = apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
         if not field_info.is_required():
@@ -278,7 +281,8 @@ class GenerateSchema:
         """
         first_arg, *other_args = get_args(annotated_type)
         schema = self.generate_schema(first_arg)
-        return apply_annotations(schema, other_args)
+        schema = apply_annotations(schema, other_args)
+        return schema
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -642,6 +646,8 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
         return apply_annotations(schema, metadata)
     elif isinstance(metadata, FieldInfo):
         schema = apply_annotations(schema, metadata.metadata)
+        if metadata.discriminator is not None:
+            schema = apply_discriminator(schema, metadata.discriminator)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
 
@@ -716,3 +722,85 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
         return obj.__modify_schema__
 
     return modify_js_function
+
+
+def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> core_schema.CoreSchema:
+    # Eventually: should add support for other discriminator types, and explicitly specified choices
+    if schema['type'] != 'union':
+        raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
+    choices = [*schema['choices'][::-1]]
+    if len(choices) < 2:
+        raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
+
+    # TODO: Need to make sure nullable unions are handled properly
+    aliases = {discriminator: None}  # use a dict to ensure order is preserved
+    tagged_union_choices: dict[str, str | core_schema.CoreSchema] = {}
+    while choices:
+        choice = choices.pop()
+        if choice['type'] == 'union':
+            choices.extend(choice['choices'])
+            continue
+
+        discriminator_values = _get_discriminator_values_for_choice(choice, discriminator, aliases)
+        for value in discriminator_values:
+            if isinstance(value, Enum):
+                value = value.value
+            value = str(value)
+            if value in tagged_union_choices and tagged_union_choices[value] != choice:
+                raise ValueError(f'Value {value!r} for discriminator {discriminator!r} mapped to multiple choices')
+            tagged_union_choices[value] = choice
+
+    if len(aliases) > 1:
+        schema_discriminator: str | list[list[str | int]] = [[alias] for alias in aliases]
+    else:
+        schema_discriminator = discriminator
+
+    return core_schema.tagged_union_schema(
+        choices=tagged_union_choices,
+        discriminator=schema_discriminator,
+        custom_error_type=schema.get('custom_error_type'),
+        custom_error_message=schema.get('custom_error_message'),
+        custom_error_context=schema.get('custom_error_context'),
+        strict=False,
+        from_attributes=True,
+        ref=schema.get('ref'),
+        metadata=schema.get('metadata'),
+        serialization=schema.get('serialization'),
+    )
+
+
+def _get_discriminator_values_for_choice(
+    choice: core_schema.CoreSchema, discriminator: str, aliases: dict[str, None]
+) -> list[Any]:
+    if choice['type'] == 'tagged-union':
+        values: list[Any] = []
+        for inner_choice in choice['choices'].values():
+            if isinstance(inner_choice, str):
+                continue
+            values.extend(_get_discriminator_values_for_choice(inner_choice, discriminator, aliases))
+        return values
+
+    elif choice['type'] == 'model':
+        model_name = choice['cls'].__name__
+        # Unpack ModelSchema into the inner TypedDictSchema
+        typed_dict_schema = choice['schema']
+        if discriminator not in typed_dict_schema['fields']:
+            raise PydanticUserError(f'Model {model_name!r} needs a discriminator field for key {discriminator!r}')
+        discriminator_field = typed_dict_schema['fields'][discriminator]
+
+        # TODO: Should maybe reflect whether populate_by_alias works or whatever
+        alias = discriminator_field.get('validation_alias', discriminator)
+        aliases[alias] = None
+
+        discriminator_schema = discriminator_field['schema']
+        if discriminator_schema['type'] == 'default':
+            # Ignore a wrapping default schema if present
+            discriminator_schema = discriminator_schema['schema']
+        if discriminator_schema['type'] != 'literal':
+            raise PydanticUserError(f'Field {discriminator!r} of model {model_name!r} needs to be a `Literal`')
+        return discriminator_schema['expected']
+
+    else:
+        raise TypeError(
+            f"{choice['type']!r} is not a valid discriminated union variant; " "should be a `BaseModel` or `dataclass`"
+        )

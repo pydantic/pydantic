@@ -1,5 +1,5 @@
 import re
-from enum import Enum
+from enum import IntEnum
 from typing import Generic, TypeVar, Union
 
 import pytest
@@ -10,7 +10,6 @@ from pydantic.errors import PydanticUserError
 from pydantic.generics import GenericModel
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_only_union():
     with pytest.raises(
         TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
@@ -20,7 +19,6 @@ def test_discriminated_union_only_union():
             x: str = Field(..., discriminator='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_single_variant():
     with pytest.raises(
         TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
@@ -30,15 +28,15 @@ def test_discriminated_union_single_variant():
             x: Union[str] = Field(..., discriminator='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_invalid_type():
-    with pytest.raises(TypeError, match="Type 'str' is not a valid `BaseModel` or `dataclass`"):
+    with pytest.raises(
+        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
+    ):
 
         class Model(BaseModel):
             x: Union[str, int] = Field(..., discriminator='qwe')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_defined_discriminator():
     class Cat(BaseModel):
         c: str
@@ -54,7 +52,6 @@ def test_discriminated_union_defined_discriminator():
             number: int
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_literal_discriminator():
     class Cat(BaseModel):
         pet_type: int
@@ -71,7 +68,7 @@ def test_discriminated_union_literal_discriminator():
             number: int
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_discriminated_union_root_same_discriminator():
     class BlackCat(BaseModel):
         pet_type: Literal['blackcat']
@@ -91,7 +88,7 @@ def test_discriminated_union_root_same_discriminator():
             __root__: Union[Cat, Dog] = Field(..., discriminator='pet_type')
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_discriminated_union_validation():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -182,7 +179,6 @@ def test_discriminated_union_validation():
     assert isinstance(m.pet.__root__, WhiteCat)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_annotated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -210,29 +206,36 @@ def test_discriminated_annotated_union():
         Model.model_validate({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
     assert exc_info.value.errors() == [
         {
+            'ctx': {'discriminator': "'pet_type'"},
+            'input': {'pet_typ': 'cat'},
             'loc': ('pet',),
-            'msg': "Discriminator 'pet_type' is missing in value",
-            'type': 'value_error.discriminated_union.missing_discriminator',
-            'ctx': {'discriminator_key': 'pet_type'},
+            'msg': "Unable to extract tag using discriminator 'pet_type'",
+            'type': 'union_tag_not_found',
         },
-        {'loc': ('number',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'input': 'x',
+            'loc': ('number',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
+            'input': {'pet_type': 'fish'},
             'loc': ('pet',),
-            'msg': "No match for discriminator 'pet_type' and value 'fish' " "(allowed values: 'cat', 'dog')",
-            'type': 'value_error.discriminated_union.invalid_discriminator',
-            'ctx': {'discriminator_key': 'pet_type', 'discriminator_value': 'fish', 'allowed_values': "'cat', 'dog'"},
-        },
+            'msg': "Input tag 'fish' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'type': 'union_tag_invalid',
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'dog'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet', 'Dog', 'dog_name'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {'pet_type': 'dog'}, 'loc': ('pet', 'dog', 'dog_name'), 'msg': 'Field required', 'type': 'missing'}
     ]
     m = Model.model_validate({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
     assert isinstance(m.pet, Dog)
@@ -241,10 +244,11 @@ def test_discriminated_annotated_union():
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet', 'Union[BlackCat, WhiteCat]'),
-            'msg': "No match for discriminator 'color' and value 'red' " "(allowed values: 'black', 'white')",
-            'type': 'value_error.discriminated_union.invalid_discriminator',
-            'ctx': {'discriminator_key': 'color', 'discriminator_value': 'red', 'allowed_values': "'black', 'white'"},
+            'ctx': {'discriminator': "'color'", 'expected_tags': "'black', 'white'", 'tag': 'red'},
+            'input': {'color': 'red', 'pet_type': 'cat'},
+            'loc': ('pet', 'cat'),
+            'msg': "Input tag 'red' found using 'color' does not match any of the " "expected tags: 'black', 'white'",
+            'type': 'union_tag_invalid',
         }
     ]
 
@@ -252,9 +256,10 @@ def test_discriminated_annotated_union():
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet', 'Union[BlackCat, WhiteCat]', 'WhiteCat', 'white_infos'),
-            'msg': 'field required',
-            'type': 'value_error.missing',
+            'input': {'color': 'white', 'pet_type': 'cat'},
+            'loc': ('pet', 'cat', 'white', 'white_infos'),
+            'msg': 'Field required',
+            'type': 'missing',
         }
     ]
     m = Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
@@ -291,7 +296,6 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
     assert Top(sub=B(literal='b')).sub.literal == 'b'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_int():
     class A(BaseModel):
         m: Literal[1]
@@ -300,24 +304,25 @@ def test_discriminated_union_int():
         m: Literal[2]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='l')
+        sub: Union[A, B] = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
         Top.model_validate({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
+            'ctx': {'discriminator': "'m'", 'expected_tags': "'1', '2'", 'tag': '3'},
+            'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "No match for discriminator 'l' and value 3 (allowed values: 1, 2)",
-            'type': 'value_error.discriminated_union.invalid_discriminator',
-            'ctx': {'discriminator_key': 'm', 'discriminator_value': 3, 'allowed_values': '1, 2'},
+            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: '1', '2'",
+            'type': 'union_tag_invalid',
         }
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_discriminated_union_enum():
-    class EnumValue(Enum):
+    # TODO: Make this work with a base Enum, not just IntEnum / StrEnum
+    class EnumValue(IntEnum):
         a = 1
         b = 2
 
@@ -331,23 +336,20 @@ def test_discriminated_union_enum():
         sub: Union[A, B] = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
+    assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
         Top.model_validate({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
+            'ctx': {'discriminator': "'m'", 'expected_tags': "'1', '2'", 'tag': '3'},
+            'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "No match for discriminator 'm' and value 3 (allowed values: <EnumValue.a: 1>, <EnumValue.b: 2>)",
-            'type': 'value_error.discriminated_union.invalid_discriminator',
-            'ctx': {
-                'discriminator_key': 'm',
-                'discriminator_value': 3,
-                'allowed_values': '<EnumValue.a: 1>, <EnumValue.b: 2>',
-            },
+            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: '1', '2'",
+            'type': 'union_tag_invalid',
         }
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_alias_different():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='U')
@@ -357,12 +359,22 @@ def test_alias_different():
         pet_type: Literal['dog'] = Field(alias='T')
         d: str
 
-    with pytest.raises(
-        PydanticUserError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")
-    ):
+    class Model(BaseModel):
+        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
 
-        class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+    Model.model_validate({'pet': {'U': 'cat', 'c': 'my_cat'}})
+    Model.model_validate({'pet': {'T': 'dog', 'd': 'my_dog'}})
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'pet': {'W': 'dog', 'd': 'my_dog'}})
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator': "'pet_type' | 'U' | 'T'"},
+            'input': {'W': 'dog', 'd': 'my_dog'},
+            'loc': ('pet',),
+            'msg': "Unable to extract tag using discriminator 'pet_type' | 'U' | 'T'",
+            'type': 'union_tag_not_found',
+        }
+    ]
 
 
 def test_alias_same():
@@ -402,7 +414,7 @@ def test_nested():
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - generics')
 def test_generic():
     T = TypeVar('T')
 
