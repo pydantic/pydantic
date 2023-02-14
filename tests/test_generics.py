@@ -1,6 +1,7 @@
 import gc
 import itertools
 import json
+import os
 import sys
 from enum import Enum
 from typing import (
@@ -1443,7 +1444,23 @@ def test_parse_generic_json():
     }
 
 
-@pytest.mark.limit_memory('100 MB')
+FT = TypeVar('FT')
+
+if os.environ.get('MEMRAY'):
+
+    def _memray_decorator(f: FT) -> FT:
+        return pytest.mark.limit_memory('100 MB')(f)  # type: ignore
+
+    decorator = _memray_decorator
+else:
+
+    def _identity_decorator(f: FT) -> FT:
+        return f
+
+    decorator = _identity_decorator
+
+
+@decorator
 def test_generics_memory_use():
     """See:
     - https://github.com/pydantic/pydantic/issues/3829
@@ -1488,9 +1505,3 @@ def test_generics_memory_use():
 
         class _(Outer[Foo]):
             pass
-
-
-if __name__ == '__main__':
-    import pytest
-
-    pytest.main([__file__, '-k', 'test_generics_memory_use'])

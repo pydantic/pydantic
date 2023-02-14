@@ -133,10 +133,8 @@ jobs:
         ls -alh
         ls -alh pydantic/
 
-    - run: mkdir coverage
-
     - name: test
-      run: pytest --memray --memray-bin-path memray-out.bin
+      run: env MEMRAY=true pytest --memray --memray-bin-path memray-out.bin
       env:
         CONTEXT: linux-py3.10-compiled
 
