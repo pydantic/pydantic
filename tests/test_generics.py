@@ -1,4 +1,5 @@
 import gc
+import itertools
 import json
 import sys
 from enum import Enum
@@ -1438,3 +1439,56 @@ def test_parse_generic_json():
         'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
         'required': ['payload_field'],
     }
+
+
+@pytest.mark.limit_memory('100 MB')
+def test_generics_memory_use():
+    """See:
+    - https://github.com/pydantic/pydantic/issues/3829
+    - https://github.com/pydantic/pydantic/pull/4083
+    - https://github.com/pydantic/pydantic/pull/5052
+    """
+
+    T = TypeVar('T')
+    U = TypeVar('U')
+    V = TypeVar('V')
+
+    class MyModel(GenericModel, Generic[T, U, V]):
+        message: Json[T]
+        field: Dict[U, V]
+
+    class Outer(GenericModel, Generic[T]):
+        inner: T
+
+    types = [
+        int,
+        str,
+        float,
+        bool,
+        bytes,
+    ]
+
+    containers = [
+        list,
+        tuple,
+        set,
+        frozenset,
+    ]
+
+    all = [*types, *[container[tp] for container in containers for tp in types]]
+
+    total = list(itertools.product(all, all, all))
+
+    for t1, t2, t3 in total:
+
+        class Foo(MyModel[t1, t2, t3]):
+            pass
+
+        class Bar(Outer[Foo]):
+            pass
+
+
+if __name__ == '__main__':
+    import pytest
+
+    pytest.main([__file__, '-k', 'test_generics_memory_use'])

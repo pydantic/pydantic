@@ -9,3 +9,4 @@ pytest-mock==3.8.2
 pytest-sugar==0.9.5
 # pin typing-extensions to minimum requirement - see #4885
 typing-extensions==4.2.0
+pytest-memray==1.4.0
