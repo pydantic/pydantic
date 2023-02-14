@@ -9,7 +9,7 @@ JsonSchemaValue = Dict[str, Any]
 JsonValue = Dict[str, Any]
 
 
-@dataclass(kw_only=True)
+@dataclass
 class JsonSchemaMisc:
     # ### Pre-processing of the JSON schema
     # If not None, this core schema will be used to generate the JSON schema instead of the real one for the field:
@@ -49,9 +49,9 @@ class JsonSchemaMisc:
     def without_core_schema_override(self) -> JsonSchemaMisc:
         return replace(self, core_schema_override=None)
 
-    def update(self, schema: JsonSchemaValue) -> JsonSchemaValue:
+    def apply_updates(self, schema: JsonSchemaValue) -> JsonSchemaValue:
         """
-        Update the given JSON schema with the values from this object.
+        Update the provided JSON schema in-place with the values from this object.
 
         Note that the "pre-processing" attributes are not used in this method.
         """

@@ -120,10 +120,10 @@ class GenerateJsonSchema:
                 # and therefore the source of what ends up in the JSON schema definitions, but we want to use the
                 # json_schema_misc that was set on the model_schema to update the typed_dict_schema
                 # I think we might be able to fix this with a minor refactoring of the way json_schema_misc is set
-                json_ref = JsonRef(json_schema['$ref'])
-                misc.update(self._get_definitions_schema(json_ref))
+                schema_to_update = self._get_definitions_schema(JsonRef(json_schema['$ref']))
+                misc.apply_updates(schema_to_update)
             else:
-                misc.update(json_schema)
+                misc.apply_updates(json_schema)
 
         # Resolve issues caused by sibling keys next to a top-level $ref
         # See the `_handle_ref_overrides` docstring for more details
