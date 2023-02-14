@@ -127,7 +127,7 @@ def test_self_forward_ref_collection(create_module):
         from typing import Dict, List, Optional
 
         from pydantic import BaseModel
-        from pydantic.json_schema import JsonSchemaExtra
+        from pydantic.json_schema_misc import JsonSchemaMisc
 
         class Foo(BaseModel):
             a: int = 123
@@ -136,7 +136,7 @@ def test_self_forward_ref_collection(create_module):
             d: 'Dict[str, Foo]' = {}
 
             @classmethod
-            def model_json_schema_extra(cls) -> Optional[JsonSchemaExtra]:
+            def model_json_schema_misc(cls) -> Optional[JsonSchemaMisc]:
                 return None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}

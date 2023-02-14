@@ -485,7 +485,6 @@ def test_enum_schema_cleandoc():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json_schema():
     class Model(BaseModel):
         a: bytes = b'foobar'

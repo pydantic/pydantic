@@ -29,6 +29,7 @@ __all__ = (
     'Required',
     'parent_frame_namespace',
     'get_type_hints',
+    'EllipsisType',
 )
 
 try:
@@ -68,6 +69,11 @@ else:
 
 
 NoneType = None.__class__
+if sys.version_info < (3, 10):
+    # NoneType = type(None)
+    EllipsisType = type(Ellipsis)
+else:
+    from types import EllipsisType as EllipsisType  # , NoneType as NoneType
 
 
 NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
@@ -366,9 +372,3 @@ else:
                 value = typing.Optional[value]
             hints[name] = value
         return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}
-
-
-if sys.version_info < (3, 10):
-    EllipsisType = type(Ellipsis)
-else:
-    from types import EllipsisType as EllipsisType  # noqa: F401

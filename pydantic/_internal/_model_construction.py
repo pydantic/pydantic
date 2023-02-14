@@ -16,8 +16,8 @@ from typing_extensions import Annotated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from ..json_schema import build_core_metadata_for_json_schema
 from . import _typing_extra
+from ._core_metadata import HandleCoreMetadata
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import SchemaRef, SelfType, Undefined
 from ._generate_schema import generate_config, model_fields_schema
@@ -114,14 +114,14 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    json_schema_extra = cls.model_json_schema_extra()
+    json_schema_misc = cls.model_json_schema_misc()
     return core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
         # TODO: Do we need to do a better job of allowing user-defined extra for the core_schema?
-        metadata=build_core_metadata_for_json_schema(extra=json_schema_extra),
+        metadata=HandleCoreMetadata.build(json_schema_misc=json_schema_misc),
     )
 
 
@@ -178,13 +178,13 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    json_schema_extra = cls.model_json_schema_extra()
+    json_schema_misc = cls.model_json_schema_misc()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        metadata=build_core_metadata_for_json_schema(extra=json_schema_extra),
+        metadata=HandleCoreMetadata.build(json_schema_misc=json_schema_misc),
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -219,11 +219,11 @@ def build_inner_schema(  # noqa: C901
                 global_ns = module.__dict__
 
     model_ref = f'{module_name}.{name}'
-    json_schema_extra = cls.model_json_schema_extra()
+    json_schema_misc = cls.model_json_schema_misc()
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
-        metadata=build_core_metadata_for_json_schema(extra=json_schema_extra),
+        metadata=HandleCoreMetadata.build(json_schema_misc=json_schema_misc),
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 

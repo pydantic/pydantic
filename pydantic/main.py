@@ -21,7 +21,8 @@ from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .json_schema import GenerateJsonSchema, JsonSchemaExtra, default_ref_template
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
+from .json_schema_misc import JsonSchemaMisc
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -364,28 +365,42 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def model_json_schema(
-        cls, by_alias: bool = True, ref_template: str = default_ref_template
+        cls,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> typing.Dict[str, Any]:
+        """
+        To override the logic used to generate the JSON schema, you can create a subclass of GenerateJsonSchema
+        with your desired modifications, then override this method on a custom base class and set the default
+        value of `schema_generator` to be your subclass.
+        """
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = GenerateJsonSchema(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
+        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 
     @classmethod
-    def model_json_schema_extra(cls) -> typing.Optional[JsonSchemaExtra]:
+    def model_json_schema_misc(cls) -> JsonSchemaMisc | None:
         """
-        Override this method to add extra information to the JSON schema.
+        Override this method to manipulate the generation of the JSON schema.
+
+        This is a convenience method primarily intended to control how the miscellaneous properties
+        of the JSON schema are populated, or apply minor transformations through `extra_updates` or
+        `modify_json_schema`.
+
+        If you want to make more sweeping changes to how the JSON schema is generated, you will probably
+        want to override the `model_json_schema` with a new default for the `schema_generator` argument.
         """
-        return JsonSchemaExtra(
-            title=cls.model_config['title'] or cls.__name__,
-            description=getdoc(cls) or None,
-        )
+        title = cls.model_config['title'] or cls.__name__
+        description = getdoc(cls) or None
+        return JsonSchemaMisc(title=title, description=description)
 
     @classmethod
     def schema_json(
-        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+        cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:
         from .json import pydantic_encoder
 
