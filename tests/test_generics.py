@@ -8,12 +8,14 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     List,
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -1469,10 +1471,10 @@ def test_generics_memory_use():
     ]
 
     containers = [
-        list,
-        tuple,
-        set,
-        frozenset,
+        List,
+        Tuple,
+        Set,
+        FrozenSet,
     ]
 
     all = [*types, *[container[tp] for container in containers for tp in types]]
@@ -1484,7 +1486,7 @@ def test_generics_memory_use():
         class Foo(MyModel[t1, t2, t3]):
             pass
 
-        class Bar(Outer[Foo]):
+        class _(Outer[Foo]):
             pass
 
 
