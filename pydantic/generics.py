@@ -36,13 +36,20 @@ TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
-_generic_types_cache = WeakValueDictionary[Tuple[Type[Any], Any, Tuple[Any, ...]], Type[BaseModel]]()
+if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
+    GenericTypesCache = WeakValueDictionary[Tuple[Type[Any], Any, Tuple[Any, ...]], Type[BaseModel]]
+    AssignedParameters = WeakKeyDictionary[Type[Any], Parametrization]
+else:
+    GenericTypesCache = WeakValueDictionary
+    AssignedParameters = WeakKeyDictionary
+
+_generic_types_cache = GenericTypesCache()
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
-_assigned_parameters = WeakKeyDictionary[Type[Any], Parametrization]()
+_assigned_parameters = AssignedParameters()
 
 
 class GenericModel(BaseModel):
