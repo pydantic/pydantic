@@ -23,7 +23,13 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, Json, ValidationError, create_model, root_validator, validator
-from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
+from pydantic.generics import (
+    GenericModel,
+    _assigned_parameters,
+    _generic_types_cache,
+    iter_contained_typevars,
+    replace_types,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -289,6 +295,9 @@ def test_cache_gets_cleaned_up():
 
 
 def test_generics_work_with_many_parametrized_base_models():
+    cache_size = len(_generic_types_cache)
+    params_size = len(_assigned_parameters)
+    count_create_models = 1000
     T = TypeVar('T')
     C = TypeVar('C')
 
@@ -299,9 +308,16 @@ def test_generics_work_with_many_parametrized_base_models():
     class B(A[int, C], GenericModel, Generic[C]):
         pass
 
-    models = [create_model(f"M{i}") for i in range(1000)]
+    models = [create_model(f'M{i}') for i in range(count_create_models)]
+    generics = []
     for m in models:
-        B[m]
+        working = B[m]
+        generics.append(working)
+
+    assert len(_generic_types_cache) == cache_size + count_create_models * 5 + 1
+    assert len(_assigned_parameters) == params_size + count_create_models * 3 + 1
+    del models
+    del generics
 
 
 def test_generic_config():
