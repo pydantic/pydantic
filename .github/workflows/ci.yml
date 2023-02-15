@@ -134,7 +134,7 @@ jobs:
         ls -alh pydantic/
 
     - name: test
-      run: env MEMRAY=true pytest --memray
+      run: env MEMRAY=true pytest --ignore=tests/mypy/ --memray
       env:
         CONTEXT: linux-py3.10-compiled
   
