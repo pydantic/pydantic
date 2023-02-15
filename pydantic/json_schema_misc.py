@@ -13,14 +13,12 @@ JsonValue = Dict[str, Any]
 
 @dataclass
 class JsonSchemaMisc:
-    # ### Pre-processing of the JSON schema
-    # If not None, this core schema will be used to generate the JSON schema instead of the real one for the field:
+    # ### "Pre-processing" of the JSON schema
+    # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one":
     core_schema_override: CoreSchema | None = None
-    # A reference to the source class if appropriate, intended for extracting docstrings, etc.
-    source_class: type[Any] | None = None
 
-    # ### Overrides for the "miscellaneous properties that are available for all JSON types"
-    # ### (see https://json-schema.org/understanding-json-schema/reference/generic.html)
+    # ### "Miscellaneous properties" that are available for all JSON types
+    # (see https://json-schema.org/understanding-json-schema/reference/generic.html)
     title: str | None = None
     description: str | None = None
     examples: list[JsonValue] | None = None
@@ -30,10 +28,12 @@ class JsonSchemaMisc:
     comment: str | None = None
     # Note: 'default', which is included with these fields in the JSON Schema docs, is handled by CoreSchema
 
-    # ### Post-processing of the JSON schema
+    # ### "Post-processing" of the JSON schema
     # A catch-all for arbitrary data to add to the schema
     extra_updates: dict[str, Any] | None = None
     # A final function to apply to the JSON schema after all other modifications have been applied
+    # If you want to force specific contents in the generated schema, you can use a function that ignores the
+    # input value and just return the schema you want.
     modify_json_schema: Callable[[JsonSchemaValue], JsonSchemaValue] | None = None
 
     @classmethod

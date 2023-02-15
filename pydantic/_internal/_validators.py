@@ -135,8 +135,6 @@ class DecimalValidator(_fields.CustomValidator):
         self.check_digits: bool = False
         self.strict: bool = False
 
-    # TODO: Probably want a way to "apply metadata"?
-    #   Right now, I don't see how condecimal is supposed to work
     def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **kwargs: Any) -> None:
         self._update_attrs(kwargs)
 

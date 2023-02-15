@@ -75,10 +75,15 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     )
     json_schema_misc = JsonSchemaMisc(
         core_schema_override=literal_schema.copy(),
-        source_class=enum_type,
         title=enum_type.__name__,
         description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.'),
     )
+    # TODO: Is 'enum_json_schema_misc' the best name? Is there a better way to handle this?
+    if hasattr(enum_type, 'enum_json_schema_misc'):
+        # The enum_json_schema_extra method should be a classmethod with signature:
+        #   def enum_json_schema_extra(cls, default: JsonSchemaMisc) -> JsonSchemaMisc: ...
+        # For convenience, the value generated above is passed to this function so you can use some/all of its defaults
+        json_schema_misc = getattr(enum_type, 'enum_json_schema_misc')(json_schema_misc)
     metadata = build_metadata_dict(json_schema_misc=json_schema_misc)
 
     if issubclass(enum_type, int):
