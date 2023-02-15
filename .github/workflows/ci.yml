@@ -134,15 +134,9 @@ jobs:
         ls -alh pydantic/
 
     - name: test
-      run: env MEMRAY=true pytest --memray --memray-bin-path memray-out.bin
+      run: env MEMRAY=true pytest --memray
       env:
         CONTEXT: linux-py3.10-compiled
-
-    - name: store memray file
-      uses: actions/upload-artifact@v3
-      with:
-        name: memray-out
-        path: memray-out.bin
   
   test-linux-compiled:
     name: test py${{ matrix.python-version }} on linux compiled
