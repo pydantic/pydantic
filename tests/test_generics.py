@@ -284,18 +284,21 @@ def test_cache_keys_are_hashable():
     del models
 
 
-def test_cache_gets_cleaned_up():
-    cache_size = len(_generic_types_cache)
+def test_caches_get_cleaned_up():
+    types_cache_size = len(_generic_types_cache)
+    params_cache_size = len(_assigned_parameters)
     T = TypeVar('T')
 
-    class Model(GenericModel, Generic[T]):
+    class MyGenericModel(GenericModel, Generic[T]):
         x: T
 
-    model = Model[int]
-    assert len(_generic_types_cache) == cache_size + 2
-    del model
+    Model = MyGenericModel[int]
+    assert len(_generic_types_cache) == types_cache_size + 2
+    assert len(_assigned_parameters) == params_cache_size + 1
+    del Model
     gc.collect()
-    assert len(_generic_types_cache) == cache_size
+    assert len(_generic_types_cache) == types_cache_size
+    assert len(_assigned_parameters) == params_cache_size
 
 
 def test_generics_work_with_many_parametrized_base_models():
@@ -315,8 +318,8 @@ def test_generics_work_with_many_parametrized_base_models():
     models = [create_model(f'M{i}') for i in range(count_create_models)]
     generics = []
     for m in models:
-        working = B[m]
-        generics.append(working)
+        Working = B[m]
+        generics.append(Working)
 
     assert len(_generic_types_cache) == cache_size + count_create_models * 5 + 1
     assert len(_assigned_parameters) == params_size + count_create_models * 3 + 1

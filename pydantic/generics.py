@@ -34,10 +34,13 @@ if sys.version_info >= (3, 10):
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
+CacheKey = Tuple[Type[Any], Any, Tuple[Any, ...]]
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
+# weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
+# once they are no longer referenced by the caller.
 if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    GenericTypesCache = WeakValueDictionary[Tuple[Type[Any], Any, Tuple[Any, ...]], Type[BaseModel]]
+    GenericTypesCache = WeakValueDictionary[CacheKey, Type[BaseModel]]
     AssignedParameters = WeakKeyDictionary[Type[BaseModel], Parametrization]
 else:
     GenericTypesCache = WeakValueDictionary
@@ -78,7 +81,7 @@ class GenericModel(BaseModel):
 
         """
 
-        def _cache_key(_params: Any) -> Tuple[Type[GenericModelT], Any, Tuple[Any, ...]]:
+        def _cache_key(_params: Any) -> CacheKey:
             args = get_args(_params)
             # python returns a list for Callables, which is not hashable
             if len(args) == 2 and isinstance(args[0], list):
