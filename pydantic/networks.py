@@ -9,6 +9,8 @@ from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated
 
 from ._internal import _fields, _repr
+from ._internal._core_metadata import build_metadata_dict
+from .json_schema_misc import JsonSchemaMisc
 
 if TYPE_CHECKING:
     import email_validator
@@ -209,7 +211,8 @@ class IPvAnyAddress:
 
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+        metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=cls))
+        return core_schema.function_plain_schema(cls._validate, metadata=metadata)
 
     @classmethod
     def _validate(cls, __input_value: Any, **_kwargs: Any) -> IPv4Address | IPv6Address:
@@ -236,7 +239,8 @@ class IPvAnyInterface:
 
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+        metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=cls))
+        return core_schema.function_plain_schema(cls._validate, metadata=metadata)
 
     @classmethod
     def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Interface | IPv6Interface:
@@ -265,7 +269,8 @@ class IPvAnyNetwork:
 
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+        metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=cls))
+        return core_schema.function_plain_schema(cls._validate, metadata=metadata)
 
     @classmethod
     def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Network | IPv6Network:

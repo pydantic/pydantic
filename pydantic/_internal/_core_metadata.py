@@ -8,7 +8,7 @@ import typing_extensions
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import TypedDictField
 
-from ..json_schema_misc import JsonSchemaMisc
+from ..json_schema_misc import JsonSchemaMisc, JsonSchemaValue
 from ._typing_extra import EllipsisType
 
 _UPDATE_CORE_SCHEMA_FIELD = 'pydantic_update_core_schema'
@@ -93,6 +93,24 @@ class CoreMetadataHandler:
         metadata_handler.merge_json_schema_misc(misc.without_core_schema_override())
 
         return schema
+
+    def get_source_class(self) -> type[Any] | None:
+        """
+        Returns the source class off the JsonSchemaMisc object if it is present.
+        """
+        misc = self.json_schema_misc
+        if misc is None:
+            return None
+        return misc.source_class
+
+    def get_modify_json_schema(self) -> typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None:
+        """
+        Returns the modify_json_schema off the JsonSchemaMisc object if it is present.
+        """
+        misc = self.json_schema_misc
+        if misc is None:
+            return None
+        return misc.modify_json_schema
 
 
 def build_metadata_dict(

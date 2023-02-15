@@ -75,15 +75,10 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     )
     json_schema_misc = JsonSchemaMisc(
         core_schema_override=literal_schema.copy(),
+        source_class=enum_type,
         title=enum_type.__name__,
         description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.'),
     )
-    # TODO: Is 'enum_json_schema_misc' the best name? Is there a better way to handle this?
-    if hasattr(enum_type, 'enum_json_schema_misc'):
-        # The enum_json_schema_extra method should be a classmethod with signature:
-        #   def enum_json_schema_extra(cls, default: JsonSchemaMisc) -> JsonSchemaMisc: ...
-        # For convenience, the value generated above is passed to this function so you can use some/all of its defaults
-        json_schema_misc = getattr(enum_type, 'enum_json_schema_misc')(json_schema_misc)
     metadata = build_metadata_dict(json_schema_misc=json_schema_misc)
 
     if issubclass(enum_type, int):
@@ -125,6 +120,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
 
 @schema_function(UUID)
 def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.UnionSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=UUID))
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     return core_schema.union_schema(
         core_schema.is_instance_schema(uuid_type),
@@ -138,11 +134,13 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
         custom_error_type='uuid_type',
         custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
+        metadata=metadata,
     )
 
 
 @schema_function(PurePath)
 def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) -> core_schema.UnionSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=PurePath))
     # TODO, is this actually faster than `function_after(...)` as above?
     return core_schema.union_schema(
         core_schema.is_instance_schema(path_type),
@@ -153,6 +151,7 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
         custom_error_type='path_type',
         custom_error_message='Input is not a valid path',
         strict=True,
+        metadata=metadata,
     )
 
 
@@ -222,43 +221,49 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
 
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=IPv4Address))
     return core_schema.function_plain_schema(
-        _validators.ip_v4_address_validator, serialization=core_schema.to_string_ser_schema()
+        _validators.ip_v4_address_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
 
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=IPv4Interface))
     return core_schema.function_plain_schema(
-        _validators.ip_v4_interface_validator, serialization=core_schema.to_string_ser_schema()
+        _validators.ip_v4_interface_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
 
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=IPv4Network))
     return core_schema.function_plain_schema(
-        _validators.ip_v4_network_validator, serialization=core_schema.to_string_ser_schema()
+        _validators.ip_v4_network_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
 
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=IPv6Address))
     return core_schema.function_plain_schema(
-        _validators.ip_v6_address_validator, serialization=core_schema.to_string_ser_schema()
+        _validators.ip_v6_address_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
 
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=IPv6Interface))
     return core_schema.function_plain_schema(
-        _validators.ip_v6_interface_validator, serialization=core_schema.to_string_ser_schema()
+        _validators.ip_v6_interface_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
 
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
+    metadata = build_metadata_dict(json_schema_misc=JsonSchemaMisc(source_class=IPv6Network))
     return core_schema.function_plain_schema(
-        _validators.ip_v6_network_validator, serialization=core_schema.to_string_ser_schema()
+        _validators.ip_v6_network_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
 
 

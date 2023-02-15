@@ -77,7 +77,14 @@ class GenerateSchema:
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
 
-    def generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
+    def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
+        schema = self._generate_schema(obj)
+        modify_json_schema = getattr(obj, '__modify_schema__', None)
+        if modify_json_schema is not None:
+            CoreMetadataHandler(schema).merge_json_schema_misc(JsonSchemaMisc(modify_json_schema=modify_json_schema))
+        return schema
+
+    def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """
         Recursively generate a pydantic-core schema for any supported python type.
         """

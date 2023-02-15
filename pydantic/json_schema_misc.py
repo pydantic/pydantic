@@ -16,6 +16,8 @@ class JsonSchemaMisc:
     # ### "Pre-processing" of the JSON schema
     # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one":
     core_schema_override: CoreSchema | None = None
+    # A reference to the source class if appropriate; useful when working with some of the plain function schemas
+    source_class: type[Any] | None = None
 
     # ### "Miscellaneous properties" that are available for all JSON types
     # (see https://json-schema.org/understanding-json-schema/reference/generic.html)

@@ -3,7 +3,10 @@ from __future__ import annotations
 import re
 from dataclasses import is_dataclass
 from enum import Enum
-from typing import Any, Callable, NewType, cast
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from pathlib import Path
+from typing import Any, Callable, NewType, Pattern, cast
+from uuid import UUID
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
@@ -11,8 +14,10 @@ from typing_extensions import TypeGuard
 
 from pydantic._internal._core_metadata import CoreMetadataHandler
 from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
+from pydantic._internal._utils import lenient_issubclass
 from pydantic.json import pydantic_encoder
 from pydantic.json_schema_misc import JsonSchemaValue
+from pydantic.networks import IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork
 
 DEFAULT_REF_TEMPLATE = '#/definitions/{model}'
 
@@ -261,12 +266,37 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
+    source_class_to_schema: tuple[tuple[Any, dict[str, Any]], ...] = (
+        (Path, {'type': 'string', 'format': 'path'}),
+        (IPv4Network, {'type': 'string', 'format': 'ipv4network'}),
+        (IPv6Network, {'type': 'string', 'format': 'ipv6network'}),
+        (IPvAnyNetwork, {'type': 'string', 'format': 'ipvanynetwork'}),
+        (IPv4Interface, {'type': 'string', 'format': 'ipv4interface'}),
+        (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
+        (IPvAnyInterface, {'type': 'string', 'format': 'ipvanyinterface'}),
+        (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
+        (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
+        (IPvAnyAddress, {'type': 'string', 'format': 'ipvanyaddress'}),
+        (Pattern, {'type': 'string', 'format': 'regex'}),
+        (UUID, {'type': 'string', 'format': 'uuid'}),
+    )
+
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
+        source_class = CoreMetadataHandler(schema).get_source_class()
+        if source_class is not None:
+            for type_, t_schema in self.source_class_to_schema:
+                # Fallback for `typing.Pattern` and `re.Pattern` as they are not a valid class
+                if lenient_issubclass(source_class, type_) or source_class is type_ is Pattern:
+                    return t_schema
+
         # I'm not sure if this might need to be different if the function's mode is 'before'
         if schema['mode'] == 'plain':
-            # Note: If this behavior is not desirable, it might make sense to add an override_core_schema
-            # for json schema generation wherever we are generating 'plain' function schemas
-            raise InvalidForJsonSchema(f'Cannot generate a JsonSchema for function {schema["function"]}')
+            if CoreMetadataHandler(schema).get_modify_json_schema():
+                # Since there is a json schema modify function, assume that this type is meant to be handled,
+                # and the modify function will set all properties as appropriate
+                return {}
+            else:
+                raise InvalidForJsonSchema(f'Cannot generate a JsonSchema for function {schema["function"]}')
         else:
             # 'after', 'before', and 'wrap' functions all have a required 'schema' field
             return self.generate_inner(schema['schema'])

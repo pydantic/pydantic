@@ -885,7 +885,6 @@ def test_special_str_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 @pytest.mark.parametrize('field_type,expected_schema', [(EmailStr, 'email'), (NameEmail, 'name-email')])
 def test_email_str_types(field_type, expected_schema):
@@ -903,7 +902,6 @@ def test_email_str_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('field_type,inner_type', [(SecretBytes, 'string'), (SecretStr, 'string')])
 def test_secret_types(field_type, inner_type):
     class Model(BaseModel):
@@ -1043,7 +1041,6 @@ def test_json_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipv4address_type():
     class Model(BaseModel):
         ip_address: IPv4Address
@@ -1057,7 +1054,6 @@ def test_ipv4address_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipv6address_type():
     class Model(BaseModel):
         ip_address: IPv6Address
@@ -1071,7 +1067,6 @@ def test_ipv6address_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipvanyaddress_type():
     class Model(BaseModel):
         ip_address: IPvAnyAddress
@@ -1085,7 +1080,6 @@ def test_ipvanyaddress_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipv4interface_type():
     class Model(BaseModel):
         ip_interface: IPv4Interface
@@ -1099,7 +1093,6 @@ def test_ipv4interface_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipv6interface_type():
     class Model(BaseModel):
         ip_interface: IPv6Interface
@@ -1113,7 +1106,6 @@ def test_ipv6interface_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipvanyinterface_type():
     class Model(BaseModel):
         ip_interface: IPvAnyInterface
@@ -1127,7 +1119,6 @@ def test_ipvanyinterface_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipv4network_type():
     class Model(BaseModel):
         ip_network: IPv4Network
@@ -1141,7 +1132,6 @@ def test_ipv4network_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipv6network_type():
     class Model(BaseModel):
         ip_network: IPv6Network
@@ -1155,7 +1145,6 @@ def test_ipv6network_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_ipvanynetwork_type():
     class Model(BaseModel):
         ip_network: IPvAnyNetwork
@@ -2036,7 +2025,6 @@ def test_literal_enum():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_color_type():
     class Model(BaseModel):
         color: Color
@@ -3234,7 +3222,7 @@ def test_model_with_type_attributes():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
 @pytest.mark.parametrize(
     'field_kw,schema_kw',
