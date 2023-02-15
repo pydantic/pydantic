@@ -16,6 +16,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
 import typing_extensions
 
@@ -25,15 +26,28 @@ from .main import BaseModel, create_model
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
+CacheKey = Tuple[Type[Any], Any, Tuple[Any, ...]]
 Parametrization = Mapping[TypeVarType, Type[Any]]
 
-_generic_types_cache: _utils.LimitedDict[Tuple[Type[Any], Any, Tuple[Any, ...]], Type[BaseModel]] = _utils.LimitedDict()
+# weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
+# once they are no longer referenced by the caller.
+if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
+    GenericTypesCache = WeakValueDictionary[CacheKey, Type[BaseModel]]
+    AssignedParameters = WeakKeyDictionary[Type[BaseModel], Parametrization]
+else:
+    GenericTypesCache = WeakValueDictionary
+    AssignedParameters = WeakKeyDictionary
+
+# _generic_types_cache is a Mapping from __class_getitem__ arguments to the parametrized version of generic models.
+# This ensures multiple calls of e.g. A[B] return always the same class.
+_generic_types_cache = GenericTypesCache()
+
 # _assigned_parameters is a Mapping from parametrized version of generic models to assigned types of parametrizations
 # as captured during construction of the class (not instances).
 # E.g., for generic model `Model[A, B]`, when parametrized model `Model[int, str]` is created,
 # `Model[int, str]`: {A: int, B: str}` will be stored in `_assigned_parameters`.
 # (This information is only otherwise available after creation from the class name string).
-_assigned_parameters: _utils.LimitedDict[Type[Any], Parametrization] = _utils.LimitedDict()
+_assigned_parameters = AssignedParameters()
 
 
 class DeferredType:
@@ -67,7 +81,7 @@ class GenericModel(BaseModel):
 
         """
 
-        def _cache_key(_params: Any) -> Tuple[Type[GenericModelT], Any, Tuple[Any, ...]]:
+        def _cache_key(_params: Any) -> CacheKey:
             return cls, _params, typing_extensions.get_args(_params)
 
         cached = _generic_types_cache.get(_cache_key(params))
