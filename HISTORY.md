@@ -1,3 +1,11 @@
+## v1.10.5 (2023-02-15)
+
+* Fix broken parametrized bases handling with `GenericModel`s with complex sets of models, #5052 by @MarkusSintonen
+* Invalidate mypy cache if plugin config changes, #5007 by @cdce8p
+* Fix `RecursionError` when deep-copying dataclass types wrapped by pydantic, #4949 by @mbillingr
+* Fix `X | Y` union syntax breaking `GenericModel`, #4146 by @thenx
+* Switch coverage badge to show coverage for this branch/release, #5060 by @samuelcolvin
+
 ## v1.10.4 (2022-12-30)
 
 * Change dependency to `typing-extensions>=4.2.0`, #4885 by @samuelcolvin
