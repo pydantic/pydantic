@@ -1,3 +1,5 @@
+import gc
+import itertools
 import json
 import sys
 from enum import Enum
@@ -6,12 +8,14 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    FrozenSet,
     Generic,
     Iterable,
     List,
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -21,8 +25,19 @@ from typing import (
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
-from pydantic.generics import GenericModel, _generic_types_cache, iter_contained_typevars, replace_types
+from pydantic import BaseModel, Field, Json, ValidationError, create_model, root_validator, validator
+from pydantic.generics import (
+    GenericModel,
+    _assigned_parameters,
+    _generic_types_cache,
+    iter_contained_typevars,
+    replace_types,
+)
+
+
+@pytest.fixture(autouse=True)
+def clean_cache():
+    gc.collect()  # cleans up _generic_types_cache for checking item counts in the cache
 
 
 def test_generic_name():
@@ -229,10 +244,13 @@ def test_cover_cache():
     class Model(GenericModel, Generic[T]):
         x: T
 
-    Model[int]  # adds both with-tuple and without-tuple version to cache
+    models = []  # keep references to models to get cache size
+
+    models.append(Model[int])  # adds both with-tuple and without-tuple version to cache
     assert len(_generic_types_cache) == cache_size + 2
-    Model[int]  # uses the cache
+    models.append(Model[int])  # uses the cache
     assert len(_generic_types_cache) == cache_size + 2
+    del models
 
 
 def test_cache_keys_are_hashable():
@@ -246,19 +264,66 @@ def test_cache_keys_are_hashable():
     # Callable's first params get converted to a list, which is not hashable.
     # Make sure we can handle that special case
     Simple = MyGenericModel[Callable[[int], str]]
+    models = []  # keep references to models to get cache size
+    models.append(Simple)
     assert len(_generic_types_cache) == cache_size + 2
     # Nested Callables
-    MyGenericModel[Callable[[C], Iterable[str]]]
+    models.append(MyGenericModel[Callable[[C], Iterable[str]]])
     assert len(_generic_types_cache) == cache_size + 4
-    MyGenericModel[Callable[[Simple], Iterable[int]]]
+    models.append(MyGenericModel[Callable[[Simple], Iterable[int]]])
     assert len(_generic_types_cache) == cache_size + 6
-    MyGenericModel[Callable[[MyGenericModel[C]], Iterable[int]]]
+    models.append(MyGenericModel[Callable[[MyGenericModel[C]], Iterable[int]]])
     assert len(_generic_types_cache) == cache_size + 10
 
     class Model(BaseModel):
         x: MyGenericModel[Callable[[C], Iterable[str]]] = Field(...)
 
+    models.append(Model)
     assert len(_generic_types_cache) == cache_size + 10
+    del models
+
+
+def test_caches_get_cleaned_up():
+    types_cache_size = len(_generic_types_cache)
+    params_cache_size = len(_assigned_parameters)
+    T = TypeVar('T')
+
+    class MyGenericModel(GenericModel, Generic[T]):
+        x: T
+
+    Model = MyGenericModel[int]
+    assert len(_generic_types_cache) == types_cache_size + 2
+    assert len(_assigned_parameters) == params_cache_size + 1
+    del Model
+    gc.collect()
+    assert len(_generic_types_cache) == types_cache_size
+    assert len(_assigned_parameters) == params_cache_size
+
+
+def test_generics_work_with_many_parametrized_base_models():
+    cache_size = len(_generic_types_cache)
+    params_size = len(_assigned_parameters)
+    count_create_models = 1000
+    T = TypeVar('T')
+    C = TypeVar('C')
+
+    class A(GenericModel, Generic[T, C]):
+        x: T
+        y: C
+
+    class B(A[int, C], GenericModel, Generic[C]):
+        pass
+
+    models = [create_model(f'M{i}') for i in range(count_create_models)]
+    generics = []
+    for m in models:
+        Working = B[m]
+        generics.append(Working)
+
+    assert len(_generic_types_cache) == cache_size + count_create_models * 5 + 1
+    assert len(_assigned_parameters) == params_size + count_create_models * 3 + 1
+    del models
+    del generics
 
 
 def test_generic_config():
@@ -1379,3 +1444,57 @@ def test_parse_generic_json():
         'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
         'required': ['payload_field'],
     }
+
+
+def memray_limit_memory(limit):
+    if '--memray' in sys.argv:
+        return pytest.mark.limit_memory(limit)
+    else:
+        return pytest.mark.skip(reason='memray not enabled')
+
+
+@memray_limit_memory('100 MB')
+def test_generics_memory_use():
+    """See:
+    - https://github.com/pydantic/pydantic/issues/3829
+    - https://github.com/pydantic/pydantic/pull/4083
+    - https://github.com/pydantic/pydantic/pull/5052
+    """
+
+    T = TypeVar('T')
+    U = TypeVar('U')
+    V = TypeVar('V')
+
+    class MyModel(GenericModel, Generic[T, U, V]):
+        message: Json[T]
+        field: Dict[U, V]
+
+    class Outer(GenericModel, Generic[T]):
+        inner: T
+
+    types = [
+        int,
+        str,
+        float,
+        bool,
+        bytes,
+    ]
+
+    containers = [
+        List,
+        Tuple,
+        Set,
+        FrozenSet,
+    ]
+
+    all = [*types, *[container[tp] for container in containers for tp in types]]
+
+    total = list(itertools.product(all, all, all))
+
+    for t1, t2, t3 in total:
+
+        class Foo(MyModel[t1, t2, t3]):
+            pass
+
+        class _(Outer[Foo]):
+            pass

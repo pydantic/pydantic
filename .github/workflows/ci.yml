@@ -97,6 +97,42 @@ jobs:
       with:
         name: docs
         path: site
+  
+  test-memray:
+    name: test memray
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: >
+          test-memray
+          ${{ runner.os }}
+          ${{ env.pythonLocation }}
+          ${{ hashFiles('setup.py') }}
+          ${{ hashFiles('requirements.txt') }}
+          ${{ hashFiles('tests/requirements-testing.txt') }}
+
+    - name: install
+      run: |
+        make install-testing
+        pip install pytest-memray==1.4.0
+
+    - name: compile
+      run: |
+        make build-trace
+        python -c "import sys, pydantic; print('compiled:', pydantic.compiled); sys.exit(0 if pydantic.compiled else 1)"
+
+    - name: test
+      run: pytest --ignore=tests/mypy/ --memray
 
   test-linux-compiled:
     name: test py${{ matrix.python-version }} on linux compiled

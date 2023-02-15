@@ -1894,7 +1894,7 @@ return Model
     model = Model(a=10.2)
     assert model.a == 10.2
     assert model.b == 10
-    return model.get_double_a() == 20.2
+    assert model.get_double_a() == 20.2
 
 
 def test_resolve_annotations_module_missing(tmp_path):

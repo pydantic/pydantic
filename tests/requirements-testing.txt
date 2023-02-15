@@ -3,9 +3,9 @@ hypothesis==6.54.4
 # pin importlib-metadata as upper versions need typing-extensions to work if on Python < 3.8
 importlib-metadata==3.1.0;python_version<"3.8"
 mypy==0.971
-pytest==7.1.2
-pytest-cov==3.0.0
-pytest-mock==3.8.2
-pytest-sugar==0.9.5
+pytest==7.2.1
+pytest-cov==4.0.0
+pytest-mock==3.10.0
+pytest-sugar==0.9.6
 # pin typing-extensions to minimum requirement - see #4885
 typing-extensions==4.2.0
