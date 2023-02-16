@@ -434,7 +434,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         else:
             override = None
         metadata = build_metadata_dict(
-            update_core_schema=validator.__pydantic_update_schema__,
+            update_cs_function=validator.__pydantic_update_schema__,
             json_schema_misc=JsonSchemaMisc(core_schema_override=override),
         )
         return core_schema.function_after_schema(

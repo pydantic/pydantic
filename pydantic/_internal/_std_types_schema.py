@@ -82,13 +82,13 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     metadata = build_metadata_dict(json_schema_misc=json_schema_misc)
 
     if issubclass(enum_type, int):
-        # this handles IntEnum
+        # this handles `IntEnum`, and also `Foobar(int, Enum)`
         json_schema_misc.extra_updates = {'type': 'integer'}
         return core_schema.chain_schema(
             core_schema.int_schema(), literal_schema, core_schema.function_plain_schema(to_enum), metadata=metadata
         )
     elif issubclass(enum_type, str):
-        # This _should_ handle 3.11's StrEnum --
+        # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
         json_schema_misc.extra_updates = {'type': 'string'}
         return core_schema.chain_schema(
@@ -102,7 +102,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
     decimal_validator = _validators.DecimalValidator()
     metadata = build_metadata_dict(
-        update_core_schema=decimal_validator.__pydantic_update_schema__,
+        update_cs_function=decimal_validator.__pydantic_update_schema__,
         json_schema_misc=JsonSchemaMisc(
             # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
             core_schema_override=lambda: decimal_validator.json_schema_override_schema()

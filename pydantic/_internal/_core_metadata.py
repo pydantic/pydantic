@@ -2,7 +2,6 @@ from __future__ import annotations as _annotations
 
 import inspect
 import typing
-import warnings
 from typing import Any
 
 import typing_extensions
@@ -12,8 +11,10 @@ from pydantic_core.core_schema import TypedDictField
 from ..json_schema_misc import JsonSchemaMisc, JsonSchemaValue
 from ._typing_extra import EllipsisType
 
-_UPDATE_CORE_SCHEMA_FIELD = 'pydantic_update_core_schema'
-_JSON_SCHEMA_MISC_FIELD = 'pydantic_json_schema_misc'
+# CS is shorthand for Core Schema
+# JS is shorthand for JSON Schema
+_UPDATE_CS_FUNCTION_FIELD = 'pydantic_update_core_schema_function'
+_JS_MISC_FIELD = 'pydantic_json_schema_misc'
 
 _CoreMetadata = typing.Dict[str, Any]
 
@@ -31,8 +32,10 @@ class CoreMetadataHandler:
     way throughout pydantic.
     """
 
+    __slots__ = ('_schema',)
+
     def __init__(self, schema: CoreSchema | TypedDictField):
-        self.schema = schema
+        self._schema = schema
 
         try:
             metadata = schema.get('metadata')
@@ -44,38 +47,57 @@ class CoreMetadataHandler:
         if metadata is None:
             schema['metadata'] = {}
         elif not isinstance(metadata, dict):
-            raise ValueError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
+            raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
 
     @property
     def metadata(self) -> _CoreMetadata:
-        metadata = self.schema.get('metadata')
+        """
+        Retrieves the metadata dict off the schema, initializing it to a dict if necessary,
+        and erroring if it is not None and not a dict
+        """
+        metadata = self._schema.get('metadata')
         if metadata is None:
-            self.schema['metadata'] = metadata = {}
+            self._schema['metadata'] = metadata = {}
         if not isinstance(metadata, dict):
-            raise ValueError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
+            raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
         return metadata
 
     @property
-    def update_core_schema(self) -> UpdateCoreSchemaCallable | None:
-        return self.metadata.get(_UPDATE_CORE_SCHEMA_FIELD)
+    def update_cs_function(self) -> UpdateCoreSchemaCallable | None:
+        """
+        Retrieves the function that will be used to update the CoreSchema.
+        This is generally obtained from a `__pydantic_update_schema__` function
+        """
+        return self.metadata.get(_UPDATE_CS_FUNCTION_FIELD)
 
-    @update_core_schema.setter
-    def update_core_schema(self, value: UpdateCoreSchemaCallable | None) -> None:
-        self.metadata[_UPDATE_CORE_SCHEMA_FIELD] = value
+    @update_cs_function.setter
+    def update_cs_function(self, value: UpdateCoreSchemaCallable | None) -> None:
+        """
+        Sets the update_cs_function on the wrapped schema, providing a clean API even when
+        the wrapped schema had metadata set to None
+        """
+        self.metadata[_UPDATE_CS_FUNCTION_FIELD] = value
 
     @property
     def json_schema_misc(self) -> JsonSchemaMisc | None:
-        return self.metadata.get(_JSON_SCHEMA_MISC_FIELD)
+        """
+        Retrieves the JsonSchemaMisc instance out of the wrapped schema's metadata
+        """
+        return self.metadata.get(_JS_MISC_FIELD)
 
     @json_schema_misc.setter
     def json_schema_misc(self, value: JsonSchemaMisc | None) -> None:
-        self.metadata[_JSON_SCHEMA_MISC_FIELD] = value
+        """
+        Sets the JsonSchemaMisc on the wrapped schema, providing a clean API even when
+        the wrapped schema had metadata set to None
+        """
+        self.metadata[_JS_MISC_FIELD] = value
 
     def merge_json_schema_misc(self, update: JsonSchemaMisc) -> None:
         """
         Given a JsonSchemaMisc object, merge it into the wrapped schema's metadata.
         """
-        self.metadata[_JSON_SCHEMA_MISC_FIELD] = JsonSchemaMisc.merged(self.json_schema_misc, update)
+        self.metadata[_JS_MISC_FIELD] = JsonSchemaMisc.merged(self.json_schema_misc, update)
 
     def get_json_schema_core_schema_override(self) -> CoreSchema | None:
         """
@@ -160,7 +182,7 @@ class CoreMetadataHandler:
 
 def build_metadata_dict(
     *,  # force keyword arguments to make it easier to modify this signature in a backwards-compatible way
-    update_core_schema: UpdateCoreSchemaCallable | None | EllipsisType = ...,
+    update_cs_function: UpdateCoreSchemaCallable | None | EllipsisType = ...,
     json_schema_misc: JsonSchemaMisc | None | EllipsisType = ...,
     initial_metadata: Any | None = None,
 ) -> Any:
@@ -169,15 +191,14 @@ def build_metadata_dict(
     with the CoreMetadataHandler class.
     """
     if initial_metadata is not None and not isinstance(initial_metadata, dict):
-        warnings.warn(f'CoreSchema metadata should be a dict or None; cannot augment {initial_metadata}.', UserWarning)
-        return initial_metadata
+        raise TypeError(f'CoreSchema metadata should be a dict; got {initial_metadata!r}.')
 
     metadata: _CoreMetadata = {} if initial_metadata is None else initial_metadata.copy()
 
-    if update_core_schema is not ...:
-        metadata[_UPDATE_CORE_SCHEMA_FIELD] = update_core_schema
+    if update_cs_function is not ...:
+        metadata[_UPDATE_CS_FUNCTION_FIELD] = update_cs_function
 
     if json_schema_misc is not ...:
-        metadata[_JSON_SCHEMA_MISC_FIELD] = json_schema_misc
+        metadata[_JS_MISC_FIELD] = json_schema_misc
 
     return metadata

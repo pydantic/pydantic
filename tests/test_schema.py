@@ -38,6 +38,7 @@ from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
+from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
 from pydantic.json_schema import model_schema, schema
@@ -1189,7 +1190,7 @@ def test_error_non_supported_types():
     class Model(BaseModel):
         a: ImportString
 
-    with pytest.raises(ValueError):
+    with pytest.raises(PydanticInvalidForJsonSchema):
         Model.model_json_schema()
 
 
@@ -2842,6 +2843,27 @@ def test_schema_with_field_parameter():
             'value': {'title': 'Value', 'alphabet': 'ABC', 'examples': ['AAA', 'BBB', 'CCC'], 'type': 'string'}
         },
         'required': ['value'],
+    }
+
+
+def test_modify_schema_dict_keys() -> None:
+    class MyType:
+        @classmethod
+        def __modify_schema__(cls, schema):
+            schema['test'] = 'passed'
+
+    class MyModel(BaseModel):
+        my_field: dict[str, MyType]
+
+        model_config = dict(arbitrary_types_allowed=True)
+
+    assert MyModel.model_json_schema() == {
+        'properties': {
+            'my_field': {'additionalProperties': {'test': 'passed'}, 'title': 'My Field', 'type': 'object'}  # <----
+        },
+        'required': ['my_field'],
+        'title': 'MyModel',
+        'type': 'object',
     }
 
 

@@ -13,22 +13,19 @@ from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
 from typing_extensions import TypeGuard
 
-from pydantic._internal._core_metadata import CoreMetadataHandler
-from pydantic._internal._typing_extra import all_literal_values, is_namedtuple
-from pydantic._internal._utils import get_model, lenient_issubclass
-from pydantic.json import pydantic_encoder
-from pydantic.json_schema_misc import JsonSchemaValue
-from pydantic.networks import IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork
+from ._internal._core_metadata import CoreMetadataHandler
+from ._internal._typing_extra import all_literal_values, is_namedtuple
+from ._internal._utils import get_model, lenient_issubclass
+from .errors import PydanticInvalidForJsonSchema, PydanticUserError
+from .json import pydantic_encoder
+from .json_schema_misc import JsonSchemaValue
+from .networks import IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
     from .main import BaseModel
 
 DEFAULT_REF_TEMPLATE = '#/definitions/{model}'
-
-
-class InvalidForJsonSchema(ValueError):
-    pass
 
 
 # There are three types of references relevant to building JSON schemas:
@@ -42,8 +39,6 @@ DefsRef = NewType('DefsRef', str)
 #   3. the values corresponding to the "$ref" key in the schema
 #       * By default, these look like "#/$defs/MyModel", as in {"$ref": "#/definitions/MyModel"}
 JsonRef = NewType('JsonRef', str)
-# TODO: We can drop the NewTypes above if preferred, but I think it's worth the extra type safety.
-#   Adding them helped me catch various mistakes in my initial implementation
 
 
 class GenerateJsonSchema:
@@ -59,6 +54,10 @@ class GenerateJsonSchema:
         self.definitions: dict[DefsRef, JsonSchemaValue] = {}
 
         self._schema_type_to_method = self.build_schema_type_to_method()
+
+        # This changes to True after generating a schema, to prevent issues caused by accidental re-use
+        # of a single instance of a schema generator
+        self._used = False
 
     def build_schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
         mapping: dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
@@ -77,18 +76,32 @@ class GenerateJsonSchema:
         """
         Given a list of core_schema, generate all JSON schema definitions, and return the generated definitions.
         """
+        if self._used:
+            raise PydanticUserError(
+                'This JSON schema generator has already been used to generate a JSON schema. '
+                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.'
+            )
         for schema in schemas:
             self.generate_inner(schema)
+        self._used = True
         return self.definitions
 
     def generate(self, schema: CoreSchema, unpack_root_ref: bool = True) -> JsonSchemaValue:
+        if self._used:
+            raise PydanticUserError(
+                'This JSON schema generator has already been used to generate a JSON schema. '
+                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.'
+            )
+
         json_schema = self.generate_inner(schema)
 
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
-        if unpack_root_ref and '$ref' in json_schema:
-            ref_json_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
-            if ref_json_schema is not None:
-                json_schema = ref_json_schema
+        if unpack_root_ref:
+            ref = json_schema.get('$ref')
+            if ref is not None:
+                ref_json_schema = self.get_schema_from_definitions(JsonRef(ref))
+                if ref_json_schema is not None:
+                    json_schema = ref_json_schema
 
         # Remove any definitions that, thanks to $ref-substitution, are no longer present
         # This should only _possibly_ apply to the root model. It might be safe to remove this logic,
@@ -102,6 +115,7 @@ class GenerateJsonSchema:
         if self.definitions:
             json_schema['definitions'] = self.definitions
 
+        self._used = True
         return json_schema
 
     def generate_inner(self, schema: CoreSchema | TypedDictField) -> JsonSchemaValue:
@@ -136,11 +150,11 @@ class GenerateJsonSchema:
                 # I think we might be able to fix this with a minor refactoring of the way json_schema_misc is set
                 schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
                 if schema_to_update is not None:
-                    misc.apply_updates(schema_to_update)
+                    misc.apply(schema_to_update)
                 else:
-                    misc.apply_updates(json_schema)
+                    misc.apply(json_schema)
             else:
-                misc.apply_updates(json_schema)
+                misc.apply(json_schema)
 
         # Resolve issues caused by sibling keys next to a top-level $ref
         # See the `_handle_ref_overrides` docstring for more details
@@ -359,7 +373,7 @@ class GenerateJsonSchema:
         for s in choices:
             try:
                 generated.append(self.generate_inner(s))
-            except InvalidForJsonSchema:
+            except PydanticInvalidForJsonSchema:
                 pass
         if len(generated) == 1:
             return generated[0]
@@ -371,7 +385,7 @@ class GenerateJsonSchema:
             if not isinstance(v, str):
                 try:
                     generated[k] = self.generate_inner(v).copy()
-                except InvalidForJsonSchema:
+                except PydanticInvalidForJsonSchema:
                     pass
         json_schema: JsonSchemaValue = {'oneOf': list(generated.values())}
 
@@ -815,7 +829,7 @@ class GenerateJsonSchema:
             # and the modify function will set all properties as appropriate
             return {}
         else:
-            raise InvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
+            raise PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
 
 
 def schema(

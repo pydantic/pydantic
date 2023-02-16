@@ -645,7 +645,7 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
         return schema
 
     handler = CoreMetadataHandler(schema)
-    update_schema_function = handler.update_core_schema
+    update_schema_function = handler.update_cs_function
     if update_schema_function is not None:
         new_schema = update_schema_function(schema, **metadata_dict)
         if new_schema is not None:

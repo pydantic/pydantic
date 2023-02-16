@@ -8,7 +8,6 @@ from pydantic_core import CoreSchema
 from pydantic._internal._utils import dict_not_none
 
 JsonSchemaValue = Dict[str, Any]
-JsonValue = Dict[str, Any]
 
 
 @dataclass
@@ -24,7 +23,7 @@ class JsonSchemaMisc:
     # (see https://json-schema.org/understanding-json-schema/reference/generic.html)
     title: str | None = None
     description: str | None = None
-    examples: list[JsonValue] | None = None
+    examples: list[dict[str, Any]] | None = None
     deprecated: bool | None = None
     read_only: bool | None = None
     write_only: bool | None = None
@@ -67,7 +66,7 @@ class JsonSchemaMisc:
         """
         return replace(self, core_schema_override=None)
 
-    def apply_updates(self, schema: JsonSchemaValue) -> JsonSchemaValue:
+    def apply(self, schema: JsonSchemaValue) -> None:
         """
         Update the provided JSON schema in-place with the values from this object.
 
@@ -91,4 +90,3 @@ class JsonSchemaMisc:
             schema.update(self.extra_updates)
         if self.modify_js_function is not None:
             self.modify_js_function(schema)
-        return schema
