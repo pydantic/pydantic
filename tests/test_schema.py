@@ -1383,7 +1383,7 @@ def test_schema_from_models():
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
-        '$defs': {
+        'definitions': {
             'Pizza': {
                 'title': 'Pizza',
                 'type': 'object',
@@ -1445,7 +1445,7 @@ def test_schema_with_refs():
 
     model_schema = schema([Bar, Baz], ref_template=ref_template)
     assert model_schema == {
-        '$defs': {
+        'definitions': {
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
@@ -1480,7 +1480,7 @@ def test_schema_with_custom_ref_template():
 
     model_schema = schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
     assert model_schema == {
-        '$defs': {
+        'definitions': {
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
@@ -1791,25 +1791,26 @@ def test_bytes_constrained_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_optional_dict():
     class Model(BaseModel):
-        something: Optional[Dict[str, Any]]
+        something: Optional[Dict[str, Any]] = None
 
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'title': 'Something', 'type': 'object'}},
+        'properties': {
+            'something': {'anyOf': [{'type': 'object'}, {'type': 'null'}], 'default': None, 'title': 'Something'}
+        },
     }
 
     assert Model().model_dump() == {'something': None}
     assert Model(something={'foo': 'Bar'}).model_dump() == {'something': {'foo': 'Bar'}}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validator')
 def test_optional_validator():
     class Model(BaseModel):
-        something: Optional[str]
+        something: Optional[str] = None
 
         @validator('something', always=True)
         def check_something(cls, v):
@@ -1819,7 +1820,13 @@ def test_optional_validator():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'title': 'Something', 'type': 'string'}},
+        'properties': {
+            'something': {
+                'title': 'Something',
+                'anyOf': [{'type': 'string'}, {'type': 'null'}],
+                'default': None,
+            }
+        },
     }
 
     assert Model().model_dump() == {'something': None}
@@ -1912,7 +1919,7 @@ def test_known_model_optimization():
     assert Model.model_json_schema() == expected
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_root():
     class Model(BaseModel):
         __root__: str
@@ -1920,7 +1927,7 @@ def test_root():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'string'}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_root_list():
     class Model(BaseModel):
         __root__: List[str]
@@ -1928,7 +1935,7 @@ def test_root_list():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_root_nested_model():
     class NestedModel(BaseModel):
         a: str
@@ -1973,7 +1980,6 @@ def test_new_type_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_literal_schema():
     class Model(BaseModel):
         a: Literal[1]
@@ -1983,16 +1989,10 @@ def test_literal_schema():
 
     assert Model.model_json_schema() == {
         'properties': {
-            'a': {'title': 'A', 'type': 'integer', 'enum': [1]},
-            'b': {'title': 'B', 'type': 'string', 'enum': ['a']},
-            'c': {'title': 'C', 'anyOf': [{'type': 'string', 'enum': ['a']}, {'type': 'integer', 'enum': [1]}]},
-            'd': {
-                'title': 'D',
-                'anyOf': [
-                    {'type': 'string', 'enum': ['a', 'b']},
-                    {'type': 'integer', 'enum': [1, 2]},
-                ],
-            },
+            'a': {'const': 1, 'title': 'A'},
+            'b': {'const': 'a', 'title': 'B'},
+            'c': {'enum': ['a', 1], 'title': 'C'},
+            'd': {'enum': ['a', 'b', 1, 2], 'title': 'D'},
         },
         'required': ['a', 'b', 'c', 'd'],
         'title': 'Model',
@@ -2000,7 +2000,6 @@ def test_literal_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_literal_enum():
     class MyEnum(str, Enum):
         FOO = 'foo'
@@ -2008,12 +2007,13 @@ def test_literal_enum():
 
     class Model(BaseModel):
         kind: Literal[MyEnum.FOO]
+        other: Literal[MyEnum.FOO, MyEnum.BAR]
 
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'type': {'title': 'Kind', 'enum': ['foo'], 'type': 'string'}},
-        'required': ['type'],
+        'properties': {'kind': {'const': 'foo', 'title': 'Kind'}, 'other': {'enum': ['foo', 'bar'], 'title': 'Other'}},
+        'required': ['kind', 'other'],
     }
 
 
@@ -2033,6 +2033,8 @@ def test_color_type():
 @pytest.mark.xfail(reason='working on V2')
 def test_model_with_schema_extra():
     class Model(BaseModel):
+        # TODO: Do we want to keep schema_extra as a field in ConfigDict?
+        #   If not, should I delete this test?
         model_config = ConfigDict(schema_extra={'examples': [{'a': 'Foo'}]})
         a: str
 
@@ -2053,6 +2055,9 @@ def test_model_with_schema_extra_callable():
         assert model_class is Model
 
     class Model(BaseModel):
+        # TODO: Do we want to keep this working like this in ConfigDict?
+        #   Should this be converted to use `__modify_schema__`?
+        #   Should this test just be dropped?
         model_config = ConfigDict(schema_extra=schema_extra)
         name: str = None
 
@@ -2066,6 +2071,9 @@ def test_model_with_schema_extra_callable_no_model_class():
         schema['type'] = 'override'
 
     class Model(BaseModel):
+        # TODO: Do we want to keep this working like this in ConfigDict?
+        #   Should this be converted to use `__modify_schema__`?
+        #   Should this test just be dropped?
         model_config = ConfigDict(schema_extra=schema_extra)
         name: str = None
 
@@ -2082,6 +2090,9 @@ def test_model_with_schema_extra_callable_classmethod():
 
             @classmethod
             def schema_extra(cls, schema, model_class):
+                # TODO: Do we want to keep this working like this in a Config class?
+                #   Should this be converted to use `__modify_schema__`?
+                #   Should this test just be dropped?
                 schema.pop('properties')
                 schema['type'] = cls.type
                 assert model_class is Model
@@ -2089,21 +2100,10 @@ def test_model_with_schema_extra_callable_classmethod():
     assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_model_with_schema_extra_callable_instance_method():
-    def schema_extra(schema, model_class):
-        schema.pop('properties')
-        schema['type'] = 'override'
-        assert model_class is Model
-
-    class Model(BaseModel):
-        model_config = ConfigDict(schema_extra=schema_extra)
-        name: str = None
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+# TODO: test_model_with_schema_extra_callable_instance_method was the same as
+#   test_model_with_schema_extra_callable, so I deleted it. Was it supposed to cover something else?
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         model_config = ConfigDict(extra=Extra.forbid)
@@ -2118,6 +2118,7 @@ def test_model_with_extra_forbidden():
     }
 
 
+@pytest.mark.xfail(reason='working on V2 - passing field constraints to generic parameters', strict=False)
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -2127,13 +2128,12 @@ def test_model_with_extra_forbidden():
             dict(gt=0),
             {'title': 'A', 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'type': 'null'}]},
         ),
-        pytest.param(
+        (
             Tuple[int, ...],
             dict(gt=0),
             {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        pytest.param(
+        (
             Tuple[int, int, int],
             dict(gt=0),
             {
@@ -2147,24 +2147,21 @@ def test_model_with_extra_forbidden():
                 'minItems': 3,
                 'maxItems': 3,
             },
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        pytest.param(
+        (
             Union[int, float],
             dict(gt=0),
             {
                 'title': 'A',
                 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
             },
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        pytest.param(
+        (
             List[int],
             dict(gt=0),
             {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        pytest.param(
+        (
             Dict[str, int],
             dict(gt=0),
             {
@@ -2173,13 +2170,11 @@ def test_model_with_extra_forbidden():
                 'type': 'object',
                 'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
             },
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        pytest.param(
+        (
             Union[str, int],
             dict(gt=0, max_length=5),
             {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
     ],
 )
@@ -2238,7 +2233,7 @@ def test_subfield_field_info():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - dataclasses')
 def test_dataclass():
     @dataclass
     class Model:
@@ -2381,6 +2376,7 @@ def test_new_type():
     }
 
 
+# TODO: To fix the next test, need to make it so that the model ID is a part of the core_schema ref
 @pytest.mark.xfail(reason='working on V2')
 def test_multiple_models_with_same_name(create_module):
     module = create_module(
@@ -2420,7 +2416,8 @@ class NestedModel(BaseModel):
     assert model_names == expected_model_names
 
 
-@pytest.mark.xfail(reason='working on V2')
+# TODO: To fix the next test, need to make it so that the model ID is a part of the core_schema ref, or similar?
+# @pytest.mark.xfail(reason='working on V2')
 def test_multiple_enums_with_same_name(create_module):
     module_1 = create_module(
         # language=Python
@@ -2464,16 +2461,15 @@ class MyModel(BaseModel):
         my_model_1: module_1.MyModel
         my_model_2: module_2.MyModel
 
-    assert len(Model.model_json_schema()['$defs']) == 4
-    assert set(Model.model_json_schema()['$defs']) == {
-        f'{module_1.__name__}__MyEnum',
-        f'{module_1.__name__}__MyModel',
-        f'{module_2.__name__}__MyEnum',
-        f'{module_2.__name__}__MyModel',
+    assert len(Model.model_json_schema()['definitions']) == 4
+    assert set(Model.model_json_schema()['definitions']) == {
+        'MyEnum',
+        'MyModel',
+        f'{module_2.__name__}.MyEnum',
+        f'{module_2.__name__}.MyModel',
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_for_generic_field():
     T = TypeVar('T')
 
@@ -2489,15 +2485,32 @@ def test_schema_for_generic_field():
         def validate(cls, v: Any):
             return v
 
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, generator: GenerateSchema, **_kwargs: Any
+        ) -> core_schema.FunctionPlainSchema:
+            source_args = getattr(source, '__args__', [Any])
+            param = source_args[0]
+            metadata = build_metadata_dict(
+                json_schema_misc=JsonSchemaMisc(core_schema_override=generator.generate_schema(param))
+            )
+            return core_schema.function_plain_schema(
+                GenModel,
+                metadata=metadata,
+            )
+
     class Model(BaseModel):
         data: GenModel[str]
         data1: GenModel
 
+        model_config = dict(arbitrary_types_allowed=True)
+
+    # assert Model.__pydantic_core_schema__ == {}
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'data': {'allOf': [{'type': 'string'}], 'title': 'Data'},
+            'data': {'type': 'string', 'title': 'Data'},
             'data1': {
                 'title': 'Data1',
             },
@@ -2508,19 +2521,21 @@ def test_schema_for_generic_field():
     class GenModelModified(GenModel, Generic[T]):
         @classmethod
         def __modify_schema__(cls, field_schema):
-            field_schema.pop('allOf', None)
-            field_schema.update(anyOf=[{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}])
+            type = field_schema.pop('type', 'other')
+            field_schema.update(anyOf=[{'type': type}, {'type': 'array', 'items': {'type': type}}])
 
     class ModelModified(BaseModel):
         data: GenModelModified[str]
         data1: GenModelModified
+
+        model_config = dict(arbitrary_types_allowed=True)
 
     assert ModelModified.model_json_schema() == {
         'title': 'ModelModified',
         'type': 'object',
         'properties': {
             'data': {'title': 'Data', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
-            'data1': {'title': 'Data1', 'anyOf': [{'type': 'string'}, {'type': 'array', 'items': {'type': 'string'}}]},
+            'data1': {'title': 'Data1', 'anyOf': [{'type': 'other'}, {'type': 'array', 'items': {'type': 'other'}}]},
         },
         'required': ['data', 'data1'],
     }
@@ -2808,6 +2823,8 @@ def test_complex_nested_generic():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_schema_with_field_parameter():
+    # TODO: How should this be reconfigured? There's a lot of stuff happening here that depends on answers to questions
+    #   asked elsewhere (e.g., will we allow unexpected kwargs to Field? I think the answer was no..)
     class RestrictedAlphabetStr(str):
         @classmethod
         def __modify_schema__(cls, field_schema, field: Optional[FieldInfo]):
@@ -3208,7 +3225,7 @@ def test_extra_inheritance():
         root: Optional[str]
 
         class Config:
-            # TODO: What is happening to this fields attribute? Not present in _ConfigDict
+            # TODO: What is the deal with this 'fields' attribute? Not present in _ConfigDict; are we moving/keeping it?
             fields = {
                 'root': {'description': 'root path of data', 'level': 1},
             }

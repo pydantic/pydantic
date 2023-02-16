@@ -205,7 +205,8 @@ class GenerateJsonSchema:
         return {'type': 'number', 'format': 'time-delta'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
-        expected = list(schema['expected'])
+        expected = [v.value if isinstance(v, Enum) else v for v in schema['expected']]
+
         if len(expected) == 1:
             return {'const': expected[0]}
         else:
@@ -442,10 +443,19 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         if 'config' in schema:
+            if schema['config']['typed_dict_extra_behavior'] == 'forbid':
+                if '$ref' in json_schema:
+                    # hack: update the definition from the typed_dict_schema
+                    referenced_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
+                    if referenced_schema is not None:
+                        referenced_schema['additionalProperties'] = False
+                else:
+                    json_schema['additionalProperties'] = False
+
             if 'title' in schema['config']:
                 title = schema['config']['title']
                 if '$ref' in json_schema:
-                    # hack: update the definition from the typed_dict_schema to include the title
+                    # hack: update the definition from the typed_dict_schema
                     referenced_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
                     if referenced_schema is not None:
                         referenced_schema['title'] = title
@@ -822,7 +832,7 @@ def schema(
 
     json_schema: dict[str, Any] = {}
     if definitions:
-        json_schema['$defs'] = definitions
+        json_schema['definitions'] = definitions
     if title:
         json_schema['title'] = title
     if description:
