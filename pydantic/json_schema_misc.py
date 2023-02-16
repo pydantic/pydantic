@@ -14,8 +14,9 @@ JsonValue = Dict[str, Any]
 @dataclass
 class JsonSchemaMisc:
     # ### "Pre-processing" of the JSON schema
-    # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one":
-    core_schema_override: CoreSchema | None = None
+    # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one"
+    # You can use a callable to defer evaluation of the CoreSchema until it's needed
+    core_schema_override: CoreSchema | Callable[[], CoreSchema] | None = None
     # A reference to the source class if appropriate; useful when working with some of the plain function schemas
     source_class: type[Any] | None = None
 
@@ -36,7 +37,7 @@ class JsonSchemaMisc:
     # A final function to apply to the JSON schema after all other modifications have been applied
     # If you want to force specific contents in the generated schema, you can use a function that ignores the
     # input value and just return the schema you want.
-    modify_json_schema: Callable[[JsonSchemaValue], JsonSchemaValue] | None = None
+    modify_js_function: Callable[[JsonSchemaValue], None] | None = None
 
     @classmethod
     def merged(cls, base: JsonSchemaMisc | None, overrides: JsonSchemaMisc | None) -> JsonSchemaMisc | None:
@@ -88,6 +89,6 @@ class JsonSchemaMisc:
             schema['$comment'] = self.comment
         if self.extra_updates is not None:
             schema.update(self.extra_updates)
-        if self.modify_json_schema is not None:
-            schema = self.modify_json_schema(schema)
+        if self.modify_js_function is not None:
+            self.modify_js_function(schema)
         return schema

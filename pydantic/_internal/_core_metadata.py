@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import inspect
 import typing
 import warnings
 from typing import Any
@@ -33,7 +34,13 @@ class CoreMetadataHandler:
     def __init__(self, schema: CoreSchema | TypedDictField):
         self.schema = schema
 
-        metadata = schema.get('metadata')
+        try:
+            metadata = schema.get('metadata')
+        except AttributeError:  # This happens for schema of type _fields.SelfType
+            # TODO: Need to figure out a better way to handle _fields.SelfType
+            #   Solution?: Adding `definitions` into pydantic_core
+            metadata = {}
+
         if metadata is None:
             schema['metadata'] = {}
         elif not isinstance(metadata, dict):
@@ -80,9 +87,13 @@ class CoreMetadataHandler:
             return None
         if misc.core_schema_override is None:
             return None
+        core_schema_override = misc.core_schema_override
+        if inspect.isfunction(core_schema_override):
+            schema = core_schema_override()
+        else:
+            # Create a copy so we don't modify the original schema
+            schema = typing.cast(CoreSchema, core_schema_override).copy()
 
-        # Create a copy so we don't modify the original schema
-        schema = misc.core_schema_override.copy()
         metadata_handler = CoreMetadataHandler(schema)
 
         # Merge in the json_schema_misc (without the core_schema_override, to prevent recursion)
@@ -103,14 +114,48 @@ class CoreMetadataHandler:
             return None
         return misc.source_class
 
-    def get_modify_json_schema(self) -> typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None:
+    def get_modify_js_function(self) -> typing.Callable[[JsonSchemaValue], None] | None:
         """
-        Returns the modify_json_schema off the JsonSchemaMisc object if it is present.
+        Returns the modify_js_function off the JsonSchemaMisc object if it is present.
         """
         misc = self.json_schema_misc
         if misc is None:
             return None
-        return misc.modify_json_schema
+        return misc.modify_js_function
+
+    def combine_modify_js_functions(
+        self, modify_js_function: typing.Callable[[JsonSchemaValue], None] | None, before: bool = True
+    ) -> None:
+        """
+        Composes the provided modify_js_function with the existing modify_js_function.
+
+        This operation is performed in-place and modifies the wrapped schema's metadata.
+
+        If before is True, the provided modify_js_function will be called first.
+        """
+        if modify_js_function is None:
+            return  # nothing to do
+
+        misc = self.json_schema_misc
+
+        if misc is None:
+            self.json_schema_misc = JsonSchemaMisc(modify_js_function=modify_js_function)
+        else:
+            original_modify = misc.modify_js_function
+            if original_modify is None:
+                misc.modify_js_function = modify_js_function
+            else:
+
+                def combined_modify_js_function(schema: JsonSchemaValue) -> None:
+                    assert original_modify is not None  # for mypy
+                    assert modify_js_function is not None  # for mypy
+                    if before:
+                        modify_js_function(schema)
+                    original_modify(schema)
+                    if not before:
+                        modify_js_function(schema)
+
+                misc.modify_js_function = combined_modify_js_function
 
 
 def build_metadata_dict(

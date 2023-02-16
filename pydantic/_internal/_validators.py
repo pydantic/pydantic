@@ -135,6 +135,17 @@ class DecimalValidator(_fields.CustomValidator):
         self.check_digits: bool = False
         self.strict: bool = False
 
+    def json_schema_override_schema(self) -> core_schema.CoreSchema:
+        # TODO: Probably there is a better alternative
+        return core_schema.float_schema(
+            allow_inf_nan=self.allow_inf_nan,
+            multiple_of=None if self.multiple_of is None else float(self.multiple_of),
+            le=None if self.le is None else float(self.le),
+            ge=None if self.ge is None else float(self.ge),
+            lt=None if self.lt is None else float(self.lt),
+            gt=None if self.gt is None else float(self.gt),
+        )
+
     def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **kwargs: Any) -> None:
         self._update_attrs(kwargs)
 

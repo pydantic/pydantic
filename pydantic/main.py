@@ -389,7 +389,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         This is a convenience method primarily intended to control how the miscellaneous properties
         of the JSON schema are populated, or apply minor transformations through `extra_updates` or
-        `modify_json_schema`.
+        `modify_js_function`.
 
         If you want to make more sweeping changes to how the JSON schema is generated, you will probably
         want to override the `model_json_schema` with a new default for the `schema_generator` argument.

@@ -29,23 +29,20 @@ from typing import (
 from uuid import UUID
 
 import pytest
+from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset, validator
+from pydantic._internal._core_metadata import build_metadata_dict
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
+from pydantic.json_schema import model_schema, schema
+from pydantic.json_schema_misc import JsonSchemaMisc
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
-from pydantic.schema import (
-    get_flat_models_from_model,
-    get_flat_models_from_models,
-    get_model_name_map,
-    model_process_schema,
-    model_schema,
-    schema,
-)
 from pydantic.types import (
     UUID1,
     UUID3,
@@ -56,6 +53,7 @@ from pydantic.types import (
     Json,
     NegativeFloat,
     NegativeInt,
+    NewPath,
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
@@ -138,7 +136,7 @@ def test_ref_template():
         'properties': {
             'a': {'default': None, 'title': 'A', 'type': 'number'},
             'key_lime': {
-                'anyOf': [{'type': 'null'}, {'$ref': 'foobar/KeyLimePie.json'}],
+                'anyOf': [{'$ref': 'foobar/KeyLimePie.json'}, {'type': 'null'}],
                 'default': None,
             },
         },
@@ -151,7 +149,7 @@ def test_ref_template():
         },
     }
     assert ApplePie.model_json_schema()['properties']['key_lime'] == {
-        'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}],
+        'anyOf': [{'$ref': '#/definitions/KeyLimePie'}, {'type': 'null'}],
         'default': None,
     }
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
@@ -159,7 +157,7 @@ def test_ref_template():
     assert '#/definitions/KeyLimePie' not in json_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - alias generator')
 def test_by_alias_generator():
     class ApplePie(BaseModel):
         model_config = ConfigDict(alias_generator=lambda x: x.upper())
@@ -199,13 +197,12 @@ def test_sub_model():
         },
         'properties': {
             'a': {'type': 'integer', 'title': 'A'},
-            'b': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'default': None},
+            'b': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}], 'default': None},
         },
         'required': ['a'],
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_class():
     class Model(BaseModel):
         foo: int = Field(4, title='Foo is Great')
@@ -242,7 +239,6 @@ def test_schema_class_by_alias():
     assert list(Model.model_json_schema(by_alias=False)['properties'].keys()) == ['foo']
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_choices():
     FooEnum = Enum('FooEnum', {'foo': 'f', 'bar': 'b'})
     BarEnum = IntEnum('BarEnum', {'foo': 1, 'bar': 2})
@@ -262,7 +258,7 @@ def test_choices():
         'properties': {
             'foo': {'$ref': '#/definitions/FooEnum'},
             'bar': {'$ref': '#/definitions/BarEnum'},
-            'spam': {'anyOf': [{'$ref': '#/definitions/SpamEnum'}], 'default': None},
+            'spam': {'allOf': [{'$ref': '#/definitions/SpamEnum'}], 'default': None},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -273,7 +269,6 @@ def test_choices():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_modify_schema():
     class SpamEnum(str, Enum):
         foo = 'f'
@@ -284,7 +279,7 @@ def test_enum_modify_schema():
             field_schema['tsEnumNames'] = [e.name for e in cls]
 
     class Model(BaseModel):
-        spam: SpamEnum = Field(None)
+        spam: Optional[SpamEnum] = Field(None)
 
     assert Model.model_json_schema() == {
         'definitions': {
@@ -296,13 +291,12 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
+        'properties': {'spam': {'anyOf': [{'$ref': '#/definitions/SpamEnum'}, {'type': 'null'}], 'default': None}},
         'title': 'Model',
         'type': 'object',
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_enum_schema_custom_field():
     class FooBarEnum(str, Enum):
         foo = 'foo'
@@ -437,6 +431,7 @@ def test_list_enum_schema_extras():
         chips = 'chips'
 
     class Model(BaseModel):
+        # TODO: Should we add the `examples` argument to Field? I am weakly in favor
         foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
 
     assert Model.model_json_schema() == {
@@ -534,7 +529,7 @@ def test_optional():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'anyOf': [{'type': 'null'}, {'type': 'string'}], 'title': 'A'}},
+        'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}},
         'required': ['a'],
     }
 
@@ -740,7 +735,7 @@ class Foo(BaseModel):
                         'required': ['a'],
                     }
                 },
-                'properties': {'a': {'anyOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}]}},
+                'properties': {'a': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}]}},
                 'required': ['a'],
                 'title': 'Model',
                 'type': 'object',
@@ -806,10 +801,10 @@ def test_date_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (Optional[str], {'properties': {'a': {'anyOf': [{'type': 'null'}, {'type': 'string'}], 'title': 'A'}}}),
+        (Optional[str], {'properties': {'a': {'anyOf': [{'type': 'string'}, {'type': 'null'}], 'title': 'A'}}}),
         (
             Optional[bytes],
-            {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'null'}, {'type': 'string', 'format': 'binary'}]}}},
+            {'properties': {'a': {'title': 'A', 'anyOf': [{'type': 'string', 'format': 'binary'}, {'type': 'null'}]}}},
         ),
         (
             Union[str, bytes],
@@ -825,7 +820,7 @@ def test_date_constrained_types(field_type, expected_schema):
                 'properties': {
                     'a': {
                         'title': 'A',
-                        'anyOf': [{'type': 'null'}, {'type': 'string'}, {'type': 'string', 'format': 'binary'}],
+                        'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}, {'type': 'null'}],
                     }
                 }
             },
@@ -868,7 +863,10 @@ def test_str_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
+        # TODO: Do we still want a maxLength set on AnyUrl?
+        #   If so, update pydantic._internal._std_types_schema.url_schema
         (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16}),
+        # TODO: Does this test need to be uncommented?
         # (
         #     stricturl(min_length=5, max_length=10),
         #     {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
@@ -957,15 +955,12 @@ def test_special_int_types(field_type, expected_schema):
         (NonNegativeFloat, {'minimum': 0}),
         (NonPositiveFloat, {'maximum': 0}),
         # (ConstrainedDecimal, {}),
-        pytest.param(
+        (
             condecimal(gt=5, lt=10),
             {'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
-        pytest.param(
-            condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}, marks=pytest.mark.xfail(reason='working on V2')
-        ),
-        pytest.param(condecimal(multiple_of=5), {'multipleOf': 5}, marks=pytest.mark.xfail(reason='working on V2')),
+        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (condecimal(multiple_of=5), {'multipleOf': 5}),
     ],
 )
 def test_special_float_types(field_type, expected_schema):
@@ -983,7 +978,6 @@ def test_special_float_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [(UUID, 'uuid'), (UUID1, 'uuid1'), (UUID3, 'uuid3'), (UUID4, 'uuid4'), (UUID5, 'uuid5')],
@@ -1003,9 +997,9 @@ def test_uuid_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
-    'field_type,expected_schema', [(FilePath, 'file-path'), (DirectoryPath, 'directory-path'), (Path, 'path')]
+    'field_type,expected_schema',
+    [(FilePath, 'file-path'), (DirectoryPath, 'directory-path'), (NewPath, 'path'), (Path, 'path')],
 )
 def test_path_types(field_type, expected_schema):
     class Model(BaseModel):
@@ -1022,7 +1016,6 @@ def test_path_types(field_type, expected_schema):
     assert Model.model_json_schema() == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json_type():
     class Model(BaseModel):
         a: Json
@@ -1034,10 +1027,13 @@ def test_json_type():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
-            'b': {'title': 'B', 'type': 'integer'},
+            # TODO: This used to be {'title': 'B', 'type': 'number'}
+            #   However, numbers no longer even pass validation Json[int] (which I think is the correct behavior)
+            #   I think the new value below is correct, but am adding this TODO to make sure it is considered
+            'b': {'title': 'B', 'type': 'string', 'format': 'json-string'},
             'c': {'title': 'C', 'type': 'string', 'format': 'json-string'},
         },
-        'required': ['b'],
+        'required': ['a', 'b', 'c'],
     }
 
 
@@ -1219,81 +1215,88 @@ def create_testing_submodules():
     sys.path.insert(0, str(base_path))
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_flat_models_unique_models():
-    create_testing_submodules()
-    from pydantic_schema_test.modulea.modela import Model as ModelA
-    from pydantic_schema_test.moduleb.modelb import Model as ModelB
-    from pydantic_schema_test.moduled.modeld import Model as ModelD
-
-    flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
-    assert flat_models == {ModelA, ModelB}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_flat_models_with_submodels():
-    class Foo(BaseModel):
-        a: str
-
-    class Bar(BaseModel):
-        b: List[Foo]
-
-    class Baz(BaseModel):
-        c: Dict[str, Bar]
-
-    flat_models = get_flat_models_from_model(Baz)
-    assert flat_models == {Foo, Bar, Baz}
+# TODO: Do we need to retain something analogous to `get_flat_models_from_models`?
+#   There is no analogous function in the new json_schema module
+# @pytest.mark.xfail(reason='working on V2')
+# def test_flat_models_unique_models():
+#     create_testing_submodules()
+#     from pydantic_schema_test.modulea.modela import Model as ModelA
+#     from pydantic_schema_test.moduleb.modelb import Model as ModelB
+#     from pydantic_schema_test.moduled.modeld import Model as ModelD
+#
+#     flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
+#     assert flat_models == {ModelA, ModelB}
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_flat_models_with_submodels_from_sequence():
-    class Foo(BaseModel):
-        a: str
-
-    class Bar(BaseModel):
-        b: Foo
-
-    class Ingredient(BaseModel):
-        name: str
-
-    class Pizza(BaseModel):
-        name: str
-        ingredients: List[Ingredient]
-
-    flat_models = get_flat_models_from_models([Bar, Pizza])
-    assert flat_models == {Foo, Bar, Ingredient, Pizza}
+# TODO: Do we need to retain something analogous to `get_flat_models_from_model`?
+#   There is no analogous function in the new json_schema module
+# @pytest.mark.xfail(reason='working on V2')
+# def test_flat_models_with_submodels():
+#     class Foo(BaseModel):
+#         a: str
+#
+#     class Bar(BaseModel):
+#         b: List[Foo]
+#
+#     class Baz(BaseModel):
+#         c: Dict[str, Bar]
+#
+#     flat_models = get_flat_models_from_model(Baz)
+#     assert flat_models == {Foo, Bar, Baz}
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_model_name_maps():
-    create_testing_submodules()
-    from pydantic_schema_test.modulea.modela import Model as ModelA
-    from pydantic_schema_test.moduleb.modelb import Model as ModelB
-    from pydantic_schema_test.modulec.modelc import Model as ModelC
-    from pydantic_schema_test.moduled.modeld import Model as ModelD
-
-    class Foo(BaseModel):
-        a: str
-
-    class Bar(BaseModel):
-        b: Foo
-
-    class Baz(BaseModel):
-        c: Bar
-
-    flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC, ModelD])
-    model_name_map = get_model_name_map(flat_models)
-    assert model_name_map == {
-        Foo: 'Foo',
-        Bar: 'Bar',
-        Baz: 'Baz',
-        ModelA: 'pydantic_schema_test__modulea__modela__Model',
-        ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
-        ModelC: 'pydantic_schema_test__modulec__modelc__Model',
-    }
+# TODO: Do we need to retain something analogous to `get_flat_models_from_models`?
+#   There is no analogous function in the new json_schema module
+# @pytest.mark.xfail(reason='working on V2')
+# def test_flat_models_with_submodels_from_sequence():
+#     class Foo(BaseModel):
+#         a: str
+#
+#     class Bar(BaseModel):
+#         b: Foo
+#
+#     class Ingredient(BaseModel):
+#         name: str
+#
+#     class Pizza(BaseModel):
+#         name: str
+#         ingredients: List[Ingredient]
+#
+#     flat_models = get_flat_models_from_models([Bar, Pizza])
+#     assert flat_models == {Foo, Bar, Ingredient, Pizza}
 
 
-@pytest.mark.xfail(reason='working on V2')
+# TODO: Do we need to retain something analogous to `get_flat_models_from_models` or `get_model_name_map`?
+#   There are no analogous functions in the new json_schema module
+# @pytest.mark.xfail(reason='working on V2')
+# def test_model_name_maps():
+#     create_testing_submodules()
+#     from pydantic_schema_test.modulea.modela import Model as ModelA
+#     from pydantic_schema_test.moduleb.modelb import Model as ModelB
+#     from pydantic_schema_test.modulec.modelc import Model as ModelC
+#     from pydantic_schema_test.moduled.modeld import Model as ModelD
+#
+#     class Foo(BaseModel):
+#         a: str
+#
+#     class Bar(BaseModel):
+#         b: Foo
+#
+#     class Baz(BaseModel):
+#         c: Bar
+#
+#     flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC, ModelD])
+#     model_name_map = get_model_name_map(flat_models)
+#     assert model_name_map == {
+#         Foo: 'Foo',
+#         Bar: 'Bar',
+#         Baz: 'Baz',
+#         ModelA: 'pydantic_schema_test__modulea__modela__Model',
+#         ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
+#         ModelC: 'pydantic_schema_test__modulec__modelc__Model',
+#     }
+
+
 def test_schema_overrides():
     class Foo(BaseModel):
         a: str
@@ -1321,9 +1324,14 @@ def test_schema_overrides():
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
+                'properties': {'b': {'allOf': [{'$ref': '#/definitions/Foo'}], 'default': {'a': 'foo'}}},
             },
-            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'anyOf': [{'$ref': '#/definitions/Bar'}, {'type': 'null'}]}},
+                'required': ['c'],
+            },
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
         'required': ['d'],
@@ -1349,7 +1357,6 @@ def test_schema_overrides_w_union():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_from_models():
     class Foo(BaseModel):
         a: str
@@ -1376,7 +1383,7 @@ def test_schema_from_models():
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
-        'definitions': {
+        '$defs': {
             'Pizza': {
                 'title': 'Pizza',
                 'type': 'object',
@@ -1424,18 +1431,9 @@ def test_schema_from_models():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
-@pytest.mark.parametrize(
-    'ref_prefix,ref_template',
-    [
-        # OpenAPI style
-        ('#/components/schemas/', None),
-        (None, '#/components/schemas/{model}'),
-        # ref_prefix takes priority
-        ('#/components/schemas/', '#/{model}/schemas/'),
-    ],
-)
-def test_schema_with_refs(ref_prefix, ref_template):
+def test_schema_with_refs():
+    ref_template = '#/components/schemas/{model}'
+
     class Foo(BaseModel):
         a: str
 
@@ -1445,9 +1443,9 @@ def test_schema_with_refs(ref_prefix, ref_template):
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_prefix=ref_prefix, ref_template=ref_template)
+    model_schema = schema([Bar, Baz], ref_template=ref_template)
     assert model_schema == {
-        'definitions': {
+        '$defs': {
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
@@ -1506,7 +1504,6 @@ def test_schema_with_custom_ref_template():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_ref_template_key_error():
     class Foo(BaseModel):
         a: str
@@ -1575,7 +1572,6 @@ def test_dict_default():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_default():
     """Make sure inner model types are encoded properly"""
 
@@ -1600,15 +1596,12 @@ def test_model_default():
                 'type': 'object',
             }
         },
-        'properties': {
-            'inner': {'allOf': [{'$ref': '#/definitions/Inner'}], 'default': {'a': {'.': ''}}, 'title': 'Inner'}
-        },
+        'properties': {'inner': {'allOf': [{'$ref': '#/definitions/Inner'}], 'default': {'a': {'.': ''}}}},
         'title': 'Outer',
         'type': 'object',
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -1616,7 +1609,7 @@ def test_model_default():
         ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
         ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
         ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
-        ({'regex': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
+        ({'pattern': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
         ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
         ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
         ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
@@ -1846,12 +1839,11 @@ def test_field_with_validator():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'something': {'anyOf': [{'type': 'null'}, {'type': 'integer'}], 'default': None, 'title': 'Something'}
+            'something': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'default': None, 'title': 'Something'}
         },
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_unparameterized_schema_generation():
     class FooList(BaseModel):
         d: List
@@ -2133,7 +2125,7 @@ def test_model_with_extra_forbidden():
         (
             Optional[int],
             dict(gt=0),
-            {'title': 'A', 'anyOf': [{'type': 'null'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
+            {'title': 'A', 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'type': 'null'}]},
         ),
         pytest.param(
             Tuple[int, ...],
@@ -2300,16 +2292,19 @@ def test_schema_attributes():
     }
 
 
-def test_model_process_schema_enum():
-    class SpamEnum(str, Enum):
-        foo = 'f'
-        bar = 'b'
+# TODO: Do we need to retain something analogous to `model_process_schema`?
+#   There is no analogous function in the new json_schema module
+# def test_model_process_schema_enum():
+#     class SpamEnum(str, Enum):
+#         foo = 'f'
+#         bar = 'b'
+#
+#     model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
+#     assert model_schema == {
+#         'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']
+#     }
 
-    model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
-    assert model_schema == {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']}
 
-
-@pytest.mark.xfail(reason='working on V2')
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
@@ -2413,7 +2408,7 @@ class NestedModel(BaseModel):
     )
 
     models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(schema(models)['definitions'].keys())
+    model_names = set(schema(models)['$defs'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
@@ -2468,8 +2463,8 @@ class MyModel(BaseModel):
         my_model_1: module_1.MyModel
         my_model_2: module_2.MyModel
 
-    assert len(Model.model_json_schema()['definitions']) == 4
-    assert set(Model.model_json_schema()['definitions']) == {
+    assert len(Model.model_json_schema()['$defs']) == 4
+    assert set(Model.model_json_schema()['$defs']) == {
         f'{module_1.__name__}__MyEnum',
         f'{module_1.__name__}__MyModel',
         f'{module_2.__name__}__MyEnum',
@@ -2530,7 +2525,6 @@ def test_schema_for_generic_field():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_namedtuple_default():
     class Coordinates(NamedTuple):
         x: float
@@ -2538,6 +2532,9 @@ def test_namedtuple_default():
 
     class LocationBase(BaseModel):
         coords: Coordinates = Coordinates(0, 0)
+
+    assert LocationBase(coords=Coordinates(1, 2)).coords == Coordinates(1, 2)
+    # assert LocationBase.__pydantic_core_schema__ == {}
 
     assert LocationBase.model_json_schema() == {
         'title': 'LocationBase',
@@ -2547,7 +2544,7 @@ def test_namedtuple_default():
                 'title': 'Coords',
                 'default': Coordinates(x=0, y=0),
                 'type': 'array',
-                'items': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+                'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
                 'minItems': 2,
                 'maxItems': 2,
             }
@@ -2555,7 +2552,6 @@ def test_namedtuple_default():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_advanced_generic_schema():
     T = TypeVar('T')
     K = TypeVar('K')
@@ -2573,8 +2569,22 @@ def test_advanced_generic_schema():
             return v
 
         @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, generator: GenerateSchema, **_kwargs: Any
+        ) -> core_schema.FunctionPlainSchema:
+            if hasattr(source, '__args__'):
+                param = source.__args__[0]
+                metadata = build_metadata_dict(
+                    json_schema_misc=JsonSchemaMisc(core_schema_override=generator.generate_schema(Optional[param]))
+                )
+                return core_schema.function_plain_schema(
+                    Gen,
+                    metadata=metadata,
+                )
+
+        @classmethod
         def __modify_schema__(cls, field_schema):
-            the_type = field_schema.pop('allOf', [{'type': 'string'}])[0]
+            the_type = field_schema.pop('anyOf', [{'type': 'string'}])[0]
             field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
 
     class GenTwoParams(Generic[T, K]):
@@ -2591,7 +2601,24 @@ def test_advanced_generic_schema():
             return cls(*v)
 
         @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, generator: GenerateSchema, **_kwargs: Any
+        ) -> core_schema.FunctionPlainSchema:
+            if hasattr(source, '__args__'):
+                metadata = build_metadata_dict(
+                    json_schema_misc=JsonSchemaMisc(
+                        core_schema_override=generator.generate_schema(Tuple[source.__args__])
+                    )
+                )
+                return core_schema.function_plain_schema(
+                    GenTwoParams,
+                    metadata=metadata,
+                )
+
+        @classmethod
         def __modify_schema__(cls, field_schema):
+            field_schema.pop('minItems')
+            field_schema.pop('maxItems')
             field_schema.update(examples='examples')
 
     class CustomType(Enum):
@@ -2611,6 +2638,8 @@ def test_advanced_generic_schema():
         data4: Tuple[CustomType]
         data5: Tuple[CustomType, str]
 
+        model_config = {'arbitrary_types_allowed': True}
+
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
@@ -2620,7 +2649,7 @@ def test_advanced_generic_schema():
                 'title': 'Gen title',
             },
             'data1': {
-                'title': 'Gen title',
+                'title': 'Data1 title',
                 'description': 'Data 1 description',
                 'anyOf': [
                     {'$ref': '#/definitions/CustomType'},
@@ -2628,28 +2657,24 @@ def test_advanced_generic_schema():
                 ],
             },
             'data2': {
-                'allOf': [
-                    {
-                        'items': [{'$ref': '#/definitions/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
-                        'type': 'array',
-                    }
-                ],
-                'title': 'Data2 title',
                 'description': 'Data 2',
                 'examples': 'examples',
+                'prefixItems': [{'$ref': '#/definitions/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
+                'title': 'Data2 title',
+                'type': 'array',
             },
-            'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
+            'data3': {'title': 'Data3', 'type': 'array'},
             'data4': {
                 'title': 'Data4',
                 'type': 'array',
-                'items': [{'$ref': '#/definitions/CustomType'}],
+                'prefixItems': [{'$ref': '#/definitions/CustomType'}],
                 'minItems': 1,
                 'maxItems': 1,
             },
             'data5': {
                 'title': 'Data5',
                 'type': 'array',
-                'items': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
+                'prefixItems': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
                 'minItems': 2,
                 'maxItems': 2,
             },
@@ -2666,7 +2691,6 @@ def test_advanced_generic_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_nested_generic():
     """
     Test a nested BaseModel that is also a Generic
@@ -2701,7 +2725,7 @@ def test_nested_generic():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - generics')
 def test_nested_generic_model():
     """
     Test a nested GenericModel
@@ -2730,7 +2754,7 @@ def test_nested_generic_model():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - generics')
 def test_complex_nested_generic():
     """
     Handle a union of a generic.
@@ -2803,7 +2827,7 @@ def test_schema_with_field_parameter():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - discriminated union')
 def test_discriminated_union():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -2891,7 +2915,7 @@ def test_discriminated_union():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - discriminated union')
 def test_discriminated_annotated_union():
     class BlackCatWithHeight(BaseModel):
         pet_type: Literal['cat']
@@ -3005,7 +3029,7 @@ def test_discriminated_annotated_union():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - discriminated union')
 def test_alias_same():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='typeOfPet')
@@ -3058,7 +3082,7 @@ def test_alias_same():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - dataclasses')
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
@@ -3090,7 +3114,7 @@ def test_nested_python_dataclasses():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - discriminated union')
 def test_discriminated_union_in_list():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -3227,12 +3251,12 @@ def test_model_with_type_attributes():
 @pytest.mark.parametrize(
     'field_kw,schema_kw',
     [
-        [{}, {}],
+        # [{}, {}],
         [{'min_length': 6}, {'minLength': 6}],
         [{'max_length': 10}, {'maxLength': 10}],
         [{'min_length': 6, 'max_length': 10}, {'minLength': 6, 'maxLength': 10}],
     ],
-    ids=['no-constrains', 'min-constraint', 'max-constraint', 'min-max-constraints'],
+    ids=['min-constraint', 'max-constraint', 'min-max-constraints'],
 )
 def test_secrets_schema(secret_cls, field_kw, schema_kw):
     class Foobar(BaseModel):

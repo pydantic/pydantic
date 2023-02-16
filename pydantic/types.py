@@ -74,6 +74,7 @@ __all__ = [
 
 from ._internal._core_metadata import build_metadata_dict
 from ._internal._utils import update_not_none
+from .json_schema_misc import JsonSchemaMisc
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -296,7 +297,7 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass
+@_dataclasses.dataclass(frozen=True)  # Add frozen=True to make it hashable
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
@@ -330,7 +331,8 @@ class PathType:
     path_type: Literal['file', 'dir', 'new']
 
     def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
-        field_schema.update(format='file-path')
+        format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
+        field_schema.update(format=format_conversion.get(self.path_type, 'path'))
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
@@ -418,7 +420,23 @@ class SecretField(abc.ABC, Generic[SecretType]):
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         validator = SecretFieldValidator(cls)
-        metadata = build_metadata_dict(update_core_schema=validator.__pydantic_update_schema__)
+        if issubclass(cls, SecretStr):
+            # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
+            override = lambda: core_schema.str_schema(  # noqa E731
+                min_length=validator.min_length,
+                max_length=validator.max_length,
+            )
+        elif issubclass(cls, SecretBytes):
+            override = lambda: core_schema.bytes_schema(  # noqa E731
+                min_length=validator.min_length,
+                max_length=validator.max_length,
+            )
+        else:
+            override = None
+        metadata = build_metadata_dict(
+            update_core_schema=validator.__pydantic_update_schema__,
+            json_schema_misc=JsonSchemaMisc(core_schema_override=override),
+        )
         return core_schema.function_after_schema(
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),

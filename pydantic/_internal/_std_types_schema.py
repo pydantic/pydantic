@@ -103,7 +103,10 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
     decimal_validator = _validators.DecimalValidator()
     metadata = build_metadata_dict(
         update_core_schema=decimal_validator.__pydantic_update_schema__,
-        json_schema_misc=JsonSchemaMisc(core_schema_override=core_schema.float_schema()),
+        json_schema_misc=JsonSchemaMisc(
+            # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
+            core_schema_override=lambda: decimal_validator.json_schema_override_schema()
+        ),
     )
     return core_schema.function_after_schema(
         core_schema.union_schema(
@@ -130,11 +133,11 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
                 core_schema.bytes_schema(),
             ),
             _validators.uuid_validator,
+            metadata=metadata,
         ),
         custom_error_type='uuid_type',
         custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
-        metadata=metadata,
     )
 
 
@@ -147,11 +150,11 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
         core_schema.function_after_schema(
             core_schema.str_schema(),
             _validators.path_validator,
+            metadata=metadata,
         ),
         custom_error_type='path_type',
         custom_error_message='Input is not a valid path',
         strict=True,
-        metadata=metadata,
     )
 
 
