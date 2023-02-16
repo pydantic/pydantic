@@ -6,7 +6,7 @@ from dataclasses import is_dataclass
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Callable, NewType, Optional, Pattern, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, NewType, Pattern, Sequence, cast
 from uuid import UUID
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
@@ -274,12 +274,18 @@ class GenerateJsonSchema:
         return json_schema
 
     def dict_schema(self, schema: core_schema.DictSchema) -> JsonSchemaValue:
+        json_schema: JsonSchemaValue = {'type': 'object'}
+
+        keys_schema = self.generate_inner(schema['keys_schema']).copy() if 'keys_schema' in schema else {}
+        keys_pattern = keys_schema.pop('pattern', None)
+
         values_schema = self.generate_inner(schema['values_schema']).copy() if 'values_schema' in schema else {}
         values_schema.pop('title', None)  # don't give a title to the additionalProperties
-
-        json_schema: JsonSchemaValue = {'type': 'object'}
-        if values_schema:  # don't add additionalProperties if it's empty
-            json_schema['additionalProperties'] = values_schema
+        if values_schema or keys_pattern is not None:  # don't add additionalProperties if it's empty
+            if keys_pattern is None:
+                json_schema['additionalProperties'] = values_schema
+            else:
+                json_schema['patternProperties'] = {keys_pattern: values_schema}
 
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
@@ -687,7 +693,7 @@ class GenerateJsonSchema:
 
         return json_schema
 
-    def get_schema_from_definitions(self, json_ref: JsonRef) -> Optional[JsonSchemaValue]:
+    def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
         return self.definitions.get(self.json_to_defs_refs[json_ref])
 
     def encode_default(self, dft: Any) -> Any:
@@ -803,7 +809,7 @@ class GenerateJsonSchema:
 
 
 def schema(
-    models: Sequence[type['BaseModel'] | type['Dataclass']],
+    models: Sequence[type[BaseModel] | type[Dataclass]],
     *,
     by_alias: bool = True,
     title: str | None = None,
@@ -826,7 +832,7 @@ def schema(
 
 
 def model_schema(
-    model: type['BaseModel'] | type['Dataclass'],
+    model: type[BaseModel] | type[Dataclass],
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,

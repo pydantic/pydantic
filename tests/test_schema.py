@@ -1468,7 +1468,6 @@ def test_schema_with_refs():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_with_custom_ref_template():
     class Foo(BaseModel):
         a: str
@@ -1481,7 +1480,7 @@ def test_schema_with_custom_ref_template():
 
     model_schema = schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
     assert model_schema == {
-        'definitions': {
+        '$defs': {
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
@@ -1666,6 +1665,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     ],
 )
 def test_unenforced_constraints_schema(kwargs, type_):
+    # TODO: Make SchemaError have an errors field, and use it to get this test passing
     with pytest.raises(ValueError, match='On field "a" the following field constraints are set but not enforced'):
 
         class Foo(BaseModel):
@@ -1744,6 +1744,7 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
 @pytest.mark.xfail(reason='working on V2')
 def test_schema_kwargs():
     class Foo(BaseModel):
+        # TODO: Should we re-add the 'examples' kwarg to Field?
         a: str = Field('foo', examples=['bar'])
 
     assert Foo.model_json_schema() == {
@@ -1753,10 +1754,9 @@ def test_schema_kwargs():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_dict_constr():
     regex_str = r'^([a-zA-Z_][a-zA-Z0-9_]*)$'
-    ConStrType = constr(regex=regex_str)
+    ConStrType = constr(pattern=regex_str)
     ConStrKeyDict = Dict[ConStrType, str]
 
     class Foo(BaseModel):
@@ -2200,6 +2200,7 @@ def test_real_vs_phony_constraints():
 
     class Model2(BaseModel):
         model_config = ConfigDict(title='Test Model')
+        # TODO: Are we going to drop this and other related fields? Are we going to error? Should we drop this test?
         foo: int = Field(..., exclusiveMinimum=123)
 
     with pytest.raises(ValidationError, match='ensure this value is greater than 123'):

@@ -10,7 +10,7 @@ import typing
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
-from pydantic_core import core_schema
+from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError
@@ -605,7 +605,7 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
     return schema
 
 
-def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
+def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:  # noqa C901
     if metadata is None:
         return schema
 
@@ -657,6 +657,12 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
             schema['schema'].update(metadata_dict)
         else:
             schema.update(metadata_dict)  # type: ignore[typeddict-item]
+        try:
+            SchemaValidator(schema)
+        except SchemaError as e:
+            # TODO: Generate an easier-to-understand ValueError here saying the field constraints are not enforced
+            # The relevant test is: `tests.test_schema.test_unenforced_constraints_schema
+            raise e
     return schema
 
 
