@@ -13,7 +13,7 @@ Data validation using Python type hints.
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
 
-## Pydantic Company
+## Pydantic Company :rocket:
 
 We've started a company based on the principles that I believe have led to Pydantic's success.
 Learning more from the [Company Announcement](https://pydantic.dev/announcement/).
