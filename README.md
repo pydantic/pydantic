@@ -1,4 +1,4 @@
-# pydantic
+# Pydantic
 
 [![CI](https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://coverage-badge.samuelcolvin.workers.dev/redirect/pydantic/pydantic)
@@ -10,20 +10,21 @@
 
 Data validation using Python type hints.
 
----
-
-## Notice
-
-**This branch relates to development of pydantic V2 which is not yet ready for release.**
-
-If you're a user of pydantic, you probably want either
-[pydantic V1.10 Documentation](https://docs.pydantic.dev/) or,
-[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes).
-
----
-
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
+
+## Pydantic Company
+
+We've started a company based on the principles that I believe have led to Pydantic's success.
+Learning more from the [Company Announcement](https://pydantic.dev/announcement/).
+
+## Pydantic V1.10 vs. V2
+
+This branch relates to development of pydantic V2 which is not yet ready for production use.
+
+If you're a Pydantic user, you probably want either
+[pydantic V1.10 Documentation](https://docs.pydantic.dev/) or,
+[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes).
 
 ## Help
 
