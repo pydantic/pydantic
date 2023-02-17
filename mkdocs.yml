@@ -1,5 +1,5 @@
-site_name: pydantic
-site_description: Data validation and settings management using Python type hints
+site_name: Pydantic
+site_description: Data validation using Python type hints
 strict: true
 site_url: https://docs.pydantic.dev/
 
