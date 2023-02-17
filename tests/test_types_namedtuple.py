@@ -51,7 +51,6 @@ def test_namedtuple():
     ]
 
 
-@pytest.mark.skip(reason='TODO JsonSchema')
 def test_namedtuple_schema():
     class Position1(NamedTuple):
         x: int
@@ -71,7 +70,7 @@ def test_namedtuple_schema():
             'pos1': {
                 'title': 'Pos1',
                 'type': 'array',
-                'items': [
+                'prefixItems': [
                     {'title': 'X', 'type': 'integer'},
                     {'title': 'Y', 'type': 'integer'},
                 ],
@@ -81,7 +80,7 @@ def test_namedtuple_schema():
             'pos2': {
                 'title': 'Pos2',
                 'type': 'array',
-                'items': [
+                'prefixItems': [
                     {'title': 'X'},
                     {'title': 'Y'},
                 ],
@@ -91,7 +90,7 @@ def test_namedtuple_schema():
             'pos3': {
                 'title': 'Pos3',
                 'type': 'array',
-                'items': [
+                'prefixItems': [
                     {'type': 'integer'},
                     {'type': 'integer'},
                 ],

@@ -181,11 +181,11 @@ def test_typeddict_extra(TypedDict):
     ]
 
 
-@pytest.mark.skip(reason='TODO JsonSchema')
 def test_typeddict_schema(TypedDict):
     class Data(BaseModel):
         a: int
 
+    # TODO: Need to make sure TypedDict's get their own schema
     class DataTD(TypedDict):
         a: int
 
@@ -226,7 +226,6 @@ def test_typeddict_postponed_annotation(TypedDict):
         Model.model_validate({'t': {'v': -1}})
 
 
-@pytest.mark.skip(reason='TODO JsonSchema')
 def test_typeddict_required(TypedDict, req_no_req):
     Required, _ = req_no_req
 
@@ -256,7 +255,6 @@ def test_typeddict_required(TypedDict, req_no_req):
     }
 
 
-@pytest.mark.skip(reason='TODO JsonSchema')
 def test_typeddict_not_required_schema(TypedDict, req_no_req):
     Required, NotRequired = req_no_req
 
@@ -286,7 +284,6 @@ def test_typeddict_not_required_schema(TypedDict, req_no_req):
     }
 
 
-@pytest.mark.skip(reason='TODO JsonSchema')
 def test_typed_dict_inheritance_schema(TypedDict, req_no_req):
     Required, NotRequired = req_no_req
 
@@ -322,7 +319,6 @@ def test_typed_dict_inheritance_schema(TypedDict, req_no_req):
     }
 
 
-@pytest.mark.skip(reason='TODO JsonSchema')
 def test_typeddict_annotated_nonoptional_schema(TypedDict):
     class DataTD(TypedDict):
         a: Optional[int]
@@ -342,9 +338,9 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
                 'type': 'object',
                 'title': 'DataTD',
                 'properties': {
-                    'a': {'title': 'A', 'type': 'integer'},
-                    'b': {'title': 'B', 'type': 'integer'},
-                    'c': {'title': 'C', 'type': 'integer', 'description': 'Test'},
+                    'a': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'title': 'A'},
+                    'b': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'default': 42, 'title': 'B'},
+                    'c': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'description': 'Test', 'title': 'C'},
                 },
                 'required': ['a', 'c'],
             },

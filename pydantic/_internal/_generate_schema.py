@@ -138,7 +138,7 @@ class GenerateSchema:
         elif _typing_extra.is_literal_type(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
-            return self._type_dict_schema(obj)
+            return self._typed_dict_schema(obj)
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj)
         elif _typing_extra.is_new_type(obj):
@@ -282,7 +282,7 @@ class GenerateSchema:
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         return core_schema.literal_schema(*expected)
 
-    def _type_dict_schema(self, typed_dict_cls: Any) -> core_schema.TypedDictSchema:
+    def _typed_dict_schema(self, typed_dict_cls: Any) -> core_schema.TypedDictSchema:
         """
         Generate schema for a TypedDict.
         """
@@ -310,7 +310,14 @@ class GenerateSchema:
                 field_name, field_info, validation_functions, serialization_functions, required=required
             )
 
-        return core_schema.typed_dict_schema(fields, extra_behavior='forbid')
+        module_name = getattr(typed_dict_cls, '__module__', None)
+        ref = f'{module_name}.{typed_dict_cls.__name__}'
+        return core_schema.typed_dict_schema(
+            fields,
+            extra_behavior='forbid',
+            ref=ref,
+            metadata=build_metadata_dict(json_schema_misc=JsonSchemaMisc(title=typed_dict_cls.__name__)),
+        )
 
     def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
         """

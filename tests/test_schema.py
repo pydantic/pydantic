@@ -2853,7 +2853,7 @@ def test_modify_schema_dict_keys() -> None:
             schema['test'] = 'passed'
 
     class MyModel(BaseModel):
-        my_field: dict[str, MyType]
+        my_field: Dict[str, MyType]
 
         model_config = dict(arbitrary_types_allowed=True)
 
@@ -3091,7 +3091,6 @@ def test_alias_same():
             'pet': {
                 'discriminator': {
                     'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
-                    # TODO: This is the only thing not being handled correctly for the discriminator now:
                     'propertyName': 'typeOfPet',
                 },
                 'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],

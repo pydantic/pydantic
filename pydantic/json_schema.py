@@ -6,7 +6,7 @@ from dataclasses import is_dataclass
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Callable, NewType, Pattern, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Counter, NewType, Pattern, Sequence, cast
 from uuid import UUID
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
@@ -94,22 +94,27 @@ class GenerateJsonSchema:
             )
 
         json_schema = self.generate_inner(schema)
+        json_ref_counts = self.get_json_ref_counts(json_schema)
 
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
         if unpack_root_ref:
             ref = json_schema.get('$ref')
             if ref is not None:
                 ref_json_schema = self.get_schema_from_definitions(JsonRef(ref))
-                if ref_json_schema is not None:
-                    json_schema = ref_json_schema
+                if json_ref_counts[ref] > 1 or ref_json_schema is None:
+                    # Keep the ref, but use an allOf to remove the top level $ref
+                    json_schema = {'allOf': [{'$ref': ref}]}
+                else:
+                    # "Unpack" the ref since this is the only reference
+                    json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
+                    json_ref_counts[ref] -= 1
 
-        # Remove any definitions that, thanks to $ref-substitution, are no longer present
-        # This should only _possibly_ apply to the root model. It might be safe to remove this logic,
-        # but I'm keeping it for now
-        remaining_json_refs = self.get_json_refs(json_schema)
+        # Remove any definitions that, thanks to $ref-substitution, are no longer present.
+        # I think this should only _possibly_ apply to the root model, though I'm not 100% sure.
+        # It might be safe to remove this logic, but I'm keeping it for now
         all_json_refs = list(self.json_to_defs_refs.keys())
         for k in all_json_refs:
-            if k not in remaining_json_refs:
+            if json_ref_counts[k] < 1:
                 del self.definitions[self.json_to_defs_refs[k]]
 
         if self.definitions:
@@ -702,7 +707,17 @@ class GenerateJsonSchema:
 
             referenced_json_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
             if referenced_json_schema is None:
-                return json_schema  # TODO: what should happen in this case?
+                # This can happen when building schemas for models with not-yet-defined references.
+                # It may be a good idea to do a recursive pass at the end of the generation to remove
+                # and redundant override keys.
+                if len(json_schema) > 1:
+                    # Make it an allOf to at least resolve the sibling keys issue
+                    json_schema = json_schema.copy()
+                    json_schema.setdefault('allOf', [])
+                    json_schema['allOf'].append({'$ref': json_schema['$ref']})
+                    del json_schema['$ref']
+
+                return json_schema
             for k, v in json_schema.items():
                 if k == '$ref':
                     continue
@@ -800,19 +815,20 @@ class GenerateJsonSchema:
                 members.append(schema)
         return {'anyOf': members}
 
-    def get_json_refs(self, json_schema: JsonSchemaValue) -> set[JsonRef]:
+    def get_json_ref_counts(self, json_schema: JsonSchemaValue) -> dict[JsonRef, int]:
         """
         Get all values corresponding to the key '$ref' anywhere in the json_schema
         """
-        json_refs: set[JsonRef] = set()
+        json_refs: dict[JsonRef, int] = Counter()
 
         def _add_json_refs(schema: JsonSchemaValue) -> None:
             if isinstance(schema, dict):
                 if '$ref' in schema:
                     json_ref = JsonRef(schema['$ref'])
-                    if json_ref in json_refs:
-                        return  # prevent recursion on a ref that was already visited
-                    json_refs.add(json_ref)
+                    already_visited = json_ref in json_refs
+                    json_refs[json_ref] += 1
+                    if already_visited:
+                        return  # prevent recursion on a definition that was already visited
                     _add_json_refs(self.definitions[self.json_to_defs_refs[json_ref]])
                 for v in schema.values():
                     _add_json_refs(v)
