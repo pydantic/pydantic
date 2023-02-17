@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <div class="admonition success announcement">
+    <p class="admonition-title">Pydantic Company</p>
+    <p>We've started a company based on the principles that I believe have led to Pydantic's success.</p>
+    <p>Learning more from the <a href="https://pydantic.dev/announcement/">Company Announcement</a>.</p>
+  </div>
+
   {{ super() }}
+
   <script src="/flarelytics/client.js"></script>
 {% endblock %}
