@@ -42,6 +42,9 @@ JsonRef = NewType('JsonRef', str)
 
 
 class GenerateJsonSchema:
+    # See https://json-schema.org/understanding-json-schema/reference/schema.html#id4 for more info about dialects
+    schema_dialect = 'https://json-schema.org/draft/2020-12/schema'
+
     def __init__(self, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE):
         self.by_alias = by_alias
         self.ref_template = ref_template
@@ -95,7 +98,7 @@ class GenerateJsonSchema:
         self._used = True
         return self.definitions
 
-    def generate(self, schema: CoreSchema, unpack_root_ref: bool = True) -> JsonSchemaValue:
+    def generate(self, schema: CoreSchema) -> JsonSchemaValue:
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
@@ -106,17 +109,16 @@ class GenerateJsonSchema:
         json_ref_counts = self.get_json_ref_counts(json_schema)
 
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
-        if unpack_root_ref:
-            ref = json_schema.get('$ref')
-            if ref is not None:
-                ref_json_schema = self.get_schema_from_definitions(JsonRef(ref))
-                if json_ref_counts[ref] > 1 or ref_json_schema is None:
-                    # Keep the ref, but use an allOf to remove the top level $ref
-                    json_schema = {'allOf': [{'$ref': ref}]}
-                else:
-                    # "Unpack" the ref since this is the only reference
-                    json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
-                    json_ref_counts[ref] -= 1
+        ref = json_schema.get('$ref')
+        if ref is not None:
+            ref_json_schema = self.get_schema_from_definitions(JsonRef(ref))
+            if json_ref_counts[ref] > 1 or ref_json_schema is None:
+                # Keep the ref, but use an allOf to remove the top level $ref
+                json_schema = {'allOf': [{'$ref': ref}]}
+            else:
+                # "Unpack" the ref since this is the only reference
+                json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
+                json_ref_counts[ref] -= 1
 
         # Remove any definitions that, thanks to $ref-substitution, are no longer present.
         # I think this should only _possibly_ apply to the root model, though I'm not 100% sure.
@@ -127,9 +129,11 @@ class GenerateJsonSchema:
                 del self.definitions[self.json_to_defs_refs[k]]
 
         json_schema = self.resolve_collisions(json_schema)
-
         if self.definitions:
             json_schema['definitions'] = self.definitions
+
+        # TODO: Enable this? It will require updating many tests. Maybe make it an option whether to include it?
+        # json_schema['$schema'] = self.schema_dialect
 
         self._used = True
         return json_schema
@@ -356,14 +360,19 @@ class GenerateJsonSchema:
             return self.generate_inner(schema['schema'])
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
+        json_schema = self.generate_inner(schema['schema'])
+
         if 'default' in schema:
-            default = self.encode_default(schema['default'])
+            try:
+                default = self.encode_default(schema['default'])
+            except TypeError:
+                # This happens if the default is not JSON serializable; in this case, just return the inner schema
+                return json_schema
         elif 'default_factory' in schema:
             default = self.encode_default(schema['default_factory']())
         else:
             raise ValueError('`schema` has neither default nor default_factory')
 
-        json_schema = self.generate_inner(schema['schema'])
         if '$ref' in json_schema:
             # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
             return {'allOf': [json_schema], 'default': default}

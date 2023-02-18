@@ -41,7 +41,7 @@ from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
-from pydantic.json_schema import model_schema, schema
+from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, model_schema, schema
 from pydantic.json_schema_misc import JsonSchemaMisc
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.types import (
@@ -3306,4 +3306,33 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
             'password': {'title': 'Password', 'type': 'string', 'writeOnly': True, 'format': 'password', **schema_kw}
         },
         'required': ['password'],
+    }
+
+
+def test_override_generate_json_schema():
+    class MyGenerateJsonSchema(GenerateJsonSchema):
+        def generate(self, schema):
+            json_schema = super().generate(schema)
+            json_schema['$schema'] = self.schema_dialect
+            return json_schema
+
+    class MyBaseModel(BaseModel):
+        @classmethod
+        def model_json_schema(
+            cls,
+            by_alias: bool = True,
+            ref_template: str = DEFAULT_REF_TEMPLATE,
+            schema_generator: Type[GenerateJsonSchema] = MyGenerateJsonSchema,
+        ) -> Dict[str, Any]:
+            return super().model_json_schema(by_alias, ref_template, schema_generator)
+
+    class MyModel(MyBaseModel):
+        x: int
+
+    assert MyModel.model_json_schema() == {
+        '$schema': 'https://json-schema.org/draft/2020-12/schema',
+        'properties': {'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x'],
+        'title': 'MyModel',
+        'type': 'object',
     }
