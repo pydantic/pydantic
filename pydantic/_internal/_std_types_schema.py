@@ -69,9 +69,10 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         except ValueError:
             raise PydanticCustomError('enum', 'Input is not a valid enum member')
 
+    enum_ref = f'{getattr(enum_type, "__module__", None)}.{enum_type.__qualname__}:{id(enum_type)}'
     literal_schema = core_schema.literal_schema(
         *[m.value for m in enum_type.__members__.values()],
-        ref=f'{getattr(enum_type, "__module__", None)}.{enum_type.__name__}',
+        ref=enum_ref,
     )
     json_schema_misc = JsonSchemaMisc(
         core_schema_override=literal_schema.copy(),

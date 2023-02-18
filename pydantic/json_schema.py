@@ -53,6 +53,12 @@ class GenerateJsonSchema:
 
         self.definitions: dict[DefsRef, JsonSchemaValue] = {}
 
+        # When collisions are detected, we choose a non-colliding name
+        # during generation, but we also track the colliding tag so that it
+        # can be remapped for the first occurrence at the end of the process
+        self.collisions: set[DefsRef] = set()
+        self.defs_ref_fallbacks: dict[CoreRef, list[DefsRef]] = {}
+
         self._schema_type_to_method = self.build_schema_type_to_method()
 
         # This changes to True after generating a schema, to prevent issues caused by accidental re-use
@@ -83,6 +89,9 @@ class GenerateJsonSchema:
             )
         for schema in schemas:
             self.generate_inner(schema)
+
+        self.resolve_collisions({})
+
         self._used = True
         return self.definitions
 
@@ -116,6 +125,8 @@ class GenerateJsonSchema:
         for k in all_json_refs:
             if json_ref_counts[k] < 1:
                 del self.definitions[self.json_to_defs_refs[k]]
+
+        json_schema = self.resolve_collisions(json_schema)
 
         if self.definitions:
             json_schema['definitions'] = self.definitions
@@ -643,28 +654,87 @@ class GenerateJsonSchema:
         else:
             raise TypeError(f'Unexpected schema type: schema={schema}')
 
-    def get_defs_ref(self, core_ref: CoreRef, schema: CoreSchema | TypedDictField) -> DefsRef:
+    def normalize_name(self, name: str) -> str:
+        return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name).replace('.', '__')
+
+    def get_defs_ref(self, core_ref: CoreRef) -> DefsRef:
         """
         Override this method to change the way that definitions keys are generated from a core reference.
         """
-        # TODO: I think a better way to do this is to error if/when there is a conflict, and add a way to explicitly
-        #   specify what the defs_ref should be for the model. Likely on JsonSchemaMisc...
-        # TODO: Note, if we load cached schemas from other models, may need to ensure refs are consistent
-        #   Proposal: the generator class should be a part of the cache key, and whatever is set on the "root"
-        #   schema generation will be used all the way down. If you want to modify the schema generation for
-        #   an individual model only, without affecting how other schemas are generated, that should be done
-        #   via the __pydantic_json_schema_extra__ method -- specifically, setting JsonSchemaMisc.modify_schema
-        #   Note: If we use the class method for generating the schema, we could provide a way to change the
-        #   generator class for child models, but I'm not sure that would be a good idea
-        # TODO: Note: core_refs are not _currently_ guaranteed to be different for different models,
-        #   we should change this; ideally, make core_ref <id(cls)>:<cls.__name__>
-        defs_ref = DefsRef(re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref.split('.')[-1]))
-        if self.defs_to_core_refs.get(defs_ref, core_ref) != core_ref:
-            defs_ref = DefsRef(re.sub(r'[^a-zA-Z0-9.\-_]', '_', core_ref))
-        while self.defs_to_core_refs.get(defs_ref, core_ref) != core_ref:
-            # Hitting a collision; add trailing `_` until we don't hit a collision
-            defs_ref = DefsRef(f'{defs_ref}_')
-        return defs_ref
+        first_choice = DefsRef(self.normalize_name(core_ref.split(':')[0].split('.')[-1]))  # name
+        second_choice = DefsRef(self.normalize_name(core_ref.split(':')[0]))  # module + qualname
+        third_choice = DefsRef(self.normalize_name(core_ref))  # module + qualname + id
+
+        # It is important that the generated defs_ref values be such that at least one could not
+        # be generated for any other core_ref. Currently, this should be the case because we include
+        # the id of the source type in the core_ref, and therefore in the third_choice
+        choices = [first_choice, second_choice, third_choice]
+        self.defs_ref_fallbacks[core_ref] = choices[1:]
+
+        for choice in choices:
+            if self.defs_to_core_refs.get(choice, core_ref) == core_ref:
+                return choice
+            else:
+                self.collisions.add(choice)
+
+        return choices[-1]  # should never get here if the final choice is guaranteed unique
+
+    def resolve_collisions(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        made_changes = True
+
+        while made_changes:
+            # TODO: may want to put something in place to keep this from running forever
+            #   if there are bugs. E.g., stop early with warning if it runs more than 100 times?
+            #   Maybe there's a better way to achieve this..
+            made_changes = False
+
+            for defs_ref, core_ref in self.defs_to_core_refs.items():
+                if defs_ref not in self.collisions:
+                    continue
+
+                for choice in self.defs_ref_fallbacks[core_ref]:
+                    if choice == defs_ref or choice in self.collisions:
+                        continue
+
+                    if self.defs_to_core_refs.get(choice, core_ref) == core_ref:
+                        json_schema = self.change_defs_ref(defs_ref, choice, json_schema)
+                        made_changes = True
+                        break
+                    else:
+                        self.collisions.add(choice)
+                if made_changes:
+                    break
+
+        return json_schema
+
+    def change_defs_ref(self, old: DefsRef, new: DefsRef, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        if new == old:
+            return json_schema
+        core_ref = self.defs_to_core_refs[old]
+        old_json_ref = self.core_to_json_refs[core_ref]
+        new_json_ref = JsonRef(self.ref_template.format(model=new))
+
+        self.definitions[new] = self.definitions.pop(old)
+        self.defs_to_core_refs[new] = self.defs_to_core_refs.pop(old)
+        self.json_to_defs_refs[new_json_ref] = self.json_to_defs_refs.pop(old_json_ref)
+        self.core_to_defs_refs[core_ref] = new
+        self.core_to_json_refs[core_ref] = new_json_ref
+
+        def walk_replace_json_schema_ref(item: Any) -> Any:
+            """
+            Recursively update the JSON schema to use the new defs_ref.
+            """
+            if isinstance(item, list):
+                return [walk_replace_json_schema_ref(item) for item in item]
+            elif isinstance(item, dict):
+                ref = item.get('$ref')
+                if ref == old_json_ref:
+                    item['$ref'] = new_json_ref
+                return {k: walk_replace_json_schema_ref(v) for k, v in item.items()}
+            else:
+                return item
+
+        return walk_replace_json_schema_ref(json_schema)
 
     def get_cache_defs_ref_schema(
         self, core_ref: CoreRef, schema: CoreSchema | TypedDictField
@@ -678,7 +748,7 @@ class GenerateJsonSchema:
             json_ref = self.core_to_json_refs[core_ref]
             return maybe_defs_ref, {'$ref': json_ref}
 
-        defs_ref = self.get_defs_ref(core_ref, schema)
+        defs_ref = self.get_defs_ref(core_ref)
 
         # populate the ref translation mappings
         self.core_to_defs_refs[core_ref] = defs_ref

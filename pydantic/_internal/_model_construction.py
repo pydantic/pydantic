@@ -217,7 +217,7 @@ def build_inner_schema(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    model_ref = f'{module_name}.{name}'
+    model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
     json_schema_misc = cls.model_json_schema_misc()
     self_schema = core_schema.model_schema(
         cls,

@@ -2377,8 +2377,6 @@ def test_new_type():
     }
 
 
-# TODO: To fix the next test, need to make it so that the model ID is a part of the core_schema ref
-@pytest.mark.xfail(reason='working on V2')
 def test_multiple_models_with_same_name(create_module):
     module = create_module(
         # language=Python
@@ -2406,7 +2404,7 @@ class NestedModel(BaseModel):
     )
 
     models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(schema(models)['$defs'].keys())
+    model_names = set(schema(models)['definitions'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
@@ -2464,10 +2462,10 @@ class MyModel(BaseModel):
 
     assert len(Model.model_json_schema()['definitions']) == 4
     assert set(Model.model_json_schema()['definitions']) == {
-        'MyEnum',
-        'MyModel',
-        f'{module_2.__name__}.MyEnum',
-        f'{module_2.__name__}.MyModel',
+        f'{module_1.__name__}__MyEnum',
+        f'{module_1.__name__}__MyModel',
+        f'{module_2.__name__}__MyEnum',
+        f'{module_2.__name__}__MyModel',
     }
 
 

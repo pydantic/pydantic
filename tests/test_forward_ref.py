@@ -156,7 +156,7 @@ def test_self_forward_ref_collection(create_module):
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
     assert repr(module.Foo.model_fields['b']) == IsStr(
-        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo\'\}.*'
+        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo:[0-9]+\'\}.*'
     )
     if sys.version_info < (3, 10):
         return

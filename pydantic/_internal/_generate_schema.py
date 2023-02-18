@@ -27,7 +27,7 @@ __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
 
 def model_fields_schema(
-    ref: str,
+    model_ref: str,
     fields: dict[str, FieldInfo],
     validator_functions: ValidationFunctions,
     serialization_functions: SerializationFunctions,
@@ -44,7 +44,7 @@ def model_fields_schema(
             k: schema_generator.generate_field_schema(k, v, validator_functions, serialization_functions)
             for k, v in fields.items()
         },
-        ref=ref,
+        ref=model_ref,
         return_fields_set=True,
     )
     schema = apply_validators(schema, validator_functions.get_root_decorators())
@@ -311,11 +311,11 @@ class GenerateSchema:
             )
 
         module_name = getattr(typed_dict_cls, '__module__', None)
-        ref = f'{module_name}.{typed_dict_cls.__name__}'
+        typed_dict_ref = f'{module_name}.{typed_dict_cls.__qualname__}:{id(typed_dict_cls)}'
         return core_schema.typed_dict_schema(
             fields,
             extra_behavior='forbid',
-            ref=ref,
+            ref=typed_dict_ref,
             metadata=build_metadata_dict(json_schema_misc=JsonSchemaMisc(title=typed_dict_cls.__name__)),
         )
 
