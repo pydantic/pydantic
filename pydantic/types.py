@@ -760,7 +760,7 @@ else:
                 return schema
 
         def __repr__(self) -> str:
-            return 'PastDate'
+            return 'FutureDate'
 
 
 def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date = None, le: date = None) -> type[date]:
