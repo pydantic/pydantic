@@ -424,7 +424,6 @@ def test_enum_includes_extra_without_other_params():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'
@@ -432,7 +431,6 @@ def test_list_enum_schema_extras():
         chips = 'chips'
 
     class Model(BaseModel):
-        # TODO: Should we add the `examples` argument to Field? I am weakly in favor
         foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
 
     assert Model.model_json_schema() == {
@@ -445,7 +443,12 @@ def test_list_enum_schema_extras():
             }
         },
         'properties': {
-            'foods': {'type': 'array', 'items': {'$ref': '#/definitions/FoodChoice'}, 'examples': [['spam', 'egg']]},
+            'foods': {
+                'title': 'Foods',
+                'type': 'array',
+                'items': {'$ref': '#/definitions/FoodChoice'},
+                'examples': [['spam', 'egg']],
+            },
         },
         'required': ['foods'],
         'title': 'Model',
@@ -566,34 +569,6 @@ def test_set():
             'c': {'title': 'C', 'type': 'array', 'items': {}, 'default': [1], 'uniqueItems': True},
         },
         'required': ['a', 'b'],
-    }
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_const_str():
-    # TODO: What is supposed to happen with 'const'?
-    #   Investigate how it works in v1 and think about what should be done
-    class Model(BaseModel):
-        # Should this become a: Literal['some string'] = 'some string'?
-        a: str = Field('some string', const=True)
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'const': 'some string', 'default': 'some string'}},
-    }
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_const_false():
-    # TODO: What is supposed to happen with 'const'?
-    class Model(BaseModel):
-        a: str = Field('some string', const=False)
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'default': 'some string'}},
     }
 
 
@@ -1216,88 +1191,6 @@ def create_testing_submodules():
     sys.path.insert(0, str(base_path))
 
 
-# TODO: Do we need to retain something analogous to `get_flat_models_from_models`?
-#   There is no analogous function in the new json_schema module
-# @pytest.mark.xfail(reason='working on V2')
-# def test_flat_models_unique_models():
-#     create_testing_submodules()
-#     from pydantic_schema_test.modulea.modela import Model as ModelA
-#     from pydantic_schema_test.moduleb.modelb import Model as ModelB
-#     from pydantic_schema_test.moduled.modeld import Model as ModelD
-#
-#     flat_models = get_flat_models_from_models([ModelA, ModelB, ModelD])
-#     assert flat_models == {ModelA, ModelB}
-
-
-# TODO: Do we need to retain something analogous to `get_flat_models_from_model`?
-#   There is no analogous function in the new json_schema module
-# @pytest.mark.xfail(reason='working on V2')
-# def test_flat_models_with_submodels():
-#     class Foo(BaseModel):
-#         a: str
-#
-#     class Bar(BaseModel):
-#         b: List[Foo]
-#
-#     class Baz(BaseModel):
-#         c: Dict[str, Bar]
-#
-#     flat_models = get_flat_models_from_model(Baz)
-#     assert flat_models == {Foo, Bar, Baz}
-
-
-# TODO: Do we need to retain something analogous to `get_flat_models_from_models`?
-#   There is no analogous function in the new json_schema module
-# @pytest.mark.xfail(reason='working on V2')
-# def test_flat_models_with_submodels_from_sequence():
-#     class Foo(BaseModel):
-#         a: str
-#
-#     class Bar(BaseModel):
-#         b: Foo
-#
-#     class Ingredient(BaseModel):
-#         name: str
-#
-#     class Pizza(BaseModel):
-#         name: str
-#         ingredients: List[Ingredient]
-#
-#     flat_models = get_flat_models_from_models([Bar, Pizza])
-#     assert flat_models == {Foo, Bar, Ingredient, Pizza}
-
-
-# TODO: Do we need to retain something analogous to `get_flat_models_from_models` or `get_model_name_map`?
-#   There are no analogous functions in the new json_schema module
-# @pytest.mark.xfail(reason='working on V2')
-# def test_model_name_maps():
-#     create_testing_submodules()
-#     from pydantic_schema_test.modulea.modela import Model as ModelA
-#     from pydantic_schema_test.moduleb.modelb import Model as ModelB
-#     from pydantic_schema_test.modulec.modelc import Model as ModelC
-#     from pydantic_schema_test.moduled.modeld import Model as ModelD
-#
-#     class Foo(BaseModel):
-#         a: str
-#
-#     class Bar(BaseModel):
-#         b: Foo
-#
-#     class Baz(BaseModel):
-#         c: Bar
-#
-#     flat_models = get_flat_models_from_models([Baz, ModelA, ModelB, ModelC, ModelD])
-#     model_name_map = get_model_name_map(flat_models)
-#     assert model_name_map == {
-#         Foo: 'Foo',
-#         Bar: 'Bar',
-#         Baz: 'Baz',
-#         ModelA: 'pydantic_schema_test__modulea__modela__Model',
-#         ModelB: 'pydantic_schema_test__moduleb__modelb__Model',
-#         ModelC: 'pydantic_schema_test__modulec__modelc__Model',
-#     }
-
-
 def test_schema_overrides():
     class Foo(BaseModel):
         a: str
@@ -1653,7 +1546,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'min_length': 2}, float),
         ({'max_length': 5}, Decimal),
         ({'frozen': True}, bool),
-        ({'regex': '^foo$'}, int),
+        ({'pattern': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),
         ({'ge': 2}, str),
@@ -1679,7 +1572,6 @@ def test_unenforced_constraints_schema(kwargs, type_):
         ({'max_length': 5}, str, 'foo'),
         ({'min_length': 2}, str, 'foo'),
         ({'max_length': 5}, bytes, b'foo'),
-        # TODO: Do we want to support regex keyword? It seems it should be pattern now..
         ({'pattern': '^foo$'}, str, 'foo'),
         ({'gt': 2}, int, 3),
         ({'lt': 5}, int, 3),
@@ -1718,8 +1610,7 @@ def test_constraints_schema_validation(kwargs, type_, value):
     [
         ({'max_length': 5}, str, 'foobar'),
         ({'min_length': 2}, str, 'f'),
-        # TODO: Do we want to support regex keyword? It seems it should be pattern now..
-        pytest.param({'regex': '^foo$'}, str, 'bar', marks=pytest.mark.xfail(reason='working on V2')),
+        ({'pattern': '^foo$'}, str, 'bar'),
         ({'gt': 2}, int, 2),
         ({'lt': 5}, int, 5),
         ({'ge': 2}, int, 1),
@@ -1742,10 +1633,8 @@ def test_constraints_schema_validation_raises(kwargs, type_, value):
         Foo(a=value)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema_kwargs():
     class Foo(BaseModel):
-        # TODO: Should we re-add the 'examples' kwarg to Field?
         a: str = Field('foo', examples=['bar'])
 
     assert Foo.model_json_schema() == {
@@ -2031,80 +1920,6 @@ def test_color_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_model_with_schema_extra():
-    class Model(BaseModel):
-        # TODO: Do we want to keep schema_extra as a field in ConfigDict?
-        #   If not, should I delete this test?
-        model_config = ConfigDict(schema_extra={'examples': [{'a': 'Foo'}]})
-        a: str
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'examples': [{'a': 'Foo'}],
-    }
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_model_with_schema_extra_callable():
-    def schema_extra(schema, model_class):
-        schema.pop('properties')
-        schema['type'] = 'override'
-        assert model_class is Model
-
-    class Model(BaseModel):
-        # TODO: Do we want to keep this working like this in ConfigDict?
-        #   Should this be converted to use `__modify_schema__`?
-        #   Should this test just be dropped?
-        model_config = ConfigDict(schema_extra=schema_extra)
-        name: str = None
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_model_with_schema_extra_callable_no_model_class():
-    def schema_extra(schema):
-        schema.pop('properties')
-        schema['type'] = 'override'
-
-    class Model(BaseModel):
-        # TODO: Do we want to keep this working like this in ConfigDict?
-        #   Should this be converted to use `__modify_schema__`?
-        #   Should this test just be dropped?
-        model_config = ConfigDict(schema_extra=schema_extra)
-        name: str = None
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_model_with_schema_extra_callable_classmethod():
-    class Model(BaseModel):
-        name: str = None
-
-        class Config:
-            type = 'foo'
-
-            @classmethod
-            def schema_extra(cls, schema, model_class):
-                # TODO: Do we want to keep this working like this in a Config class?
-                #   Should this be converted to use `__modify_schema__`?
-                #   Should this test just be dropped?
-                schema.pop('properties')
-                schema['type'] = cls.type
-                assert model_class is Model
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
-
-
-# TODO: test_model_with_schema_extra_callable_instance_method was the same as
-#   test_model_with_schema_extra_callable, so I deleted it. Was it supposed to cover something else?
-
-
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
         model_config = ConfigDict(extra=Extra.forbid)
@@ -2188,32 +2003,22 @@ def test_enforced_constraints(annotation, kwargs, field_schema):
     assert schema['properties']['a'] == field_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_real_vs_phony_constraints():
+def test_real_constraints():
     class Model1(BaseModel):
         model_config = ConfigDict(title='Test Model')
         foo: int = Field(..., gt=123)
 
-    class Model2(BaseModel):
-        model_config = ConfigDict(title='Test Model')
-        # TODO: Are we going to drop this and other related fields? Are we going to error? Should we drop this test?
-        foo: int = Field(..., exclusiveMinimum=123)
+    with pytest.raises(ValidationError, match='should be greater than 123'):
+        Model1(foo=123)
 
-    with pytest.raises(ValidationError, match='ensure this value is greater than 123'):
-        Model1(foo=122)
+    assert Model1(foo=124).model_dump() == {'foo': 124}
 
-    assert Model2(foo=122).model_dump() == {'foo': 122}
-
-    assert (
-        Model1.model_json_schema()
-        == Model2.model_json_schema()
-        == {
-            'title': 'Test Model',
-            'type': 'object',
-            'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
-            'required': ['foo'],
-        }
-    )
+    assert Model1.model_json_schema() == {
+        'title': 'Test Model',
+        'type': 'object',
+        'properties': {'foo': {'title': 'Foo', 'exclusiveMinimum': 123, 'type': 'integer'}},
+        'required': ['foo'],
+    }
 
 
 def test_subfield_field_info():
@@ -2287,19 +2092,6 @@ def test_schema_attributes():
             }
         },
     }
-
-
-# TODO: Do we need to retain something analogous to `model_process_schema`?
-#   There is no analogous function in the new json_schema module
-# def test_model_process_schema_enum():
-#     class SpamEnum(str, Enum):
-#         foo = 'f'
-#         bar = 'b'
-#
-#     model_schema, _, _ = model_process_schema(SpamEnum, model_name_map={})
-#     assert model_schema == {
-#         'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']
-#     }
 
 
 def test_path_modify_schema():
@@ -2415,8 +2207,6 @@ class NestedModel(BaseModel):
     assert model_names == expected_model_names
 
 
-# TODO: To fix the next test, need to make it so that the model ID is a part of the core_schema ref, or similar?
-# @pytest.mark.xfail(reason='working on V2')
 def test_multiple_enums_with_same_name(create_module):
     module_1 = create_module(
         # language=Python
@@ -2822,17 +2612,19 @@ def test_complex_nested_generic():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_schema_with_field_parameter():
-    # TODO: How should this be reconfigured? There's a lot of stuff happening here that depends on answers to questions
-    #   asked elsewhere (e.g., will we allow unexpected kwargs to Field? I think the answer was no..)
+    # TODO: Update so that __modify_schema__ gets called with the FieldInfo when generating schema for fields
     class RestrictedAlphabetStr(str):
         @classmethod
         def __modify_schema__(cls, field_schema, field: Optional[FieldInfo]):
             assert isinstance(field, FieldInfo)
-            alphabet = field.field_info.extra['alphabet']
+            alphabet = field.json_schema_extra['alphabet']
             field_schema['examples'] = [c * 3 for c in alphabet]
+            field_schema['title'] = field.title.lower()
 
     class MyModel(BaseModel):
-        value: RestrictedAlphabetStr = Field(alphabet='ABC')
+        value: RestrictedAlphabetStr = Field(title='RESTRICTED_ALPHABET', json_schema_extra={'alphabet': 'ABC'})
+
+        model_config = {'arbitrary_types_allowed': True}
 
     assert MyModel.model_json_schema() == {
         'title': 'MyModel',
@@ -3235,32 +3027,6 @@ def test_discriminated_union_in_list():
                 'required': ['pet_type', 'name'],
             },
         },
-    }
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_extra_inheritance():
-    class A(BaseModel):
-        root: Optional[str]
-
-        class Config:
-            # TODO: What is the deal with this 'fields' attribute? Not present in _ConfigDict; are we moving/keeping it?
-            fields = {
-                'root': {'description': 'root path of data', 'level': 1},
-            }
-
-    class Model(A):
-        root: str = Field('asa', description='image height', level=3)
-
-    m = Model()
-    assert m.model_json_schema()['properties'] == {
-        'root': {
-            'title': 'Root',
-            'type': 'string',
-            'description': 'image height',
-            'default': 'asa',
-            'level': 3,
-        }
     }
 
 

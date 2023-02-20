@@ -15,6 +15,14 @@ if TYPE_CHECKING:
     from .main import BaseModel
 
     class SchemaExtraCallable(Protocol):
+        # TODO: This has been replaced with __pydantic_update_json_schema__ in v2; need to make sure we
+        #   document the migration, in particular changing `model_class` to `cls` from the classmethod
+        # TODO: Note that the argument to Field(...) that served a similar purpose received the FieldInfo as well.
+        #   Should we accept that argument here too? Will that add a ton of boilerplate?
+        # Tentative suggestion to previous TODO: I think we let the json_schema_extra argument
+        #   to FieldInfo be a callable that accepts schema, model_class, and field_info. And use
+        #   similar machinery to `_apply_modify_schema` to call the function properly for different signatures.
+        #   (And use this Protocol-based approach to get good type-checking.)
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass
@@ -36,6 +44,7 @@ class Extra(str, Enum):
 
 
 class _ConfigDict(TypedDict, total=False):
+    # TODO: Should we raise an error (or warning) when building a model class if a now-invalid config key is present?
     title: Optional[str]
     str_to_lower: bool
     str_to_upper: bool
@@ -52,7 +61,6 @@ class _ConfigDict(TypedDict, total=False):
     from_attributes: bool
     alias_generator: Optional[Callable[[str], str]]
     keep_untouched: Tuple[type, ...]  # TODO remove??
-    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable']  # TODO remove, new model method
     json_loads: Callable[[str], Any]  # TODO decide
     json_dumps: Callable[..., str]  # TODO decide
     json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]]  # TODO decide

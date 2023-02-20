@@ -215,7 +215,7 @@ class GenerateSchema:
     def generate_field_schema(
         self,
         name: str,
-        field: FieldInfo,
+        field_info: FieldInfo,
         validator_functions: ValidationFunctions,
         serializer_functions: SerializationFunctions,
         *,
@@ -224,23 +224,28 @@ class GenerateSchema:
         """
         Prepare a TypedDictField to represent a model or typeddict field.
         """
-        assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.metadata)
+        assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
+        schema = self.generate_schema(field_info.annotation)
+        schema = apply_annotations(schema, field_info.metadata)
 
-        if not field.is_required():
+        if not field_info.is_required():
             required = False
-            schema = wrap_default(field, schema)
+            schema = wrap_default(field_info, schema)
 
         schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
-        misc = JsonSchemaMisc(title=field.title, description=field.description, extra_updates=field.json_schema_extra)
+        misc = JsonSchemaMisc(
+            title=field_info.title,
+            description=field_info.description,
+            examples=field_info.examples,
+            extra_updates=field_info.json_schema_extra,
+        )
         metadata = build_metadata_dict(json_schema_misc=misc)
         field_schema = core_schema.typed_dict_field(schema, required=required, metadata=metadata)
-        if field.alias is not None:
-            field_schema['validation_alias'] = field.alias
-            field_schema['serialization_alias'] = field.alias
-        if field.exclude:
+        if field_info.alias is not None:
+            field_schema['validation_alias'] = field_info.alias
+            field_schema['serialization_alias'] = field_info.alias
+        if field_info.exclude:
             field_schema['serialization_exclude'] = True
         return field_schema
 

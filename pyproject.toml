@@ -172,3 +172,7 @@ module = [
     'devtools.*',
 ]
 ignore_missing_imports = true
+
+[tool.pyright]
+include = ['pydantic']
+# reportUnnecessaryTypeIgnoreComment = true

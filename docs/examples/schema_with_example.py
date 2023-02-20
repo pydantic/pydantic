@@ -7,6 +7,8 @@ class Person(BaseModel):
     age: int
 
     class Config:
+        # TODO: This is no longer valid in v2;
+        #   update example to use __pydantic_update_json_schema__
         schema_extra = {
             'examples': [
                 {

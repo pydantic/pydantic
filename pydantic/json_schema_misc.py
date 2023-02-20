@@ -46,10 +46,14 @@ class JsonSchemaMisc:
         Returns a new object, or None if both arguments are None. The provided objects are not modified.
         """
         if base is None:
-            return replace(overrides)
-        if overrides is None:
+            if overrides is None:
+                return None
+            else:
+                return replace(overrides)
+        elif overrides is None:
             return replace(base)
-        return base.with_updates(overrides)
+        else:
+            return base.with_updates(overrides)
 
     def with_updates(self, other: JsonSchemaMisc) -> JsonSchemaMisc:
         """

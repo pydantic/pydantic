@@ -183,7 +183,7 @@ class GenerateJsonSchema:
         # Populate the definitions
         if 'ref' in schema:
             core_ref = CoreRef(schema['ref'])  # type: ignore[typeddict-item]
-            defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref, schema)
+            defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
             self.definitions[defs_ref] = json_schema
             json_schema = ref_json_schema
 
@@ -461,7 +461,7 @@ class GenerateJsonSchema:
                 field_json_schema['title'] = title
             field_json_schema = self.handle_ref_overrides(field_json_schema)
             properties[name] = field_json_schema
-            if field['required']:
+            if field.get('required'):
                 required.append(name)
 
         json_schema = {'type': 'object', 'properties': properties}
@@ -482,7 +482,7 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         if 'config' in schema:
-            if schema['config']['typed_dict_extra_behavior'] == 'forbid':
+            if schema['config'].get('typed_dict_extra_behavior') == 'forbid':
                 if '$ref' in json_schema:
                     # hack: update the definition from the typed_dict_schema
                     referenced_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
@@ -613,7 +613,7 @@ class GenerateJsonSchema:
 
     def recursive_ref_schema(self, schema: core_schema.RecursiveReferenceSchema) -> JsonSchemaValue:
         core_ref = CoreRef(schema['schema_ref'])
-        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref, schema)
+        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
 
     def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
@@ -745,9 +745,7 @@ class GenerateJsonSchema:
 
         return walk_replace_json_schema_ref(json_schema)
 
-    def get_cache_defs_ref_schema(
-        self, core_ref: CoreRef, schema: CoreSchema | TypedDictField
-    ) -> tuple[DefsRef, JsonSchemaValue]:
+    def get_cache_defs_ref_schema(self, core_ref: CoreRef) -> tuple[DefsRef, JsonSchemaValue]:
         """
         This method wraps the get_defs_ref method with some cache-lookup/population logic,
         and returns both the produced defs_ref and the JSON schema that will refer to the right definition.
@@ -788,7 +786,7 @@ class GenerateJsonSchema:
             if referenced_json_schema is None:
                 # This can happen when building schemas for models with not-yet-defined references.
                 # It may be a good idea to do a recursive pass at the end of the generation to remove
-                # and redundant override keys.
+                # any redundant override keys.
                 if len(json_schema) > 1:
                     # Make it an allOf to at least resolve the sibling keys issue
                     json_schema = json_schema.copy()
@@ -900,7 +898,7 @@ class GenerateJsonSchema:
         """
         json_refs: dict[JsonRef, int] = Counter()
 
-        def _add_json_refs(schema: JsonSchemaValue) -> None:
+        def _add_json_refs(schema: Any) -> None:
             if isinstance(schema, dict):
                 if '$ref' in schema:
                     json_ref = JsonRef(schema['$ref'])
