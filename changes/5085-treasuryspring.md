@@ -1,0 +1,1 @@
+Fix mypy plugin import for version >= 1.x.x
