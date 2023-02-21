@@ -6,7 +6,21 @@ from dataclasses import is_dataclass
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Pattern, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Counter,
+    Dict,
+    List,
+    NewType,
+    Optional,
+    Pattern,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 from uuid import UUID
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
@@ -36,24 +50,24 @@ JsonSchemaMetadata = TypedDict(
         # You can use a callable to defer evaluation of the CoreSchema until it's needed
         'core_schema_override': Union[CoreSchema, Callable[[], CoreSchema], None],
         # A reference to the source class if appropriate; useful when working with some of the plain function schemas
-        'source_class': type[Any] | None,
+        'source_class': Union[Type[Any], None],
         # ### "Miscellaneous properties" that are available for all JSON types
         # (see https://json-schema.org/understanding-json-schema/reference/generic.html)
-        'title': str | None,
-        'description': str | None,
-        'examples': list[dict[str, Any]] | None,
-        'deprecated': bool | None,
-        'readOnly': bool | None,
-        'writeOnly': bool | None,
-        '$comment': str | None,
+        'title': Optional[str],
+        'description': Optional[str],
+        'examples': Optional[List[Any]],
+        'deprecated': Optional[bool],
+        'readOnly': Optional[bool],
+        'writeOnly': Optional[bool],
+        '$comment': Optional[str],
         # Note: 'default', which is included with these fields in the JSON Schema docs, is handled by CoreSchema
         # ### "Post-processing" of the JSON schema
         # A catch-all for arbitrary data to add to the schema
-        'extra_updates': dict[str, Any] | None,
+        'extra_updates': Optional[Dict[str, Any]],
         # A final function to apply to the JSON schema after all other modifications have been applied
         # If you want to force specific contents in the generated schema, you can use a function that ignores the
         # input value and just return the schema you want.
-        'modify_js_function': Callable[[JsonSchemaValue], None] | None,
+        'modify_js_function': Optional[Callable[[JsonSchemaValue], None]],
     },
     total=False,
 )
