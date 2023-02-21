@@ -6,7 +6,7 @@ from dataclasses import is_dataclass
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Pattern, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Pattern, Sequence, Union, cast
 from uuid import UUID
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
@@ -34,7 +34,7 @@ JsonSchemaMetadata = TypedDict(
         # ### "Pre-processing" of the JSON schema
         # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one"
         # You can use a callable to defer evaluation of the CoreSchema until it's needed
-        'core_schema_override': CoreSchema | Callable[[], CoreSchema] | None,
+        'core_schema_override': Union[CoreSchema, Callable[[], CoreSchema], None],
         # A reference to the source class if appropriate; useful when working with some of the plain function schemas
         'source_class': type[Any] | None,
         # ### "Miscellaneous properties" that are available for all JSON types
