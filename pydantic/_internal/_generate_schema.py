@@ -99,7 +99,7 @@ class GenerateSchema:
             # this schema is not overwritten
             return obj
         elif obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
-            return {'type': obj.__name__}  # type: ignore[return-value,misc]
+            return {'type': obj.__name__}
         elif obj is Any or obj is object:
             return core_schema.AnySchema(type='any')
         elif obj is None or obj is _typing_extra.NoneType:
@@ -323,7 +323,7 @@ class GenerateSchema:
         except AttributeError:
             name = get_origin(type_).__name__  # type: ignore[union-attr]
 
-        return {  # type: ignore[misc,return-value]
+        return {
             'type': name.lower(),
             'items_schema': self.generate_schema(get_first_arg(type_)),
         }
