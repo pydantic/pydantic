@@ -227,7 +227,8 @@ class GenerateJsonSchema:
         if self.definitions:
             json_schema['$defs'] = self.definitions
 
-        # TODO: Enable this? It will require updating many tests. Maybe make it an option whether to include it?
+        # For now, we will not set the $schema key. However, if desired, this can be easily added by overriding
+        # this method and adding the following line after a call to super().generate(schema):
         # json_schema['$schema'] = self.schema_dialect
 
         self._used = True
