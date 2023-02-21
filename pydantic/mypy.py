@@ -152,10 +152,9 @@ class PydanticPlugin(Plugin):
         if self.plugin_config.debug_dataclass_transform:
             return
         info_metaclass = ctx.cls.info.declared_metaclass
-        assert info_metaclass
+        assert info_metaclass, "callback not passed from 'get_metaclass_hook'"
         if getattr(info_metaclass.type, 'dataclass_transform_spec', None):
             info_metaclass.type.dataclass_transform_spec = None  # type: ignore[attr-defined]
-        return None
 
     def _pydantic_field_callback(self, ctx: FunctionContext) -> 'Type':
         """
