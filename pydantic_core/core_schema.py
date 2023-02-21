@@ -1110,6 +1110,9 @@ def tuple_positional_schema(
     Args:
         items_schema: The value must be a tuple with items that match these schemas
         extra_schema: The value must be a tuple with items that match this schema
+            This was inspired by JSON schema's `prefixItems` and `items` fields.
+            In python's `typing.Tuple`, you can't specify a type for "extra" items -- they must all be the same type
+            if the length is variable. So this field won't be set from a `typing.Tuple` annotation on a pydantic model.
         strict: The value must be a tuple with exactly this many items
         ref: See [TODO] for details
         metadata: See [TODO] for details
@@ -1218,7 +1221,9 @@ def set_schema(
         items_schema: The value must be a set with items that match this schema
         min_length: The value must be a set with at least this many items
         max_length: The value must be a set with at most this many items
-        generator_max_length: The value must be a set with at most this many items
+        generator_max_length: At most this many items will be read from a generator before failing validation
+            This is important because generators can be infinite, and even with a `max_length` on the set,
+            an infinite generator could run forever without producing more than `max_length` distinct items.
         strict: The value must be a set with exactly this many items
         ref: See [TODO] for details
         metadata: See [TODO] for details
@@ -1856,7 +1861,14 @@ def tagged_union_schema(
 
     Args:
         choices: The schemas to match
+            When retrieving a schema from `choices` using the discriminator value, if the value is a str,
+            it should be fed back into the `choices` map until a schema is obtained
+            (This approach is to prevent multiple ownership of a single schema in Rust)
         discriminator: The discriminator to use to determine the schema to use
+            * If `discriminator` is a str, it is the name of the attribute to use as the discriminator
+            * If `discriminator` is a list of int/str, it should be used as a "path" to access the discriminator
+            * If `discriminator` is a list of lists, each inner list is a path, and the first path that exists is used
+            * If `discriminator` is a callable, it should return the discriminator when called on the value to validate
         custom_error_type: The custom error type to use if the validation fails
         custom_error_message: The custom error message to use if the validation fails
         custom_error_context: The custom error context to use if the validation fails
