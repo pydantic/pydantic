@@ -136,7 +136,13 @@ class DecimalValidator(_fields.CustomValidator):
         self.strict: bool = False
 
     def json_schema_override_schema(self) -> core_schema.CoreSchema:
-        # TODO: Probably there is a better alternative
+        """
+        This function is used to produce an "override schema" for generating the JSON schema of fields of type Decimal.
+
+        The purpose of an override schema is to use the pre-existing approach to producing a JSON schema from a
+        CoreSchema, where we know we want to use a different CoreSchema for the purposes of JSON schema generation.
+        (Generally because we know what we want and an appropriately simplified CoreSchema will produce it.)
+        """
         return core_schema.float_schema(
             allow_inf_nan=self.allow_inf_nan,
             multiple_of=None if self.multiple_of is None else float(self.multiple_of),

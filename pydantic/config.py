@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .main import BaseModel
 
     class SchemaExtraCallable(Protocol):
-        # TODO: This has been replaced with __pydantic_update_json_schema__ in v2; need to make sure we
+        # TODO: This has been replaced with __pydantic_modify_json_schema__ in v2; need to make sure we
         #   document the migration, in particular changing `model_class` to `cls` from the classmethod
         # TODO: Note that the argument to Field(...) that served a similar purpose received the FieldInfo as well.
         #   Should we accept that argument here too? Will that add a ton of boilerplate?
@@ -44,7 +44,7 @@ class Extra(str, Enum):
 
 
 class _ConfigDict(TypedDict, total=False):
-    # TODO: Should we raise an error (or warning) when building a model class if a now-invalid config key is present?
+    # TODO: We should raise a warning when building a model class if a now-invalid config key is present
     title: Optional[str]
     str_to_lower: bool
     str_to_upper: bool

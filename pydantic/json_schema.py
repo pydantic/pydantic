@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Sequenc
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
-from typing_extensions import TypedDict, TypeGuard
+from typing_extensions import TypedDict
 
 from ._internal._core_metadata import CoreMetadataHandler
 from ._internal._typing_extra import all_literal_values, is_namedtuple
-from ._internal._utils import get_model, lenient_issubclass
+from ._internal._utils import get_model, is_core_schema, is_typed_dict_field, lenient_issubclass
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -247,9 +247,9 @@ class GenerateJsonSchema:
             return self.generate_inner(core_schema_override)
 
         # Generate the core-schema-type-specific bits of the schema generation:
-        if _is_typed_dict_field(schema):
+        if is_typed_dict_field(schema):
             json_schema = self.typed_dict_field_schema(schema)
-        elif _is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
+        elif is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
             generate_for_schema_type = self._schema_type_to_method[schema['type']]
             json_schema = generate_for_schema_type(schema)
         else:
@@ -728,10 +728,10 @@ class GenerateJsonSchema:
         Intuitively, we want this to return true for schemas that wouldn't otherwise provide their own title
         (e.g., int, float, str), and false for those that would (e.g., BaseModel subclasses).
         """
-        if _is_typed_dict_field(schema):
+        if is_typed_dict_field(schema):
             return self.field_title_should_be_set(schema['schema'])
 
-        elif _is_core_schema(schema):
+        elif is_core_schema(schema):
             override = CoreMetadataHandler(schema).get_json_schema_core_schema_override()
             if override:
                 return self.field_title_should_be_set(override)
@@ -1040,13 +1040,3 @@ def model_schema(
 ) -> dict[str, Any]:
     model = get_model(model)
     return model.model_json_schema(by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
-
-
-# TODO: It might be a good idea to move these functions to a separate file, whether in pydantic_core or not
-#   Alternatively, might be good to make them "public"
-def _is_typed_dict_field(schema: CoreSchema | TypedDictField) -> TypeGuard[TypedDictField]:
-    return 'type' not in schema
-
-
-def _is_core_schema(schema: CoreSchema | TypedDictField) -> TypeGuard[CoreSchema]:
-    return 'type' in schema

@@ -61,7 +61,7 @@ class FieldInfo(_repr.Representation):
     }
 
     def __init__(self, **kwargs: Any) -> None:
-        # TODO: This is a good place to add migration warnings; should we use overload for type-hinting the signature?
+        # TODO: This is a good place to add migration warnings; we should use overload for type-hinting the signature
         self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
 
         default = kwargs.pop('default', Undefined)
