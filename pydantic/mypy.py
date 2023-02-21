@@ -85,7 +85,7 @@ def parse_mypy_version(version: str) -> Tuple[int, ...]:
 
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
-BUILTINS_NAME = 'builtins' if len(MYPY_VERSION_TUPLE) == 2 and MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
+BUILTINS_NAME = 'builtins' if len(MYPY_VERSION_TUPLE) > 2 or MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
