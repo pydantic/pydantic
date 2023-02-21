@@ -4,7 +4,7 @@ import math
 import re
 from dataclasses import is_dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Pattern, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Sequence, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
@@ -419,7 +419,6 @@ class GenerateJsonSchema:
 
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
-
 
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
         source_class = CoreMetadataHandler(schema).get_source_class()

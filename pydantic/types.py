@@ -333,7 +333,7 @@ class PathType:
 
     def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> None:
         format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
-        field_schema.update(format=format_conversion.get(self.path_type, 'path'))
+        field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any

@@ -148,7 +148,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
 
 @schema_function(PurePath)
 def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) -> core_schema.UnionSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=PurePath))
+    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=PurePath, type='string', format='path'))
     # TODO, is this actually faster than `function_after(...)` as above?
     return core_schema.union_schema(
         core_schema.is_instance_schema(path_type),
