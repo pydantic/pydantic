@@ -384,14 +384,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     def model_json_schema_metadata(cls) -> JsonSchemaMetadata | None:
         """
-        Override this method to manipulate the generation of the JSON schema.
+        Overriding this method provides a simple way to modify certain aspects of the JSON schema generation.
 
-        This is a convenience method primarily intended to control how the miscellaneous properties
+        This is a convenience method primarily intended to control how the "generic" properties
         of the JSON schema are populated, or apply minor transformations through `extra_updates` or
-        `modify_js_function`.
+        `modify_js_function`. See https://json-schema.org/understanding-json-schema/reference/generic.html
+        and the comments surrounding the definition of `JsonSchemaMetadata` for more details.
 
         If you want to make more sweeping changes to how the JSON schema is generated, you will probably
-        want to override the `model_json_schema` with a new default for the `schema_generator` argument.
+        want to subclass `GenerateJsonSchema` and pass your subclass in the `schema_generator` argument to the
+        `model_json_schema` method.
         """
         title = cls.model_config['title'] or cls.__name__
         description = getdoc(cls) or None

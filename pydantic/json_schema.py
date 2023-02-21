@@ -4,34 +4,16 @@ import math
 import re
 from dataclasses import is_dataclass
 from enum import Enum
-from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from pathlib import PurePath
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Counter,
-    Dict,
-    List,
-    NewType,
-    Optional,
-    Pattern,
-    Sequence,
-    Type,
-    Union,
-    cast,
-)
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Pattern, Sequence, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
-from typing_extensions import Literal, TypedDict, TypeGuard
+from typing_extensions import TypedDict, TypeGuard
 
 from ._internal._core_metadata import CoreMetadataHandler
 from ._internal._typing_extra import all_literal_values, is_namedtuple
 from ._internal._utils import get_model, lenient_issubclass
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
-from .networks import IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -39,38 +21,37 @@ if TYPE_CHECKING:
 
 JsonSchemaValue = Dict[str, Any]
 
+
 # ##### JSON Schema Metadata Manipulation #####
 # Keys missing in a JsonSchemaMetadata should be treated the same as they would be if present with a value of None.
 # This is important to ensure that it is possible to "remove" an override by setting it to None.
-JsonSchemaMetadata = TypedDict(
-    'JsonSchemaMetadata',
-    {
-        # ### "Pre-processing" of the JSON schema
-        # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one"
-        # You can use a callable to defer evaluation of the CoreSchema until it's needed
-        'core_schema_override': Union[CoreSchema, Callable[[], CoreSchema], None],
-        # A reference to the source class if appropriate; useful when working with some of the plain function schemas
-        'source_class': Union[Type[Any], None],
-        # ### "Miscellaneous properties" that are available for all JSON types
-        # (see https://json-schema.org/understanding-json-schema/reference/generic.html)
-        'title': Optional[str],
-        'description': Optional[str],
-        'examples': Optional[List[Any]],
-        'deprecated': Optional[bool],
-        'readOnly': Optional[bool],
-        'writeOnly': Optional[bool],
-        '$comment': Optional[str],
-        # Note: 'default', which is included with these fields in the JSON Schema docs, is handled by CoreSchema
-        # ### "Post-processing" of the JSON schema
-        # A catch-all for arbitrary data to add to the schema
-        'extra_updates': Optional[Dict[str, Any]],
-        # A final function to apply to the JSON schema after all other modifications have been applied
-        # If you want to force specific contents in the generated schema, you can use a function that ignores the
-        # input value and just return the schema you want.
-        'modify_js_function': Optional[Callable[[JsonSchemaValue], None]],
-    },
-    total=False,
-)
+class JsonSchemaMetadata(TypedDict, total=False):
+    # ### "Pre-processing" of the JSON schema
+    # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one"
+    # You can use a callable to defer evaluation of the CoreSchema until it's needed
+    core_schema_override: CoreSchema | Callable[[], CoreSchema] | None
+    # A reference to the source class if appropriate; useful when working with some of the plain function schemas
+    source_class: type[Any] | None
+    # ### "Miscellaneous properties" that are available for all JSON types
+    # (see https://json-schema.org/understanding-json-schema/reference/generic.html)
+    title: str | None
+    description: str | None
+    examples: list[Any] | None
+    deprecated: bool | None
+    read_only: bool | None
+    write_only: bool | None
+    comment: str | None
+    # Note: 'default', which is included with these fields in the JSON Schema docs, is handled by CoreSchema
+    # ### Other properties it may be useful to override here
+    type: str | None
+    format: str | None  # Should _only_ be used for schemas with 'type': 'string'
+    # ### "Post-processing" of the JSON schema
+    # A catch-all for arbitrary data to add to the schema
+    extra_updates: dict[str, Any] | None
+    # A final function to apply to the JSON schema after all other modifications have been applied
+    # If you want to force specific contents in the generated schema, you can use a function that ignores the
+    # input value and just return the schema you want.
+    modify_js_function: Callable[[JsonSchemaValue], None] | None
 
 
 def merge_js_metadata(
@@ -104,29 +85,37 @@ def without_core_schema_override(json_schema_metadata: JsonSchemaMetadata) -> Js
     return result
 
 
-_STANDARD_FIELDS: list[
-    Literal['title', 'description', 'examples', 'deprecated', 'readOnly', 'writeOnly', '$comment']
-] = ['title', 'description', 'examples', 'deprecated', 'readOnly', 'writeOnly', '$comment']
+_FIELDS_MAPPING = {
+    'title': 'title',
+    'description': 'description',
+    'examples': 'examples',
+    'deprecated': 'deprecated',
+    'read_only': 'readOnly',
+    'write_only': 'writeOnly',
+    'comment': '$comment',
+    'type': 'type',
+    'format': 'format',
+}
 
 
-def _apply_js_metadata(json_schema_metadata: JsonSchemaMetadata, schema: JsonSchemaValue) -> None:
+def _apply_js_metadata(js_metadata: JsonSchemaMetadata, schema: JsonSchemaValue) -> None:
     """
     Update the provided JSON schema in-place with the values from the provided JsonSchemaMetadata.
 
     Note that the "pre-processing" attributes are not used in this method and must be used separately.
     """
-    for k in _STANDARD_FIELDS:
-        metadata_value = json_schema_metadata.get(k, None)
+    for python_name, json_schema_name in _FIELDS_MAPPING.items():
+        metadata_value = js_metadata.get(python_name, None)
         if metadata_value is None:
             continue
         else:
-            schema[k] = metadata_value
+            schema[json_schema_name] = metadata_value
 
-    extra_updates = json_schema_metadata.get('extra_updates', None)
+    extra_updates = js_metadata.get('extra_updates', None)
     if extra_updates is not None:
         schema.update(extra_updates)
 
-    modify_js_function = json_schema_metadata.get('modify_js_function', None)
+    modify_js_function = js_metadata.get('modify_js_function', None)
     if modify_js_function is not None:
         modify_js_function(schema)
 
@@ -431,32 +420,15 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
-    source_class_to_schema: tuple[tuple[Any, dict[str, Any]], ...] = (
-        (PurePath, {'type': 'string', 'format': 'path'}),
-        (IPv4Network, {'type': 'string', 'format': 'ipv4network'}),
-        (IPv6Network, {'type': 'string', 'format': 'ipv6network'}),
-        (IPvAnyNetwork, {'type': 'string', 'format': 'ipvanynetwork'}),
-        (IPv4Interface, {'type': 'string', 'format': 'ipv4interface'}),
-        (IPv6Interface, {'type': 'string', 'format': 'ipv6interface'}),
-        (IPvAnyInterface, {'type': 'string', 'format': 'ipvanyinterface'}),
-        (IPv4Address, {'type': 'string', 'format': 'ipv4'}),
-        (IPv6Address, {'type': 'string', 'format': 'ipv6'}),
-        (IPvAnyAddress, {'type': 'string', 'format': 'ipvanyaddress'}),
-        (Pattern, {'type': 'string', 'format': 'regex'}),
-        (UUID, {'type': 'string', 'format': 'uuid'}),
-        (UUID, {'type': 'string', 'format': 'uuid'}),
-        (UUID, {'type': 'string', 'format': 'uuid'}),
-        (UUID, {'type': 'string', 'format': 'uuid'}),
-        (UUID, {'type': 'string', 'format': 'uuid'}),
-    )
 
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
         source_class = CoreMetadataHandler(schema).get_source_class()
         if source_class is not None:
-            for type_, t_schema in self.source_class_to_schema:
-                # Fallback for `typing.Pattern` and `re.Pattern` as they are not a valid class
-                if lenient_issubclass(source_class, type_) or source_class is type_ is Pattern:
-                    return t_schema
+            # If a source_class has been specified, assume that its json schema will be handled elsewhere
+            # TODO: May want to handle source_class in other schemas,
+            #   and may want to attempt to read __pydantic_json_schema__ off of it.
+            #   (Note that __pydantic_json_schema__ won't work for many important cases of standard library types)
+            return {}
 
         # I'm not sure if this might need to be different if the function's mode is 'before'
         if schema['mode'] == 'plain':

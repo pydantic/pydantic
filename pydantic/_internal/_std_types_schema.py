@@ -124,7 +124,11 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
 
 @schema_function(UUID)
 def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.UnionSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=UUID))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(
+            source_class=UUID, type='string', format='uuid', modify_js_function=lambda schema: schema.pop('anyOf', None)
+        )
+    )
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     return core_schema.union_schema(
         core_schema.is_instance_schema(uuid_type),
@@ -225,7 +229,9 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
 
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=IPv4Address))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(source_class=IPv4Address, type='string', format='ipv4')
+    )
     return core_schema.function_plain_schema(
         _validators.ip_v4_address_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
@@ -233,7 +239,9 @@ def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=IPv4Interface))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(source_class=IPv4Interface, type='string', format='ipv4interface')
+    )
     return core_schema.function_plain_schema(
         _validators.ip_v4_interface_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
@@ -241,7 +249,9 @@ def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=IPv4Network))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(source_class=IPv4Network, type='string', format='ipv4network')
+    )
     return core_schema.function_plain_schema(
         _validators.ip_v4_network_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
@@ -249,7 +259,9 @@ def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=IPv6Address))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(source_class=IPv6Address, type='string', format='ipv6')
+    )
     return core_schema.function_plain_schema(
         _validators.ip_v6_address_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
@@ -257,7 +269,9 @@ def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=IPv6Interface))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(source_class=IPv6Interface, type='string', format='ipv6interface')
+    )
     return core_schema.function_plain_schema(
         _validators.ip_v6_interface_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )
@@ -265,7 +279,9 @@ def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.FunctionPlainSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=IPv6Network))
+    metadata = build_metadata_dict(
+        js_metadata=JsonSchemaMetadata(source_class=IPv6Network, type='string', format='ipv6network')
+    )
     return core_schema.function_plain_schema(
         _validators.ip_v6_network_validator, serialization=core_schema.to_string_ser_schema(), metadata=metadata
     )

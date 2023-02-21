@@ -302,6 +302,7 @@ class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
     def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> None:
+        field_schema.pop('anyOf', None)  # remove the bytes/str union
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
     def __get_pydantic_core_schema__(

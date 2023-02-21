@@ -20,6 +20,7 @@ from typing import (
     NamedTuple,
     NewType,
     Optional,
+    Pattern,
     Set,
     Tuple,
     Type,
@@ -812,6 +813,23 @@ def test_str_basic_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
+        (Pattern, {'type': 'string', 'format': 'regex'}),
+        (Pattern[str], {'type': 'string', 'format': 'regex'}),
+        (Pattern[bytes], {'type': 'string', 'format': 'regex'}),
+    ],
+)
+def test_pattern(field_type, expected_schema) -> None:
+    class Model(BaseModel):
+        a: field_type
+
+    expected_schema.update({'title': 'A'})
+    full_schema = {'title': 'Model', 'type': 'object', 'required': ['a'], 'properties': {'a': expected_schema}}
+    assert Model.model_json_schema() == full_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
         (StrictStr, {'title': 'A', 'type': 'string'}),
         # (ConstrainedStr, {'title': 'A', 'type': 'string'}),
         (
@@ -1000,9 +1018,6 @@ def test_json_type():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
-            # TODO: This used to be {'title': 'B', 'type': 'number'}
-            #   However, numbers no longer even pass validation Json[int] (which I think is the correct behavior)
-            #   I think the new value below is correct, but am adding this TODO to make sure it is considered
             'b': {'title': 'B', 'type': 'string', 'format': 'json-string'},
             'c': {'title': 'C', 'type': 'string', 'format': 'json-string'},
         },

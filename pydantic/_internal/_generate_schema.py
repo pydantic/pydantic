@@ -528,16 +528,23 @@ class GenerateSchema:
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
         from . import _serializers, _validators
 
+        metadata = build_metadata_dict(js_metadata={'source_class': pattern_type, 'type': 'string', 'format': 'regex'})
         ser = core_schema.function_plain_ser_schema(_serializers.pattern_serializer, json_return_type='str')
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
-            return core_schema.function_plain_schema(_validators.pattern_either_validator, serialization=ser)
+            return core_schema.function_plain_schema(
+                _validators.pattern_either_validator, serialization=ser, metadata=metadata
+            )
 
         param = get_args(pattern_type)[0]
         if param == str:
-            return core_schema.function_plain_schema(_validators.pattern_str_validator, serialization=ser)
+            return core_schema.function_plain_schema(
+                _validators.pattern_str_validator, serialization=ser, metadata=metadata
+            )
         elif param == bytes:
-            return core_schema.function_plain_schema(_validators.pattern_bytes_validator, serialization=ser)
+            return core_schema.function_plain_schema(
+                _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
+            )
         else:
             raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {pattern_type!r}.')
 
