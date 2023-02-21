@@ -124,15 +124,20 @@ def test_self_forward_ref_module(create_module):
 def test_self_forward_ref_collection(create_module):
     @create_module
     def module():
-        from typing import Dict, List
+        from typing import Dict, List, Optional
 
         from pydantic import BaseModel
+        from pydantic.json_schema import JsonSchemaMetadata
 
         class Foo(BaseModel):
             a: int = 123
             b: 'Foo' = None
             c: 'List[Foo]' = []
             d: 'Dict[str, Foo]' = {}
+
+            @classmethod
+            def model_json_schema_metadata(cls) -> Optional[JsonSchemaMetadata]:
+                return None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
     assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).model_dump() == {
@@ -151,7 +156,7 @@ def test_self_forward_ref_collection(create_module):
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
     assert repr(module.Foo.model_fields['b']) == IsStr(
-        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo\'\}\}\)\]\)'
+        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo:[0-9]+\'\}.*'
     )
     if sys.version_info < (3, 10):
         return
@@ -271,7 +276,6 @@ def test_forward_ref_nested_sub_types(create_module):
     assert isinstance(node.right[0], Node)
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_self_reference_json_schema(create_module):
     @create_module
     def module():
@@ -285,8 +289,8 @@ def test_self_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
@@ -296,7 +300,7 @@ def test_self_reference_json_schema(create_module):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name'],
@@ -305,7 +309,6 @@ def test_self_reference_json_schema(create_module):
     }
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -321,8 +324,8 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
@@ -332,7 +335,7 @@ class Account(BaseModel):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name'],
@@ -341,7 +344,6 @@ class Account(BaseModel):
     }
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_circular_reference_json_schema(create_module):
     @create_module
     def module():
@@ -352,6 +354,8 @@ def test_circular_reference_json_schema(create_module):
         class Owner(BaseModel):
             account: 'Account'
 
+            model_config = dict(undefined_types_warning=False)
+
         class Account(BaseModel):
             name: str
             owner: 'Owner'
@@ -359,19 +363,19 @@ def test_circular_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'owner': {'$ref': '#/definitions/Owner'},
+                    'owner': {'$ref': '#/$defs/Owner'},
                     'subaccounts': {
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -379,14 +383,13 @@ def test_circular_reference_json_schema(create_module):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'$ref': '#/definitions/Account'}},
+                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
                 'required': ['account'],
             },
         },
     }
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -398,6 +401,8 @@ from pydantic import BaseModel
 class Owner(BaseModel):
   account: Account
 
+  model_config=dict(undefined_types_warning=False)
+
 class Account(BaseModel):
   name: str
   owner: Owner
@@ -407,19 +412,19 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'owner': {'$ref': '#/definitions/Owner'},
+                    'owner': {'$ref': '#/$defs/Owner'},
                     'subaccounts': {
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -427,7 +432,7 @@ class Account(BaseModel):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'$ref': '#/definitions/Account'}},
+                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
                 'required': ['account'],
             },
         },
@@ -561,9 +566,9 @@ def test_discriminated_union_forward_ref(create_module):
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
-        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
-        'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
-        'definitions': {
+        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}},
+        'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+        '$defs': {
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',

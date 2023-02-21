@@ -39,3 +39,11 @@ class PydanticSchemaGenerationError(PydanticUserError):
     """
 
     pass
+
+
+class PydanticInvalidForJsonSchema(PydanticUserError):
+    """
+    Error raised when a type from a CoreSchema is not compatible with JSON schema generation
+    """
+
+    pass

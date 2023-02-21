@@ -17,6 +17,7 @@ from typing_extensions import Annotated
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
+from ._core_metadata import build_metadata_dict
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import SchemaRef, SelfType, Undefined
 from ._generate_schema import generate_config, model_fields_schema
@@ -113,7 +114,14 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    return core_schema.model_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
+    js_metadata = cls.model_json_schema_metadata()
+    return core_schema.model_schema(
+        cls,
+        inner_schema,
+        config=core_config,
+        call_after_init=model_post_init,
+        metadata=build_metadata_dict(js_metadata=js_metadata),
+    )
 
 
 def complete_model_class(
@@ -169,8 +177,13 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
-        cls, inner_schema, config=core_config, call_after_init=model_post_init
+        cls,
+        inner_schema,
+        config=core_config,
+        call_after_init=model_post_init,
+        metadata=build_metadata_dict(js_metadata=js_metadata),
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -204,8 +217,13 @@ def build_inner_schema(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    model_ref = f'{module_name}.{name}'
-    self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(model_ref))
+    model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
+    model_js_metadata = cls.model_json_schema_metadata()
+    self_schema = core_schema.model_schema(
+        cls,
+        core_schema.recursive_reference_schema(model_ref),
+        metadata=build_metadata_dict(js_metadata=model_js_metadata),
+    )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined

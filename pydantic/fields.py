@@ -21,6 +21,8 @@ class FieldInfo(_repr.Representation):
     function below is explicitly used.
     """
 
+    # TODO: Need to add attribute annotations
+
     __slots__ = (
         'annotation',
         'default',
@@ -29,6 +31,7 @@ class FieldInfo(_repr.Representation):
         'alias_priority',
         'title',
         'description',
+        'examples',
         'exclude',
         'include',
         'metadata',
@@ -58,6 +61,7 @@ class FieldInfo(_repr.Representation):
     }
 
     def __init__(self, **kwargs: Any) -> None:
+        # TODO: This is a good place to add migration warnings; we should use overload for type-hinting the signature
         self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
 
         default = kwargs.pop('default', Undefined)
@@ -75,6 +79,7 @@ class FieldInfo(_repr.Representation):
         self.alias_priority = kwargs.get('alias_priority', 2 if self.alias is not None else None)
         self.title = kwargs.get('title')
         self.description = kwargs.get('description')
+        self.examples = kwargs.get('examples')
         self.exclude = kwargs.get('exclude')
         self.include = kwargs.get('include')
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata
@@ -90,6 +95,7 @@ class FieldInfo(_repr.Representation):
         >>> class MyModel(pydantic.BaseModel):
         >>>     foo: int = pydantic.Field(4, ...)  # <-- like this
         """
+        # TODO: This is a good place to add migration warnings; should we use overload for type-hinting the signature?
         if 'annotation' in kwargs:
             raise TypeError('"annotation" is not permitted as a Field keyword argument')
         return cls(default=default, **kwargs)
@@ -241,6 +247,7 @@ def Field(
     alias: str = None,
     title: str = None,
     description: str = None,
+    examples: list[Any] = None,
     exclude: typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any = None,
     include: typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any = None,
     gt: float = None,
@@ -273,6 +280,7 @@ def Field(
     :param alias: the public name of the field
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
+    :param examples: can be any list of json-encodable data, used in the schema
     :param exclude: exclude this field while dumping.
       Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param include: include this field while dumping.
@@ -317,6 +325,7 @@ def Field(
         alias=alias,
         title=title,
         description=description,
+        examples=examples,
         exclude=exclude,
         include=include,
         gt=gt,

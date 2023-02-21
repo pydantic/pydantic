@@ -155,10 +155,9 @@ def test_field_reuse():
     assert AnnotatedModel(one=1).model_dump() == {'one': 1}
 
 
-@pytest.mark.skip(reason='TODO JSON Schema')
 def test_config_field_info():
     class Foo(BaseModel):
-        a: Annotated[int, Field(foobar='hello', description='descr')]
+        a: Annotated[int, Field(description='descr', json_schema_extra={'foobar': 'hello'})]
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},

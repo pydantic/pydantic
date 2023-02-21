@@ -29,6 +29,7 @@ __all__ = (
     'Required',
     'parent_frame_namespace',
     'get_type_hints',
+    'EllipsisType',
 )
 
 try:
@@ -67,7 +68,11 @@ else:
     WithArgsTypes = typing._GenericAlias, types.GenericAlias, types.UnionType  # type: ignore[attr-defined]
 
 
-NoneType = None.__class__
+if sys.version_info < (3, 10):
+    NoneType = type(None)
+    EllipsisType = type(Ellipsis)
+else:
+    from types import EllipsisType as EllipsisType, NoneType as NoneType
 
 
 NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])

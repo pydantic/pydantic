@@ -70,7 +70,6 @@ def test_args():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_wrap():
     @validate_arguments
     def foo_bar(a: int, b: int):
@@ -347,7 +346,6 @@ def test_class_method():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_config_title():
     @validate_arguments(config=dict(title='Testing'))
     def foo(a: int, b: int):
