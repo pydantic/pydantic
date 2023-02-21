@@ -168,7 +168,9 @@ class DecimalValidator(_fields.CustomValidator):
                 raise PydanticKnownError('finite_number')
 
             if self.check_digits:
-                if exponent >= 0:
+                if isinstance(exponent, str):
+                    raise PydanticKnownError('finite_number')
+                elif exponent >= 0:
                     # A positive exponent adds that many trailing zeros.
                     digits = len(digit_tuple) + exponent
                     decimals = 0

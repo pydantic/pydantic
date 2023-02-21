@@ -149,7 +149,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mypy-version: ['0.950', '0.961', '0.971', '0.982']
+        mypy-version: ['0.950', '0.961', '0.971', '0.982', '0.991']
 
     steps:
     - uses: actions/checkout@v3

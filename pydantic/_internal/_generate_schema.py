@@ -124,7 +124,7 @@ class GenerateSchema:
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
                 # Note: obj may fail to be hashable if it has an unhashable annotation
-                return {'type': obj.__name__}  # type: ignore[return-value,misc]
+                return {'type': obj.__name__}
         except TypeError:  # obj not hashable; can happen due to unhashable annotations
             pass
 
@@ -376,7 +376,7 @@ class GenerateSchema:
         except AttributeError:
             name = get_origin(type_).__name__  # type: ignore[union-attr]
 
-        return {  # type: ignore[misc,return-value]
+        return {
             'type': name.lower(),
             'items_schema': self.generate_schema(get_first_arg(type_)),
         }

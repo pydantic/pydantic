@@ -13,7 +13,7 @@ from ._internal import _fields, _repr
 if TYPE_CHECKING:
     import email_validator
 
-    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]  # type: ignore[misc]
+    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]
 
 else:
     email_validator = None
