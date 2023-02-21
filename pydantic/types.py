@@ -74,7 +74,7 @@ __all__ = [
 
 from ._internal._core_metadata import build_metadata_dict
 from ._internal._utils import update_not_none
-from .json_schema_misc import JsonSchemaMisc
+from .json_schema import JsonSchemaMetadata
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -301,7 +301,7 @@ def condecimal(
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
-    def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
 
     def __get_pydantic_core_schema__(
@@ -330,7 +330,7 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 class PathType:
     path_type: Literal['file', 'dir', 'new']
 
-    def __modify_schema__(self, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> None:
         format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
         field_schema.update(format=format_conversion.get(self.path_type, 'path'))
 
@@ -396,7 +396,7 @@ else:
             return core_schema.json_schema(schema)
 
         @classmethod
-        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
             field_schema.update(type='string', format='json-string')
 
         def __repr__(self) -> str:
@@ -435,7 +435,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
             override = None
         metadata = build_metadata_dict(
             update_cs_function=validator.__pydantic_update_schema__,
-            json_schema_misc=JsonSchemaMisc(core_schema_override=override),
+            js_metadata=JsonSchemaMetadata(core_schema_override=override),
         )
         return core_schema.function_after_schema(
             core_schema.union_schema(
@@ -466,7 +466,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         ...
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
         update_not_none(
             field_schema,
             type='string',

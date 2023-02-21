@@ -6,27 +6,119 @@ from dataclasses import is_dataclass
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Any, Callable, Counter, NewType, Pattern, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Pattern, Sequence, cast
 from uuid import UUID
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
-from typing_extensions import TypeGuard
+from typing_extensions import Literal, TypedDict, TypeGuard
 
 from ._internal._core_metadata import CoreMetadataHandler
 from ._internal._typing_extra import all_literal_values, is_namedtuple
 from ._internal._utils import get_model, lenient_issubclass
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
-from .json import pydantic_encoder
-from .json_schema_misc import JsonSchemaValue
 from .networks import IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
     from .main import BaseModel
 
-DEFAULT_REF_TEMPLATE = '#/definitions/{model}'
+JsonSchemaValue = Dict[str, Any]
 
+# ##### JSON Schema Metadata Manipulation #####
+# Keys missing in a JsonSchemaMetadata should be treated the same as they would be if present with a value of None.
+# This is important to ensure that it is possible to "remove" an override by setting it to None.
+JsonSchemaMetadata = TypedDict(
+    'JsonSchemaMetadata',
+    {
+        # ### "Pre-processing" of the JSON schema
+        # If not None, this CoreSchema will be used to generate the JSON schema instead of the "real one"
+        # You can use a callable to defer evaluation of the CoreSchema until it's needed
+        'core_schema_override': CoreSchema | Callable[[], CoreSchema] | None,
+        # A reference to the source class if appropriate; useful when working with some of the plain function schemas
+        'source_class': type[Any] | None,
+        # ### "Miscellaneous properties" that are available for all JSON types
+        # (see https://json-schema.org/understanding-json-schema/reference/generic.html)
+        'title': str | None,
+        'description': str | None,
+        'examples': list[dict[str, Any]] | None,
+        'deprecated': bool | None,
+        'readOnly': bool | None,
+        'writeOnly': bool | None,
+        '$comment': str | None,
+        # Note: 'default', which is included with these fields in the JSON Schema docs, is handled by CoreSchema
+        # ### "Post-processing" of the JSON schema
+        # A catch-all for arbitrary data to add to the schema
+        'extra_updates': dict[str, Any] | None,
+        # A final function to apply to the JSON schema after all other modifications have been applied
+        # If you want to force specific contents in the generated schema, you can use a function that ignores the
+        # input value and just return the schema you want.
+        'modify_js_function': Callable[[JsonSchemaValue], None] | None,
+    },
+    total=False,
+)
+
+
+def merge_js_metadata(
+    base: JsonSchemaMetadata | None, overrides: JsonSchemaMetadata | None
+) -> JsonSchemaMetadata | None:
+    """
+    Merge two JsonSchemaMetadata dicts, with the values from the second overriding the first.
+
+    Returns a new object, or None if both arguments are None. The provided objects are not modified.
+    """
+    if base is None:
+        if overrides is None:
+            return None
+        else:
+            return overrides.copy()
+    elif overrides is None:
+        return base.copy()
+    else:
+        result: JsonSchemaMetadata = base.copy()
+        result.update(**overrides)  # type: ignore[misc]  # seems like a mypy bug
+        return result
+
+
+def without_core_schema_override(json_schema_metadata: JsonSchemaMetadata) -> JsonSchemaMetadata:
+    """
+    Return a copy without the core_schema_override; when handling the core_schema_override,
+    we need to remove it from the object so that the handler doesn't recurse infinitely.
+    """
+    result = json_schema_metadata.copy()
+    result.pop('core_schema_override', None)
+    return result
+
+
+_STANDARD_FIELDS: list[
+    Literal['title', 'description', 'examples', 'deprecated', 'readOnly', 'writeOnly', '$comment']
+] = ['title', 'description', 'examples', 'deprecated', 'readOnly', 'writeOnly', '$comment']
+
+
+def _apply_js_metadata(json_schema_metadata: JsonSchemaMetadata, schema: JsonSchemaValue) -> None:
+    """
+    Update the provided JSON schema in-place with the values from the provided JsonSchemaMetadata.
+
+    Note that the "pre-processing" attributes are not used in this method and must be used separately.
+    """
+    for k in _STANDARD_FIELDS:
+        metadata_value = json_schema_metadata.get(k, None)
+        if metadata_value is None:
+            continue
+        else:
+            schema[k] = metadata_value
+
+    extra_updates = json_schema_metadata.get('extra_updates', None)
+    if extra_updates is not None:
+        schema.update(extra_updates)
+
+    modify_js_function = json_schema_metadata.get('modify_js_function', None)
+    if modify_js_function is not None:
+        modify_js_function(schema)
+
+
+# ##### JSON Schema Generation #####
+DEFAULT_REF_TEMPLATE = '#/$defs/{model}'
 
 # There are three types of references relevant to building JSON schemas:
 #   1. core_schema "ref" values; these are not exposed as part of the JSON schema
@@ -37,7 +129,7 @@ CoreRef = NewType('CoreRef', str)
 #       * eventually, we may want to make it easier to modify the way these names are generated
 DefsRef = NewType('DefsRef', str)
 #   3. the values corresponding to the "$ref" key in the schema
-#       * By default, these look like "#/$defs/MyModel", as in {"$ref": "#/definitions/MyModel"}
+#       * By default, these look like "#/$defs/MyModel", as in {"$ref": "#/$defs/MyModel"}
 JsonRef = NewType('JsonRef', str)
 
 
@@ -130,7 +222,7 @@ class GenerateJsonSchema:
 
         json_schema = self.resolve_collisions(json_schema)
         if self.definitions:
-            json_schema['definitions'] = self.definitions
+            json_schema['$defs'] = self.definitions
 
         # TODO: Enable this? It will require updating many tests. Maybe make it an option whether to include it?
         # json_schema['$schema'] = self.schema_dialect
@@ -161,20 +253,20 @@ class GenerateJsonSchema:
             raise TypeError(f'Unexpected schema type: schema={schema}')
 
         # Handle the miscellaneous properties and apply "post-processing":
-        misc = metadata_handler.json_schema_misc
-        if misc is not None:
+        js_metadata = metadata_handler.json_schema_metadata
+        if js_metadata is not None:
             if '$ref' in json_schema and schema.get('type') == 'model':
                 # This is a hack relating to the fact that the typed_dict_schema is where the CoreRef is set,
                 # and therefore the source of what ends up in the JSON schema definitions, but we want to use the
-                # json_schema_misc that was set on the model_schema to update the typed_dict_schema
-                # I think we might be able to fix this with a minor refactoring of the way json_schema_misc is set
+                # json_schema_metadata that was set on the model_schema to update the typed_dict_schema
+                # I think we might be able to fix this with a minor refactoring of the way json_schema_metadata is set
                 schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
                 if schema_to_update is not None:
-                    misc.apply(schema_to_update)
+                    _apply_js_metadata(js_metadata, schema_to_update)
                 else:
-                    misc.apply(json_schema)
+                    _apply_js_metadata(js_metadata, json_schema)
             else:
-                misc.apply(json_schema)
+                _apply_js_metadata(js_metadata, json_schema)
 
         # Resolve issues caused by sibling keys next to a top-level $ref
         # See the `_handle_ref_overrides` docstring for more details
@@ -363,21 +455,27 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         if 'default' in schema:
-            try:
-                default = self.encode_default(schema['default'])
-            except TypeError:
-                # This happens if the default is not JSON serializable; in this case, just return the inner schema
-                return json_schema
+            default = self.encode_default(schema['default'])
         elif 'default_factory' in schema:
             default = self.encode_default(schema['default_factory']())
         else:
             raise ValueError('`schema` has neither default nor default_factory')
 
+        try:
+            encoded_default = self.encode_default(default)
+        except TypeError:
+            # This happens if the default value is not JSON serializable; in this case, just return the inner schema
+            # Note: We could update the '$comment' field to indicate that the default value was not JSON serializable.
+            #   This would have the upside that there would be some positive indication that the default value was not
+            #   valid, but would have the downside that it would make some assumptions about how users are using the
+            #   '$comment' field. For now, I have decided not to do this.
+            return json_schema
+
         if '$ref' in json_schema:
             # Since reference schemas do not support child keys, we wrap the reference schema in a single-case allOf:
-            return {'allOf': [json_schema], 'default': default}
+            return {'allOf': [json_schema], 'default': encoded_default}
         else:
-            json_schema['default'] = default
+            json_schema['default'] = encoded_default
             return json_schema
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
@@ -813,6 +911,7 @@ class GenerateJsonSchema:
         return self.definitions.get(self.json_to_defs_refs[json_ref])
 
     def encode_default(self, dft: Any) -> Any:
+        from .json import pydantic_encoder
         from .main import BaseModel
 
         if isinstance(dft, BaseModel) or is_dataclass(dft):
@@ -939,7 +1038,7 @@ def schema(
 
     json_schema: dict[str, Any] = {}
     if definitions:
-        json_schema['definitions'] = definitions
+        json_schema['$defs'] = definitions
     if title:
         json_schema['title'] = title
     if description:

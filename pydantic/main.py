@@ -21,8 +21,7 @@ from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
-from .json_schema_misc import JsonSchemaMisc
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -383,7 +382,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return s
 
     @classmethod
-    def model_json_schema_misc(cls) -> JsonSchemaMisc | None:
+    def model_json_schema_metadata(cls) -> JsonSchemaMetadata | None:
         """
         Override this method to manipulate the generation of the JSON schema.
 
@@ -396,7 +395,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         title = cls.model_config['title'] or cls.__name__
         description = getdoc(cls) or None
-        return JsonSchemaMisc(title=title, description=description)
+        return {'title': title, 'description': description}
 
     @classmethod
     def schema_json(

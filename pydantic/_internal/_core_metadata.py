@@ -8,13 +8,16 @@ import typing_extensions
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import TypedDictField
 
-from ..json_schema_misc import JsonSchemaMisc, JsonSchemaValue
 from ._typing_extra import EllipsisType
+
+if typing.TYPE_CHECKING:
+    from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
+
 
 # CS is shorthand for Core Schema
 # JS is shorthand for JSON Schema
 _UPDATE_CS_FUNCTION_FIELD = 'pydantic_update_core_schema_function'
-_JS_MISC_FIELD = 'pydantic_json_schema_misc'
+_JS_METADATA_FIELD = 'pydantic_json_schema_metadata'
 
 _CoreMetadata = typing.Dict[str, Any]
 
@@ -79,38 +82,41 @@ class CoreMetadataHandler:
         self.metadata[_UPDATE_CS_FUNCTION_FIELD] = value
 
     @property
-    def json_schema_misc(self) -> JsonSchemaMisc | None:
+    def json_schema_metadata(self) -> JsonSchemaMetadata | None:
         """
-        Retrieves the JsonSchemaMisc instance out of the wrapped schema's metadata
+        Retrieves the JsonSchemaMetadata instance out of the wrapped schema's metadata
         """
-        return self.metadata.get(_JS_MISC_FIELD)
+        return self.metadata.get(_JS_METADATA_FIELD)
 
-    @json_schema_misc.setter
-    def json_schema_misc(self, value: JsonSchemaMisc | None) -> None:
+    @json_schema_metadata.setter
+    def json_schema_metadata(self, value: JsonSchemaMetadata | None) -> None:
         """
-        Sets the JsonSchemaMisc on the wrapped schema, providing a clean API even when
+        Sets the JsonSchemaMetadata on the wrapped schema, providing a clean API even when
         the wrapped schema had metadata set to None
         """
-        self.metadata[_JS_MISC_FIELD] = value
+        self.metadata[_JS_METADATA_FIELD] = value
 
-    def merge_json_schema_misc(self, update: JsonSchemaMisc) -> None:
+    def merge_json_schema_metadata(self, update: JsonSchemaMetadata) -> None:
         """
-        Given a JsonSchemaMisc object, merge it into the wrapped schema's metadata.
+        Given a JsonSchemaMetadata object, merge it into the wrapped schema's metadata.
         """
-        self.metadata[_JS_MISC_FIELD] = JsonSchemaMisc.merged(self.json_schema_misc, update)
+        from pydantic.json_schema import merge_js_metadata
+
+        self.metadata[_JS_METADATA_FIELD] = merge_js_metadata(self.json_schema_metadata, update)
 
     def get_json_schema_core_schema_override(self) -> CoreSchema | None:
         """
-        Returns the core_schema_override off the JsonSchemaMisc object if it is present,
-        merging in the json_schema_misc if present on the wrapped schema.
+        Returns the core_schema_override off the JsonSchemaMetadata object if it is present,
+        merging in the json_schema_metadata if present on the wrapped schema.
         """
-        misc = self.json_schema_misc
-        if misc is None:
+        metadata = self.json_schema_metadata
+        if metadata is None:
             return None
-        if misc.core_schema_override is None:
+        core_schema_override = metadata.get('core_schema_override')
+        if core_schema_override is None:
             return None
-        core_schema_override = misc.core_schema_override
         if inspect.isfunction(core_schema_override):
+            # Perform deferred schema evaluation
             schema = core_schema_override()
         else:
             # Create a copy so we don't modify the original schema
@@ -118,32 +124,34 @@ class CoreMetadataHandler:
 
         metadata_handler = CoreMetadataHandler(schema)
 
-        # Merge in the json_schema_misc (without the core_schema_override, to prevent recursion)
+        # Merge in the json_schema_metadata (without the core_schema_override, to prevent recursion)
         #
-        # By merging the json_schema_misc like this, we ensure that you don't have to
-        # manually merge the json_schema_misc into the core_schema_override when generating
+        # By merging the json_schema_metadata like this, we ensure that you don't have to
+        # manually merge the json_schema_metadata into the core_schema_override when generating
         # the core schema.
-        metadata_handler.merge_json_schema_misc(misc.without_core_schema_override())
+        from pydantic.json_schema import without_core_schema_override
+
+        metadata_handler.merge_json_schema_metadata(without_core_schema_override(metadata))
 
         return schema
 
     def get_source_class(self) -> type[Any] | None:
         """
-        Returns the source class off the JsonSchemaMisc object if it is present.
+        Returns the source class off the JsonSchemaMetadata object if it is present.
         """
-        misc = self.json_schema_misc
+        misc = self.json_schema_metadata
         if misc is None:
             return None
-        return misc.source_class
+        return misc.get('source_class')
 
     def get_modify_js_function(self) -> typing.Callable[[JsonSchemaValue], None] | None:
         """
-        Returns the modify_js_function off the JsonSchemaMisc object if it is present.
+        Returns the modify_js_function off the JsonSchemaMetadata object if it is present.
         """
-        misc = self.json_schema_misc
+        misc = self.json_schema_metadata
         if misc is None:
             return None
-        return misc.modify_js_function
+        return misc.get('modify_js_function')
 
     def combine_modify_js_functions(
         self, modify_js_function: typing.Callable[[JsonSchemaValue], None] | None, before: bool = True
@@ -158,14 +166,14 @@ class CoreMetadataHandler:
         if modify_js_function is None:
             return  # nothing to do
 
-        misc = self.json_schema_misc
+        metadata = self.json_schema_metadata
 
-        if misc is None:
-            self.json_schema_misc = JsonSchemaMisc(modify_js_function=modify_js_function)
+        if metadata is None:
+            self.json_schema_metadata = {'modify_js_function': modify_js_function}
         else:
-            original_modify = misc.modify_js_function
+            original_modify = metadata.get('modify_js_function')
             if original_modify is None:
-                misc.modify_js_function = modify_js_function
+                metadata['modify_js_function'] = modify_js_function
             else:
 
                 def combined_modify_js_function(schema: JsonSchemaValue) -> None:
@@ -177,13 +185,13 @@ class CoreMetadataHandler:
                     if not before:
                         modify_js_function(schema)
 
-                misc.modify_js_function = combined_modify_js_function
+                metadata['modify_js_function'] = combined_modify_js_function
 
 
 def build_metadata_dict(
     *,  # force keyword arguments to make it easier to modify this signature in a backwards-compatible way
     update_cs_function: UpdateCoreSchemaCallable | None | EllipsisType = ...,
-    json_schema_misc: JsonSchemaMisc | None | EllipsisType = ...,
+    js_metadata: JsonSchemaMetadata | None | EllipsisType = ...,
     initial_metadata: Any | None = None,
 ) -> Any:
     """
@@ -198,7 +206,7 @@ def build_metadata_dict(
     if update_cs_function is not ...:
         metadata[_UPDATE_CS_FUNCTION_FIELD] = update_cs_function
 
-    if json_schema_misc is not ...:
-        metadata[_JS_MISC_FIELD] = json_schema_misc
+    if js_metadata is not ...:
+        metadata[_JS_METADATA_FIELD] = js_metadata
 
     return metadata

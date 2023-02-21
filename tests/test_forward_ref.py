@@ -127,7 +127,7 @@ def test_self_forward_ref_collection(create_module):
         from typing import Dict, List, Optional
 
         from pydantic import BaseModel
-        from pydantic.json_schema_misc import JsonSchemaMisc
+        from pydantic.json_schema import JsonSchemaMetadata
 
         class Foo(BaseModel):
             a: int = 123
@@ -136,7 +136,7 @@ def test_self_forward_ref_collection(create_module):
             d: 'Dict[str, Foo]' = {}
 
             @classmethod
-            def model_json_schema_misc(cls) -> Optional[JsonSchemaMisc]:
+            def model_json_schema_metadata(cls) -> Optional[JsonSchemaMetadata]:
                 return None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
@@ -289,8 +289,8 @@ def test_self_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/definitions/Account'}],
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
@@ -300,7 +300,7 @@ def test_self_reference_json_schema(create_module):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/definitions/Account'}], 'title': 'Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name'],
@@ -324,8 +324,8 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/definitions/Account'}],
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
@@ -335,7 +335,7 @@ class Account(BaseModel):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/definitions/Account'}], 'title': 'Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name'],
@@ -363,19 +363,19 @@ def test_circular_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/definitions/Account'}],
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'owner': {'$ref': '#/definitions/Owner'},
+                    'owner': {'$ref': '#/$defs/Owner'},
                     'subaccounts': {
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/definitions/Account'}], 'title': 'Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -383,7 +383,7 @@ def test_circular_reference_json_schema(create_module):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'allOf': [{'$ref': '#/definitions/Account'}], 'title': 'Account'}},
+                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
                 'required': ['account'],
             },
         },
@@ -412,19 +412,19 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        'allOf': [{'$ref': '#/definitions/Account'}],
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'owner': {'$ref': '#/definitions/Owner'},
+                    'owner': {'$ref': '#/$defs/Owner'},
                     'subaccounts': {
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/definitions/Account'}], 'title': 'Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -432,7 +432,7 @@ class Account(BaseModel):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'allOf': [{'$ref': '#/definitions/Account'}], 'title': 'Account'}},
+                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
                 'required': ['account'],
             },
         },
@@ -566,9 +566,9 @@ def test_discriminated_union_forward_ref(create_module):
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
-        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
-        'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
-        'definitions': {
+        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}},
+        'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+        '$defs': {
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',

@@ -18,7 +18,7 @@ class RestrictedAlphabetStr(str):
         return cls(value)
 
     @classmethod
-    def __modify_schema__(
+    def __pydantic_modify_json_schema__(
         cls, field_schema: Dict[str, Any], field: Optional[ModelField]
     ):
         if field:

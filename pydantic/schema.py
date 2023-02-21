@@ -277,7 +277,7 @@ def get_field_schema_validations(field: ModelField) -> Dict[str, Any]:
         f_schema['const'] = field.default
     if field.field_info.extra:
         f_schema.update(field.field_info.extra)
-    modify_schema = getattr(field.outer_type_, '__modify_schema__', None)
+    modify_schema = getattr(field.outer_type_, '__pydantic_modify_json_schema__', None)
     if modify_schema:
         _apply_modify_schema(modify_schema, field, f_schema)
     return f_schema
@@ -492,13 +492,13 @@ def field_type_schema(
         definitions.update(f_definitions)
         nested_models.update(f_nested_models)
 
-    # check field type to avoid repeated calls to the same __modify_schema__ method
+    # check field type to avoid repeated calls to the same __pydantic_modify_json_schema__ method
     if field.type_ != field.outer_type_:
         if field.shape == 'SHAPE_GENERIC':
             field_type = field.type_
         else:
             field_type = field.outer_type_
-        modify_schema = getattr(field_type, '__modify_schema__', None)
+        modify_schema = getattr(field_type, '__pydantic_modify_json_schema__', None)
         if modify_schema:
             _apply_modify_schema(modify_schema, field, f_schema)
     return f_schema, definitions, nested_models
@@ -627,7 +627,7 @@ def enum_process_schema(enum: Type[Enum], *, field: Optional[ModelField] = None)
 
     add_field_type_to_schema(enum, schema_)
 
-    modify_schema = getattr(enum, '__modify_schema__', None)
+    modify_schema = getattr(enum, '__pydantic_modify_json_schema__', None)
     if modify_schema:
         _apply_modify_schema(modify_schema, field, schema_)
 
@@ -727,7 +727,7 @@ def field_singleton_sub_fields_schema(
 
 
 # Order is important, e.g. subclasses of str must go before str
-# this is used only for standard library types, custom types should use __modify_schema__ instead
+# this is used only for standard library types, custom types should use __pydantic_modify_json_schema__ instead
 field_class_to_schema: Tuple[Tuple[Any, Dict[str, Any]], ...] = (
     (Path, {'type': 'string', 'format': 'path'}),
     (datetime, {'type': 'string', 'format': 'date-time'}),
@@ -869,7 +869,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
     elif not hasattr(field_type, '__pydantic_model__'):
         add_field_type_to_schema(field_type, f_schema)
 
-        modify_schema = getattr(field_type, '__modify_schema__', None)
+        modify_schema = getattr(field_type, '__pydantic_modify_json_schema__', None)
         if modify_schema:
             _apply_modify_schema(modify_schema, field, f_schema)
 

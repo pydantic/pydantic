@@ -114,13 +114,13 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    json_schema_misc = cls.model_json_schema_misc()
+    json_schema_metadata = cls.model_json_schema_metadata()
     return core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        metadata=build_metadata_dict(json_schema_misc=json_schema_misc),
+        metadata=build_metadata_dict(js_metadata=json_schema_metadata),
     )
 
 
@@ -177,13 +177,13 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    json_schema_misc = cls.model_json_schema_misc()
+    js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
-        metadata=build_metadata_dict(json_schema_misc=json_schema_misc),
+        metadata=build_metadata_dict(js_metadata=js_metadata),
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -218,11 +218,11 @@ def build_inner_schema(  # noqa: C901
                 global_ns = module.__dict__
 
     model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
-    json_schema_misc = cls.model_json_schema_misc()
+    json_schema_metadata = cls.model_json_schema_metadata()
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
-        metadata=build_metadata_dict(json_schema_misc=json_schema_misc),
+        metadata=build_metadata_dict(js_metadata=json_schema_metadata),
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 

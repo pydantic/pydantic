@@ -41,8 +41,7 @@ from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
 from pydantic.generics import GenericModel
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, model_schema, schema
-from pydantic.json_schema_misc import JsonSchemaMisc
+from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata, model_schema, schema
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.types import (
     UUID1,
@@ -99,7 +98,7 @@ def test_key():
     }
     assert ApplePie.__schema_cache__.keys() == set()
     assert ApplePie.model_json_schema() == s
-    assert ApplePie.__schema_cache__.keys() == {(True, '#/definitions/{model}')}
+    assert ApplePie.__schema_cache__.keys() == {(True, '#/$defs/{model}')}
     assert ApplePie.model_json_schema() == s
 
 
@@ -141,7 +140,7 @@ def test_ref_template():
                 'default': None,
             },
         },
-        'definitions': {
+        '$defs': {
             'KeyLimePie': {
                 'title': 'KeyLimePie',
                 'type': 'object',
@@ -150,12 +149,12 @@ def test_ref_template():
         },
     }
     assert ApplePie.model_json_schema()['properties']['key_lime'] == {
-        'anyOf': [{'$ref': '#/definitions/KeyLimePie'}, {'type': 'null'}],
+        'anyOf': [{'$ref': '#/$defs/KeyLimePie'}, {'type': 'null'}],
         'default': None,
     }
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
     assert 'foobar/KeyLimePie.json' in json_schema
-    assert '#/definitions/KeyLimePie' not in json_schema
+    assert '#/$defs/KeyLimePie' not in json_schema
 
 
 @pytest.mark.xfail(reason='working on V2 - alias generator')
@@ -187,7 +186,7 @@ def test_sub_model():
     assert Bar.model_json_schema() == {
         'type': 'object',
         'title': 'Bar',
-        'definitions': {
+        '$defs': {
             'Foo': {
                 'type': 'object',
                 'title': 'Foo',
@@ -198,7 +197,7 @@ def test_sub_model():
         },
         'properties': {
             'a': {'type': 'integer', 'title': 'A'},
-            'b': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}], 'default': None},
+            'b': {'anyOf': [{'$ref': '#/$defs/Foo'}, {'type': 'null'}], 'default': None},
         },
         'required': ['a'],
     }
@@ -257,12 +256,12 @@ def test_choices():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'foo': {'$ref': '#/definitions/FooEnum'},
-            'bar': {'$ref': '#/definitions/BarEnum'},
-            'spam': {'allOf': [{'$ref': '#/definitions/SpamEnum'}], 'default': None},
+            'foo': {'$ref': '#/$defs/FooEnum'},
+            'bar': {'$ref': '#/$defs/BarEnum'},
+            'spam': {'allOf': [{'$ref': '#/$defs/SpamEnum'}], 'default': None},
         },
         'required': ['foo', 'bar'],
-        'definitions': {
+        '$defs': {
             'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
             'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
             'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
@@ -276,14 +275,14 @@ def test_enum_modify_schema():
         bar = 'b'
 
         @classmethod
-        def __modify_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema):
             field_schema['tsEnumNames'] = [e.name for e in cls]
 
     class Model(BaseModel):
         spam: Optional[SpamEnum] = Field(None)
 
     assert Model.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'SpamEnum': {
                 'description': 'An enumeration.',
                 'enum': ['f', 'b'],
@@ -292,7 +291,7 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'anyOf': [{'$ref': '#/definitions/SpamEnum'}, {'type': 'null'}], 'default': None}},
+        'properties': {'spam': {'anyOf': [{'$ref': '#/$defs/SpamEnum'}, {'type': 'null'}], 'default': None}},
         'title': 'Model',
         'type': 'object',
     }
@@ -309,7 +308,7 @@ def test_enum_schema_custom_field():
         cara: FooBarEnum
 
     assert Model.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'FooBarEnum': {
                 'description': 'An enumeration.',
                 'enum': ['foo', 'bar'],
@@ -319,17 +318,17 @@ def test_enum_schema_custom_field():
         },
         'properties': {
             'pikalias': {
-                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
+                'allOf': [{'$ref': '#/$defs/FooBarEnum'}],
                 'description': 'Pika is definitely the best!',
                 'title': 'Pikapika!',
             },
             'bulbialias': {
-                'allOf': [{'$ref': '#/definitions/FooBarEnum'}],
+                'allOf': [{'$ref': '#/$defs/FooBarEnum'}],
                 'description': 'Bulbi is not...',
                 'title': 'Bulbibulbi!',
                 'default': 'foo',
             },
-            'cara': {'$ref': '#/definitions/FooBarEnum'},
+            'cara': {'$ref': '#/$defs/FooBarEnum'},
         },
         'required': ['pikalias', 'cara'],
         'title': 'Model',
@@ -361,7 +360,7 @@ def test_enum_and_model_have_same_behaviour():
         )
 
     assert Foo.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'Pika': {
                 'properties': {'a': {'title': 'A', 'type': 'string'}},
                 'required': ['a'],
@@ -376,15 +375,15 @@ def test_enum_and_model_have_same_behaviour():
             },
         },
         'properties': {
-            'enum': {'$ref': '#/definitions/Names'},
-            'model': {'$ref': '#/definitions/Pika'},
+            'enum': {'$ref': '#/$defs/Names'},
+            'model': {'$ref': '#/$defs/Pika'},
             'titled_enum': {
-                'allOf': [{'$ref': '#/definitions/Names'}],
+                'allOf': [{'$ref': '#/$defs/Names'}],
                 'description': 'Description of enum',
                 'title': 'Title of enum',
             },
             'titled_model': {
-                'allOf': [{'$ref': '#/definitions/Pika'}],
+                'allOf': [{'$ref': '#/$defs/Pika'}],
                 'description': 'Description of model',
                 'title': 'Title of model',
             },
@@ -406,7 +405,7 @@ def test_enum_includes_extra_without_other_params():
         extra_enum: Names = Field(..., json_schema_extra={'extra': 'Extra field'})
 
     assert Foo.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'Names': {
                 'description': 'An enumeration.',
                 'enum': ['Rick', 'Morty', 'Summer'],
@@ -415,8 +414,8 @@ def test_enum_includes_extra_without_other_params():
             },
         },
         'properties': {
-            'enum': {'$ref': '#/definitions/Names'},
-            'extra_enum': {'allOf': [{'$ref': '#/definitions/Names'}], 'extra': 'Extra field'},
+            'enum': {'$ref': '#/$defs/Names'},
+            'extra_enum': {'allOf': [{'$ref': '#/$defs/Names'}], 'extra': 'Extra field'},
         },
         'required': ['enum', 'extra_enum'],
         'title': 'Foo',
@@ -434,7 +433,7 @@ def test_list_enum_schema_extras():
         foods: List[FoodChoice] = Field(examples=[['spam', 'egg']])
 
     assert Model.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'FoodChoice': {
                 'description': 'An enumeration.',
                 'enum': ['spam', 'egg', 'chips'],
@@ -446,7 +445,7 @@ def test_list_enum_schema_extras():
             'foods': {
                 'title': 'Foods',
                 'type': 'array',
-                'items': {'$ref': '#/definitions/FoodChoice'},
+                'items': {'$ref': '#/$defs/FoodChoice'},
                 'examples': [['spam', 'egg']],
             },
         },
@@ -471,9 +470,9 @@ def test_enum_schema_cleandoc():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'enum': {'$ref': '#/definitions/FooBar'}},
+        'properties': {'enum': {'$ref': '#/$defs/FooBar'}},
         'required': ['enum'],
-        'definitions': {
+        '$defs': {
             'FooBar': {
                 'title': 'FooBar',
                 'description': 'This is docstring which needs to be cleaned up',
@@ -513,7 +512,7 @@ def test_list_sub_model():
     assert Bar.model_json_schema() == {
         'title': 'Bar',
         'type': 'object',
-        'definitions': {
+        '$defs': {
             'Foo': {
                 'title': 'Foo',
                 'type': 'object',
@@ -521,7 +520,7 @@ def test_list_sub_model():
                 'required': ['a'],
             }
         },
-        'properties': {'b': {'type': 'array', 'items': {'$ref': '#/definitions/Foo'}, 'title': 'B'}},
+        'properties': {'b': {'type': 'array', 'items': {'$ref': '#/$defs/Foo'}, 'title': 'B'}},
         'required': ['b'],
     }
 
@@ -686,7 +685,7 @@ class Foo(BaseModel):
         (
             Dict[str, Foo],
             {
-                'definitions': {
+                '$defs': {
                     'Foo': {
                         'title': 'Foo',
                         'type': 'object',
@@ -694,16 +693,14 @@ class Foo(BaseModel):
                         'required': ['a'],
                     }
                 },
-                'properties': {
-                    'a': {'title': 'A', 'type': 'object', 'additionalProperties': {'$ref': '#/definitions/Foo'}}
-                },
+                'properties': {'a': {'title': 'A', 'type': 'object', 'additionalProperties': {'$ref': '#/$defs/Foo'}}},
                 'required': ['a'],
             },
         ),
         (
             Union[None, Foo],
             {
-                'definitions': {
+                '$defs': {
                     'Foo': {
                         'title': 'Foo',
                         'type': 'object',
@@ -711,7 +708,7 @@ class Foo(BaseModel):
                         'required': ['a'],
                     }
                 },
-                'properties': {'a': {'anyOf': [{'$ref': '#/definitions/Foo'}, {'type': 'null'}]}},
+                'properties': {'a': {'anyOf': [{'$ref': '#/$defs/Foo'}, {'type': 'null'}]}},
                 'required': ['a'],
                 'title': 'Model',
                 'type': 'object',
@@ -1208,7 +1205,7 @@ def test_schema_overrides():
     assert model_schema == {
         'title': 'Model',
         'type': 'object',
-        'definitions': {
+        '$defs': {
             'Foo': {
                 'title': 'Foo',
                 'type': 'object',
@@ -1218,16 +1215,16 @@ def test_schema_overrides():
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {'b': {'allOf': [{'$ref': '#/definitions/Foo'}], 'default': {'a': 'foo'}}},
+                'properties': {'b': {'allOf': [{'$ref': '#/$defs/Foo'}], 'default': {'a': 'foo'}}},
             },
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
-                'properties': {'c': {'anyOf': [{'$ref': '#/definitions/Bar'}, {'type': 'null'}]}},
+                'properties': {'c': {'anyOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
                 'required': ['c'],
             },
         },
-        'properties': {'d': {'$ref': '#/definitions/Baz'}},
+        'properties': {'d': {'$ref': '#/$defs/Baz'}},
         'required': ['d'],
     }
 
@@ -1246,7 +1243,7 @@ def test_schema_overrides_w_union():
         'a': {
             'title': 'A',
             'description': 'xxx',
-            'anyOf': [{'$ref': '#/definitions/Foo'}, {'$ref': '#/definitions/Bar'}],
+            'anyOf': [{'$ref': '#/$defs/Foo'}, {'$ref': '#/$defs/Bar'}],
         },
     }
 
@@ -1277,7 +1274,7 @@ def test_schema_from_models():
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
-        'definitions': {
+        '$defs': {
             'Pizza': {
                 'title': 'Pizza',
                 'type': 'object',
@@ -1286,7 +1283,7 @@ def test_schema_from_models():
                     'ingredients': {
                         'title': 'Ingredients',
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Ingredient'},
+                        'items': {'$ref': '#/$defs/Ingredient'},
                     },
                 },
                 'required': ['name', 'ingredients'],
@@ -1300,19 +1297,19 @@ def test_schema_from_models():
             'Model': {
                 'title': 'Model',
                 'type': 'object',
-                'properties': {'d': {'$ref': '#/definitions/Baz'}},
+                'properties': {'d': {'$ref': '#/$defs/Baz'}},
                 'required': ['d'],
             },
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
-                'properties': {'c': {'$ref': '#/definitions/Bar'}},
+                'properties': {'c': {'$ref': '#/$defs/Bar'}},
                 'required': ['c'],
             },
             'Bar': {
                 'title': 'Bar',
                 'type': 'object',
-                'properties': {'b': {'$ref': '#/definitions/Foo'}},
+                'properties': {'b': {'$ref': '#/$defs/Foo'}},
                 'required': ['b'],
             },
             'Foo': {
@@ -1339,7 +1336,7 @@ def test_schema_with_refs():
 
     model_schema = schema([Bar, Baz], ref_template=ref_template)
     assert model_schema == {
-        'definitions': {
+        '$defs': {
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
@@ -1374,7 +1371,7 @@ def test_schema_with_custom_ref_template():
 
     model_schema = schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
     assert model_schema == {
-        'definitions': {
+        '$defs': {
             'Baz': {
                 'title': 'Baz',
                 'type': 'object',
@@ -1475,7 +1472,7 @@ def test_model_default():
         inner: Inner = Inner()
 
     assert Outer.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'Inner': {
                 'properties': {
                     'a': {
@@ -1489,7 +1486,7 @@ def test_model_default():
                 'type': 'object',
             }
         },
-        'properties': {'inner': {'allOf': [{'$ref': '#/definitions/Inner'}], 'default': {'a': {'.': ''}}}},
+        'properties': {'inner': {'allOf': [{'$ref': '#/$defs/Inner'}], 'default': {'a': {'.': ''}}}},
         'title': 'Outer',
         'type': 'object',
     }
@@ -1792,11 +1789,11 @@ def test_known_model_optimization():
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'dep': {'$ref': '#/definitions/Dep'},
-            'dep_l': {'title': 'Dep L', 'type': 'array', 'items': {'$ref': '#/definitions/Dep'}},
+            'dep': {'$ref': '#/$defs/Dep'},
+            'dep_l': {'title': 'Dep L', 'type': 'array', 'items': {'$ref': '#/$defs/Dep'}},
         },
         'required': ['dep', 'dep_l'],
-        'definitions': {
+        '$defs': {
             'Dep': {
                 'title': 'Dep',
                 'type': 'object',
@@ -1836,8 +1833,8 @@ def test_root_nested_model():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'array',
-        'items': {'$ref': '#/definitions/NestedModel'},
-        'definitions': {
+        'items': {'$ref': '#/$defs/NestedModel'},
+        '$defs': {
             'NestedModel': {
                 'title': 'NestedModel',
                 'type': 'object',
@@ -2046,7 +2043,7 @@ def test_dataclass():
         a: bool
 
     assert schema([Model]) == {
-        'definitions': {
+        '$defs': {
             'Model': {
                 'title': 'Model',
                 'type': 'object',
@@ -2082,9 +2079,9 @@ def test_schema_attributes():
     assert Example.model_json_schema() == {
         'title': 'Example',
         'type': 'object',
-        'properties': {'example': {'$ref': '#/definitions/ExampleEnum'}},
+        'properties': {'example': {'$ref': '#/$defs/ExampleEnum'}},
         'required': ['example'],
-        'definitions': {
+        '$defs': {
             'ExampleEnum': {
                 'title': 'ExampleEnum',
                 'description': 'This is a test description.',
@@ -2097,7 +2094,7 @@ def test_schema_attributes():
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
-        def __modify_schema__(cls, schema):
+        def __pydantic_modify_json_schema__(cls, schema):
             schema.update(foobar=123)
 
     class Model(BaseModel):
@@ -2196,7 +2193,7 @@ class NestedModel(BaseModel):
     )
 
     models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(schema(models)['definitions'].keys())
+    model_names = set(schema(models)['$defs'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
@@ -2250,8 +2247,8 @@ class MyModel(BaseModel):
         my_model_1: module_1.MyModel
         my_model_2: module_2.MyModel
 
-    assert len(Model.model_json_schema()['definitions']) == 4
-    assert set(Model.model_json_schema()['definitions']) == {
+    assert len(Model.model_json_schema()['$defs']) == 4
+    assert set(Model.model_json_schema()['$defs']) == {
         f'{module_1.__name__}__MyEnum',
         f'{module_1.__name__}__MyModel',
         f'{module_2.__name__}__MyEnum',
@@ -2281,7 +2278,7 @@ def test_schema_for_generic_field():
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             metadata = build_metadata_dict(
-                json_schema_misc=JsonSchemaMisc(core_schema_override=generator.generate_schema(param))
+                js_metadata=JsonSchemaMetadata(core_schema_override=generator.generate_schema(param))
             )
             return core_schema.function_plain_schema(
                 GenModel,
@@ -2309,7 +2306,7 @@ def test_schema_for_generic_field():
 
     class GenModelModified(GenModel, Generic[T]):
         @classmethod
-        def __modify_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema):
             type = field_schema.pop('type', 'other')
             field_schema.update(anyOf=[{'type': type}, {'type': 'array', 'items': {'type': type}}])
 
@@ -2380,7 +2377,7 @@ def test_advanced_generic_schema():
             if hasattr(source, '__args__'):
                 param = source.__args__[0]
                 metadata = build_metadata_dict(
-                    json_schema_misc=JsonSchemaMisc(core_schema_override=generator.generate_schema(Optional[param]))
+                    js_metadata=JsonSchemaMetadata(core_schema_override=generator.generate_schema(Optional[param]))
                 )
                 return core_schema.function_plain_schema(
                     Gen,
@@ -2388,7 +2385,7 @@ def test_advanced_generic_schema():
                 )
 
         @classmethod
-        def __modify_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema):
             the_type = field_schema.pop('anyOf', [{'type': 'string'}])[0]
             field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
 
@@ -2411,7 +2408,7 @@ def test_advanced_generic_schema():
         ) -> core_schema.FunctionPlainSchema:
             if hasattr(source, '__args__'):
                 metadata = build_metadata_dict(
-                    json_schema_misc=JsonSchemaMisc(
+                    js_metadata=JsonSchemaMetadata(
                         core_schema_override=generator.generate_schema(Tuple[source.__args__])
                     )
                 )
@@ -2421,7 +2418,7 @@ def test_advanced_generic_schema():
                 )
 
         @classmethod
-        def __modify_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema):
             field_schema.pop('minItems')
             field_schema.pop('maxItems')
             field_schema.update(examples='examples')
@@ -2431,7 +2428,7 @@ def test_advanced_generic_schema():
         B = 'b'
 
         @classmethod
-        def __modify_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema):
             field_schema.update(title='CustomType title', type='string')
 
     class Model(BaseModel):
@@ -2457,14 +2454,14 @@ def test_advanced_generic_schema():
                 'title': 'Data1 title',
                 'description': 'Data 1 description',
                 'anyOf': [
-                    {'$ref': '#/definitions/CustomType'},
-                    {'type': 'array', 'items': {'$ref': '#/definitions/CustomType'}},
+                    {'$ref': '#/$defs/CustomType'},
+                    {'type': 'array', 'items': {'$ref': '#/$defs/CustomType'}},
                 ],
             },
             'data2': {
                 'description': 'Data 2',
                 'examples': 'examples',
-                'prefixItems': [{'$ref': '#/definitions/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
+                'prefixItems': [{'$ref': '#/$defs/CustomType'}, {'format': 'uuid4', 'type': 'string'}],
                 'title': 'Data2 title',
                 'type': 'array',
             },
@@ -2472,20 +2469,20 @@ def test_advanced_generic_schema():
             'data4': {
                 'title': 'Data4',
                 'type': 'array',
-                'prefixItems': [{'$ref': '#/definitions/CustomType'}],
+                'prefixItems': [{'$ref': '#/$defs/CustomType'}],
                 'minItems': 1,
                 'maxItems': 1,
             },
             'data5': {
                 'title': 'Data5',
                 'type': 'array',
-                'prefixItems': [{'$ref': '#/definitions/CustomType'}, {'type': 'string'}],
+                'prefixItems': [{'$ref': '#/$defs/CustomType'}, {'type': 'string'}],
                 'minItems': 2,
                 'maxItems': 2,
             },
         },
         'required': ['data0', 'data1', 'data2', 'data3', 'data4', 'data5'],
-        'definitions': {
+        '$defs': {
             'CustomType': {
                 'title': 'CustomType title',
                 'description': 'An enumeration.',
@@ -2513,7 +2510,7 @@ def test_nested_generic():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'definitions': {
+        '$defs': {
             'Ref': {
                 'title': 'Ref',
                 'type': 'object',
@@ -2524,7 +2521,7 @@ def test_nested_generic():
             },
         },
         'properties': {
-            'ref': {'$ref': '#/definitions/Ref'},
+            'ref': {'$ref': '#/$defs/Ref'},
         },
         'required': ['ref'],
     }
@@ -2547,13 +2544,13 @@ def test_nested_generic_model():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
-        'definitions': {
+        '$defs': {
             'Box_str_': Box[str].model_json_schema(),
             'Box_int_': Box[int].model_json_schema(),
         },
         'properties': {
-            'box_str': {'$ref': '#/definitions/Box_str_'},
-            'box_int': {'$ref': '#/definitions/Box_int_'},
+            'box_str': {'$ref': '#/$defs/Box_str_'},
+            'box_int': {'$ref': '#/$defs/Box_int_'},
         },
         'required': ['box_str', 'box_int'],
     }
@@ -2581,7 +2578,7 @@ def test_complex_nested_generic():
     Model.model_rebuild()
 
     assert Model.model_json_schema() == {
-        'definitions': {
+        '$defs': {
             'Model': {
                 'title': 'Model',
                 'type': 'object',
@@ -2590,8 +2587,8 @@ def test_complex_nested_generic():
                     'model': {
                         'title': 'Model',
                         'anyOf': [
-                            {'$ref': '#/definitions/Ref'},
-                            {'$ref': '#/definitions/Model'},
+                            {'$ref': '#/$defs/Ref'},
+                            {'$ref': '#/$defs/Model'},
                         ],
                     },
                 },
@@ -2606,16 +2603,16 @@ def test_complex_nested_generic():
                 'required': ['uuid'],
             },
         },
-        '$ref': '#/definitions/Model',
+        '$ref': '#/$defs/Model',
     }
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_schema_with_field_parameter():
-    # TODO: Update so that __modify_schema__ gets called with the FieldInfo when generating schema for fields
+    # TODO: Update so that __pydantic_modify_json_schema__ gets called with the FieldInfo when handling fields
     class RestrictedAlphabetStr(str):
         @classmethod
-        def __modify_schema__(cls, field_schema, field: Optional[FieldInfo]):
+        def __pydantic_modify_json_schema__(cls, field_schema, field: Optional[FieldInfo]):
             assert isinstance(field, FieldInfo)
             alphabet = field.json_schema_extra['alphabet']
             field_schema['examples'] = [c * 3 for c in alphabet]
@@ -2639,7 +2636,7 @@ def test_schema_with_field_parameter():
 def test_modify_schema_dict_keys() -> None:
     class MyType:
         @classmethod
-        def __modify_schema__(cls, schema):
+        def __pydantic_modify_json_schema__(cls, schema):
             schema['test'] = 'passed'
 
     class MyModel(BaseModel):
@@ -2688,21 +2685,21 @@ def test_discriminated_union():
                 'discriminator': {
                     'propertyName': 'pet_type',
                     'mapping': {
-                        'cat': '#/definitions/Cat',
-                        'dog': '#/definitions/Dog',
-                        'reptile': '#/definitions/Lizard',
-                        'lizard': '#/definitions/Lizard',
+                        'cat': '#/$defs/Cat',
+                        'dog': '#/$defs/Dog',
+                        'reptile': '#/$defs/Lizard',
+                        'lizard': '#/$defs/Lizard',
                     },
                 },
                 'oneOf': [
-                    {'$ref': '#/definitions/Cat'},
-                    {'$ref': '#/definitions/Dog'},
-                    {'$ref': '#/definitions/Lizard'},
+                    {'$ref': '#/$defs/Cat'},
+                    {'$ref': '#/$defs/Dog'},
+                    {'$ref': '#/$defs/Lizard'},
                 ],
             }
         },
         'required': ['pet'],
-        'definitions': {
+        '$defs': {
             'BlackCat': {
                 'title': 'BlackCat',
                 'type': 'object',
@@ -2725,9 +2722,9 @@ def test_discriminated_union():
                 'title': 'Cat',
                 'discriminator': {
                     'propertyName': 'color',
-                    'mapping': {'black': '#/definitions/BlackCat', 'white': '#/definitions/WhiteCat'},
+                    'mapping': {'black': '#/$defs/BlackCat', 'white': '#/$defs/WhiteCat'},
                 },
-                'oneOf': [{'$ref': '#/definitions/BlackCat'}, {'$ref': '#/definitions/WhiteCat'}],
+                'oneOf': [{'$ref': '#/$defs/BlackCat'}, {'$ref': '#/$defs/WhiteCat'}],
             },
             'Dog': {
                 'title': 'Dog',
@@ -2788,11 +2785,11 @@ def test_discriminated_annotated_union():
                     'propertyName': 'pet_type',
                     'mapping': {
                         'cat': {
-                            'BlackCatWithHeight': {'$ref': '#/definitions/BlackCatWithHeight'},
-                            'BlackCatWithWeight': {'$ref': '#/definitions/BlackCatWithWeight'},
-                            'WhiteCat': {'$ref': '#/definitions/WhiteCat'},
+                            'BlackCatWithHeight': {'$ref': '#/$defs/BlackCatWithHeight'},
+                            'BlackCatWithWeight': {'$ref': '#/$defs/BlackCatWithWeight'},
+                            'WhiteCat': {'$ref': '#/$defs/WhiteCat'},
                         },
-                        'dog': '#/definitions/Dog',
+                        'dog': '#/$defs/Dog',
                     },
                 },
                 'oneOf': [
@@ -2800,20 +2797,20 @@ def test_discriminated_annotated_union():
                         'oneOf': [
                             {
                                 'oneOf': [
-                                    {'$ref': '#/definitions/BlackCatWithHeight'},
-                                    {'$ref': '#/definitions/BlackCatWithWeight'},
+                                    {'$ref': '#/$defs/BlackCatWithHeight'},
+                                    {'$ref': '#/$defs/BlackCatWithWeight'},
                                 ]
                             },
-                            {'$ref': '#/definitions/WhiteCat'},
+                            {'$ref': '#/$defs/WhiteCat'},
                         ]
                     },
-                    {'$ref': '#/definitions/Dog'},
+                    {'$ref': '#/$defs/Dog'},
                 ],
             },
             'number': {'title': 'Number', 'type': 'integer'},
         },
         'required': ['pet', 'number'],
-        'definitions': {
+        '$defs': {
             'BlackCatWithHeight': {
                 'title': 'BlackCatWithHeight',
                 'type': 'object',
@@ -2880,14 +2877,14 @@ def test_alias_same():
             'number': {'title': 'Number', 'type': 'integer'},
             'pet': {
                 'discriminator': {
-                    'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'},
+                    'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'},
                     'propertyName': 'typeOfPet',
                 },
-                'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
                 'title': 'Pet',
             },
         },
-        'definitions': {
+        '$defs': {
             'Cat': {
                 'properties': {
                     'c': {'title': 'C', 'type': 'string'},
@@ -2930,9 +2927,9 @@ def test_nested_python_dataclasses():
     assert model_schema(dataclass(NestedModel)) == {
         'title': 'NestedModel',
         'type': 'object',
-        'properties': {'child': {'title': 'Child', 'type': 'array', 'items': {'$ref': '#/definitions/ChildModel'}}},
+        'properties': {'child': {'title': 'Child', 'type': 'array', 'items': {'$ref': '#/$defs/ChildModel'}}},
         'required': ['child'],
-        'definitions': {
+        '$defs': {
             'ChildModel': {
                 'title': 'ChildModel',
                 'type': 'object',
@@ -2977,26 +2974,26 @@ def test_discriminated_union_in_list():
                     'propertyName': 'pet_type',
                     'mapping': {
                         'cat': {
-                            'BlackCat': {'$ref': '#/definitions/BlackCat'},
-                            'WhiteCat': {'$ref': '#/definitions/WhiteCat'},
+                            'BlackCat': {'$ref': '#/$defs/BlackCat'},
+                            'WhiteCat': {'$ref': '#/$defs/WhiteCat'},
                         },
-                        'dog': '#/definitions/Dog',
+                        'dog': '#/$defs/Dog',
                     },
                 },
                 'oneOf': [
                     {
                         'oneOf': [
-                            {'$ref': '#/definitions/BlackCat'},
-                            {'$ref': '#/definitions/WhiteCat'},
+                            {'$ref': '#/$defs/BlackCat'},
+                            {'$ref': '#/$defs/WhiteCat'},
                         ],
                     },
-                    {'$ref': '#/definitions/Dog'},
+                    {'$ref': '#/$defs/Dog'},
                 ],
             },
             'n': {'title': 'N', 'type': 'integer'},
         },
         'required': ['pets', 'n'],
-        'definitions': {
+        '$defs': {
             'BlackCat': {
                 'title': 'BlackCat',
                 'type': 'object',
