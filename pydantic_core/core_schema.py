@@ -1805,7 +1805,7 @@ def union_schema(
 
 class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
-    choices: Required[Dict[str, Union[str, CoreSchema]]]
+    choices: Required[Dict[Union[str, int], Union[str, int, CoreSchema]]]
     discriminator: Required[
         Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
     ]
@@ -1813,19 +1813,21 @@ class TaggedUnionSchema(TypedDict, total=False):
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
     strict: bool
+    from_attributes: bool  # default: True
     ref: str
     metadata: Any
     serialization: SerSchema
 
 
 def tagged_union_schema(
-    choices: Dict[str, str | CoreSchema],
+    choices: Dict[Union[int, str], int | str | CoreSchema],
     discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | None],
     *,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
     custom_error_context: dict[str, int | str | float] | None = None,
     strict: bool | None = None,
+    from_attributes: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
@@ -1873,6 +1875,7 @@ def tagged_union_schema(
         custom_error_message: The custom error message to use if the validation fails
         custom_error_context: The custom error context to use if the validation fails
         strict: Whether the underlying schemas should be validated with strict mode
+        from_attributes: Whether to use the attributes of the object to retrieve the discriminator value
         ref: See [TODO] for details
         metadata: See [TODO] for details
         serialization: Custom serialization schema
@@ -1885,6 +1888,7 @@ def tagged_union_schema(
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
         strict=strict,
+        from_attributes=from_attributes,
         ref=ref,
         metadata=metadata,
         serialization=serialization,

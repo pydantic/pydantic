@@ -23,7 +23,7 @@ impl<'a> Input<'a> for JsonInput {
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn as_loc_item(&self) -> LocItem {
         match self {
-            JsonInput::Int(i) => LocItem::I(*i as usize),
+            JsonInput::Int(i) => (*i).into(),
             JsonInput::String(s) => s.as_str().into(),
             v => format!("{v:?}").into(),
         }

@@ -8,6 +8,8 @@ from pydantic_core import SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson, plain_repr
 
+i64_max = 9_223_372_036_854_775_807
+
 
 @pytest.mark.parametrize(
     'input_value,expected',
@@ -24,6 +26,7 @@ from ..conftest import Err, PyAndJson, plain_repr
         ('123456789.0', 123_456_789),
         ('123456789123456.00001', 123_456_789_123_456),
         (int(1e10), int(1e10)),
+        (i64_max, i64_max),
         pytest.param(
             12.5,
             Err('Input should be a valid integer, got a number with a fractional part [type=int_from_float'),
@@ -54,6 +57,9 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
     [
         (Decimal('1'), 1),
         (Decimal('1.0'), 1),
+        (i64_max, i64_max),
+        (i64_max + 1, i64_max),
+        (i64_max * 2, i64_max),
         pytest.param(
             Decimal('1.001'),
             Err(
