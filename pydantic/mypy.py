@@ -86,6 +86,9 @@ def parse_mypy_version(version: str) -> Tuple[int, ...]:
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins' if MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
 
+# Increment version if plugin changes and mypy caches should be invalidated
+PLUGIN_VERSION = 1
+
 
 def plugin(version: str) -> 'TypingType[Plugin]':
     """
@@ -101,6 +104,7 @@ class PydanticPlugin(Plugin):
     def __init__(self, options: Options) -> None:
         self.plugin_config = PydanticPluginConfig(options)
         self._plugin_data = self.plugin_config.to_data()
+        self._plugin_data['version'] = PLUGIN_VERSION
         super().__init__(options)
 
     def get_base_class_hook(self, fullname: str) -> 'Optional[Callable[[ClassDefContext], None]]':
