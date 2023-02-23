@@ -1,6 +1,7 @@
 from collections import deque
 from datetime import datetime
 from enum import Enum
+from functools import partial
 from itertools import product
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -1345,3 +1346,17 @@ def test_list_unique_items_with_optional():
         {'loc': ('foo',), 'msg': 'the list has duplicated items', 'type': 'value_error.list.unique_items'},
         {'loc': ('bar',), 'msg': 'the list has duplicated items', 'type': 'value_error.list.unique_items'},
     ]
+
+
+@pytest.mark.xfail()
+def test_partialmethod_as_validator():
+    def custom_validator(additional_stuff: str, cls, values):
+        print(additional_stuff)
+        return values
+
+    validate = partial(custom_validator, 'TEXT')
+
+    class TestClass(BaseModel):
+        name: str
+
+        _custom_validate = validator('name')(validate)
