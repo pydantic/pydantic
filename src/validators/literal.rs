@@ -71,11 +71,11 @@ impl Validator for LiteralSingleStringValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let either_str = input.strict_str()?;
+        let either_str = input.validate_str(extra.strict.unwrap_or(false))?;
         if either_str.as_cow()?.as_ref() == self.expected.as_str() {
             Ok(input.to_object(py))
         } else {
@@ -113,12 +113,12 @@ impl Validator for LiteralSingleIntValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let str = input.strict_int()?;
-        if str == self.expected {
+        let int = input.validate_int(extra.strict.unwrap_or(false))?;
+        if int == self.expected {
             Ok(input.to_object(py))
         } else {
             Err(ValError::new(
@@ -168,11 +168,11 @@ impl Validator for LiteralMultipleStringsValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let either_str = input.strict_str()?;
+        let either_str = input.validate_str(extra.strict.unwrap_or(false))?;
         if self.expected.contains(either_str.as_cow()?.as_ref()) {
             Ok(input.to_object(py))
         } else {
@@ -223,11 +223,11 @@ impl Validator for LiteralMultipleIntsValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let int = input.strict_int()?;
+        let int = input.validate_int(extra.strict.unwrap_or(false))?;
         if self.expected.contains(&int) {
             Ok(input.to_object(py))
         } else {
@@ -287,19 +287,20 @@ impl Validator for LiteralGeneralValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
+        extra: &Extra,
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
+        let strict = extra.strict.unwrap_or(false);
         if !self.expected_int.is_empty() {
-            if let Ok(int) = input.strict_int() {
+            if let Ok(int) = input.validate_int(strict) {
                 if self.expected_int.contains(&int) {
                     return Ok(input.to_object(py));
                 }
             }
         }
         if !self.expected_str.is_empty() {
-            if let Ok(either_str) = input.strict_str() {
+            if let Ok(either_str) = input.validate_str(strict) {
                 if self.expected_str.contains(either_str.as_cow()?.as_ref()) {
                     return Ok(input.to_object(py));
                 }
