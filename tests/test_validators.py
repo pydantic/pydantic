@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from functools import partial
 from itertools import product
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -1350,9 +1350,9 @@ def test_list_unique_items_with_optional():
 
 @pytest.mark.xfail()
 def test_partialmethod_as_validator():
-    def custom_validator(additional_stuff: str, cls, values):
+    def custom_validator(additional_stuff: str, cls, v: Any):
         print(additional_stuff)
-        return values
+        return v
 
     validate = partial(custom_validator, 'TEXT')
 
