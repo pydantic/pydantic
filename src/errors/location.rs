@@ -11,8 +11,12 @@ use pyo3::types::PyTuple;
 pub enum LocItem {
     /// string type key, used to identify items from a dict or anything that implements `__getitem__`
     S(String),
-    /// integer key, used to get items from a list, tuple OR a dict with int keys `Dict[int, ...]` (python only)
-    I(usize),
+    /// integer key, used to get:
+    ///   * items from a list
+    ///   * items from a tuple
+    ///   * dict with int keys `Dict[int, ...]` (python only)
+    ///   * with integer keys in tagged unions
+    I(i64),
 }
 
 impl fmt::Display for LocItem {
@@ -36,9 +40,15 @@ impl From<&str> for LocItem {
     }
 }
 
-impl From<usize> for LocItem {
-    fn from(i: usize) -> Self {
+impl From<i64> for LocItem {
+    fn from(i: i64) -> Self {
         Self::I(i)
+    }
+}
+
+impl From<usize> for LocItem {
+    fn from(u: usize) -> Self {
+        Self::I(u as i64)
     }
 }
 
