@@ -491,11 +491,8 @@ class GenerateJsonSchema:
     def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
         generated: dict[str, JsonSchemaValue] = {}
         for k, v in schema['choices'].items():
-            if not isinstance(v, str):
-                try:
-                    generated[k] = self.generate_inner(v).copy()
-                except PydanticInvalidForJsonSchema:
-                    pass
+            if not isinstance(v, (str, int)):
+                generated[str(k)] = self.generate_inner(v).copy()
         json_schema: JsonSchemaValue = {'oneOf': list(generated.values())}
 
         # This reflects the v1 behavior, but we may want to only include the discriminator based on dialect / etc.

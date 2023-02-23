@@ -1,5 +1,6 @@
 import re
-from enum import IntEnum
+import sys
+from enum import Enum, IntEnum
 from typing import Generic, TypeVar, Union
 
 import pytest
@@ -320,11 +321,30 @@ def test_discriminated_union_int():
     ]
 
 
-def test_discriminated_union_enum():
-    # TODO: Make this work with a base Enum, not just IntEnum / StrEnum
-    class EnumValue(IntEnum):
-        a = 1
-        b = 2
+class TestIntEnum(int, Enum):
+    pass
+
+
+class TestStrEnum(str, Enum):
+    pass
+
+
+ENUM_TEST_CASES = [
+    pytest.param(Enum, {'a': 1, 'b': 2}, marks=pytest.mark.xfail(reason='Plain Enum not yet supported')),
+    pytest.param(Enum, {'a': 'v_a', 'b': 'v_b'}, marks=pytest.mark.xfail(reason='Plain Enum not yet supported')),
+    (TestIntEnum, {'a': 1, 'b': 2}),
+    (IntEnum, {'a': 1, 'b': 2}),
+    (TestStrEnum, {'a': 'v_a', 'b': 'v_b'}),
+]
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+
+    ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
+
+
+@pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
+def test_discriminated_union_enum(base_class, choices):
+    EnumValue = base_class('EnumValue', choices)
 
     class A(BaseModel):
         m: Literal[EnumValue.a]

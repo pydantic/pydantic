@@ -733,8 +733,8 @@ def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> c
         raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
     # TODO: Need to make sure nullable unions are handled properly
-    aliases = {discriminator: None}  # use a dict to ensure order is preserved
-    tagged_union_choices: dict[str, str | core_schema.CoreSchema] = {}
+    aliases = {discriminator: None}  # this is meant to behave like a set, but use a dict to ensure order is preserved
+    tagged_union_choices: dict[str | int, str | int | core_schema.CoreSchema] = {}
     while choices:
         choice = choices.pop()
         if choice['type'] == 'union':
@@ -745,7 +745,6 @@ def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> c
         for value in discriminator_values:
             if isinstance(value, Enum):
                 value = value.value
-            value = str(value)
             if value in tagged_union_choices and tagged_union_choices[value] != choice:
                 raise ValueError(f'Value {value!r} for discriminator {discriminator!r} mapped to multiple choices')
             tagged_union_choices[value] = choice
@@ -762,7 +761,6 @@ def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> c
         custom_error_message=schema.get('custom_error_message'),
         custom_error_context=schema.get('custom_error_context'),
         strict=False,
-        from_attributes=True,
         ref=schema.get('ref'),
         metadata=schema.get('metadata'),
         serialization=schema.get('serialization'),
@@ -775,7 +773,7 @@ def _get_discriminator_values_for_choice(
     if choice['type'] == 'tagged-union':
         values: list[Any] = []
         for inner_choice in choice['choices'].values():
-            if isinstance(inner_choice, str):
+            if isinstance(inner_choice, (str, int)):
                 continue
             values.extend(_get_discriminator_values_for_choice(inner_choice, discriminator, aliases))
         return values
