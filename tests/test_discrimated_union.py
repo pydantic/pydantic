@@ -312,34 +312,34 @@ def test_discriminated_union_int():
         Top.model_validate({'sub': {'m': 3}})
     assert exc_info.value.errors() == [
         {
-            'ctx': {'discriminator': "'m'", 'expected_tags': "'1', '2'", 'tag': '3'},
+            'ctx': {'discriminator': "'m'", 'expected_tags': "1, 2", 'tag': '3'},
             'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: '1', '2'",
+            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: 1, 2",
             'type': 'union_tag_invalid',
         }
     ]
 
 
-class TestIntEnum(int, Enum):
+class FooIntEnum(int, Enum):
     pass
 
 
-class TestStrEnum(str, Enum):
+class BarTestStrEnum(str, Enum):
     pass
 
 
 ENUM_TEST_CASES = [
     pytest.param(Enum, {'a': 1, 'b': 2}, marks=pytest.mark.xfail(reason='Plain Enum not yet supported')),
     pytest.param(Enum, {'a': 'v_a', 'b': 'v_b'}, marks=pytest.mark.xfail(reason='Plain Enum not yet supported')),
-    (TestIntEnum, {'a': 1, 'b': 2}),
-    (IntEnum, {'a': 1, 'b': 2}),
-    (TestStrEnum, {'a': 'v_a', 'b': 'v_b'}),
+    (FooIntEnum, {'a': 1, 'b': 2}),
+    (FooIntEnum, {'a': 1, 'b': 2}),
+    (BarTestStrEnum, {'a': 'v_a', 'b': 'v_b'}),
 ]
 if sys.version_info >= (3, 11):
     from enum import StrEnum
 
-    ENUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
+    NUM_TEST_CASES.append((StrEnum, {'a': 'v_a', 'b': 'v_b'}))
 
 
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
@@ -356,15 +356,21 @@ def test_discriminated_union_enum(base_class, choices):
         sub: Union[A, B] = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
-    assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
+    assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b.value}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
         Top.model_validate({'sub': {'m': 3}})
+    
+    if issubclass(base_class, int):
+        expected_tags = f'{EnumValue.a}, {EnumValue.b}'
+    else:
+        expected_tags = f"'{EnumValue.a}', '{EnumValue.b}'"
+
     assert exc_info.value.errors() == [
         {
-            'ctx': {'discriminator': "'m'", 'expected_tags': "'1', '2'", 'tag': '3'},
+            'ctx': {'discriminator': "'m'", 'expected_tags': expected_tags, 'tag': '3'},
             'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: '1', '2'",
+            'msg': f"Input tag '3' found using 'm' does not match any of the expected tags: {expected_tags}",
             'type': 'union_tag_invalid',
         }
     ]
