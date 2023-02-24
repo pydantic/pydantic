@@ -1528,7 +1528,7 @@ class DisplayGen(Generic[T1, T2]):
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Union[List[int], NoneType]'),
         (dict, 'dict'),
-        (DisplayGen[bool, str], 'DisplayGen[bool, str]'),
+        (DisplayGen[bool, str], ('DisplayGen[bool, str]', 'tests.test_edge_cases.DisplayGen[bool, str]')),
     ],
 )
 def test_field_type_display(type_, expected):
@@ -1537,8 +1537,10 @@ def test_field_type_display(type_, expected):
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    # assert re.match()
-    assert re.search(f'annotation={re.escape(expected)},', str(Model.model_fields))
+    if not isinstance(expected, tuple):
+        expected = (expected,)
+
+    assert any(re.search(f'annotation={re.escape(x)},', str(Model.model_fields)) for x in expected)
 
 
 def test_any_none():
