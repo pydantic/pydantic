@@ -1,6 +1,6 @@
 import warnings
 from collections import ChainMap
-from functools import wraps
+from functools import partial, partialmethod, wraps
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -145,7 +145,7 @@ def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMet
     Avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
     """
-    if function.__module__ == 'functools':
+    if isinstance(function, (partial, partialmethod)):
         raise ConfigError('validators created using `functools` are not supported')
     f_cls = function if isinstance(function, classmethod) else classmethod(function)
     if not in_ipython() and not allow_reuse:
