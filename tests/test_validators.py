@@ -1,9 +1,9 @@
 from collections import deque
 from datetime import datetime
 from enum import Enum
-from functools import partial
+from functools import partial, partialmethod
 from itertools import product
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -1348,15 +1348,23 @@ def test_list_unique_items_with_optional():
     ]
 
 
-@pytest.mark.xfail()
-def test_partialmethod_as_validator():
-    def custom_validator(additional_stuff: str, cls, v: Any):
-        print(additional_stuff)
+@pytest.mark.parametrize('func,allow_reuse', product([partialmethod, partial], [True, False]))
+def test_functool_as_validator(
+    func: Callable,
+    allow_reuse: bool,
+):
+    def custom_validator(
+        cls,
+        v: Any,
+        allowed: str,
+    ) -> Any:
+        assert v == allowed, f'Only {allowed} allowed as value; given: {v}'
         return v
 
-    validate = partial(custom_validator, 'TEXT')
+    validate = func(custom_validator, allowed='TEXT')
 
-    class TestClass(BaseModel):
-        name: str
+    with pytest.raises(ConfigError, match='validators created using `functools` are not supported'):
 
-        _custom_validate = validator('name')(validate)
+        class TestClass(BaseModel):
+            name: str
+            _custom_validate = validator('name', allow_reuse=allow_reuse)(validate)
