@@ -3,7 +3,15 @@ from __future__ import annotations as _annotations
 from datetime import date, datetime, time
 from typing import Any
 
-from pydantic_core import PydanticKnownError, SchemaError, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import (
+    ErrorDetails,
+    PydanticKnownError,
+    SchemaError,
+    SchemaSerializer,
+    SchemaValidator,
+    ValidationError,
+    core_schema,
+)
 from pydantic_core.core_schema import CoreConfig, CoreSchema
 
 
@@ -208,3 +216,17 @@ def test_ser_function_wrap():
         "SerializationInfo(include=None, exclude=None, mode='json', by_alias=True, exclude_unset=False, "
         'exclude_defaults=False, exclude_none=False, round_trip=False)'
     )
+
+
+def test_error_details() -> None:
+    # Test that the ErrorDetails type is correctly exported.
+    def act_on_error_details(_: ErrorDetails) -> None:
+        pass
+
+    v = SchemaValidator({'type': 'int'})
+
+    try:
+        v.validate_python('not an int')
+    except ValidationError as err:
+        for details in err.errors():
+            act_on_error_details(details)
