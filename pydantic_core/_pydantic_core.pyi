@@ -1,13 +1,19 @@
 import decimal
 import sys
-from typing import Any, TypedDict
+from typing import Any
 
+from pydantic_core import ErrorDetails
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
-if sys.version_info < (3, 11):
-    from typing_extensions import Literal, NotRequired, TypeAlias
+if sys.version_info < (3, 9):
+    from typing_extensions import TypedDict
 else:
-    from typing import Literal, NotRequired, TypeAlias
+    from typing import TypedDict
+
+if sys.version_info < (3, 11):
+    from typing_extensions import Literal, TypeAlias
+else:
+    from typing import Literal, TypeAlias
 
 __all__ = (
     '__version__',
@@ -124,13 +130,6 @@ class MultiHostUrl:
 
 class SchemaError(Exception):
     pass
-
-class ErrorDetails(TypedDict):
-    type: str
-    loc: 'tuple[int | str, ...]'
-    msg: str
-    input: Any
-    ctx: NotRequired['dict[str, str | int | float]']
 
 class ValidationError(ValueError):
     title: str
