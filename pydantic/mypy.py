@@ -75,7 +75,7 @@ except ImportError:  # pragma: no cover
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
-BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
+MODEL_METACLASS_FULLNAME = 'pydantic.main.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 
@@ -86,6 +86,9 @@ def parse_mypy_version(version: str) -> Tuple[int, ...]:
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins' if MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
+
+# Increment version if plugin changes and mypy caches should be invalidated
+PLUGIN_VERSION = 1
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -102,6 +105,7 @@ class PydanticPlugin(Plugin):
     def __init__(self, options: Options) -> None:
         self.plugin_config = PydanticPluginConfig(options)
         self._plugin_data = self.plugin_config.to_data()
+        self._plugin_data['version'] = PLUGIN_VERSION
         super().__init__(options)
 
     def get_base_class_hook(self, fullname: str) -> 'Optional[Callable[[ClassDefContext], None]]':
@@ -110,6 +114,11 @@ class PydanticPlugin(Plugin):
             # No branching may occur if the mypy cache has not been cleared
             if any(get_fullname(base) == BASEMODEL_FULLNAME for base in sym.node.mro):
                 return self._pydantic_model_class_maker_callback
+        return None
+
+    def get_metaclass_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
+        if fullname == MODEL_METACLASS_FULLNAME:
+            return self._pydantic_model_metaclass_marker_callback
         return None
 
     def get_function_hook(self, fullname: str) -> 'Optional[Callable[[FunctionContext], Type]]':
@@ -138,6 +147,19 @@ class PydanticPlugin(Plugin):
     def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
         transformer = PydanticModelTransformer(ctx, self.plugin_config)
         transformer.transform()
+
+    def _pydantic_model_metaclass_marker_callback(self, ctx: ClassDefContext) -> None:
+        """Reset dataclass_transform_spec attribute of ModelMetaclass.
+
+        Let the plugin handle it. This behavior can be disabled
+        if 'debug_dataclass_transform' is set to True', for testing purposes.
+        """
+        if self.plugin_config.debug_dataclass_transform:
+            return
+        info_metaclass = ctx.cls.info.declared_metaclass
+        assert info_metaclass, "callback not passed from 'get_metaclass_hook'"
+        if getattr(info_metaclass.type, 'dataclass_transform_spec', None):
+            info_metaclass.type.dataclass_transform_spec = None  # type: ignore[attr-defined]
 
     def _pydantic_field_callback(self, ctx: FunctionContext) -> 'Type':
         """
@@ -194,11 +216,18 @@ class PydanticPlugin(Plugin):
 
 
 class PydanticPluginConfig:
-    __slots__ = ('init_forbid_extra', 'init_typed', 'warn_required_dynamic_aliases', 'warn_untyped_fields')
+    __slots__ = (
+        'init_forbid_extra',
+        'init_typed',
+        'warn_required_dynamic_aliases',
+        'warn_untyped_fields',
+        'debug_dataclass_transform',
+    )
     init_forbid_extra: bool
     init_typed: bool
     warn_required_dynamic_aliases: bool
     warn_untyped_fields: bool
+    debug_dataclass_transform: bool  # undocumented
 
     def __init__(self, options: Options) -> None:
         if options.config_file is None:  # pragma: no cover
