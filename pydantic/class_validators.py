@@ -145,6 +145,8 @@ def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMet
     Avoid validators with duplicated names since without this, validators can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if allow_reuse is False.
     """
+    if function.__module__ == 'functools':
+        raise ConfigError('validators created using `functools` are not supported')
     f_cls = function if isinstance(function, classmethod) else classmethod(function)
     if not in_ipython() and not allow_reuse:
         ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
