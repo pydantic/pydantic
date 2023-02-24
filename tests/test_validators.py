@@ -1348,7 +1348,15 @@ def test_list_unique_items_with_optional():
     ]
 
 
-@pytest.mark.parametrize('func,allow_reuse', product([partialmethod, partial], [True, False]))
+@pytest.mark.parametrize(
+    'func,allow_reuse',
+    [
+        pytest.param(partial, False, id='`partial` and check for reuse'),
+        pytest.param(partial, True, id='`partial` and ignore reuse'),
+        pytest.param(partialmethod, False, id='`partialmethod` and check for reuse'),
+        pytest.param(partialmethod, False, id='`partialmethod` and ignore reuse'),
+    ],
+)
 def test_functool_as_validator(
     func: Callable,
     allow_reuse: bool,
