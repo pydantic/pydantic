@@ -1354,7 +1354,7 @@ def test_list_unique_items_with_optional():
         pytest.param(partial, False, id='`partial` and check for reuse'),
         pytest.param(partial, True, id='`partial` and ignore reuse'),
         pytest.param(partialmethod, False, id='`partialmethod` and check for reuse'),
-        pytest.param(partialmethod, False, id='`partialmethod` and ignore reuse'),
+        pytest.param(partialmethod, True, id='`partialmethod` and ignore reuse'),
     ],
 )
 def test_functool_as_validator(
