@@ -760,7 +760,18 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
 
         if isinstance(v, dict):
             return {
-                k_: cls._get_value(
+                cls._get_value(
+                    k_,
+                    to_dict=to_dict,
+                    by_alias=by_alias,
+                    exclude_unset=exclude_unset,
+                    exclude_defaults=exclude_defaults,
+                    include=value_include and value_include.for_element(k_),
+                    exclude=value_exclude and value_exclude.for_element(k_),
+                    exclude_none=exclude_none,
+                )
+                if isinstance(k_, BaseModel)
+                else k_: cls._get_value(
                     v_,
                     to_dict=to_dict,
                     by_alias=by_alias,
