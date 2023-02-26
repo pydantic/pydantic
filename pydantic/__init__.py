@@ -110,6 +110,7 @@ __all__ = [
     'VERSION',
 ]
 
+
 def __getattr__(name):
     inform(__name__, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
