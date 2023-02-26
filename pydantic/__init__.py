@@ -8,14 +8,12 @@ from .decorator import validate_arguments
 from .decorators import root_validator, serializer, validator
 from .errors import *
 from .fields import Field, PrivateAttr
-from .import_helper import patch_importlib_with_migration_info
+from .import_helper import getattr, patch_importlib_with_migration_info
 from .main import *
 from .networks import *
 from .tools import *
 from .types import *
 from .version import VERSION
-
-patch_importlib_with_migration_info(importlib)
 
 __version__ = VERSION
 
@@ -113,3 +111,10 @@ __all__ = [
     # version
     'VERSION',
 ]
+
+
+patch_importlib_with_migration_info(importlib)
+
+
+def __getattr__(name: str) -> None:
+    return getattr(__name__, name)
