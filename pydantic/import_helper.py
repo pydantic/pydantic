@@ -22,7 +22,12 @@ V2_MIGRATION_MAPPING = {
     # Case: Superseded
 }
 
+import importlib
+___handle_fromlist__ = importlib._bootstrap._handle_fromlist
 
-def inform(current_module, obj):
-    if exception := V2_MIGRATION_MAPPING.get(f"{current_module}.{obj}"):
+def _handle_fromlist_override(module, fromlist, import_, *, recursive=False):
+    if exception := V2_MIGRATION_MAPPING.get(f"{module.__name__}.{'.'.join(fromlist)}"):
         raise exception
+    return ___handle_fromlist__(module, fromlist, import_, recursive=recursive)
+
+importlib._bootstrap._handle_fromlist = _handle_fromlist_override
