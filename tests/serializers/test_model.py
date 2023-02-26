@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import platform
+from typing import ClassVar
 
 import pytest
 
@@ -54,9 +55,11 @@ def test_model():
 
 @dataclasses.dataclass
 class DataClass:
+    class_var: ClassVar[int] = 1
     foo: int
     bar: str
     spam: bytes
+    frog: dataclasses.InitVar[int]
 
 
 def test_dataclass():
@@ -65,6 +68,7 @@ def test_dataclass():
             core_schema.arguments_parameter('foo', core_schema.int_schema()),
             core_schema.arguments_parameter('bar', core_schema.str_schema()),
             core_schema.arguments_parameter('spam', core_schema.bytes_schema(), mode='keyword_only'),
+            core_schema.arguments_parameter('frog', core_schema.int_schema(), mode='keyword_only'),
         ),
         DataClass,
         serialization=core_schema.model_ser_schema(
@@ -80,12 +84,14 @@ def test_dataclass():
     )
     # just check validation works as expected
     v = SchemaValidator(schema)
-    dc = v.validate_python({'foo': 1, 'bar': 'bar-str', 'spam': 'bite'})
-    assert dc == DataClass(foo=1, bar='bar-str', spam=b'bite')
+    dc = v.validate_python({'foo': 1, 'bar': 'bar-str', 'spam': 'bite', 'frog': 123})
+    assert dc == DataClass(foo=1, bar='bar-str', spam=b'bite', frog=123)
+    dc.class_var = 2
     assert dataclasses.is_dataclass(dc)
 
     s = SchemaSerializer(schema)
 
+    assert dataclasses.asdict(dc) == IsStrictDict(foo=1, bar='bar-str', spam=b'bite')
     assert s.to_python(dc) == IsStrictDict(foo=1, bar='bar-str', spam=b'bite')
 
     assert s.to_python(dc, mode='json') == {'foo': 1, 'bar': 'bar-str', 'spam': 'bite'}

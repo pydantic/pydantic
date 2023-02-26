@@ -1,8 +1,9 @@
+import dataclasses
 import json
-from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
+from typing import ClassVar
 
 import pytest
 from dirty_equals import IsList
@@ -22,10 +23,12 @@ def test_repr(any_serializer):
     assert plain_repr(any_serializer) == 'SchemaSerializer(serializer=Any(AnySerializer),slots=[])'
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class MyDataclass:
+    class_var: ClassVar[int] = 1
     a: int
     b: str
+    frog: dataclasses.InitVar[int]
 
 
 class MyModel:
@@ -46,7 +49,7 @@ def test_any_json_round_trip(any_serializer, value):
 @pytest.mark.parametrize(
     'input_value,expected_plain,expected_json_obj',
     [
-        (MyDataclass(1, 'foo'), {'a': 1, 'b': 'foo'}, {'a': 1, 'b': 'foo'}),
+        (MyDataclass(1, 'foo', 3), {'a': 1, 'b': 'foo'}, {'a': 1, 'b': 'foo'}),
         (MyModel(a=1, b='foo'), {'a': 1, 'b': 'foo'}, {'a': 1, 'b': 'foo'}),
         ({1, 2, 3}, {1, 2, 3}, IsList(1, 2, 3, check_order=False)),
         ({1, '2', b'3'}, {1, '2', b'3'}, IsList(1, '2', '3', check_order=False)),
@@ -59,7 +62,7 @@ def test_any_python(any_serializer, input_value, expected_plain, expected_json_o
 
 
 def test_set_member_db(any_serializer):
-    input_value = {MyDataclass(1, 'a'), MyDataclass(2, 'b')}
+    input_value = {MyDataclass(1, 'a', 2), MyDataclass(2, 'b', 2)}
     expected_json_obj = IsList({'a': 1, 'b': 'a'}, {'a': 2, 'b': 'b'}, check_order=False)
     assert any_serializer.to_python(input_value, mode='json') == expected_json_obj
     assert json.loads(any_serializer.to_json(input_value)) == expected_json_obj
@@ -84,9 +87,9 @@ def test_set_member_db(any_serializer):
         (date(2022, 12, 3), b'"2022-12-03"'),
         (time(12, 30, 45), b'"12:30:45"'),
         (timedelta(hours=2), b'"PT7200S"'),
-        (MyDataclass(1, 'foo'), b'{"a":1,"b":"foo"}'),
+        (MyDataclass(1, 'foo', 2), b'{"a":1,"b":"foo"}'),
         (MyModel(a=1, b='foo'), b'{"a":1,"b":"foo"}'),
-        ([MyDataclass(1, 'a'), MyModel(a=2, b='b')], b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
+        ([MyDataclass(1, 'a', 2), MyModel(a=2, b='b')], b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
     ],
 )
 def test_any_json(any_serializer, value, expected_json):
@@ -205,22 +208,22 @@ def test_include_generator(any_serializer):
 
 def test_include_dict(any_serializer):
     assert any_serializer.to_python({1: 2, '3': 4}) == {1: 2, '3': 4}
-    assert any_serializer.to_python(MyDataclass(a=1, b='foo')) == {'a': 1, 'b': 'foo'}
+    assert any_serializer.to_python(MyDataclass(a=1, b='foo', frog=2)) == {'a': 1, 'b': 'foo'}
     assert any_serializer.to_python({1: 2, '3': 4}, mode='json') == {'1': 2, '3': 4}
     assert any_serializer.to_json({1: 2, '3': 4}) == b'{"1":2,"3":4}'
-    assert any_serializer.to_json(MyDataclass(a=1, b='foo')) == b'{"a":1,"b":"foo"}'
+    assert any_serializer.to_json(MyDataclass(a=1, b='foo', frog=2)) == b'{"a":1,"b":"foo"}'
 
     assert any_serializer.to_python({1: 2, '3': 4}, include={1}) == {1: 2}
     assert any_serializer.to_python({1: 2, '3': 4}, include={'3'}) == {'3': 4}
-    assert any_serializer.to_python(MyDataclass(a=1, b='foo'), include={'a'}) == {'a': 1}
-    assert any_serializer.to_python(MyDataclass(a=1, b='foo'), include={'a'}, mode='json') == {'a': 1}
+    assert any_serializer.to_python(MyDataclass(a=1, b='foo', frog=2), include={'a'}) == {'a': 1}
+    assert any_serializer.to_python(MyDataclass(a=1, b='foo', frog=2), include={'a'}, mode='json') == {'a': 1}
     assert any_serializer.to_python(MyModel(a=1, b='foo'), include={'a'}) == {'a': 1}
     assert any_serializer.to_python(MyModel(a=1, b='foo'), include={'a'}, mode='json') == {'a': 1}
     assert any_serializer.to_python({1: 2, '3': 4}, include={1}, mode='json') == {'1': 2}
     assert any_serializer.to_python({1: 2, '3': 4}, include={'3'}, mode='json') == {'3': 4}
     assert any_serializer.to_json({1: 2, '3': 4}, include={1}) == b'{"1":2}'
     assert any_serializer.to_json({1: 2, '3': 4}, include={'3'}) == b'{"3":4}'
-    assert any_serializer.to_json(MyDataclass(a=1, b='foo'), include={'a'}) == b'{"a":1}'
+    assert any_serializer.to_json(MyDataclass(a=1, b='foo', frog=2), include={'a'}) == b'{"a":1}'
 
 
 class FieldsSetModel:
@@ -326,7 +329,7 @@ def test_base64():
         (lambda: Decimal('12.34'), {}, b'"12.34"'),
         (lambda: MyEnum.a, {}, b'1'),
         (lambda: MyEnum.b, {}, b'"b"'),
-        (lambda: [MyDataclass(1, 'a'), MyModel(a=2, b='b')], {}, b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
+        (lambda: [MyDataclass(1, 'a', 2), MyModel(a=2, b='b')], {}, b'[{"a":1,"b":"a"},{"a":2,"b":"b"}]'),
         # # (lambda: re.compile('^regex$'), b'"^regex$"'),
     ],
 )
