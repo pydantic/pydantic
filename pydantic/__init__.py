@@ -6,6 +6,7 @@ from .decorator import validate_arguments
 from .decorators import root_validator, serializer, validator
 from .errors import *
 from .fields import Field, PrivateAttr
+from .import_helper import inform
 from .main import *
 from .networks import *
 from .tools import *
@@ -108,3 +109,7 @@ __all__ = [
     # version
     'VERSION',
 ]
+
+def __getattr__(name):
+    inform(__name__, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
