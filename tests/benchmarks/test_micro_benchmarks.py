@@ -264,13 +264,81 @@ def test_core_string_lax(benchmark):
 
 
 @pytest.mark.benchmark(group='string')
+def test_core_string_lax_wrong(benchmark):
+    validator = SchemaValidator(core_schema.str_schema())
+
+    with pytest.raises(ValidationError, match='Input should be a valid string'):
+        validator.validate_python(123)
+
+    @benchmark
+    def t():
+        try:
+            validator.validate_python(123)
+        except ValidationError:
+            pass
+
+
+@pytest.mark.benchmark(group='string')
 def test_core_string_strict(benchmark):
     validator = SchemaValidator(core_schema.str_schema(strict=True))
     input_str = 'Hello ' * 20
 
     assert validator.validate_python(input_str) == input_str
 
-    benchmark(validator.validate_python, 'foo')
+    benchmark(validator.validate_python, input_str)
+
+
+@pytest.mark.benchmark(group='string')
+def test_core_string_strict_wrong(benchmark):
+    validator = SchemaValidator(core_schema.str_schema(strict=True))
+
+    with pytest.raises(ValidationError, match='Input should be a valid string'):
+        validator.validate_python(123)
+
+    @benchmark
+    def t():
+        try:
+            validator.validate_python(123)
+        except ValidationError:
+            pass
+
+
+@pytest.mark.benchmark(group='isinstance-string')
+def test_isinstance_string_lax_true(benchmark):
+    validator = SchemaValidator(core_schema.str_schema())
+    input_str = 'Hello ' * 20
+
+    assert validator.isinstance_python(input_str) is True
+
+    benchmark(validator.isinstance_python, input_str)
+
+
+@pytest.mark.benchmark(group='isinstance-string')
+def test_isinstance_string_lax_false(benchmark):
+    validator = SchemaValidator(core_schema.str_schema())
+
+    assert validator.isinstance_python(123) is False
+
+    benchmark(validator.isinstance_python, 123)
+
+
+@pytest.mark.benchmark(group='isinstance-string')
+def test_isinstance_string_strict_true(benchmark):
+    validator = SchemaValidator(core_schema.str_schema(strict=True))
+    input_str = 'Hello ' * 20
+
+    assert validator.isinstance_python(input_str) is True
+
+    benchmark(validator.isinstance_python, input_str)
+
+
+@pytest.mark.benchmark(group='isinstance-string')
+def test_isinstance_string_strict_false(benchmark):
+    validator = SchemaValidator(core_schema.str_schema(strict=True))
+
+    assert validator.isinstance_python(123) is False
+
+    benchmark(validator.isinstance_python, 123)
 
 
 @pytest.fixture
