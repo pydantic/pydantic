@@ -54,15 +54,10 @@ if typing.TYPE_CHECKING:
 
 
 def pydantic_dataclass_init(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-    v_args, v_kwargs = __dataclass_self__.__pydantic_validator__.validate_python(
-        {'__args__': args, '__kwargs__': kwargs}
-    )
+    # just a dict returned since we set `return_dict_only=True`
+    dc_dict = __dataclass_self__.__pydantic_validator__.validate_python({'__args__': args, '__kwargs__': kwargs})
 
-    # TODO this is a slow workaround until get get https://github.com/pydantic/pydantic-core/issues/381
-    if v_args:
-        args_dict = {f: a for a, f in zip(v_args, __dataclass_self__.__pydantic_fields__.keys())}
-        v_kwargs = {**args_dict, **kwargs}
-    object_setattr(__dataclass_self__, '__dict__', v_kwargs)
+    object_setattr(__dataclass_self__, '__dict__', dc_dict)
 
 
 def pydantic_dataclass_init_post(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:

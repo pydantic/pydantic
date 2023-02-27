@@ -4,7 +4,6 @@ Provide an enhanced dataclass that performs validation.
 from __future__ import annotations as _annotations
 
 import sys
-from copy import copy
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union, overload
 
 from typing_extensions import Literal, dataclass_transform
@@ -115,7 +114,9 @@ def dataclass(
 
         if dataclasses.is_dataclass(cls):
             # so we don't add validation to the existing dataclass
-            cls = copy(cls)
+            # FIXME we need to construct `cls.__pydantic_fields__` from `cls.__dataclass_fields__` so cls
+            #  "looks" like a pydantic dataclass
+            cls = type(f'Sub{cls.__name__}', (cls,), {})
 
         _pydantic_dataclasses.prepare_dataclass(cls, the_config, kw_only)
         return dataclasses.dataclass(  # type: ignore[call-overload]

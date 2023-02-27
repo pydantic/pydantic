@@ -102,7 +102,7 @@ def collect_fields(  # noqa: C901
     types_namespace: dict[str, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], str]:
     """
-    Collect the fields of a pydantic model or dataclass, also returns teh model/class ref to use in the
+    Collect the fields of a pydantic model or dataclass, also returns the model/class ref to use in the
     core-schema.
 
     :param cls: BaseModel or dataclass

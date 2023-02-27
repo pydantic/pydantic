@@ -68,7 +68,7 @@ def dataclass_fields_schema(
         schema_generator.generate_arg_param_schema(k, v, mode, validator_functions, serializer_functions)
         for k, v in fields.items()
     ]
-    schema: core_schema.CoreSchema = core_schema.arguments_schema(*args, ref=ref)
+    schema: core_schema.CoreSchema = core_schema.arguments_schema(*args, return_dict_only=True, ref=ref)
     schema = apply_validators(schema, validator_functions.get_root_decorators())
     return schema
 

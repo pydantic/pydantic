@@ -168,7 +168,6 @@ def test_post_init():
     assert post_init_called
 
 
-@pytest.mark.xfail(reason='existing dataclass is being modified???')
 def test_post_init_validation():
     @dataclasses.dataclass
     class DC:
