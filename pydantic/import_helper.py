@@ -63,12 +63,6 @@ V2_MIGRATION_MAPPING = {
     'pydantic.class_validators.prep_validators': V2MigrationRemovedException('TODO'),
     'pydantic.class_validators.all_kwargs': V2MigrationRemovedException('TODO'),
     'pydantic.class_validators.gather_all_validators': V2MigrationRemovedException('TODO'),
-    # pydantic.color
-    'pydantic.color.ColorError': V2MigrationRemovedException('TODO'),
-    'pydantic.color.Representation': V2MigrationRemovedException('TODO'),  # Moved to _internal._repr.Representation
-    'pydantic.color.almost_equal_floats': V2MigrationRemovedException(
-        'TODO'
-    ),  # Moved to _internal._utils.almost_equal_floats
     # pydantic.config
     'pydantic.config.inherit_config': V2MigrationRemovedException('TODO'),
     # pydantic.datetime_parse
@@ -204,8 +198,8 @@ V2_MIGRATION_MAPPING = {
     'pydantic.errors.InvalidDiscriminator': V2MigrationRemovedException('TODO'),
     # pydantic.fields
     'pydantic.fields.Required': V2MigrationRemovedException('pydantic.Required has been removed in favour of ...'),
-    'pydantic.fields.UndefinedType': V2MigrationRemovedException('TODO'),  # Moved
-    'pydantic.fields.Undefined': V2MigrationRemovedException('TODO'),  # Moved
+    # 'pydantic.fields.UndefinedType': V2MigrationRemovedException('TODO'),  # Moved
+    # 'pydantic.fields.Undefined': V2MigrationRemovedException('TODO'),  # Moved
     'pydantic.fields.SHAPE_SINGLETON': V2MigrationMovedWarning('TODO'),
     'pydantic.fields.SHAPE_LIST': V2MigrationMovedWarning('TODO'),
     'pydantic.fields.SHAPE_SET': V2MigrationMovedWarning('TODO'),
