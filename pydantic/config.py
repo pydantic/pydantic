@@ -237,3 +237,9 @@ def prepare_config(config: ConfigDict, cls_name: str) -> None:
             config['extra'] = Extra(config['extra'])
         except ValueError:
             raise ValueError(f'"{cls_name}": {config["extra"]} is not a valid value for "extra"')
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)

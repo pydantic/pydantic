@@ -39,3 +39,9 @@ def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwarg
 def schema_json_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_json_kwargs: Any) -> str:
     """Generate a JSON schema (as JSON) for the passed model or dynamically generated one"""
     return _get_parsing_type(type_, type_name=title).schema_json(**schema_json_kwargs)
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)

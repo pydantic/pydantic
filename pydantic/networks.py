@@ -302,3 +302,9 @@ def validate_email(value: str) -> tuple[str, str]:
         ) from e
 
     return name or parts['local'], parts['email']
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)

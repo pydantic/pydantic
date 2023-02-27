@@ -25,3 +25,9 @@ def version_info() -> str:
         'optional deps. installed': optional_deps,
     }
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)

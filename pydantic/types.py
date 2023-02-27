@@ -790,3 +790,9 @@ def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date =
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
     ]
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)

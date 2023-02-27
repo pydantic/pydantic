@@ -904,3 +904,9 @@ def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
 
     with open(config_file, 'rb') as rf:
         return toml_.load(rf)
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)

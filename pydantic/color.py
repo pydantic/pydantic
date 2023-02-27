@@ -494,3 +494,9 @@ COLORS_BY_NAME = {
 }
 
 COLORS_BY_VALUE = {v: k for k, v in COLORS_BY_NAME.items()}
+
+
+def __getattr__(name: str) -> None:
+    from .import_helper import getattr
+
+    return getattr(__name__, name)
