@@ -31,6 +31,7 @@ This means we **don't want to create a new dataclass that inherits from it**
 The trick is to create a wrapper around `M` that will act as a proxy to trigger
 validation without altering default `M` behaviour.
 """
+import dataclasses
 import sys
 from contextlib import contextmanager
 from functools import wraps
@@ -105,7 +106,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -121,7 +122,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -140,7 +141,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
     @overload
     def dataclass(
         *,
@@ -155,7 +156,7 @@ else:
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -172,7 +173,7 @@ else:
         ...
 
 
-@dataclass_transform(field_specifiers=(Field, FieldInfo))
+@dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[_T]] = None,
     *,
