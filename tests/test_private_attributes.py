@@ -1,3 +1,4 @@
+import platform
 from typing import ClassVar, Generic, TypeVar
 
 import pytest
@@ -14,7 +15,10 @@ def test_private_attribute():
         _foo = PrivateAttr(default)
 
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'CPython':
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(default)}
 
     m = Model()
@@ -52,7 +56,11 @@ def test_private_attribute_factory():
         _foo = PrivateAttr(default_factory=factory)
 
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'CPython':
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(default_factory=factory)}
 
     m = Model()
@@ -76,7 +84,11 @@ def test_private_attribute_annotation():
         model_config = ConfigDict(underscore_attrs_are_private=True)
 
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'CPython':
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(Undefined)}
     assert repr(Model.__doc__) == "'The best model'"
 

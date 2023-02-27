@@ -1,3 +1,4 @@
+import platform
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -1615,11 +1616,10 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    with pytest.raises(
-        TypeError,
-        match=r'__init_subclass__\(\) takes no keyword arguments|'
-        "__init_subclass__\\(\\) got an unexpected keyword argument 'some_config'",
-    ):
+    expected_message = r'__init_subclass__\(\) takes no keyword arguments'
+    if platform.python_implementation() == 'PyPy':
+        expected_message = r"__init_subclass__\(\) got an unexpected keyword argument 'some_config'"
+    with pytest.raises(TypeError, match=expected_message):
 
         class Model(BaseModel, some_config='new_value'):
             a: int
