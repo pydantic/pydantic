@@ -94,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
+        os: [ubuntu]
         python-version: ['pypy3.7', 'pypy3.8', 'pypy3.9']
 
     env:

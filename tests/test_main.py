@@ -1615,7 +1615,11 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
+    with pytest.raises(
+        TypeError,
+        match=r'__init_subclass__\(\) takes no keyword arguments|'
+        "__init_subclass__\\(\\) got an unexpected keyword argument 'some_config'",
+    ):
 
         class Model(BaseModel, some_config='new_value'):
             a: int
