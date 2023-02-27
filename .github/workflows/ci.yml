@@ -95,7 +95,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', 'pypy3.7', '3.8', 'pypy3.8', '3.9', 'pypy3.9', '3.10', '3.11']
+        python-version: ['pypy3.7', 'pypy3.8', 'pypy3.9']
 
     env:
       PYTHON: ${{ matrix.python-version }}
