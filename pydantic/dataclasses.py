@@ -31,7 +31,6 @@ This means we **don't want to create a new dataclass that inherits from it**
 The trick is to create a wrapper around `M` that will act as a proxy to trigger
 validation without altering default `M` behaviour.
 """
-import dataclasses
 import sys
 from contextlib import contextmanager
 from functools import wraps
@@ -60,6 +59,8 @@ from .fields import Field, FieldInfo
 from .main import create_model
 
 if TYPE_CHECKING:
+    import dataclasses
+
     from .main import BaseModel
 
     NoArgAnyCallable = Callable[[], Any]
@@ -104,76 +105,74 @@ __all__ = [
 
 _T = TypeVar('_T')
 
-if sys.version_info >= (3, 10):
+if TYPE_CHECKING:
+    if sys.version_info >= (3, 10):
 
-    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
-    @overload
-    def dataclass(
-        *,
-        init: bool = True,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
-        kw_only: bool = ...,
-    ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
-        ...
+        @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
+        @overload
+        def dataclass(
+            *,
+            init: bool = True,
+            repr: bool = True,
+            eq: bool = True,
+            order: bool = False,
+            unsafe_hash: bool = False,
+            frozen: bool = False,
+            config: Union[ConfigDict, Type[object], None] = None,
+            validate_on_init: Optional[bool] = None,
+            kw_only: bool = ...,
+        ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
+            ...
 
-    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
-    @overload
-    def dataclass(
-        _cls: Type[_T],
-        *,
-        init: bool = True,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
-        kw_only: bool = ...,
-    ) -> 'DataclassClassOrWrapper':
-        ...
+        @overload
+        def dataclass(
+            _cls: Type[_T],
+            *,
+            init: bool = True,
+            repr: bool = True,
+            eq: bool = True,
+            order: bool = False,
+            unsafe_hash: bool = False,
+            frozen: bool = False,
+            config: Union[ConfigDict, Type[object], None] = None,
+            validate_on_init: Optional[bool] = None,
+            kw_only: bool = ...,
+        ) -> 'DataclassClassOrWrapper':
+            ...
 
-else:
+    else:
 
-    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
-    @overload
-    def dataclass(
-        *,
-        init: bool = True,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
-    ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
-        ...
+        @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
+        @overload
+        def dataclass(
+            *,
+            init: bool = True,
+            repr: bool = True,
+            eq: bool = True,
+            order: bool = False,
+            unsafe_hash: bool = False,
+            frozen: bool = False,
+            config: Union[ConfigDict, Type[object], None] = None,
+            validate_on_init: Optional[bool] = None,
+        ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
+            ...
 
-    @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
-    @overload
-    def dataclass(
-        _cls: Type[_T],
-        *,
-        init: bool = True,
-        repr: bool = True,
-        eq: bool = True,
-        order: bool = False,
-        unsafe_hash: bool = False,
-        frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
-    ) -> 'DataclassClassOrWrapper':
-        ...
+        @overload
+        def dataclass(
+            _cls: Type[_T],
+            *,
+            init: bool = True,
+            repr: bool = True,
+            eq: bool = True,
+            order: bool = False,
+            unsafe_hash: bool = False,
+            frozen: bool = False,
+            config: Union[ConfigDict, Type[object], None] = None,
+            validate_on_init: Optional[bool] = None,
+        ) -> 'DataclassClassOrWrapper':
+            ...
 
 
-@dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
 def dataclass(
     _cls: Optional[Type[_T]] = None,
     *,
