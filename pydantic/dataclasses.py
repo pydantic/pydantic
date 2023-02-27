@@ -108,7 +108,7 @@ _T = TypeVar('_T')
 if TYPE_CHECKING:
     if sys.version_info >= (3, 10):
 
-        @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
+        @dataclass_transform(field_specifiers=(dataclasses.field, Field))
         @overload
         def dataclass(
             *,
@@ -142,7 +142,7 @@ if TYPE_CHECKING:
 
     else:
 
-        @dataclass_transform(field_specifiers=(dataclasses.Field, dataclasses.field, Field, FieldInfo))
+        @dataclass_transform(field_specifiers=(dataclasses.field, Field))
         @overload
         def dataclass(
             *,
