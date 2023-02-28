@@ -112,11 +112,24 @@ def dataclass(
     def create_dataclass(cls: Type[Any]) -> PydanticDataclass:
         import dataclasses
 
-        if dataclasses.is_dataclass(cls):
-            # so we don't add validation to the existing dataclass
-            # FIXME we need to construct `cls.__pydantic_fields__` from `cls.__dataclass_fields__` so cls
-            #  "looks" like a pydantic dataclass
-            cls = type(f'Sub{cls.__name__}', (cls,), {})
+        if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
+            # so we don't add validation to the existing std lib dataclass, so we subclass it, but we need to
+            # set `__pydantic_fields__` while subclassing so the logic below can treat the new class like its
+            # parent is a pydantic dataclass
+            dc_fields = dataclasses.fields(cls)
+            pydantic_fields = {}
+            omitted_fields = set()
+            for f in dc_fields:
+                if f.init:
+                    pydantic_fields[f.name] = FieldInfo.from_dataclass_field(f)
+                else:
+                    omitted_fields.add(f.name)
+            fields = {f.name: FieldInfo.from_dataclass_field(f) for f in dataclasses.fields(cls) if f.init}
+            cls = type(
+                cls.__name__,
+                (cls,),
+                {'__pydantic_fields__': fields, '__pydantic_omitted_fields__': omitted_fields or None},
+            )
 
         _pydantic_dataclasses.prepare_dataclass(cls, the_config, kw_only)
         return dataclasses.dataclass(  # type: ignore[call-overload]

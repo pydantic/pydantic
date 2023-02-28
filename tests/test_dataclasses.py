@@ -14,7 +14,6 @@ import pydantic
 from pydantic import BaseModel, Extra, ValidationError, validator
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_simple():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
@@ -182,6 +181,47 @@ def test_post_init_validation():
     assert PydanticDC(a='2').a == 4
 
 
+def test_convert_vanilla_dc():
+    @dataclasses.dataclass
+    class DC:
+        a: int
+        b: str = dataclasses.field(init=False)
+
+        def __post_init__(self):
+            self.a *= 2
+            self.b = 'hello'
+
+    dc1 = DC(a='2')
+    assert dc1.a == '22'
+    assert dc1.b == 'hello'
+    PydanticDC = pydantic.dataclasses.dataclass(DC)
+    dc2 = DC(a='2')
+    assert dc2.a == '22'
+    assert dc2.b == 'hello'
+
+    py_dc = PydanticDC(a='2')
+    assert py_dc.a == 4
+    assert py_dc.b == 'hello'
+
+
+def test_std_dataclass_with_parent():
+    @dataclasses.dataclass
+    class DCParent:
+        a: int
+
+    @dataclasses.dataclass
+    class DC(DCParent):
+        b: int
+
+        def __post_init__(self):
+            self.a *= 2
+
+    assert dataclasses.asdict(DC(a='2', b='1')) == {'a': '22', 'b': '1'}
+    PydanticDC = pydantic.dataclasses.dataclass(DC)
+    assert dataclasses.asdict(DC(a='2', b='1')) == {'a': '22', 'b': '1'}
+    assert dataclasses.asdict(PydanticDC(a='2', b='1')) == {'a': 4, 'b': 1}
+
+
 def test_post_init_inheritance_chain():
     parent_post_init_called = False
     post_init_called = False
@@ -251,6 +291,9 @@ def test_inheritance():
     class A:
         a: str = None
 
+    a_ = A(a=b'a')
+    assert a_.a == 'a'
+
     @pydantic.dataclasses.dataclass
     class B(A):
         b: int = None
@@ -262,8 +305,10 @@ def test_inheritance():
     with pytest.raises(ValidationError):
         B(a='a', b='b')
 
+    a_ = A(a=b'a')
+    assert a_.a == 'a'
 
-# @pytest.mark.xfail(reason='working on V2')
+
 def test_validate_long_string_error():
     class Config:
         max_anystr_length = 3
@@ -367,7 +412,6 @@ def test_nested_dataclass():
     ]
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_arbitrary_types_allowed():
     class Button:
         def __init__(self, href: str):
@@ -411,7 +455,6 @@ def test_nested_dataclass_model():
     assert navbar.n.number == 1
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_fields():
     @pydantic.dataclasses.dataclass
     class User:
@@ -431,21 +474,23 @@ def test_fields():
     assert fields['signup_ts'].default is None
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 def test_default_factory_field():
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        other: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
-    fields = user.__pydantic_model__.model_fields
+    assert user.id == 123
+    # assert user.other == {'John': 'Joey'}
+    fields = user.__pydantic_fields__
 
-    assert fields['id'].required is True
-    assert fields['id'].default is None
+    assert fields['id'].is_required() is True
+    assert repr(fields['id'].default) == 'PydanticUndefined'
 
-    assert fields['aliases'].required is False
-    assert fields['aliases'].default_factory() == {'John': 'Joey'}
+    assert fields['other'].is_required() is False
+    assert fields['other'].default_factory() == {'John': 'Joey'}
 
 
 def test_default_factory_singleton_field():
@@ -713,7 +758,6 @@ def test_override_builtin_dataclass():
     assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_override_builtin_dataclass_2():
     @dataclasses.dataclass
     class Meta:

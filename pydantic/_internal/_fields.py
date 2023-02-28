@@ -3,6 +3,7 @@ Private logic related to fields (the `Field()` function and `FieldInfo` class), 
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import re
 import sys
 from abc import ABC, abstractmethod
@@ -151,9 +152,11 @@ def collect_fields(  # noqa: C901
     fields: dict[str, FieldInfo] = {}
 
     cls_fields: dict[str, FieldInfo] = getattr(cls, 'model_fields', None) or getattr(cls, '__pydantic_fields__', {})
+    # currently just used for `init=False` dataclass fields, but could be used more
+    omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
     for ann_name, ann_type in type_hints.items():
-        if ann_name.startswith('_') or is_classvar(ann_type):
+        if ann_name.startswith('_') or is_classvar(ann_type) or (omitted_fields and ann_name in omitted_fields):
             continue
 
         # raise a PydanticUndefinedAnnotation if type is undefined
@@ -170,13 +173,17 @@ def collect_fields(  # noqa: C901
         try:
             default = getattr(cls, ann_name)
         except AttributeError:
-            # if field has no default value and is not in __annotations__ this means that it is
-            # defined in a base class and we can take it from there
             if ann_name in annotations:
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
+                # if field has no default value and is not in __annotations__ this means that it is
+                # defined in a base class and we can take it from there
                 fields[ann_name] = cls_fields[ann_name]
         else:
+            if isinstance(default, dataclasses.Field) and not default.init:
+                # dataclasses.Field with init=False are not fields
+                continue
+
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
