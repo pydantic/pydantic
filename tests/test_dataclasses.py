@@ -868,7 +868,6 @@ def test_dataclass_arbitrary():
     TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 def test_forward_stdlib_dataclass_params():
     @dataclasses.dataclass(frozen=True)
     class Item:

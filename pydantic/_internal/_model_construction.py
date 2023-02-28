@@ -170,13 +170,13 @@ def complete_model_class(
         fields,
         validator_functions,
         serializer_functions,
-        cls.__config__.arbitrary_types_allowed,
+        cls.model_config['arbitrary_types_allowed'],
         types_namespace,
     )
     validator_functions.check_for_unused()
     serializer_functions.check_for_unused()
 
-    core_config = generate_config(cls.__config__, cls)
+    core_config = generate_config(cls.model_config, cls)
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None

@@ -22,7 +22,7 @@ from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 
 if TYPE_CHECKING:
-    from ..config import BaseConfig
+    from ..config import ConfigDict
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -76,7 +76,7 @@ def dataclass_fields_schema(
     return schema
 
 
-def generate_config(config: type[BaseConfig], cls: type[Any]) -> core_schema.CoreConfig:
+def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfig:
     """
     Create a pydantic-core config from a pydantic config.
     """
@@ -92,12 +92,12 @@ def generate_config(config: type[BaseConfig], cls: type[Any]) -> core_schema.Cor
         ser_json_timedelta=config['ser_json_timedelta'],
         ser_json_bytes=config['ser_json_bytes'],
     )
-    max_anystr_length = config.get('max_anystr_length')
-    if max_anystr_length is not None:
-        core_config['str_max_length'] = max_anystr_length
-    min_anystr_length = config.get('min_anystr_length')
-    if min_anystr_length is not None:
-        core_config['str_min_length'] = min_anystr_length
+    str_max_length = config.get('str_max_length')
+    if str_max_length is not None:
+        core_config['str_max_length'] = str_max_length
+    str_min_length = config.get('str_min_length')
+    if str_min_length is not None:
+        core_config['str_min_length'] = str_min_length
 
     return core_config
 

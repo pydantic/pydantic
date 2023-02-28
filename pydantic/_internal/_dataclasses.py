@@ -97,7 +97,7 @@ def prepare_dataclass(
         'keyword_only' if kw_only else 'positional_or_keyword',
         validator_functions,
         serializer_functions,
-        config.arbitrary_types_allowed,
+        config['arbitrary_types_allowed'],
         types_namespace,
     )
     validator_functions.check_for_unused()
