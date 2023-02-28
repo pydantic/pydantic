@@ -36,32 +36,18 @@ if typing.TYPE_CHECKING:
         __pydantic_validator_functions__: typing.ClassVar[ValidationFunctions]
         __pydantic_serializer_functions__: typing.ClassVar[SerializationFunctions]
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
-        # __pydantic_run_validation__: ClassVar[bool]
-        # __post_init_post_parse__: ClassVar[Callable[..., None]]
-        # __pydantic_initialised__: ClassVar[bool]
-        # __pydantic_model__: ClassVar[type[BaseModel]]
-        # __pydantic_validate_values__: ClassVar[Callable[['Dataclass'], None]]
-        # __pydantic_has_field_info_default__: ClassVar[bool]  # whether a `pydantic.Field` is used as default value
-        #
-        #
-        # @classmethod
-        # def __get_validators__(cls: type['Dataclass']) -> 'CallableGenerator':
-        #     pass
-        #
-        # @classmethod
-        # def __validate__(cls: type['DataclassT'], v: Any) -> 'DataclassT':
-        #     pass
 
 
 def pydantic_dataclass_init(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
     # just a dict returned since we set `return_dict_only=True`
     dc_dict = __dataclass_self__.__pydantic_validator__.validate_python({'__args__': args, '__kwargs__': kwargs})
-
     object_setattr(__dataclass_self__, '__dict__', dc_dict)
 
 
 def pydantic_dataclass_init_post(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-    pydantic_dataclass_init(__dataclass_self__, *args, **kwargs)
+    # same as above, avoid call for performance, just a dict returned since we set `return_dict_only=True`
+    dc_dict = __dataclass_self__.__pydantic_validator__.validate_python({'__args__': args, '__kwargs__': kwargs})
+    object_setattr(__dataclass_self__, '__dict__', dc_dict)
     # TODO support InitVar
     __dataclass_self__.__post_init__()
 
