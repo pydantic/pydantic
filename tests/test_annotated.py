@@ -6,7 +6,6 @@ from annotated_types import Gt, Lt
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
-from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import Undefined
 
 NO_VALUE = object()
@@ -96,11 +95,6 @@ def test_annotated(hint_fn, value, expected_repr):
             5,
             pytest.raises(TypeError, match='Default may not be specified twice on the same field'),
         ),
-        (
-            lambda: Annotated[int, 0],
-            5,
-            pytest.raises(PydanticSchemaGenerationError, match=r'Metadata must be instances of annotated_types\.'),
-        ),
     ],
 )
 def test_annotated_model_exceptions(hint_fn, value, exc_handler):
@@ -109,6 +103,17 @@ def test_annotated_model_exceptions(hint_fn, value, exc_handler):
 
         class M(BaseModel):
             x: hint = value
+
+
+@pytest.mark.parametrize('metadata', [0, 'foo'])
+def test_annotated_allows_unknown(metadata):
+    class M(BaseModel):
+        x: Annotated[int, metadata] = 5
+
+    field_info = M.model_fields['x']
+    assert len(field_info.metadata) == 1
+    assert metadata in field_info.metadata, 'Records the unknown metadata'
+    assert metadata in M.__annotations__['x'].__metadata__, 'Annotated type is recorded'
 
 
 @pytest.mark.parametrize(
@@ -150,13 +155,9 @@ def test_field_reuse():
     assert AnnotatedModel(one=1).model_dump() == {'one': 1}
 
 
-@pytest.mark.skip(reason='TODO JSON Schema')
 def test_config_field_info():
     class Foo(BaseModel):
-        a: Annotated[int, Field(foobar='hello')]
-
-        class Config:
-            fields = {'a': {'description': 'descr'}}
+        a: Annotated[int, Field(description='descr', json_schema_extra={'foobar': 'hello'})]
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},

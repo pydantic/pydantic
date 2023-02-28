@@ -125,7 +125,7 @@ Pydantic models can be created from arbitrary class instances to support models 
 
 To do this:
 
-1. The [Config](model_config.md) property `orm_mode` must be set to `True`.
+1. The [Config](model_config.md) property `from_attributes` must be set to `True`.
 2. The special constructor `from_orm` must be used to create the model instance.
 
 The example here uses SQLAlchemy, but the same approach should work for any ORM.

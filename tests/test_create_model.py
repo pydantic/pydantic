@@ -2,7 +2,7 @@ from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
 
-from pydantic import BaseModel, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors, validator
 from pydantic.fields import ModelPrivateAttr
 from pydantic.generics import GenericModel
 
@@ -11,11 +11,10 @@ from pydantic.generics import GenericModel
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=123)
     assert issubclass(model, BaseModel)
-    assert issubclass(model.__config__, BaseModel.Config)
+    assert model.model_config == BaseModel.model_config
     assert model.__name__ == 'FooModel'
     assert model.model_fields.keys() == {'foo', 'bar'}
     assert model.__validators__ == {}
-    assert model.__config__.__name__ == 'Config'
     assert model.__module__ == 'pydantic.main'
 
 
@@ -67,7 +66,7 @@ def test_field_wrong_tuple():
 
 def test_config_and_base():
     with pytest.raises(errors.PydanticUserError):
-        create_model('FooModel', __config__=BaseModel.Config, __base__=BaseModel)
+        create_model('FooModel', __config__=BaseModel.model_config, __base__=BaseModel)
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -82,35 +81,39 @@ def test_inheritance():
     assert m.model_dump() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_custom_config():
-    class Config:
-        fields = {'foo': 'api-foo-field'}
+    config = ConfigDict(frozen=True)
+    expected_config = BaseModel.model_config.copy()
+    expected_config['frozen'] = True
 
-    model = create_model('FooModel', foo=(int, ...), __config__=Config)
-    assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.__config__, BaseModel.Config)
-    with pytest.raises(ValidationError):
-        model(foo=654)
+    model = create_model('FooModel', foo=(int, ...), __config__=config)
+    m = model(**{'foo': '987'})
+    assert m.foo == 987
+    assert model.model_config == expected_config
+    with pytest.raises(TypeError):
+        m.foo = 654
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_custom_config_inherits():
-    class Config(BaseModel.Config):
-        fields = {'foo': 'api-foo-field'}
+    class Config(ConfigDict):
+        custom_config: bool
 
-    model = create_model('FooModel', foo=(int, ...), __config__=Config)
-    assert model(**{'api-foo-field': '987'}).foo == 987
-    assert issubclass(model.__config__, BaseModel.Config)
+    config = Config(custom_config=True, validate_assignment=True)
+    expected_config = Config(BaseModel.model_config)
+    expected_config.update(config)
+
+    model = create_model('FooModel', foo=(int, ...), __config__=config)
+    m = model(**{'foo': '987'})
+    assert m.foo == 987
+    assert model.model_config == expected_config
     with pytest.raises(ValidationError):
-        model(foo=654)
+        m.foo = ['123']
 
 
 def test_custom_config_extras():
-    class Config(BaseModel.Config):
-        extra = Extra.forbid
+    config = ConfigDict(extra=Extra.forbid)
 
-    model = create_model('FooModel', foo=(int, ...), __config__=Config)
+    model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(foo=654)
     with pytest.raises(ValidationError):
         model(bar=654)
@@ -212,13 +215,15 @@ def test_dynamic_and_static():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_create_model():
-    class Config:
-        fields = {'a': {'description': 'descr'}}
+    # TODO fields doesn't exist anymore, remove test?
+    # class Config:
+    #     fields = {'a': {'description': 'descr'}}
+    config = ConfigDict()
 
-    m1 = create_model('M1', __config__=Config, a=(str, ...))
+    m1 = create_model('M1', __config__=config, a=(str, ...))
     assert m1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
-    m2 = create_model('M2', __config__=Config, a=(str, Field(...)))
+    m2 = create_model('M2', __config__=config, a=(str, Field(...)))
     assert m2.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
 
@@ -230,11 +235,11 @@ def test_generics_model():
         pass
 
     AAModel = create_model(
-        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'orm_mode': True}, aa=(int, Field(0))
+        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'from_attributes': True}, aa=(int, Field(0))
     )
     result = AAModel[int](aa=1)
     assert result.aa == 1
-    assert result.__config__.orm_mode is True
+    assert result.model_config['from_attributes'] is True
 
 
 @pytest.mark.xfail(reason='working on V2')

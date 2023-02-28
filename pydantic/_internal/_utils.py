@@ -14,6 +14,9 @@ from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import Any, TypeVar
 
+from pydantic_core import CoreSchema
+from pydantic_core.core_schema import TypedDictField
+
 from . import _repr, _typing_extra
 
 if typing.TYPE_CHECKING:
@@ -414,3 +417,11 @@ else:
         def __class_getitem__(cls, *args: Any) -> Any:
             # to avoid errors with 3.7
             pass
+
+
+def is_typed_dict_field(schema: CoreSchema | TypedDictField) -> typing.TypeGuard[TypedDictField]:
+    return 'type' not in schema
+
+
+def is_core_schema(schema: CoreSchema | TypedDictField) -> typing.TypeGuard[CoreSchema]:
+    return 'type' in schema

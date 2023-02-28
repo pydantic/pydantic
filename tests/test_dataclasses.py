@@ -11,7 +11,7 @@ import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, Extra, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, Extra, ValidationError, validator
 
 
 def test_simple():
@@ -73,10 +73,7 @@ def test_frozen():
 
 @pytest.mark.xfail(reason='validate assignment')
 def test_validate_assignment():
-    class Config:
-        validate_assignment = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
     class MyDataclass:
         a: int
 
@@ -116,10 +113,7 @@ def test_not_validate_assignment():
 
 @pytest.mark.xfail(reason='validate assignment')
 def test_validate_assignment_value_change():
-    class Config:
-        validate_assignment = True
-
-    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
     class MyDataclass:
         a: int
 
@@ -135,10 +129,7 @@ def test_validate_assignment_value_change():
 
 
 def test_validate_assignment_extra():
-    class Config:
-        validate_assignment = True
-
-    @pydantic.dataclasses.dataclass(config=Config, frozen=False)
+    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
     class MyDataclass:
         a: int
 
@@ -310,10 +301,7 @@ def test_inheritance():
 
 
 def test_validate_long_string_error():
-    class Config:
-        max_anystr_length = 3
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3))
     class MyDataclass:
         a: str
 
@@ -334,11 +322,7 @@ def test_validate_long_string_error():
 
 @pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assigment_long_string_error():
-    class Config:
-        max_anystr_length = 3
-        validate_assignment = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3, validate_assignment=True))
     class MyDataclass:
         a: str
 
@@ -346,7 +330,7 @@ def test_validate_assigment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
-    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.Config)
+    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.model_config)
     assert exc_info.value.errors() == [
         {
             'loc': ('a',),
@@ -358,11 +342,7 @@ def test_validate_assigment_long_string_error():
 
 
 def test_no_validate_assigment_long_string_error():
-    class Config:
-        max_anystr_length = 3
-        validate_assignment = False
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3, validate_assignment=False))
     class MyDataclass:
         a: str
 
@@ -417,10 +397,7 @@ def test_arbitrary_types_allowed():
         def __init__(self, href: str):
             self.href = href
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
     class Navbar:
         button: Button
 
@@ -497,12 +474,9 @@ def test_default_factory_singleton_field():
     class MySingleton:
         pass
 
-    class MyConfig:
-        arbitrary_types_allowed = True
-
     MY_SINGLETON = MySingleton()
 
-    @pydantic.dataclasses.dataclass(config=MyConfig)
+    @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
     class Foo:
         singleton: MySingleton = dataclasses.field(default_factory=lambda: MY_SINGLETON)
 
@@ -889,8 +863,7 @@ def test_dataclass_arbitrary():
         a: ArbitraryType
         b: Test
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
 
@@ -905,8 +878,7 @@ def test_forward_stdlib_dataclass_params():
         item: Item
         other: str
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = ConfigDict(arbitrary_types_allowed=True)
 
     e = Example(item=Item(name='pika'), other='bulbi')
     e.other = 'bulbi2'
@@ -986,8 +958,7 @@ class ModelForPickle(pydantic.BaseModel):
 
     dataclass: BuiltInDataclassForPickle
 
-    class Config:
-        validate_assignment = True
+    model_config = pydantic.ConfigDict(validate_assignment=True)
         """
     )
     obj = module.ModelForPickle(dataclass=module.BuiltInDataclassForPickle(value=5))
@@ -1009,12 +980,11 @@ def test_config_field_info_create_model():
     class A1(BaseModel):
         a: str
 
-        class Config:
-            fields = {'a': {'description': 'descr'}}
+        model_config = ConfigDict(fields={'a': {'description': 'descr'}})
 
     assert A1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
 
-    @pydantic.dataclasses.dataclass(config=A1.Config)
+    @pydantic.dataclasses.dataclass(config=A1.model_config)
     class A2:
         a: str
 
@@ -1236,10 +1206,7 @@ def test_issue_3011():
     class B(A):
         thing_b: str
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @pydantic.dataclasses.dataclass(config=Config)
+    @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
     class C:
         thing: A
 
@@ -1563,3 +1530,19 @@ def test_subclass_post_init_inheritance():
             self.a *= 3
 
     assert C().a == 6  # 1 * 3 + 3
+
+
+@pytest.mark.xfail(reason='working on V2')
+def test_config_as_type_deprecated():
+    class Config:
+        validate_assignment = True
+
+    match = 'dataclass: support for "config" as "type" is deprecated and will be removed in a future version'
+
+    with pytest.warns(DeprecationWarning, match=match):
+
+        @pydantic.dataclasses.dataclass(config=Config)
+        class MyDataclass:
+            a: int
+
+        assert MyDataclass.__pydantic_model__.model_config == ConfigDict(validate_assignment=True)

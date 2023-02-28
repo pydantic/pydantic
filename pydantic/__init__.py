@@ -31,6 +31,9 @@ __all__ = [
     'validate_arguments',
     # error_wrappers
     'ValidationError',
+    'PydanticUserError',
+    'PydanticSchemaGenerationError',
+    'PydanticUndefinedAnnotation',
     # fields
     'Field',
     # main

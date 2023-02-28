@@ -13,7 +13,7 @@ from ._internal import _fields, _repr
 if TYPE_CHECKING:
     import email_validator
 
-    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]  # type: ignore[misc]
+    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]
 
 else:
     email_validator = None
@@ -143,7 +143,7 @@ else:
                 return core_schema.function_after_schema(schema, cls.validate)
 
         @classmethod
-        def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+        def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
             field_schema.update(type='string', format='email')
 
         @classmethod
@@ -162,7 +162,7 @@ class NameEmail(_repr.Representation):
         return isinstance(other, NameEmail) and (self.name, self.email) == (other.name, other.email)
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format='name-email')
 
     @classmethod
@@ -204,7 +204,7 @@ class IPvAnyAddress:
             raise PydanticCustomError('ip_any_address', 'value is not a valid IPv4 or IPv6 address')
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyaddress')
 
     @classmethod
@@ -231,7 +231,7 @@ class IPvAnyInterface:
             raise PydanticCustomError('ip_any_interface', 'value is not a valid IPv4 or IPv6 interface')
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanyinterface')
 
     @classmethod
@@ -260,7 +260,7 @@ class IPvAnyNetwork:
             raise PydanticCustomError('ip_any_network', 'value is not a valid IPv4 or IPv6 network')
 
     @classmethod
-    def __modify_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
         field_schema.update(type='string', format='ipvanynetwork')
 
     @classmethod

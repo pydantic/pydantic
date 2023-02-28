@@ -13,6 +13,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+from ._core_metadata import build_metadata_dict
 from ._fields import Undefined, collect_fields
 from ._generate_schema import generate_config, model_fields_schema
 from ._utils import ClassAttribute, is_valid_identifier
@@ -20,7 +21,7 @@ from ._utils import ClassAttribute, is_valid_identifier
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from ..config import BaseConfig
+    from ..config import ConfigDict
     from ..main import BaseModel
 
 __all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator'
@@ -110,7 +111,14 @@ def deferred_model_get_pydantic_validation_schema(
     # we have to set model_fields as otherwise `repr` on the model will fail
     # cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    return core_schema.model_schema(cls, inner_schema, config=core_config, call_after_init=model_post_init)
+    js_metadata = cls.model_json_schema_metadata()
+    return core_schema.model_schema(
+        cls,
+        inner_schema,
+        config=core_config,
+        call_after_init=model_post_init,
+        metadata=build_metadata_dict(js_metadata=js_metadata),
+    )
 
 
 def complete_model_class(
@@ -139,10 +147,18 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
-        if cls.__config__.undefined_types_warning:
-            raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(warning_string)  # type: ignore[assignment]
+        if cls.model_config['undefined_types_warning']:
+            config_warning_string = (
+                f'`{name}` has an undefined annotation: `{e}`. '
+                f'It may be possible to resolve this by setting '
+                f'undefined_types_warning=False in the config for `{name}`.'
+            )
+            raise UserWarning(config_warning_string)
+        usage_warning_string = (
+            f'`{name}` is not fully defined; you should define `{e}`, then call `{name}.model_rebuild()` '
+            f'before the first `{name}` instance is created.'
+        )
+        cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
             deferred_model_get_pydantic_validation_schema, cls
@@ -164,20 +180,25 @@ def complete_model_class(
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+    js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
-        cls, inner_schema, config=core_config, call_after_init=model_post_init
+        cls,
+        inner_schema,
+        config=core_config,
+        call_after_init=model_post_init,
+        metadata=build_metadata_dict(js_metadata=js_metadata),
     )
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
-    cls.__signature__ = ClassAttribute('__signature__', generate_model_signature(cls.__init__, fields, cls.__config__))
+    cls.__signature__ = ClassAttribute(
+        '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
+    )
     return True
 
 
-def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config: type[BaseConfig]
-) -> Signature:
+def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:
     """
     Generate signature for model based on its fields
     """
@@ -202,7 +223,7 @@ def generate_model_signature(
         merged_params[param.name] = param
 
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = config.allow_population_by_field_name
+        allow_names = config['populate_by_name']
         for field_name, field in fields.items():
             param_name = field.alias or field_name
             if field_name in merged_params or param_name in merged_params:
@@ -220,7 +241,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
 
-    if config.extra is Extra.allow:
+    if config['extra'] is Extra.allow:
         use_var_kw = True
 
     if var_kw and use_var_kw:

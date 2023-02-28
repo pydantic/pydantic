@@ -29,7 +29,7 @@ There are other benefits too! See below for more details.
 #### Generate a signature for `Model.__init__`
 * Any required fields that don't have dynamically-determined aliases will be included as required
   keyword arguments.
-* If `Config.allow_population_by_field_name=True`, the generated signature will use the field names,
+* If `Config.populate_by_name=True`, the generated signature will use the field names,
   rather than aliases.
 * If `Config.extra="forbid"` and you don't make use of dynamically-determined aliases, the generated signature
   will not allow unexpected inputs.
@@ -47,8 +47,8 @@ There are other benefits too! See below for more details.
 * If `Config.allow_mutation` is `False`, you'll get a mypy error if you try to change
   the value of a model field; cf. [faux immutability](usage/models.md#faux-immutability).
 
-#### Respect `Config.orm_mode`
-* If `Config.orm_mode` is `False`, you'll get a mypy error if you try to call `.from_orm()`;
+#### Respect `Config.from_attributes`
+* If `Config.from_attributes` is `False`, you'll get a mypy error if you try to call `.from_orm()`;
   cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
 
 #### Generate a signature for `dataclasses`
@@ -64,7 +64,7 @@ There are other benefits too! See below for more details.
 
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy
   error any time you use a dynamically-determined alias or alias generator on a model with
-  `Config.allow_population_by_field_name=False`.
+  `Config.populate_by_name=False`.
 * This is important because if such aliases are present, mypy cannot properly type check calls to `__init__`.
   In this case, it will default to treating all arguments as optional.
 

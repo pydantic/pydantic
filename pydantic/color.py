@@ -84,7 +84,7 @@ class Color(_repr.Representation):
         self._original = value
 
     @classmethod
-    def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='color')
 
     def original(self) -> ColorType:

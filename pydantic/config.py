@@ -1,19 +1,28 @@
 from __future__ import annotations as _annotations
 
 import json
+import warnings
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
 
 from typing_extensions import Literal, Protocol, TypedDict
+
+from pydantic.errors import PydanticUserError
 
 if TYPE_CHECKING:
     from typing import overload
 
     from .main import BaseModel
 
-    ConfigType = Type['BaseConfig']
-
     class SchemaExtraCallable(Protocol):
+        # TODO: This has been replaced with __pydantic_modify_json_schema__ in v2; need to make sure we
+        #   document the migration, in particular changing `model_class` to `cls` from the classmethod
+        # TODO: Note that the argument to Field(...) that served a similar purpose received the FieldInfo as well.
+        #   Should we accept that argument here too? Will that add a ton of boilerplate?
+        # Tentative suggestion to previous TODO: I think we let the json_schema_extra argument
+        #   to FieldInfo be a callable that accepts schema, model_class, and field_info. And use
+        #   similar machinery to `_apply_modify_schema` to call the function properly for different signatures.
+        #   (And use this Protocol-based approach to get good type-checking.)
         @overload
         def __call__(self, schema: Dict[str, Any]) -> None:
             pass
@@ -25,7 +34,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'build_config', 'inherit_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'Extra', 'build_config', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -34,189 +43,197 @@ class Extra(str, Enum):
     forbid = 'forbid'
 
 
-class ConfigDict(TypedDict, total=False):
+class _ConfigDict(TypedDict, total=False):
+    # TODO: We should raise a warning when building a model class if a now-invalid config key is present
     title: Optional[str]
-    anystr_lower: bool
-    anystr_strip_whitespace: bool
-    min_anystr_length: int
-    max_anystr_length: Optional[int]
-    validate_all: bool
+    str_to_lower: bool
+    str_to_upper: bool
+    str_strip_whitespace: bool
+    str_min_length: int
+    str_max_length: Optional[int]
     extra: Extra
-    allow_mutation: bool
     frozen: bool
-    allow_population_by_field_name: bool
+    populate_by_name: bool
     use_enum_values: bool
-    fields: Dict[str, Union[str, Dict[str, str]]]
     validate_assignment: bool
-    error_msg_templates: Dict[str, str]
-    arbitrary_types_allowed: bool
-    orm_mode: bool
+    arbitrary_types_allowed: bool  # TODO default True, or remove
+    undefined_types_warning: bool  # TODO review docs
+    from_attributes: bool
     alias_generator: Optional[Callable[[str], str]]
-    keep_untouched: Tuple[type, ...]
-    schema_extra: Union[Dict[str, object], 'SchemaExtraCallable']
-    json_loads: Callable[[str], object]
-    json_dumps: Callable[..., Any]
-    json_encoders: Dict[Type[object], Callable[..., Any]]
-    underscore_attrs_are_private: bool
+    keep_untouched: Tuple[type, ...]  # TODO remove??
+    json_loads: Callable[[str], Any]  # TODO decide
+    json_dumps: Callable[..., str]  # TODO decide
+    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]]  # TODO decide
     allow_inf_nan: bool
-    copy_on_model_validation: Literal['none', 'deep', 'shallow']
-    post_init_call: Literal['before_validation', 'after_validation']
 
-
-config_keys = set(ConfigDict.__annotations__.keys())
-
-
-class BaseConfig:
-    title: Optional[str] = None
-    anystr_lower: bool = False  # TODO rename to str_to_lower
-    anystr_upper: bool = False  # TODO rename to str_to_upper
-    anystr_strip_whitespace: bool = False  # TODO rename to str_strip_whitespace
-    min_anystr_length: int = 0  # TODO rename to str_min_length
-    max_anystr_length: Optional[int] = None  # TODO rename to str_max_length
-    validate_all: bool = False  # TODO remove
-    extra: Extra = Extra.ignore
-    allow_mutation: bool = True  # TODO remove - replaced by frozen
-    frozen: bool = False
-    allow_population_by_field_name: bool = False  # TODO rename to populate_by_name
-    use_enum_values: bool = False
-    fields: Dict[str, Union[str, Dict[str, str]]] = {}  # TODO remove
-    validate_assignment: bool = False
-    error_msg_templates: Dict[str, str] = {}  # TODO remove
-    arbitrary_types_allowed: bool = False  # TODO default True, or remove
-    undefined_types_warning: bool = True  # TODO review docs
-    orm_mode: bool = False  # TODO rename to from_attributes
-    alias_generator: Optional[Callable[[str], str]] = None
-    keep_untouched: Tuple[type, ...] = ()  # TODO remove??
-    schema_extra: Union[Dict[str, Any], 'SchemaExtraCallable'] = {}  # TODO remove, new model method
-    json_loads: Callable[[str], Any] = json.loads  # TODO decide
-    json_dumps: Callable[..., str] = json.dumps  # TODO decide
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]] = {}  # TODO decide
-    underscore_attrs_are_private: bool = False  # TODO remove
-    allow_inf_nan: bool = True
-
-    strict: bool = False
+    strict: bool
 
     # whether inherited models as fields should be reconstructed as base model,
     # and whether such a copy should be shallow or deep
-    copy_on_model_validation: Literal['none', 'deep', 'shallow'] = 'shallow'  # TODO remove???
+    copy_on_model_validation: Literal['none', 'deep', 'shallow']  # TODO remove???
 
-    # whether `Union` should check all allowed types before even trying to coerce
-    smart_union: bool = False  # TODO remove
     # whether dataclass `__post_init__` should be run before or after validation
-    post_init_call: Literal['before_validation', 'after_validation'] = 'before_validation'  # TODO remove
+    post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
 
     # new in V2
-    ser_json_timedelta: Literal['iso8601', 'float'] = 'iso8601'
-    ser_json_bytes: Literal['utf8', 'base64'] = 'utf8'
-
-    @classmethod
-    def get_field_info(cls, name: str) -> Dict[str, Any]:
-        """
-        Get properties of FieldInfo from the `fields` property of the config class.
-        """
-
-        fields_value = cls.fields.get(name)
-
-        if isinstance(fields_value, str):
-            field_info: Dict[str, Any] = {'alias': fields_value}
-        elif isinstance(fields_value, dict):
-            field_info = fields_value
-        else:
-            field_info = {}
-
-        if 'alias' in field_info:
-            field_info.setdefault('alias_priority', 2)
-
-        if field_info.get('alias_priority', 0) <= 1 and cls.alias_generator:
-            alias = cls.alias_generator(name)
-            if not isinstance(alias, str):
-                raise TypeError(f'Config.alias_generator must return str, not {alias.__class__}')
-            field_info.update(alias=alias, alias_priority=1)
-        return field_info
-
-    @classmethod
-    def prepare_field(cls, field: Any) -> None:
-        """
-        Optional hook to check or modify fields during model creation.
-        """
-        pass
+    ser_json_timedelta: Literal['iso8601', 'float']
+    ser_json_bytes: Literal['utf8', 'base64']
 
 
-def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig]:
-    if config is None:
-        return BaseConfig
+config_keys = set(_ConfigDict.__annotations__.keys())
 
-    else:
-        config_dict = (
-            config
-            if isinstance(config, dict)
-            else {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
+if TYPE_CHECKING:
+
+    class ConfigDict(_ConfigDict):
+        ...
+
+else:
+
+    class ConfigDict(dict):
+        def __missing__(self, key: str) -> Any:
+            if key in _default_config:  # need this check to prevent a recursion error
+                return _default_config[key]
+            raise KeyError(key)
+
+
+_default_config = ConfigDict(
+    title=None,
+    str_to_lower=False,
+    str_to_upper=False,
+    str_strip_whitespace=False,
+    str_min_length=0,
+    str_max_length=None,
+    extra=Extra.ignore,
+    frozen=False,
+    populate_by_name=False,
+    use_enum_values=False,
+    validate_assignment=False,
+    arbitrary_types_allowed=False,
+    undefined_types_warning=True,
+    from_attributes=False,
+    alias_generator=None,
+    keep_untouched=(),
+    json_loads=json.loads,
+    json_dumps=json.dumps,
+    json_encoders={},
+    allow_inf_nan=True,
+    strict=False,
+    copy_on_model_validation='shallow',
+    post_init_call='before_validation',
+    ser_json_timedelta='iso8601',
+    ser_json_bytes='utf8',
+)
+
+
+class ConfigMetaclass(type):
+    def __getattr__(self, item: str) -> Any:
+        warnings.warn(
+            f'Support for "config" as "{self.__name__}" is deprecated and will be removed in a future version"',
+            DeprecationWarning,
         )
 
-        class Config(BaseConfig):
-            ...
-
-        for k, v in config_dict.items():
-            setattr(Config, k, v)
-        return Config
+        try:
+            return _default_config[item]  # type: ignore[literal-required]
+        except KeyError as exc:
+            raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}")
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
-    # TODO remove
-    if not self_config:
-        base_classes: Tuple['ConfigType', ...] = (parent_config,)
-    elif self_config == parent_config:
-        base_classes = (self_config,)
+class BaseConfig(metaclass=ConfigMetaclass):
+    """
+    This class is only retained for backwards compatibility.
+
+    The preferred approach going forward is to assign a ConfigDict to the `model_config` attribute of the Model class.
+    """
+
+    def __getattr__(self, item: str) -> Any:
+        warnings.warn(
+            f'Support for "config" as "{type(self).__name__}" is deprecated and will be removed in a future version',
+            DeprecationWarning,
+        )
+        try:
+            return super().__getattribute__(item)
+        except AttributeError as exc:
+            try:
+                return getattr(type(self), item)
+            except AttributeError:
+                # reraising changes the displayed text to reflect that `self` is not a type
+                raise AttributeError(str(exc))
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        warnings.warn(
+            '`BaseConfig` is deprecated and will be removed in a future version',
+            DeprecationWarning,
+        )
+        return super().__init_subclass__(**kwargs)
+
+
+def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> ConfigDict:
+    if config is None:
+        return ConfigDict()
+
+    if isinstance(config, dict):
+        config_dict = config
     else:
-        base_classes = self_config, parent_config
+        warnings.warn(
+            f'Support for "config" as "{type(config).__name__}" is deprecated and will be removed in a future version',
+            DeprecationWarning,
+        )
+        config_dict = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
-    namespace['json_encoders'] = {
-        **getattr(parent_config, 'json_encoders', {}),
-        **getattr(self_config, 'json_encoders', {}),
-        **namespace.get('json_encoders', {}),
-    }
-
-    return type('Config', base_classes, namespace)
+    return ConfigDict(config_dict)  # type: ignore
 
 
 def build_config(
     cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]
-) -> tuple[type[BaseConfig], type[BaseConfig] | None]:
+) -> ConfigDict:
     """
-    TODO update once we're sure what this does.
-
-    Note: merging json_encoders is not currently implemented
+    Build a new ConfigDict instance based on (from lowest to highest)
+    - options defined in base
+    - options defined in namespace
+    - options defined via kwargs
     """
     config_kwargs = {k: kwargs.pop(k) for k in list(kwargs.keys()) if k in config_keys}
-    config_from_namespace = namespace.get('Config')
 
-    config_bases = []
+    config_bases = {}
+    configs_ordered = []
+    # collect all config options from bases
     for base in bases:
-        config = getattr(base, 'Config', None)
+        config = getattr(base, 'model_config', None)
         if config:
-            config_bases.append(config)
+            configs_ordered.append(config)
+            config_bases.update({key: value for key, value in config.items()})
+    config_new = dict(config_bases.items())
 
-    if len(config_bases) == 1 and not any([config_kwargs, config_from_namespace]):
-        return BaseConfig, None
+    config_class_from_namespace = namespace.get('Config')
+    config_dict_from_namespace = namespace.get('model_config')
+
+    if config_class_from_namespace and config_dict_from_namespace:
+        raise PydanticUserError('"Config" and "model_config" cannot be used together')
+
+    config_from_namespace = config_dict_from_namespace or get_config(config_class_from_namespace)
 
     if config_from_namespace:
-        config_bases = [config_from_namespace] + config_bases
+        configs_ordered.append(config_from_namespace)
+        config_new.update(config_from_namespace)
+    configs_ordered.append(config_kwargs)
 
-    combined_config: type[BaseConfig] = type('CombinedConfig', tuple(config_bases), config_kwargs)
-    prepare_config(combined_config, cls_name)
+    config_new.update(config_kwargs)
+    new_model_config = ConfigDict(config_new)  # type: ignore
+    # merge `json_encoders`-dict in correct order
+    json_encoders = {}
+    for c in configs_ordered:
+        json_encoders.update(c.get('json_encoders', {}))
 
-    if config_from_namespace and config_kwargs:
-        # we want to override `Config` so future inheritance includes config_kwargs
-        new_model_config: type[BaseConfig] = type('ConfigWithKwargs', (config_from_namespace,), config_kwargs)
-        return combined_config, new_model_config
-    else:
-        # we want to use CombinedConfig for `__config__`, but we
-        return combined_config, combined_config
+    if json_encoders:
+        new_model_config['json_encoders'] = json_encoders
+
+    prepare_config(new_model_config, cls_name)
+    return new_model_config
 
 
-def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
-    if not isinstance(config.extra, Extra):
+def prepare_config(config: ConfigDict, cls_name: str) -> None:
+    if not isinstance(config['extra'], Extra):
         try:
-            config.extra = Extra(config.extra)
+            config['extra'] = Extra(config['extra'])
         except ValueError:
-            raise ValueError(f'"{cls_name}": {config.extra} is not a valid value for "extra"')
+            raise ValueError(f'"{cls_name}": {config["extra"]} is not a valid value for "extra"')

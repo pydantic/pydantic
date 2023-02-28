@@ -8,6 +8,8 @@ class Person(BaseModel):
     age: int
 
     class Config:
+        # TODO: This is no longer valid in v2;
+        #   update example to use __pydantic_modify_json_schema__
         @staticmethod
         def schema_extra(schema: Dict[str, Any], model: Type['Person']) -> None:
             for prop in schema.get('properties', {}).values():

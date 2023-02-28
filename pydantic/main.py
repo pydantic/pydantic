@@ -9,6 +9,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+from inspect import getdoc
 from types import prepare_class, resolve_bases
 from typing import Any
 
@@ -16,11 +17,11 @@ import typing_extensions
 
 from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
-from .config import BaseConfig, Extra, build_config, inherit_config
+from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .schema import default_ref_template, model_schema
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -49,11 +50,8 @@ _base_class_defined = False
 class ModelMetaclass(ABCMeta):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any) -> type:
         if _base_class_defined:
-            __config__, new_model_config = build_config(cls_name, bases, namespace, kwargs)
-            if new_model_config is not None:
-                namespace['Config'] = new_model_config
-            namespace['__config__'] = __config__
-
+            config_new = build_config(cls_name, bases, namespace, kwargs)
+            namespace['model_config'] = config_new
             namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
@@ -85,13 +83,14 @@ class ModelMetaclass(ABCMeta):
                 if not found_validator:
                     serializer_functions.extract_decorator(name, value)
 
-            if __config__.json_encoders:
-                json_encoder = partial(custom_pydantic_encoder, __config__.json_encoders)
+            if config_new['json_encoders']:
+                json_encoder = partial(custom_pydantic_encoder, config_new['json_encoders'])
             else:
                 json_encoder = pydantic_encoder  # type: ignore[assignment]
             namespace['__json_encoder__'] = staticmethod(json_encoder)
+            namespace['__schema_cache__'] = {}
 
-            if '__hash__' not in namespace and __config__.frozen:
+            if '__hash__' not in namespace and config_new['frozen']:
 
                 def hash_func(self_: Any) -> int:
                     return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
@@ -130,7 +129,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator_functions__: typing.ClassVar[_decorators.ValidationFunctions]
         __pydantic_serializer_functions__: typing.ClassVar[_decorators.SerializationFunctions]
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
-        __config__: typing.ClassVar[type[BaseConfig]] = BaseConfig
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
         __signature__: typing.ClassVar[Signature]
@@ -142,7 +140,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
         )
 
-    Config = BaseConfig
+    model_config = ConfigDict()
     __slots__ = '__dict__', '__fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
@@ -193,13 +191,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def __setattr__(self, name, value):
         if name.startswith('_'):
             _object_setattr(self, name, value)
-        elif self.__config__.frozen:
+        elif self.model_config['frozen']:
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
-        elif self.__config__.validate_assignment:
+        elif self.model_config['validate_assignment']:
             values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
             _object_setattr(self, '__dict__', values)
             self.__fields_set__ |= fields_set
-        elif self.__config__.extra is not Extra.allow and name not in self.model_fields:
+        elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
@@ -364,22 +362,48 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def model_json_schema(
-        cls, by_alias: bool = True, ref_template: str = default_ref_template
+        cls,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> typing.Dict[str, Any]:
+        """
+        To override the logic used to generate the JSON schema, you can create a subclass of GenerateJsonSchema
+        with your desired modifications, then override this method on a custom base class and set the default
+        value of `schema_generator` to be your subclass.
+        """
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = model_schema(cls, by_alias=by_alias, ref_template=ref_template)
+        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 
     @classmethod
+    def model_json_schema_metadata(cls) -> JsonSchemaMetadata | None:
+        """
+        Overriding this method provides a simple way to modify certain aspects of the JSON schema generation.
+
+        This is a convenience method primarily intended to control how the "generic" properties
+        of the JSON schema are populated, or apply minor transformations through `extra_updates` or
+        `modify_js_function`. See https://json-schema.org/understanding-json-schema/reference/generic.html
+        and the comments surrounding the definition of `JsonSchemaMetadata` for more details.
+
+        If you want to make more sweeping changes to how the JSON schema is generated, you will probably
+        want to subclass `GenerateJsonSchema` and pass your subclass in the `schema_generator` argument to the
+        `model_json_schema` method.
+        """
+        title = cls.model_config['title'] or cls.__name__
+        description = getdoc(cls) or None
+        return {'title': title, 'description': description}
+
+    @classmethod
     def schema_json(
-        cls, *, by_alias: bool = True, ref_template: str = default_ref_template, **dumps_kwargs: Any
+        cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:
         from .json import pydantic_encoder
 
-        return cls.__config__.json_dumps(
+        return cls.model_config['json_dumps'](
             cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
             default=pydantic_encoder,
             **dumps_kwargs,
@@ -450,7 +474,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             return v.__class__(*seq_args) if _typing_extra.is_namedtuple(v.__class__) else v.__class__(seq_args)
 
-        elif isinstance(v, Enum) and getattr(cls.Config, 'use_enum_values', False):
+        elif isinstance(v, Enum) and getattr(cls.model_config, 'use_enum_values', False):
             return v.value
 
         else:
@@ -594,7 +618,7 @@ _base_class_defined = True
 def create_model(
     __model_name: str,
     *,
-    __config__: type[BaseConfig] | None = None,
+    __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -608,7 +632,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: type[BaseConfig] | None = None,
+    __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -621,7 +645,7 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: type[BaseConfig] | None = None,
+    __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] = None,
@@ -632,7 +656,7 @@ def create_model(
     """
     Dynamically create a model.
     :param __model_name: name of the created model
-    :param __config__: config class to use for the new model
+    :param __config__: config dict/class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __module__: module of the created model
     :param __validators__: a dict of method names and @validator class methods
@@ -686,7 +710,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['Config'] = inherit_config(__config__, BaseConfig)
+        namespace['model_config'] = get_config(__config__)
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

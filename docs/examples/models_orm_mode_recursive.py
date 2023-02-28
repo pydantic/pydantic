@@ -20,7 +20,7 @@ class Pet(BaseModel):
     species: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Person(BaseModel):
@@ -29,7 +29,7 @@ class Person(BaseModel):
     pets: List[Pet]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 bones = PetCls(name='Bones', species='dog')

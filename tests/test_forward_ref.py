@@ -42,11 +42,8 @@ def test_forward_ref_auto_update_no_model(create_module):
     def module():
         from pydantic import BaseModel
 
-        class Foo(BaseModel):
+        class Foo(BaseModel, undefined_types_warning=False):
             a: 'Bar' = None
-
-            class Config:
-                undefined_types_warning = False
 
         class Bar(BaseModel):
             b: 'Foo'
@@ -64,7 +61,7 @@ def test_forward_ref_auto_update_no_model(create_module):
         'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_core_schema__'
     )
     # but Foo is not ready to use
-    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined, you should define `Bar`,'):
+    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
         module.Foo(a={'b': {'a': {}}})
 
     assert module.Foo.model_rebuild() is True
@@ -78,14 +75,12 @@ def test_forward_ref_auto_update_no_model(create_module):
 def test_forward_ref_one_of_fields_not_defined(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         class Foo(BaseModel):
+            model_config = ConfigDict(undefined_types_warning=False)
             foo: 'Foo'
             bar: 'Bar'
-
-            class Config:
-                undefined_types_warning = False
 
     assert hasattr(module.Foo, 'model_fields') is False
 
@@ -129,15 +124,20 @@ def test_self_forward_ref_module(create_module):
 def test_self_forward_ref_collection(create_module):
     @create_module
     def module():
-        from typing import Dict, List
+        from typing import Dict, List, Optional
 
         from pydantic import BaseModel
+        from pydantic.json_schema import JsonSchemaMetadata
 
         class Foo(BaseModel):
             a: int = 123
             b: 'Foo' = None
             c: 'List[Foo]' = []
             d: 'Dict[str, Foo]' = {}
+
+            @classmethod
+            def model_json_schema_metadata(cls) -> Optional[JsonSchemaMetadata]:
+                return None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
     assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).model_dump() == {
@@ -156,7 +156,7 @@ def test_self_forward_ref_collection(create_module):
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
     assert repr(module.Foo.model_fields['b']) == IsStr(
-        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo\'\}\}\)\]\)'
+        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo:[0-9]+\'\}.*'
     )
     if sys.version_info < (3, 10):
         return
@@ -276,7 +276,6 @@ def test_forward_ref_nested_sub_types(create_module):
     assert isinstance(node.right[0], Node)
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_self_reference_json_schema(create_module):
     @create_module
     def module():
@@ -290,8 +289,8 @@ def test_self_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
@@ -301,7 +300,7 @@ def test_self_reference_json_schema(create_module):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name'],
@@ -310,7 +309,6 @@ def test_self_reference_json_schema(create_module):
     }
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_self_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -326,8 +324,8 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
@@ -337,7 +335,7 @@ class Account(BaseModel):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name'],
@@ -346,7 +344,6 @@ class Account(BaseModel):
     }
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_circular_reference_json_schema(create_module):
     @create_module
     def module():
@@ -357,6 +354,8 @@ def test_circular_reference_json_schema(create_module):
         class Owner(BaseModel):
             account: 'Account'
 
+            model_config = dict(undefined_types_warning=False)
+
         class Account(BaseModel):
             name: str
             owner: 'Owner'
@@ -364,19 +363,19 @@ def test_circular_reference_json_schema(create_module):
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'owner': {'$ref': '#/definitions/Owner'},
+                    'owner': {'$ref': '#/$defs/Owner'},
                     'subaccounts': {
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -384,14 +383,13 @@ def test_circular_reference_json_schema(create_module):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'$ref': '#/definitions/Account'}},
+                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
                 'required': ['account'],
             },
         },
     }
 
 
-@pytest.mark.xfail(reason='TODO schema')
 def test_circular_reference_json_schema_with_future_annotations(create_module):
     module = create_module(
         # language=Python
@@ -403,6 +401,8 @@ from pydantic import BaseModel
 class Owner(BaseModel):
   account: Account
 
+  model_config=dict(undefined_types_warning=False)
+
 class Account(BaseModel):
   name: str
   owner: Owner
@@ -412,19 +412,19 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        '$ref': '#/definitions/Account',
-        'definitions': {
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
             'Account': {
                 'title': 'Account',
                 'type': 'object',
                 'properties': {
                     'name': {'title': 'Name', 'type': 'string'},
-                    'owner': {'$ref': '#/definitions/Owner'},
+                    'owner': {'$ref': '#/$defs/Owner'},
                     'subaccounts': {
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'$ref': '#/definitions/Account'},
+                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -432,7 +432,7 @@ class Account(BaseModel):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'$ref': '#/definitions/Account'}},
+                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
                 'required': ['account'],
             },
         },
@@ -462,7 +462,7 @@ def test_forward_ref_optional(create_module):
         # language=Python
         """
 from __future__ import annotations
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 
 
@@ -473,10 +473,8 @@ class Spec(BaseModel):
 
 
 class PSpec(Spec):
+    model_config = ConfigDict(undefined_types_warning = False)
     g: Optional[GSpec]
-
-    class Config:
-        undefined_types_warning = False
 
 
 class GSpec(Spec):
@@ -558,7 +556,7 @@ def test_discriminated_union_forward_ref(create_module):
         class Dog(BaseModel):
             type: Literal['dog']
 
-    with pytest.raises(PydanticUserError, match='`Pet` is not fully defined, you should define `Cat`'):
+    with pytest.raises(PydanticUserError, match='`Pet` is not fully defined; you should define `Cat`'):
         module.Pet.model_validate({'type': 'pika'})
 
     module.Pet.model_rebuild()
@@ -568,9 +566,9 @@ def test_discriminated_union_forward_ref(create_module):
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
-        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/definitions/Cat', 'dog': '#/definitions/Dog'}},
-        'oneOf': [{'$ref': '#/definitions/Cat'}, {'$ref': '#/definitions/Dog'}],
-        'definitions': {
+        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}},
+        'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+        '$defs': {
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
@@ -609,7 +607,7 @@ def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class User(BaseModel):
@@ -624,13 +622,10 @@ class User(BaseModel):
 
 
 class Model(BaseModel):
+    model_config=ConfigDict(json_encoders={ 'User': lambda v: f'User({v.y})'})
     foo_user: FooUser
     user: User
 
-    class Config:
-        json_encoders = {
-            'User': lambda v: f'User({v.y})',
-        }
 """
     )
 
@@ -643,17 +638,17 @@ def test_json_encoder_forward_ref(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import ForwardRef, List, Optional
 
 class User(BaseModel):
     name: str
     friends: Optional[List['User']] = None
 
-    class Config:
+    mdoel_config = ConfigDict(
         json_encoders = {
             ForwardRef('User'): lambda v: f'User({v.name})',
-        }
+        })
 """
     )
 
@@ -695,16 +690,15 @@ def test_pep585_recursive_generics(create_module):
     def module():
         from typing import ForwardRef
 
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         HeroRef = ForwardRef('Hero')
 
         class Team(BaseModel):
+            model_config = ConfigDict(undefined_types_warning=False)
+
             name: str
             heroes: list[HeroRef]
-
-            class Config:
-                undefined_types_warning = False
 
         class Hero(BaseModel):
             name: str
@@ -790,7 +784,7 @@ def nested():
 def test_nested_more_annotation(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         def nested():
             class Foo(BaseModel):
@@ -798,10 +792,8 @@ def test_nested_more_annotation(create_module):
 
             def more_nested():
                 class Bar(BaseModel):
+                    model_config = ConfigDict(undefined_types_warning=False)
                     b: 'Foo'
-
-                    class Config:
-                        undefined_types_warning = False
 
                 return Bar
 
@@ -840,14 +832,12 @@ def test_nested_annotation_priority(create_module):
 def test_nested_model_rebuild(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel
+        from pydantic import BaseModel, ConfigDict
 
         def nested():
             class Bar(BaseModel):
+                model_config = ConfigDict(undefined_types_warning=False)
                 b: 'Foo'
-
-                class Config:
-                    undefined_types_warning = False
 
             class Foo(BaseModel):
                 a: int
@@ -869,9 +859,9 @@ def pytest_raises_undefined_types_warning(defining_class_name, missing_type_name
     return pytest.raises(
         UserWarning,
         match=re.escape(
-            # split this f-string into two lines to pass linting (line too long)
-            f'`{defining_class_name}` is not fully defined, you should define `{missing_type_name}`, '
-            f'then call `{defining_class_name}.model_rebuild()`',
+            f'`{defining_class_name}` has an undefined annotation: `{missing_type_name}`. '
+            'It may be possible to resolve this by setting undefined_types_warning=False '
+            f'in the config for `{defining_class_name}`.'
         ),
     )
 
@@ -924,11 +914,9 @@ def test_undefined_types_warning_1b_suppressed_via_config_2a_future_annotations(
 from __future__ import annotations
 from pydantic import BaseModel
 
-class Foobar(BaseModel):
+# Suppress the undefined_types_warning
+class Foobar(BaseModel, undefined_types_warning=False):
     a: UndefinedType
-    # Suppress the undefined_types_warning
-    class Config:
-        undefined_types_warning = False
 """
     )
     # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
@@ -945,13 +933,35 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
         UndefinedType = ForwardRef('UndefinedType')
 
-        class Foobar(BaseModel):
+        # Suppress the undefined_types_warning
+        class Foobar(BaseModel, undefined_types_warning=False):
             a: UndefinedType
-
-            # Suppress the undefined_types_warning
-            class Config:
-                undefined_types_warning = False
 
     # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
     # The presence of the `__pydantic_model_complete__` is a good indicator of this.
     assert module.Foobar.__pydantic_model_complete__ is False
+
+
+def test_undefined_types_warning_raised_by_usage(create_module):
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            '`Foobar` is not fully defined; you should define `UndefinedType`, '
+            'then call `Foobar.model_rebuild()` before the first `Foobar` instance is created.',
+        ),
+    ):
+
+        @create_module
+        def module():
+            from typing import ForwardRef
+
+            from pydantic import BaseModel
+
+            UndefinedType = ForwardRef('UndefinedType')
+
+            class Foobar(BaseModel):
+                a: UndefinedType
+
+                model_config = {'undefined_types_warning': False}
+
+            Foobar(a=1)
