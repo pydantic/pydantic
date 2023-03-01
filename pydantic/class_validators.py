@@ -150,7 +150,7 @@ def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMet
         ref = (
             getattr(f_cls.__func__, '__module__', '<default_module>')
             + '.'
-            + getattr(f_cls.__func__, '__qualname__', '<default name>')
+            + getattr(f_cls.__func__, '__qualname__', f'id:{id(f_cls.__func__)}')
         )
         if ref in _FUNCS:
             raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
@@ -169,14 +169,14 @@ class ValidatorGroup:
         if name != ROOT_KEY:
             validators += self.validators.get('*', [])
         if validators:
-            return {getattr(v.func, '__name__', '<default name>'): v for v in validators}
+            return {getattr(v.func, '__name__', f'id:{id(v.func)}'): v for v in validators}
         else:
             return None
 
     def check_for_unused(self) -> None:
         unused_validators = set(
             chain.from_iterable(
-                (getattr(v.func, '__name__', '<default name>') for v in self.validators[f] if v.check_fields)
+                (getattr(v.func, '__name__', f'id:{id(v.func)}') for v in self.validators[f] if v.check_fields)
                 for f in (self.validators.keys() - self.used_validators)
             )
         )
