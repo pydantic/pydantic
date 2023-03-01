@@ -147,7 +147,7 @@ def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMet
     """
     f_cls = function if isinstance(function, classmethod) else classmethod(function)
     if not in_ipython() and not allow_reuse:
-        ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
+        ref = f_cls.__func__.__module__ + '.' + getattr(f_cls.__func__, '__qualname__', '<default name>')
         if ref in _FUNCS:
             raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
