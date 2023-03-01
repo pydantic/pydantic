@@ -159,7 +159,8 @@ def test_config_field_info():
     class Foo(BaseModel):
         a: Annotated[int, Field(description='descr', json_schema_extra={'foobar': 'hello'})]
 
-    assert Foo.model_json_schema(by_alias=True)['properties'] == {
+    schema = Foo.model_json_schema(by_alias=True)
+    assert schema['properties'] == {
         'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
     }
 

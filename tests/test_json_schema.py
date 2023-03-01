@@ -2522,12 +2522,13 @@ def test_nested_generic():
     class Model(BaseModel):
         ref: Ref['Model']
 
+    print(Model.__pydantic_core_schema__)
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         '$defs': {
-            'Ref': {
-                'title': 'Ref',
+            'Ref_Model_': {
+                'title': 'Ref[Model]',
                 'type': 'object',
                 'properties': {
                     'uuid': {'title': 'Uuid', 'type': 'string'},
@@ -2536,7 +2537,7 @@ def test_nested_generic():
             },
         },
         'properties': {
-            'ref': {'$ref': '#/$defs/Ref'},
+            'ref': {'$ref': '#/$defs/Ref_Model_'},
         },
         'required': ['ref'],
     }

@@ -522,7 +522,6 @@ def test_include_exclude_unset():
     assert m.model_dump(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset=True) == {'b': 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_include_exclude_defaults():
     class Model(BaseModel):
         a: int

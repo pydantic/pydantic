@@ -7,20 +7,21 @@ import re
 import sys
 import typing
 import warnings
+from copy import copy
 from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
-from typing_extensions import Annotated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import SchemaRef, SelfType, Undefined
+from ._fields import Undefined, get_self_type
 from ._generate_schema import generate_config, model_fields_schema
+from ._generics import replace_types
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -133,6 +134,7 @@ def complete_model_class(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[str, Any] | None = None,
 ) -> bool:
     """
     Collect bound validator functions, build the model validation schema and set the model signature.
@@ -147,7 +149,7 @@ def complete_model_class(
 
     try:
         inner_schema, fields = build_inner_schema(
-            cls, name, validator_functions, serialization_functions, bases, types_namespace
+            cls, name, validator_functions, serialization_functions, bases, types_namespace, typevars_map
         )
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
@@ -202,6 +204,7 @@ def build_inner_schema(  # noqa: C901
     serialization_functions: SerializationFunctions,
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[Any, Any] = None,
 ) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
     module_name = getattr(cls, '__module__', None)
     global_ns: dict[str, Any] | None = None
@@ -224,7 +227,7 @@ def build_inner_schema(  # noqa: C901
         core_schema.recursive_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
-    local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+    local_ns = {name: get_self_type(self_schema, cls)}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
@@ -268,7 +271,11 @@ def build_inner_schema(  # noqa: C901
             if ann_name in annotations:
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
-                fields[ann_name] = cls.model_fields[ann_name]
+                model_fields_lookup: dict[str, FieldInfo] = {}
+                for x in cls.__bases__[::-1]:
+                    model_fields_lookup.update(getattr(x, 'model_fields', {}))
+                # copy to make sure typevar substitutions don't cause issues with the base classes
+                fields[ann_name] = copy(model_fields_lookup[ann_name])
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
@@ -276,6 +283,10 @@ def build_inner_schema(  # noqa: C901
             # 2. To avoid false positives in the NameError check above
             delattr(cls, ann_name)
 
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', typevars_map)
+    if typevars_map:
+        for field in fields.values():
+            field.annotation = replace_types(field.annotation, typevars_map)
     schema = model_fields_schema(
         model_ref,
         fields,
@@ -283,6 +294,7 @@ def build_inner_schema(  # noqa: C901
         serialization_functions,
         cls.model_config['arbitrary_types_allowed'],
         local_ns,
+        typevars_map,
     )
     return schema, fields
 

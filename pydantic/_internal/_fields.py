@@ -4,11 +4,14 @@ Private logic related to fields (the `Field()` function and `FieldInfo` class), 
 from __future__ import annotations as _annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic_core import core_schema
 
 from ._repr import Representation
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
 
 
 class _UndefinedType:
@@ -45,10 +48,36 @@ class PydanticGeneralMetadata(PydanticMetadata):
         self.__dict__ = metadata
 
 
-class SelfType:
+class BaseSelfType:
     """
     No-op marker class for `self` type reference.
+
+    All the weird logic here is for the purposes of handling recursive generics.
+    Note this _must_ be a type for it to work properly during evaluation as a ForwardRef.
+    We need __class_getitem__ to work because that gets called on generic types.
     """
+
+    self_schema: ClassVar[core_schema.CoreSchema]
+    model: ClassVar[type[BaseModel]]
+    class_getitems: ClassVar[list[Any]]
+
+    @classmethod
+    def __class_getitem__(cls, item: Any) -> Any:
+        updated_class_getitems = cls.class_getitems + [item]
+
+        class SelfType(cls):  # type: ignore[valid-type,misc]
+            class_getitems = updated_class_getitems
+
+        return SelfType
+
+
+def get_self_type(self_schema_: core_schema.CoreSchema, model_: type[BaseModel]) -> type[BaseSelfType]:
+    class SelfType(BaseSelfType):
+        self_schema = self_schema_
+        model = model_
+        class_getitems = []
+
+    return SelfType
 
 
 class SchemaRef(Representation):

@@ -20,6 +20,8 @@ from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._generics import replace_types
+from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -34,12 +36,13 @@ def model_fields_schema(
     serialization_functions: SerializationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
+    typevars_map: dict[Any, Any] | None,
 ) -> core_schema.CoreSchema:
     """
     Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
     since this is typed_dict schema which is used to create the model.
     """
-    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
+    schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {
             k: schema_generator.generate_field_schema(k, v, validator_functions, serialization_functions)
@@ -72,11 +75,14 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
 
 
 class GenerateSchema:
-    __slots__ = 'arbitrary_types', 'types_namespace'
+    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map'
 
-    def __init__(self, arbitrary_types: bool, types_namespace: dict[str, Any] | None):
+    def __init__(
+        self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None
+    ):
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
+        self.typevars_map = typevars_map
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
@@ -88,6 +94,16 @@ class GenerateSchema:
 
         CoreMetadataHandler(schema).combine_modify_js_functions(modify_js_function)
 
+        return schema
+
+    def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
+        assert isinstance(typevar, typing.TypeVar)
+        if typevar.__bound__:
+            schema = self.generate_schema(typevar.__bound__)
+        elif typevar.__constraints__:
+            schema = self._union_schema(typing.Union[typevar.__constraints__])
+        else:
+            schema = core_schema.AnySchema(type='any')
         return schema
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
@@ -116,11 +132,28 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if obj is _fields.SelfType:
-            # returned value doesn't do anything here since SchemaRef should always be used as an annotated argument
-            # which replaces the schema returned here, we return `SelfType` to make debugging easier if
-            # this schema is not overwritten
-            return obj
+        if lenient_issubclass(obj, _fields.BaseSelfType):
+            self_type = typing.cast(type[_fields.BaseSelfType], obj)
+            if self.typevars_map is not None:
+                # TODO: This seems rather hacky; ideally there would be a way to not duplicate the model ref creation
+                #   I think resolving this may also be a part of fixing the final failing test
+                cls = replace_types(self_type.model, self.typevars_map)
+                module_name = getattr(cls, '__module__', None)
+                model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
+                model_js_metadata = cls.model_json_schema_metadata()
+                self_schema = core_schema.model_schema(
+                    cls,
+                    core_schema.recursive_reference_schema(model_ref),
+                    metadata=build_metadata_dict(js_metadata=model_js_metadata),
+                )
+                return self_schema
+            elif self_type.class_getitems:
+                # I think this logic fork should only get hit if building a schema for a recursive generic model
+                # during a first pass; a rebuild will happen with an actual typevars_map.
+                # TODO: Perhaps there is a better way to indicate a schema is being built for a pre-initialized generic
+                return core_schema.any_schema()
+            else:
+                return self_type.self_schema
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
                 # Note: obj may fail to be hashable if it has an unhashable annotation
@@ -151,6 +184,8 @@ class GenerateSchema:
             if issubclass(obj, dict):
                 return self._dict_subclass_schema(obj)
             # probably need to take care of other subclasses here
+        elif isinstance(obj, typing.TypeVar):
+            return self._unsubstituted_typevar_schema(obj)
 
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
@@ -310,6 +345,9 @@ class GenerateSchema:
             elif get_origin(annotation) == _typing_extra.NotRequired:
                 required = False
                 annotation = get_args(annotation)[0]
+
+            if self.typevars_map is not None:
+                annotation = replace_types(annotation, self.typevars_map)
 
             field_info = FieldInfo.from_annotation(annotation)
             fields[field_name] = self.generate_field_schema(
@@ -493,6 +531,16 @@ class GenerateSchema:
         type_param = get_first_arg(type_)
         if type_param == Any:
             return self._type_schema()
+        elif isinstance(type_param, typing.TypeVar):
+            # Note: If a substitution is needed, I _believe_ it would have already happened from the replace_types calls
+            if type_param.__bound__:
+                return core_schema.is_subclass_schema(type_param.__bound__)
+            elif type_param.__constraints__:
+                return core_schema.union_schema(
+                    *[self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
+                )
+            else:
+                return self._type_schema()
         else:
             return core_schema.is_subclass_schema(type_param)
 
