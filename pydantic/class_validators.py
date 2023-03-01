@@ -55,7 +55,7 @@ def validator(
     each_item: bool = False,
     always: bool = False,
     check_fields: bool = True,
-    whole: bool = None,
+    whole: Optional[bool] = None,
     allow_reuse: bool = False,
 ) -> Callable[[AnyCallable], 'AnyClassMethod']:
     """
