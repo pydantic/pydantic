@@ -760,9 +760,15 @@ class GenerateJsonSchema:
         """
         Override this method to change the way that definitions keys are generated from a core reference.
         """
-        core_ref_no_id = core_ref.split(':')[0]
-        # The following regex substitution is like doing ref.split('.')[-1] to each component of a generic ref
-        short_ref = re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', core_ref_no_id)
+        # Remove IDs from each component, handling generics properly
+        components = re.split(r'([\][,])', core_ref)
+        components = [x.split(":")[0] for x in components]
+        core_ref_no_id = "".join(components)
+
+        # Remove everything before the last period from each "component"
+        components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
+        short_ref = "".join(components)
+
         first_choice = DefsRef(self.normalize_name(short_ref))  # name
         second_choice = DefsRef(self.normalize_name(core_ref_no_id))  # module + qualname
         third_choice = DefsRef(self.normalize_name(core_ref))  # module + qualname + id

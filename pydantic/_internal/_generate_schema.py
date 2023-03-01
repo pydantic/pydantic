@@ -20,6 +20,8 @@ from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._deferred_field import DeferredField
+from ._fields import BaseSelfType
 from ._generics import replace_types
 from ._utils import lenient_issubclass
 
@@ -137,21 +139,26 @@ class GenerateSchema:
             if self.typevars_map is not None:
                 # TODO: This seems rather hacky; ideally there would be a way to not duplicate the model ref creation
                 #   I think resolving this may also be a part of fixing the final failing test
-                cls = replace_types(self_type.model, self.typevars_map)
-                module_name = getattr(cls, '__module__', None)
-                model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
+                model = self_type.model
+                cls = replace_types(model, self.typevars_map)
+                if lenient_issubclass(cls, BaseSelfType):
+                    # This should end up below a ref that is duplicated, so will get removed
+                    return core_schema.any_schema(metadata={'self_schema': cls, 'invalid': True})
+                else:
+                    model_ref = cls.model_ref()
                 model_js_metadata = cls.model_json_schema_metadata()
                 self_schema = core_schema.model_schema(
                     cls,
                     core_schema.recursive_reference_schema(model_ref),
                     metadata=build_metadata_dict(js_metadata=model_js_metadata),
                 )
+                self_schema = core_schema.any_schema(metadata={'self_schema_2': self_schema})
                 return self_schema
-            elif self_type.class_getitems:
+            elif self_type.actions:
                 # I think this logic fork should only get hit if building a schema for a recursive generic model
                 # during a first pass; a rebuild will happen with an actual typevars_map.
                 # TODO: Perhaps there is a better way to indicate a schema is being built for a pre-initialized generic
-                return core_schema.any_schema()
+                return core_schema.any_schema(metadata={'self_type': self_type})
             else:
                 return self_type.self_schema
         try:
@@ -260,6 +267,10 @@ class GenerateSchema:
         """
         Prepare a TypedDictField to represent a model or typeddict field.
         """
+        if isinstance(field_info, DeferredField) or lenient_issubclass(field_info, BaseSelfType):
+            return core_schema.typed_dict_field(
+                core_schema.any_schema(), required=required, metadata={'field_info': field_info}
+            )
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
         schema = apply_annotations(schema, field_info.metadata)

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic_core import core_schema
 
+from ._generics import replace_types
 from ._repr import Representation
 
 if TYPE_CHECKING:
@@ -48,7 +49,16 @@ class PydanticGeneralMetadata(PydanticMetadata):
         self.__dict__ = metadata
 
 
-class BaseSelfType:
+class BaseSelfTypeMeta(type):
+    model: type[BaseModel]
+    actions: list[Any]
+    self_schema: core_schema.CoreSchema
+
+    def __repr__(self):
+        return f"{self.__name__}" f"(model={self.model}, actions={self.actions}, self_schema={self.self_schema})"
+
+
+class BaseSelfType(metaclass=BaseSelfTypeMeta):
     """
     No-op marker class for `self` type reference.
 
@@ -57,25 +67,42 @@ class BaseSelfType:
     We need __class_getitem__ to work because that gets called on generic types.
     """
 
-    self_schema: ClassVar[core_schema.CoreSchema]
-    model: ClassVar[type[BaseModel]]
-    class_getitems: ClassVar[list[Any]]
-
     @classmethod
     def __class_getitem__(cls, item: Any) -> Any:
-        updated_class_getitems = cls.class_getitems + [item]
+        updated_actions = cls.actions + [{"kind": "class_getitem", "item": item}]
 
         class SelfType(cls):  # type: ignore[valid-type,misc]
-            class_getitems = updated_class_getitems
+            actions = updated_actions
 
         return SelfType
 
+    @classmethod
+    def replace_types(cls, typevars_map: Any) -> Any:
+        updated_actions = cls.actions + [{"kind": "replace_types", "typevars_map": typevars_map}]
 
-def get_self_type(self_schema_: core_schema.CoreSchema, model_: type[BaseModel]) -> type[BaseSelfType]:
+        class SelfType(cls):  # type: ignore[valid-type,misc]
+            actions = updated_actions
+
+        return SelfType
+
+    @classmethod
+    def resolve_model(cls):
+        model = cls.model
+        for action in cls.actions:
+            if action['kind'] == 'replace_types':
+                model = replace_types(model, action['typevars_map'])
+            elif action['kind'] == 'class_getitem':
+                model = model[action['item']]
+        return model
+
+
+def get_self_type(
+    self_schema_: core_schema.CoreSchema, model_: type[BaseModel], actions_: list[Any] | None = None
+) -> type[BaseSelfType]:
     class SelfType(BaseSelfType):
         self_schema = self_schema_
         model = model_
-        class_getitems = []
+        actions = actions_ or []
 
     return SelfType
 

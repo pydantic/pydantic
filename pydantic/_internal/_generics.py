@@ -25,7 +25,7 @@ if typing.TYPE_CHECKING:
     #     __pydantic_generic_origin__: typing.ClassVar[type['GenericBaseModel']]
 
 
-def create_generic_submodel(model_name: str, base: type[BaseModel]) -> type[BaseModel]:
+def create_generic_submodel(model_name: str, origin: type[BaseModel], args: list[Any], typevars_map) -> type[BaseModel]:
     """
     Dynamically create a submodel of a provided (generic) BaseModel.
 
@@ -34,16 +34,24 @@ def create_generic_submodel(model_name: str, base: type[BaseModel]) -> type[Base
     reflect a concrete parametrization elsewhere.
 
     :param model_name: name of the newly created model
-    :param base: base class for the new model to inherit from
+    :param origin: base class for the new model to inherit from
     """
-    namespace: dict[str, Any] = {'__module__': base.__module__}
-    bases = (base,)
+    namespace: dict[str, Any] = {'__module__': origin.__module__}
+    bases = (origin,)
     resolved_bases = resolve_bases(bases)
     meta, ns, kwds = prepare_class(model_name, resolved_bases)
     if resolved_bases is not bases:
         ns['__orig_bases__'] = bases
     namespace.update(ns)
-    created_model = meta(model_name, resolved_bases, namespace, **kwds)
+    created_model = meta(
+        model_name,
+        resolved_bases,
+        namespace,
+        generic_origin=origin,
+        generic_args=args,
+        typevars_map=typevars_map,
+        **kwds,
+    )
     # created_model.__parameters__ = base.__parameters__  # TODO: I think this is safe to remove, but not 100% sure yet
 
     model_module, called_globally = _get_caller_frame_info(depth=3)

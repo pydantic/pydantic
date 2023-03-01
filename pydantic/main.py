@@ -3,9 +3,12 @@ Logic for creating models, could perhaps be renamed to `models.py`.
 """
 from __future__ import annotations as _annotations
 
+import sys
 import typing
 import warnings
 from abc import ABCMeta
+from collections import defaultdict
+from contextvars import ContextVar
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -14,9 +17,11 @@ from types import prepare_class, resolve_bases
 from typing import Any, Generic
 
 import typing_extensions
+from pydantic_core import core_schema
 
 from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
-from ._internal._fields import Undefined
+from ._internal._core_metadata import build_metadata_dict
+from ._internal._fields import Undefined, get_self_type
 from ._internal._generics import TypeVarType, check_parameters_count, iter_contained_typevars, replace_types
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
@@ -28,7 +33,7 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, core_schema
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
@@ -54,6 +59,9 @@ _generic_types_cache: _utils.LimitedDict[tuple[type[Any], Any, tuple[Any, ...]],
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
 class ModelMetaclass(ABCMeta):
     def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any) -> type:
+        typevars_map = kwargs.pop('typevars_map', None)
+        generic_origin = kwargs.pop('generic_origin', None)
+        generic_args = kwargs.pop('generic_args', None)
         if _base_class_defined:
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
@@ -104,6 +112,11 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
+            cls.__pydantic_generic_origin__ = generic_origin
+            cls.__pydantic_generic_args__ = generic_args
+            cls.__pydantic_generic_typevars_map__ = (
+                None if generic_origin is None else dict(zip(iter_contained_typevars(generic_origin), generic_args))
+            )
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
@@ -112,10 +125,8 @@ class ModelMetaclass(ABCMeta):
                 bases,
                 types_namespace=_typing_extra.parent_frame_namespace(),
                 raise_errors=False,
+                typevars_map=typevars_map,
             )
-            cls.__pydantic_generic_origin__ = None
-            cls.__pydantic_generic_args__ = None
-            cls.__pydantic_generic_typevars_map__ = None
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
@@ -128,6 +139,9 @@ class ModelMetaclass(ABCMeta):
         See #3829 and python/cpython#92810
         """
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
+
+
+generic_recursion: ContextVar[dict[Any, int] | None] = ContextVar('generic_recursion', default=None)
 
 
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
@@ -514,7 +528,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             elif parents_namespace:
                 types_namespace = parents_namespace
 
-            return _model_construction.complete_model_class(
+            completed = _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
                 cls.__pydantic_validator_functions__,
@@ -524,6 +538,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 types_namespace=types_namespace,
                 typevars_map=typevars_map,
             )
+
+            return completed
 
     def __iter__(self) -> 'TupleGenerator':
         """
@@ -660,18 +676,32 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # Build map from generic typevars to passed params
         typevars_map: dict[TypeVarType, type[Any]] = dict(zip(getattr(cls, '__parameters__', ()), typevar_values))
         need_to_rebuild = False
+        # if False:  # all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
         if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
         else:
-            if not cls.__pydantic_generic_args__:
+            if not getattr(cls, '__pydantic_generic_args__', None):
                 args = typevar_values
             else:
                 args = tuple(replace_types(arg, typevars_map) for arg in cls.__pydantic_generic_args__)
 
             origin = getattr(cls, '__pydantic_generic_origin__') or cls
             model_name = origin.model_concrete_name(args)
-            submodel = _generics.create_generic_submodel(model_name, origin)
 
+            parent_calls = generic_recursion.get()
+            if parent_calls is None:
+                parent_calls = defaultdict(int)
+            if parent_calls[(origin, args)] >= 2:
+                self_type = get_self_type(
+                    core_schema.recursive_reference_schema(origin.model_ref(args_override=args)), origin, []
+                )
+                return self_type
+            parent_calls[(origin, args)] += 1
+
+            token = generic_recursion.set(parent_calls)
+
+            submodel = _generics.create_generic_submodel(model_name, origin, args, typevars_map)
+            generic_recursion.reset(token)
             need_to_rebuild = True
 
             # Update params
@@ -681,9 +711,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             submodel.__concrete__ = not new_params  # type: ignore[attr-defined]
             submodel.__parameters__ = new_params
 
-            submodel.__pydantic_generic_origin__ = origin
-            submodel.__pydantic_generic_args__ = args
-            submodel.__pydantic_generic_typevars_map__ = dict(zip(iter_contained_typevars(origin), args))
+            # submodel.__pydantic_generic_origin__ = origin
+            # submodel.__pydantic_generic_args__ = args
+            # submodel.__pydantic_generic_typevars_map__ = dict(zip(iter_contained_typevars(origin), args))
 
         # Update cache
         _generic_types_cache[_cache_key(typevar_values)] = submodel
@@ -693,7 +723,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # Rebuild model
         if need_to_rebuild:
             # Doing the rebuild _after_ populating the cache prevents infinite recursion
-            submodel.model_rebuild(force=True, typevars_map=typevars_map)
+            # submodel.model_rebuild(force=True, typevars_map=typevars_map)
+            submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
 
         return submodel
 
@@ -715,6 +746,23 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         param_names = [_repr.display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
+
+    @classmethod
+    def model_ref(cls, args_override: tuple[type[Any], ...] | None = None) -> str:
+        # cls = replace_types(model, self.typevars_map)
+        args = args_override or getattr(cls, '__pydantic_generic_args__', None) or ()
+
+        origin = getattr(cls, '__pydantic_generic_origin__', None) or cls  # use the origin if possible
+        module_name = getattr(origin, '__module__', None)
+        model_ref = f'{module_name}.{origin.__qualname__}:{id(origin)}'
+
+        arg_refs: list[str] = []
+        for arg in args:
+            arg_ref = f"{_repr.display_as_type(arg)}:{id(arg)}"
+            arg_refs.append(arg_ref)
+        if arg_refs:
+            model_ref = f"{model_ref}[{','.join(arg_refs)}]"
+        return model_ref
 
 
 _base_class_defined = True

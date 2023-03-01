@@ -9,20 +9,23 @@ import typing
 import warnings
 from copy import copy
 from functools import partial
+from pprint import pprint
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
 from ._core_metadata import build_metadata_dict
+from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import Undefined, get_self_type
+from ._deferred_field import DeferredField
+from ._fields import BaseSelfType, Undefined, get_self_type
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
-from ._utils import ClassAttribute, is_valid_identifier
+from ._utils import ClassAttribute, is_valid_identifier, lenient_issubclass
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -93,7 +96,7 @@ def single_underscore(name: str) -> bool:
 
 
 def deferred_model_get_pydantic_validation_schema(
-    cls: type[BaseModel], types_namespace: dict[str, Any] | None, **_kwargs: Any
+    cls: type[BaseModel], types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None, **_kwargs: Any
 ) -> core_schema.CoreSchema:
     """
     Used on model as `__get_pydantic_core_schema__` if not all type hints are available.
@@ -109,6 +112,7 @@ def deferred_model_get_pydantic_validation_schema(
         cls.__pydantic_serializer_functions__,
         cls.__bases__,
         types_namespace,
+        typevars_map,
     )
 
     core_config = generate_config(cls)
@@ -168,7 +172,7 @@ def complete_model_class(
         cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
-            deferred_model_get_pydantic_validation_schema, cls
+            deferred_model_get_pydantic_validation_schema, cls, typevars_map=typevars_map
         )
         return False
 
@@ -177,7 +181,12 @@ def complete_model_class(
 
     core_config = generate_config(cls)
     cls.model_fields = fields
-    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    inner_schema = consolidate_refs(inner_schema)
+    try:
+        cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    except SchemaError as e:
+        pprint(inner_schema)
+        raise e
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
@@ -220,13 +229,14 @@ def build_inner_schema(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
+    model_ref = cls.model_ref()
     model_js_metadata = cls.model_json_schema_metadata()
     self_schema = core_schema.model_schema(
         cls,
         core_schema.recursive_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
+    # self_schema = core_schema.any_schema(metadata={'self_schema_1': self_schema})
     local_ns = {name: get_self_type(self_schema, cls)}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
@@ -247,7 +257,9 @@ def build_inner_schema(  # noqa: C901
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
     annotations = cls.__dict__.get('__annotations__', {})
-    fields: dict[str, FieldInfo] = {}
+    fields: dict[str, FieldInfo | type[BaseSelfType]] = {}
+    # if model_ref.startswith('__main__.Model1[str]'):
+    # print("here")
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
@@ -268,14 +280,19 @@ def build_inner_schema(  # noqa: C901
         except AttributeError:
             # if field has no default value and is not in __annotations__ this means that it is
             # defined in a base class and we can take it from there
-            if ann_name in annotations:
+            if ann_name in annotations or lenient_issubclass(ann_type, BaseSelfType):
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
                 model_fields_lookup: dict[str, FieldInfo] = {}
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
                 # copy to make sure typevar substitutions don't cause issues with the base classes
-                fields[ann_name] = copy(model_fields_lookup[ann_name])
+                if ann_name in model_fields_lookup:
+                    fields[ann_name] = copy(model_fields_lookup[ann_name])
+                else:
+                    # This seems to arise from the case of a not-yet-built model class
+                    fields[ann_name] = DeferredField(cls.__bases__, ann_name)
+                    # raise PydanticUndefinedAnnotation(f'Field {ann_name!r}') from e
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
@@ -283,10 +300,15 @@ def build_inner_schema(  # noqa: C901
             # 2. To avoid false positives in the NameError check above
             delattr(cls, ann_name)
 
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', typevars_map)
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
     if typevars_map:
         for field in fields.values():
-            field.annotation = replace_types(field.annotation, typevars_map)
+            if isinstance(field, DeferredField):
+                field.replace_types(typevars_map)
+            elif lenient_issubclass(field, BaseSelfType):
+                field.replace_types(typevars_map)
+            else:
+                field.annotation = replace_types(field.annotation, typevars_map)
     schema = model_fields_schema(
         model_ref,
         fields,

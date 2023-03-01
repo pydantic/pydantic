@@ -1196,7 +1196,6 @@ def test_generic_with_partial_callable():
 
 
 # TODO: This seems like it will be the single hardest thing left to resolve
-@pytest.mark.xfail(reason='working on V2 - the crucible')
 def test_generic_recursive_models(create_module):
     @create_module
     def module():
@@ -1220,12 +1219,31 @@ def test_generic_recursive_models(create_module):
 
     Model1 = module.Model1
     Model2 = module.Model2
-    # TODO: With v2 changes, result1 below should actually fail validation.
-    #   If we can make that happen, it should mean things are working as desired
-    result1 = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
-    result2 = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
-    # assert result == result2
-    assert result1.model_dump() == result2.model_dump()
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    assert exc_info.value.errors() == [
+        {
+            'input': {'ref': {'ref': 123}},
+            'loc': ('ref', 'ref', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 123,
+            'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 123,
+            'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        },
+    ]
+    result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
+    assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
 
 
 def test_generic_enum():
