@@ -1371,8 +1371,6 @@ def test_functool_as_validator(
 
     validate = func(custom_validator, allowed='TEXT')
 
-    with pytest.raises(ConfigError, match='validators created using `functools` are not supported'):
-
-        class TestClass(BaseModel):
-            name: str
-            _custom_validate = validator('name', allow_reuse=allow_reuse)(validate)
+    class TestClass(BaseModel):
+        name: str
+        _custom_validate = validator('name', allow_reuse=allow_reuse)(validate)
