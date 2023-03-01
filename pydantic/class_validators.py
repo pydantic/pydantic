@@ -165,14 +165,14 @@ class ValidatorGroup:
         if name != ROOT_KEY:
             validators += self.validators.get('*', [])
         if validators:
-            return {v.func.__name__: v for v in validators}
+            return {getattr(v.func, '__name__', '<default name>'): v for v in validators}
         else:
             return None
 
     def check_for_unused(self) -> None:
         unused_validators = set(
             chain.from_iterable(
-                (v.func.__name__ for v in self.validators[f] if v.check_fields)
+                (getattr(v.func, '__name__', '<default name>') for v in self.validators[f] if v.check_fields)
                 for f in (self.validators.keys() - self.used_validators)
             )
         )
