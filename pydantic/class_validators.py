@@ -1,6 +1,6 @@
 import warnings
 from collections import ChainMap
-from functools import wraps
+from functools import partial, partialmethod, wraps
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -243,8 +243,19 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     """
     from inspect import signature
 
-    sig = signature(validator)
-    args = list(sig.parameters.keys())
+    if not isinstance(validator, (partial, partialmethod)):
+        # This should be the default case, so overhead is reduced
+        sig = signature(validator)
+        args = list(sig.parameters.keys())
+    else:
+        # Fix the generated argument lists of partial methods
+        sig = signature(validator.func)
+        args = [
+            k
+            for k in signature(validator.func).parameters.keys()
+            if k not in validator.args | validator.keywords.keys()
+        ]
+
     first_arg = args.pop(0)
     if first_arg == 'self':
         raise ConfigError(
