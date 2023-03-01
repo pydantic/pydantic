@@ -1358,6 +1358,7 @@ def test_list_unique_items_with_optional():
     ],
 )
 def test_functool_as_validator(
+    reset_tracked_validators,
     func: Callable,
     allow_reuse: bool,
 ):
