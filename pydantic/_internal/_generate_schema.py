@@ -20,9 +20,7 @@ from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
-from ._fields import BaseSelfType
 from ._generics import replace_types
-from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -133,11 +131,10 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if lenient_issubclass(obj, _fields.BaseSelfType):
-            self_type = typing.cast(type[_fields.BaseSelfType], obj)
+        if _fields.is_self_type(obj):
             if self.typevars_map is not None:
-                model = replace_types(self_type.resolve_model(), self.typevars_map)
-                if lenient_issubclass(model, BaseSelfType):
+                model = replace_types(obj.resolve_model(), self.typevars_map)
+                if _fields.is_self_type(model):
                     # This should end up below a ref that is duplicated, so will get removed
                     # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
                     #   Ideally there would be a schema that was invalid for anything if validation is attempted
@@ -145,14 +142,14 @@ class GenerateSchema:
                 else:
                     model_ref = model._model_ref()
                     return core_schema.definition_reference_schema(model_ref)
-            elif self_type.deferred_actions:
+            elif obj.deferred_actions:
                 # I think this logic fork should only get hit if building a schema for a recursive generic model
                 # during a first pass; a rebuild will happen with an actual typevars_map.
                 # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
                 #   Ideally there would be a schema that was invalid for anything if validation is attempted
-                return core_schema.any_schema(metadata={'self_type': self_type, 'invalid': True})
+                return core_schema.any_schema(metadata={'self_type': obj, 'invalid': True})
             else:
-                return self_type.self_schema
+                return obj.self_schema
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
                 # Note: obj may fail to be hashable if it has an unhashable annotation

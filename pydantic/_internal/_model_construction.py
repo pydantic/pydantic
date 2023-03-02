@@ -20,10 +20,10 @@ from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import BaseSelfType, Undefined, get_self_type
+from ._fields import Undefined, get_self_type, is_self_type
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
-from ._utils import ClassAttribute, is_valid_identifier, lenient_issubclass
+from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -271,7 +271,7 @@ def build_inner_schema(  # noqa: C901
         except AttributeError:
             # if field has no default value and is not in __annotations__ this means that it is
             # defined in a base class and we can take it from there
-            if ann_name in annotations or lenient_issubclass(ann_type, BaseSelfType):
+            if ann_name in annotations or is_self_type(ann_type):
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
                 model_fields_lookup: dict[str, FieldInfo] = {}

@@ -4,7 +4,7 @@ import sys
 import types
 import typing
 from types import prepare_class, resolve_bases
-from typing import Annotated, Any, Iterator, List, Mapping, TypeVar
+from typing import Any, Iterator, List, Mapping, TypeVar
 
 import typing_extensions
 
@@ -141,9 +141,9 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     type_args = get_args(type_)
     origin_type = get_origin(type_)
 
-    if origin_type is Annotated:
+    if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
-        return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
+        return typing_extensions.Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.

@@ -4,12 +4,14 @@ Private logic related to fields (the `Field()` function and `FieldInfo` class), 
 from __future__ import annotations as _annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from pydantic_core import core_schema
+from typing_extensions import Literal, TypedDict, TypeGuard
 
 from ._generics import TypeVarType, replace_types
 from ._repr import Representation
+from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -159,6 +161,14 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
             elif action['kind'] == 'class_getitem':
                 model = model.__class_getitem__(action['item'])
         return model
+
+
+def is_self_type(obj: Any) -> TypeGuard[type[BaseSelfType]]:
+    """
+    Using this typeguard instead of lenient_issubclass directly eliminates the need for casting
+    for the sake of proper type-checking
+    """
+    return lenient_issubclass(obj, BaseSelfType)
 
 
 def get_self_type(
