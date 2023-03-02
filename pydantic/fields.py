@@ -1117,15 +1117,18 @@ class ModelField(Representation):
             except (AttributeError, TypeError):
                 return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
 
-        try:
-            sub_field = self.sub_fields_mapping[discriminator_value]  # type: ignore[index]
-        except TypeError:
+        if self.sub_fields_mapping is None:
             assert cls is not None
             raise ConfigError(
                 f'field "{self.name}" not yet prepared so type is still a ForwardRef, '
                 f'you might need to call {cls.__name__}.update_forward_refs().'
             )
-        except KeyError:
+
+        try:
+            sub_field = self.sub_fields_mapping[discriminator_value]  # type: ignore[index]
+        except (KeyError, TypeError):
+            # KeyError: `discriminator_value` is not in the dictionary.
+            # TypeError: `discriminator_value` is unhashable.
             assert self.sub_fields_mapping is not None
             return v, ErrorWrapper(
                 InvalidDiscriminator(
