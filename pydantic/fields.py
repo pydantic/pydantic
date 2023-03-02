@@ -242,10 +242,10 @@ def Field(
     unique_items: Optional[bool] = None,
     min_length: Optional[int] = None,
     max_length: Optional[int] = None,
-    allow_mutation: Optional[bool] = True,
+    allow_mutation: bool = True,
     regex: Optional[str] = None,
     discriminator: Optional[str] = None,
-    repr: Optional[bool] = True,
+    repr: bool = True,
     **extra: Any,
 ) -> Any:
     """
