@@ -223,7 +223,7 @@ def build_inner_schema(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    model_ref = cls.model_ref()
+    model_ref = cls._model_ref()
     model_js_metadata = cls.model_json_schema_metadata()
     self_schema = core_schema.model_schema(
         cls,

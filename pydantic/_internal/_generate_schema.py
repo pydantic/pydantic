@@ -143,7 +143,7 @@ class GenerateSchema:
                     #   Ideally there would be a schema that was invalid for anything if validation is attempted
                     return core_schema.any_schema(metadata={'self_schema': model, 'invalid': True})
                 else:
-                    model_ref = model.model_ref()
+                    model_ref = model._model_ref()
                     return core_schema.definition_reference_schema(model_ref)
             elif self_type.deferred_actions:
                 # I think this logic fork should only get hit if building a schema for a recursive generic model
@@ -250,7 +250,7 @@ class GenerateSchema:
     def generate_field_schema(
         self,
         name: str,
-        field_info: FieldInfo | type[BaseSelfType],
+        field_info: FieldInfo,
         validator_functions: ValidationFunctions,
         serializer_functions: SerializationFunctions,
         *,
@@ -259,10 +259,6 @@ class GenerateSchema:
         """
         Prepare a TypedDictField to represent a model or typeddict field.
         """
-        if not isinstance(field_info, FieldInfo):
-            return core_schema.typed_dict_field(
-                core_schema.any_schema(), required=required, metadata={'field_info': field_info}
-            )
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
         schema = apply_annotations(schema, field_info.metadata)

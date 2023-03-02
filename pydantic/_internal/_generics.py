@@ -20,9 +20,7 @@ if typing.TYPE_CHECKING:
     from pydantic import BaseModel
 
 
-def create_generic_submodel(
-    model_name: str, origin: type[BaseModel], args: tuple[Any, ...], typevars_map: dict[Any, Any]
-) -> type[BaseModel]:
+def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tuple[Any, ...]) -> type[BaseModel]:
     """
     Dynamically create a submodel of a provided (generic) BaseModel.
 
@@ -44,12 +42,10 @@ def create_generic_submodel(
         model_name,
         resolved_bases,
         namespace,
-        generic_origin=origin,
-        generic_args=args,
-        typevars_map=typevars_map,
+        __pydantic_generic_origin__=origin,
+        __pydantic_generic_args__=args,
         **kwds,
     )
-    # created_model.__parameters__ = base.__parameters__  # TODO: I think this is safe to remove, but not 100% sure yet
 
     model_module, called_globally = _get_caller_frame_info(depth=3)
     if called_globally:  # create global reference and therefore allow pickling
@@ -79,15 +75,8 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
     return frame_globals.get('__name__'), previous_caller_frame.f_locals is frame_globals
 
 
-def is_generic_model(x: type[BaseModel]) -> bool:  # typing.TypeGuard[type[GenericBaseModel]]:
-    """
-    This TypeGuard serves as a workaround for shortcomings in the ability to check at runtime
-    if a (model) class is generic (i.e., inherits from typing.Generic), and also have mypy recognize
-    the implications related to attributes.
-
-    # TODO: Remove the above note unless we re-add the GenericBaseModel type-hint
-    """
-    return issubclass(x, typing.Generic)  # type: ignore[arg-type]
+def is_generic_model(model: type[BaseModel]) -> bool:
+    return issubclass(model, typing.Generic)  # type: ignore[arg-type]
 
 
 DictValues: type[Any] = {}.values().__class__
@@ -106,12 +95,11 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
         yield v
     elif (
         # TODO: I think we can/should replace __parameters__ with __pydantic_generic_parameters__
-        # We can retain the ability to retrieve __parameters__ for backwards compatibility though
+        # TODO: Should we retain ability to get generic parameters from __parameters__ for backwards compatibility?
         hasattr(v, '__parameters__')
-        and not typing_extensions.get_origin(v)
         and lenient_issubclass(v, BaseModel)
     ):
-        yield from v.__parameters__
+        yield from v.__parameters__ or ()
     elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
@@ -187,9 +175,9 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     from pydantic import BaseModel
 
     if not origin_type and lenient_issubclass(type_, BaseModel) and not getattr(type_, '__concrete__', None):
-        type_args = type_.__parameters__
-        resolved_type_args = tuple(replace_types(t, type_map) for t in type_args)
-        if all_identical(type_args, resolved_type_args):
+        parameters = type_.__parameters__
+        resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
+        if all_identical(parameters, resolved_type_args):
             return type_
         return type_[resolved_type_args]
 
@@ -201,6 +189,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             return type_
         return resolved_list
 
+    # TODO: Need to handle this properly..
     # For JsonWrapperValue, need to handle its inner type to allow correct parsing
     # of generic Json arguments like Json[T]
     # if not origin_type and lenient_issubclass(type_, JsonWrapper):
