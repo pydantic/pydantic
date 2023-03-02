@@ -697,11 +697,6 @@ class GenerateJsonSchema:
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
         return self.generate_inner(schema['arguments_schema'])
 
-    def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
-        core_ref = CoreRef(schema['schema_ref'])
-        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
-        return ref_json_schema
-
     def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
         return self.generate_inner(schema['schema'])
 
@@ -722,6 +717,16 @@ class GenerateJsonSchema:
         json_schema = {'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         return json_schema
+
+    def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:
+        for definition in schema['definitions']:
+            self.generate_inner(definition)
+        return self.generate_inner(schema['schema'])
+
+    def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
+        core_ref = CoreRef(schema['schema_ref'])
+        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        return ref_json_schema
 
     # ### Utility methods
 
