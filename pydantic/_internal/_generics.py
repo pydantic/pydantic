@@ -95,7 +95,6 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
         yield v
     elif (
         # TODO: I think we can/should replace __parameters__ with __pydantic_generic_parameters__
-        # TODO: Should we retain ability to get generic parameters from __parameters__ for backwards compatibility?
         hasattr(v, '__parameters__')
         and lenient_issubclass(v, BaseModel)
     ):
@@ -189,7 +188,8 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             return type_
         return resolved_list
 
-    # TODO: Need to handle this properly..
+    # TODO: Need to confirm Json[X] is handled properly. I believe it is since Json[X] now produces Annotated[X, Json()]
+    #   Once this is confirmed, we should delete the following code related to handling Json
     # For JsonWrapperValue, need to handle its inner type to allow correct parsing
     # of generic Json arguments like Json[T]
     # if not origin_type and lenient_issubclass(type_, JsonWrapper):

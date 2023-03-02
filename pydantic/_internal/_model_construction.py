@@ -9,11 +9,10 @@ import typing
 import warnings
 from copy import copy
 from functools import partial
-from pprint import pprint
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
@@ -182,11 +181,7 @@ def complete_model_class(
 
     core_config = generate_config(cls)
     cls.model_fields = fields
-    try:
-        cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
-    except SchemaError as e:
-        pprint(inner_schema)
-        raise e
+    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(

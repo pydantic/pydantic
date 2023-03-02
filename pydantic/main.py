@@ -118,6 +118,7 @@ class ModelMetaclass(ABCMeta):
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
             # TODO: cls.__concrete__ has been removed -- do we need to retain this for v1 compatibility?
+            # TODO: cls.__parameters__ may be removed -- do we need to retain this for v1 compatibility?
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_typevars_map__ = (
@@ -125,7 +126,6 @@ class ModelMetaclass(ABCMeta):
                 if __pydantic_generic_origin__ is None
                 else dict(zip(iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ()))
             )
-            # cls.__parameters__ = None
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
@@ -172,8 +172,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None] = None
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None] = None
         __pydantic_generic_typevars_map__: typing.ClassVar[dict[TypeVarType, Any] | None] = None
-        # __parameters__: typing.ClassVar[tuple[TypeVarType, ...] | None] = None
         # TODO: rename __parameters__ with __pydantic prefix
+        # __parameters__: typing.ClassVar[tuple[TypeVarType, ...] | None] = None
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
