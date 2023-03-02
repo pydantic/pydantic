@@ -20,7 +20,14 @@ from pydantic_core import core_schema
 
 from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
-from ._internal._generics import TypeVarType, check_parameters_count, iter_contained_typevars, replace_types
+from ._internal._generics import (
+    GENERIC_TYPES_CACHE,
+    GenericTypesCacheKey,
+    TypeVarType,
+    check_parameters_count,
+    iter_contained_typevars,
+    replace_types,
+)
 from ._internal._self_type import BaseSelfType, get_self_type
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
@@ -53,7 +60,6 @@ _base_class_defined = False
 
 # TODO: Of course we need to do the WeakRef dict thing here before we are done
 #   (Also need to move this to the _generics file or similar)
-_generic_types_cache: _utils.LimitedDict[tuple[type[Any], Any, tuple[Any, ...]], type[BaseModel]] = _utils.LimitedDict()
 
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
@@ -662,7 +668,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
     ) -> type[BaseModel] | type[BaseSelfType]:
-        def _cache_key(_params: Any) -> tuple[type[Any], Any, tuple[Any, ...]]:
+        def _cache_key(_params: Any) -> GenericTypesCacheKey:
             # TODO: This doesn't seem right if _params is a tuple, which it definitely can be...
             #   Revisit this after looking into the changes added with the types cache
             args = typing_extensions.get_args(_params)
@@ -672,7 +678,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return cls, _params, args
 
         cache_key = _cache_key(typevar_values)
-        cached = _generic_types_cache.get(cache_key)
+        cached = GENERIC_TYPES_CACHE.get(cache_key)
         if cached is not None:
             return cached
 
@@ -725,9 +731,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             submodel.__parameters__ = new_params
 
         # Update cache
-        _generic_types_cache[_cache_key(typevar_values)] = submodel
+        GENERIC_TYPES_CACHE[_cache_key(typevar_values)] = submodel
         if len(typevar_values) == 1:
-            _generic_types_cache[_cache_key(typevar_values[0])] = submodel
+            GENERIC_TYPES_CACHE[_cache_key(typevar_values[0])] = submodel
 
         # Rebuild model
         if need_to_rebuild:

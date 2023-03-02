@@ -4,7 +4,8 @@ import sys
 import types
 import typing
 from types import prepare_class, resolve_bases
-from typing import Any, Iterator, List, Mapping, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Iterator, List, Mapping, Tuple, Type, TypeVar
+from weakref import WeakValueDictionary
 
 import typing_extensions
 
@@ -16,8 +17,22 @@ TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pydantic import BaseModel
+
+
+GenericTypesCacheKey = Tuple[Type[Any], Any, Tuple[Any, ...]]
+
+# weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
+# once they are no longer referenced by the caller.
+if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
+    GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'Type[BaseModel]']
+else:
+    GenericTypesCache = WeakValueDictionary
+
+# _generic_types_cache is a Mapping from __class_getitem__ arguments to the parametrized version of generic models.
+# This ensures multiple calls of e.g. A[B] return always the same class.
+GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
 def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tuple[Any, ...]) -> type[BaseModel]:
@@ -76,7 +91,7 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
 
 
 def is_generic_model(model: type[BaseModel]) -> bool:
-    return issubclass(model, typing.Generic)  # type: ignore[arg-type]
+    return issubclass(model, Generic)  # type: ignore[arg-type]
 
 
 DictValues: type[Any] = {}.values().__class__
