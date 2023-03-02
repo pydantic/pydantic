@@ -40,7 +40,7 @@ else:
     core_schema_spec.loader.exec_module(core_schema)
 
 # the validator for referencing schema (Schema is used recursively, so has to use a reference)
-schema_ref_validator = {'type': 'recursive-ref', 'schema_ref': 'root-schema'}
+schema_ref_validator = {'type': 'definition-ref', 'schema_ref': 'root-schema'}
 
 
 def get_schema(obj) -> core_schema.CoreSchema:
@@ -151,7 +151,7 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
             schema = get_schema(field_type)
             if fr_arg == 'SerSchema':
                 if defined_ser_schema:
-                    schema = {'type': 'recursive-ref', 'schema_ref': 'ser-schema'}
+                    schema = {'type': 'definition-ref', 'schema_ref': 'ser-schema'}
                 else:
                     defined_ser_schema = True
                     schema = tagged_union(schema, 'type', 'ser-schema')

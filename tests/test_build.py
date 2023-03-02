@@ -49,14 +49,14 @@ def test_pickle(pickle_protocol: int) -> None:
     assert repr(v1) == repr(v2)
 
 
-def test_schema_recursive_error():
+def test_schema_definition_error():
     schema = {'type': 'union', 'choices': []}
     schema['choices'].append({'type': 'nullable', 'schema': schema})
     with pytest.raises(SchemaError, match='Recursion error - cyclic reference detected'):
         SchemaValidator(schema)
 
 
-def test_not_schema_recursive_error():
+def test_not_schema_definition_error():
     schema = {
         'type': 'typed-dict',
         'fields': {f'f_{i}': {'schema': {'type': 'nullable', 'schema': {'type': 'int'}}} for i in range(101)},

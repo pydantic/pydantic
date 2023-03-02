@@ -1,24 +1,50 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 
+use crate::build_context::{BuildContext, ThingOrId};
 use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
 
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct RecursiveRefValidator {
+pub struct DefinitionsBuilder;
+
+impl BuildValidator for DefinitionsBuilder {
+    const EXPECTED_TYPE: &'static str = "definitions";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedValidator>,
+    ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
+
+        let definitions: &PyList = schema.get_as_req(intern!(py, "definitions"))?;
+
+        for def_schema in definitions {
+            build_validator(def_schema, config, build_context)?;
+            // no need to store the validator here, it has already been stored in build_context if necessary
+        }
+
+        let inner_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
+        build_validator(inner_schema, config, build_context)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DefinitionRefValidator {
     validator_id: usize,
     inner_name: String,
     // we have to record the answers to `Question`s as we can't access the validator when `ask()` is called
     answers: Answers,
 }
 
-impl RecursiveRefValidator {
+impl DefinitionRefValidator {
     pub fn from_id(validator_id: usize, inner_name: String, answers: Answers) -> CombinedValidator {
         Self {
             validator_id,
@@ -29,26 +55,32 @@ impl RecursiveRefValidator {
     }
 }
 
-impl BuildValidator for RecursiveRefValidator {
-    const EXPECTED_TYPE: &'static str = "recursive-ref";
+impl BuildValidator for DefinitionRefValidator {
+    const EXPECTED_TYPE: &'static str = "definition-ref";
 
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
         build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let name: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
-        let (validator_id, answers) = build_context.find_slot_id_answer(&name)?;
-        Ok(Self {
-            validator_id,
-            inner_name: "...".to_string(),
-            answers: answers.unwrap(),
+        let schema_ref: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
+
+        match build_context.find(&schema_ref)? {
+            ThingOrId::Thing(validator) => Ok(validator),
+            ThingOrId::Id(validator_id) => {
+                let answers = build_context.get_slot_answer(validator_id)?;
+                Ok(Self {
+                    validator_id,
+                    inner_name: "...".to_string(),
+                    answers: answers.unwrap(),
+                }
+                .into())
+            }
         }
-        .into())
     }
 }
 
-impl Validator for RecursiveRefValidator {
+impl Validator for DefinitionRefValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,

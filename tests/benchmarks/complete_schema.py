@@ -145,7 +145,7 @@ def schema(*, strict: bool = False) -> dict:
                                     'type': 'default',
                                     'schema': {
                                         'type': 'nullable',
-                                        'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'},
+                                        'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
                                     },
                                     'default': None,
                                 }

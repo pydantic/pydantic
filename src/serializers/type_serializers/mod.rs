@@ -1,6 +1,7 @@
 pub mod any;
 pub mod bytes;
 pub mod datetime_etc;
+pub mod definitions;
 pub mod dict;
 pub mod format;
 pub mod function;
@@ -11,7 +12,6 @@ pub mod literal;
 pub mod model;
 pub mod nullable;
 pub mod other;
-pub mod recursive;
 pub mod set_frozenset;
 pub mod simple;
 pub mod string;
