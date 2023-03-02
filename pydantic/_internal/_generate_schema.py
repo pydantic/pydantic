@@ -21,6 +21,7 @@ from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 from ._generics import replace_types
+from ._self_type import is_self_type
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -131,10 +132,10 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if _fields.is_self_type(obj):
+        if is_self_type(obj):
             if self.typevars_map is not None:
                 model = replace_types(obj.resolve_model(), self.typevars_map)
-                if _fields.is_self_type(model):
+                if is_self_type(model):
                     # This should end up below a ref that is duplicated, so will get removed
                     # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
                     #   Ideally there would be a schema that was invalid for anything if validation is attempted

@@ -19,8 +19,9 @@ import typing_extensions
 from pydantic_core import core_schema
 
 from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
-from ._internal._fields import BaseSelfType, Undefined, get_self_type
+from ._internal._fields import Undefined
 from ._internal._generics import TypeVarType, check_parameters_count, iter_contained_typevars, replace_types
+from ._internal._self_type import BaseSelfType, get_self_type
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
