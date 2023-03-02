@@ -56,7 +56,7 @@ def test_datetime_binary(datetime_schema, data):
 
 
 @pytest.fixture(scope='module')
-def recursive_schema():
+def definition_schema():
     return SchemaValidator(
         {
             'type': 'typed-dict',
@@ -66,7 +66,7 @@ def recursive_schema():
                 'sub_branch': {
                     'schema': {
                         'type': 'default',
-                        'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
+                        'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
                         'default': None,
                     }
                 },
@@ -75,8 +75,8 @@ def recursive_schema():
     )
 
 
-def test_recursive_simple(recursive_schema):
-    assert recursive_schema.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
+def test_definition_simple(definition_schema):
+    assert definition_schema.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
 
 
 class BranchModel(TypedDict):
@@ -86,8 +86,8 @@ class BranchModel(TypedDict):
 
 @pytest.mark.skipif(sys.platform == 'emscripten', reason='Seems to fail sometimes on pyodide no idea why')
 @given(strategies.from_type(BranchModel))
-def test_recursive(recursive_schema, data):
-    assert recursive_schema.validate_python(data) == data
+def test_recursive(definition_schema, data):
+    assert definition_schema.validate_python(data) == data
 
 
 @strategies.composite
@@ -105,9 +105,9 @@ def branch_models_with_cycles(draw, existing=None):
 
 
 @given(branch_models_with_cycles())
-def test_recursive_cycles(recursive_schema, data):
+def test_definition_cycles(definition_schema, data):
     try:
-        assert recursive_schema.validate_python(data) == data
+        assert definition_schema.validate_python(data) == data
     except ValidationError as exc:
         assert exc.errors() == [
             {
@@ -119,11 +119,11 @@ def test_recursive_cycles(recursive_schema, data):
         ]
 
 
-def test_recursive_broken(recursive_schema):
+def test_definition_broken(definition_schema):
     data = {'name': 'x'}
     data['sub_branch'] = data
     with pytest.raises(ValidationError, match='Recursion error - cyclic reference detected'):
-        recursive_schema.validate_python(data)
+        definition_schema.validate_python(data)
 
 
 @given(strategies.timedeltas())

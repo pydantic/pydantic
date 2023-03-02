@@ -11,7 +11,7 @@ def test_branch_nullable():
             'fields': {
                 'name': {'schema': {'type': 'str'}},
                 'sub_branch': {
-                    'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}}
+                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}}
                 },
             },
         }
@@ -34,7 +34,7 @@ def test_cyclic_recursion():
             'fields': {
                 'name': {'schema': {'type': 'str'}},
                 'sub_branch': {
-                    'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}}
+                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}}
                 },
             },
         }
@@ -60,7 +60,7 @@ def test_custom_ser():
                     'schema': {
                         'type': 'nullable',
                         'schema': {
-                            'type': 'recursive-ref',
+                            'type': 'definition-ref',
                             'schema_ref': 'Branch',
                             'serialization': {'type': 'to-string', 'when_used': 'always'},
                         },

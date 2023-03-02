@@ -368,34 +368,37 @@ def test_offset_too_large():
         SchemaValidator(core_schema.datetime_schema(now_op='past', now_utc_offset=-24 * 3600))
 
 
-class TestTZConstraints:
+def test_raises_schema_error_for_unknown_constraint_kind():
+    with pytest.raises(
+        SchemaError,
+        match=(
+            r'Input should be \'aware\' or \'naive\' ' r'\[type=literal_error, input_value=\'foo\', input_type=str\]'
+        ),
+    ):
+        SchemaValidator({'type': 'datetime', 'tz_constraint': 'foo'})
+
+
+def test_can_validate_aware_value():
     aware_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
+    value = datetime.now(tz=timezone.utc)
+    assert value is aware_validator.validate_python(value)
+
+
+def test_raises_validation_error_when_aware_given_naive():
+    aware_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
+    value = datetime.now()
+    with pytest.raises(ValidationError, match=r'Datetime should have timezone info'):
+        assert aware_validator.validate_python(value)
+
+
+def test_can_validate_naive_value():
     naive_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='naive'))
+    value = datetime.now()
+    assert value is naive_validator.validate_python(value)
 
-    def test_raises_schema_error_for_unknown_constraint_kind(self):
-        with pytest.raises(
-            SchemaError,
-            match=(
-                r'Input should be \'aware\' or \'naive\' '
-                r'\[type=literal_error, input_value=\'foo\', input_type=str\]'
-            ),
-        ):
-            SchemaValidator({'type': 'datetime', 'tz_constraint': 'foo'})
 
-    def test_can_validate_aware_value(self):
-        value = datetime.now(tz=timezone.utc)
-        assert value is self.aware_validator.validate_python(value)
-
-    def test_raises_validation_error_when_aware_given_naive(self):
-        value = datetime.now()
-        with pytest.raises(ValidationError, match=r'Datetime should have timezone info'):
-            assert self.aware_validator.validate_python(value)
-
-    def test_can_validate_naive_value(self):
-        value = datetime.now()
-        assert value is self.naive_validator.validate_python(value)
-
-    def test_raises_validation_error_when_naive_given_aware(self):
-        value = datetime.now(tz=timezone.utc)
-        with pytest.raises(ValidationError, match=r'Datetime should not have timezone info'):
-            assert self.naive_validator.validate_python(value)
+def test_raises_validation_error_when_naive_given_aware():
+    naive_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='naive'))
+    value = datetime.now(tz=timezone.utc)
+    with pytest.raises(ValidationError, match=r'Datetime should not have timezone info'):
+        assert naive_validator.validate_python(value)

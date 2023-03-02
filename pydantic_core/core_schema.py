@@ -2318,35 +2318,6 @@ def call_schema(
     )
 
 
-class RecursiveReferenceSchema(TypedDict, total=False):
-    type: Required[Literal['recursive-ref']]
-    schema_ref: Required[str]
-    metadata: Any
-    serialization: SerSchema
-
-
-def recursive_reference_schema(
-    schema_ref: str, metadata: Any = None, serialization: SerSchema | None = None
-) -> RecursiveReferenceSchema:
-    """
-    Returns a schema that matches a recursive reference value, e.g.:
-
-    ```py
-    from pydantic_core import SchemaValidator, core_schema
-    schema_recursive = core_schema.recursive_reference_schema('list-schema')
-    schema = core_schema.list_schema(items_schema=schema_recursive, ref='list-schema')
-    v = SchemaValidator(schema)
-    assert v.validate_python([[]]) == [[]]
-    ```
-
-    Args:
-        schema_ref: The schema ref to use for the recursive reference schema
-        metadata: See [TODO] for details
-        serialization: Custom serialization schema
-    """
-    return dict_not_none(type='recursive-ref', schema_ref=schema_ref, metadata=metadata, serialization=serialization)
-
-
 class CustomErrorSchema(TypedDict, total=False):
     type: Required[Literal['custom-error']]
     schema: Required[CoreSchema]
@@ -2579,6 +2550,66 @@ def multi_host_url_schema(
     )
 
 
+class DefinitionsSchema(TypedDict, total=False):
+    type: Required[Literal['definitions']]
+    schema: Required[CoreSchema]
+    definitions: Required[List[CoreSchema]]
+    metadata: Any
+    serialization: SerSchema
+
+
+def definitions_schema(schema: CoreSchema, definitions: list[CoreSchema]) -> DefinitionsSchema:
+    """
+    Build a schema that contains both an inner schema and a list of definitions which can be used
+    within the inner schema.
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+    schema = core_schema.definitions_schema(
+        core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
+        [core_schema.int_schema(ref='foobar')],
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_python([1, 2, '3']) == [1, 2, 3]
+    ```
+
+    Args:
+        schema: The inner schema
+        definitions: List of definitions which can be referenced within inner schema
+    """
+    return DefinitionsSchema(type='definitions', schema=schema, definitions=definitions)
+
+
+class DefinitionReferenceSchema(TypedDict, total=False):
+    type: Required[Literal['definition-ref']]
+    schema_ref: Required[str]
+    metadata: Any
+    serialization: SerSchema
+
+
+def definition_reference_schema(
+    schema_ref: str, metadata: Any = None, serialization: SerSchema | None = None
+) -> DefinitionReferenceSchema:
+    """
+    Returns a schema that points to a schema stored in "definitions", this is useful for nested recursive
+    models and also when you want to define validators separately from the main schema, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+    schema_definition = core_schema.definition_reference_schema('list-schema')
+    schema = core_schema.list_schema(items_schema=schema_definition, ref='list-schema')
+    v = SchemaValidator(schema)
+    assert v.validate_python([[]]) == [[]]
+    ```
+
+    Args:
+        schema_ref: The schema ref to use for the definition reference schema
+        metadata: See [TODO] for details
+        serialization: Custom serialization schema
+    """
+    return dict_not_none(type='definition-ref', schema_ref=schema_ref, metadata=metadata, serialization=serialization)
+
+
 CoreSchema = Union[
     AnySchema,
     NoneSchema,
@@ -2615,11 +2646,12 @@ CoreSchema = Union[
     ModelSchema,
     ArgumentsSchema,
     CallSchema,
-    RecursiveReferenceSchema,
     CustomErrorSchema,
     JsonSchema,
     UrlSchema,
     MultiHostUrlSchema,
+    DefinitionsSchema,
+    DefinitionReferenceSchema,
 ]
 
 # to update this, call `pytest -k test_core_schema_type_literal` and copy the output
@@ -2656,11 +2688,12 @@ CoreSchemaType = Literal[
     'model',
     'arguments',
     'call',
-    'recursive-ref',
     'custom-error',
     'json',
     'url',
     'multi-host-url',
+    'definitions',
+    'definition-ref',
 ]
 
 

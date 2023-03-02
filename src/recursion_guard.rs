@@ -1,11 +1,11 @@
 use ahash::AHashSet;
 
 /// This is used to avoid cyclic references in input data causing recursive validation and a nasty segmentation fault.
-/// It's used in `validators/recursive.rs` to detect when a reference is reused within itself.
+/// It's used in `validators/definition` to detect when a reference is reused within itself.
 #[derive(Debug, Clone, Default)]
 pub struct RecursionGuard {
     ids: Option<AHashSet<usize>>,
-    // see validators/recursive.rs::BACKUP_GUARD_LIMIT for details
+    // see validators/definition::BACKUP_GUARD_LIMIT for details
     // depth could be a hashmap {validator_id => depth} but for simplicity and performance it's easier to just
     // use one number for all validators
     depth: u16,
