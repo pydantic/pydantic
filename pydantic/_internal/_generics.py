@@ -19,11 +19,6 @@ if sys.version_info >= (3, 10):
 if typing.TYPE_CHECKING:
     from pydantic import BaseModel
 
-    # class GenericBaseModel(BaseModel):
-    #     __parameters__: typing.ClassVar[tuple[TypeVarType, ...]]
-    #     __pydantic_generic_alias__: typing.ClassVar[Any]
-    #     __pydantic_generic_origin__: typing.ClassVar[type['GenericBaseModel']]
-
 
 def create_generic_submodel(
     model_name: str, origin: type[BaseModel], args: tuple[Any, ...], typevars_map: dict[Any, Any]

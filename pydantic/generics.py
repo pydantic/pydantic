@@ -273,7 +273,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases
-    if not origin_type and _utils.lenient_issubclass(type_, BaseModel) and not type_.__concrete__:
+    if not origin_type and _utils.lenient_issubclass(type_, GenericModel) and not type_.__concrete__:
         type_args = type_.__parameters__
         resolved_type_args = tuple(replace_types(t, type_map) for t in type_args)
         if _utils.all_identical(type_args, resolved_type_args):

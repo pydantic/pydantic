@@ -9,11 +9,10 @@ import typing
 import warnings
 from copy import copy
 from functools import partial
-from pprint import pprint
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
@@ -174,18 +173,14 @@ def complete_model_class(
             deferred_model_get_pydantic_validation_schema, cls, typevars_map=typevars_map
         )
         return False
+    inner_schema = consolidate_refs(inner_schema)
 
     validator_functions.check_for_unused()
     serialization_functions.check_for_unused()
 
     core_config = generate_config(cls)
     cls.model_fields = fields
-    inner_schema = consolidate_refs(inner_schema)
-    try:
-        cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
-    except SchemaError as e:
-        pprint(inner_schema)
-        raise e
+    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
@@ -343,11 +338,12 @@ def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldI
                 else:
                     use_var_kw = True
                     continue
-            # TODO: replace annotation with actual expected types once #1055 solved
-            annotation = field.rebuild_annotation()
-            kwargs = {} if field.is_required() else {'default': field.get_default()}
 
-            merged_params[param_name] = Parameter(param_name, Parameter.KEYWORD_ONLY, annotation=annotation, **kwargs)
+            # TODO: replace annotation with actual expected types once #1055 solved
+            kwargs = {} if field.is_required() else {'default': field.get_default()}
+            merged_params[param_name] = Parameter(
+                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
+            )
 
     if config['extra'] is Extra.allow:
         use_var_kw = True

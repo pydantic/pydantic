@@ -1,6 +1,4 @@
-"""
-The goal is to move this file's contents into pydantic_core proper.
-"""
+# TODO: Should we move WalkAndApply into pydantic_core proper?
 
 from __future__ import annotations
 
@@ -12,9 +10,16 @@ from typing_extensions import get_args
 
 def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     """
-    Assumption: Any time that two schemas have the same ref, they are equivalent.
     This function walks a schema recursively, replacing all but the first occurrence of each ref with
     a definition-ref schema referencing that ref.
+
+    This makes the fundamental assemption that any time two schemas have the same ref, occurrences
+    after the first can safely be replaced.
+
+    In most cases, schemas with the same ref should not actually be produced, or should be completely identical.
+    However, as an implementation detail, recursive generic models will emit a non-identical schema deeper in the
+    tree with a re-used ref, with the intent that that schema gets replaced with a recursive reference once the
+    specific generic parametrization to use can be determined.
     """
     refs = set()
 

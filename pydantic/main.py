@@ -139,6 +139,8 @@ class ModelMetaclass(ABCMeta):
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
 
+# TODO: Need to add some comments documenting how/why this ContextVar is used
+#   Possibly move to another module and wrap in a function/contextmanager that better conveys intent?
 generic_recursion: ContextVar[dict[Any, int] | None] = ContextVar('generic_recursion', default=None)
 
 

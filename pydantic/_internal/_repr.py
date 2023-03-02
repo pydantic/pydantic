@@ -102,7 +102,11 @@ def display_as_type(obj: Any) -> str:
         return repr(obj)
 
     if isinstance(obj, str):
-        return obj  # hitting this for generic forward references; used to return 'str' in this case
+        # TODO: I'm hitting this for generic forward references. It used to return 'str' in this case. Affects:
+        #   * tests/test_json_schema.py::test_nested_generic
+        #   * tests/test_utils.py::test_display_as_type[foobar-str]
+        #   * tests/test_utils.py::test_display_as_type_310[<lambda>-str1]
+        return obj
 
     if not isinstance(obj, (_typing_extra.typing_base, _typing_extra.WithArgsTypes, type)):
         obj = obj.__class__
