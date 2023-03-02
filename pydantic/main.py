@@ -693,7 +693,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 parent_calls = defaultdict(int)
             if parent_calls[(origin, args)] >= 2:
                 self_type = get_self_type(
-                    core_schema.recursive_reference_schema(origin.model_ref(args_override=args)), origin, []
+                    core_schema.definition_reference_schema(origin.model_ref(args_override=args)), origin, []
                 )
                 return self_type
             parent_calls[(origin, args)] += 1

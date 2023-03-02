@@ -144,7 +144,7 @@ class GenerateSchema:
                     return core_schema.any_schema(metadata={'self_schema': model, 'invalid': True})
                 else:
                     model_ref = model.model_ref()
-                    return core_schema.recursive_reference_schema(model_ref)
+                    return core_schema.definition_reference_schema(model_ref)
             elif self_type.actions:
                 # I think this logic fork should only get hit if building a schema for a recursive generic model
                 # during a first pass; a rebuild will happen with an actual typevars_map.

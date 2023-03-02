@@ -25,7 +25,7 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         ref: str | None = s.get('ref')  # type: ignore[assignment]
         if ref:
             if ref in refs:
-                return {'type': 'recursive-ref', 'schema_ref': ref}
+                return {'type': 'definition-ref', 'schema_ref': ref}
             refs.add(ref)
         return s
 
@@ -68,25 +68,25 @@ class WalkAndApply:
             schema['schema'] = self._walk(schema['schema'])  # type: ignore
         return schema
 
-    # def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema) -> CoreSchema:
-    #     new_definitions = []
-    #     for definition in schema['definitions']:
-    #         updated_definition = self._walk(definition)
-    #         if 'ref' in updated_definition:
-    #             # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
-    #             # This is most likely to happen due to replacing something with a definition reference, in
-    #             # which case it should certainly not go in the definitions list
-    #             new_definitions.append(updated_definition)
-    #     new_inner_schema = self._walk(schema['schema'])
-    #
-    #     if not new_definitions and len(schema) == 3:
-    #         # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
-    #         return new_inner_schema
-    #
-    #     new_schema = schema.copy()
-    #     new_schema['schema'] = new_inner_schema
-    #     new_schema['definitions'] = new_definitions
-    #     return new_schema
+    def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema) -> CoreSchema:
+        new_definitions = []
+        for definition in schema['definitions']:
+            updated_definition = self._walk(definition)
+            if 'ref' in updated_definition:
+                # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
+                # This is most likely to happen due to replacing something with a definition reference, in
+                # which case it should certainly not go in the definitions list
+                new_definitions.append(updated_definition)
+        new_inner_schema = self._walk(schema['schema'])
+
+        if not new_definitions and len(schema) == 3:
+            # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
+            return new_inner_schema
+
+        new_schema = schema.copy()
+        new_schema['schema'] = new_inner_schema
+        new_schema['definitions'] = new_definitions
+        return new_schema
 
     def handle_list_schema(self, schema: core_schema.ListSchema) -> CoreSchema:
         if 'items_schema' in schema:
