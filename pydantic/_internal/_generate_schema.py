@@ -14,6 +14,7 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
+from ._fields import DeferredField
 from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
@@ -243,7 +244,20 @@ class GenerateSchema:
         Prepare a TypedDictField to represent a model or typeddict field.
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
-        schema = self.generate_schema(field_info.annotation)
+        if isinstance(field_info.annotation, DeferredField):
+            obj = field_info.annotation
+            model_fields_lookup: dict[str, FieldInfo] = {}
+            for x in obj.bases[::-1]:
+                model_fields_lookup.update(getattr(x, 'model_fields', {}))
+
+            if obj.name in model_fields_lookup:
+                inherited_field = model_fields_lookup[obj.name]
+                schema = self.generate_schema(inherited_field.annotation)
+            else:
+                schema = core_schema.none_schema()
+        else:
+            schema = self.generate_schema(field_info.annotation)
+
         schema = apply_annotations(schema, field_info.metadata)
 
         if not field_info.is_required():

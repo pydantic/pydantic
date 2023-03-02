@@ -79,3 +79,9 @@ class CustomValidator(ABC):
             if k not in attrs:
                 raise TypeError(f'{self.__class__.__name__} has no attribute {k!r}')
             setattr(self, k, v)
+
+
+class DeferredField:
+    def __init__(self, name, bases):
+        self.name = name
+        self.bases = bases

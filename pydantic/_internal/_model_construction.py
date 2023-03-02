@@ -9,10 +9,11 @@ import typing
 import warnings
 from copy import copy
 from functools import partial
+from pprint import pprint
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, SchemaError
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
@@ -20,7 +21,7 @@ from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import Undefined
+from ._fields import Undefined, DeferredField
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
 from ._self_type import get_self_type, is_self_type
@@ -181,7 +182,11 @@ def complete_model_class(
 
     core_config = generate_config(cls)
     cls.model_fields = fields
-    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    try:
+        cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    except SchemaError as e:
+        pprint(inner_schema)
+        raise e
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
@@ -199,7 +204,6 @@ def complete_model_class(
         '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
     )
     return True
-
 
 def build_inner_schema(  # noqa: C901
     cls: type[BaseModel],
@@ -278,7 +282,10 @@ def build_inner_schema(  # noqa: C901
                 model_fields_lookup: dict[str, FieldInfo] = {}
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
-                field = model_fields_lookup[ann_name]
+                if ann_name in model_fields_lookup:
+                    field = model_fields_lookup[ann_name]
+                else:
+                    field = FieldInfo.from_annotation(DeferredField(ann_name, cls.__bases__))
                 # copy to make sure typevar substitutions don't cause issues with the base classes
                 fields[ann_name] = copy(field)
         else:
