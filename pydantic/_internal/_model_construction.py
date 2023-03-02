@@ -21,8 +21,7 @@ from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._deferred_field import DeferredField
-from ._fields import Undefined
+from ._fields import DeferredField, Undefined
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
 from ._self_type import get_self_type, is_self_type
@@ -285,10 +284,15 @@ def build_inner_schema(  # noqa: C901
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
                 if ann_name in model_fields_lookup:
-                    # copy to make sure typevar substitutions don't cause issues with the base classes
+                    # The field was present on one of the (possibly multiple) base classes
+                    # copy the field to make sure typevar substitutions don't cause issues with the base classes
                     field = copy(model_fields_lookup[ann_name])
                 else:
-                    field = FieldInfo.from_annotation(DeferredField(cls.__bases__, ann_name))
+                    # The field was not found on any base clasess; this seems to be caused by fields not getting
+                    # generated thanks to "short-circuiting" during the initialization of recursive models
+                    # We deal with this by putting in a placeholder that will be removed from the final recursive
+                    # thanks to other aspects of the class creation process.
+                    field = FieldInfo.from_annotation(DeferredField())
                 fields[ann_name] = field
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
@@ -300,10 +304,7 @@ def build_inner_schema(  # noqa: C901
     typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
     if typevars_map:
         for field in fields.values():
-            if isinstance(field.annotation, DeferredField):
-                field.annotation.replace_types(typevars_map)
-            else:
-                field.annotation = replace_types(field.annotation, typevars_map)
+            field.annotation = replace_types(field.annotation, typevars_map)
     schema = model_fields_schema(
         model_ref,
         fields,

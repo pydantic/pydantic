@@ -20,7 +20,6 @@ from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
-from ._deferred_field import DeferredField
 from ._generics import replace_types
 from ._self_type import is_self_type
 
@@ -130,9 +129,9 @@ class GenerateSchema:
                     # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
                     return core_schema.none_schema(metadata={'pydantic_debug_self_type': model, 'invalid': True})
                 else:
-                    # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
                     model_ref = model._model_ref()
                     self_schema = core_schema.definition_reference_schema(model_ref)
+                    # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
                     return core_schema.none_schema(
                         metadata={'pydantic_debug_self_schema': self_schema, 'invalid': True}
                     )
@@ -248,17 +247,11 @@ class GenerateSchema:
         Prepare a TypedDictField to represent a model or typeddict field.
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
-        if isinstance(field_info.annotation, DeferredField):
-            obj = field_info.annotation
-            model_fields_lookup: dict[str, FieldInfo] = {}
-            for x in obj.bases[::-1]:
-                model_fields_lookup.update(getattr(x, 'model_fields', {}))
-
-            if obj.ann_name in model_fields_lookup:
-                inherited_field = model_fields_lookup[obj.ann_name]
-                schema = self.generate_schema(inherited_field.annotation)
-            else:
-                schema = core_schema.none_schema()  # placeholder
+        if isinstance(field_info.annotation, _fields.DeferredField):
+            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+            schema = core_schema.none_schema(
+                metadata={'pydantic_debug_deferred_field': field_info.annotation, 'invalid': True}
+            )
         else:
             schema = self.generate_schema(field_info.annotation)
 

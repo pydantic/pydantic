@@ -9,8 +9,7 @@ import typing_extensions
 
 from . import types
 from ._internal import _fields, _repr, _typing_extra, _utils
-from ._internal._deferred_field import DeferredField
-from ._internal._fields import Undefined
+from ._internal._fields import DeferredField, Undefined
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
