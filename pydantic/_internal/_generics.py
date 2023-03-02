@@ -174,7 +174,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     # semantics as "typing" classes or generic aliases
     from pydantic import BaseModel
 
-    if not origin_type and lenient_issubclass(type_, BaseModel) and not getattr(type_, '__concrete__', None):
+    if not origin_type and lenient_issubclass(type_, BaseModel) and getattr(type_, '__parameters__'):
         parameters = type_.__parameters__
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
         if all_identical(parameters, resolved_type_args):

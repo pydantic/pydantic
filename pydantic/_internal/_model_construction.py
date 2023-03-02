@@ -278,8 +278,9 @@ def build_inner_schema(  # noqa: C901
                 model_fields_lookup: dict[str, FieldInfo] = {}
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
+                field = model_fields_lookup[ann_name]
                 # copy to make sure typevar substitutions don't cause issues with the base classes
-                fields[ann_name] = copy(model_fields_lookup[ann_name])
+                fields[ann_name] = copy(field)
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:

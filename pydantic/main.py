@@ -117,6 +117,7 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
+            # TODO: cls.__concrete__ has been removed -- do we need to retain this for v1 compatibility?
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_typevars_map__ = (
@@ -124,7 +125,6 @@ class ModelMetaclass(ABCMeta):
                 if __pydantic_generic_origin__ is None
                 else dict(zip(iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ()))
             )
-            cls.__concrete__ = None
             # cls.__parameters__ = None
             _model_construction.complete_model_class(
                 cls,
@@ -140,7 +140,6 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
             # cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
-            # cls.__concrete__ = None
             # return cls
 
     def __instancecheck__(self, instance: Any) -> bool:
@@ -175,11 +174,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None] = None
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None] = None
         __pydantic_generic_typevars_map__: typing.ClassVar[dict[TypeVarType, Any] | None] = None
-        # __concrete__ is None for non-generics, True for generics that have params, False for generics without params
-        __concrete__: typing.ClassVar[bool | None] = None
         # __parameters__: typing.ClassVar[tuple[TypeVarType, ...] | None] = None
-        # TODO: rename __concrete__ and __parameters__ with __pydantic prefix
-        # TODO: remove __concrete__?
+        # TODO: rename __parameters__ with __pydantic prefix
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -684,10 +680,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         if cls is BaseModel:
             raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
-        if cls.__concrete__ and Generic not in cls.__bases__:
-            raise TypeError(f'{cls} is not a generic class')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
+        if not cls.__parameters__ and Generic not in cls.__bases__:
+            raise TypeError(f'{cls} is not a generic class')
 
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
@@ -728,7 +724,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             new_params = tuple(
                 {param: None for param in iter_contained_typevars(typevars_map.values())}
             )  # use dict as ordered set
-            submodel.__concrete__ = not new_params
             submodel.__parameters__ = new_params
 
         # Update cache

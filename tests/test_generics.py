@@ -1195,7 +1195,6 @@ def test_generic_with_partial_callable():
     assert not Model[str, int].__parameters__
 
 
-# TODO: This seems like it will be the single hardest thing left to resolve
 def test_generic_recursive_models(create_module):
     @create_module
     def module():
@@ -1212,6 +1211,58 @@ def test_generic_recursive_models(create_module):
 
         class Model2(BaseModel, Generic[T]):
             ref: Union[T, Model1[T]]
+
+            model_config = dict(undefined_types_warning=False)
+
+        Model1.model_rebuild()
+
+    Model1 = module.Model1
+    Model2 = module.Model2
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    assert exc_info.value.errors() == [
+        {
+            'input': {'ref': {'ref': 123}},
+            'loc': ('ref', 'ref', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 123,
+            'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 123,
+            'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        },
+    ]
+    result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
+    assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
+
+
+def test_generic_recursive_models_separate_parameters(create_module):
+    @create_module
+    def module():
+        from typing import Generic, TypeVar, Union
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Model1(BaseModel, Generic[T]):
+            ref: 'Model2[T]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        S = TypeVar('S')
+
+        class Model2(BaseModel, Generic[S]):
+            ref: Union[S, Model1[S]]
 
             model_config = dict(undefined_types_warning=False)
 
