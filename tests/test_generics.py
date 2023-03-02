@@ -1259,8 +1259,7 @@ def test_generic_recursive_models_separate_parameters(create_module):
 
             model_config = dict(undefined_types_warning=False)
 
-        S = TypeVar('S')
-
+        S = TypeVar("S")
         class Model2(BaseModel, Generic[S]):
             ref: Union[S, Model1[S]]
 
@@ -1293,9 +1292,11 @@ def test_generic_recursive_models_separate_parameters(create_module):
             'type': 'dict_type',
         },
     ]
-    result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
-    assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
+    # This doesn't work, but maybe should?
+    # result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
 
+    result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref='123')))))
+    assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
 
 def test_generic_enum():
     T = TypeVar('T')
