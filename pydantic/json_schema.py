@@ -494,7 +494,8 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if not isinstance(v, (str, int)):
                 try:
-                    # Use str(k) since keys must be strings for json
+                    # Use str(k) since keys must be strings for json; while not technically correct,
+                    # it's the closest that can be represented in valid JSON
                     generated[str(k)] = self.generate_inner(v).copy()
                 except PydanticInvalidForJsonSchema:
                     pass
@@ -701,10 +702,12 @@ class GenerateJsonSchema:
         return self.generate_inner(schema['schema'])
 
     def json_schema(self, schema: core_schema.JsonSchema) -> JsonSchemaValue:
-        # TODO: Should we be doing something with `schema['schema']`? In the JSON schema
-        #   PR I made an executive decision to return this schema, but I realized there was a test
-        #   in the test_generics.py file that was checking for a specific behavior.
-        #   I think this is a serialization vs. validation thing; see https://github.com/pydantic/pydantic/issues/5072
+        # TODO: For v1 compatibility, we should probably be using `schema['schema']` to produce the schema.
+        #   This is a serialization vs. validation thing; see https://github.com/pydantic/pydantic/issues/5072
+        #   -
+        #   The behavior below is not currently consistent with the v1 behavior, so should probably be changed.
+        #   I think making it work like v1 should be as easy as handling schema['schema'] instead, with the note
+        #   that we'll need to make generics work with Json (there is a test for this in test_generics.py).
         return {'type': 'string', 'format': 'json-string'}
 
     def url_schema(self, schema: core_schema.UrlSchema) -> JsonSchemaValue:
@@ -765,11 +768,11 @@ class GenerateJsonSchema:
         """
         Override this method to change the way that definitions keys are generated from a core reference.
         """
-        # Remove IDs from each component, handling generics properly
+        # Split the core ref into "components"; generic origins and arguments are each separate components
         components = re.split(r'([\][,])', core_ref)
+        # Remove IDs from each component
         components = [x.split(':')[0] for x in components]
         core_ref_no_id = ''.join(components)
-
         # Remove everything before the last period from each "component"
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
         short_ref = ''.join(components)

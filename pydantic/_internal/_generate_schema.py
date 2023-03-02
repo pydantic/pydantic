@@ -96,16 +96,6 @@ class GenerateSchema:
 
         return schema
 
-    def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
-        assert isinstance(typevar, typing.TypeVar)
-        if typevar.__bound__:
-            schema = self.generate_schema(typevar.__bound__)
-        elif typevar.__constraints__:
-            schema = self._union_schema(typing.Union[typevar.__constraints__])
-        else:
-            schema = core_schema.AnySchema(type='any')
-        return schema
-
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         schema_property = getattr(obj, '__pydantic_core_schema__', None)
         if schema_property is not None:
@@ -136,19 +126,14 @@ class GenerateSchema:
             if self.typevars_map is not None:
                 model = replace_types(obj.resolve_model(), self.typevars_map)
                 if is_self_type(model):
-                    # This should end up below a ref that is duplicated, so will get removed
-                    # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
-                    #   Ideally there would be a schema that was invalid for anything if validation is attempted
-                    return core_schema.any_schema(metadata={'self_schema': model, 'invalid': True})
+                    # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+                    return core_schema.none_schema(metadata={'self_schema': model, 'invalid': True})
                 else:
                     model_ref = model._model_ref()
                     return core_schema.definition_reference_schema(model_ref)
             elif obj.deferred_actions:
-                # I think this logic fork should only get hit if building a schema for a recursive generic model
-                # during a first pass; a rebuild will happen with an actual typevars_map.
-                # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
-                #   Ideally there would be a schema that was invalid for anything if validation is attempted
-                return core_schema.any_schema(metadata={'self_type': obj, 'invalid': True})
+                # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+                return core_schema.none_schema(metadata={'self_type': obj, 'invalid': True})
             else:
                 return obj.self_schema
         try:
@@ -529,7 +514,6 @@ class GenerateSchema:
         if type_param == Any:
             return self._type_schema()
         elif isinstance(type_param, typing.TypeVar):
-            # Note: If a substitution is needed, I _believe_ it would have already happened from the replace_types calls
             if type_param.__bound__:
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
@@ -613,6 +597,16 @@ class GenerateSchema:
                 continue
             return encoder(self, obj)
         return None
+
+    def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
+        assert isinstance(typevar, typing.TypeVar)
+        if typevar.__bound__:
+            schema = self.generate_schema(typevar.__bound__)
+        elif typevar.__constraints__:
+            schema = self._union_schema(typing.Union[typevar.__constraints__])
+        else:
+            schema = core_schema.AnySchema(type='any')
+        return schema
 
 
 def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]) -> core_schema.CoreSchema:

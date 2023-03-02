@@ -52,6 +52,7 @@ _object_setattr = _model_construction.object_setattr
 _base_class_defined = False
 
 # TODO: Of course we need to do the WeakRef dict thing here before we are done
+#   (Also need to move this to the _generics file or similar)
 _generic_types_cache: _utils.LimitedDict[tuple[type[Any], Any, tuple[Any, ...]], type[BaseModel]] = _utils.LimitedDict()
 
 
@@ -152,7 +153,7 @@ class ModelMetaclass(ABCMeta):
 
 
 # TODO: Need to add some comments documenting how/why this ContextVar is used
-#   Possibly move to another module and wrap in a function/contextmanager that better conveys intent?
+#   Ideally move to the _generics module and wrap in a context manager that conveys intent
 generic_recursion: ContextVar[dict[Any, int] | None] = ContextVar('generic_recursion', default=None)
 
 
@@ -669,6 +670,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     ) -> type[BaseModel] | type[BaseSelfType]:
         def _cache_key(_params: Any) -> tuple[type[Any], Any, tuple[Any, ...]]:
             # TODO: This doesn't seem right if _params is a tuple, which it definitely can be...
+            #   Revisit this after looking into the changes added with the types cache
             args = typing_extensions.get_args(_params)
             # python returns a list for Callables, which is not hashable
             if len(args) == 2 and isinstance(args[0], list):
