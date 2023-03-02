@@ -14,13 +14,13 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ._fields import DeferredField
 from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._deferred_field import DeferredField
 from ._generics import replace_types
 from ._self_type import is_self_type
 
@@ -128,13 +128,17 @@ class GenerateSchema:
                 model = replace_types(obj.resolve_model(), self.typevars_map)
                 if is_self_type(model):
                     # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                    return core_schema.none_schema(metadata={'self_schema': model, 'invalid': True})
+                    return core_schema.none_schema(metadata={'pydantic_debug_self_type': model, 'invalid': True})
                 else:
+                    # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
                     model_ref = model._model_ref()
-                    return core_schema.definition_reference_schema(model_ref)
+                    self_schema = core_schema.definition_reference_schema(model_ref)
+                    return core_schema.none_schema(
+                        metadata={'pydantic_debug_self_schema': self_schema, 'invalid': True}
+                    )
             elif obj.deferred_actions:
                 # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                return core_schema.none_schema(metadata={'self_type': obj, 'invalid': True})
+                return core_schema.none_schema(metadata={'pydantic_debug_self_type': obj, 'invalid': True})
             else:
                 return obj.self_schema
         try:
@@ -250,11 +254,11 @@ class GenerateSchema:
             for x in obj.bases[::-1]:
                 model_fields_lookup.update(getattr(x, 'model_fields', {}))
 
-            if obj.name in model_fields_lookup:
-                inherited_field = model_fields_lookup[obj.name]
+            if obj.ann_name in model_fields_lookup:
+                inherited_field = model_fields_lookup[obj.ann_name]
                 schema = self.generate_schema(inherited_field.annotation)
             else:
-                schema = core_schema.none_schema()
+                schema = core_schema.none_schema()  # placeholder
         else:
             schema = self.generate_schema(field_info.annotation)
 

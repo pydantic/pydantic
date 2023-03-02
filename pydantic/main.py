@@ -139,8 +139,6 @@ class ModelMetaclass(ABCMeta):
         else:
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
-            # cls = super().__new__(mcs, cls_name, bases, namespace, **kwargs)
-            # return cls
 
     def __instancecheck__(self, instance: Any) -> bool:
         """

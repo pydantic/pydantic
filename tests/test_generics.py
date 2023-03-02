@@ -1244,6 +1244,9 @@ def test_generic_recursive_models(create_module):
     result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
     assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
 
+    result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref='123')))))
+    assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
+
 
 def test_generic_recursive_models_separate_parameters(create_module):
     @create_module
@@ -1259,7 +1262,8 @@ def test_generic_recursive_models_separate_parameters(create_module):
 
             model_config = dict(undefined_types_warning=False)
 
-        S = TypeVar("S")
+        S = TypeVar('S')
+
         class Model2(BaseModel, Generic[S]):
             ref: Union[S, Model1[S]]
 
@@ -1268,7 +1272,7 @@ def test_generic_recursive_models_separate_parameters(create_module):
         Model1.model_rebuild()
 
     Model1 = module.Model1
-    Model2 = module.Model2
+    # Model2 = module.Model2
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
@@ -1292,11 +1296,21 @@ def test_generic_recursive_models_separate_parameters(create_module):
             'type': 'dict_type',
         },
     ]
-    # This doesn't work, but maybe should?
+    # TODO: Unlike in the previous test, the following (commented) line currently produces this error:
+    #   >       result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
+    #   E       pydantic_core._pydantic_core.ValidationError: 1 validation error for Model2[~T]
+    #   E       ref
+    #   E         Input should be a valid dictionary [type=dict_type, input_value=Model2(ref='123'), input_type=Model2]
+    #  The root of this problem is that Model2[T] ends up being a proper subclass of Model2 since T != S.
+    #  I am sure we can solve this problem, just need to put a bit more effort in.
+    #  While I don't think we should block merging this functionality on getting the next line to pass,
+    #  I think we should come back and resolve this at some point.
     # result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
+    # assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
 
     result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref='123')))))
     assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
+
 
 def test_generic_enum():
     T = TypeVar('T')

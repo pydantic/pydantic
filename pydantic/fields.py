@@ -9,6 +9,7 @@ import typing_extensions
 
 from . import types
 from ._internal import _fields, _repr, _typing_extra, _utils
+from ._internal._deferred_field import DeferredField
 from ._internal._fields import Undefined
 
 if typing.TYPE_CHECKING:
@@ -101,7 +102,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any]) -> 'FieldInfo':
+    def from_annotation(cls, annotation: type[Any] | DeferredField) -> 'FieldInfo':
         """
         Create `FieldInfo` from a bare annotation, e.g.:
         >>> import pydantic

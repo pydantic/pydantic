@@ -13,7 +13,7 @@ from pprint import pprint
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema, SchemaError
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
@@ -21,7 +21,8 @@ from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import Undefined, DeferredField
+from ._deferred_field import DeferredField
+from ._fields import Undefined
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
 from ._self_type import get_self_type, is_self_type
@@ -205,6 +206,7 @@ def complete_model_class(
     )
     return True
 
+
 def build_inner_schema(  # noqa: C901
     cls: type[BaseModel],
     name: str,
@@ -283,11 +285,11 @@ def build_inner_schema(  # noqa: C901
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
                 if ann_name in model_fields_lookup:
-                    field = model_fields_lookup[ann_name]
+                    # copy to make sure typevar substitutions don't cause issues with the base classes
+                    field = copy(model_fields_lookup[ann_name])
                 else:
-                    field = FieldInfo.from_annotation(DeferredField(ann_name, cls.__bases__))
-                # copy to make sure typevar substitutions don't cause issues with the base classes
-                fields[ann_name] = copy(field)
+                    field = FieldInfo.from_annotation(DeferredField(cls.__bases__, ann_name))
+                fields[ann_name] = field
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
@@ -298,7 +300,10 @@ def build_inner_schema(  # noqa: C901
     typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
     if typevars_map:
         for field in fields.values():
-            field.annotation = replace_types(field.annotation, typevars_map)
+            if isinstance(field.annotation, DeferredField):
+                field.annotation.replace_types(typevars_map)
+            else:
+                field.annotation = replace_types(field.annotation, typevars_map)
     schema = model_fields_schema(
         model_ref,
         fields,
