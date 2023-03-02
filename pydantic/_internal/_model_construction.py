@@ -213,7 +213,7 @@ def build_inner_schema(  # noqa: C901
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
     typevars_map: dict[Any, Any] = None,
-) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo | type[BaseSelfType]]]:
+) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
     module_name = getattr(cls, '__module__', None)
     global_ns: dict[str, Any] | None = None
     if module_name:
@@ -235,7 +235,6 @@ def build_inner_schema(  # noqa: C901
         core_schema.recursive_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
-    # self_schema = core_schema.any_schema(metadata={'self_schema_1': self_schema})
     local_ns = {name: get_self_type(self_schema, cls)}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
@@ -256,7 +255,7 @@ def build_inner_schema(  # noqa: C901
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
     annotations = cls.__dict__.get('__annotations__', {})
-    fields: dict[str, FieldInfo | type[BaseSelfType]] = {}
+    fields: dict[str, FieldInfo] = {}
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
@@ -292,13 +291,10 @@ def build_inner_schema(  # noqa: C901
             # 2. To avoid false positives in the NameError check above
             delattr(cls, ann_name)
 
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
+    typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
     if typevars_map:
         for field in fields.values():
-            if isinstance(field, FieldInfo):
-                field.annotation = replace_types(field.annotation, typevars_map)
-            else:
-                field.replace_types(typevars_map)
+            field.annotation = replace_types(field.annotation, typevars_map)
     schema = model_fields_schema(
         model_ref,
         fields,
@@ -311,7 +307,7 @@ def build_inner_schema(  # noqa: C901
     return schema, fields
 
 
-def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo | type[BaseSelfType]], config: ConfigDict) -> Signature:
+def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:
     """
     Generate signature for model based on its fields
     """
@@ -338,28 +334,20 @@ def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldI
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config['populate_by_name']
         for field_name, field in fields.items():
-            if isinstance(field, FieldInfo):
-                param_name = field.alias or field_name
-                if field_name in merged_params or param_name in merged_params:
+            param_name = field.alias or field_name
+            if field_name in merged_params or param_name in merged_params:
+                continue
+            elif not is_valid_identifier(param_name):
+                if allow_names and is_valid_identifier(field_name):
+                    param_name = field_name
+                else:
+                    use_var_kw = True
                     continue
-                elif not is_valid_identifier(param_name):
-                    if allow_names and is_valid_identifier(field_name):
-                        param_name = field_name
-                    else:
-                        use_var_kw = True
-                        continue
-                # TODO: replace annotation with actual expected types once #1055 solved
-                annotation = field.rebuild_annotation()
-                kwargs = {} if field.is_required() else {'default': field.get_default()}
-            else:
-                # This should never make its way into a "final" model
-                param_name = field_name
-                annotation = Any
-                kwargs = {}
+            # TODO: replace annotation with actual expected types once #1055 solved
+            annotation = field.rebuild_annotation()
+            kwargs = {} if field.is_required() else {'default': field.get_default()}
 
-            merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=annotation, **kwargs
-            )
+            merged_params[param_name] = Parameter(param_name, Parameter.KEYWORD_ONLY, annotation=annotation, **kwargs)
 
     if config['extra'] is Extra.allow:
         use_var_kw = True

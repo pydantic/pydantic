@@ -4,7 +4,7 @@ Private logic related to fields (the `Field()` function and `FieldInfo` class), 
 from __future__ import annotations as _annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import core_schema
 
@@ -55,7 +55,7 @@ class BaseSelfTypeMeta(type):
     self_schema: core_schema.CoreSchema
 
     def __repr__(self) -> str:
-        return f"{self.__name__}" f"(model={self.model}, actions={self.actions}, self_schema={self.self_schema})"
+        return f'{self.__name__}(model={self.model}, actions={self.actions}, self_schema={self.self_schema})'
 
 
 class BaseSelfType(metaclass=BaseSelfTypeMeta):
@@ -69,7 +69,7 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
 
     @classmethod
     def __class_getitem__(cls, item: Any) -> Any:
-        updated_actions = cls.actions + [{"kind": "class_getitem", "item": item}]
+        updated_actions = cls.actions + [{'kind': 'class_getitem', 'item': item}]
 
         class SelfType(cls):  # type: ignore[valid-type,misc]
             actions = updated_actions
@@ -78,7 +78,7 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
 
     @classmethod
     def replace_types(cls, typevars_map: Any) -> type[BaseSelfType]:
-        updated_actions = cls.actions + [{"kind": "replace_types", "typevars_map": typevars_map}]
+        updated_actions = cls.actions + [{'kind': 'replace_types', 'typevars_map': typevars_map}]
 
         class SelfType(cls):  # type: ignore[valid-type,misc]
             actions = updated_actions

@@ -762,12 +762,12 @@ class GenerateJsonSchema:
         """
         # Remove IDs from each component, handling generics properly
         components = re.split(r'([\][,])', core_ref)
-        components = [x.split(":")[0] for x in components]
-        core_ref_no_id = "".join(components)
+        components = [x.split(':')[0] for x in components]
+        core_ref_no_id = ''.join(components)
 
         # Remove everything before the last period from each "component"
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
-        short_ref = "".join(components)
+        short_ref = ''.join(components)
 
         first_choice = DefsRef(self.normalize_name(short_ref))  # name
         second_choice = DefsRef(self.normalize_name(core_ref_no_id))  # module + qualname

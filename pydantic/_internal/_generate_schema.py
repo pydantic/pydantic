@@ -32,7 +32,7 @@ __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
 def model_fields_schema(
     model_ref: str,
-    fields: dict[str, FieldInfo | type[BaseSelfType]],
+    fields: dict[str, FieldInfo],
     validator_functions: ValidationFunctions,
     serialization_functions: SerializationFunctions,
     arbitrary_types: bool,

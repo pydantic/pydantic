@@ -4,7 +4,7 @@ The goal is to move this file's contents into pydantic_core proper.
 
 from __future__ import annotations
 
-from typing import Callable, cast
+from typing import Callable
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from typing_extensions import get_args
@@ -144,7 +144,7 @@ class WalkAndApply:
         return schema
 
     def handle_tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> CoreSchema:
-        new_choices: dict[str | int,  str | int | CoreSchema] = {}
+        new_choices: dict[str | int, str | int | CoreSchema] = {}
         for k, v in schema['choices'].items():
             new_choices[k] = v if isinstance(v, (str, int)) else self._walk(v)
         schema['choices'] = new_choices

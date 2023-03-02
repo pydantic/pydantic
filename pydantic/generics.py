@@ -20,8 +20,6 @@ from typing import (
 import typing_extensions
 
 from ._internal import _repr, _typing_extra, _utils
-from ._internal._fields import BaseSelfType
-from ._internal._utils import lenient_issubclass
 from .main import BaseModel, create_model
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')

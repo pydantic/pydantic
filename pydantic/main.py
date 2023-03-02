@@ -3,7 +3,6 @@ Logic for creating models, could perhaps be renamed to `models.py`.
 """
 from __future__ import annotations as _annotations
 
-import sys
 import typing
 import warnings
 from abc import ABCMeta
@@ -17,11 +16,9 @@ from types import prepare_class, resolve_bases
 from typing import Any, Generic
 
 import typing_extensions
-from pydantic_core import core_schema
 
 from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
-from ._internal._core_metadata import build_metadata_dict
-from ._internal._fields import Undefined, get_self_type, BaseSelfType
+from ._internal._fields import BaseSelfType, Undefined, get_self_type
 from ._internal._generics import TypeVarType, check_parameters_count, iter_contained_typevars, replace_types
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
@@ -647,7 +644,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
 
-    def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[BaseModel] | type[BaseSelfType]:
+    def __class_getitem__(
+        cls, typevar_values: type[Any] | tuple[type[Any], ...]
+    ) -> type[BaseModel] | type[BaseSelfType]:
         def _cache_key(_params: Any) -> tuple[type[Any], Any, tuple[Any, ...]]:
             # TODO: This doesn't seem right if _params is a tuple, which it definitely can be...
             args = typing_extensions.get_args(_params)
@@ -750,7 +749,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def model_ref(cls, args_override: tuple[type[Any], ...] | None = None) -> str:
-        # cls = replace_types(model, self.typevars_map)
+        """
+        Produces the ref to be used for this model by pydantic_core's core schemas.
+
+        This method has been designed to be able to create valid recursive references
+        when creating generic models.
+        """
         args = args_override or getattr(cls, '__pydantic_generic_args__', None) or ()
 
         origin = getattr(cls, '__pydantic_generic_origin__', None) or cls  # use the origin if possible
@@ -759,10 +763,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         arg_refs: list[str] = []
         for arg in args:
-            arg_ref = f"{_repr.display_as_type(arg)}:{id(arg)}"
+            arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
             arg_refs.append(arg_ref)
         if arg_refs:
-            model_ref = f"{model_ref}[{','.join(arg_refs)}]"
+            model_ref = f'{model_ref}[{",".join(arg_refs)}]'
         return model_ref
 
 
