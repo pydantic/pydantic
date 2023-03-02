@@ -136,12 +136,11 @@ class GenerateSchema:
         if lenient_issubclass(obj, _fields.BaseSelfType):
             self_type = typing.cast(type[_fields.BaseSelfType], obj)
             if self.typevars_map is not None:
-                # TODO: This seems rather hacky; ideally there would be a way to not duplicate the model ref creation
-                #   I think resolving this may also be a part of fixing the final failing test
-                # model = self_type.model
                 model = replace_types(self_type.resolve_model(), self.typevars_map)
                 if lenient_issubclass(model, BaseSelfType):
                     # This should end up below a ref that is duplicated, so will get removed
+                    # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
+                    #   Ideally there would be a schema that was invalid for anything if validation is attempted
                     return core_schema.any_schema(metadata={'self_schema': model, 'invalid': True})
                 else:
                     model_ref = model.model_ref()
@@ -149,8 +148,9 @@ class GenerateSchema:
             elif self_type.actions:
                 # I think this logic fork should only get hit if building a schema for a recursive generic model
                 # during a first pass; a rebuild will happen with an actual typevars_map.
-                # TODO: Perhaps there is a better way to indicate a schema is being built for a pre-initialized generic
-                return core_schema.any_schema(metadata={'self_type': self_type})
+                # TODO: Perhaps we can better indicate that a schema is being built for a pre-initialized generic
+                #   Ideally there would be a schema that was invalid for anything if validation is attempted
+                return core_schema.any_schema(metadata={'self_type': self_type, 'invalid': True})
             else:
                 return self_type.self_schema
         try:
