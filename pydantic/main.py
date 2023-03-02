@@ -21,7 +21,7 @@ from pydantic_core import core_schema
 
 from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
 from ._internal._core_metadata import build_metadata_dict
-from ._internal._fields import Undefined, get_self_type
+from ._internal._fields import Undefined, get_self_type, BaseSelfType
 from ._internal._generics import TypeVarType, check_parameters_count, iter_contained_typevars, replace_types
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
@@ -647,7 +647,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
 
-    def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[Any]:
+    def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[BaseModel] | type[BaseSelfType]:
         def _cache_key(_params: Any) -> tuple[type[Any], Any, tuple[Any, ...]]:
             # TODO: This doesn't seem right if _params is a tuple, which it definitely can be...
             args = typing_extensions.get_args(_params)
@@ -680,12 +680,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
         else:
-            if not getattr(cls, '__pydantic_generic_args__', None):
+            parent_args = cls.__pydantic_generic_args__
+            if not parent_args:
                 args = typevar_values
             else:
-                args = tuple(replace_types(arg, typevars_map) for arg in cls.__pydantic_generic_args__)
+                args = tuple(replace_types(arg, typevars_map) for arg in parent_args)
 
-            origin = getattr(cls, '__pydantic_generic_origin__') or cls
+            origin = cls.__pydantic_generic_origin__ or cls
             model_name = origin.model_concrete_name(args)
 
             parent_calls = generic_recursion.get()

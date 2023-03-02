@@ -25,7 +25,7 @@ if typing.TYPE_CHECKING:
     #     __pydantic_generic_origin__: typing.ClassVar[type['GenericBaseModel']]
 
 
-def create_generic_submodel(model_name: str, origin: type[BaseModel], args: list[Any], typevars_map) -> type[BaseModel]:
+def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tuple[Any, ...], typevars_map: dict[Any, Any]) -> type[BaseModel]:
     """
     Dynamically create a submodel of a provided (generic) BaseModel.
 

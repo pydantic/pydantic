@@ -4,27 +4,10 @@ The goal is to move this file's contents into pydantic_core proper.
 
 from __future__ import annotations
 
-from pprint import pprint
-from typing import Callable
+from typing import Callable, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from typing_extensions import get_args
-
-
-def apply_ref_substitutions(
-    schema: core_schema.CoreSchema, substitutions: dict[str, core_schema.CoreSchema]
-) -> core_schema.CoreSchema:
-    pprint(schema)
-
-    def _apply_substitution(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if s['type'] == 'definition-ref':
-            return s
-        ref: Any = s.get('ref')
-        if ref:
-            return substitutions.get(ref, s)
-        return s
-
-    return WalkAndApply(_apply_substitution).walk(schema)
 
 
 def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -36,7 +19,10 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     refs = set()
 
     def _replace_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        ref = s.get('ref')
+        # Without the cast, get:
+        # pydantic/_internal/_core_utils.py:22: error: Incompatible types in assignment
+        # (expression has type "object", variable has type "Optional[str]")  [assignment]
+        ref: str | None = s.get('ref')  # type: ignore[assignment]
         if ref:
             if ref in refs:
                 return {'type': 'recursive-ref', 'schema_ref': ref}
@@ -45,33 +31,6 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
 
     schema = WalkAndApply(_replace_refs, apply_before_recurse=True).walk(schema)
     return schema
-
-
-def apply_typevars_to_models(schema: core_schema.CoreSchema, typevars_map) -> core_schema.CoreSchema:
-    """
-    Assumption: Any time that two schemas have the same ref, they are equivalent.
-    This function walks a schema recursively, replacing all but the first occurrence of each ref with
-    a definition-ref schema referencing that ref.
-    """
-    if not typevars_map:
-        return schema
-
-    def _apply_typevars(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if s['type'] == 'model':
-            cls = s['cls']
-            parameters = getattr(cls, '__parameters__', None)
-            if parameters is not None:
-                # TODO: Need to actually substitute the _correct_ typevars, not just all
-                cls = s['cls'] = cls[tuple(typevars_map.get(p, p) for p in parameters)]
-                module_name = getattr(cls, '__module__', None)
-                substituted_model_ref = f'{module_name}.{cls.__qualname__}:{id(cls)}'
-                if s['schema']['type'] == 'definition-ref':
-                    s['schema']['schema_ref'] = substituted_model_ref
-                else:
-                    s['schema']['ref'] = substituted_model_ref
-        return s
-
-    return WalkAndApply(_apply_typevars).walk(schema)
 
 
 class WalkAndApply:
@@ -109,25 +68,25 @@ class WalkAndApply:
             schema['schema'] = self._walk(schema['schema'])  # type: ignore
         return schema
 
-    def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema) -> CoreSchema:
-        new_definitions = []
-        for definition in schema['definitions']:
-            updated_definition = self._walk(definition)
-            if 'ref' in updated_definition:
-                # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
-                # This is most likely to happen due to replacing something with a definition reference, in
-                # which case it should certainly not go in the definitions list
-                new_definitions.append(updated_definition)
-        new_inner_schema = self._walk(schema['schema'])
-
-        if not new_definitions and len(schema) == 3:
-            # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
-            return new_inner_schema
-
-        new_schema = schema.copy()
-        new_schema['schema'] = new_inner_schema
-        new_schema['definitions'] = new_definitions
-        return new_schema
+    # def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema) -> CoreSchema:
+    #     new_definitions = []
+    #     for definition in schema['definitions']:
+    #         updated_definition = self._walk(definition)
+    #         if 'ref' in updated_definition:
+    #             # If the updated definition schema doesn't have a 'ref', it shouldn't go in the definitions
+    #             # This is most likely to happen due to replacing something with a definition reference, in
+    #             # which case it should certainly not go in the definitions list
+    #             new_definitions.append(updated_definition)
+    #     new_inner_schema = self._walk(schema['schema'])
+    #
+    #     if not new_definitions and len(schema) == 3:
+    #         # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
+    #         return new_inner_schema
+    #
+    #     new_schema = schema.copy()
+    #     new_schema['schema'] = new_inner_schema
+    #     new_schema['definitions'] = new_definitions
+    #     return new_schema
 
     def handle_list_schema(self, schema: core_schema.ListSchema) -> CoreSchema:
         if 'items_schema' in schema:
@@ -155,7 +114,7 @@ class WalkAndApply:
         if 'mode' not in schema or schema['mode'] == 'variable':
             if 'items_schema' in schema:
                 # Could drop the # type: ignore on the next line if we made 'mode' required in TupleVariableSchema
-                schema['items_schema'] = self._walk(schema['items_schema'])  # type: ignore[arg-type]
+                schema['items_schema'] = self._walk(schema['items_schema'])
         elif schema['mode'] == 'positional':
             schema['items_schema'] = [self._walk(v) for v in schema['items_schema']]
             if 'extra_schema' in schema:
@@ -185,7 +144,10 @@ class WalkAndApply:
         return schema
 
     def handle_tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> CoreSchema:
-        schema['choices'] = {k: v if isinstance(v, str) else self._walk(v) for k, v in schema['choices'].items()}
+        new_choices: dict[str | int,  str | int | CoreSchema] = {}
+        for k, v in schema['choices'].items():
+            new_choices[k] = v if isinstance(v, (str, int)) else self._walk(v)
+        schema['choices'] = new_choices
         return schema
 
     def handle_chain_schema(self, schema: core_schema.ChainSchema) -> CoreSchema:

@@ -54,7 +54,7 @@ class BaseSelfTypeMeta(type):
     actions: list[Any]
     self_schema: core_schema.CoreSchema
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__name__}" f"(model={self.model}, actions={self.actions}, self_schema={self.self_schema})"
 
 
@@ -77,7 +77,7 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
         return SelfType
 
     @classmethod
-    def replace_types(cls, typevars_map: Any) -> Any:
+    def replace_types(cls, typevars_map: Any) -> type[BaseSelfType]:
         updated_actions = cls.actions + [{"kind": "replace_types", "typevars_map": typevars_map}]
 
         class SelfType(cls):  # type: ignore[valid-type,misc]
@@ -86,13 +86,13 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
         return SelfType
 
     @classmethod
-    def resolve_model(cls):
+    def resolve_model(cls) -> type[BaseSelfType] | type[BaseModel]:
         model = cls.model
         for action in cls.actions:
             if action['kind'] == 'replace_types':
                 model = replace_types(model, action['typevars_map'])
             elif action['kind'] == 'class_getitem':
-                model = model[action['item']]
+                model = model[action['item']]  # type: ignore[index]
         return model
 
 

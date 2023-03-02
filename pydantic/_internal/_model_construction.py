@@ -21,7 +21,6 @@ from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._deferred_field import DeferredField
 from ._fields import BaseSelfType, Undefined, get_self_type
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
@@ -214,7 +213,7 @@ def build_inner_schema(  # noqa: C901
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
     typevars_map: dict[Any, Any] = None,
-) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
+) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo | type[BaseSelfType]]]:
     module_name = getattr(cls, '__module__', None)
     global_ns: dict[str, Any] | None = None
     if module_name:
@@ -258,8 +257,6 @@ def build_inner_schema(  # noqa: C901
     # annotations is only used for finding fields in parent classes
     annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo | type[BaseSelfType]] = {}
-    # if model_ref.startswith('__main__.Model1[str]'):
-    # print("here")
     for ann_name, ann_type in type_hints.items():
         if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
             continue
@@ -287,12 +284,7 @@ def build_inner_schema(  # noqa: C901
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
                 # copy to make sure typevar substitutions don't cause issues with the base classes
-                if ann_name in model_fields_lookup:
-                    fields[ann_name] = copy(model_fields_lookup[ann_name])
-                else:
-                    # This seems to arise from the case of a not-yet-built model class
-                    fields[ann_name] = DeferredField(cls.__bases__, ann_name)
-                    # raise PydanticUndefinedAnnotation(f'Field {ann_name!r}') from e
+                fields[ann_name] = copy(model_fields_lookup[ann_name])
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
@@ -303,12 +295,10 @@ def build_inner_schema(  # noqa: C901
     typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
     if typevars_map:
         for field in fields.values():
-            if isinstance(field, DeferredField):
-                field.replace_types(typevars_map)
-            elif lenient_issubclass(field, BaseSelfType):
-                field.replace_types(typevars_map)
-            else:
+            if isinstance(field, FieldInfo):
                 field.annotation = replace_types(field.annotation, typevars_map)
+            else:
+                field.replace_types(typevars_map)
     schema = model_fields_schema(
         model_ref,
         fields,
@@ -321,7 +311,7 @@ def build_inner_schema(  # noqa: C901
     return schema, fields
 
 
-def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:
+def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo | type[BaseSelfType]], config: ConfigDict) -> Signature:
     """
     Generate signature for model based on its fields
     """
@@ -348,20 +338,27 @@ def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldI
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config['populate_by_name']
         for field_name, field in fields.items():
-            param_name = field.alias or field_name
-            if field_name in merged_params or param_name in merged_params:
-                continue
-            elif not is_valid_identifier(param_name):
-                if allow_names and is_valid_identifier(field_name):
-                    param_name = field_name
-                else:
-                    use_var_kw = True
+            if isinstance(field, FieldInfo):
+                param_name = field.alias or field_name
+                if field_name in merged_params or param_name in merged_params:
                     continue
+                elif not is_valid_identifier(param_name):
+                    if allow_names and is_valid_identifier(field_name):
+                        param_name = field_name
+                    else:
+                        use_var_kw = True
+                        continue
+                # TODO: replace annotation with actual expected types once #1055 solved
+                annotation = field.rebuild_annotation()
+                kwargs = {} if field.is_required() else {'default': field.get_default()}
+            else:
+                # This should never make its way into a "final" model
+                param_name = field_name
+                annotation = Any
+                kwargs = {}
 
-            # TODO: replace annotation with actual expected types once #1055 solved
-            kwargs = {} if field.is_required() else {'default': field.get_default()}
             merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
+                param_name, Parameter.KEYWORD_ONLY, annotation=annotation, **kwargs
             )
 
     if config['extra'] is Extra.allow:

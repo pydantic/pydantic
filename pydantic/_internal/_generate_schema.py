@@ -20,7 +20,6 @@ from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
-from ._deferred_field import DeferredField
 from ._fields import BaseSelfType
 from ._generics import replace_types
 from ._utils import lenient_issubclass
@@ -33,7 +32,7 @@ __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
 def model_fields_schema(
     model_ref: str,
-    fields: dict[str, FieldInfo],
+    fields: dict[str, FieldInfo | type[BaseSelfType]],
     validator_functions: ValidationFunctions,
     serialization_functions: SerializationFunctions,
     arbitrary_types: bool,
@@ -139,21 +138,14 @@ class GenerateSchema:
             if self.typevars_map is not None:
                 # TODO: This seems rather hacky; ideally there would be a way to not duplicate the model ref creation
                 #   I think resolving this may also be a part of fixing the final failing test
-                model = self_type.model
-                cls = replace_types(model, self.typevars_map)
-                if lenient_issubclass(cls, BaseSelfType):
+                # model = self_type.model
+                model = replace_types(self_type.resolve_model(), self.typevars_map)
+                if lenient_issubclass(model, BaseSelfType):
                     # This should end up below a ref that is duplicated, so will get removed
-                    return core_schema.any_schema(metadata={'self_schema': cls, 'invalid': True})
+                    return core_schema.any_schema(metadata={'self_schema': model, 'invalid': True})
                 else:
-                    model_ref = cls.model_ref()
-                model_js_metadata = cls.model_json_schema_metadata()
-                self_schema = core_schema.model_schema(
-                    cls,
-                    core_schema.recursive_reference_schema(model_ref),
-                    metadata=build_metadata_dict(js_metadata=model_js_metadata),
-                )
-                self_schema = core_schema.any_schema(metadata={'self_schema_2': self_schema})
-                return self_schema
+                    model_ref = model.model_ref()
+                    return core_schema.recursive_reference_schema(model_ref)
             elif self_type.actions:
                 # I think this logic fork should only get hit if building a schema for a recursive generic model
                 # during a first pass; a rebuild will happen with an actual typevars_map.
@@ -258,7 +250,7 @@ class GenerateSchema:
     def generate_field_schema(
         self,
         name: str,
-        field_info: FieldInfo,
+        field_info: FieldInfo | type[BaseSelfType],
         validator_functions: ValidationFunctions,
         serializer_functions: SerializationFunctions,
         *,
@@ -267,7 +259,7 @@ class GenerateSchema:
         """
         Prepare a TypedDictField to represent a model or typeddict field.
         """
-        if isinstance(field_info, DeferredField) or lenient_issubclass(field_info, BaseSelfType):
+        if not isinstance(field_info, FieldInfo):
             return core_schema.typed_dict_field(
                 core_schema.any_schema(), required=required, metadata={'field_info': field_info}
             )
