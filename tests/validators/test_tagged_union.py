@@ -374,7 +374,7 @@ def test_use_ref():
             'discriminator': 'foobar',
             'choices': {
                 'apple': {'type': 'typed-dict', 'ref': 'apple', 'fields': {'a': {'schema': {'type': 'str'}}}},
-                'apple2': {'type': 'recursive-ref', 'schema_ref': 'apple'},
+                'apple2': {'type': 'definition-ref', 'schema_ref': 'apple'},
                 'banana': {'type': 'typed-dict', 'fields': {'b': {'schema': {'type': 'str'}}}},
             },
         },

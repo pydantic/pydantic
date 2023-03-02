@@ -2,39 +2,67 @@ use std::borrow::Cow;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyList};
 
-use crate::build_context::BuildContext;
+use crate::build_context::{BuildContext, ThingOrId};
 use crate::build_tools::SchemaDict;
 
 use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
 
 #[derive(Debug, Clone)]
-pub struct RecursiveRefSerializer {
+pub struct DefinitionsBuilder;
+
+impl BuildSerializer for DefinitionsBuilder {
+    const EXPECTED_TYPE: &'static str = "definitions";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        let py = schema.py();
+
+        let definitions: &PyList = schema.get_as_req(intern!(py, "definitions"))?;
+
+        for def_schema in definitions {
+            CombinedSerializer::build(def_schema.downcast()?, config, build_context)?;
+            // no need to store the serializer here, it has already been stored in build_context if necessary
+        }
+
+        let inner_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
+        CombinedSerializer::build(inner_schema, config, build_context)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DefinitionRefSerializer {
     serializer_id: usize,
 }
 
-impl RecursiveRefSerializer {
+impl DefinitionRefSerializer {
     pub fn from_id(serializer_id: usize) -> CombinedSerializer {
         Self { serializer_id }.into()
     }
 }
 
-impl BuildSerializer for RecursiveRefSerializer {
-    const EXPECTED_TYPE: &'static str = "recursive-ref";
+impl BuildSerializer for DefinitionRefSerializer {
+    const EXPECTED_TYPE: &'static str = "definition-ref";
 
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
         build_context: &mut BuildContext<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let name: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
-        let (serializer_id, _) = build_context.find_slot_id_answer(&name)?;
-        Ok(Self { serializer_id }.into())
+        let schema_ref: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
+
+        match build_context.find(&schema_ref)? {
+            ThingOrId::Thing(serializer) => Ok(serializer),
+            ThingOrId::Id(serializer_id) => Ok(Self { serializer_id }.into()),
+        }
     }
 }
 
-impl TypeSerializer for RecursiveRefSerializer {
+impl TypeSerializer for DefinitionRefSerializer {
     fn to_python(
         &self,
         value: &PyAny,

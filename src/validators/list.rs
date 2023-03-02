@@ -133,9 +133,11 @@ impl Validator for ListValidator {
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        match self.item_validator {
-            Some(ref mut v) => v.complete(build_context),
-            None => Ok(()),
+        if let Some(ref mut v) = self.item_validator {
+            v.complete(build_context)?;
+            let inner_name = v.get_name();
+            self.name = format!("{}[{inner_name}]", Self::EXPECTED_TYPE);
         }
+        Ok(())
     }
 }

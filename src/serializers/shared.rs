@@ -97,6 +97,7 @@ combined_serializer! {
         super::type_serializers::other::IsInstanceBuilder;
         super::type_serializers::other::IsSubclassBuilder;
         super::type_serializers::other::CallableBuilder;
+        super::type_serializers::definitions::DefinitionsBuilder;
     }
     // `both` means the struct is added to both the `CombinedSerializer` enum and the match statement in
     // `find_serializer` so they can be used via a `type` str.
@@ -126,9 +127,9 @@ combined_serializer! {
         ToString: super::type_serializers::format::ToStringSerializer;
         WithDefault: super::type_serializers::with_default::WithDefaultSerializer;
         Json: super::type_serializers::json::JsonSerializer;
-        Recursive: super::type_serializers::recursive::RecursiveRefSerializer;
         Union: super::type_serializers::union::UnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
+        Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
     }
 }
 
@@ -187,14 +188,34 @@ impl BuildSerializer for CombinedSerializer {
         build_context: &mut BuildContext<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         if let Some(schema_ref) = schema.get_as::<String>(intern!(schema.py(), "ref"))? {
-            // as with validators, only use a recursive reference if the ref is used
+            // as with validators, if there's a ref,
+            // we **might** want to store the serializer in slots and return a DefinitionRefSerializer:
+            // * if the ref isn't used at all, we just want to return a normal serializer, and ignore the ref completely
+            // * if the ref is used inside itself, we have to store the serializer in slots,
+            //   and return a DefinitionRefSerializer - two step process with `prepare_slot` and `complete_slot`
+            // * if the ref is used elsewhere, we want to clone it each time it's used
             if build_context.ref_used(&schema_ref) {
-                let slot_id = build_context.prepare_slot(schema_ref, None)?;
-                let inner_ser = Self::_build(schema, config, build_context)?;
-                build_context.complete_slot(slot_id, inner_ser)?;
-                return Ok(super::type_serializers::recursive::RecursiveRefSerializer::from_id(
-                    slot_id,
-                ));
+                // the ref is used somewhere
+                // check the ref is unique
+                if build_context.ref_already_used(&schema_ref) {
+                    return py_err!("Duplicate ref: `{}`", schema_ref);
+                }
+
+                return if build_context.ref_used_within(schema, &schema_ref)? {
+                    // the ref is used within itself, so we have to store the serializer in slots
+                    // and return a DefinitionRefSerializer
+                    let slot_id = build_context.prepare_slot(schema_ref, None)?;
+                    let inner_ser = Self::_build(schema, config, build_context)?;
+                    build_context.complete_slot(slot_id, inner_ser)?;
+                    Ok(super::type_serializers::definitions::DefinitionRefSerializer::from_id(
+                        slot_id,
+                    ))
+                } else {
+                    // the ref is used elsewhere, so we want to clone it each time it's used
+                    let serializer = Self::_build(schema, config, build_context)?;
+                    build_context.store_reusable(schema_ref, serializer.clone());
+                    Ok(serializer)
+                };
             }
         }
 

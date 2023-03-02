@@ -342,7 +342,7 @@ def test_isinstance_string_strict_false(benchmark):
 
 
 @pytest.fixture
-def recursive_model_data():
+def definition_model_data():
     data = {'width': -1}
 
     _data = data
@@ -355,17 +355,17 @@ def recursive_model_data():
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='crashes on pypy due to recursion depth')
 @skip_pydantic
 @pytest.mark.benchmark(group='recursive model')
-def test_recursive_model_pyd(recursive_model_data, benchmark):
+def test_definition_model_pyd(definition_model_data, benchmark):
     class PydanticBranch(BaseModel):
         width: int
         branch: Optional['PydanticBranch'] = None
 
-    benchmark(PydanticBranch.parse_obj, recursive_model_data)
+    benchmark(PydanticBranch.parse_obj, definition_model_data)
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='crashes on pypy due to recursion depth')
 @pytest.mark.benchmark(group='recursive model')
-def test_recursive_model_core(recursive_model_data, benchmark):
+def test_definition_model_core(definition_model_data, benchmark):
     class CoreBranch:
         # this is not required, but it avoids `__fields_set__` being included in `__dict__`
         __slots__ = '__dict__', '__fields_set__'
@@ -383,7 +383,10 @@ def test_recursive_model_core(recursive_model_data, benchmark):
                     'branch': {
                         'schema': {
                             'type': 'default',
-                            'schema': {'type': 'nullable', 'schema': {'type': 'recursive-ref', 'schema_ref': 'Branch'}},
+                            'schema': {
+                                'type': 'nullable',
+                                'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
+                            },
                             'default': None,
                         }
                     },
@@ -391,7 +394,7 @@ def test_recursive_model_core(recursive_model_data, benchmark):
             },
         }
     )
-    benchmark(v.validate_python, recursive_model_data)
+    benchmark(v.validate_python, definition_model_data)
 
 
 @skip_pydantic
@@ -1167,3 +1170,22 @@ def test_int_error(benchmark):
             validator.validate_python('foobar', strict=True)
         except ValidationError as e:
             e.errors()
+
+
+@pytest.mark.benchmark(group='definition')
+def test_definition_in_tree(benchmark):
+    validator = SchemaValidator(core_schema.list_schema(core_schema.int_schema()))
+    values = [1, 2, 3.0, '4', '5', '6'] * 1000
+    benchmark(validator.validate_python, values)
+
+
+@pytest.mark.benchmark(group='definition')
+def test_definition_out_of_tree(benchmark):
+    validator = SchemaValidator(
+        core_schema.definitions_schema(
+            core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
+            [core_schema.int_schema(ref='foobar')],
+        )
+    )
+    values = [1, 2, 3.0, '4', '5', '6'] * 1000
+    benchmark(validator.validate_python, values)

@@ -102,7 +102,7 @@ def test_schema_typing() -> None:
                     'type': 'default',
                     'schema': {
                         'type': 'union',
-                        'choices': [{'type': 'none'}, {'type': 'recursive-ref', 'schema_ref': 'Branch'}],
+                        'choices': [{'type': 'none'}, {'type': 'definition-ref', 'schema_ref': 'Branch'}],
                     },
                     'default': None,
                 }

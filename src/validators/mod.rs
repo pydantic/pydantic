@@ -24,6 +24,7 @@ mod chain;
 mod custom_error;
 mod date;
 mod datetime;
+mod definitions;
 mod dict;
 mod float;
 mod frozenset;
@@ -39,7 +40,6 @@ mod literal;
 mod model;
 mod none;
 mod nullable;
-mod recursive;
 mod set;
 mod string;
 mod time;
@@ -66,9 +66,10 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, schema: &PyAny, config: Option<&PyDict>) -> PyResult<Self> {
-        let schema = Self::validate_schema(py, schema)?;
+        let self_validator = SelfValidator::new(py)?;
+        let schema = self_validator.validate_schema(py, schema)?;
 
-        let mut build_context = BuildContext::for_schema(schema)?;
+        let mut build_context = BuildContext::new(schema)?;
 
         let mut validator = build_validator(schema, config, &mut build_context)?;
         validator.complete(&build_context)?;
@@ -212,16 +213,33 @@ impl SchemaValidator {
     }
 }
 
+impl SchemaValidator {
+    fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
+        ValidationError::from_val_error(py, self.title.clone_ref(py), error, None)
+    }
+}
+
 static SCHEMA_DEFINITION: GILOnceCell<SchemaValidator> = GILOnceCell::new();
 
-impl SchemaValidator {
-    pub(crate) fn validate_schema<'py>(py: Python<'py>, schema: &'py PyAny) -> PyResult<&'py PyAny> {
-        let self_schema = Self::get_self_schema(py);
-        match self_schema.validator.validate(
+pub struct SelfValidator<'py> {
+    validator: &'py SchemaValidator,
+}
+
+impl<'py> SelfValidator<'py> {
+    pub fn new(py: Python<'py>) -> PyResult<Self> {
+        let validator = SCHEMA_DEFINITION.get_or_init(py, || match Self::build(py) {
+            Ok(schema) => schema,
+            Err(e) => panic!("Error building schema validator:\n  {e}"),
+        });
+        Ok(Self { validator })
+    }
+
+    pub fn validate_schema(&self, py: Python<'py>, schema: &'py PyAny) -> PyResult<&'py PyAny> {
+        match self.validator.validator.validate(
             py,
             schema,
             &Extra::default(),
-            &self_schema.slots,
+            &self.validator.slots,
             &mut RecursionGuard::default(),
         ) {
             Ok(schema_obj) => Ok(schema_obj.into_ref(py)),
@@ -229,16 +247,7 @@ impl SchemaValidator {
         }
     }
 
-    fn get_self_schema(py: Python) -> &Self {
-        SCHEMA_DEFINITION.get_or_init(py, || match Self::build_self_schema(py) {
-            Ok(schema) => schema,
-            Err(e) => {
-                panic!("Error building schema validator:\n  {e}");
-            }
-        })
-    }
-
-    fn build_self_schema(py: Python) -> PyResult<Self> {
+    fn build(py: Python) -> PyResult<SchemaValidator> {
         let code = include_str!("../self_schema.py");
         let locals = PyDict::new(py);
         py.run(code, None, Some(locals))?;
@@ -250,16 +259,12 @@ impl SchemaValidator {
             Ok(v) => v,
             Err(err) => return py_err!("Error building self-schema:\n  {}", err),
         };
-        Ok(Self {
+        Ok(SchemaValidator {
             validator,
             slots: build_context.into_slots_val()?,
             schema: py.None(),
             title: "Self Schema".into_py(py),
         })
-    }
-
-    fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
-        ValidationError::from_val_error(py, self.title.clone_ref(py), error, None)
     }
 }
 
@@ -284,16 +289,33 @@ fn build_specific_validator<'a, T: BuildValidator>(
 ) -> PyResult<CombinedValidator> {
     let py = schema_dict.py();
     if let Some(schema_ref) = schema_dict.get_as::<String>(intern!(py, "ref"))? {
-        // we only want to use a RecursiveContainerValidator if the ref is actually used,
-        // this means refs can always be set without having an effect on the validator which is generated
-        // unless it's used/referenced
+        // if there's a ref, we **might** want to store the validator in slots and return a DefinitionRefValidator:
+        // * if the ref isn't used at all, we just want to return a normal validator, and ignore the ref completely
+        // * if the ref is used inside itself, we have to store the validator in slots,
+        //   and return a DefinitionRefValidator - two step process with `prepare_slot` and `complete_slot`
+        // * if the ref is used elsewhere, we want to clone it each time it's used
         if build_context.ref_used(&schema_ref) {
-            let answers = Answers::new(schema_dict)?;
-            let slot_id = build_context.prepare_slot(schema_ref, Some(answers.clone()))?;
-            let inner_val = T::build(schema_dict, config, build_context)?;
-            let name = inner_val.get_name().to_string();
-            build_context.complete_slot(slot_id, inner_val)?;
-            return Ok(recursive::RecursiveRefValidator::from_id(slot_id, name, answers));
+            // the ref is used somewhere
+            // check the ref is unique
+            if build_context.ref_already_used(&schema_ref) {
+                return py_err!("Duplicate ref: `{}`", schema_ref);
+            }
+
+            return if build_context.ref_used_within(schema_dict, &schema_ref)? {
+                // the ref is used within itself, so we have to store the validator in slots
+                // and return a DefinitionRefValidator
+                let answers = Answers::new(schema_dict)?;
+                let slot_id = build_context.prepare_slot(schema_ref, Some(answers.clone()))?;
+                let inner_val = T::build(schema_dict, config, build_context)?;
+                let name = inner_val.get_name().to_string();
+                build_context.complete_slot(slot_id, inner_val)?;
+                Ok(definitions::DefinitionRefValidator::from_id(slot_id, name, answers))
+            } else {
+                // ref is used, but only out side itself, we want to clone it everywhere it's used
+                let validator = T::build(schema_dict, config, build_context)?;
+                build_context.store_reusable(schema_ref, validator.clone());
+                Ok(validator)
+            };
         }
     }
 
@@ -356,8 +378,6 @@ pub fn build_validator<'a>(
         function::FunctionBuilder,
         // function call - validation around a function call
         call::CallValidator,
-        // recursive (self-referencing) models
-        recursive::RecursiveRefValidator,
         // literals
         literal::LiteralBuilder,
         // any
@@ -395,6 +415,9 @@ pub fn build_validator<'a>(
         // url types
         url::UrlValidator,
         url::MultiHostUrlValidator,
+        // recursive (self-referencing) models
+        definitions::DefinitionRefValidator,
+        definitions::DefinitionsBuilder,
     )
 }
 
@@ -475,8 +498,6 @@ pub enum CombinedValidator {
     FunctionWrap(function::FunctionWrapValidator),
     // function call - validation around a function call
     FunctionCall(call::CallValidator),
-    // recursive (self-referencing) models
-    RecursiveRef(recursive::RecursiveRefValidator),
     // literals
     LiteralSingleString(literal::LiteralSingleStringValidator),
     LiteralSingleInt(literal::LiteralSingleIntValidator),
@@ -519,6 +540,8 @@ pub enum CombinedValidator {
     // url types
     Url(url::UrlValidator),
     MultiHostUrl(url::MultiHostUrlValidator),
+    // reference to definition, useful for recursive (self-referencing) models
+    DefinitionRef(definitions::DefinitionRefValidator),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

@@ -185,7 +185,6 @@ all_schema_functions = [
             },
         },
     ),
-    (core_schema.recursive_reference_schema, args('foo'), {'type': 'recursive-ref', 'schema_ref': 'foo'}),
     (
         core_schema.custom_error_schema,
         args(core_schema.int_schema(), 'foobar', custom_error_message='Hello'),
@@ -205,6 +204,12 @@ all_schema_functions = [
         {'type': 'lax-or-strict', 'lax_schema': {'type': 'int'}, 'strict_schema': {'type': 'int'}},
     ),
     (core_schema.is_subclass_schema, args(MyModel), {'type': 'is-subclass', 'cls': MyModel}),
+    (
+        core_schema.definitions_schema,
+        args({'type': 'int'}, [{'type': 'int'}]),
+        {'type': 'definitions', 'schema': {'type': 'int'}, 'definitions': [{'type': 'int'}]},
+    ),
+    (core_schema.definition_reference_schema, args('foo'), {'type': 'definition-ref', 'schema_ref': 'foo'}),
 ]
 
 
@@ -213,7 +218,7 @@ def test_schema_functions(function, args_kwargs, expected_schema):
     args, kwargs = args_kwargs
     schema = function(*args, **kwargs)
     assert schema == expected_schema
-    if schema.get('type') in {None, 'recursive-ref'}:
+    if schema.get('type') in {None, 'definition-ref'}:
         return
 
     v = SchemaValidator(schema)
