@@ -1,6 +1,7 @@
 import itertools
 import math
 import os
+import platform
 import re
 import sys
 import uuid
@@ -2327,7 +2328,7 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
             for value in non_finite_values
         ],
         *[
-            (
+            pytest.param(
                 dict(decimal_places=2, max_digits=10, allow_inf_nan=False),
                 Decimal(value),
                 [
@@ -2338,6 +2339,7 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
                         'input': AnyThing(),
                     }
                 ],
+                marks=pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='pypy behaviour different'),
             )
             for value in non_finite_values
         ],
