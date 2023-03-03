@@ -439,7 +439,5 @@ def test_discriminator_with_unhashable_type():
     class Foo(BaseModel):
         foo: Union[Model1, Model2] = Field(discriminator='target')
 
-    with pytest.raises(
-        ValidationError, match=re.escape("No match for discriminator 'target' and value {}")
-    ):
+    with pytest.raises(ValidationError, match=re.escape("No match for discriminator 'target' and value {}")):
         Foo(**{'foo': {'target': {}}})
