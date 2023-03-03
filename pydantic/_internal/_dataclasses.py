@@ -111,11 +111,8 @@ def prepare_dataclass(
     dc_init.__name__ = '__init__'
     dc_init.__qualname__ = f'{cls.__qualname__}.__init__'
     setattr(cls, '__init__', dc_init)
-    # cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
-    #     cls, inner_schema,
-    #     config=core_config,
-    #     # call_after_init=model_post_init
-    # )
+    # this works because cls has been transformed into a dataclass by the time "cls" is called
+    cls.__pydantic_core_schema__ = core_schema.call_schema(inner_schema, cls)
     # cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
 
     return True
