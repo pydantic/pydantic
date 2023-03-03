@@ -90,12 +90,12 @@ jobs:
         path: site
 
   test:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    name: test ${{ matrix.python-version }} & ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', 'pypy3.7', 'pypy3.8', 'pypy3.9']
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -144,12 +144,22 @@ jobs:
         path: coverage
 
   test-old-mypy:
-    name: test mypy v${{ matrix.mypy-version }}
+    name: test mypy v${{ matrix.mypy-version }} / py${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        mypy-version: ['0.950', '0.961', '0.971', '0.982', '0.991']
+        mypy-version: ['0.950', '0.961', '0.971', '0.982', '0.991', '1.0.1']
+        python-version: ['3.10']
+        include:
+          - mypy-version: '1.0.1'
+            python-version: '3.7'
+          - mypy-version: '1.0.1'
+            python-version: '3.8'
+          - mypy-version: '1.0.1'
+            python-version: '3.9'
+          - mypy-version: '1.0.1'
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v3
@@ -157,7 +167,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ matrix.python-version }}
 
     - uses: actions/cache@v3
       id: cache
