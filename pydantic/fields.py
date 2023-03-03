@@ -1125,7 +1125,7 @@ class ModelField(Representation):
             )
 
         try:
-            sub_field = self.sub_fields_mapping[discriminator_value]  # type: ignore[index]
+            sub_field = self.sub_fields_mapping[discriminator_value]
         except (KeyError, TypeError):
             # KeyError: `discriminator_value` is not in the dictionary.
             # TypeError: `discriminator_value` is unhashable.
