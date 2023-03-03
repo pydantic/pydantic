@@ -16,11 +16,6 @@ def pytest_addoption(parser):
     parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
 
 
-@pytest.fixture(name='mypy_test')
-def mypy_test_fix(request):
-    return request.config.getoption('--test-mypy')
-
-
 def _extract_source_code_from_function(function):
     if function.__code__.co_argcount:
         raise RuntimeError(f'function {function.__qualname__} cannot have any arguments')
