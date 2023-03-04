@@ -56,7 +56,7 @@ class CoreMetadataHandler:
     def metadata(self) -> _CoreMetadata:
         """
         Retrieves the metadata dict off the schema, initializing it to a dict if necessary,
-        and erroring if it is not None and not a dict
+        and raise an error if it is not a dict.
         """
         metadata = self._schema.get('metadata')
         if metadata is None:
