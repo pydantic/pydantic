@@ -55,8 +55,8 @@ class CoreMetadataHandler:
     @property
     def metadata(self) -> _CoreMetadata:
         """
-        Retrieves the metadata dict off the schema, initializing it to a dict if necessary,
-        and raise an error if it is not a dict.
+        Retrieves the metadata dict off the schema, initializing it to a dict if it is None
+        and raises an error if it is not a dict.
         """
         metadata = self._schema.get('metadata')
         if metadata is None:
