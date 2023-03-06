@@ -2,8 +2,7 @@ name: 🚀 Pydantic V2 Feature request
 description: |
   Suggest a new feature for Pydantic V2
 
-  **Note:** Pydantic V2 is currently in development, and we only making critical bug fixes to Pydantic V1.\
-  We won't be accepting any new features for Pydantic V1.
+  **Note:** Pydantic V2 is currently in development, and we only making critical bug fixes to Pydantic V1. We won't be accepting any new features for Pydantic V1.
 labels: [feature request]
 
 body:
