@@ -6,6 +6,7 @@ from __future__ import annotations as _annotations
 import collections.abc
 import dataclasses
 import re
+import sys
 import typing
 import warnings
 from typing import TYPE_CHECKING, Any
@@ -28,6 +29,9 @@ if TYPE_CHECKING:
     from ..main import BaseModel
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
+
+
+_SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 
 def model_fields_schema(
@@ -310,10 +314,18 @@ class GenerateSchema:
         """
         Generate schema for a TypedDict.
         """
-        try:
-            required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
-        except AttributeError:
-            raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.')
+        # It is not possible to track required/optional keys in TypedDict without __required_keys__
+        # since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
+        # and thus we can track usage of total=True/False
+        # __required_keys__ was added in Python 3.9 (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)  # noqa: E501
+        # however it is buggy (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666)  # noqa: E501
+        # Hence to avoid creating validators that do not do what users expect we only
+        # support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
+        is_typing_typeddict = type(typed_dict_cls).__module__ == 'typing'
+        if not _SUPPORTS_TYPEDDICT and is_typing_typeddict:
+            raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.')
+
+        required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
 
         fields: typing.Dict[str, core_schema.TypedDictField] = {}
         validation_functions = ValidationFunctions(())

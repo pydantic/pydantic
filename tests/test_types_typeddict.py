@@ -1,6 +1,7 @@
 """
 Tests for TypedDict
 """
+import sys
 import typing
 from typing import Optional
 
@@ -33,6 +34,9 @@ def fixture_typed_dict(TypedDictAll):
     class TestTypedDict(TypedDictAll):
         foo: str
 
+    if sys.version_info < (3, 11) and TypedDictAll.__module__ == 'typing':
+        pytest.xfail('typing.TypedDict does not track required keys correctly on Python < 3.11')
+
     if hasattr(TestTypedDict, '__required_keys__'):
         return TypedDictAll
     else:
@@ -63,7 +67,7 @@ def test_typeddict_all(TypedDictAll):
             d: MyDict
 
     except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.'
+        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
     else:
         assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
