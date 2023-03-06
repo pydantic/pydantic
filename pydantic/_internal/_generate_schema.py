@@ -17,11 +17,12 @@ from typing_extensions import Annotated, Literal, get_args, get_origin, is_typed
 from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
-from . import _fields, _repr, _typing_extra
+from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 from ._generics import replace_types
 from ._self_type import is_self_type
+from ._utils import get_type_ref
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -766,26 +767,3 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
         return obj.__modify_schema__
 
     return modify_js_function
-
-
-def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
-    """
-    Produces the ref to be used for this type by pydantic_core's core schemas.
-
-    This `args_override` argument was added for the purpose of creating valid recursive references
-    when creating generic models without needing to create a concrete class.
-    """
-    origin = getattr(type_, '__pydantic_generic_origin__', None) or type_
-    args = getattr(type_, '__pydantic_generic_args__', args_override) or ()
-
-    module_name = getattr(origin, '__module__', '<No __module__>')
-    qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
-    type_ref = f'{module_name}.{qualname}:{id(origin)}'
-
-    arg_refs: list[str] = []
-    for arg in args:
-        arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
-        arg_refs.append(arg_ref)
-    if arg_refs:
-        type_ref = f'{type_ref}[{",".join(arg_refs)}]'
-    return type_ref

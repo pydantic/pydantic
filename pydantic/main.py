@@ -6,7 +6,6 @@ from __future__ import annotations as _annotations
 import typing
 import warnings
 from abc import ABCMeta
-from collections import defaultdict
 from contextvars import ContextVar
 from copy import deepcopy
 from enum import Enum
@@ -16,20 +15,20 @@ from types import prepare_class, resolve_bases
 from typing import Any, Generic
 
 import typing_extensions
-from pydantic_core import core_schema
 
-from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
+from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
-from ._internal._generate_schema import get_type_ref
 from ._internal._generics import (
     GENERIC_TYPES_CACHE,
     GenericTypesCacheKey,
-    TypeVarType,
     check_parameters_count,
+    create_generic_submodel,
+    generic_recursion_self_type,
+    is_generic_model,
     iter_contained_typevars,
     replace_types,
 )
-from ._internal._self_type import BaseSelfType, get_self_type
+from ._internal._self_type import BaseSelfType
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -175,9 +174,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __fields_set__: set[str] = set()
         __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None] = None
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None] = None
-        __pydantic_generic_typevars_map__: typing.ClassVar[dict[TypeVarType, Any] | None] = None
+        __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None] = None
         # TODO: rename __parameters__ with __pydantic prefix
-        # __parameters__: typing.ClassVar[tuple[TypeVarType, ...] | None] = None
+        # __parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None] = None
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -692,7 +691,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         check_parameters_count(cls, typevar_values)
 
         # Build map from generic typevars to passed params
-        typevars_map: dict[TypeVarType, type[Any]] = dict(zip(getattr(cls, '__parameters__', ()), typevar_values))
+        typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
+            zip(getattr(cls, '__parameters__', ()), typevar_values)
+        )
         need_to_rebuild = False
         if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
@@ -706,20 +707,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             origin = cls.__pydantic_generic_origin__ or cls
             model_name = origin.model_concrete_name(args)
 
-            parent_calls = generic_recursion.get()
-            if parent_calls is None:
-                parent_calls = defaultdict(int)
-            if parent_calls[(origin, args)] >= 2:
-                self_type = get_self_type(
-                    core_schema.definition_reference_schema(get_type_ref(origin, args_override=args)), origin, []
-                )
-                return self_type
-            parent_calls[(origin, args)] += 1
+            with generic_recursion_self_type(origin, args) as maybe_self_type:
+                if maybe_self_type is not None:
+                    return maybe_self_type
+                submodel = create_generic_submodel(model_name, origin, args)
 
-            token = generic_recursion.set(parent_calls)
-
-            submodel = _generics.create_generic_submodel(model_name, origin, args)
-            generic_recursion.reset(token)
             need_to_rebuild = True
 
             # Update params
@@ -753,7 +745,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         This method can be overridden to achieve a custom naming scheme for generic BaseModels.
         """
-        if not _generics.is_generic_model(cls):
+        if not is_generic_model(cls):
             raise TypeError('Concrete names should only be generated for generic models.')
 
         param_names = [_repr.display_as_type(param) for param in params]

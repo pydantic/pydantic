@@ -21,10 +21,10 @@ from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import DeferredField, Undefined
-from ._generate_schema import generate_config, get_type_ref, model_fields_schema
+from ._generate_schema import generate_config, model_fields_schema
 from ._generics import replace_types
 from ._self_type import get_self_type, is_self_type
-from ._utils import ClassAttribute, is_valid_identifier
+from ._utils import ClassAttribute, get_type_ref, is_valid_identifier
 
 if typing.TYPE_CHECKING:
     from inspect import Signature

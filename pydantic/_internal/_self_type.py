@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Union
 from pydantic_core import core_schema
 from typing_extensions import Literal, TypedDict, TypeGuard
 
-from ._generics import TypeVarType, replace_types
+from ._typing_extra import TypeVarType
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
@@ -78,6 +78,8 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
 
     @classmethod
     def resolve_model(cls) -> type[BaseSelfType] | type[BaseModel]:
+        from ._generics import replace_types
+
         model: type[BaseModel] | type[BaseSelfType] = cls.model
         for action in cls.deferred_actions:
             if action['kind'] == 'replace_types':

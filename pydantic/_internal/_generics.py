@@ -3,23 +3,25 @@ from __future__ import annotations
 import sys
 import types
 import typing
+from collections import defaultdict
+from contextlib import contextmanager
+from contextvars import ContextVar
 from types import prepare_class
 from typing import TYPE_CHECKING, Any, Generic, Iterator, List, Mapping, Tuple, Type, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
+from pydantic_core import core_schema
 
-from ._typing_extra import typing_base
-from ._utils import all_identical, lenient_issubclass
-
-TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
+from ._self_type import BaseSelfType, get_self_type
+from ._typing_extra import TypeVarType, typing_base
+from ._utils import all_identical, get_type_ref, lenient_issubclass
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
-
 
 GenericTypesCacheKey = Tuple[Type[Any], Any, Tuple[Any, ...]]
 
@@ -214,3 +216,42 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
+
+
+_generic_recursion: ContextVar[dict[Any, int] | None] = ContextVar('_generic_recursion', default=None)
+
+
+@contextmanager
+def generic_recursion_self_type(origin: type[Any], args: tuple[Any, ...]) -> Iterator[type[BaseSelfType] | None]:
+    """
+    This contextmanager should be placed around recursive calls used to build a generic type,
+    and accept as arguments the generic origin type and the type arguments being passed to it.
+
+    If the same origin and arguments are observed twice, it implies that a self-reference placeholder
+    can be used while building the core schema, and will produce a schema_ref that will be valid in the
+    final parent schema.
+
+    I believe the main reason that the same origin/args must be observed twice is that a BaseModel's
+    inner_schema will be a TypedDictSchema that doesn't include the first occurrence of the SelfType
+    reference, so the referenced schema may not end up in the final core_schema unless you expand two
+    layers deep.
+    """
+    parent_calls = _generic_recursion.get()
+    if parent_calls is None:
+        parent_calls = defaultdict(int)
+    else:
+        # copy the dict to ensure that "sibling" recursions don't result in early self-type returns
+        # TODO: I am not actually sure if this is necessary.. try adding a test with the same generic
+        #   parametrization for two separate fields. (Similar to test_generic_recursive_model)
+        parent_calls = parent_calls.copy()
+
+    if parent_calls[(origin, args)] >= 2:
+        self_type = get_self_type(
+            core_schema.definition_reference_schema(get_type_ref(origin, args_override=args)), origin, []
+        )
+        yield self_type
+    else:
+        parent_calls[(origin, args)] += 1
+        token = _generic_recursion.set(parent_calls)
+        yield None
+        _generic_recursion.reset(token)
