@@ -260,12 +260,16 @@ def build_inner_schema(  # noqa: C901
         if isinstance(ann_type, typing.ForwardRef):
             raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
+        generic_origin_has_attr = False
         for base in bases:
             if hasattr(base, ann_name):
-                raise NameError(
-                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
-                    f'you might want to use a different field name with "alias=\'{ann_name}\'".'
-                )
+                if base is cls.__pydantic_generic_origin__:
+                    generic_origin_has_attr = True
+                else:
+                    raise NameError(
+                        f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
+                        f'you might want to use a different field name with "alias=\'{ann_name}\'".'
+                    )
 
         try:
             default = getattr(cls, ann_name)
@@ -294,7 +298,8 @@ def build_inner_schema(  # noqa: C901
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
-            delattr(cls, ann_name)
+            if not generic_origin_has_attr:
+                delattr(cls, ann_name)
 
     typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
     if typevars_map:

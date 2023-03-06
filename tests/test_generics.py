@@ -1383,6 +1383,133 @@ def test_generic_recursive_models_separate_parameters(create_module):
     assert result.model_dump() == {'ref': {'ref': {'ref': {'ref': '123'}}}}
 
 
+def test_generic_recursive_models_repeated_separate_parameters(create_module):
+    @create_module
+    def module():
+        from typing import Generic, TypeVar, Union
+
+        from pydantic import BaseModel
+
+        T = TypeVar('T')
+
+        class Model1(BaseModel, Generic[T]):
+            ref: 'Model2[T]'
+            ref2: Union['Model2[T]', None] = None
+
+            model_config = dict(undefined_types_warning=False)
+
+        S = TypeVar('S')
+
+        class Model2(BaseModel, Generic[S]):
+            ref: Union[S, Model1[S]]
+            ref2: Union[S, Model1[S], None] = None
+
+            model_config = dict(undefined_types_warning=False)
+
+        Model1.model_rebuild()
+
+    Model1 = module.Model1
+    # Model2 = module.Model2
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    assert exc_info.value.errors() == [
+        {
+            'input': {'ref': {'ref': 123}},
+            'loc': ('ref', 'ref', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 123,
+            'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 123,
+            'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        },
+    ]
+
+    result = Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref='123')))))
+    assert result.model_dump() == {
+        'ref': {'ref': {'ref': {'ref': '123', 'ref2': None}, 'ref2': None}, 'ref2': None},
+        'ref2': None,
+    }
+
+
+def test_generic_recursive_models_repeated_separate_parameters2(create_module):
+    @create_module
+    def module():
+        from typing import Generic, Optional, TypeVar
+
+        from pydantic import BaseModel
+
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        T3 = TypeVar('T3')
+
+        class A1(BaseModel, Generic[T1]):
+            a1: 'A2[T1]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        class A2(BaseModel, Generic[T2]):
+            a2: 'A3[T2]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        class A3(BaseModel, Generic[T3]):
+            a3: Optional['A1[T3]']
+
+            model_config = dict(undefined_types_warning=False)
+
+        A1.model_rebuild()
+
+        S1 = TypeVar('S1')
+        S2 = TypeVar('S2')
+
+        class B1(BaseModel, Generic[S1]):
+            b1: 'B2[S1]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        class B2(BaseModel, Generic[S2]):
+            b2: Optional['B1[S2]']
+
+            model_config = dict(undefined_types_warning=False)
+
+        B1.model_rebuild()
+
+        V1 = TypeVar('V1')
+        V2 = TypeVar('V2')
+
+        class Model1(BaseModel, Generic[V1, V2]):
+            a: A1[V1]
+            b: B1[V2]
+            m: 'Model2[V1]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        V3 = TypeVar('V3')
+
+        class Model2(BaseModel, Generic[V3]):
+            a: A1[V1]
+            b: B1[V2]
+            m: Model1[V3, int]
+
+            model_config = dict(undefined_types_warning=False)
+
+        Model1.model_rebuild()
+
+    Model1 = module.Model1
+
+    assert Model1.__pydantic_core_schema__ == {}
+
+
 def test_generic_enum():
     T = TypeVar('T')
 

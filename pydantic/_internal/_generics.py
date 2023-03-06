@@ -205,6 +205,10 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             return type_
         return resolved_list
 
+    if lenient_issubclass(type_, BaseSelfType):
+        # queue the replacement as a deferred action
+        return type_.replace_types(type_map)
+
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
     return type_map.get(type_, type_)

@@ -86,6 +86,8 @@ class BaseSelfType(metaclass=BaseSelfTypeMeta):
                 model = replace_types(model, action['typevars_map'])
             elif action['kind'] == 'class_getitem':
                 model = model.__class_getitem__(action['item'])
+            else:
+                raise ValueError(f'Unexpected action: {action}')
         return model
 
 
