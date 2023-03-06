@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from types import prepare_class, resolve_bases
+from types import prepare_class
 from typing import TYPE_CHECKING, Any, Generic, Iterator, List, Mapping, Tuple, Type, TypeVar
 from weakref import WeakValueDictionary
 
@@ -48,14 +48,11 @@ def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tupl
     """
     namespace: dict[str, Any] = {'__module__': origin.__module__}
     bases = (origin,)
-    resolved_bases = resolve_bases(bases)
-    meta, ns, kwds = prepare_class(model_name, resolved_bases)
-    if resolved_bases is not bases:
-        ns['__orig_bases__'] = bases
+    meta, ns, kwds = prepare_class(model_name, bases)
     namespace.update(ns)
     created_model = meta(
         model_name,
-        resolved_bases,
+        bases,
         namespace,
         __pydantic_generic_origin__=origin,
         __pydantic_generic_args__=args,
@@ -157,7 +154,10 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
-        return typing_extensions.Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
+        annotated = replace_types(annotated_type, type_map)
+        for annotation in annotations:
+            annotated = typing_extensions.Annotated[annotated, annotation]
+        return annotated
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
@@ -202,14 +202,6 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
         if all_identical(type_, resolved_list):
             return type_
         return resolved_list
-
-    # TODO: Need to confirm Json[X] is handled properly. I believe it is since Json[X] now produces Annotated[X, Json()]
-    #   Once this is confirmed, we should delete the following code related to handling Json
-    # For JsonWrapperValue, need to handle its inner type to allow correct parsing
-    # of generic Json arguments like Json[T]
-    # if not origin_type and lenient_issubclass(type_, JsonWrapper):
-    #     type_.inner_type = replace_types(type_.inner_type, type_map)
-    #     return type_
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.

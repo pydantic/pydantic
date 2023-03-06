@@ -309,6 +309,7 @@ def test_cache_keys_are_hashable():
     del models
 
 
+@pytest.mark.xfail(reason='Memory leak issue -- see https://github.com/pydantic/pydantic/issues/5136')
 def test_caches_get_cleaned_up():
     types_cache_size = len(GENERIC_TYPES_CACHE)
     T = TypeVar('T')
@@ -929,19 +930,19 @@ def test_generic_model_caching_detect_order_of_union_args_nested(create_module):
 def test_get_caller_frame_info(create_module):
     @create_module
     def module():
-        from pydantic.generics import get_caller_frame_info
+        from pydantic._internal._generics import _get_caller_frame_info
 
         def function():
-            assert get_caller_frame_info() == (__name__, True)
+            assert _get_caller_frame_info() == (__name__, True)
 
             another_function()
 
         def another_function():
-            assert get_caller_frame_info() == (__name__, False)
+            assert _get_caller_frame_info() == (__name__, False)
             third_function()
 
         def third_function():
-            assert get_caller_frame_info() == (__name__, False)
+            assert _get_caller_frame_info() == (__name__, False)
 
         function()
 
@@ -953,20 +954,20 @@ def test_get_caller_frame_info_called_from_module(create_module):
 
         import pytest
 
-        from pydantic.generics import get_caller_frame_info
+        from pydantic._internal._generics import _get_caller_frame_info
 
         with pytest.raises(RuntimeError, match='This function must be used inside another function'):
             with patch('sys._getframe', side_effect=ValueError('getframe_exc')):
-                get_caller_frame_info()
+                _get_caller_frame_info()
 
 
 def test_get_caller_frame_info_when_sys_getframe_undefined():
-    from pydantic.generics import get_caller_frame_info
+    from pydantic._internal._generics import _get_caller_frame_info
 
     getframe = sys._getframe
     del sys._getframe
     try:
-        assert get_caller_frame_info() == (None, False)
+        assert _get_caller_frame_info() == (None, False)
     finally:  # just to make sure we always setting original attribute back
         sys._getframe = getframe
 
@@ -1017,12 +1018,17 @@ def test_replace_types():
     assert replace_types(T, {}) is T
     assert replace_types(Type[T], {T: int}) == Type[int]
     assert replace_types(Model[T], {T: T}) == Model[T]
+    assert replace_types(Json[T], {T: int}) == Json[int]
 
     if sys.version_info >= (3, 9):
         # Check generic aliases (subscripted builtin types) to make sure they
         # resolve correctly (don't get translated to typing versions for
         # example)
         assert replace_types(list[Union[str, list, T]], {T: int}) == list[Union[str, list, int]]
+
+    if sys.version_info >= (3, 10):
+        # Check that types.UnionType gets handled properly
+        assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
 
 
 @pytest.mark.xfail(reason='working on V2 - generic containers - issue #5019')

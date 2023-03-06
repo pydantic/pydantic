@@ -405,6 +405,12 @@ else:
         def __repr__(self) -> str:
             return 'Json'
 
+        def __hash__(self) -> int:
+            return hash(type(self))
+
+        def __eq__(self, other: Any) -> bool:
+            return type(other) == type(self)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
