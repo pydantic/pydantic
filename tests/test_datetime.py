@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timedelta, timezone
 import pytest
 from dirty_equals import HasRepr
 
-from pydantic import BaseModel, FutureDate, PastDate, ValidationError, condate
+from pydantic import AwareDatetime, BaseModel, FutureDate, NaiveDatetime, PastDate, ValidationError, condate
 
 from .conftest import Err
 
@@ -158,6 +158,62 @@ def test_datetime_parsing(DatetimeModel, value, result):
             DatetimeModel(dt=value)
     else:
         assert DatetimeModel(dt=value).dt == result
+
+
+def test_aware_datetime_validation_success():
+    class Model(BaseModel):
+        foo: AwareDatetime
+
+    value = datetime.now(tz=timezone.utc)
+
+    assert Model(foo=value).foo == value
+
+
+def test_aware_datetime_validation_fails():
+    class Model(BaseModel):
+        foo: AwareDatetime
+
+    value = datetime.now()
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_aware',
+            'loc': ('foo',),
+            'msg': 'Datetime should have timezone info',
+            'input': value,
+        }
+    ]
+
+
+def test_naive_datetime_validation_success():
+    class Model(BaseModel):
+        foo: NaiveDatetime
+
+    value = datetime.now()
+
+    assert Model(foo=value).foo == value
+
+
+def test_naive_datetime_validation_fails():
+    class Model(BaseModel):
+        foo: NaiveDatetime
+
+    value = datetime.now(tz=timezone.utc)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_naive',
+            'loc': ('foo',),
+            'msg': 'Datetime should not have timezone info',
+            'input': value,
+        }
+    ]
 
 
 @pytest.fixture(scope='module', name='TimedeltaModel')
