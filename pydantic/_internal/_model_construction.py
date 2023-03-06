@@ -21,7 +21,7 @@ from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import DeferredField, Undefined
-from ._generate_schema import generate_config, model_fields_schema
+from ._generate_schema import generate_config, get_type_ref, model_fields_schema
 from ._generics import replace_types
 from ._self_type import get_self_type, is_self_type
 from ._utils import ClassAttribute, is_valid_identifier
@@ -224,7 +224,7 @@ def build_inner_schema(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    model_ref = cls._model_ref()
+    model_ref = get_type_ref(cls)
     model_js_metadata = cls.model_json_schema_metadata()
     self_schema = core_schema.model_schema(
         cls,

@@ -89,6 +89,7 @@ jobs:
         name: docs
         path: site
 
+# TODO: Get this working once the memory leak issue is resolved - https://github.com/pydantic/pydantic/issues/5136
 #  test-memray:
 #    name: test memray
 #    runs-on: ubuntu-latest

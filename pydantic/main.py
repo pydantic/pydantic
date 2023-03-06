@@ -20,6 +20,7 @@ from pydantic_core import core_schema
 
 from ._internal import _decorators, _generics, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
+from ._internal._generate_schema import get_type_ref
 from ._internal._generics import (
     GENERIC_TYPES_CACHE,
     GenericTypesCacheKey,
@@ -57,9 +58,6 @@ _object_setattr = _model_construction.object_setattr
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _base_class_defined = False
-
-# TODO: Of course we need to do the WeakRef dict thing here before we are done
-#   (Also need to move this to the _generics file or similar)
 
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
@@ -713,7 +711,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 parent_calls = defaultdict(int)
             if parent_calls[(origin, args)] >= 2:
                 self_type = get_self_type(
-                    core_schema.definition_reference_schema(origin._model_ref(args_override=args)), origin, []
+                    core_schema.definition_reference_schema(get_type_ref(origin, args_override=args)), origin, []
                 )
                 return self_type
             parent_calls[(origin, args)] += 1
@@ -761,29 +759,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         param_names = [_repr.display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
-
-    # TODO: Make this `_model_ref` method a standalone function (without leading _) in an _internal module
-    @classmethod
-    def _model_ref(cls, args_override: tuple[type[Any], ...] | None = None) -> str:
-        """
-        Produces the ref to be used for this model by pydantic_core's core schemas.
-
-        This method has been designed to be able to create valid recursive references
-        when creating generic models.
-        """
-        origin = cls.__pydantic_generic_origin__ or cls  # use the generic origin if it exists
-        args = args_override or cls.__pydantic_generic_args__ or ()
-
-        module_name = getattr(origin, '__module__', None)
-        model_ref = f'{module_name}.{origin.__qualname__}:{id(origin)}'
-
-        arg_refs: list[str] = []
-        for arg in args:
-            arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
-            arg_refs.append(arg_ref)
-        if arg_refs:
-            model_ref = f'{model_ref}[{",".join(arg_refs)}]'
-        return model_ref
 
 
 _base_class_defined = True
