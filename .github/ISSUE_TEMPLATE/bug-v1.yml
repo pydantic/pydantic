@@ -1,6 +1,6 @@
-name: 🐛 Bug
-description: Report a bug or unexpected behavior in pydantic
-labels: [bug, unconfirmed]
+name: 🐛 Pydantic V1.X Bug
+description: Report a bug or unexpected behavior in Pydantic V1.X, e.g. all releases prior to V2
+labels: [bug-v1, unconfirmed]
 
 body:
   - type: markdown
@@ -20,7 +20,7 @@ body:
           required: true
         - label: I have searched Google & StackOverflow for a solution and couldn't find anything
           required: true
-        - label: I have read and followed [the docs](https://pydantic-docs.helpmanual.io) and still think this is a bug
+        - label: I have read and followed [the docs](https://docs.pydantic.dev) and still think this is a bug
           required: true
         - label: >
             I am confident that the issue is with pydantic
@@ -78,14 +78,14 @@ body:
       description: Which of the following parts of pydantic does this bug affect?
       # keep this lis in sync with feature_request.yml
       options:
-        - label: '[Compatibility between releases](https://pydantic-docs.helpmanual.io/changelog/)'
-        - label: '[Data validation/parsing](https://pydantic-docs.helpmanual.io/usage/models/#basic-model-usage)'
-        - label: '[Data serialization](https://pydantic-docs.helpmanual.io/usage/exporting_models/) - `.model_dump()` and `.model_dump_json()`'
-        - label: '[JSON Schema](https://pydantic-docs.helpmanual.io/usage/schema/)'
-        - label: '[Dataclasses](https://pydantic-docs.helpmanual.io/usage/dataclasses/)'
-        - label: '[Model Config](https://pydantic-docs.helpmanual.io/usage/model_config/)'
-        - label: '[Field Types](https://pydantic-docs.helpmanual.io/usage/types/) - adding or changing a particular data type'
-        - label: '[Function validation decorator](https://pydantic-docs.helpmanual.io/usage/validation_decorator/)'
-        - label: '[Generic Models](https://pydantic-docs.helpmanual.io/usage/models/#generic-models)'
-        - label: '[Other Model behaviour](https://pydantic-docs.helpmanual.io/usage/models/) - `model_construct()`, pickling, private attributes, ORM mode'
-        - label: '[Plugins](https://pydantic-docs.helpmanual.io/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'
+        - label: '[Compatibility between releases](https://docs.pydantic.dev/changelog/)'
+        - label: '[Data validation/parsing](https://docs.pydantic.dev/usage/models/#basic-model-usage)'
+        - label: '[Data serialization](https://docs.pydantic.dev/usage/exporting_models/) - `.dict()` and `.json()`'
+        - label: '[JSON Schema](https://docs.pydantic.dev/usage/schema/)'
+        - label: '[Dataclasses](https://docs.pydantic.dev/usage/dataclasses/)'
+        - label: '[Model Config](https://docs.pydantic.dev/usage/model_config/)'
+        - label: '[Field Types](https://docs.pydantic.dev/usage/types/) - adding or changing a particular data type'
+        - label: '[Function validation decorator](https://docs.pydantic.dev/usage/validation_decorator/)'
+        - label: '[Generic Models](https://docs.pydantic.dev/usage/models/#generic-models)'
+        - label: '[Other Model behaviour](https://docs.pydantic.dev/usage/models/) - `construct()`, pickling, private attributes, ORM mode'
+        - label: '[Plugins](https://docs.pydantic.dev/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'
