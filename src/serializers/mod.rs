@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
+use pyo3::{PyTraverseError, PyVisit};
 
 use crate::build_context::BuildContext;
 use crate::validators::SelfValidator;
@@ -135,6 +136,21 @@ impl SchemaSerializer {
             "SchemaSerializer(serializer={:#?}, slots={:#?})",
             self.serializer, self.slots
         )
+    }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.serializer.py_gc_traverse(&visit)?;
+        for slot in self.slots.iter() {
+            slot.py_gc_traverse(&visit)?;
+        }
+        Ok(())
+    }
+
+    fn __clear__(&mut self) {
+        self.serializer.py_gc_clear();
+        for slot in self.slots.iter_mut() {
+            slot.py_gc_clear();
+        }
     }
 }
 
