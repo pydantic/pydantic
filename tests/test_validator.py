@@ -1,7 +1,7 @@
-from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple, TypeAlias, Union
+from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple, Union
 
 import pytest
-from typing_extensions import TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import BaseModel, Validator
 
