@@ -8,7 +8,7 @@ import dataclasses
 import re
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ForwardRef
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
@@ -118,6 +118,11 @@ class GenerateSchema:
         elif isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
+
+        if isinstance(obj, ForwardRef):
+            # ForwardRef internally tries to get the globals from the
+            # namespace in which it was defined
+            obj = obj._evaluate(globalns=None, localns=self.types_namespace, recursive_guard=frozenset())
 
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:

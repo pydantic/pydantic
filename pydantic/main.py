@@ -11,11 +11,21 @@ from enum import Enum
 from functools import partial
 from inspect import getdoc
 from types import prepare_class, resolve_bases
-from typing import Any, Generic
+from typing import Any, Generic, Type, TypeVar, overload
 
 import typing_extensions
+from pydantic_core import CoreConfig, SchemaValidator
 
-from ._internal import _decorators, _forward_ref, _generics, _model_construction, _repr, _typing_extra, _utils
+from ._internal import (
+    _decorators,
+    _forward_ref,
+    _generate_schema,
+    _generics,
+    _model_construction,
+    _repr,
+    _typing_extra,
+    _utils,
+)
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -26,7 +36,7 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+    from pydantic_core import CoreSchema, SchemaSerializer
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
@@ -36,7 +46,7 @@ if typing.TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
 
-__all__ = 'BaseModel', 'create_model'
+__all__ = 'BaseModel', 'create_model', 'Validator'
 
 _object_setattr = _model_construction.object_setattr
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
@@ -832,3 +842,31 @@ def create_model(
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
     return meta(__model_name, resolved_bases, namespace, **kwds)
+
+
+T = TypeVar('T')
+
+
+class Validator(Generic[T]):
+    @overload
+    def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
+        ...
+
+    @overload
+    def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
+        ...
+
+    def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
+        self._type = __type
+        merged_config: CoreConfig = {
+            **(config or {}),  # type: ignore[misc]
+            **getattr(__type, 'model_config', {}),
+        }
+        arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
+        types_namespace = _typing_extra.parent_frame_namespace(parent_depth=2)
+        gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=types_namespace)
+        schema = gen.generate_schema(__type)
+        self._validator = SchemaValidator(schema, config=merged_config)
+
+    def __call__(self, __input: Any) -> T:
+        return self._validator.validate_python(__input)

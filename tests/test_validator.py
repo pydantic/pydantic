@@ -1,21 +1,20 @@
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple
 
 import pytest
 from typing_extensions import TypedDict
 
-from pydantic.main import BaseModel
-from pydantic.validator import Validator
+from pydantic import BaseModel, Validator
 
 
 class PydanticModel(BaseModel):
     x: int
 
 
-class ATypedDict(TypedDict):
+class SomeTypedDict(TypedDict):
     x: int
 
 
-class ANamedTuple(NamedTuple):
+class SomeNamedTuple(NamedTuple):
     x: int
 
 
@@ -24,8 +23,8 @@ class ANamedTuple(NamedTuple):
     [
         (PydanticModel, PydanticModel(x=1), PydanticModel(x=1)),
         (PydanticModel, {'x': 1}, PydanticModel(x=1)),
-        (ATypedDict, {'x': 1}, {'x': 1}),
-        (ANamedTuple, ANamedTuple(x=1), ANamedTuple(x=1)),
+        (SomeTypedDict, {'x': 1}, {'x': 1}),
+        (SomeNamedTuple, SomeNamedTuple(x=1), SomeNamedTuple(x=1)),
         (List[str], ['1', '2'], ['1', '2']),
         (Tuple[str], ('1',), ('1',)),
         (Tuple[str, int], ('1', 1), ('1', 1)),
@@ -35,6 +34,27 @@ class ANamedTuple(NamedTuple):
         (int | str, '2', '2'),
     ],
 )
-def test_ok(tp: Any, val: Any, expected: Any):
+def test_types(tp: Any, val: Any, expected: Any):
     v = Validator(tp)
     assert expected == v(val)
+
+
+def test_local_namespace_variables():
+    IntList = List[int]
+    OuterDict = Dict[str, 'IntList']
+
+    v = Validator(OuterDict)
+
+    res = v({'foo': [1, '2']})
+    assert res == {'foo': [1, 2]}
+
+
+def test_top_level_fwd_ref():
+    IntList = List[int]
+    OuterDict = Dict[str, 'IntList']
+    FwdRef = ForwardRef('Dict[str, List[int]]', module=__name__)
+
+    v: Validator[OuterDict] = Validator(FwdRef)
+
+    res = v({'foo': [1, '2']})
+    assert res == {'foo': [1, 2]}
