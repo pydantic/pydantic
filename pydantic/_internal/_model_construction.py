@@ -182,19 +182,16 @@ def complete_model_class(
 
     core_config = generate_config(cls)
     cls.model_fields = fields
+    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
-    outer_schema = core_schema.model_schema(
+    cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
         call_after_init=model_post_init,
         metadata=build_metadata_dict(js_metadata=js_metadata),
     )
-    validation_schema = core_schema.union_schema(inner_schema, outer_schema)
-    cls.__pydantic_validator__ = SchemaValidator(validation_schema, core_config)
-    cls.__pydantic_core_schema__ = outer_schema
-    cls.__pydantic_core_validation_schema__ = validation_schema
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
 

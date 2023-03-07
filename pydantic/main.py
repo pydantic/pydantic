@@ -149,7 +149,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # populated by the metaclass, defined here to help IDEs only
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_core_schema__: typing.ClassVar[CoreSchema]
-        __pydantic_core_validation_schema__: typing.ClassVar[CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
         __pydantic_validator_functions__: typing.ClassVar[_decorators.ValidationFunctions]
         __pydantic_serializer_functions__: typing.ClassVar[_decorators.SerializationFunctions]
