@@ -15,7 +15,7 @@ from pydantic_core import core_schema
 
 from ._forward_ref import PydanticForwardRef
 from ._typing_extra import TypeVarType, typing_base
-from ._utils import all_identical, get_type_ref, lenient_issubclass
+from ._utils import all_identical, get_type_ref, is_basemodel
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]
@@ -33,7 +33,9 @@ else:
     GenericTypesCache = WeakValueDictionary
 
 
-def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tuple[Any, ...]) -> type[BaseModel]:
+def create_generic_submodel(
+    model_name: str, origin: type[BaseModel], args: tuple[Any, ...], params: tuple[Any, ...]
+) -> type[BaseModel]:
     """
     Dynamically create a submodel of a provided (generic) BaseModel.
 
@@ -54,6 +56,7 @@ def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tupl
         namespace,
         __pydantic_generic_origin__=origin,
         __pydantic_generic_args__=args,
+        __pydantic_generic_parameters__=params,
         **kwds,
     )
 
@@ -96,19 +99,13 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     """
     Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found.
 
-    This is meant as an alternative to directly accessing the `__parameters__` attribute of a GenericAlias,
-    since __parameters__ of (nested) custom classes won't show up in that list.
+    This is inspired as an alternative to directly accessing the `__parameters__` attribute of a GenericAlias,
+    since __parameters__ of (nested) generic BaseModel subclasses won't show up in that list.
     """
-    from pydantic import BaseModel
-
     if isinstance(v, TypeVar):
         yield v
-    elif (
-        # TODO: I think we can/should replace __parameters__ with __pydantic_generic_parameters__
-        hasattr(v, '__parameters__')
-        and lenient_issubclass(v, BaseModel)
-    ):
-        yield from v.__parameters__ or ()
+    elif is_basemodel(v):
+        yield from v.__pydantic_generic_parameters__ or ()
     elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
@@ -184,14 +181,15 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases
-    from pydantic import BaseModel
 
-    if not origin_type and lenient_issubclass(type_, BaseModel) and getattr(type_, '__parameters__', None):
-        parameters = type_.__parameters__
+    if not origin_type and is_basemodel(type_):
+        parameters = type_.__pydantic_generic_parameters__
+        if not parameters:
+            return type_
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
         if all_identical(parameters, resolved_type_args):
             return type_
-        return type_[resolved_type_args]
+        return type_[resolved_type_args]  # type: ignore[index]
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
@@ -212,7 +210,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
 def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
     actual = len(parameters)
-    expected = len(getattr(cls, '__parameters__', ()))
+    expected = len(cls.__pydantic_generic_parameters__ or ())
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')

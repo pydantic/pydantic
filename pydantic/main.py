@@ -68,6 +68,7 @@ class ModelMetaclass(ABCMeta):
         namespace: dict[str, Any],
         __pydantic_generic_origin__: type[BaseModel] | None = None,
         __pydantic_generic_args__: tuple[Any, ...] | None = None,
+        __pydantic_generic_parameters__: tuple[Any, ...] | None = None,
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
@@ -124,7 +125,10 @@ class ModelMetaclass(ABCMeta):
             # TODO: cls.__parameters__ may be removed -- do we need to retain this for v1 compatibility?
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
-            cls.__pydantic_deleted_attrs__ = {}
+            cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
+                cls, '__parameters__', None
+            )
+            cls.__pydantic_deleted_attrs__ = {}  # TODO: yuck, get rid of this
             cls.__pydantic_generic_typevars_map__ = (
                 None
                 if __pydantic_generic_origin__ is None
@@ -176,9 +180,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_deleted_attrs__: typing.ClassVar[dict[str, Any]]
         __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None]
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
+        __pydantic_generic_parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None]
         __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
-        # TODO: rename __parameters__ with __pydantic prefix
-        # __parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None] = None
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -675,7 +678,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
-        if not cls.__parameters__ and Generic not in cls.__bases__:
+        if not cls.__pydantic_generic_parameters__ and Generic not in cls.__bases__:
             raise TypeError(f'{cls} is not a generic class')
 
         if not isinstance(typevar_values, tuple):
@@ -684,7 +687,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         # Build map from generic typevars to passed params
         typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
-            zip(getattr(cls, '__parameters__', ()), typevar_values)
+            zip(cls.__pydantic_generic_parameters__ or (), typevar_values)
         )
         if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
@@ -698,18 +701,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             origin = cls.__pydantic_generic_origin__ or cls
             model_name = origin.model_concrete_name(args)
+            params = tuple(
+                {param: None for param in iter_contained_typevars(typevars_map.values())}
+            )  # use dict as ordered set
 
             with generic_recursion_self_type(origin, args) as maybe_self_type:
                 if maybe_self_type is not None:
                     return maybe_self_type
 
-                submodel = create_generic_submodel(model_name, origin, args)
-
-                # Update params
-                new_params = tuple(
-                    {param: None for param in iter_contained_typevars(typevars_map.values())}
-                )  # use dict as ordered set
-                submodel.__parameters__ = new_params
+                submodel = create_generic_submodel(model_name, origin, args, params)
 
                 # Update cache
                 set_cached_generic_type(cls, typevar_values, submodel)
