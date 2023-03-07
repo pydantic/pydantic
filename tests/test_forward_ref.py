@@ -34,7 +34,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.model_fields['a'].annotation.__name__ == 'SelfType'
+    assert module.Model.model_fields['a'].annotation.__name__ == 'PydanticForwardRef'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
@@ -60,7 +60,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     # __field__ is complete on Foo
     assert module.Foo.model_fields['a'] == HasRepr(
-        'FieldInfo(annotation=Union[get_self_type.<locals>.SelfType, NoneType], required=False)'
+        'FieldInfo(annotation=Union[PydanticForwardRef, NoneType], required=False)'
     )
 
     # but Foo is not ready to use
@@ -158,14 +158,14 @@ def test_self_forward_ref_collection(create_module):
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=get_self_type.<locals>.SelfType, required=False)'
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=PydanticForwardRef, required=False)'
     if sys.version_info < (3, 10):
         return
     assert repr(module.Foo.model_fields['c']) == (
-        'FieldInfo(annotation=List[get_self_type.<locals>.SelfType], required=False, ' 'default=[])'
+        'FieldInfo(annotation=List[PydanticForwardRef], required=False, ' 'default=[])'
     )
     assert repr(module.Foo.model_fields['d']) == (
-        'FieldInfo(annotation=Dict[str, get_self_type.<locals>.SelfType], required=False, default={})'
+        'FieldInfo(annotation=Dict[str, PydanticForwardRef], required=False, default={})'
     )
 
 
@@ -681,7 +681,7 @@ class SelfReferencing(BaseModel):
     if sys.version_info >= (3, 10):
         assert (
             repr(SelfReferencing.model_fields['names'])
-            == 'FieldInfo(annotation=list[get_self_type.<locals>.SelfType], required=True)'
+            == 'FieldInfo(annotation=list[PydanticForwardRef], required=True)'
         )
 
     # test that object creation works

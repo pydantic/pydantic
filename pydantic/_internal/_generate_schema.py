@@ -20,8 +20,8 @@ from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
-from ._self_type import is_self_type
 from ._utils import get_type_ref
 
 if TYPE_CHECKING:
@@ -123,19 +123,19 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if is_self_type(obj):
+        if isinstance(obj, PydanticForwardRef):
             if not obj.deferred_actions:
-                return obj.self_schema
-            model = obj.resolve_model()
-            if is_self_type(model):
-                # If you still have a SelfType after resolving, it should be deeply nested enough that it will
+                return obj.schema
+            resolved_model = obj.resolve_model()
+            if isinstance(resolved_model, PydanticForwardRef):
+                # If you still have a PydanticForwardRef after resolving, it should be deeply nested enough that it will
                 # eventually be substituted out. So it is safe to return an invalid schema here.
                 # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
                 return core_schema.none_schema(
-                    metadata={'invalid': True, 'pydantic_debug_self_schema': model.self_schema}
+                    metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
                 )
             else:
-                return core_schema.definition_reference_schema(get_type_ref(model))
+                return core_schema.definition_reference_schema(get_type_ref(resolved_model))
 
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:

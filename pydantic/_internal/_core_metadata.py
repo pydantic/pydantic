@@ -42,9 +42,8 @@ class CoreMetadataHandler:
 
         try:
             metadata = schema.get('metadata')
-        except AttributeError:  # This happens for schema of type _fields.SelfType
-            # TODO: Need to figure out a better way to handle _fields.SelfType
-            #   Solution?: Adding `definitions` into pydantic_core
+        except AttributeError:  # This happens if `schema` is of type PydanticForwardRef
+            # TODO: Need to figure out a better way to handle PydanticForwardRef
             metadata = {}
 
         if metadata is None:

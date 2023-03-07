@@ -18,6 +18,7 @@ import typing_extensions
 
 from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
+from ._internal._forward_ref import PydanticForwardRef
 from ._internal._generics import (
     check_parameters_count,
     create_generic_submodel,
@@ -28,7 +29,6 @@ from ._internal._generics import (
     replace_types,
     set_cached_generic_type,
 )
-from ._internal._self_type import BaseSelfType
 from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -666,7 +666,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
-    ) -> type[BaseModel] | type[BaseSelfType]:
+    ) -> type[BaseModel] | PydanticForwardRef:
         cached = get_cached_generic_type(cls, typevar_values)
         if cached is not None:
             return cached

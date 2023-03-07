@@ -13,7 +13,7 @@ from weakref import WeakValueDictionary
 import typing_extensions
 from pydantic_core import core_schema
 
-from ._self_type import BaseSelfType, get_self_type
+from ._forward_ref import PydanticForwardRef
 from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, get_type_ref, lenient_issubclass
 
@@ -201,7 +201,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
             return type_
         return resolved_list
 
-    if lenient_issubclass(type_, BaseSelfType):
+    if isinstance(type_, PydanticForwardRef):
         # queue the replacement as a deferred action
         return type_.replace_types(type_map)
 
@@ -222,7 +222,7 @@ _visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_co
 
 
 @contextmanager
-def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) -> Iterator[type[BaseSelfType] | None]:
+def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) -> Iterator[PydanticForwardRef | None]:
     """
     This contextmanager should be placed around recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
@@ -232,7 +232,7 @@ def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) 
     final parent schema.
 
     I believe the main reason that the same origin/args must be observed twice is that a BaseModel's
-    inner_schema will be a TypedDictSchema that doesn't include the first occurrence of the SelfType
+    inner_schema will be a TypedDictSchema that doesn't include the first occurrence of the PydanticForwardRef
     reference, so the referenced schema may not end up in the final core_schema unless you expand two
     layers deep.
     """
@@ -245,8 +245,8 @@ def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) 
 
     type_ref = get_type_ref(origin, args_override=args)
     if visit_counts_by_ref[type_ref] >= 2:
-        self_type = get_self_type(
-            core_schema.definition_reference_schema(type_ref), origin, [{'kind': 'class_getitem', 'item': args}]
+        self_type = PydanticForwardRef(
+            core_schema.definition_reference_schema(type_ref), origin, ({'kind': 'class_getitem', 'item': args},)
         )
         yield self_type
     else:

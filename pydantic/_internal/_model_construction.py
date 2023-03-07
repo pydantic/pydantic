@@ -21,9 +21,9 @@ from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import Undefined
+from ._forward_ref import PydanticForwardRef
 from ._generate_schema import generate_config, model_fields_schema
 from ._generics import recursively_defined_type_refs, replace_types
-from ._self_type import get_self_type, is_self_type
 from ._utils import ClassAttribute, get_type_ref, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -232,7 +232,7 @@ def build_inner_schema(  # noqa: C901
         core_schema.definition_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
-    local_ns = {name: get_self_type(self_schema, cls)}
+    local_ns = {name: PydanticForwardRef(self_schema, cls)}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
@@ -284,7 +284,7 @@ def build_inner_schema(  # noqa: C901
         except AttributeError:
             # if field has no default value and is not in __annotations__ this usually means that it is
             # defined in a base class and we can take it from there
-            if ann_name in annotations or is_self_type(ann_type):
+            if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
                 model_fields_lookup: dict[str, FieldInfo] = {}
