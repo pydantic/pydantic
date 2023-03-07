@@ -470,6 +470,8 @@ def test_recursive_lists():
         v: List[List[Union[int, float]]] = ...
 
     assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
+    assert Model.model_fields['v'].annotation == List[List[Union[int, float]]]
+    assert Model.model_fields['v'].is_required()
 
 
 class StrEnum(str, Enum):
@@ -556,22 +558,17 @@ def test_include_exclude_defaults():
     assert m.model_dump(include={'a', 'b', 'c'}, exclude={'b'}, exclude_defaults=True) == {'a': 1}
     assert m.model_dump(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_defaults=True) == {'b': 2}
 
-    # TODO: Do we still want to support the "abstract set" cases?
-    #   Right now, it causes: "TypeError: `include` argument must a set or dict." (and similar for exclude)
-    #   I opened https://github.com/pydantic/pydantic-core/pull/409 to address it, but that also allows list:
-    # # abstract set
-    # assert m.model_dump(include={'a': 1}.keys()) == {'a': 1}
-    # assert m.model_dump(exclude={'a': 1}.keys()) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
-    #
-    # assert m.model_dump(include={'a': 1}.keys(), exclude_unset=True) == {'a': 1}
-    # assert m.model_dump(exclude={'a': 1}.keys(), exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
-    #
-    # # list -- should this be explicitly disallowed? Could check for AbstractSet subclass-ness
-    # assert m.model_dump(include=['a']) == {'a': 1}
-    # assert m.model_dump(exclude=['a']) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
-    #
-    # assert m.model_dump(include=['a'], exclude_unset=True) == {'a': 1}
-    # assert m.model_dump(exclude=['a'], exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
+    assert m.model_dump(include={'a': 1}.keys()) == {'a': 1}
+    assert m.model_dump(exclude={'a': 1}.keys()) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+
+    assert m.model_dump(include={'a': 1}.keys(), exclude_unset=True) == {'a': 1}
+    assert m.model_dump(exclude={'a': 1}.keys(), exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
+
+    assert m.model_dump(include=['a']) == {'a': 1}
+    assert m.model_dump(exclude=['a']) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+
+    assert m.model_dump(include=['a'], exclude_unset=True) == {'a': 1}
+    assert m.model_dump(exclude=['a'], exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -590,8 +587,7 @@ def test_advanced_exclude():
 
     m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
 
-    # TODO: Do we still want to support this wrapping behavior on exclude?
-    #   If so, I am happy to implement it in pydantic_core. I got a good ways through but abandoned it until we discuss.
+    # TODO: Need to add wrapping support to pydantic_core to get this test to pass
     assert m.model_dump(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}}) == {
         'e': 'e',
         'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]},
@@ -646,7 +642,7 @@ def test_advanced_value_include():
 
     assert m.model_dump(include={'f'}) == {'f': {'c': 'foo', 'd': [{'a': 'a', 'b': 'b'}, {'a': 'c', 'b': 'e'}]}}
     assert m.model_dump(include={'e'}) == {'e': 'e'}
-    # TODO: Do we still want to support this wrapping behavior on exclude?
+    # TODO: Need to add wrapping support to pydantic_core to get this test to pass
     assert m.model_dump(include={'f': {'d': {0: ..., -1: {'b'}}}}) == {'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
 
 
@@ -671,7 +667,7 @@ def test_advanced_value_exclude_include():
     }
     assert m.model_dump(exclude={'e': ..., 'f': {'d'}}, include={'e', 'f'}) == {'f': {'c': 'foo'}}
 
-    # TODO: Do we still want to support this wrapping behavior on exclude?
+    # TODO: Need to add wrapping support to pydantic_core to get this test to pass
     assert m.model_dump(exclude={'f': {'d': {-1: {'a'}}}}, include={'f': {'d'}}) == {
         'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}
     }
@@ -1379,7 +1375,6 @@ def test_type_on_annotation():
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    # TODO: Why was this ever not the case? I don't understand why these weren't all fields
     assert Model.model_fields.keys() == set('abcdefghi')
 
 
@@ -1528,7 +1523,16 @@ class DisplayGen(Generic[T1, T2]):
         (Tuple[int, ...], 'Tuple[int, ...]'),
         (Optional[List[int]], 'Union[List[int], NoneType]'),
         (dict, 'dict'),
-        (DisplayGen[bool, str], ('DisplayGen[bool, str]', 'tests.test_edge_cases.DisplayGen[bool, str]')),
+        pytest.param(
+            DisplayGen[bool, str],
+            'DisplayGen[bool, str]',
+            marks=pytest.mark.skipif(sys.version_info[:2] <= (3, 9), reason='difference in __name__ between versions'),
+        ),
+        pytest.param(
+            DisplayGen[bool, str],
+            'tests.test_edge_cases.DisplayGen[bool, str]',
+            marks=pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='difference in __name__ between versions'),
+        ),
     ],
 )
 def test_field_type_display(type_, expected):
@@ -1537,10 +1541,7 @@ def test_field_type_display(type_, expected):
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    if not isinstance(expected, tuple):
-        expected = (expected,)
-
-    assert any(re.search(f'annotation={re.escape(x)},', str(Model.model_fields)) for x in expected)
+    assert re.search(fr'\(annotation={re.escape(expected)},', str(Model.model_fields))
 
 
 def test_any_none():
