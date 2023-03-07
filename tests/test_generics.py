@@ -23,16 +23,17 @@ from typing import (
 )
 
 import pytest
+from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
-from pydantic._internal._generics import iter_contained_typevars, replace_types
-from pydantic.main import GENERIC_TYPES_CACHE
+from pydantic._internal._core_utils import collect_invalid_schemas
+from pydantic._internal._generics import _GENERIC_TYPES_CACHE, iter_contained_typevars, replace_types
 
 
 @pytest.fixture(autouse=True)
 def clean_cache():
-    gc.collect()  # cleans up _generic_types_cache for checking item counts in the cache
+    gc.collect()  # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
 
 
 def test_generic_name():
@@ -263,7 +264,7 @@ def test_parameter_count():
 
 
 def test_cover_cache():
-    cache_size = len(GENERIC_TYPES_CACHE)
+    cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
 
     class Model(BaseModel, Generic[T]):
@@ -272,14 +273,14 @@ def test_cover_cache():
     models = []  # keep references to models to get cache size
 
     models.append(Model[int])  # adds both with-tuple and without-tuple version to cache
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 2
     models.append(Model[int])  # uses the cache
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 2
     del models
 
 
 def test_cache_keys_are_hashable():
-    cache_size = len(GENERIC_TYPES_CACHE)
+    cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
     C = Callable[[str, Dict[str, Any]], Iterable[str]]
 
@@ -292,42 +293,42 @@ def test_cache_keys_are_hashable():
     models = []  # keep references to models to get cache size
     models.append(Simple)
 
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 2
     # Nested Callables
     models.append(MyGenericModel[Callable[[C], Iterable[str]]])
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 4
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 4
     models.append(MyGenericModel[Callable[[Simple], Iterable[int]]])
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 6
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 6
     models.append(MyGenericModel[Callable[[MyGenericModel[C]], Iterable[int]]])
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 10
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 10
 
     class Model(BaseModel):
         x: MyGenericModel[Callable[[C], Iterable[str]]] = Field(...)
 
     models.append(Model)
-    assert len(GENERIC_TYPES_CACHE) == cache_size + 10
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 10
     del models
 
 
 @pytest.mark.xfail(reason='Memory leak issue -- see https://github.com/pydantic/pydantic/issues/5136')
 def test_caches_get_cleaned_up():
-    types_cache_size = len(GENERIC_TYPES_CACHE)
+    types_cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
 
     class MyGenericModel(BaseModel, Generic[T]):
         x: T
 
     Model = MyGenericModel[int]
-    assert len(GENERIC_TYPES_CACHE) == types_cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == types_cache_size + 2
     del Model
     gc.collect()
 
     # TODO: Need to figure out why this is failing
-    assert len(GENERIC_TYPES_CACHE) == types_cache_size
+    assert len(_GENERIC_TYPES_CACHE) == types_cache_size
 
 
 def test_generics_work_with_many_parametrized_base_models():
-    cache_size = len(GENERIC_TYPES_CACHE)
+    cache_size = len(_GENERIC_TYPES_CACHE)
     count_create_models = 1000
     T = TypeVar('T')
     C = TypeVar('C')
@@ -353,7 +354,7 @@ def test_generics_work_with_many_parametrized_base_models():
         Working = B[m]
         generics.append(Working)
 
-    assert len(GENERIC_TYPES_CACHE) == cache_size + count_create_models * 2 + 1
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + count_create_models * 2 + 1
     del models
     del generics
 
@@ -855,7 +856,7 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
         from typing import Generic, TypeVar
 
         from pydantic import BaseModel
-        from pydantic.main import GENERIC_TYPES_CACHE
+        from pydantic._internal._generics import _GENERIC_TYPES_CACHE
 
         t = TypeVar('t')
 
@@ -866,7 +867,7 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
             ...
 
         concrete = MyGeneric[Model]
-        GENERIC_TYPES_CACHE.clear()
+        _GENERIC_TYPES_CACHE.clear()
         second_concrete = MyGeneric[Model]
 
         class Model(BaseModel):  # same name, but type different, so it's not in cache
@@ -1441,10 +1442,10 @@ def test_generic_recursive_models_repeated_separate_parameters(create_module):
     }
 
 
-def test_generic_recursive_models_repeated_separate_parameters2(create_module):
+def test_generic_recursive_models_triple(create_module):
     @create_module
     def module():
-        from typing import Generic, Optional, TypeVar
+        from typing import Generic, TypeVar
 
         from pydantic import BaseModel
 
@@ -1463,7 +1464,85 @@ def test_generic_recursive_models_repeated_separate_parameters2(create_module):
             model_config = dict(undefined_types_warning=False)
 
         class A3(BaseModel, Generic[T3]):
-            a3: Optional['A1[T3]']
+            a3: 'A1[T3] | T3'
+
+            model_config = dict(undefined_types_warning=False)
+
+        A1.model_rebuild()
+
+    A1 = module.A1
+
+    with pytest.raises(ValidationError) as exc_info:
+        A1[str].model_validate({'a1': {'a2': {'a3': 1}}})
+    assert exc_info.value.errors() == [
+        {
+            'input': 1,
+            'loc': ('a1', 'a2', 'a3', 'A1[str]'),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        },
+        {'input': 1, 'loc': ('a1', 'a2', 'a3', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
+    ]
+
+    A1[int].model_validate({'a1': {'a2': {'a3': 1}}})
+
+
+def test_generic_recursive_models_again(create_module):
+    @create_module
+    def module():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        class A1(BaseModel):
+            pass
+
+        V1 = TypeVar('V1')
+        V2 = TypeVar('V2')
+        V3 = TypeVar('V3')
+
+        class M1(BaseModel, Generic[V1, V2]):
+            a: V1
+            m: 'M2[V2]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        class M2(BaseModel, Generic[V3]):
+            m: M1[int, V3] | V3
+
+            model_config = dict(undefined_types_warning=False)
+
+        M1.model_rebuild()
+
+    M1 = module.M1
+
+    # assert M1.__pydantic_core_schema__ == {}
+    assert collect_invalid_schemas(M1.__pydantic_core_schema__) == []
+
+
+def test_generic_recursive_models_complicated(create_module):
+    @create_module
+    def module():
+        from typing import Generic, TypeVar
+
+        from pydantic import BaseModel
+
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        T3 = TypeVar('T3')
+
+        class A1(BaseModel, Generic[T1]):
+            a1: T1  # 'A2[T1]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        class A2(BaseModel, Generic[T2]):
+            a2: 'A3[T2]'
+
+            model_config = dict(undefined_types_warning=False)
+
+        class A3(BaseModel, Generic[T3]):
+            a3: 'A1[T3] | T3'
 
             model_config = dict(undefined_types_warning=False)
 
@@ -1473,12 +1552,12 @@ def test_generic_recursive_models_repeated_separate_parameters2(create_module):
         S2 = TypeVar('S2')
 
         class B1(BaseModel, Generic[S1]):
-            b1: 'B2[S1]'
+            a1: 'B2[S1]'
 
             model_config = dict(undefined_types_warning=False)
 
         class B2(BaseModel, Generic[S2]):
-            b2: Optional['B1[S2]']
+            a2: 'B1[S2]'
 
             model_config = dict(undefined_types_warning=False)
 
@@ -1486,28 +1565,30 @@ def test_generic_recursive_models_repeated_separate_parameters2(create_module):
 
         V1 = TypeVar('V1')
         V2 = TypeVar('V2')
-
-        class Model1(BaseModel, Generic[V1, V2]):
-            a: A1[V1]
-            b: B1[V2]
-            m: 'Model2[V1]'
-
-            model_config = dict(undefined_types_warning=False)
-
         V3 = TypeVar('V3')
 
-        class Model2(BaseModel, Generic[V3]):
-            a: A1[V1]
+        class M1(BaseModel, Generic[V1, V2]):
+            a: int
             b: B1[V2]
-            m: Model1[V3, int]
+            m: 'M2[V1]'
 
             model_config = dict(undefined_types_warning=False)
 
-        Model1.model_rebuild()
+        class M2(BaseModel, Generic[V3]):
+            m: M1[V3, int] | V3
 
-    Model1 = module.Model1
+            model_config = dict(undefined_types_warning=False)
 
-    assert Model1.__pydantic_core_schema__ == {}
+        M1.model_rebuild()
+
+    M1 = module.M1
+
+    assert collect_invalid_schemas(M1.__pydantic_core_schema__) == []
+
+
+def test_schema_is_valid():
+    assert not collect_invalid_schemas(core_schema.none_schema())
+    assert collect_invalid_schemas(core_schema.nullable_schema(core_schema.int_schema(metadata={'invalid': True})))
 
 
 def test_generic_enum():

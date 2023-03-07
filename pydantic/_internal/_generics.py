@@ -32,10 +32,6 @@ if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
 else:
     GenericTypesCache = WeakValueDictionary
 
-# _generic_types_cache is a Mapping from __class_getitem__ arguments to the parametrized version of generic models.
-# This ensures multiple calls of e.g. A[B] return always the same class.
-GENERIC_TYPES_CACHE = GenericTypesCache()
-
 
 def create_generic_submodel(model_name: str, origin: type[BaseModel], args: tuple[Any, ...]) -> type[BaseModel]:
     """
@@ -190,7 +186,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     # semantics as "typing" classes or generic aliases
     from pydantic import BaseModel
 
-    if not origin_type and lenient_issubclass(type_, BaseModel) and getattr(type_, '__parameters__'):
+    if not origin_type and lenient_issubclass(type_, BaseModel) and getattr(type_, '__parameters__', None):
         parameters = type_.__parameters__
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
         if all_identical(parameters, resolved_type_args):
@@ -222,11 +218,11 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_generic_recursion: ContextVar[dict[Any, int] | None] = ContextVar('_generic_recursion', default=None)
+_visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_counts_context', default=None)
 
 
 @contextmanager
-def generic_recursion_self_type(origin: type[Any], args: tuple[Any, ...]) -> Iterator[type[BaseSelfType] | None]:
+def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) -> Iterator[type[BaseSelfType] | None]:
     """
     This contextmanager should be placed around recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
@@ -240,22 +236,50 @@ def generic_recursion_self_type(origin: type[Any], args: tuple[Any, ...]) -> Ite
     reference, so the referenced schema may not end up in the final core_schema unless you expand two
     layers deep.
     """
-    parent_calls = _generic_recursion.get()
-    if parent_calls is None:
-        parent_calls = defaultdict(int)
+    visit_counts_by_ref = _visit_counts_context.get()
+    if visit_counts_by_ref is None:
+        visit_counts_by_ref = defaultdict(int)
+        token = _visit_counts_context.set(visit_counts_by_ref)
     else:
-        # copy the dict to ensure that "sibling" recursions don't result in early self-type returns
-        # TODO: I am not actually sure if this is necessary.. try adding a test with the same generic
-        #   parametrization for two separate fields. (Similar to test_generic_recursive_model)
-        parent_calls = parent_calls.copy()
+        token = None
 
-    if parent_calls[(origin, args)] >= 2:
+    type_ref = get_type_ref(origin, args_override=args)
+    if visit_counts_by_ref[type_ref] >= 2:
         self_type = get_self_type(
-            core_schema.definition_reference_schema(get_type_ref(origin, args_override=args)), origin, []
+            core_schema.definition_reference_schema(type_ref), origin, [{'kind': 'class_getitem', 'item': args}]
         )
         yield self_type
     else:
-        parent_calls[(origin, args)] += 1
-        token = _generic_recursion.set(parent_calls)
+        visit_counts_by_ref[type_ref] += 1
         yield None
-        _generic_recursion.reset(token)
+    if token:
+        _visit_counts_context.reset(token)
+
+
+def recursively_defined_type_refs() -> set[str]:
+    return set((_visit_counts_context.get() or {}).keys())
+
+
+_GENERIC_TYPES_CACHE = GenericTypesCache()
+
+
+def _cache_key(cls: type[BaseModel], _params: Any) -> GenericTypesCacheKey:
+    # TODO: What is happening with args here?
+    #   Note: get_args always returns () if _params is a tuple, and
+    #   if _params is a type, _params and (_params,) should have the same meaning as arguments to __class_getitem__.
+    #   So something seems suspicious..
+    args = typing_extensions.get_args(_params)
+    # python returns a list for Callables, which is not hashable
+    if len(args) == 2 and isinstance(args[0], list):
+        args = (tuple(args[0]), args[1])
+    return cls, _params, args
+
+
+def set_cached_generic_type(parent: type[BaseModel], typevar_values: tuple[Any, ...], type_: type[BaseModel]) -> None:
+    _GENERIC_TYPES_CACHE[_cache_key(parent, typevar_values)] = type_
+    if len(typevar_values) == 1:
+        _GENERIC_TYPES_CACHE[_cache_key(parent, typevar_values[0])] = type_
+
+
+def get_cached_generic_type(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
+    return _GENERIC_TYPES_CACHE.get(_cache_key(parent, typevar_values))

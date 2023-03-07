@@ -38,6 +38,42 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     return schema
 
 
+def define_expected_missing_refs(
+    schema: core_schema.CoreSchema, allowed_missing_refs: set[str]
+) -> core_schema.CoreSchema:
+    refs = set()
+
+    def _record_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        if ref:
+            refs.add(ref)
+        return s
+
+    WalkAndApply(_record_refs).walk(schema)
+
+    expected_missing_refs = allowed_missing_refs.difference(refs)
+    if expected_missing_refs:
+        definitions: list[core_schema.CoreSchema] = [
+            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+            core_schema.none_schema(ref=ref, metadata={'pydantic_debug_missing_ref': True, 'invalid': True})
+            for ref in expected_missing_refs
+        ]
+        return core_schema.definitions_schema(schema, definitions)
+    return schema
+
+
+def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.CoreSchema]:
+    invalid_schemas: list[core_schema.CoreSchema] = []
+
+    def _is_schema_valid(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        if s.get('metadata', {}).get('invalid'):
+            invalid_schemas.append(s)
+        return s
+
+    WalkAndApply(_is_schema_valid).walk(schema)
+    return invalid_schemas
+
+
 class WalkAndApply:
     def __init__(
         self, f: Callable[[core_schema.CoreSchema], core_schema.CoreSchema], apply_before_recurse: bool = True

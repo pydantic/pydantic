@@ -18,11 +18,11 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from . import _typing_extra
 from ._core_metadata import build_metadata_dict
-from ._core_utils import consolidate_refs
+from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import DeferredField, Undefined
+from ._fields import Undefined
 from ._generate_schema import generate_config, model_fields_schema
-from ._generics import replace_types
+from ._generics import recursively_defined_type_refs, replace_types
 from ._self_type import get_self_type, is_self_type
 from ._utils import ClassAttribute, get_type_ref, is_valid_identifier
 
@@ -175,6 +175,7 @@ def complete_model_class(
         )
         return False
     inner_schema = consolidate_refs(inner_schema)
+    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
     validator_functions.check_for_unused()
     serialization_functions.check_for_unused()
@@ -260,11 +261,13 @@ def build_inner_schema(  # noqa: C901
         if isinstance(ann_type, typing.ForwardRef):
             raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
-        generic_origin_has_attr = False
+        if cls.__pydantic_generic_typevars_map__:
+            ann_type = replace_types(ann_type, cls.__pydantic_generic_typevars_map__)
+
         for base in bases:
             if hasattr(base, ann_name):
                 if base is cls.__pydantic_generic_origin__:
-                    generic_origin_has_attr = True
+                    pass  # TODO: This may be a good place to add logic for handling generic default values..
                 else:
                     raise NameError(
                         f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
@@ -272,9 +275,14 @@ def build_inner_schema(  # noqa: C901
                     )
 
         try:
-            default = getattr(cls, ann_name)
+            default = getattr(cls, ann_name, Undefined)
+            if default is Undefined:
+                origin = getattr(cls, '__pydantic_generic_origin__')
+                default = getattr(origin, '__pydantic_deleted_attrs__', {}).get(ann_name, Undefined)
+            if default is Undefined:
+                raise AttributeError
         except AttributeError:
-            # if field has no default value and is not in __annotations__ this means that it is
+            # if field has no default value and is not in __annotations__ this usually means that it is
             # defined in a base class and we can take it from there
             if ann_name in annotations or is_self_type(ann_type):
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
@@ -287,19 +295,24 @@ def build_inner_schema(  # noqa: C901
                     # copy the field to make sure typevar substitutions don't cause issues with the base classes
                     field = copy(model_fields_lookup[ann_name])
                 else:
-                    # The field was not found on any base clasess; this seems to be caused by fields not getting
-                    # generated thanks to "short-circuiting" during the initialization of recursive models
-                    # We deal with this by putting in a placeholder that will be removed from the final recursive
-                    # thanks to other aspects of the class creation process.
-                    field = FieldInfo.from_annotation(DeferredField())
+                    # The field was not found on any base classes; this seems to be caused by fields not getting
+                    # generated thanks to models not being fully defined while initializing recursive models.
+                    # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
+                    field = FieldInfo.from_annotation(ann_type)
                 fields[ann_name] = field
         else:
             fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
-            if not generic_origin_has_attr:
+            try:
+                # TODO: I need to understand why we are deleting attributes,
+                #   and how to make it work properly with generics. Without this janky logic for grabbing default
+                #   values out of __deleted_attrs__, I can't get defaults to work on recursive generic models
                 delattr(cls, ann_name)
+                cls.__pydantic_deleted_attrs__[ann_name] = default
+            except AttributeError:
+                pass  # indicates the attribute was on a parent class
 
     typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
     if typevars_map:

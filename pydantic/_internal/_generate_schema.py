@@ -124,23 +124,19 @@ class GenerateSchema:
             return from_property
 
         if is_self_type(obj):
-            if self.typevars_map is not None:
-                model = replace_types(obj.resolve_model(), self.typevars_map)
-                if is_self_type(model):
-                    # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                    return core_schema.none_schema(metadata={'pydantic_debug_self_type': model, 'invalid': True})
-                else:
-                    model_ref = get_type_ref(model)
-                    self_schema = core_schema.definition_reference_schema(model_ref)
-                    # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                    return core_schema.none_schema(
-                        metadata={'pydantic_debug_self_schema': self_schema, 'invalid': True}
-                    )
-            elif obj.deferred_actions:
-                # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                return core_schema.none_schema(metadata={'pydantic_debug_self_type': obj, 'invalid': True})
-            else:
+            if not obj.deferred_actions:
                 return obj.self_schema
+            model = obj.resolve_model()
+            if is_self_type(model):
+                # If you still have a SelfType after resolving, it should be deeply nested enough that it will
+                # eventually be substituted out. So it is safe to return an invalid schema here.
+                # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+                return core_schema.none_schema(
+                    metadata={'invalid': True, 'pydantic_debug_self_schema': model.self_schema}
+                )
+            else:
+                return core_schema.definition_reference_schema(get_type_ref(model))
+
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
                 # Note: obj may fail to be hashable if it has an unhashable annotation

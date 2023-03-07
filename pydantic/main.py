@@ -19,14 +19,14 @@ import typing_extensions
 from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from ._internal._generics import (
-    GENERIC_TYPES_CACHE,
-    GenericTypesCacheKey,
     check_parameters_count,
     create_generic_submodel,
     generic_recursion_self_type,
+    get_cached_generic_type,
     is_generic_model,
     iter_contained_typevars,
     replace_types,
+    set_cached_generic_type,
 )
 from ._internal._self_type import BaseSelfType
 from ._internal._utils import all_identical
@@ -124,6 +124,7 @@ class ModelMetaclass(ABCMeta):
             # TODO: cls.__parameters__ may be removed -- do we need to retain this for v1 compatibility?
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
+            cls.__pydantic_deleted_attrs__ = {}
             cls.__pydantic_generic_typevars_map__ = (
                 None
                 if __pydantic_generic_origin__ is None
@@ -172,9 +173,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
-        __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None] = None
-        __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None] = None
-        __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None] = None
+        __pydantic_deleted_attrs__: typing.ClassVar[dict[str, Any]]
+        __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None]
+        __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
+        __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
         # TODO: rename __parameters__ with __pydantic prefix
         # __parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None] = None
     else:
@@ -665,17 +667,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
     ) -> type[BaseModel] | type[BaseSelfType]:
-        def _cache_key(_params: Any) -> GenericTypesCacheKey:
-            # TODO: This doesn't seem right if _params is a tuple, which it definitely can be...
-            #   Revisit this after looking into the changes added with the types cache
-            args = typing_extensions.get_args(_params)
-            # python returns a list for Callables, which is not hashable
-            if len(args) == 2 and isinstance(args[0], list):
-                args = (tuple(args[0]), args[1])
-            return cls, _params, args
-
-        cache_key = _cache_key(typevar_values)
-        cached = GENERIC_TYPES_CACHE.get(cache_key)
+        cached = get_cached_generic_type(cls, typevar_values)
         if cached is not None:
             return cached
 
@@ -694,9 +686,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
             zip(getattr(cls, '__parameters__', ()), typevar_values)
         )
-        need_to_rebuild = False
         if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
+            set_cached_generic_type(cls, typevar_values, submodel)
         else:
             parent_args = cls.__pydantic_generic_args__
             if not parent_args:
@@ -710,26 +702,21 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             with generic_recursion_self_type(origin, args) as maybe_self_type:
                 if maybe_self_type is not None:
                     return maybe_self_type
+
                 submodel = create_generic_submodel(model_name, origin, args)
 
-            need_to_rebuild = True
+                # Update params
+                new_params = tuple(
+                    {param: None for param in iter_contained_typevars(typevars_map.values())}
+                )  # use dict as ordered set
+                submodel.__parameters__ = new_params
 
-            # Update params
-            new_params = tuple(
-                {param: None for param in iter_contained_typevars(typevars_map.values())}
-            )  # use dict as ordered set
-            submodel.__parameters__ = new_params
+                # Update cache
+                set_cached_generic_type(cls, typevar_values, submodel)
 
-        # Update cache
-        GENERIC_TYPES_CACHE[_cache_key(typevar_values)] = submodel
-        if len(typevar_values) == 1:
-            GENERIC_TYPES_CACHE[_cache_key(typevar_values[0])] = submodel
-
-        # Rebuild model
-        if need_to_rebuild:
-            # Doing the rebuild _after_ populating the cache prevents infinite recursion
-            # submodel.model_rebuild(force=True, typevars_map=typevars_map)
-            submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
+                # Doing the rebuild _after_ populating the cache prevents infinite recursion
+                # submodel.model_rebuild(force=True, typevars_map=typevars_map)
+                submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
 
         return submodel
 
