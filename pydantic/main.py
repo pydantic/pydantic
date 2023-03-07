@@ -101,7 +101,6 @@ class ModelMetaclass(ABCMeta):
 
             _model_construction.complete_model_class(
                 cls,
-                cls_name,
                 validator_functions,
                 serializer_functions,
                 bases,
@@ -163,6 +162,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         _object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         if hasattr(__pydantic_self__, '__pydantic_post_init__'):
             __pydantic_self__.__pydantic_post_init__(context=None)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs) -> CoreSchema:
+        return _model_construction.model_get_pydantic_validation_schema(cls, **kwargs)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
@@ -500,7 +503,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             return _model_construction.complete_model_class(
                 cls,
-                cls.__name__,
                 cls.__pydantic_validator_functions__,
                 cls.__pydantic_serializer_functions__,
                 cls.__bases__,

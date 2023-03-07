@@ -28,7 +28,6 @@ __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
 
 def model_fields_schema(
-    model_ref: str,
     fields: dict[str, FieldInfo],
     validator_functions: ValidationFunctions,
     serialization_functions: SerializationFunctions,
@@ -45,11 +44,9 @@ def model_fields_schema(
             k: schema_generator.generate_field_schema(k, v, validator_functions, serialization_functions)
             for k, v in fields.items()
         },
-        ref=model_ref,
         return_fields_set=True,
     )
-    schema = apply_validators(schema, validator_functions.get_root_decorators())
-    return schema
+    return apply_validators(schema, validator_functions.get_root_decorators())
 
 
 def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:

@@ -905,7 +905,7 @@ def test_model_iteration():
         pytest.param(
             {'foos': {0: 1}},
             TypeError,
-            '`exclude` argument must a set or dict',
+            r'`exclude` argument must be a set or dict\.',
             id='value as int should be an error',
         ),
         pytest.param(
