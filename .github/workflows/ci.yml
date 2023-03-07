@@ -90,12 +90,20 @@ jobs:
         path: site
 
   test:
-    name: test py${{ matrix.python-version }} on ${{ matrix.os }}
+    name: test ${{ matrix.os }} / ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', 'pypy3.7', 'pypy3.8', 'pypy3.9']
+        # no pydantic-core binaries for pypy on windows, so tests take absolute ages
+        exclude:
+          - os: windows
+            python-version: 'pypy3.7'
+          - os: windows
+            python-version: 'pypy3.8'
+          - os: windows
+            python-version: 'pypy3.9'
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -143,13 +151,24 @@ jobs:
         name: coverage
         path: coverage
 
-  test-old-mypy:
-    name: test mypy v${{ matrix.mypy-version }}
+  test-mypy:
+    name: mypy v${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        mypy-version: ['0.950', '0.961', '0.971', '0.982', '0.991']
+        # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
+        mypy-version: ['0.971', '0.982', '0.991', '1.0.1']
+        python-version: ['3.10']
+        include:
+          - mypy-version: '1.0.1'
+            python-version: '3.7'
+          - mypy-version: '1.0.1'
+            python-version: '3.8'
+          - mypy-version: '1.0.1'
+            python-version: '3.9'
+          - mypy-version: '1.0.1'
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v3
@@ -157,7 +176,7 @@ jobs:
     - name: set up python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ matrix.python-version }}
 
     - uses: actions/cache@v3
       id: cache
@@ -182,10 +201,10 @@ jobs:
     - run: mkdir coverage
 
     - name: run tests
-      run: coverage run -m pytest tests/mypy
+      run: coverage run -m pytest tests/mypy --test-mypy
       env:
-        COVERAGE_FILE: coverage/.coverage.linux-py3.10-mypy${{ matrix.mypy-version }}
-        CONTEXT: linux-py3.10-mypy${{ matrix.mypy-version }}
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
 
     - name: store coverage files
       uses: actions/upload-artifact@v3
@@ -194,7 +213,7 @@ jobs:
         path: coverage
 
   coverage-combine:
-    needs: [test, test-old-mypy]
+    needs: [test, test-mypy]
     runs-on: ubuntu-latest
 
     steps:
@@ -255,7 +274,7 @@ jobs:
       - lint
       - docs-build
       - test
-      - test-old-mypy
+      - test-mypy
       - test-fastapi
 
     runs-on: ubuntu-latest
