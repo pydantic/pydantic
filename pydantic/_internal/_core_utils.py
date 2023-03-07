@@ -24,9 +24,6 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     refs = set()
 
     def _replace_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        # Without the cast, get:
-        # pydantic/_internal/_core_utils.py:22: error: Incompatible types in assignment
-        # (expression has type "object", variable has type "Optional[str]")  [assignment]
         ref: str | None = s.get('ref')  # type: ignore[assignment]
         if ref:
             if ref in refs:
