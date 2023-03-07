@@ -2,10 +2,10 @@ use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
 
-use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
+use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
@@ -210,6 +210,22 @@ impl SchemaValidator {
             self.validator,
             self.slots,
         )
+    }
+
+    fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.validator.py_gc_traverse(&visit)?;
+        visit.call(&self.schema)?;
+        for slot in self.slots.iter() {
+            slot.py_gc_traverse(&visit)?;
+        }
+        Ok(())
+    }
+
+    fn __clear__(&mut self) {
+        self.validator.py_gc_clear();
+        for slot in self.slots.iter_mut() {
+            slot.py_gc_clear();
+        }
     }
 }
 
@@ -548,6 +564,10 @@ pub enum CombinedValidator {
 /// validators defined in `build_validator` also need `EXPECTED_TYPE` as a const, but that can't be part of the trait
 #[enum_dispatch(CombinedValidator)]
 pub trait Validator: Send + Sync + Clone + Debug {
+    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        Ok(())
+    }
+    fn py_gc_clear(&mut self) {}
     /// Do the actual validation for this schema/type
     fn validate<'s, 'data>(
         &'s self,
