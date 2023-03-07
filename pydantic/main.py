@@ -33,7 +33,6 @@ from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import (
     MAPPING_LIKE_SHAPES,
     Field,
-    FieldInfo,
     ModelField,
     ModelPrivateAttr,
     PrivateAttr,
@@ -118,7 +117,7 @@ UNTOUCHED_TYPES: Tuple[Any, ...] = (FunctionType,) + ANNOTATED_FIELD_UNTOUCHED_T
 _is_base_model_class_defined = False
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
