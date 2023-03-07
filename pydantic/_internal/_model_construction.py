@@ -221,7 +221,7 @@ def build_inner_schema(  # noqa: C901
     model_js_metadata = cls.model_json_schema_metadata()
     self_schema = core_schema.model_schema(
         cls,
-        core_schema.recursive_reference_schema(model_ref),
+        core_schema.definition_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
     local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
