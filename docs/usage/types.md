@@ -445,6 +445,12 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
 `FutureDate`
 : like `date`, but the date should be in the future
 
+`AwareDatetime`
+: like `datetime`, but requires the value to have timezone info
+
+`NaiveDatetime`
+: like `datetime`, but requires the value to lack timezone info
+
 `EmailStr`
 : requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
   the input string must be a valid email address, and the output is a simple string
