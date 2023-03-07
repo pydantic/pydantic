@@ -122,7 +122,7 @@ class GenerateSchema:
         if isinstance(obj, ForwardRef):
             # ForwardRef internally tries to get the globals from the
             # namespace in which it was defined
-            obj = obj._evaluate(globalns=None, localns=self.types_namespace, recursive_guard=frozenset())
+            _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=self.types_namespace)
 
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
