@@ -205,7 +205,7 @@ class GenerateJsonSchema:
 
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
         ref = json_schema.get('$ref')
-        if ref is not None:
+        while ref is not None:  # may need to unpack multiple levels
             ref_json_schema = self.get_schema_from_definitions(JsonRef(ref))
             if json_ref_counts[ref] > 1 or ref_json_schema is None:
                 # Keep the ref, but use an allOf to remove the top level $ref
@@ -214,6 +214,7 @@ class GenerateJsonSchema:
                 # "Unpack" the ref since this is the only reference
                 json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
                 json_ref_counts[ref] -= 1
+            ref = json_schema.get('$ref')
 
         # Remove any definitions that, thanks to $ref-substitution, are no longer present.
         # I think this should only _possibly_ apply to the root model, though I'm not 100% sure.
@@ -491,9 +492,11 @@ class GenerateJsonSchema:
     def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
         generated: dict[str, JsonSchemaValue] = {}
         for k, v in schema['choices'].items():
-            if not isinstance(v, str):
+            if not isinstance(v, (str, int)):
                 try:
-                    generated[k] = self.generate_inner(v).copy()
+                    # Use str(k) since keys must be strings for json; while not technically correct,
+                    # it's the closest that can be represented in valid JSON
+                    generated[str(k)] = self.generate_inner(v).copy()
                 except PydanticInvalidForJsonSchema:
                     pass
         json_schema: JsonSchemaValue = {'oneOf': list(generated.values())}
@@ -695,15 +698,16 @@ class GenerateJsonSchema:
     def call_schema(self, schema: core_schema.CallSchema) -> JsonSchemaValue:
         return self.generate_inner(schema['arguments_schema'])
 
-    def recursive_ref_schema(self, schema: core_schema.RecursiveReferenceSchema) -> JsonSchemaValue:
-        core_ref = CoreRef(schema['schema_ref'])
-        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
-        return ref_json_schema
-
     def custom_error_schema(self, schema: core_schema.CustomErrorSchema) -> JsonSchemaValue:
         return self.generate_inner(schema['schema'])
 
     def json_schema(self, schema: core_schema.JsonSchema) -> JsonSchemaValue:
+        # TODO: For v1 compatibility, we should probably be using `schema['schema']` to produce the schema.
+        #   This is a serialization vs. validation thing; see https://github.com/pydantic/pydantic/issues/5072
+        #   -
+        #   The behavior below is not currently consistent with the v1 behavior, so should probably be changed.
+        #   I think making it work like v1 should be as easy as handling schema['schema'] instead, with the note
+        #   that we'll need to make generics work with Json (there is a test for this in test_generics.py).
         return {'type': 'string', 'format': 'json-string'}
 
     def url_schema(self, schema: core_schema.UrlSchema) -> JsonSchemaValue:
@@ -716,6 +720,16 @@ class GenerateJsonSchema:
         json_schema = {'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         return json_schema
+
+    def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:
+        for definition in schema['definitions']:
+            self.generate_inner(definition)
+        return self.generate_inner(schema['schema'])
+
+    def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
+        core_ref = CoreRef(schema['schema_ref'])
+        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        return ref_json_schema
 
     # ### Utility methods
 
