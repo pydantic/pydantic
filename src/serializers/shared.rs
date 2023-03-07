@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 
 use pyo3::exceptions::PyTypeError;
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet};
+use pyo3::{intern, PyTraverseError, PyVisit};
 
 use enum_dispatch::enum_dispatch;
 use serde::Serialize;
@@ -225,6 +225,10 @@ impl BuildSerializer for CombinedSerializer {
 
 #[enum_dispatch(CombinedSerializer)]
 pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
+    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        Ok(())
+    }
+    fn py_gc_clear(&mut self) {}
     fn to_python(
         &self,
         value: &PyAny,

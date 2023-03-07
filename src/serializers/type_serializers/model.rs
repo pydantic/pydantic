@@ -55,6 +55,12 @@ impl ModelSerializer {
 }
 
 impl TypeSerializer for ModelSerializer {
+    fn py_gc_traverse(&self, visit: &pyo3::PyVisit<'_>) -> Result<(), pyo3::PyTraverseError> {
+        visit.call(&self.class)?;
+        self.serializer.py_gc_traverse(visit)?;
+        Ok(())
+    }
+
     fn to_python(
         &self,
         value: &PyAny,
