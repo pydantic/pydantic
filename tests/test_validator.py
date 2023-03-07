@@ -1,4 +1,4 @@
-from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple
+from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple, TypeAlias, Union
 
 import pytest
 from typing_extensions import TypedDict
@@ -30,8 +30,8 @@ class SomeNamedTuple(NamedTuple):
         (Tuple[str, int], ('1', 1), ('1', 1)),
         (Tuple[str, ...], ('1',), ('1',)),
         (Dict[str, int], {'foo': 123}, {'foo': 123}),
-        (int | str, 1, 1),
-        (int | str, '2', '2'),
+        (Union[int, str], 1, 1),
+        (Union[int, str], '2', '2'),
     ],
 )
 def test_types(tp: Any, val: Any, expected: Any):
@@ -58,3 +58,13 @@ def test_top_level_fwd_ref():
 
     res = v({'foo': [1, '2']})
     assert res == {'foo': [1, 2]}
+
+
+MyUnion: TypeAlias = 'str | int'
+
+
+def test_type_alias():
+    MyList = List[MyUnion]
+    v: Validator[MyList] = Validator(MyList)
+    res = v([1, '2'])
+    assert res == [1, '2']
