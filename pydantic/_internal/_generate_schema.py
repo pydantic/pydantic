@@ -244,13 +244,7 @@ class GenerateSchema:
         Prepare a TypedDictField to represent a model or typeddict field.
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
-        if isinstance(field_info.annotation, _fields.DeferredField):
-            # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-            schema = core_schema.none_schema(
-                metadata={'pydantic_debug_deferred_field': field_info.annotation, 'invalid': True}
-            )
-        else:
-            schema = self.generate_schema(field_info.annotation)
+        schema = self.generate_schema(field_info.annotation)
 
         schema = apply_annotations(schema, field_info.metadata)
 

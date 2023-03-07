@@ -79,15 +79,3 @@ class CustomValidator(ABC):
             if k not in attrs:
                 raise TypeError(f'{self.__class__.__name__} has no attribute {k!r}')
             setattr(self, k, v)
-
-
-class DeferredField:
-    """
-    This class is used to produce a placeholder for fields that are "missing" while building recursive generic models.
-
-    Instances of this class should used as a value of FieldInfo.annotation when you know a field needs to exist,
-    but cannot determine what its annotation should be due to short-circuiting in the recursive model-building process.
-
-    Fields with such an annotation should never make it into a final class, and are intended just as an implementation
-    detail for building recursive (generic) models.
-    """
