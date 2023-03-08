@@ -1,3 +1,9 @@
+## v1.10.6 (2023-03-08)
+
+* Implement logic to support creating validators from non standard callables by using defaults to identify them and unwrapping `functools.partial` and `functools.partialmethod` when checking the signature, #5126 by @JensHeinrich
+* Fix mypy plugin for v1.1.1, and fix `dataclass_transform` decorator for pydantic dataclasses, #5111 by @cdce8p
+* Raise `ValidationError`, not `ConfigError`, when a discriminator value is unhashable, #4773 by @kurtmckee
+
 ## v1.10.5 (2023-02-15)
 
 * Fix broken parametrized bases handling with `GenericModel`s with complex sets of models, #5052 by @MarkusSintonen
