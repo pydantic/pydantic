@@ -40,12 +40,7 @@ class CoreMetadataHandler:
     def __init__(self, schema: CoreSchema | TypedDictField):
         self._schema = schema
 
-        try:
-            metadata = schema.get('metadata')
-        except AttributeError:  # This happens if `schema` is of type PydanticForwardRef
-            # TODO: Need to figure out a better way to handle PydanticForwardRef
-            metadata = {}
-
+        metadata = schema.get('metadata')
         if metadata is None:
             schema['metadata'] = {}
         elif not isinstance(metadata, dict):
