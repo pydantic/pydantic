@@ -2,7 +2,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, FrozenSet, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -59,7 +59,7 @@ def test_int_overflow_validation(value):
 
 def test_frozenset_validation():
     class Model(BaseModel):
-        a: frozenset[int]
+        a: FrozenSet[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
