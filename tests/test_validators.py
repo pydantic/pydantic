@@ -45,7 +45,6 @@ def test_int_validation():
     assert Model(a=4.5).a == 4
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
 def test_int_overflow_validation(value):
     class Model(BaseModel):
@@ -54,24 +53,24 @@ def test_int_overflow_validation(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(a=value)
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'type': 'finite_number', 'loc': ('a',), 'msg': 'Input should be a finite number', 'input': value}
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_frozenset_validation():
     class Model(BaseModel):
-        a: frozenset
+        a: frozenset[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid frozenset', 'type': 'type_error.frozenset'}
+        {'type': 'frozen_set_type', 'loc': ('a',), 'msg': 'Input should be a valid frozenset', 'input': 'snap'}
     ]
     assert Model(a={1, 2, 3}).a == frozenset({1, 2, 3})
     assert Model(a=frozenset({1, 2, 3})).a == frozenset({1, 2, 3})
     assert Model(a=[4, 5]).a == frozenset({4, 5})
     assert Model(a=(6,)).a == frozenset({6})
+    assert Model(a={'1', '2', '3'}).a == frozenset({1, 2, 3})
 
 
 @pytest.mark.xfail(reason='working on V2')
