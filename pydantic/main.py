@@ -857,7 +857,7 @@ class Validator(Generic[T]):
     def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
         ...
 
-    def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
+    def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
         self._type = __type
         merged_config: CoreConfig = {
             **(config or {}),  # type: ignore[misc]
@@ -865,6 +865,14 @@ class Validator(Generic[T]):
         }
         arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
         local_ns = _typing_extra.parent_frame_namespace(parent_depth=2)
+        # BaseModel uses it's own __module__ to find out where it was defined
+        # and then look for symbols to resolve forward references in those globals
+        # On the other hand Validator() can be called with arbitrary objects,
+        # including type aliases where __module__ (always `typing.py`) is not useful
+        # So instead we look at the globals in our parent stack frame
+        # This works for the case where Validator() is called in a module that
+        # has the target of forward references in it's scope but obviously
+        # does not work for more complex cases
         global_ns = sys._getframe(1).f_globals.copy()
         global_ns.update(local_ns or {})
         gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns)

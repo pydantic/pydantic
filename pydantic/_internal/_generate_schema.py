@@ -120,10 +120,7 @@ class GenerateSchema:
             return obj  # type: ignore[return-value]
 
         if isinstance(obj, ForwardRef):
-            localns = {}
-            if self.types_namespace:
-                localns.update(self.types_namespace)
-            obj = _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=localns)
+            obj = _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=self.types_namespace)
 
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
