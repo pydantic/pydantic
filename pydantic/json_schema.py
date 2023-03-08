@@ -10,10 +10,7 @@ from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
 from typing_extensions import TypedDict
 
-from ._internal._core_metadata import CoreMetadataHandler
-from ._internal._core_utils import is_core_schema, is_typed_dict_field
-from ._internal._typing_extra import all_literal_values, is_namedtuple
-from ._internal._utils import get_model, lenient_issubclass
+from ._internal import _core_metadata, _core_utils, _typing_extra, _utils
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -166,7 +163,7 @@ class GenerateJsonSchema:
 
     def build_schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
         mapping: dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
-        for key in all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
+        for key in _typing_extra.all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
             method_name = f"{key.replace('-', '_')}_schema"
             try:
                 mapping[key] = getattr(self, method_name)
@@ -243,16 +240,16 @@ class GenerateJsonSchema:
             if core_ref in self.core_to_json_refs:
                 return {'$ref': self.core_to_json_refs[core_ref]}
 
-        metadata_handler = CoreMetadataHandler(schema)
+        metadata_handler = _core_metadata.CoreMetadataHandler(schema)
         core_schema_override = metadata_handler.get_json_schema_core_schema_override()
         if core_schema_override is not None:
             # If there is a core schema override, use it to generate the JSON schema
             return self.generate_inner(core_schema_override)
 
         # Generate the core-schema-type-specific bits of the schema generation:
-        if is_typed_dict_field(schema):
+        if _core_utils.is_typed_dict_field(schema):
             json_schema = self.typed_dict_field_schema(schema)
-        elif is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
+        elif _core_utils.is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
             generate_for_schema_type = self._schema_type_to_method[schema['type']]
             json_schema = generate_for_schema_type(schema)
         else:
@@ -424,7 +421,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
-        source_class = CoreMetadataHandler(schema).get_source_class()
+        source_class = _core_metadata.CoreMetadataHandler(schema).get_source_class()
         if source_class is not None:
             # If a source_class has been specified, assume that its json schema will be handled elsewhere
             # TODO: May want to handle source_class in other schemas,
@@ -592,8 +589,8 @@ class GenerateJsonSchema:
         return json_schema
 
     def arguments_schema(self, schema: core_schema.ArgumentsSchema, prefer_positional: bool = False) -> JsonSchemaValue:
-        source_class = CoreMetadataHandler(schema).get_source_class()
-        prefer_positional = lenient_issubclass(source_class, tuple)  # intended to catch NamedTuple
+        source_class = _core_metadata.CoreMetadataHandler(schema).get_source_class()
+        prefer_positional = _utils.lenient_issubclass(source_class, tuple)  # intended to catch NamedTuple
 
         arguments = schema['arguments_schema']
         kw_only_arguments = [a for a in arguments if a.get('mode') == 'keyword_only']
@@ -744,11 +741,11 @@ class GenerateJsonSchema:
         Intuitively, we want this to return true for schemas that wouldn't otherwise provide their own title
         (e.g., int, float, str), and false for those that would (e.g., BaseModel subclasses).
         """
-        if is_typed_dict_field(schema):
+        if _core_utils.is_typed_dict_field(schema):
             return self.field_title_should_be_set(schema['schema'])
 
-        elif is_core_schema(schema):
-            override = CoreMetadataHandler(schema).get_json_schema_core_schema_override()
+        elif _core_utils.is_core_schema(schema):
+            override = _core_metadata.CoreMetadataHandler(schema).get_json_schema_core_schema_override()
             if override:
                 return self.field_title_should_be_set(override)
 
@@ -936,7 +933,7 @@ class GenerateJsonSchema:
         elif isinstance(dft, (list, tuple)):
             t = dft.__class__
             seq_args = (self.encode_default(v) for v in dft)
-            return t(*seq_args) if is_namedtuple(t) else t(seq_args)
+            return t(*seq_args) if _typing_extra.is_namedtuple(t) else t(seq_args)
         elif dft is None:
             return None
         else:
@@ -1026,7 +1023,7 @@ class GenerateJsonSchema:
         return json_refs
 
     def handle_invalid_for_json_schema(self, schema: CoreSchema | TypedDictField, error_info: str) -> JsonSchemaValue:
-        if CoreMetadataHandler(schema).get_modify_js_function():
+        if _core_metadata.CoreMetadataHandler(schema).get_modify_js_function():
             # Since there is a json schema modify function, assume that this type is meant to be handled,
             # and the modify function will set all properties as appropriate
             return {}
@@ -1044,7 +1041,7 @@ def schema(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    definitions = instance.generate_definitions([get_model(x).__pydantic_core_schema__ for x in models])
+    definitions = instance.generate_definitions([_utils.get_model(x).__pydantic_core_schema__ for x in models])
 
     json_schema: dict[str, Any] = {}
     if definitions:
@@ -1063,5 +1060,5 @@ def model_schema(
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
-    model = get_model(model)
+    model = _utils.get_model(model)
     return model.model_json_schema(by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)

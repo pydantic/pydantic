@@ -15,20 +15,8 @@ from typing import Any, Generic
 
 import typing_extensions
 
-from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
+from ._internal import _decorators, _forward_ref, _generics, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
-from ._internal._forward_ref import PydanticForwardRef
-from ._internal._generics import (
-    check_parameters_count,
-    create_generic_submodel,
-    generic_recursion_self_type,
-    get_cached_generic_type_early,
-    get_cached_generic_type_late,
-    iter_contained_typevars,
-    replace_types,
-    set_cached_generic_type,
-)
-from ._internal._utils import all_identical
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
@@ -129,7 +117,9 @@ class ModelMetaclass(ABCMeta):
             cls.__pydantic_generic_typevars_map__ = (
                 None
                 if __pydantic_generic_origin__ is None
-                else dict(zip(iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ()))
+                else dict(
+                    zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
+                )
             )
             _model_construction.complete_model_class(
                 cls,
@@ -661,8 +651,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
-    ) -> type[BaseModel] | PydanticForwardRef:
-        cached = get_cached_generic_type_early(cls, typevar_values)
+    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef:
+        cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
             return cached
 
@@ -675,39 +665,39 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         if not isinstance(typevar_values, tuple):
             typevar_values = (typevar_values,)
-        check_parameters_count(cls, typevar_values)
+        _generics.check_parameters_count(cls, typevar_values)
 
         # Build map from generic typevars to passed params
         typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
             zip(cls.__pydantic_generic_parameters__ or (), typevar_values)
         )
-        if all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
+        if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
-            set_cached_generic_type(cls, typevar_values, submodel)
+            _generics.set_cached_generic_type(cls, typevar_values, submodel)
         else:
             parent_args = cls.__pydantic_generic_args__
             if not parent_args:
                 args = typevar_values
             else:
-                args = tuple(replace_types(arg, typevars_map) for arg in parent_args)
+                args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
 
             origin = cls.__pydantic_generic_origin__ or cls
             model_name = origin.model_parametrized_name(args)
             params = tuple(
-                {param: None for param in iter_contained_typevars(typevars_map.values())}
+                {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
             )  # use dict as ordered set
 
-            with generic_recursion_self_type(origin, args) as maybe_self_type:
+            with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
                 if maybe_self_type is not None:
                     return maybe_self_type
 
-                cached = get_cached_generic_type_late(cls, typevar_values, origin, args)
+                cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
-                submodel = create_generic_submodel(model_name, origin, args, params)
+                submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
                 # Update cache
-                set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
                 # Doing the rebuild _after_ populating the cache prevents infinite recursion
                 # submodel.model_rebuild(force=True, typevars_map=typevars_map)
