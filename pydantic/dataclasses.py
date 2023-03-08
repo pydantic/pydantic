@@ -462,8 +462,6 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
     which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
     """
-    import dataclasses
-
     return (
         dataclasses.is_dataclass(_cls)
         and not hasattr(_cls, '__pydantic_model__')
