@@ -135,7 +135,7 @@ class GenerateSchema:
                     metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
                 )
             else:
-                return core_schema.definition_reference_schema(get_type_ref(resolved_model))
+                return get_model_self_schema(resolved_model)
 
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
@@ -757,3 +757,13 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
         return obj.__modify_schema__
 
     return modify_js_function
+
+
+def get_model_self_schema(cls: type[BaseModel]) -> core_schema.ModelSchema:
+    model_ref = get_type_ref(cls)
+    model_js_metadata = cls.model_json_schema_metadata()
+    return core_schema.model_schema(
+        cls,
+        core_schema.definition_reference_schema(model_ref),
+        metadata=build_metadata_dict(js_metadata=model_js_metadata),
+    )

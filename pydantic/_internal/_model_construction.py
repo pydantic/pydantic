@@ -22,9 +22,9 @@ from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import Undefined
 from ._forward_ref import PydanticForwardRef
-from ._generate_schema import generate_config, model_fields_schema
+from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
 from ._generics import recursively_defined_type_refs, replace_types
-from ._utils import ClassAttribute, get_type_ref, is_valid_identifier
+from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -225,13 +225,7 @@ def build_inner_schema(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    model_ref = get_type_ref(cls)
-    model_js_metadata = cls.model_json_schema_metadata()
-    self_schema = core_schema.model_schema(
-        cls,
-        core_schema.definition_reference_schema(model_ref),
-        metadata=build_metadata_dict(js_metadata=model_js_metadata),
-    )
+    self_schema = get_model_self_schema(cls)
     local_ns = {name: PydanticForwardRef(self_schema, cls)}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
@@ -318,6 +312,7 @@ def build_inner_schema(  # noqa: C901
     if typevars_map:
         for field in fields.values():
             field.annotation = replace_types(field.annotation, typevars_map)
+    model_ref = self_schema['schema']['schema_ref']
     schema = model_fields_schema(
         model_ref,
         fields,
