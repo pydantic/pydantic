@@ -120,8 +120,6 @@ class GenerateSchema:
             return obj  # type: ignore[return-value]
 
         if isinstance(obj, ForwardRef):
-            # ForwardRef internally tries to get the globals from the
-            # namespace in which it was defined
             localns = {}
             if self.types_namespace:
                 localns.update(self.types_namespace)
