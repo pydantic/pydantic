@@ -258,11 +258,10 @@ def build_inner_schema(  # noqa: C901
         if cls.__pydantic_generic_typevars_map__:
             ann_type = replace_types(ann_type, cls.__pydantic_generic_typevars_map__)
 
+        generic_origin = cls.__pydantic_generic_origin__
         for base in bases:
             if hasattr(base, ann_name):
-                if base is cls.__pydantic_generic_origin__:
-                    pass  # TODO: This may be a good place to add logic for handling generic default values..
-                else:
+                if base is not generic_origin:  # Don't warn about shadowing of attributes in parametrized generics
                     raise NameError(
                         f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
                         f'you might want to use a different field name with "alias=\'{ann_name}\'".'
@@ -270,9 +269,8 @@ def build_inner_schema(  # noqa: C901
 
         try:
             default = getattr(cls, ann_name, Undefined)
-            if default is Undefined:
-                origin = getattr(cls, '__pydantic_generic_origin__')
-                default = getattr(origin, '__pydantic_deleted_attrs__', {}).get(ann_name, Undefined)
+            if default is Undefined and generic_origin:
+                default = (generic_origin.__pydantic_generic_defaults__ or {}).get(ann_name, Undefined)
             if default is Undefined:
                 raise AttributeError
         except AttributeError:
@@ -300,11 +298,10 @@ def build_inner_schema(  # noqa: C901
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
             try:
-                # TODO: I need to understand why we are deleting attributes,
-                #   and how to make it work properly with generics. Without this janky logic for grabbing default
-                #   values out of __deleted_attrs__, I can't get defaults to work on recursive generic models
                 delattr(cls, ann_name)
-                cls.__pydantic_deleted_attrs__[ann_name] = default
+                if cls.__pydantic_generic_parameters__:  # model can be parametrized
+                    assert cls.__pydantic_generic_defaults__ is not None
+                    cls.__pydantic_generic_defaults__[ann_name] = default
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 

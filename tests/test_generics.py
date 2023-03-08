@@ -1762,6 +1762,24 @@ def test_multi_inheritance_generic_binding():
     assert not issubclass(B[float], C)
 
 
+def test_multi_inheritance_generic_defaults():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+        x: str = 'a'
+
+    class B(A[int], Generic[T]):
+        b: Optional[T] = None
+        y: str = 'b'
+
+    class C(B[str], Generic[T]):
+        c: T
+        z: str = 'c'
+
+    assert C(a=1, c=...).model_dump() == {'a': 1, 'b': None, 'c': ..., 'x': 'a', 'y': 'b', 'z': 'c'}
+
+
 @pytest.mark.xfail(reason="'Json type's JSON schema; see issue #5072")
 def test_parse_generic_json():
     T = TypeVar('T')

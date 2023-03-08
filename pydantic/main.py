@@ -24,7 +24,6 @@ from ._internal._generics import (
     generic_recursion_self_type,
     get_cached_generic_type_early,
     get_cached_generic_type_late,
-    is_generic_model,
     iter_contained_typevars,
     replace_types,
     set_cached_generic_type,
@@ -123,12 +122,12 @@ class ModelMetaclass(ABCMeta):
 
             # TODO: cls.__concrete__ has been removed -- do we need to retain this for v1 compatibility?
             # TODO: cls.__parameters__ may be removed -- do we need to retain this for v1 compatibility?
-            cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
+            cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
                 cls, '__parameters__', None
             )
-            cls.__pydantic_deleted_attrs__ = {}  # TODO: yuck, get rid of this
+            cls.__pydantic_generic_defaults__ = None if not cls.__pydantic_generic_parameters__ else {}
             cls.__pydantic_generic_typevars_map__ = (
                 None
                 if __pydantic_generic_origin__ is None
@@ -172,8 +171,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
-        __pydantic_deleted_attrs__: typing.ClassVar[dict[str, Any]]
         __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None]
+        __pydantic_generic_defaults__: typing.ClassVar[dict[str, Any] | None]
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
         __pydantic_generic_parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None]
         __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
@@ -730,7 +729,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         This method can be overridden to achieve a custom naming scheme for generic BaseModels.
         """
-        if not is_generic_model(cls):
+        if not issubclass(cls, Generic):  # type: ignore[arg-type]
             raise TypeError('Concrete names should only be generated for generic models.')
 
         param_names = [_repr.display_as_type(param) for param in params]

@@ -7,7 +7,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Generic, Iterator, List, Mapping, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Tuple, Type, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -86,10 +86,6 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
         return None, False
     frame_globals = previous_caller_frame.f_globals
     return frame_globals.get('__name__'), previous_caller_frame.f_locals is frame_globals
-
-
-def is_generic_model(model: type[BaseModel]) -> bool:
-    return issubclass(model, Generic)  # type: ignore[arg-type]
 
 
 DictValues: type[Any] = {}.values().__class__
@@ -222,7 +218,7 @@ _visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_co
 @contextmanager
 def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) -> Iterator[PydanticForwardRef | None]:
     """
-    This contextmanager should be placed around recursive calls used to build a generic type,
+    This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
 
     If the same origin and arguments are observed twice, it implies that a self-reference placeholder
