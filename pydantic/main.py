@@ -46,7 +46,7 @@ _object_setattr = _model_construction.object_setattr
 _base_class_defined = False
 
 
-@typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,
