@@ -112,10 +112,13 @@ jobs:
             ${{ hashFiles('requirements.txt') }}
             ${{ hashFiles('tests/requirements-testing.txt') }}
 
-      - name: install
+      - name: install deps
         run: |
-          make install-testing
+          pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
           pip install pytest-memray==1.4.0
+
+      - name: install pydantic
+        run: pip install .
 
       - name: test
         run: pytest --ignore=tests/mypy/ --memray
@@ -305,9 +308,9 @@ jobs:
       - lint
       - docs-build
       - test
+      - test-memray
       - test-mypy
       - test-fastapi
-      - test-memray
 
     runs-on: ubuntu-latest
 
