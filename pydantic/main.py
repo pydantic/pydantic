@@ -852,7 +852,10 @@ class Validator(Generic[T]):
     @overload
     def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
         ...
-
+    # Adding this overload ensures you can use special forms without getting mypy errors.
+    # For example:
+    #   v: Validator[int | str] = Validator(int | str)
+    # Type checkers don't consider special forms like `int | str` (or `Union[int, str]`) to satisfy a Type[T]
     @overload
     def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
         ...
