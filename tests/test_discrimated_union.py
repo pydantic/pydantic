@@ -423,3 +423,21 @@ def test_generic():
 
     # coercion is done properly
     assert Container[str].parse_obj({'result': {'type': 'Success', 'data': 1}}).result.data == '1'
+
+
+def test_discriminator_with_unhashable_type():
+    """Verify an unhashable discriminator value raises a ValidationError."""
+
+    class Model1(BaseModel):
+        target: Literal['t1']
+        a: int
+
+    class Model2(BaseModel):
+        target: Literal['t2']
+        b: int
+
+    class Foo(BaseModel):
+        foo: Union[Model1, Model2] = Field(discriminator='target')
+
+    with pytest.raises(ValidationError, match=re.escape("No match for discriminator 'target' and value {}")):
+        Foo(**{'foo': {'target': {}}})
