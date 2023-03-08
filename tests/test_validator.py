@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple, Union
 
 import pytest
@@ -39,6 +40,16 @@ def test_types(tp: Any, val: Any, expected: Any):
     assert expected == v(val)
 
 
+IntList = List[int]
+OuterDict = Dict[str, 'IntList']
+
+
+def test_global_namespace_variables():
+    v = Validator(OuterDict)
+    res = v({'foo': [1, '2']})
+    assert res == {'foo': [1, 2]}
+
+
 def test_local_namespace_variables():
     IntList = List[int]
     OuterDict = Dict[str, 'IntList']
@@ -49,18 +60,16 @@ def test_local_namespace_variables():
     assert res == {'foo': [1, 2]}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
 def test_top_level_fwd_ref():
-    IntList = List[int]
-    OuterDict = Dict[str, 'IntList']
-    FwdRef = ForwardRef('Dict[str, List[int]]', module=__name__)
-
+    FwdRef = ForwardRef('OuterDict', module=__name__)
     v: Validator[OuterDict] = Validator(FwdRef)
 
     res = v({'foo': [1, '2']})
     assert res == {'foo': [1, 2]}
 
 
-MyUnion: TypeAlias = 'str | int'
+MyUnion: TypeAlias = 'Union[str, int]'
 
 
 def test_type_alias():

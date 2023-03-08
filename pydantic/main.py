@@ -3,6 +3,7 @@ Logic for creating models, could perhaps be renamed to `models.py`.
 """
 from __future__ import annotations as _annotations
 
+import sys
 import typing
 import warnings
 from abc import ABCMeta
@@ -863,8 +864,10 @@ class Validator(Generic[T]):
             **getattr(__type, 'model_config', {}),
         }
         arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
-        types_namespace = _typing_extra.parent_frame_namespace(parent_depth=2)
-        gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=types_namespace)
+        local_ns = _typing_extra.parent_frame_namespace(parent_depth=2)
+        global_ns = sys._getframe(1).f_globals.copy()
+        global_ns.update(local_ns or {})
+        gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns)
         schema = gen.generate_schema(__type)
         self._validator = SchemaValidator(schema, config=merged_config)
 
