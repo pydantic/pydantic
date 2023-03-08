@@ -65,7 +65,9 @@ class LoggedVar(Generic[T]):
     'value,expected',
     [
         (str, 'str'),
-        pytest.param('foobar', 'str', marks=pytest.mark.xfail(reason='is this really the right behavior?')),
+        ('foobar', 'foobar'),
+        ('SomeForwardRefString', 'SomeForwardRefString'),
+        (List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (Union[str, int], 'Union[str, int]'),
         (list, 'list'),
         (List, 'List'),
@@ -88,7 +90,8 @@ def test_display_as_type(value, expected):
     'value_gen,expected',
     [
         (lambda: str, 'str'),
-        pytest.param(lambda: 'string', 'str', marks=pytest.mark.xfail(reason='is this really the right behavior?')),
+        (lambda: 'SomeForwardRefString', 'SomeForwardRefString'),
+        (lambda: List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (lambda: str | int, 'Union[str, int]'),
         (lambda: list, 'list'),
         (lambda: List, 'List'),
