@@ -1,8 +1,9 @@
 from collections import deque
 from datetime import datetime
 from enum import Enum
+from functools import partial, partialmethod
 from itertools import product
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -1345,3 +1346,32 @@ def test_list_unique_items_with_optional():
         {'loc': ('foo',), 'msg': 'the list has duplicated items', 'type': 'value_error.list.unique_items'},
         {'loc': ('bar',), 'msg': 'the list has duplicated items', 'type': 'value_error.list.unique_items'},
     ]
+
+
+@pytest.mark.parametrize(
+    'func,allow_reuse',
+    [
+        pytest.param(partial, False, id='`partial` and check for reuse'),
+        pytest.param(partial, True, id='`partial` and ignore reuse'),
+        pytest.param(partialmethod, False, id='`partialmethod` and check for reuse'),
+        pytest.param(partialmethod, True, id='`partialmethod` and ignore reuse'),
+    ],
+)
+def test_functool_as_validator(
+    reset_tracked_validators,
+    func: Callable,
+    allow_reuse: bool,
+):
+    def custom_validator(
+        cls,
+        v: Any,
+        allowed: str,
+    ) -> Any:
+        assert v == allowed, f'Only {allowed} allowed as value; given: {v}'
+        return v
+
+    validate = func(custom_validator, allowed='TEXT')
+
+    class TestClass(BaseModel):
+        name: str
+        _custom_validate = validator('name', allow_reuse=allow_reuse)(validate)
