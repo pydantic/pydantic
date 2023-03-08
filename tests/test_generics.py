@@ -1,6 +1,7 @@
 import gc
 import itertools
 import json
+import platform
 import sys
 from enum import Enum, IntEnum
 from typing import (
@@ -313,6 +314,7 @@ def test_cache_keys_are_hashable():
     del models
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
 def test_caches_get_cleaned_up():
     initial_types_cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
