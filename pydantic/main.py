@@ -530,7 +530,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             elif parents_namespace:
                 types_namespace = parents_namespace
 
-            completed = _model_construction.complete_model_class(
+            return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
                 cls.__pydantic_validator_functions__,
@@ -540,8 +540,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 types_namespace=types_namespace,
                 typevars_map=typevars_map,
             )
-
-            return completed
 
     def __iter__(self) -> 'TupleGenerator':
         """
@@ -700,7 +698,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
                 # Doing the rebuild _after_ populating the cache prevents infinite recursion
-                # submodel.model_rebuild(force=True, typevars_map=typevars_map)
                 submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
 
         return submodel

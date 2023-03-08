@@ -2521,7 +2521,6 @@ def test_nested_generic():
     class Model(BaseModel):
         ref: Ref['Model']
 
-    print(Model.__pydantic_core_schema__)
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',

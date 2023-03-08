@@ -33,7 +33,10 @@ from pydantic._internal._generics import _GENERIC_TYPES_CACHE, iter_contained_ty
 
 @pytest.fixture(autouse=True)
 def clean_cache():
-    gc.collect()  # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
+    # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
 
 
 def test_generic_name():
@@ -310,21 +313,30 @@ def test_cache_keys_are_hashable():
     del models
 
 
-@pytest.mark.xfail(reason='Memory leak issue -- see https://github.com/pydantic/pydantic/issues/5136')
 def test_caches_get_cleaned_up():
-    types_cache_size = len(_GENERIC_TYPES_CACHE)
+    initial_types_cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
 
     class MyGenericModel(BaseModel, Generic[T]):
         x: T
 
-    Model = MyGenericModel[int]
-    assert len(_GENERIC_TYPES_CACHE) == types_cache_size + 2
-    del Model
-    gc.collect()
+        model_config = dict(arbitrary_types_allowed=True)
 
-    # TODO: Need to figure out why this is failing
-    assert len(_GENERIC_TYPES_CACHE) == types_cache_size
+    n_types = 200
+    types = []
+    for i in range(n_types):
+
+        class MyType(int):
+            pass
+
+        types.append(MyGenericModel[MyType])  # retain a reference
+
+    assert len(_GENERIC_TYPES_CACHE) == initial_types_cache_size + 3 * n_types
+    types.clear()
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    assert len(_GENERIC_TYPES_CACHE) == initial_types_cache_size
 
 
 def test_generics_work_with_many_parametrized_base_models():
@@ -354,11 +366,8 @@ def test_generics_work_with_many_parametrized_base_models():
         Working = B[m]
         generics.append(Working)
 
-    target_size = cache_size + count_create_models * 3 - 1
-    # I'm seeing some differences in cache size between local and CI, likely due to the new,
-    # more nuanced caching logic; ultimately the _exact_ correctness of the cache size is less important
-    # than validating that it is growing at almost exactly the expected rate.
-    assert len(_GENERIC_TYPES_CACHE) in {target_size, target_size + 3}
+    target_size = cache_size + count_create_models * 3 + 2
+    assert len(_GENERIC_TYPES_CACHE) == target_size
     del models
     del generics
 
@@ -1191,8 +1200,6 @@ def test_deep_generic_with_multiple_inheritance():
 
     ConcreteInnerModel = InnerModel[int, float, str]
 
-    # TODO: Samuel wasn't sure we should be updating the annotations, but I think it may be a good idea
-    #   Need to discuss
     assert ConcreteInnerModel.model_fields['data'].annotation == Dict[int, float]
     assert ConcreteInnerModel.model_fields['stuff'].annotation == List[str]
     assert ConcreteInnerModel.model_fields['extra'].annotation == int
