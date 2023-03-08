@@ -226,7 +226,7 @@ def build_inner_schema(  # noqa: C901
                 global_ns = module.__dict__
 
     self_schema = get_model_self_schema(cls)
-    local_ns = {name: PydanticForwardRef(self_schema, cls)}
+    local_ns = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
