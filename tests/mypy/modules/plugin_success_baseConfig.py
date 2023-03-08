@@ -2,7 +2,6 @@ from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Field, create_model, validator
 from pydantic.dataclasses import dataclass
-from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
@@ -218,7 +217,7 @@ model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
 T = TypeVar('T')
 
 
-class Response(GenericModel, Generic[T]):
+class Response(BaseModel, Generic[T]):
     data: T
     error: Optional[str]
 

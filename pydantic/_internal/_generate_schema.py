@@ -19,10 +19,10 @@ from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
+from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
-from ._utils import get_type_ref
 
 if TYPE_CHECKING:
     from ..main import BaseModel
@@ -245,7 +245,6 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
-
         schema = apply_annotations(schema, field_info.metadata)
 
         if not field_info.is_required():

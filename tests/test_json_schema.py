@@ -41,7 +41,6 @@ from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
-from pydantic.generics import GenericModel
 from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata, model_schema, schema
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.types import (
@@ -2543,13 +2542,12 @@ def test_nested_generic():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - generics')
 def test_nested_generic_model():
     """
-    Test a nested GenericModel
+    Test a nested generic model
     """
 
-    class Box(GenericModel, Generic[T]):
+    class Box(BaseModel, Generic[T]):
         uuid: str
         data: T
 
@@ -2572,7 +2570,6 @@ def test_nested_generic_model():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - generics')
 def test_complex_nested_generic():
     """
     Handle a union of a generic.
@@ -2603,23 +2600,21 @@ def test_complex_nested_generic():
                     'model': {
                         'title': 'Model',
                         'anyOf': [
-                            {'$ref': '#/$defs/Ref'},
-                            {'$ref': '#/$defs/Model'},
+                            {'$ref': '#/$defs/Ref_Model_'},
+                            {'allOf': [{'$ref': '#/$defs/Model'}], 'title': 'Model'},
                         ],
                     },
                 },
                 'required': ['uuid', 'model'],
             },
-            'Ref': {
-                'title': 'Ref',
+            'Ref_Model_': {
+                'title': 'Ref[Model]',
                 'type': 'object',
-                'properties': {
-                    'uuid': {'title': 'Uuid', 'type': 'string'},
-                },
+                'properties': {'uuid': {'title': 'Uuid', 'type': 'string'}},
                 'required': ['uuid'],
             },
         },
-        '$ref': '#/$defs/Model',
+        'allOf': [{'$ref': '#/$defs/Model'}],
     }
 
 

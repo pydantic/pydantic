@@ -2,7 +2,6 @@ from typing import Generic, List, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, validator
 from pydantic.dataclasses import dataclass
-from pydantic.generics import GenericModel
 
 
 class Model(BaseModel):
@@ -129,7 +128,7 @@ class Blah(BaseModel):
 T = TypeVar('T')
 
 
-class Response(GenericModel, Generic[T]):
+class Response(BaseModel, Generic[T]):
     data: T
     error: Optional[str]
 

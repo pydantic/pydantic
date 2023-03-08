@@ -11,8 +11,9 @@ from pydantic_core.core_schema import TypedDictField
 from typing_extensions import TypedDict
 
 from ._internal._core_metadata import CoreMetadataHandler
+from ._internal._core_utils import is_core_schema, is_typed_dict_field
 from ._internal._typing_extra import all_literal_values, is_namedtuple
-from ._internal._utils import get_model, is_core_schema, is_typed_dict_field, lenient_issubclass
+from ._internal._utils import get_model, lenient_issubclass
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:

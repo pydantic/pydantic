@@ -13,9 +13,10 @@ from weakref import WeakValueDictionary
 import typing_extensions
 from pydantic_core import core_schema
 
+from ._core_utils import get_type_ref
 from ._forward_ref import PydanticForwardRef
 from ._typing_extra import TypeVarType, typing_base
-from ._utils import all_identical, get_type_ref, is_basemodel
+from ._utils import all_identical, is_basemodel
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]

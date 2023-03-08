@@ -549,7 +549,7 @@ def test_custom_generic_naming():
         value: Optional[T]
 
         @classmethod
-        def model_concrete_name(cls, params: Tuple[Type[Any], ...]) -> str:
+        def model_parametrized_name(cls, params: Tuple[Type[Any], ...]) -> str:
             param_names = [param.__name__ if hasattr(param, '__name__') else str(param) for param in params]
             title = param_names[0].title()
             return f'Optional{title}Wrapper'

@@ -2,10 +2,43 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import Any, Callable
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
-from typing_extensions import get_args
+from typing_extensions import TypeGuard, get_args
+
+from . import _repr
+
+
+def is_typed_dict_field(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard[core_schema.TypedDictField]:
+    return 'type' not in schema
+
+
+def is_core_schema(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard[CoreSchema]:
+    return 'type' in schema
+
+
+def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
+    """
+    Produces the ref to be used for this type by pydantic_core's core schemas.
+
+    This `args_override` argument was added for the purpose of creating valid recursive references
+    when creating generic models without needing to create a concrete class.
+    """
+    origin = getattr(type_, '__pydantic_generic_origin__', None) or type_
+    args = getattr(type_, '__pydantic_generic_args__') or args_override or ()
+
+    module_name = getattr(origin, '__module__', '<No __module__>')
+    qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
+    type_ref = f'{module_name}.{qualname}:{id(origin)}'
+
+    arg_refs: list[str] = []
+    for arg in args:
+        arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
+        arg_refs.append(arg_ref)
+    if arg_refs:
+        type_ref = f'{type_ref}[{",".join(arg_refs)}]'
+    return type_ref
 
 
 def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:

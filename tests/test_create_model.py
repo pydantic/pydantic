@@ -1,10 +1,9 @@
-from typing import Generic, Optional, Tuple, TypeVar
+from typing import Optional, Tuple
 
 import pytest
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors, validator
 from pydantic.fields import ModelPrivateAttr
-from pydantic.generics import GenericModel
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -225,21 +224,6 @@ def test_config_field_info_create_model():
 
     m2 = create_model('M2', __config__=config, a=(str, Field(...)))
     assert m2.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_generics_model():
-    T = TypeVar('T')
-
-    class TestGenericModel(GenericModel):
-        pass
-
-    AAModel = create_model(
-        'AAModel', __base__=(TestGenericModel, Generic[T]), __cls_kwargs__={'from_attributes': True}, aa=(int, Field(0))
-    )
-    result = AAModel[int](aa=1)
-    assert result.aa == 1
-    assert result.model_config['from_attributes'] is True
 
 
 @pytest.mark.xfail(reason='working on V2')

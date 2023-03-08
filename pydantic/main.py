@@ -120,8 +120,6 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
-            # TODO: cls.__concrete__ has been removed -- do we need to retain this for v1 compatibility?
-            # TODO: cls.__parameters__ may be removed -- do we need to retain this for v1 compatibility?
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
@@ -694,7 +692,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 args = tuple(replace_types(arg, typevars_map) for arg in parent_args)
 
             origin = cls.__pydantic_generic_origin__ or cls
-            model_name = origin.model_concrete_name(args)
+            model_name = origin.model_parametrized_name(args)
             params = tuple(
                 {param: None for param in iter_contained_typevars(typevars_map.values())}
             )  # use dict as ordered set
@@ -718,8 +716,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return submodel
 
     @classmethod
-    def model_concrete_name(cls, params: tuple[type[Any], ...]) -> str:
-        """Compute class name for child classes.
+    def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
+        """
+        Compute class name for parametrizations of generic classes.
 
         :param params: Tuple of types of the class . Given a generic class
             `Model` with 2 type variables and a concrete model `Model[str, int]`,

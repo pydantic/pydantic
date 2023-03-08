@@ -261,7 +261,7 @@ def build_inner_schema(  # noqa: C901
         generic_origin = cls.__pydantic_generic_origin__
         for base in bases:
             if hasattr(base, ann_name):
-                if base is not generic_origin:  # Don't warn about shadowing of attributes in parametrized generics
+                if base is not generic_origin:  # Don't warn about "shadowing" of attributes in parametrized generics
                     raise NameError(
                         f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
                         f'you might want to use a different field name with "alias=\'{ann_name}\'".'

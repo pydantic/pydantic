@@ -5,7 +5,6 @@ import pytest
 
 from pydantic import BaseModel, ConfigDict, Extra, PrivateAttr
 from pydantic.fields import Undefined
-from pydantic.generics import GenericModel
 
 
 def test_private_attribute():
@@ -203,11 +202,10 @@ def test_config_override_init():
     assert m._private_attr == 123
 
 
-@pytest.mark.xfail(reason='generics not implemented')
 def test_generic_private_attribute():
     T = TypeVar('T')
 
-    class Model(GenericModel, Generic[T]):
+    class Model(BaseModel, Generic[T]):
         value: T
         _private_value: T
 
