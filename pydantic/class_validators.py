@@ -1,6 +1,6 @@
 import warnings
 from collections import ChainMap
-from functools import wraps
+from functools import partial, partialmethod, wraps
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -147,7 +147,11 @@ def _prepare_validator(function: AnyCallable, allow_reuse: bool) -> 'AnyClassMet
     """
     f_cls = function if isinstance(function, classmethod) else classmethod(function)
     if not in_ipython() and not allow_reuse:
-        ref = f_cls.__func__.__module__ + '.' + f_cls.__func__.__qualname__
+        ref = (
+            getattr(f_cls.__func__, '__module__', '<No __module__>')
+            + '.'
+            + getattr(f_cls.__func__, '__qualname__', f'<No __qualname__: id:{id(f_cls.__func__)}>')
+        )
         if ref in _FUNCS:
             raise ConfigError(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
@@ -165,14 +169,18 @@ class ValidatorGroup:
         if name != ROOT_KEY:
             validators += self.validators.get('*', [])
         if validators:
-            return {v.func.__name__: v for v in validators}
+            return {getattr(v.func, '__name__', f'<No __name__: id:{id(v.func)}>'): v for v in validators}
         else:
             return None
 
     def check_for_unused(self) -> None:
         unused_validators = set(
             chain.from_iterable(
-                (v.func.__name__ for v in self.validators[f] if v.check_fields)
+                (
+                    getattr(v.func, '__name__', f'<No __name__: id:{id(v.func)}>')
+                    for v in self.validators[f]
+                    if v.check_fields
+                )
                 for f in (self.validators.keys() - self.used_validators)
             )
         )
@@ -243,8 +251,19 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
     """
     from inspect import signature
 
-    sig = signature(validator)
-    args = list(sig.parameters.keys())
+    if not isinstance(validator, (partial, partialmethod)):
+        # This should be the default case, so overhead is reduced
+        sig = signature(validator)
+        args = list(sig.parameters.keys())
+    else:
+        # Fix the generated argument lists of partial methods
+        sig = signature(validator.func)
+        args = [
+            k
+            for k in signature(validator.func).parameters.keys()
+            if k not in validator.args | validator.keywords.keys()
+        ]
+
     first_arg = args.pop(0)
     if first_arg == 'self':
         raise ConfigError(
