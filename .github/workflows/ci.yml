@@ -114,6 +114,7 @@ jobs:
 
       - name: install deps
         run: |
+          pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
           pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
           pip install pytest-memray==1.4.0
 
