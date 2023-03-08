@@ -1078,6 +1078,7 @@ def test_annotation_inheritance():
         class D(A):
             integer = 'G'
 
+    # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
     assert str(exc_info.value) == (
         'The type of D.integer differs from the new default value; '
         'if you wish to change the type of this field, please use a type annotation'
@@ -1166,6 +1167,7 @@ def test_unable_to_infer():
         class InvalidDefinitionModel(BaseModel):
             x = None
 
+    # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
@@ -1340,6 +1342,8 @@ def test_nested_init():
         self: str
         nest: NestedModel
 
+    # TODO: Do we want any changes to this behavior in v2? (Currently the __init__-override is not called)
+    #   We could detect if `__init__` has been overridden if necessary...
     m = TopModel.model_validate(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
@@ -1552,7 +1556,7 @@ def test_any_none():
     assert dict(m) == {'foo': None}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - typevar-handling will be improved after merging generics')
 def test_type_var_any():
     Foobar = TypeVar('Foobar')
 
@@ -1569,7 +1573,7 @@ def test_type_var_any():
     assert MyModel(foo=123).foo == 123
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - typevar-handling will be improved after merging generics')
 def test_type_var_constraint():
     Foobar = TypeVar('Foobar', int, str)
 
@@ -1590,7 +1594,7 @@ def test_type_var_constraint():
     assert MyModel(foo=123).foo == 123
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - typevar-handling will be improved after merging generics')
 def test_type_var_bound():
     Foobar = TypeVar('Foobar', bound=int)
 
@@ -1634,7 +1638,7 @@ def test_dict_any():
     assert m.foo == {'x': 'a', 'y': None}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validators')
 def test_modify_fields():
     class Foo(BaseModel):
         foo: List[List[int]]
@@ -1646,8 +1650,8 @@ def test_modify_fields():
     class Bar(Foo):
         pass
 
-    assert repr(Foo.model_fields['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
-    assert repr(Bar.model_fields['foo']) == "ModelField(name='foo', type=List[List[int]], required=True)"
+    assert repr(Foo.model_fields['foo']) == 'FieldInfo(annotation=List[List[int]], required=True)'
+    assert repr(Bar.model_fields['foo']) == 'FieldInfo(annotation=List[List[int]], required=True)'
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
 
@@ -1738,7 +1742,7 @@ def test_repr_method_inheritance():
     assert repr(Bar()) == '7'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validators')
 def test_optional_validator():
     val_calls = []
 
@@ -1750,13 +1754,15 @@ def test_optional_validator():
             val_calls.append(v)
             return v
 
-    assert Model().model_dump() == {'something': None}
+    with pytest.raises(ValidationError) as exc_info:
+        assert Model().model_dump() == {'something': None}
+    assert exc_info.value.errors() == [{'input': {}, 'loc': ('something',), 'msg': 'Field required', 'type': 'missing'}]
+
     assert Model(something=None).model_dump() == {'something': None}
     assert Model(something='hello').model_dump() == {'something': 'hello'}
     assert val_calls == [None, 'hello']
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_required_optional():
     class Model(BaseModel):
         nullable1: Optional[int] = ...
@@ -1765,26 +1771,34 @@ def test_required_optional():
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors() == [
-        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable1=1)
-    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [
+        {'input': {'nullable1': 1}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'}
+    ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable2=2)
-    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [
+        {'input': {'nullable2': 2}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'}
+    ]
     assert Model(nullable1=None, nullable2=None).model_dump() == {'nullable1': None, 'nullable2': None}
     assert Model(nullable1=1, nullable2=2).model_dump() == {'nullable1': 1, 'nullable2': 2}
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable1='some text')
     assert exc_info.value.errors() == [
-        {'loc': ('nullable1',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {
+            'input': 'some text',
+            'loc': ('nullable1',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {'input': {'nullable1': 'some text'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_required_any():
     class Model(BaseModel):
         optional1: Any
@@ -1795,22 +1809,38 @@ def test_required_any():
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors() == [
-        {'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable1='a')
-    assert exc_info.value.errors() == [{'loc': ('nullable2',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [
+        {'input': {'nullable1': 'a'}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable1': 'a'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
+    ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable2=False)
-    assert exc_info.value.errors() == [{'loc': ('nullable1',), 'msg': 'field required', 'type': 'value_error.missing'}]
-    assert Model(nullable1=None, nullable2=None).model_dump() == {
-        'optional1': None,
-        'optional2': None,
-        'nullable1': None,
-        'nullable2': None,
-    }
-    assert Model(nullable1=1, nullable2='two').model_dump() == {
+    assert exc_info.value.errors() == [
+        {'input': {'nullable2': False}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable2': False}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        assert Model(nullable1=None, nullable2=None).model_dump() == {
+            'optional1': None,
+            'optional2': None,
+            'nullable1': None,
+            'nullable2': None,
+        }
+    assert exc_info.value.errors() == [
+        {
+            'input': {'nullable1': None, 'nullable2': None},
+            'loc': ('optional1',),
+            'msg': 'Field required',
+            'type': 'missing',
+        }
+    ]
+    assert Model(optional1=None, nullable1=1, nullable2='two').model_dump() == {
         'optional1': None,
         'optional2': None,
         'nullable1': 1,
@@ -1862,11 +1892,25 @@ def test_custom_generic_validators():
         gen: MyGen[str, bool]
         gen2: MyGen
 
+        model_config = dict(arbitrary_types_allowed=True)
+
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foo', gen='invalid', gen2='invalid')
     assert exc_info.value.errors() == [
-        {'loc': ('gen',), 'msg': 'Invalid value', 'type': 'type_error'},
-        {'loc': ('gen2',), 'msg': 'Invalid value', 'type': 'type_error'},
+        {
+            'ctx': {'class': 'test_custom_generic_validators.<locals>.MyGen'},
+            'input': 'invalid',
+            'loc': ('gen',),
+            'msg': 'Input should be an instance of ' 'test_custom_generic_validators.<locals>.MyGen',
+            'type': 'is_instance_of',
+        },
+        {
+            'ctx': {'class': 'test_custom_generic_validators.<locals>.MyGen'},
+            'input': 'invalid',
+            'loc': ('gen2',),
+            'msg': 'Input should be an instance of ' 'test_custom_generic_validators.<locals>.MyGen',
+            'type': 'is_instance_of',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1883,7 +1927,6 @@ def test_custom_generic_validators():
     assert m.gen2.t2 == 2
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_arbitrary_allowed():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1897,17 +1940,17 @@ def test_custom_generic_arbitrary_allowed():
         a: str
         gen: MyGen[str, bool]
 
-        class Config:
-            arbitrary_types_allowed = True
+        model_config = dict(arbitrary_types_allowed=True)
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foo', gen='invalid')
     assert exc_info.value.errors() == [
         {
+            'ctx': {'class': 'test_custom_generic_arbitrary_allowed.<locals>.MyGen'},
+            'input': 'invalid',
             'loc': ('gen',),
-            'msg': 'instance of MyGen expected',
-            'type': 'type_error.arbitrary_type',
-            'ctx': {'expected_arbitrary_type': 'MyGen'},
+            'msg': 'Input should be an instance of ' 'test_custom_generic_arbitrary_allowed.<locals>.MyGen',
+            'type': 'is_instance_of',
         }
     ]
 
@@ -1923,7 +1966,6 @@ def test_custom_generic_arbitrary_allowed():
     assert m.gen.t2 is True
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_custom_generic_disallowed():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1933,7 +1975,10 @@ def test_custom_generic_disallowed():
             self.t1 = t1
             self.t2 = t2
 
-    match = r'Fields of type(.*)are not supported.'
+    match = (
+        r'Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). '
+        r'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
+    )
     with pytest.raises(TypeError, match=match):
 
         class Model(BaseModel):
@@ -1941,33 +1986,42 @@ def test_custom_generic_disallowed():
             gen: MyGen[str, bool]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_hashable_required():
     class Model(BaseModel):
         v: Hashable
+
+        # TODO: Should arbitrary_types_allowed be necessary for Hashable?
+        model_config = dict(arbitrary_types_allowed=True)
 
     Model(v=None)
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[])
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+        {
+            'ctx': {'class': 'Hashable'},
+            'input': [],
+            'loc': ('v',),
+            'msg': 'Input should be an instance of Hashable',
+            'type': 'is_instance_of',
+        }
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model()
-    assert exc_info.value.errors() == [{'loc': ('v',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [{'input': {}, 'loc': ('v',), 'msg': 'Field required', 'type': 'missing'}]
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('default', [1, None])
 def test_hashable_optional(default):
     class Model(BaseModel):
         v: Hashable = default
 
+        model_config = dict(arbitrary_types_allowed=True)
+
     Model(v=None)
     Model()
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validators')
 def test_default_factory_called_once():
     """It should never call `default_factory` more than once even when `validate_all` is set"""
 
@@ -1997,7 +2051,7 @@ def test_default_factory_called_once():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validators')
 def test_default_factory_validator_child():
     class Parent(BaseModel):
         foo: List[str] = Field(default_factory=list)
@@ -2014,7 +2068,6 @@ def test_default_factory_validator_child():
     assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_resolve_annotations_module_missing(tmp_path):
     # see https://github.com/pydantic/pydantic/issues/2363
     file_path = tmp_path / 'module_to_load.py'
@@ -2024,7 +2077,7 @@ def test_resolve_annotations_module_missing(tmp_path):
 from pydantic import BaseModel
 class User(BaseModel):
     id: int
-    name = 'Jane Doe'
+    name: str = 'Jane Doe'
 """
     )
 
@@ -2043,38 +2096,7 @@ def test_iter_coverage():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_config_field_info():
-    class Foo(BaseModel):
-        model_config = ConfigDict(fields={'a': {'description': 'descr'}})
-        a: str = Field(...)
-
-    assert Foo.model_json_schema(by_alias=True)['properties'] == {
-        'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
-    }
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_config_field_info_alias():
-    class Foo(BaseModel):
-        model_config = ConfigDict(fields={'a': {'alias': 'b'}})
-        a: str = Field(...)
-
-    assert Foo.model_json_schema(by_alias=True)['properties'] == {'b': {'title': 'B', 'type': 'string'}}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_config_field_info_merge():
-    class Foo(BaseModel):
-        model_config = ConfigDict(fields={'a': {'bar': 'Bar'}})
-        a: str = Field(..., foo='Foo')
-
-    assert Foo.model_json_schema(by_alias=True)['properties'] == {
-        'a': {'bar': 'Bar', 'foo': 'Foo', 'title': 'A', 'type': 'string'}
-    }
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_config_field_info_frozen():
+def test_frozen_config_and_field():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)
         a: str = Field(...)
@@ -2135,6 +2157,7 @@ def test_int_subclass():
             return self
 
     m = MyModel(my_int=IntSubclass(123))
+    # TODO: Is this still the behavior we want in v2? (Currently m.my_int.__class__ is int)
     assert m.my_int.__class__ == IntSubclass
 
 
@@ -2161,6 +2184,12 @@ def test_long_int():
     class Model(BaseModel):
         x: int
 
+    # TODO: The next line now raises the following error:
+    #     E       pydantic_core._pydantic_core.ValidationError: 1 validation error for Model
+    #     E       x
+    #     E         Input should be a finite number [type=finite_number,
+    #     input_value='111111111111111111111111...11111111111111111111111', input_type=str]
+    #   Do we need to resolve this? How hard would that be in pydantic_core? Is it worth it?
     assert Model(x='1' * 4_300).x == int('1' * 4_300)
     assert Model(x=b'1' * 4_300).x == int('1' * 4_300)
     assert Model(x=bytearray(b'1' * 4_300)).x == int('1' * 4_300)
