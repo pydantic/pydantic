@@ -23,7 +23,7 @@ if sys.version_info >= (3, 10):
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-GenericTypesCacheKey = Tuple[Type[Any], Any, Tuple[Any, ...]]
+GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
@@ -261,23 +261,67 @@ def recursively_defined_type_refs() -> set[str]:
 _GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
-def _cache_key(cls: type[BaseModel], _params: Any) -> GenericTypesCacheKey:
-    # TODO: What is happening with args here?
-    #   Note: get_args always returns () if _params is a tuple, and
-    #   if _params is a type, _params and (_params,) should have the same meaning as arguments to __class_getitem__.
-    #   So something seems suspicious..
-    args = typing_extensions.get_args(_params)
-    # python returns a list for Callables, which is not hashable
-    if len(args) == 2 and isinstance(args[0], list):
-        args = (tuple(args[0]), args[1])
-    return cls, _params, args
+def _union_orderings_key(typevar_values: Any) -> Any:
+    """
+    This is intended to help differentiate between Union types with the same arguments in different order.
+    """
+    if isinstance(typevar_values, tuple):
+        args_data = []
+        for value in typevar_values:
+            args_data.append(_union_orderings_key(value))
+        return tuple(args_data)
+    elif typing_extensions.get_origin(typevar_values) is typing.Union:
+        return get_args(typevar_values)
+    else:
+        return ()
 
 
-def set_cached_generic_type(parent: type[BaseModel], typevar_values: tuple[Any, ...], type_: type[BaseModel]) -> None:
-    _GENERIC_TYPES_CACHE[_cache_key(parent, typevar_values)] = type_
+def _early_cache_key(cls: type[BaseModel], typevar_values: Any) -> GenericTypesCacheKey:
+    """
+    This is intended for minimal computational overhead during lookups of cached types.
+
+    Note that this is overly simplistic, and it's possible that two different cls/typevar_values
+    inputs would ultimately result in the same type being created in BaseModel.__class_getitem__.
+    To handle this, we have a fallback _late_cache_key that is checked later if the _early_cache_key
+    lookup fails, and should result in a cache hit _precisely_ when the inputs to __class_getitem__
+    would result in the same type.
+    """
+    return cls, typevar_values, _union_orderings_key(typevar_values)
+
+
+def _late_cache_key(origin: type[BaseModel], args: tuple[Any, ...], typevar_values: Any) -> GenericTypesCacheKey:
+    """
+    This is intended for use later in the process of creating a new type, when we have more information
+    about the exact args that will be passed. If it turns out that a different set of inputs to
+    __class_getitem__ resulted in the same inputs to the generic type creation process, we can still
+    return the cached type, and update the cache with the _early_cache_key as well.
+    """
+    # Put the _union_orderings_key at the start here to ensure there cannot be a collision with an _early_cache_key
+    return _union_orderings_key(typevar_values), origin, args
+
+
+def set_cached_generic_type(
+    parent: type[BaseModel],
+    typevar_values: tuple[Any, ...],
+    type_: type[BaseModel],
+    origin: type[BaseModel] | None = None,
+    args: tuple[Any, ...] | None = None,
+) -> None:
+    _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values)] = type_
     if len(typevar_values) == 1:
-        _GENERIC_TYPES_CACHE[_cache_key(parent, typevar_values[0])] = type_
+        _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values[0])] = type_
+    if origin and args:
+        _GENERIC_TYPES_CACHE[_late_cache_key(origin, args, typevar_values)] = type_
 
 
-def get_cached_generic_type(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
-    return _GENERIC_TYPES_CACHE.get(_cache_key(parent, typevar_values))
+def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
+    return _GENERIC_TYPES_CACHE.get(_early_cache_key(parent, typevar_values))
+
+
+def get_cached_generic_type_late(
+    parent: type[BaseModel], typevar_values: Any, origin: type[BaseModel], args: tuple[Any, ...]
+) -> type[BaseModel] | None:
+    cached = _GENERIC_TYPES_CACHE.get(_late_cache_key(origin, args, typevar_values))
+    if cached is not None:
+        set_cached_generic_type(parent, typevar_values, cached, origin, args)
+    return cached

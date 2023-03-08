@@ -22,7 +22,8 @@ from ._internal._generics import (
     check_parameters_count,
     create_generic_submodel,
     generic_recursion_self_type,
-    get_cached_generic_type,
+    get_cached_generic_type_early,
+    get_cached_generic_type_late,
     is_generic_model,
     iter_contained_typevars,
     replace_types,
@@ -664,7 +665,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
     ) -> type[BaseModel] | PydanticForwardRef:
-        cached = get_cached_generic_type(cls, typevar_values)
+        cached = get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
             return cached
 
@@ -703,10 +704,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 if maybe_self_type is not None:
                     return maybe_self_type
 
+                cached = get_cached_generic_type_late(cls, typevar_values, origin, args)
+                if cached is not None:
+                    return cached
                 submodel = create_generic_submodel(model_name, origin, args, params)
 
                 # Update cache
-                set_cached_generic_type(cls, typevar_values, submodel)
+                set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
                 # Doing the rebuild _after_ populating the cache prevents infinite recursion
                 # submodel.model_rebuild(force=True, typevars_map=typevars_map)

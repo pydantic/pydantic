@@ -273,9 +273,9 @@ def test_cover_cache():
     models = []  # keep references to models to get cache size
 
     models.append(Model[int])  # adds both with-tuple and without-tuple version to cache
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 3
     models.append(Model[int])  # uses the cache
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 3
     del models
 
 
@@ -293,20 +293,20 @@ def test_cache_keys_are_hashable():
     models = []  # keep references to models to get cache size
     models.append(Simple)
 
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 2
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 3
     # Nested Callables
     models.append(MyGenericModel[Callable[[C], Iterable[str]]])
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 4
-    models.append(MyGenericModel[Callable[[Simple], Iterable[int]]])
     assert len(_GENERIC_TYPES_CACHE) == cache_size + 6
+    models.append(MyGenericModel[Callable[[Simple], Iterable[int]]])
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 9
     models.append(MyGenericModel[Callable[[MyGenericModel[C]], Iterable[int]]])
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 10
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
 
     class Model(BaseModel):
         x: MyGenericModel[Callable[[C], Iterable[str]]] = Field(...)
 
     models.append(Model)
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + 10
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + 15
     del models
 
 
@@ -354,7 +354,7 @@ def test_generics_work_with_many_parametrized_base_models():
         Working = B[m]
         generics.append(Working)
 
-    assert len(_GENERIC_TYPES_CACHE) == cache_size + count_create_models * 2 + 1
+    assert len(_GENERIC_TYPES_CACHE) == cache_size + count_create_models * 3 - 1
     del models
     del generics
 
@@ -1010,8 +1010,7 @@ def test_replace_types():
     assert replace_types(Callable[[int, str, T], T], {T: int}) == Callable[[int, str, int], int]
     assert replace_types(T, {}) is T
     assert replace_types(Model[List[T]], {T: int}) == Model[List[int]]
-    # TODO: The next line is failing, we should probably fix whatever is misbehaving with the generic type cache:
-    # assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
+    assert replace_types(Model[List[T]], {T: int}) == Model[List[T]][int]
     assert (
         replace_types(Model[List[T]], {T: int}).model_fields['a'].annotation
         == Model[List[T]][int].model_fields['a'].annotation

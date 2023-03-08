@@ -13,7 +13,7 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     This function walks a schema recursively, replacing all but the first occurrence of each ref with
     a definition-ref schema referencing that ref.
 
-    This makes the fundamental assemption that any time two schemas have the same ref, occurrences
+    This makes the fundamental assumption that any time two schemas have the same ref, occurrences
     after the first can safely be replaced.
 
     In most cases, schemas with the same ref should not actually be produced, or should be completely identical.
