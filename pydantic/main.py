@@ -6,7 +6,6 @@ from __future__ import annotations as _annotations
 import typing
 import warnings
 from abc import ABCMeta
-from contextvars import ContextVar
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -155,11 +154,6 @@ class ModelMetaclass(ABCMeta):
         See #3829 and python/cpython#92810
         """
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
-
-
-# TODO: Need to add some comments documenting how/why this ContextVar is used
-#   Ideally move to the _generics module and wrap in a context manager that conveys intent
-generic_recursion: ContextVar[dict[Any, int] | None] = ContextVar('generic_recursion', default=None)
 
 
 class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
