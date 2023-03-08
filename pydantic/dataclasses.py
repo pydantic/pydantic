@@ -31,6 +31,7 @@ This means we **don't want to create a new dataclass that inherits from it**
 The trick is to create a wrapper around `M` that will act as a proxy to trigger
 validation without altering default `M` behaviour.
 """
+import dataclasses
 import sys
 from contextlib import contextmanager
 from functools import wraps
@@ -105,7 +106,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         *,
@@ -121,7 +122,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -140,7 +141,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         *,
@@ -155,7 +156,7 @@ else:
     ) -> Callable[[Type[_T]], 'DataclassClassOrWrapper']:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -172,7 +173,7 @@ else:
         ...
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@dataclass_transform(field_specifiers=(dataclasses.field, Field))
 def dataclass(
     _cls: Optional[Type[_T]] = None,
     *,
@@ -195,8 +196,6 @@ def dataclass(
     the_config = get_config(config)
 
     def wrap(cls: Type[Any]) -> 'DataclassClassOrWrapper':
-        import dataclasses
-
         if is_builtin_dataclass(cls) and _extra_dc_args(_cls) == _extra_dc_args(_cls.__bases__[0]):  # type: ignore
             dc_cls_doc = ''
             dc_cls = DataclassProxy(cls)
@@ -314,7 +313,6 @@ def _add_pydantic_validation_attributes(  # noqa: C901 (ignore complexity)
             if hasattr(self, '__post_init_post_parse__'):
                 # We need to find again the initvars. To do that we use `__dataclass_fields__` instead of
                 # public method `dataclasses.fields`
-                import dataclasses
 
                 # get all initvars and their default values
                 initvars_and_values: Dict[str, Any] = {}
@@ -364,8 +362,6 @@ def create_pydantic_model_from_dataclass(
     config: Optional[ConfigDict] = None,
     dc_cls_doc: Optional[str] = None,
 ) -> Type['BaseModel']:
-    import dataclasses
-
     if config is None:
         config = ConfigDict()
 
@@ -467,8 +463,6 @@ def is_builtin_dataclass(_cls: Type[Any]) -> bool:
     In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
     which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
     """
-    import dataclasses
-
     return (
         dataclasses.is_dataclass(_cls)
         and not hasattr(_cls, '__pydantic_model__')
