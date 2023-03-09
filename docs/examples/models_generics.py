@@ -1,7 +1,6 @@
 from typing import Generic, TypeVar, Optional, List
 
 from pydantic import BaseModel, validator, ValidationError
-from pydantic.generics import GenericModel
 
 DataT = TypeVar('DataT')
 
@@ -16,7 +15,7 @@ class DataModel(BaseModel):
     people: List[str]
 
 
-class Response(GenericModel, Generic[DataT]):
+class Response(BaseModel, Generic[DataT]):
     data: Optional[DataT]
     error: Optional[Error]
 

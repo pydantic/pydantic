@@ -1,10 +1,10 @@
 from typing import TypeVar, Generic
-from pydantic.generics import GenericModel
+from pydantic import BaseModel
 
 TypeX = TypeVar('TypeX')
 
 
-class BaseClass(GenericModel, Generic[TypeX]):
+class BaseClass(BaseModel, Generic[TypeX]):
     X: TypeX
 
 

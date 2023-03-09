@@ -7,7 +7,6 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic.errors import PydanticUserError
-from pydantic.generics import GenericModel
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -406,7 +405,7 @@ def test_nested():
 def test_generic():
     T = TypeVar('T')
 
-    class Success(GenericModel, Generic[T]):
+    class Success(BaseModel, Generic[T]):
         type: Literal['Success'] = 'Success'
         data: T
 
@@ -414,7 +413,7 @@ def test_generic():
         type: Literal['Failure'] = 'Failure'
         error_message: str
 
-    class Container(GenericModel, Generic[T]):
+    class Container(BaseModel, Generic[T]):
         result: Union[Success[T], Failure] = Field(discriminator='type')
 
     with pytest.raises(ValidationError, match="Discriminator 'type' is missing in value"):
