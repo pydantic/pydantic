@@ -6,8 +6,8 @@ from .conftest import PyAndJson
 
 
 def test_after(py_and_json: PyAndJson):
-    def f(input_value, *, context, **kwargs):
-        return input_value + f'| context: {context}'
+    def f(input_value, info):
+        return input_value + f'| context: {info.context}'
 
     v = py_and_json({'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}})
 
@@ -17,8 +17,8 @@ def test_after(py_and_json: PyAndJson):
 
 
 def test_mutable_context(py_and_json: PyAndJson):
-    def f(input_value, *, context, **kwargs):
-        context['foo'] = input_value
+    def f(input_value, info):
+        info.context['foo'] = input_value
         return input_value
 
     v = py_and_json({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
@@ -28,13 +28,13 @@ def test_mutable_context(py_and_json: PyAndJson):
 
 
 def test_typed_dict(py_and_json: PyAndJson):
-    def f1(input_value, *, context, **kwargs):
-        context['f1'] = input_value
-        return input_value + f'| context: {context}'
+    def f1(input_value, info):
+        info.context['f1'] = input_value
+        return input_value + f'| context: {info.context}'
 
-    def f2(input_value, *, context, **kwargs):
-        context['f2'] = input_value
-        return input_value + f'| context: {context}'
+    def f2(input_value, info):
+        info.context['f2'] = input_value
+        return input_value + f'| context: {info.context}'
 
     v = py_and_json(
         {
@@ -53,8 +53,8 @@ def test_typed_dict(py_and_json: PyAndJson):
 
 
 def test_wrap(py_and_json: PyAndJson):
-    def f(input_value, *, validator, context, **kwargs):
-        return validator(input_value) + f'| context: {context}'
+    def f(input_value, validator, info):
+        return validator(input_value) + f'| context: {info.context}'
 
     v = py_and_json({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
 
@@ -64,8 +64,8 @@ def test_wrap(py_and_json: PyAndJson):
 
 
 def test_isinstance(py_and_json: PyAndJson):
-    def f(input_value, *, validator, context, **kwargs):
-        if 'error' in context:
+    def f(input_value, validator, info):
+        if 'error' in info.context:
             raise ValueError('wrong')
         return validator(input_value)
 
@@ -92,13 +92,13 @@ def test_isinstance(py_and_json: PyAndJson):
 
 
 def test_validate_assignment_with_context():
-    def f1(input_value, *, context, **kwargs):
-        context['f1'] = input_value
-        return input_value + f'| context: {context}'
+    def f1(input_value, info):
+        info.context['f1'] = input_value
+        return input_value + f'| context: {info.context}'
 
-    def f2(input_value, *, context, **kwargs):
-        context['f2'] = input_value
-        return input_value + f'| context: {context}'
+    def f2(input_value, info):
+        info.context['f2'] = input_value
+        return input_value + f'| context: {info.context}'
 
     v = SchemaValidator(
         {

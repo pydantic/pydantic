@@ -605,7 +605,7 @@ def test_no_args(py_and_json: PyAndJson, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
-def double_or_bust(input_value, **kwargs):
+def double_or_bust(input_value, info):
     if input_value == 1:
         raise RuntimeError('bust')
     return input_value * 2

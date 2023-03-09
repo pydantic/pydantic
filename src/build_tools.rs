@@ -203,13 +203,6 @@ pub fn function_name(f: &PyAny) -> PyResult<String> {
     }
 }
 
-macro_rules! kwargs {
-    ($py:ident, $($k:ident: $v:expr),* $(,)?) => {{
-        Some(pyo3::types::IntoPyDict::into_py_dict([$((stringify!($k), $v.into_py($py)),)*], $py).into())
-    }};
-}
-pub(crate) use kwargs;
-
 pub fn safe_repr(v: &PyAny) -> Cow<str> {
     match v.repr() {
         Ok(r) => r.to_string_lossy(),
