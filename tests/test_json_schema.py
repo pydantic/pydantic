@@ -2713,7 +2713,6 @@ def test_discriminated_union():
                     {'$ref': '#/$defs/Cat'},
                     {'$ref': '#/$defs/Dog'},
                     {'$ref': '#/$defs/Lizard'},
-                    {'$ref': '#/$defs/Lizard'},
                 ],
                 'title': 'Pet',
             }
@@ -2772,7 +2771,6 @@ def test_discriminated_annotated_union():
                 'oneOf': [
                     {'$ref': '#/$defs/Cat'},
                     {'$ref': '#/$defs/Dog'},
-                    {'$ref': '#/$defs/Lizard'},
                     {'$ref': '#/$defs/Lizard'},
                 ],
                 'title': 'Pet',

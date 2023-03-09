@@ -4,7 +4,7 @@ import math
 import re
 from dataclasses import is_dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, NewType, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, Iterable, List, NewType, Sequence, Tuple, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from .main import BaseModel
 
 JsonSchemaValue = Dict[str, Any]
+Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+HashableJson = Union[Tuple[Tuple[str, Any], ...], Tuple[Any, ...], str, int, float, bool, None]
 
 
 # ##### JSON Schema Metadata Manipulation #####
@@ -506,7 +508,7 @@ class GenerateJsonSchema:
                 if str(v) in generated:  # PydanticInvalidForJsonSchema may have been raised above
                     generated[str(k)] = generated[str(v)]
 
-        json_schema: JsonSchemaValue = {'oneOf': list(generated.values())}
+        json_schema: JsonSchemaValue = {'oneOf': _deduplicate_schemas(generated.values())}
 
         # This reflects the v1 behavior, but we may want to only include the discriminator based on dialect / etc.
         if 'discriminator' in schema and isinstance(schema['discriminator'], str):
@@ -1071,3 +1073,16 @@ def model_schema(
 ) -> dict[str, Any]:
     model = _utils.get_model(model)
     return model.model_json_schema(by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
+
+
+def _deduplicate_schemas(schemas: Iterable[Json]) -> list[Json]:
+    return list({_make_json_hashable(schema): schema for schema in schemas}.values())
+
+
+def _make_json_hashable(value: Json) -> HashableJson:
+    if isinstance(value, dict):
+        return tuple(sorted((k, _make_json_hashable(v)) for k, v in value.items()))
+    elif isinstance(value, list):
+        return tuple(_make_json_hashable(v) for v in value)
+    else:
+        return value
