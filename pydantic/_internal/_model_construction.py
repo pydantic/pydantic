@@ -181,7 +181,6 @@ def complete_model_class(
     serialization_functions.check_for_unused()
 
     core_config = generate_config(cls)
-    pre_validator_core_config = core_config.copy()
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
@@ -189,7 +188,7 @@ def complete_model_class(
     cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
         cls,
         inner_schema,
-        config=pre_validator_core_config,
+        config=core_config,
         call_after_init=model_post_init,
         metadata=build_metadata_dict(js_metadata=js_metadata),
     )
