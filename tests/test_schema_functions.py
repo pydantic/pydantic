@@ -1,12 +1,13 @@
 import re
 from datetime import date
+from typing import Any
 
 import pytest
 
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator, ValidationError, core_schema
 
 
-def val_function(x, **kwargs):
+def val_function(x, *args: Any):
     return x
 
 

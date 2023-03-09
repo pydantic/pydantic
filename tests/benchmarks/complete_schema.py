@@ -3,10 +3,10 @@ def schema(*, strict: bool = False) -> dict:
         # __slots__ is not required, but it avoids __fields_set__ falling into __dict__
         __slots__ = '__dict__', '__fields_set__'
 
-    def append_func(input_value, **kwargs):
+    def append_func(input_value, info):
         return f'{input_value} Changed'
 
-    def wrap_function(input_value, *, validator, **kwargs):
+    def wrap_function(input_value, validator, info):
         return f'Input {validator(input_value)} Changed'
 
     return {

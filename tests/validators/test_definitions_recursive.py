@@ -510,7 +510,7 @@ def test_multiple_tuple_recursion_once(multiple_tuple_schema: SchemaValidator):
 
 
 def test_definition_wrap():
-    def wrap_func(input_value, *, validator, **kwargs):
+    def wrap_func(input_value, validator, info):
         return validator(input_value) + (42,)
 
     v = SchemaValidator(
@@ -634,7 +634,7 @@ def test_union_cycle(strict: bool):
 
 
 def test_function_name():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         return input_value + ' Changed'
 
     v = SchemaValidator(
@@ -676,7 +676,7 @@ def test_function_name():
 
 @pytest.mark.parametrize('strict', [True, False], ids=lambda s: f'strict={s}')
 def test_function_change_id(strict: bool):
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         _, count = input_value.split('-')
         return f'f-{int(count) + 1}'
 

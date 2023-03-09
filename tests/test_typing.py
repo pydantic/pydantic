@@ -1,9 +1,10 @@
 from __future__ import annotations as _annotations
 
 from datetime import date, datetime, time
-from typing import Any
+from typing import Any, Callable
 
 from pydantic_core import (
+    CoreSchema,
     ErrorDetails,
     PydanticKnownError,
     SchemaError,
@@ -12,7 +13,6 @@ from pydantic_core import (
     ValidationError,
     core_schema,
 )
-from pydantic_core.core_schema import CoreConfig, CoreSchema
 
 
 class Foo:
@@ -23,7 +23,11 @@ def foo(bar: str) -> None:
     ...
 
 
-def validator(value: Any, **kwargs: Any) -> None:
+def validator(value: Any, info: core_schema.ValidationInfo) -> None:
+    ...
+
+
+def wrap_validator(value: Any, call_next: Callable[[Any], Any], info: core_schema.ValidationInfo) -> None:
     ...
 
 
@@ -87,7 +91,7 @@ def test_schema_typing() -> None:
         },
     }
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'function', 'mode': 'wrap', 'function': validator, 'schema': {'type': 'str'}}
+    schema: CoreSchema = {'type': 'function', 'mode': 'wrap', 'function': wrap_validator, 'schema': {'type': 'str'}}
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'function', 'mode': 'plain', 'function': validator}
     SchemaValidator(schema)
@@ -153,7 +157,7 @@ def test_schema_validator_wrong() -> None:
 
 
 def test_correct_function_signature() -> None:
-    def my_validator(value: Any, *, data: Any, config: CoreConfig | None, context: Any, **future_kwargs: Any) -> str:
+    def my_validator(value: Any, info: Any) -> str:
         return str(value)
 
     v = SchemaValidator(core_schema.function_plain_schema(my_validator))
@@ -170,7 +174,7 @@ def test_wrong_function_signature() -> None:
     try:
         v.validate_python(1)
     except TypeError as exc:
-        assert 'unexpected keyword argument' in str(exc)
+        assert 'takes 1 positional argument but 2 were given' in str(exc)
     else:
         raise AssertionError('v.validate_python(1) did not raise TypeError')
 

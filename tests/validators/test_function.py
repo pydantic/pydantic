@@ -1,17 +1,21 @@
 import platform
 import re
 from copy import deepcopy
-from typing import Type
+from typing import Any, Dict, Type
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import plain_repr
 
 
+def deepcopy_info(info: core_schema.ValidationInfo) -> Dict[str, Any]:
+    return {'context': deepcopy(info.context), 'data': deepcopy(info.data), 'config': deepcopy(info.config)}
+
+
 def test_function_before():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         return input_value + ' Changed'
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
@@ -20,7 +24,7 @@ def test_function_before():
 
 
 def test_function_before_raise():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise ValueError('foobar')
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
@@ -40,7 +44,7 @@ def test_function_before_raise():
 
 
 def test_function_before_error():
-    def my_function(input_value, **kwargs):
+    def my_function(input_value, info):
         return input_value + 'x'
 
     v = SchemaValidator(
@@ -63,7 +67,7 @@ def test_function_before_error():
 
 
 def test_function_before_error_model():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         if 'my_field' in input_value:
             input_value['my_field'] += 'x'
         return input_value
@@ -92,7 +96,7 @@ def test_function_before_error_model():
 
 
 def test_function_wrap():
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         return validator(input_value=input_value) + ' Changed'
 
     v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
@@ -101,7 +105,7 @@ def test_function_wrap():
 
 
 def test_function_wrap_repr():
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         assert repr(validator) == str(validator)
         return plain_repr(validator)
 
@@ -111,7 +115,7 @@ def test_function_wrap_repr():
 
 
 def test_function_wrap_str():
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         return plain_repr(validator)
 
     v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'str'}})
@@ -128,7 +132,7 @@ def test_function_wrap_not_callable():
 
 
 def test_wrap_error():
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         try:
             return validator(input_value) * 2
         except ValidationError as e:
@@ -152,7 +156,7 @@ def test_wrap_error():
 
 
 def test_function_wrap_location():
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         return validator(input_value, outer_location='foo') + 2
 
     v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'int'}})
@@ -172,7 +176,7 @@ def test_function_wrap_location():
 
 
 def test_function_wrap_invalid_location():
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         return validator(input_value, ('4',)) + 2
 
     v = SchemaValidator({'type': 'function', 'mode': 'wrap', 'function': f, 'schema': {'type': 'int'}})
@@ -189,9 +193,9 @@ def test_wrong_mode():
 def test_function_after_data():
     f_kwargs = None
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         nonlocal f_kwargs
-        f_kwargs = deepcopy(kwargs)
+        f_kwargs = deepcopy_info(info)
         return input_value + ' Changed'
 
     v = SchemaValidator(
@@ -211,9 +215,9 @@ def test_function_after_data():
 def test_function_after_config():
     f_kwargs = None
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         nonlocal f_kwargs
-        f_kwargs = deepcopy(kwargs)
+        f_kwargs = deepcopy_info(info)
         return input_value + ' Changed'
 
     v = SchemaValidator(
@@ -235,9 +239,9 @@ def test_function_after_config():
 def test_config_no_model():
     f_kwargs = None
 
-    def f(input_value, **kwargs):
+    def f(input_value, info: core_schema.ValidationInfo):
         nonlocal f_kwargs
-        f_kwargs = deepcopy(kwargs)
+        f_kwargs = deepcopy_info(info)
         return input_value + ' Changed'
 
     v = SchemaValidator({'type': 'function', 'mode': 'after', 'function': f, 'schema': {'type': 'str'}})
@@ -247,7 +251,7 @@ def test_config_no_model():
 
 
 def test_function_plain():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         return input_value * 2
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
@@ -262,7 +266,7 @@ def test_plain_with_schema():
 
 
 def test_validate_assignment():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         input_value['more'] = 'foobar'
         return input_value
 
@@ -288,9 +292,9 @@ def test_function_wrong_sig():
 
     # exception messages differ between python and pypy
     if platform.python_implementation() == 'PyPy':
-        error_message = 'f() got 3 unexpected keyword arguments'
+        error_message = 'f() takes 1 positional argument but 2 were given'
     else:
-        error_message = "f() got an unexpected keyword argument 'data'"
+        error_message = 'f() takes 1 positional argument but 2 were given'
 
     with pytest.raises(TypeError, match=re.escape(error_message)):
         v.validate_python('input value')
@@ -304,7 +308,7 @@ def test_class_with_validator():
             self.a = a
 
         @classmethod
-        def __validate__(cls, input_value, **kwargs):
+        def __validate__(cls, input_value, info):
             return Foobar(input_value * 2)
 
     v = SchemaValidator(
@@ -328,7 +332,7 @@ def test_class_with_validator():
 
 
 def test_raise_assertion_error():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise AssertionError('foobar')
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
@@ -348,7 +352,7 @@ def test_raise_assertion_error():
 
 
 def test_raise_assertion_error_plain():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise AssertionError
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
@@ -373,7 +377,7 @@ def test_error_with_error(base_error: Type[Exception]):
         def __str__(self):
             raise RuntimeError('internal error')
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise MyError()
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})
@@ -383,7 +387,7 @@ def test_error_with_error(base_error: Type[Exception]):
 
 
 def test_raise_type_error():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise TypeError('foobar')
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'str'}})

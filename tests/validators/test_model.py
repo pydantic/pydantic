@@ -73,7 +73,7 @@ def test_model_class_root_validator():
     class MyModel:
         pass
 
-    def f(input_value, *, validator, **kwargs):
+    def f(input_value, validator, info):
         output = validator(input_value)
         return str(output)
 
@@ -105,7 +105,7 @@ def test_function_ask(mode, return_fields_set):
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         return input_value
 
     v = SchemaValidator(
@@ -132,7 +132,7 @@ def test_function_plain_ask():
     class MyModel:
         pass
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         return input_value
 
     v = SchemaValidator(
@@ -226,7 +226,7 @@ def test_model_class_function_after():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         input_value[0]['x'] = 'y'
         return input_value
 
