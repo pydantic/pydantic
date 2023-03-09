@@ -193,8 +193,6 @@ def complete_model_class(
         call_after_init=model_post_init,
         metadata=build_metadata_dict(js_metadata=js_metadata),
     )
-    # print(cls.__pydantic_core_schema__)
-    print(cls.__name__, cls.__pydantic_core_schema__['config']['title'])
     cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
     cls.__pydantic_model_complete__ = True
 
