@@ -775,14 +775,58 @@ def get_model_self_schema(cls: type[BaseModel]) -> core_schema.ModelSchema:
 
 def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> core_schema.CoreSchema:
     # Eventually: should add support for other discriminator types, and explicitly specified choices
+
+    # If the field was wrapped with a nullable schema, we preserve that here and re-wrap the final result at the end.
+    nullable_schema: core_schema.NullableSchema | None = None
+    if schema['type'] == 'nullable':
+        nullable_schema = schema
+        schema = schema['schema']
+
     if schema['type'] != 'union':
         raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
-    choices = [*schema['choices'][::-1]]
-    if len(choices) < 2:
+
+    union_choices = schema['choices']
+    if len(union_choices) < 2:
         raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
 
-    # TODO: Need to make sure nullable unions are handled properly
-    aliases = {discriminator: None}  # this is meant to behave like a set, but use a dict to ensure order is preserved
+    # `aliases` is meant to behave like a set, but uses a dict to ensure order is preserved
+    aliases = {discriminator: None}
+    tagged_union_choices = _build_tagged_union_choices(union_choices, discriminator, aliases)
+
+    if len(aliases) > 1:
+        schema_discriminator: str | list[list[str | int]] = [[alias] for alias in aliases]
+    else:
+        schema_discriminator = discriminator
+
+    discriminated_schema = core_schema.tagged_union_schema(
+        choices=tagged_union_choices,
+        discriminator=schema_discriminator,
+        custom_error_type=schema.get('custom_error_type'),
+        custom_error_message=schema.get('custom_error_message'),
+        custom_error_context=schema.get('custom_error_context'),
+        strict=False,
+        ref=schema.get('ref'),
+        metadata=schema.get('metadata'),
+        serialization=schema.get('serialization'),
+    )
+
+    if nullable_schema is None:
+        return discriminated_schema
+    else:
+        return core_schema.nullable_schema(
+            discriminated_schema,
+            strict=nullable_schema.get('strict'),
+            ref=nullable_schema.get('ref'),
+            metadata=nullable_schema.get('metadata'),
+            serialization=nullable_schema.get('serialization'),
+        )
+
+
+def _build_tagged_union_choices(
+    choices: typing.Iterable[core_schema.CoreSchema], discriminator: str, aliases: dict[str, None]
+) -> dict[str | int, str | int | core_schema.CoreSchema]:
+    choices = list(choices)[::-1]
+
     tagged_union_choices: dict[str | int, str | int | core_schema.CoreSchema] = {}
     while choices:
         choice = choices.pop()
@@ -815,23 +859,7 @@ def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> c
             _handle_discriminator_value(primary_value)
             for other_value in discriminator_values[1:]:
                 _handle_discriminator_value(other_value, primary_value)
-
-    if len(aliases) > 1:
-        schema_discriminator: str | list[list[str | int]] = [[alias] for alias in aliases]
-    else:
-        schema_discriminator = discriminator
-
-    return core_schema.tagged_union_schema(
-        choices=tagged_union_choices,
-        discriminator=schema_discriminator,
-        custom_error_type=schema.get('custom_error_type'),
-        custom_error_message=schema.get('custom_error_message'),
-        custom_error_context=schema.get('custom_error_context'),
-        strict=False,
-        ref=schema.get('ref'),
-        metadata=schema.get('metadata'),
-        serialization=schema.get('serialization'),
-    )
+    return tagged_union_choices
 
 
 def _get_discriminator_values_for_choice(
@@ -857,7 +885,6 @@ def _get_discriminator_values_for_choice(
                 raise PydanticUserError(f'Model {model_name!r} needs a discriminator field for key {discriminator!r}')
             discriminator_field = typed_dict_schema['fields'][discriminator]
 
-            # TODO: Should maybe reflect whether populate_by_alias works or whatever
             alias = discriminator_field.get('validation_alias', discriminator)
             aliases[alias] = None
 

@@ -1,7 +1,7 @@
 import re
 import sys
 from enum import Enum, IntEnum
-from typing import Generic, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated, Literal
@@ -291,6 +291,14 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
     class Top(BaseModel):
         sub: Union[A, B] = Field(..., discriminator='literal')
 
+    with pytest.raises(ValidationError) as exc_info:
+        Top(sub=A(literal='a'))
+    # TODO: Adding this note here that we should make sure the produced error messages for DiscriminatedUnion
+    #   have the same behavior as elsewhere when aliases are involved.
+    #   (I.e., possibly using the alias value as the 'loc')
+    assert exc_info.value.errors() == [
+        {'input': {'literal': 'a'}, 'loc': ('literal',), 'msg': 'Field required', 'type': 'missing'}
+    ]
     assert Top(sub=A(lit='a')).sub.literal == 'a'
     assert Top(sub=B(lit='b')).sub.literal == 'b'
     assert Top(sub=B(literal='b')).sub.literal == 'b'
@@ -484,3 +492,90 @@ def test_generic():
     ]
 
     assert Container[str].model_validate({'result': {'type': 'Success', 'data': '1'}}).result.data == '1'
+
+
+def test_optional_union():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        name: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        name: str
+
+    class Pet(BaseModel):
+        pet: Optional[Union[Cat, Dog]] = Field(discriminator='pet_type')
+
+    assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
+    assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
+    assert Pet(pet=None).model_dump() == {'pet': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Pet()
+    assert exc_info.value.errors() == [{'input': {}, 'loc': ('pet',), 'msg': 'Field required', 'type': 'missing'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Pet(pet={'name': 'Benji'})
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator': "'pet_type'"},
+            'input': {'name': 'Benji'},
+            'loc': ('pet',),
+            'msg': "Unable to extract tag using discriminator 'pet_type'",
+            'type': 'union_tag_not_found',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Pet(pet={'pet_type': 'lizard'})
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
+            'input': {'pet_type': 'lizard'},
+            'loc': ('pet',),
+            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]
+
+
+def test_optional_union_with_defaults():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = 'cat'
+        name: str
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = 'dog'
+        name: str
+
+    class Pet(BaseModel):
+        pet: Optional[Union[Cat, Dog]] = Field(default=None, discriminator='pet_type')
+
+    assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
+    assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
+    assert Pet(pet=None).model_dump() == {'pet': None}
+    assert Pet().model_dump() == {'pet': None}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Pet(pet={'name': 'Benji'})
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator': "'pet_type'"},
+            'input': {'name': 'Benji'},
+            'loc': ('pet',),
+            'msg': "Unable to extract tag using discriminator 'pet_type'",
+            'type': 'union_tag_not_found',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Pet(pet={'pet_type': 'lizard'})
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
+            'input': {'pet_type': 'lizard'},
+            'loc': ('pet',),
+            'msg': "Input tag 'lizard' found using 'pet_type' does not match any of the " "expected tags: 'cat', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]
