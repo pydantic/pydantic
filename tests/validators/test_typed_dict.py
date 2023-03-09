@@ -277,11 +277,11 @@ def test_validate_assignment_strict_field():
 def test_validate_assignment_functions():
     calls = []
 
-    def func_a(input_value, **kwargs):
+    def func_a(input_value, info):
         calls.append('func_a')
         return input_value * 2
 
-    def func_b(input_value, **kwargs):
+    def func_b(input_value, info):
         calls.append('func_b')
         return input_value / 2
 
@@ -1368,7 +1368,7 @@ class TestOnError:
         assert v.validate_test({'x': ['foo']}) == {'x': 'pika'}
 
     def test_wrap_on_error(self, py_and_json: PyAndJson):
-        def wrap_function(input_value, *, validator, **kwargs):
+        def wrap_function(input_value, validator, info):
             try:
                 return validator(input_value)
             except ValidationError:

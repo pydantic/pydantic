@@ -216,7 +216,7 @@ def test_length_ctx():
 
 
 def test_list_function():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         return input_value * 2
 
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'function', 'mode': 'plain', 'function': f}})
@@ -225,7 +225,7 @@ def test_list_function():
 
 
 def test_list_function_val_error():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise ValueError(f'error {input_value}')
 
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'function', 'mode': 'plain', 'function': f}})
@@ -239,7 +239,7 @@ def test_list_function_val_error():
 
 
 def test_list_function_internal_error():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise RuntimeError(f'error {input_value}')
 
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'function', 'mode': 'plain', 'function': f}})

@@ -70,7 +70,7 @@ def test_internal_error():
 
 
 def test_omit(py_and_json: PyAndJson):
-    def omit(v, **kwargs):
+    def omit(v, info):
         if v == 'omit':
             raise PydanticOmit
         elif v == 'error':

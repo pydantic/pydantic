@@ -12,10 +12,7 @@ def test_chain():
     validator = SchemaValidator(
         {
             'type': 'chain',
-            'steps': [
-                {'type': 'str'},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: Decimal(v)},
-            ],
+            'steps': [{'type': 'str'}, {'type': 'function', 'mode': 'plain', 'function': lambda v, info: Decimal(v)}],
         }
     )
 
@@ -28,10 +25,10 @@ def test_chain_many():
         {
             'type': 'chain',
             'steps': [
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-1'},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-2'},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-3'},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-4'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-1'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-2'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-3'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-4'},
             ],
         }
     )
@@ -67,7 +64,7 @@ def test_json(py_and_json: PyAndJson, input_value, expected):
             'type': 'chain',
             'steps': [
                 {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'float'}]},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: Decimal(v)},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: Decimal(v)},
             ],
         }
     )
@@ -81,12 +78,12 @@ def test_flatten():
         {
             'type': 'chain',
             'steps': [
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-1'},
+                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-1'},
                 {
                     'type': 'chain',
                     'steps': [
-                        {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-2'},
-                        {'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-3'},
+                        {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-2'},
+                        {'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-3'},
                     ],
                 },
             ],
@@ -104,7 +101,7 @@ def test_chain_empty():
 
 def test_chain_one():
     validator = SchemaValidator(
-        {'type': 'chain', 'steps': [{'type': 'function', 'mode': 'plain', 'function': lambda v, **kwargs: f'{v}-1'}]}
+        {'type': 'chain', 'steps': [{'type': 'function', 'mode': 'plain', 'function': lambda v, info: f'{v}-1'}]}
     )
     assert validator.validate_python('input') == 'input-1'
     assert validator.title == 'function-plain[<lambda>()]'
@@ -116,7 +113,7 @@ def test_ask():
 
     calls = []
 
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         calls.append(input_value)
         return input_value
 

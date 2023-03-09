@@ -33,7 +33,7 @@ def test_pydantic_value_error_none():
 
 
 def test_pydantic_value_error_usage():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo} {bar}', {'foo': 'FOOBAR', 'bar': 42})
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
@@ -53,7 +53,7 @@ def test_pydantic_value_error_usage():
 
 
 def test_pydantic_value_error_invalid_dict():
-    def my_function(input_value, **kwargs):
+    def my_function(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', {(): 'foobar'})
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': my_function})
@@ -71,7 +71,7 @@ def test_pydantic_value_error_invalid_dict():
 
 
 def test_pydantic_value_error_invalid_type():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', [('foo', 123)])
 
     v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
@@ -86,7 +86,7 @@ def test_validator_instance_plain():
             self.foo = 42
             self.bar = 'before'
 
-        def validate(self, input_value, **kwargs):
+        def validate(self, input_value, info):
             return f'{input_value} {self.foo} {self.bar}'
 
     c = CustomValidator()
@@ -103,7 +103,7 @@ def test_validator_instance_after():
         def __init__(self):
             self.foo = 42
 
-        def validate(self, input_value, **kwargs):
+        def validate(self, input_value, info):
             assert isinstance(input_value, str)
             return f'{input_value} {self.foo}'
 
@@ -133,7 +133,7 @@ def test_pydantic_error_type():
 
 
 def test_pydantic_error_type_raise_no_ctx():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise PydanticKnownError('finite_number')
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
@@ -147,7 +147,7 @@ def test_pydantic_error_type_raise_no_ctx():
 
 
 def test_pydantic_error_type_raise_ctx():
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise PydanticKnownError('greater_than', {'gt': 42})
 
     v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
@@ -295,7 +295,7 @@ def test_custom_error_decimal():
 
 
 def test_pydantic_value_error_plain(py_and_json: PyAndJson):
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         raise PydanticCustomError
 
     v = py_and_json({'type': 'function', 'mode': 'plain', 'function': f})
@@ -305,7 +305,7 @@ def test_pydantic_value_error_plain(py_and_json: PyAndJson):
 
 @pytest.mark.parametrize('exception', [PydanticOmit(), PydanticOmit])
 def test_list_omit_exception(py_and_json: PyAndJson, exception):
-    def f(input_value, **kwargs):
+    def f(input_value, info):
         if input_value % 2 == 0:
             raise exception
         return input_value
