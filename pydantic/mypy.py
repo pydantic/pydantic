@@ -99,7 +99,7 @@ def plugin(version: str) -> 'TypingType[Plugin]':
     We might want to use this to print a warning if the mypy version being used is
     newer, or especially older, than we expect (or need).
     """
-    PydanticPlugin.mypy_version = tuple(map(int, version.partition("+")[0].split(".")))
+    PydanticPlugin.mypy_version = tuple(map(int, version.partition('+')[0].split('.')))
     return PydanticPlugin
 
 
