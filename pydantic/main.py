@@ -718,7 +718,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not issubclass(cls, Generic):  # type: ignore[arg-type]
             raise TypeError('Concrete names should only be generated for generic models.')
 
-        param_names = [_repr.display_as_type(param) for param in params]
+        # Any strings received should represent forward references, so we handle them specially below.
+        # If we eventually move toward wrapping them in a ForwardRef in __class_getitem__ in the future,
+        # we may be able to remove this special case.
+        param_names = [param if isinstance(param, str) else _repr.display_as_type(param) for param in params]
         params_component = ', '.join(param_names)
         return f'{cls.__name__}[{params_component}]'
 

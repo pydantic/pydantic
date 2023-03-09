@@ -65,8 +65,8 @@ class LoggedVar(Generic[T]):
     'value,expected',
     [
         (str, 'str'),
-        ('foobar', 'foobar'),
-        ('SomeForwardRefString', 'SomeForwardRefString'),
+        ('foobar', 'str'),
+        ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
         (List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (Union[str, int], 'Union[str, int]'),
         (list, 'list'),
@@ -90,7 +90,7 @@ def test_display_as_type(value, expected):
     'value_gen,expected',
     [
         (lambda: str, 'str'),
-        (lambda: 'SomeForwardRefString', 'SomeForwardRefString'),
+        (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
         (lambda: List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (lambda: str | int, 'Union[str, int]'),
         (lambda: list, 'list'),

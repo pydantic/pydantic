@@ -34,7 +34,12 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
 
     arg_refs: list[str] = []
     for arg in args:
-        arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
+        if isinstance(arg, str):
+            # Handle string literals as a special case; we may be able to remove this special handling if we
+            # wrap them in a ForwardRef at some point.
+            arg_ref = f'{arg}:str-{id(arg)}'
+        else:
+            arg_ref = f'{_repr.display_as_type(arg)}:{id(arg)}'
         arg_refs.append(arg_ref)
     if arg_refs:
         type_ref = f'{type_ref}[{",".join(arg_refs)}]'
