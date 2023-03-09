@@ -497,6 +497,15 @@ class GenerateJsonSchema:
                     generated[str(k)] = self.generate_inner(v).copy()
                 except PydanticInvalidForJsonSchema:
                     pass
+
+        # Populate the schema with any "indirect" references
+        for k, v in schema['choices'].items():
+            if isinstance(v, (str, int)):
+                while isinstance(schema['choices'][v], (str, int)):
+                    v = schema['choices'][v]
+                if str(v) in generated:  # PydanticInvalidForJsonSchema may have been raised above
+                    generated[str(k)] = generated[str(v)]
+
         json_schema: JsonSchemaValue = {'oneOf': list(generated.values())}
 
         # This reflects the v1 behavior, but we may want to only include the discriminator based on dialect / etc.

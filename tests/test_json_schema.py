@@ -2664,8 +2664,388 @@ def test_modify_schema_dict_keys() -> None:
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - discriminated union')
 def test_discriminated_union():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Cat': {
+                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type'}},
+                'required': ['pet_type'],
+                'title': 'Cat',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type'}},
+                'required': ['pet_type'],
+                'title': 'Dog',
+                'type': 'object',
+            },
+            'Lizard': {
+                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type'}},
+                'required': ['pet_type'],
+                'title': 'Lizard',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'pet': {
+                'discriminator': {
+                    'mapping': {
+                        'cat': '#/$defs/Cat',
+                        'dog': '#/$defs/Dog',
+                        'lizard': '#/$defs/Lizard',
+                        'reptile': '#/$defs/Lizard',
+                    },
+                    'propertyName': 'pet_type',
+                },
+                'oneOf': [
+                    {'$ref': '#/$defs/Cat'},
+                    {'$ref': '#/$defs/Dog'},
+                    {'$ref': '#/$defs/Lizard'},
+                    {'$ref': '#/$defs/Lizard'},
+                ],
+                'title': 'Pet',
+            }
+        },
+        'required': ['pet'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_discriminated_annotated_union():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+
+    class Model(BaseModel):
+        pet: Annotated[Union[Cat, Dog, Lizard], Field(..., discriminator='pet_type')]
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Cat': {
+                'properties': {'pet_type': {'const': 'cat', 'title': 'Pet Type'}},
+                'required': ['pet_type'],
+                'title': 'Cat',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {'pet_type': {'const': 'dog', 'title': 'Pet Type'}},
+                'required': ['pet_type'],
+                'title': 'Dog',
+                'type': 'object',
+            },
+            'Lizard': {
+                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type'}},
+                'required': ['pet_type'],
+                'title': 'Lizard',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'pet': {
+                'discriminator': {
+                    'mapping': {
+                        'cat': '#/$defs/Cat',
+                        'dog': '#/$defs/Dog',
+                        'lizard': '#/$defs/Lizard',
+                        'reptile': '#/$defs/Lizard',
+                    },
+                    'propertyName': 'pet_type',
+                },
+                'oneOf': [
+                    {'$ref': '#/$defs/Cat'},
+                    {'$ref': '#/$defs/Dog'},
+                    {'$ref': '#/$defs/Lizard'},
+                    {'$ref': '#/$defs/Lizard'},
+                ],
+                'title': 'Pet',
+            }
+        },
+        'required': ['pet'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_nested_discriminated_union():
+    class BlackCatWithHeight(BaseModel):
+        color: Literal['black']
+        info: Literal['height']
+        height: float
+
+    class BlackCatWithWeight(BaseModel):
+        color: Literal['black']
+        info: Literal['weight']
+        weight: float
+
+    BlackCat = Annotated[Union[BlackCatWithHeight, BlackCatWithWeight], Field(discriminator='info')]
+
+    class WhiteCat(BaseModel):
+        color: Literal['white']
+        white_cat_info: str
+
+    class Cat(BaseModel):
+        pet: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+    assert Cat.model_json_schema() == {
+        '$defs': {
+            'BlackCatWithHeight': {
+                'properties': {
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'height': {'title': 'Height', 'type': 'number'},
+                    'info': {'const': 'height', 'title': 'Info'},
+                },
+                'required': ['color', 'info', 'height'],
+                'title': 'BlackCatWithHeight',
+                'type': 'object',
+            },
+            'BlackCatWithWeight': {
+                'properties': {
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'info': {'const': 'weight', 'title': 'Info'},
+                    'weight': {'title': 'Weight', 'type': 'number'},
+                },
+                'required': ['color', 'info', 'weight'],
+                'title': 'BlackCatWithWeight',
+                'type': 'object',
+            },
+            'WhiteCat': {
+                'properties': {
+                    'color': {'const': 'white', 'title': 'Color'},
+                    'white_cat_info': {'title': 'White Cat Info', 'type': 'string'},
+                },
+                'required': ['color', 'white_cat_info'],
+                'title': 'WhiteCat',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'pet': {
+                'discriminator': {
+                    'mapping': {
+                        'black': {
+                            'discriminator': {
+                                'mapping': {
+                                    'height': '#/$defs/BlackCatWithHeight',
+                                    'weight': '#/$defs/BlackCatWithWeight',
+                                },
+                                'propertyName': 'info',
+                            },
+                            'oneOf': [{'$ref': '#/$defs/BlackCatWithHeight'}, {'$ref': '#/$defs/BlackCatWithWeight'}],
+                        },
+                        'white': '#/$defs/WhiteCat',
+                    },
+                    'propertyName': 'color',
+                },
+                'oneOf': [
+                    {
+                        'discriminator': {
+                            'mapping': {'height': '#/$defs/BlackCatWithHeight', 'weight': '#/$defs/BlackCatWithWeight'},
+                            'propertyName': 'info',
+                        },
+                        'oneOf': [{'$ref': '#/$defs/BlackCatWithHeight'}, {'$ref': '#/$defs/BlackCatWithWeight'}],
+                    },
+                    {'$ref': '#/$defs/WhiteCat'},
+                ],
+                'title': 'Pet',
+            }
+        },
+        'required': ['pet'],
+        'title': 'Cat',
+        'type': 'object',
+    }
+
+
+def test_deeper_nested_discriminated_annotated_union():
+    class BlackCatWithHeight(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        info: Literal['height']
+        black_infos: str
+
+    class BlackCatWithWeight(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['black']
+        info: Literal['weight']
+        black_infos: str
+
+    BlackCat = Annotated[Union[BlackCatWithHeight, BlackCatWithWeight], Field(discriminator='info')]
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal['cat']
+        color: Literal['white']
+        white_infos: str
+
+    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        dog_name: str
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    class Model(BaseModel):
+        pet: Pet
+        number: int
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'BlackCatWithHeight': {
+                'properties': {
+                    'black_infos': {'title': 'Black ' 'Infos', 'type': 'string'},
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'info': {'const': 'height', 'title': 'Info'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet ' 'Type'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+                'title': 'BlackCatWithHeight',
+                'type': 'object',
+            },
+            'BlackCatWithWeight': {
+                'properties': {
+                    'black_infos': {'title': 'Black ' 'Infos', 'type': 'string'},
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'info': {'const': 'weight', 'title': 'Info'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet ' 'Type'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+                'title': 'BlackCatWithWeight',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {
+                    'dog_name': {'title': 'Dog Name', 'type': 'string'},
+                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                },
+                'required': ['pet_type', 'dog_name'],
+                'title': 'Dog',
+                'type': 'object',
+            },
+            'WhiteCat': {
+                'properties': {
+                    'color': {'const': 'white', 'title': 'Color'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'white_infos': {'title': 'White Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'white_infos'],
+                'title': 'WhiteCat',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'number': {'title': 'Number', 'type': 'integer'},
+            'pet': {
+                'discriminator': {
+                    'mapping': {
+                        'cat': {
+                            'discriminator': {
+                                'mapping': {
+                                    'black': {
+                                        'discriminator': {
+                                            'mapping': {
+                                                'height': '#/$defs/BlackCatWithHeight',
+                                                'weight': '#/$defs/BlackCatWithWeight',
+                                            },
+                                            'propertyName': 'info',
+                                        },
+                                        'oneOf': [
+                                            {'$ref': '#/$defs/BlackCatWithHeight'},
+                                            {'$ref': '#/$defs/BlackCatWithWeight'},
+                                        ],
+                                    },
+                                    'white': '#/$defs/WhiteCat',
+                                },
+                                'propertyName': 'color',
+                            },
+                            'oneOf': [
+                                {
+                                    'discriminator': {
+                                        'mapping': {
+                                            'height': '#/$defs/BlackCatWithHeight',
+                                            'weight': '#/$defs/BlackCatWithWeight',
+                                        },
+                                        'propertyName': 'info',
+                                    },
+                                    'oneOf': [
+                                        {'$ref': '#/$defs/BlackCatWithHeight'},
+                                        {'$ref': '#/$defs/BlackCatWithWeight'},
+                                    ],
+                                },
+                                {'$ref': '#/$defs/WhiteCat'},
+                            ],
+                        },
+                        'dog': '#/$defs/Dog',
+                    },
+                    'propertyName': 'pet_type',
+                },
+                'oneOf': [
+                    {
+                        'discriminator': {
+                            'mapping': {
+                                'black': {
+                                    'discriminator': {
+                                        'mapping': {
+                                            'height': '#/$defs/BlackCatWithHeight',
+                                            'weight': '#/$defs/BlackCatWithWeight',
+                                        },
+                                        'propertyName': 'info',
+                                    },
+                                    'oneOf': [
+                                        {'$ref': '#/$defs/BlackCatWithHeight'},
+                                        {'$ref': '#/$defs/BlackCatWithWeight'},
+                                    ],
+                                },
+                                'white': '#/$defs/WhiteCat',
+                            },
+                            'propertyName': 'color',
+                        },
+                        'oneOf': [
+                            {
+                                'discriminator': {
+                                    'mapping': {
+                                        'height': '#/$defs/BlackCatWithHeight',
+                                        'weight': '#/$defs/BlackCatWithWeight',
+                                    },
+                                    'propertyName': 'info',
+                                },
+                                'oneOf': [
+                                    {'$ref': '#/$defs/BlackCatWithHeight'},
+                                    {'$ref': '#/$defs/BlackCatWithWeight'},
+                                ],
+                            },
+                            {'$ref': '#/$defs/WhiteCat'},
+                        ],
+                    },
+                    {'$ref': '#/$defs/Dog'},
+                ],
+                'title': 'Pet',
+            },
+        },
+        'required': ['pet', 'number'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.xfail(reason='working on V2 - __root__')
+def test_discriminated_union_root():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
         color: Literal['black']
@@ -2752,121 +3132,7 @@ def test_discriminated_union():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - discriminated union')
-def test_discriminated_annotated_union():
-    class BlackCatWithHeight(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['black']
-        info: Literal['height']
-        black_infos: str
-
-    class BlackCatWithWeight(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['black']
-        info: Literal['weight']
-        black_infos: str
-
-    BlackCat = Annotated[Union[BlackCatWithHeight, BlackCatWithWeight], Field(discriminator='info')]
-
-    class WhiteCat(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['white']
-        white_infos: str
-
-    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
-
-    class Dog(BaseModel):
-        pet_type: Literal['dog']
-        dog_name: str
-
-    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
-
-    class Model(BaseModel):
-        pet: Pet
-        number: int
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'pet': {
-                'title': 'Pet',
-                'discriminator': {
-                    'propertyName': 'pet_type',
-                    'mapping': {
-                        'cat': {
-                            'BlackCatWithHeight': {'$ref': '#/$defs/BlackCatWithHeight'},
-                            'BlackCatWithWeight': {'$ref': '#/$defs/BlackCatWithWeight'},
-                            'WhiteCat': {'$ref': '#/$defs/WhiteCat'},
-                        },
-                        'dog': '#/$defs/Dog',
-                    },
-                },
-                'oneOf': [
-                    {
-                        'oneOf': [
-                            {
-                                'oneOf': [
-                                    {'$ref': '#/$defs/BlackCatWithHeight'},
-                                    {'$ref': '#/$defs/BlackCatWithWeight'},
-                                ]
-                            },
-                            {'$ref': '#/$defs/WhiteCat'},
-                        ]
-                    },
-                    {'$ref': '#/$defs/Dog'},
-                ],
-            },
-            'number': {'title': 'Number', 'type': 'integer'},
-        },
-        'required': ['pet', 'number'],
-        '$defs': {
-            'BlackCatWithHeight': {
-                'title': 'BlackCatWithHeight',
-                'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
-                    'info': {'title': 'Info', 'enum': ['height'], 'type': 'string'},
-                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                },
-                'required': ['pet_type', 'color', 'info', 'black_infos'],
-            },
-            'BlackCatWithWeight': {
-                'title': 'BlackCatWithWeight',
-                'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
-                    'info': {'title': 'Info', 'enum': ['weight'], 'type': 'string'},
-                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
-                },
-                'required': ['pet_type', 'color', 'info', 'black_infos'],
-            },
-            'WhiteCat': {
-                'title': 'WhiteCat',
-                'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
-                    'white_infos': {'title': 'White Infos', 'type': 'string'},
-                },
-                'required': ['pet_type', 'color', 'white_infos'],
-            },
-            'Dog': {
-                'title': 'Dog',
-                'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'},
-                    'dog_name': {'title': 'Dog Name', 'type': 'string'},
-                },
-                'required': ['pet_type', 'dog_name'],
-            },
-        },
-    }
-
-
-@pytest.mark.xfail(reason='working on V2 - discriminated union')
+@pytest.mark.xfail(reason='working on V2 - discriminated union with alias')
 def test_alias_same():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='typeOfPet')
@@ -2950,7 +3216,6 @@ def test_nested_python_dataclasses():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - discriminated union')
 def test_discriminated_union_in_list():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -2975,65 +3240,69 @@ def test_discriminated_union_in_list():
         n: int
 
     assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'pets': {
-                'title': 'Pets',
-                'discriminator': {
-                    'propertyName': 'pet_type',
-                    'mapping': {
-                        'cat': {
-                            'BlackCat': {'$ref': '#/$defs/BlackCat'},
-                            'WhiteCat': {'$ref': '#/$defs/WhiteCat'},
-                        },
-                        'dog': '#/$defs/Dog',
-                    },
-                },
-                'oneOf': [
-                    {
-                        'oneOf': [
-                            {'$ref': '#/$defs/BlackCat'},
-                            {'$ref': '#/$defs/WhiteCat'},
-                        ],
-                    },
-                    {'$ref': '#/$defs/Dog'},
-                ],
-            },
-            'n': {'title': 'N', 'type': 'integer'},
-        },
-        'required': ['pets', 'n'],
         '$defs': {
             'BlackCat': {
-                'title': 'BlackCat',
-                'type': 'object',
                 'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
                     'black_name': {'title': 'Black Name', 'type': 'string'},
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
                 },
                 'required': ['pet_type', 'color', 'black_name'],
+                'title': 'BlackCat',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                },
+                'required': ['pet_type', 'name'],
+                'title': 'Dog',
+                'type': 'object',
             },
             'WhiteCat': {
-                'title': 'WhiteCat',
-                'type': 'object',
                 'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                    'color': {'const': 'white', 'title': 'Color'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
                     'white_name': {'title': 'White Name', 'type': 'string'},
                 },
                 'required': ['pet_type', 'color', 'white_name'],
-            },
-            'Dog': {
-                'title': 'Dog',
+                'title': 'WhiteCat',
                 'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'},
-                    'name': {'title': 'Name', 'type': 'string'},
-                },
-                'required': ['pet_type', 'name'],
             },
         },
+        'properties': {
+            'n': {'title': 'N', 'type': 'integer'},
+            'pets': {
+                'discriminator': {
+                    'mapping': {
+                        'cat': {
+                            'discriminator': {
+                                'mapping': {'black': '#/$defs/BlackCat', 'white': '#/$defs/WhiteCat'},
+                                'propertyName': 'color',
+                            },
+                            'oneOf': [{'$ref': '#/$defs/BlackCat'}, {'$ref': '#/$defs/WhiteCat'}],
+                        },
+                        'dog': '#/$defs/Dog',
+                    },
+                    'propertyName': 'pet_type',
+                },
+                'oneOf': [
+                    {
+                        'discriminator': {
+                            'mapping': {'black': '#/$defs/BlackCat', 'white': '#/$defs/WhiteCat'},
+                            'propertyName': 'color',
+                        },
+                        'oneOf': [{'$ref': '#/$defs/BlackCat'}, {'$ref': '#/$defs/WhiteCat'}],
+                    },
+                    {'$ref': '#/$defs/Dog'},
+                ],
+                'title': 'Pets',
+            },
+        },
+        'required': ['pets', 'n'],
+        'title': 'Model',
+        'type': 'object',
     }
 
 
