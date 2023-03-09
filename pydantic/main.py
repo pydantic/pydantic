@@ -852,6 +852,7 @@ class Validator(Generic[T]):
     @overload
     def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
         ...
+
     # Adding this overload ensures you can use special forms without getting mypy errors.
     # For example:
     #   v: Validator[int | str] = Validator(int | str)
