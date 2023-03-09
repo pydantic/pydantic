@@ -69,8 +69,8 @@ impl PydanticCustomError {
     pub fn message(&self, py: Python) -> PyResult<String> {
         let mut message = self.message_template.clone();
         if let Some(ref context) = self.context {
-            for item in context.as_ref(py).items().iter() {
-                let (key, value): (&PyString, &PyAny) = item.extract()?;
+            for (key, value) in context.as_ref(py) {
+                let key: &PyString = key.downcast()?;
                 if let Ok(py_str) = value.downcast::<PyString>() {
                     message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
                 } else if let Ok(value_int) = value.extract::<i64>() {
