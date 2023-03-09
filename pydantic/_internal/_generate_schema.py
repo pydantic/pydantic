@@ -321,8 +321,7 @@ class GenerateSchema:
         # however it is buggy (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666)  # noqa: E501
         # Hence to avoid creating validators that do not do what users expect we only
         # support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
-        is_typing_typeddict = type(typed_dict_cls).__module__ == 'typing'
-        if not _SUPPORTS_TYPEDDICT and is_typing_typeddict:
+        if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
             raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.')
 
         required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
