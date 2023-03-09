@@ -104,7 +104,7 @@ def plugin(version: str) -> 'TypingType[Plugin]':
 
 
 class PydanticPlugin(Plugin):
-    mypy_version: tuple[int, ...]
+    mypy_version: Tuple[int, ...]
 
     def __init__(self, options: Options) -> None:
         self.plugin_config = PydanticPluginConfig(options)
