@@ -341,6 +341,33 @@ def test_caches_get_cleaned_up():
     assert len(_GENERIC_TYPES_CACHE) == initial_types_cache_size
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
+def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
+    types_cache_size = len(_GENERIC_TYPES_CACHE)
+
+    def run() -> None:  # Run inside nested function to get classes in local vars cleaned also
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+
+        class A(BaseModel, Generic[T1, T2]):
+            x: T1
+            y: T2
+
+        B = A[int, T2]
+        C = B[str]
+        assert len(_GENERIC_TYPES_CACHE) == types_cache_size + 5
+        del C
+        del B
+        gc.collect()
+
+    run()
+
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    assert len(_GENERIC_TYPES_CACHE) == types_cache_size
+
+
 def test_generics_work_with_many_parametrized_base_models():
     cache_size = len(_GENERIC_TYPES_CACHE)
     count_create_models = 1000
