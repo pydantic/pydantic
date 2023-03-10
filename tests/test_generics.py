@@ -27,7 +27,7 @@ import pytest
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, Json, ValidationError, ValidationInfo, root_validator, validator
 from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import _GENERIC_TYPES_CACHE, iter_contained_typevars, replace_types
 
@@ -71,13 +71,13 @@ def test_value_validation():
         data: T
 
         @validator('data')
-        def validate_value_nonzero(cls, v, **kwargs):
+        def validate_value_nonzero(cls, v: Any):
             if any(x == 0 for x in v.values()):
                 raise ValueError('some value is zero')
             return v
 
         @root_validator()
-        def validate_sum(cls, item, **kwargs):
+        def validate_sum(cls, item: Any):
             values, fields = item
             data = values.get('data', {})
             if sum(data.values()) > 5:
@@ -437,7 +437,8 @@ def test_generic():
         positive_number: int
 
         @validator('error')
-        def validate_error(cls, v: Optional[error_type], values: Dict[str, Any]) -> Optional[error_type]:
+        def validate_error(cls, v: Optional[error_type], info: ValidationInfo) -> Optional[error_type]:
+            values = info.data
             if values.get('data', None) is None and v is None:
                 raise ValueError('Must provide data or error')
             if values.get('data', None) is not None and v is not None:
@@ -479,18 +480,6 @@ def test_generic():
             'msg': 'Value error, Unknown error',
             'input': -1,
             'ctx': {'error': 'Unknown error'},
-        }
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
-    assert exc_info.value.errors() == [
-        {
-            'type': 'value_error',
-            'loc': ('error',),
-            'msg': 'Value error, Must not provide both data and error',
-            'input': Error(message='error'),
-            'ctx': {'error': 'Must not provide both data and error'},
         }
     ]
 

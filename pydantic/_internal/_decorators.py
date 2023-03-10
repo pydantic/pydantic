@@ -3,6 +3,7 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
+import inspect
 import warnings
 from functools import wraps
 from inspect import Parameter, signature
@@ -203,20 +204,26 @@ class SerializationFunctions(DecoratorFunctions[Serializer]):
 _FUNCS: set[str] = set()
 
 
-def prepare_decorator(function: Callable[..., Any], allow_reuse: bool) -> classmethod[Any]:
+def prepare_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
     """
     Convert the function to a classmethod if it isn't already.
 
     Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
-    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    first_param = next(iter(inspect.signature(function).parameters.values()))
+    ret: Any
+    if first_param.name == 'cls':
+        ret = function if isinstance(function, classmethod) else classmethod(function)
+        function = ret.__func__
+    else:
+        ret = function
     if not allow_reuse and not in_ipython():
-        ref = f'{f_cls.__func__.__module__}::{f_cls.__func__.__qualname__}'
+        ref = f'{function.__module__}::{function.__qualname__}'
         if ref in _FUNCS:
             warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
-    return f_cls
+    return ret
 
 
 def in_ipython() -> bool:
@@ -274,6 +281,23 @@ def make_generic_validator(
     """
     sig = signature(validator)
 
+    def _warn_v1_validator() -> None:
+        warnings.warn(
+            'Validator signatures using the `values` keyword argument or `**kwargs` are no longer supported.'
+            ' Please use an `info: pydantic.ValidationInfo` as the second positional argument instead.'
+            ' This compatibility shim may be removed in a future minor release of Pydantic v2.X',
+            DeprecationWarning,
+            # The stacklevel parameter makes the warning show up as coming from the User's code instead
+            # of our internal implementation
+            # Since this just goes up the stack the source location will appear as
+            # class TheModelName(BaseModel):
+            # Which is good enough for now in terms of helping users locate the issue
+            # In the future maybe we can capture the calling module and line number in the
+            # @validator decorator and use that here to be more accurate about where the issue is
+            # But that may not be 100% reliable, so tabling for now.
+            stacklevel=6,
+        )
+
     positional_params: List[str] = []
     keyword_only_params: List[str] = []
     accepts_kwargs = False
@@ -302,6 +326,8 @@ def make_generic_validator(
         # so we treat it as a backwards compatible validator
         validator = cast(V1ValidatorWithKwargs, validator)
 
+        _warn_v1_validator()
+
         @wraps(validator)
         def _wrapper1(value: Any, info: ValidationInfo) -> Any:
             return validator(value, values=info.data)  # type: ignore[call-arg]
@@ -317,6 +343,8 @@ def make_generic_validator(
         return _wrapper2
     elif len(positional_params) in (1, 2) and accepts_values_kw:
         validator = cast(V1ValidatorWithValues, validator)
+
+        _warn_v1_validator()
 
         @wraps(validator)
         def _wrapper3(value: Any, info: ValidationInfo) -> Any:

@@ -43,7 +43,7 @@ class _V1ValidatorWithValuesAndKwargs(Protocol):
 
 
 class _V2Validator(Protocol):
-    def __call__(self, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:  # pragma: no cover
         ...
 
 

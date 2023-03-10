@@ -3,11 +3,22 @@ from datetime import datetime
 from enum import Enum
 from itertools import product
 from typing import Any, Deque, Dict, FrozenSet, List, Optional, Tuple, Union
+from warnings import WarningMessage
 
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, PydanticUserError, ValidationError, errors, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    PydanticUserError,
+    ValidationError,
+    ValidationInfo,
+    errors,
+    validator,
+)
 from pydantic.decorators import root_validator
 
 
@@ -201,7 +212,8 @@ def validate_assignment_model_fixture():
         c: int = 0
 
         @validator('b')
-        def b_length(cls, v, values, **kwargs):
+        def b_length(cls, v, info):
+            values = info.data
             if 'a' in values and len(v) < values['a']:
                 raise ValueError('b too short')
             return v
@@ -268,9 +280,9 @@ def test_validating_assignment_values_dict():
         b: int
 
         @validator('b')
-        def validate_b(cls, b, values):
-            if 'm' in values:
-                return b + values['m'].a  # this fails if values['m'] is a dict
+        def validate_b(cls, b, info: ValidationInfo):
+            if 'm' in info.data:
+                return b + info.data['m'].a  # this fails if values['m'] is a dict
             else:
                 return b
 
@@ -781,7 +793,6 @@ def test_pre_called_once():
     assert check_calls == 1
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_assert_raises_validation_error():
     class Model(BaseModel):
         a: str
@@ -795,9 +806,15 @@ def test_assert_raises_validation_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "\nassert 'snap' == 'a'\n  - a\n  + snap"
+    injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
+        {
+            'type': 'assertion_error',
+            'loc': ('a',),
+            'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
+            'input': 'snap',
+            'ctx': {'error': "invalid a\nassert 'snap' == 'a'\n  - a\n  + snap"},
+        }
     ]
 
 
@@ -1421,3 +1438,120 @@ def test_root_validator_many_values_change():
     assert r.area == 1
     r.height = 5
     assert r.area == 5
+
+
+V1_VALIDATOR_DEPRECATION_MATCH = (
+    r'Validator signatures using the `values` keyword argument or `\*\*kwargs` are no longer supported'
+)
+
+
+def _get_source_line(filename: str, lineno: int) -> str:
+    with open(filename) as f:
+        for _ in range(lineno - 1):
+            f.readline()
+        return f.readline()
+
+
+def _check_warning(warnings: List[WarningMessage]) -> None:
+    assert len(warnings) == 1
+    w = warnings[0]
+    # check that we got stacklevel correct
+    # if this fails you need to edit the stacklevel
+    # parameter to warnings.warn in _decorators.py
+    assert w.filename == __file__
+    source = _get_source_line(w.filename, w.lineno)
+    assert 'class Point(BaseModel):' in source
+
+
+def test_v1_validator_values_cls_method():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            @validator('x')
+            def check_x(cls, y: Any, values: Dict[str, Any]) -> int:
+                raise NotImplementedError
+
+    _check_warning(w.list)
+
+
+def test_v1_validator_values_kwargs_cls_method():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            @validator('x')
+            def check_x(cls, y: Any, values: Dict[str, Any], **kwargs: Any) -> int:
+                raise NotImplementedError
+
+    _check_warning(w.list)
+
+
+def test_v1_validator_kwargs_cls_method():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            @validator('x')
+            def check_x(cls, y: Any, **kwargs: Any) -> int:
+                raise NotImplementedError
+
+    _check_warning(w.list)
+
+
+def test_v1_validator_values_function():
+    def _check_x(y: Any, values: Dict[str, Any]) -> int:
+        raise NotImplementedError
+
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            check_x = validator('x')(_check_x)
+
+    _check_warning(w.list)
+
+
+def test_v1_validator_values_kwargs_function():
+    def _check_x(y: Any, values: Dict[str, Any], **kwargs: Any) -> int:
+        raise NotImplementedError
+
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            check_x = validator('x')(_check_x)
+
+    _check_warning(w.list)
+
+
+def test_v1_validator_kwargs_function():
+    def _check_x(y: Any, **kwargs: Any) -> int:
+        raise NotImplementedError
+
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            check_x = validator('x')(_check_x)
+
+    assert len(w.list) == 1
+    w = w.list[0]
+    # check that we got stacklevel correct
+    # if this fails you need to edit the stacklevel
+    # parameter to warnings.warn in _decorators.py
+    assert w.filename == __file__
+    source = _get_source_line(w.filename, w.lineno)
+    assert 'class Point(BaseModel):' in source
