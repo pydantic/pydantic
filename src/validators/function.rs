@@ -86,7 +86,7 @@ impl Validator for FunctionBeforeValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let info = ValidationInfo::new(extra, &self.config, py);
+        let info = ValidationInfo::new(py, extra, &self.config);
         let value = self
             .func
             .call1(py, (input.to_object(py), info))
@@ -129,7 +129,7 @@ impl Validator for FunctionAfterValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let v = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-        let info = ValidationInfo::new(extra, &self.config, py);
+        let info = ValidationInfo::new(py, extra, &self.config);
         self.func.call1(py, (v, info)).map_err(|e| convert_err(py, e, input))
     }
 
@@ -178,7 +178,7 @@ impl Validator for FunctionPlainValidator {
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let info = ValidationInfo::new(extra, &self.config, py);
+        let info = ValidationInfo::new(py, extra, &self.config);
         self.func
             .call1(py, (input.to_object(py), info))
             .map_err(|e| convert_err(py, e, input))
@@ -211,7 +211,7 @@ impl Validator for FunctionWrapValidator {
         let call_next_validator = ValidatorCallable {
             validator: InternalValidator::new(py, "ValidatorCallable", &self.validator, slots, extra, recursion_guard),
         };
-        let info = ValidationInfo::new(extra, &self.config, py);
+        let info = ValidationInfo::new(py, extra, &self.config);
         self.func
             .call1(py, (input.to_object(py), call_next_validator, info))
             .map_err(|e| convert_err(py, e, input))
@@ -309,8 +309,8 @@ pub struct ValidationInfo {
 }
 
 impl ValidationInfo {
-    fn new(extra: &Extra, config: &PyObject, py: Python) -> Self {
-        ValidationInfo {
+    fn new(py: Python, extra: &Extra, config: &PyObject) -> Self {
+        Self {
             data: extra.data.map(|v| v.into()),
             config: config.clone_ref(py),
             context: extra.context.map(|v| v.into()),
