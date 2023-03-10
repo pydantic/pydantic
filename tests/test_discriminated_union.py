@@ -579,3 +579,25 @@ def test_optional_union_with_defaults():
             'type': 'union_tag_invalid',
         }
     ]
+
+def test_nested_optional_unions() -> None:
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = 'cat'
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog'] = 'dog'
+
+    class Lizard(BaseModel):
+        pet_type: Literal['lizard'] = 'lizard'
+
+    MaybeCatDog = Annotated[Optional[Union[Cat, Dog]], Field(discriminator='pet_type')]
+    MaybeDogLizard = Annotated[Union[Dog, Lizard, None], Field(discriminator='pet_type')]
+    class Pet(BaseModel):
+        pet: Union[MaybeCatDog, MaybeDogLizard] = Field(discriminator='pet_type')
+
+    Pet({'pet_type': 'dog'})
+    Pet({'pet_type': 'cat'})
+    Pet({'pet_type': 'lizard'})
+    Pet({'pet_type': None})
+    Pet({'pet_type': 'fox'})
+
