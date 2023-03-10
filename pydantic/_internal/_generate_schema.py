@@ -8,17 +8,16 @@ import dataclasses
 import re
 import typing
 import warnings
-from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ..errors import PydanticSchemaGenerationError, PydanticUserError
+from ..errors import PydanticSchemaGenerationError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
-from . import _fields, _typing_extra
+from . import _discriminated_union, _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
@@ -247,7 +246,7 @@ class GenerateSchema:
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
         if field_info.discriminator is not None:
-            schema = apply_discriminator(schema, field_info.discriminator)
+            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
         if not field_info.is_required():
@@ -686,7 +685,7 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
     elif isinstance(metadata, FieldInfo):
         schema = apply_annotations(schema, metadata.metadata)
         if metadata.discriminator is not None:
-            schema = apply_discriminator(schema, metadata.discriminator)
+            schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
 
@@ -771,214 +770,3 @@ def get_model_self_schema(cls: type[BaseModel]) -> core_schema.ModelSchema:
         core_schema.definition_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
-
-
-def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> core_schema.CoreSchema:
-    # Eventually: should add support for other discriminator types, and explicitly specified choices
-
-    # If the field was wrapped with a nullable schema, we preserve that here and re-wrap the final result at the end.
-    nullable_schema: core_schema.NullableSchema | None = None
-    if schema['type'] == 'nullable':
-        nullable_schema = schema
-        schema = schema['schema']
-
-    if schema['type'] != 'union':
-        # TODO: Perhaps we should change this error message and remove the note about 'more than one variant'
-        raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
-
-    union_choices = schema['choices']
-    if len(union_choices) < 2:
-        raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
-
-    # `aliases` is meant to behave like a set, but uses a dict to ensure order is preserved
-    aliases = {discriminator: None}
-    tagged_union_choices, nullable = _build_tagged_union_choices(union_choices, discriminator, aliases)
-
-    if len(aliases) > 1:
-        # * Need to annotate as a union here to handle both branches of this conditional
-        # * Need to annotate as list[list[str | int]] and not list[list[str]] due to the invariance of list, and
-        #   because list[list[str | int]] is the type of the discriminator argument to tagged_union_schema below
-        # * See the docstring of pydantic_core.core_schema.tagged_union_schema for more details about how to
-        #   interpret the value of the discriminator argument to tagged_union_schema. (The list[list[str]] here
-        #   is the appropriate way to provide a list of fallback attributes to check for a discriminator value.)
-        schema_discriminator: str | list[list[str | int]] = [[alias] for alias in aliases]
-    else:
-        schema_discriminator = discriminator
-
-    discriminated_schema = core_schema.tagged_union_schema(
-        choices=tagged_union_choices,
-        discriminator=schema_discriminator,
-        custom_error_type=schema.get('custom_error_type'),
-        custom_error_message=schema.get('custom_error_message'),
-        custom_error_context=schema.get('custom_error_context'),
-        strict=False,
-        ref=schema.get('ref'),
-        metadata=schema.get('metadata'),
-        serialization=schema.get('serialization'),
-    )
-
-    if nullable_schema is not None:
-        return core_schema.nullable_schema(
-            discriminated_schema,
-            strict=nullable_schema.get('strict'),
-            ref=nullable_schema.get('ref'),
-            metadata=nullable_schema.get('metadata'),
-            serialization=nullable_schema.get('serialization'),
-        )
-    elif nullable:
-        # None was present in one of the union choices
-        return core_schema.nullable_schema(discriminated_schema)
-    else:
-        return discriminated_schema
-
-
-def _build_tagged_union_choices(
-    choices: list[core_schema.CoreSchema], discriminator: str, aliases: dict[str, None]
-) -> tuple[dict[str | int, str | int | core_schema.CoreSchema], bool]:
-    # The following line copies the input so we can safely pop items from it below,
-    # and reverses it so that the first item that gets popped is the original first item of the list, etc.
-    choices = list(choices)[::-1]
-    # Need to do list(choices) above due to this bug https://github.com/pydantic/pydantic-core/issues/427
-    # Once that is addressed, we can drop the wrapping list call and just keep the [::-1] to obtain a copy.
-
-    nullable = False
-    tagged_union_choices: dict[str | int, str | int | core_schema.CoreSchema] = {}
-    while choices:
-        choice = choices.pop()
-
-
-
-        if choice['type'] == 'tagged-union':
-            # Update the discriminator fields
-            choice_discriminator = choice['discriminator']
-            if not (
-                choice_discriminator == discriminator or
-                choice_discriminator == [discriminator] or
-                [discriminator] in choice_discriminator
-            ):
-                # This tagged union is not compatible with the "parent" discriminator
-                raise TypeError(
-                    f'Discriminator {discriminator!r} is not compatible with '
-                    f'inner tagged-union discriminator {choice_discriminator!r}'
-                )
-            for value, subchoice in choice['choices'].items():
-                _set_unique_choice_for_values(k, v)
-                discriminator_values = _get_discriminator_values_for_choice(choice, discriminator, aliases)
-                if discriminator_values:
-
-                    primary_value = discriminator_values[0]
-                    _set_unique_choice_for_values(primary_value)
-                    for other_value in discriminator_values[1:]:
-                        _set_unique_choice_for_values(other_value, primary_value)
-
-
-            choices.extend(choice['choices'][::-1])  # again, reverse the list to preserve order while popping
-            continue
-
-        if choice['type'] == 'none':
-            nullable = True
-            continue
-
-        # Unwrap nullable schemas, noting that None should be an allowed value
-        if choice['type'] == 'nullable':
-            nullable = True
-
-        # Coalesce nested unions:
-        if choice['type'] == 'union':
-            choices.extend(choice['choices'][::-1])  # again, reverse the list to preserve order while popping
-            continue
-
-        discriminator_values = _get_discriminator_values_for_choice(choice, discriminator, aliases)
-        if discriminator_values:
-
-            primary_value = discriminator_values[0]
-            _set_unique_choice_for_values(primary_value)
-            for other_value in discriminator_values[1:]:
-                _set_unique_choice_for_values(other_value, primary_value)
-    return tagged_union_choices, nullable
-
-
-def _get_discriminator_values_for_choice(
-    choice: core_schema.CoreSchema, discriminator: str, aliases: dict[str, None]
-) -> list[Any]:
-    if choice['type'] == 'none':
-        return []  # None will be handled higher up, and should not correspond to any discriminator values
-
-    if choice['type'] == 'nullable':
-        # None should not correspond to any discriminator values, so we can ignore the nullable wrapper
-        choice = choice['schema']
-
-    if choice['type'] == 'tagged-union':
-        values: list[Any] = []
-        for inner_choice in choice['choices'].values():
-            if isinstance(inner_choice, (str, int)):
-                continue
-            values.extend(_get_discriminator_values_for_choice(inner_choice, discriminator, aliases))
-        return values
-
-    elif choice['type'] == 'model':
-        model_name = choice['cls'].__name__
-        # Unpack ModelSchema into the inner TypedDictSchema
-        inner_schema = choice['schema']
-        if inner_schema['type'] == 'definitions':
-            inner_schema = inner_schema['schema']  # unpack a definitions schema
-        if inner_schema['type'] == 'typed-dict':
-            typed_dict_schema = inner_schema
-            if discriminator not in typed_dict_schema['fields']:
-                raise PydanticUserError(f'Model {model_name!r} needs a discriminator field for key {discriminator!r}')
-            discriminator_field = typed_dict_schema['fields'][discriminator]
-
-            alias = discriminator_field.get('validation_alias', discriminator)
-            aliases[alias] = None
-
-            discriminator_schema = discriminator_field['schema']
-            if discriminator_schema['type'] == 'default':
-                # Ignore a wrapping default schema if present
-                discriminator_schema = discriminator_schema['schema']
-            if discriminator_schema['type'] != 'literal':
-                raise PydanticUserError(f'Field {discriminator!r} of model {model_name!r} needs to be a `Literal`')
-            return discriminator_schema['expected']
-        else:
-            raise TypeError(
-                f"Expected a CoreSchema with type='typed-dict' for model {model_name!r}, "
-                f"got type={inner_schema['type']!r}"
-            )
-
-    else:
-        raise TypeError(
-            f"{choice['type']!r} is not a valid discriminated union variant; " "should be a `BaseModel` or `dataclass`"
-        )
-
-
-def _set_unique_choice_for_values(
-    tagged_union_choices: dict[str | int, str | int | core_schema.CoreSchema],
-    discriminator: str,
-    discriminator_value: Any,
-    choice: Any,
-    choice_override: int | str | None = None
-) -> None:
-    """
-    This function validates that, for the current value of `choice`, the provided discriminator
-    value `value` does not already map to a different choice.
-
-    The `choice_override` argument is there for the purpose of having multiple discriminator
-    values mapping to the same choice reference the first such value, rather than copying the
-    choice multiple times.
-    """
-    if not isinstance(discriminator_value, (str, int, Enum)):
-        raise ValueError(f'Invalid discriminator value {discriminator_value!r}; must be a string, int, or Enum')
-    if isinstance(discriminator_value, Enum):
-        discriminator_value = discriminator_value.value
-    if discriminator_value in tagged_union_choices:
-        # It is okay if `value` is already in tagged_union_choices as long as it maps to the same value.
-        # Because tagged_union_choices may map values to other values, we need to walk the choices dict
-        # until we get to a "real" choice, and confirm that is equal to the one assigned.
-        existing_choice = tagged_union_choices[discriminator_value]
-        while isinstance(existing_choice, (str, int)):
-            existing_choice = tagged_union_choices[existing_choice]
-        if existing_choice != choice:
-            raise ValueError(
-                f'Value {discriminator_value!r} for discriminator {discriminator!r} mapped to multiple choices'
-            )
-    else:
-        tagged_union_choices[discriminator_value] = choice if choice_override is None else choice_override
