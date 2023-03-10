@@ -246,3 +246,16 @@ class FieldDefaultTestingModel(BaseModel):
     g: List[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
+
+
+# Include the import down here to reduce the effect on line numbers
+from dataclasses import InitVar  # noqa E402
+
+
+@dataclass
+class MyDataClass:
+    foo: InitVar[str]
+    bar: str
+
+
+MyDataClass(foo='foo', bar='bar')

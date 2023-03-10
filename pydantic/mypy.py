@@ -80,14 +80,14 @@ DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 
 
 def parse_mypy_version(version: str) -> Tuple[int, ...]:
-    return tuple(int(part) for part in version.split('+', 1)[0].split('.'))
+    return tuple(map(int, version.partition('+')[0].split('.')))
 
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 BUILTINS_NAME = 'builtins' if MYPY_VERSION_TUPLE >= (0, 930) else '__builtins__'
 
 # Increment version if plugin changes and mypy caches should be invalidated
-PLUGIN_VERSION = 1
+__version__ = 2
 
 
 def plugin(version: str) -> 'TypingType[Plugin]':
@@ -104,7 +104,6 @@ class PydanticPlugin(Plugin):
     def __init__(self, options: Options) -> None:
         self.plugin_config = PydanticPluginConfig(options)
         self._plugin_data = self.plugin_config.to_data()
-        self._plugin_data['version'] = PLUGIN_VERSION
         super().__init__(options)
 
     def get_base_class_hook(self, fullname: str) -> 'Optional[Callable[[ClassDefContext], None]]':
@@ -132,7 +131,11 @@ class PydanticPlugin(Plugin):
         return None
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
-        if fullname == DATACLASS_FULLNAME:
+        """Mark pydantic.dataclasses as dataclass.
+
+        Mypy version 1.1.1 added support for `@dataclass_transform` decorator.
+        """
+        if fullname == DATACLASS_FULLNAME and MYPY_VERSION_TUPLE < (1, 1):
             return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
         return None
 
