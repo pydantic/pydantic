@@ -1067,7 +1067,6 @@ def reusable_validator(num):
     return num * 2
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_reuse_global_validators():
     class Model(BaseModel):
         x: int

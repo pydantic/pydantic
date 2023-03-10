@@ -142,7 +142,8 @@ def test_subclass_custom_encoding():
         b: SubDelta
 
         @serializer('a', when_used='json')
-        def serialize_a(self, v: SubDt, _info):
+        @staticmethod
+        def serialize_a(v: SubDt, _info):
             return v.strftime('%a, %d %b %C %H:%M:%S')
 
         model_config = ConfigDict(ser_json_timedelta='float')
@@ -181,11 +182,13 @@ def test_custom_encoder():
         z: date
 
         @serializer('x')
-        def serialize_x(self, v: timedelta, _info):
+        @staticmethod
+        def serialize_x(v: timedelta, _info):
             return f'{v.total_seconds():0.3f}s'
 
         @serializer('y')
-        def serialize_y(self, v: Decimal, _info):
+        @staticmethod
+        def serialize_y(v: Decimal, _info):
             return 'a decimal'
 
     assert Model(x=123, y=5, z='2032-06-01').model_dump_json() == b'{"x":"123.000s","y":"a decimal","z":"2032-06-01"}'
@@ -222,12 +225,14 @@ def test_json_encoder_simple_inheritance():
         timedt: timedelta = timedelta(hours=100)
 
         @serializer('dt')
-        def serialize_dt(self, _v: datetime, _info):
+        @staticmethod
+        def serialize_dt(_v: datetime, _info):
             return 'parent_encoder'
 
     class Child(Parent):
         @serializer('timedt')
-        def serialize_timedt(self, _v: timedelta, _info):
+        @staticmethod
+        def serialize_timedt(_v: timedelta, _info):
             return 'child_encoder'
 
     assert Child().model_dump_json() == b'{"dt":"parent_encoder","timedt":"child_encoder"}'
@@ -238,12 +243,14 @@ def test_json_encoder_inheritance_override():
         dt: datetime = datetime.now()
 
         @serializer('dt')
-        def serialize_dt(self, _v: datetime, _info):
+        @staticmethod
+        def serialize_dt(_v: datetime, _info):
             return 'parent_encoder'
 
     class Child(Parent):
         @serializer('dt')
-        def serialize_dt(self, _v: datetime, _info):
+        @staticmethod
+        def serialize_dt(_v: datetime, _info):
             return 'child_encoder'
 
     assert Child().model_dump_json() == b'{"dt":"child_encoder"}'
@@ -283,15 +290,18 @@ def test_json_nested_encode_models():
         friend: Optional['User'] = None
 
         @serializer('birthday')
-        def serialize_birthday(self, v: datetime, _info):
+        @staticmethod
+        def serialize_birthday(v: datetime, _info):
             return v.timestamp()
 
         @serializer('phone', when_used='unless-none')
-        def serialize_phone(self, v: Phone, _info):
+        @staticmethod
+        def serialize_phone(v: Phone, _info):
             return v.number
 
         @serializer('friend', when_used='unless-none')
-        def serialize_user(self, v, _info):
+        @staticmethod
+        def serialize_user(v, _info):
             return v.SSN
 
     User.model_rebuild()
@@ -322,7 +332,8 @@ def test_custom_encode_fallback_basemodel():
         x: MyExoticType
 
         @serializer('x')
-        def serialize_x(self, _v: MyExoticType, _info):
+        @staticmethod
+        def serialize_x(_v: MyExoticType, _info):
             return 'exo'
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
