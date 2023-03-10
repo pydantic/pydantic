@@ -139,11 +139,7 @@ class DecoratorFunctions(Generic[DecFunc]):
         for name, decorator in self._decorators.items():
             func = getattr(cls, name)
             if isinstance(decorator, Validator):
-                try:
-                    decorator.function = make_generic_validator(func, decorator.mode)
-                except Exception as e:
-                    print(e)
-                    raise
+                decorator.function = make_generic_validator(func, decorator.mode)
             else:
                 decorator.function = func
 
