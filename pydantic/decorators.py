@@ -18,32 +18,32 @@ from .errors import PydanticUserError
 
 
 class _OnlyValueValidatorClsMethod(Protocol):
-    def __call__(self, __cls: Any, __value: Any) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, __value: Any) -> Any:
         ...
 
 
 class _V1ValidatorWithValuesClsMethod(Protocol):
-    def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:
         ...
 
 
 class _V1ValidatorWithValuesKwOnlyClsMethod(Protocol):
-    def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:
         ...
 
 
 class _V1ValidatorWithKwargsClsMethod(Protocol):
-    def __call__(self, __cls: Any, **kwargs: Any) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, **kwargs: Any) -> Any:
         ...
 
 
 class _V1ValidatorWithValuesAndKwargsClsMethod(Protocol):
-    def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:
         ...
 
 
 class _V2ValidatorClsMethod(Protocol):
-    def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:  # pragma: no cover
+    def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
         ...
 
 
@@ -54,7 +54,7 @@ class _V2WrapValidatorClsMethod(Protocol):
         __input_value: Any,
         __validator: _core_schema.CallableValidator,
         __info: _core_schema.ValidationInfo,
-    ) -> Any:  # pragma: no cover
+    ) -> Any:
         ...
 
 

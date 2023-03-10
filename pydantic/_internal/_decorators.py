@@ -259,32 +259,32 @@ def in_ipython() -> bool:
 
 
 class OnlyValueValidator(Protocol):
-    def __call__(self, __value: Any) -> Any:  # pragma: no cover
+    def __call__(self, __value: Any) -> Any:
         ...
 
 
 class V1ValidatorWithValues(Protocol):
-    def __call__(self, __value: Any, values: dict[str, Any]) -> Any:  # pragma: no cover
+    def __call__(self, __value: Any, values: dict[str, Any]) -> Any:
         ...
 
 
 class V1ValidatorWithValuesKwOnly(Protocol):
-    def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any:  # pragma: no cover
+    def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any:
         ...
 
 
 class V1ValidatorWithKwargs(Protocol):
-    def __call__(self, __value: Any, **kwargs: Any) -> Any:  # pragma: no cover
+    def __call__(self, __value: Any, **kwargs: Any) -> Any:
         ...
 
 
 class V1ValidatorWithKwargsAndValue(Protocol):
-    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:  # pragma: no cover
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
         ...
 
 
 class V1ValidatorWithValuesAndKwargs(Protocol):
-    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:  # pragma: no cover
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
         ...
 
 

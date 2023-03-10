@@ -120,6 +120,7 @@ exclude_lines = [
     'raise NotImplementedError',
     'if TYPE_CHECKING:',
     '@overload',
+    '\(Protocol\):$',
 ]
 
 
