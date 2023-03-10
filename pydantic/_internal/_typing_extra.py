@@ -78,6 +78,9 @@ else:
 NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
 
+TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
+
+
 if sys.version_info < (3, 8):
     # Even though this implementation is slower, we need it for python 3.7:
     # In python 3.7 "Literal" is not a builtin type and uses a different

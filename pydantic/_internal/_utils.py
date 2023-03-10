@@ -14,14 +14,14 @@ from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import Any, TypeVar
 
-from pydantic_core import CoreSchema
-from pydantic_core.core_schema import TypedDictField
+from typing_extensions import TypeGuard
 
 from . import _repr, _typing_extra
 
 if typing.TYPE_CHECKING:
     MappingIntStrAny = typing.Mapping[int | str, Any]
     AbstractSetIntStr = typing.AbstractSet[int | str]
+    from ..main import BaseModel
 
 __all__ = (
     'sequence_like',
@@ -36,10 +36,10 @@ __all__ = (
     'ValueItems',
     'ClassAttribute',
     'ROOT_KEY',
-    'LimitedDict',
     'dict_not_none',
     'AbstractSetIntStr',
     'MappingIntStrAny',
+    'all_identical',
 )
 
 ROOT_KEY = '__root__'
@@ -97,6 +97,20 @@ def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:
         if isinstance(cls, _typing_extra.WithArgsTypes):
             return False
         raise  # pragma: no cover
+
+
+def is_basemodel(cls: Any) -> TypeGuard[type[BaseModel]]:
+    """
+    We can remove this function and go back to using lenient_issubclass, but this is nice because it
+    ensures that we get proper type-checking, which lenient_issubclass doesn't provide.
+
+    Would be nice if there was a lenient_issubclass-equivalent in typing_extensions, or otherwise
+    a way to define such a function that would support proper type-checking; maybe we should bring it up
+    at the typing summit..
+    """
+    from ..main import BaseModel
+
+    return lenient_issubclass(cls, BaseModel)
 
 
 def is_valid_identifier(identifier: str) -> bool:
@@ -382,46 +396,3 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
         if left_item is not right_item:
             return False
     return True
-
-
-if typing.TYPE_CHECKING:
-    # define like this to work with older python
-    KT = TypeVar('KT')
-    VT = TypeVar('VT')
-
-    class LimitedDict(dict[KT, VT]):
-        def __init__(self, size_limit: int = 1000):
-            ...
-
-else:
-
-    class LimitedDict(dict):
-        """
-        Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
-
-        Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
-        """
-
-        def __init__(self, size_limit: int = 1000):
-            self.size_limit = size_limit
-            super().__init__()
-
-        def __setitem__(self, __key: Any, __value: Any) -> None:
-            super().__setitem__(__key, __value)
-            if len(self) > self.size_limit:
-                excess = len(self) - self.size_limit + self.size_limit // 10
-                to_remove = list(self.keys())[:excess]
-                for key in to_remove:
-                    del self[key]
-
-        def __class_getitem__(cls, *args: Any) -> Any:
-            # to avoid errors with 3.7
-            pass
-
-
-def is_typed_dict_field(schema: CoreSchema | TypedDictField) -> typing.TypeGuard[TypedDictField]:
-    return 'type' not in schema
-
-
-def is_core_schema(schema: CoreSchema | TypedDictField) -> typing.TypeGuard[CoreSchema]:
-    return 'type' in schema

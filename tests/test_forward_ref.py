@@ -3,7 +3,7 @@ import sys
 from typing import Optional, Tuple
 
 import pytest
-from dirty_equals import IsStr
+from dirty_equals import HasRepr
 
 from pydantic import BaseModel, PydanticUserError, ValidationError
 
@@ -34,16 +34,18 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.model_fields['a'].annotation.__name__ == 'SelfType'
+    assert module.Model.model_fields['a'].annotation.__name__ == 'PydanticForwardRef'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
     @create_module
     def module():
+        from typing import Optional
+
         from pydantic import BaseModel
 
         class Foo(BaseModel, undefined_types_warning=False):
-            a: 'Bar' = None
+            a: Optional['Bar'] = None
 
         class Bar(BaseModel):
             b: 'Foo'
@@ -57,9 +59,10 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # __field__ is complete on Foo
-    assert repr(module.Foo.model_fields['a']).startswith(
-        'FieldInfo(annotation=SelfType, required=False, metadata=[SchemaRef(__pydantic_core_schema__'
+    assert module.Foo.model_fields['a'] == HasRepr(
+        'FieldInfo(annotation=Union[PydanticForwardRef, NoneType], required=False)'
     )
+
     # but Foo is not ready to use
     with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
         module.Foo(a={'b': {'a': {}}})
@@ -68,7 +71,7 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert module.Foo.__pydantic_model_complete__ is True
 
     # now Foo is ready to use
-    f = module.Foo(a={'b': {'a': {'b': {}}}})
+    f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
     assert f == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
@@ -107,7 +110,7 @@ def test_basic_forward_ref(create_module):
 def test_self_forward_ref_module(create_module):
     @create_module
     def module():
-        from typing import ForwardRef
+        from typing import ForwardRef, Optional
 
         from pydantic import BaseModel
 
@@ -115,7 +118,7 @@ def test_self_forward_ref_module(create_module):
 
         class Foo(BaseModel):
             a: int = 123
-            b: FooRef = None
+            b: Optional[FooRef] = None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
@@ -155,14 +158,14 @@ def test_self_forward_ref_collection(create_module):
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.model_fields['b']) == IsStr(
-        regex=r'FieldInfo\(annotation=SelfType, required=False, metadata=\[Schem.+.Foo:[0-9]+\'\}.*'
-    )
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=PydanticForwardRef, required=False)'
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.model_fields['c']) == IsStr(regex=r'FieldInfo\(annotation=List\[Annotated\[SelfType.+')
-    assert repr(module.Foo.model_fields['d']) == IsStr(
-        regex=r'FieldInfo\(annotation=Dict\[str, Annotated\[SelfType, SchemaRef.*'
+    assert repr(module.Foo.model_fields['c']) == (
+        'FieldInfo(annotation=List[PydanticForwardRef], required=False, ' 'default=[])'
+    )
+    assert repr(module.Foo.model_fields['d']) == (
+        'FieldInfo(annotation=Dict[str, PydanticForwardRef], required=False, default={})'
     )
 
 
@@ -676,9 +679,11 @@ class SelfReferencing(BaseModel):
 
     SelfReferencing = module.SelfReferencing
     if sys.version_info >= (3, 10):
-        assert repr(SelfReferencing.model_fields['names']) == IsStr(
-            regex=r'FieldInfo\(annotation=list\[Annotated\[SelfType, SchemaRef.+, required=True\)'
+        assert (
+            repr(SelfReferencing.model_fields['names'])
+            == 'FieldInfo(annotation=list[PydanticForwardRef], required=True)'
         )
+
     # test that object creation works
     obj = SelfReferencing(names=[SelfReferencing(names=[])])
     assert obj.names == [SelfReferencing(names=[])]

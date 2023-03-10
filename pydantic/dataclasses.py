@@ -3,6 +3,7 @@ Provide an enhanced dataclass that performs validation.
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import sys
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union, overload
 
@@ -22,7 +23,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         *,
@@ -38,7 +39,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[Type[_T]], PydanticDataclass]:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -57,7 +58,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         *,
@@ -72,7 +73,7 @@ else:
     ) -> Callable[[Type[_T]], PydanticDataclass]:
         ...
 
-    @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         _cls: Type[_T],
@@ -89,7 +90,7 @@ else:
         ...
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@dataclass_transform(field_specifiers=(dataclasses.field, Field))
 def dataclass(
     _cls: Optional[Type[_T]] = None,
     *,
@@ -110,8 +111,6 @@ def dataclass(
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
     def create_dataclass(cls: Type[Any]) -> PydanticDataclass:
-        import dataclasses
-
         if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
             # so we don't add validation to the existing std lib dataclass, so we subclass it, but we need to
             # set `__pydantic_fields__` while subclassing so the logic below can treat the new class like its

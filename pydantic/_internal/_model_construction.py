@@ -14,8 +14,10 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._core_metadata import build_metadata_dict
+from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._fields import Undefined, collect_fields
 from ._generate_schema import generate_config, model_fields_schema
+from ._generics import recursively_defined_type_refs
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -87,7 +89,7 @@ def single_underscore(name: str) -> bool:
 
 
 def deferred_model_get_pydantic_validation_schema(
-    cls: type[BaseModel], types_namespace: dict[str, Any] | None, **_kwargs: Any
+    cls: type[BaseModel], types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None, **_kwargs: Any
 ) -> core_schema.CoreSchema:
     """
     Used on model as `__get_pydantic_core_schema__` if not all type hints are available.
@@ -105,6 +107,7 @@ def deferred_model_get_pydantic_validation_schema(
         cls.__pydantic_serializer_functions__,
         cls.__config__.arbitrary_types_allowed,
         types_namespace,
+        typevars_map,
     )
 
     core_config = generate_config(cls.__config__, cls)
@@ -128,6 +131,7 @@ def complete_model_class(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[str, Any] | None = None,
 ) -> bool:
     """
     Collect bound validator functions, build the model validation schema and set the model signature.
@@ -143,7 +147,7 @@ def complete_model_class(
     serializer_functions.set_bound_functions(cls)
 
     try:
-        fields, model_ref = collect_fields(cls, name, bases, types_namespace)
+        fields, model_ref = collect_fields(cls, name, bases, types_namespace, typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -161,7 +165,7 @@ def complete_model_class(
         cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
         # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
         cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
-            deferred_model_get_pydantic_validation_schema, cls
+            deferred_model_get_pydantic_validation_schema, cls, typevars_map=typevars_map
         )
         return False
 
@@ -172,7 +176,11 @@ def complete_model_class(
         serializer_functions,
         cls.model_config['arbitrary_types_allowed'],
         types_namespace,
+        typevars_map,
     )
+    inner_schema = consolidate_refs(inner_schema)
+    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+
     validator_functions.check_for_unused()
     serializer_functions.check_for_unused()
 

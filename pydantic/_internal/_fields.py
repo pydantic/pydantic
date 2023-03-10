@@ -6,15 +6,17 @@ from __future__ import annotations as _annotations
 import dataclasses
 import re
 import sys
+from copy import copy
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, ForwardRef
 
 from pydantic_core import core_schema
-from typing_extensions import Annotated
 
 from ..errors import PydanticUndefinedAnnotation
+from ._forward_ref import PydanticForwardRef
 from ._repr import Representation
 from ._typing_extra import get_type_hints, is_classvar
+from ._generics import replace_types
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo
@@ -52,12 +54,6 @@ class PydanticMetadata(Representation):
 class PydanticGeneralMetadata(PydanticMetadata):
     def __init__(self, **metadata: Any):
         self.__dict__ = metadata
-
-
-class SelfType:
-    """
-    No-op marker class for `self` type reference.
-    """
 
 
 class SchemaRef(Representation):
@@ -101,6 +97,7 @@ def collect_fields(  # noqa: C901
     name: str,
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[str, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], str]:
     """
     Collect the fields of a pydantic model or dataclass, also returns the model/class ref to use in the
@@ -110,8 +107,10 @@ def collect_fields(  # noqa: C901
     :param name: name of the class, generally `cls.__name__`
     :param bases: parents of the class, generally `cls.__bases__`
     :param types_namespace: optional extra namespace to look for types in
+    :param typevars_map: TODO
     """
     from ..fields import FieldInfo
+    from ._generate_schema import get_model_self_schema
 
     module_name = getattr(cls, '__module__', None)
     global_ns: dict[str, Any] | None = None
@@ -127,9 +126,11 @@ def collect_fields(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
-    schema_ref = f'{module_name}.{name}'
-    self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(schema_ref))
-    local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
+    self_schema = get_model_self_schema(cls)
+    local_ns = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
+    # schema_ref = f'{module_name}.{name}'
+    # self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(schema_ref))
+    # local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
@@ -151,7 +152,7 @@ def collect_fields(  # noqa: C901
     annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo] = {}
 
-    cls_fields: dict[str, FieldInfo] = getattr(cls, 'model_fields', None) or getattr(cls, '__pydantic_fields__', {})
+    # cls_fields: dict[str, FieldInfo] = getattr(cls, 'model_fields', None) or getattr(cls, '__pydantic_fields__', {})
     # currently just used for `init=False` dataclass fields, but could be used more
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
@@ -163,22 +164,44 @@ def collect_fields(  # noqa: C901
         if isinstance(ann_type, ForwardRef):
             raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
+        if cls.__pydantic_generic_typevars_map__:
+            ann_type = replace_types(ann_type, cls.__pydantic_generic_typevars_map__)
+
+        generic_origin = cls.__pydantic_generic_origin__
         for base in bases:
             if hasattr(base, ann_name):
-                raise NameError(
-                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
-                    f'you might want to use a different field name with "alias=\'{ann_name}\'".'
-                )
+                if base is not generic_origin:  # Don't warn about "shadowing" of attributes in parametrized generics
+                    raise NameError(
+                        f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
+                        f'you might want to use a different field name with "alias=\'{ann_name}\'".'
+                    )
 
         try:
-            default = getattr(cls, ann_name)
+            default = getattr(cls, ann_name, Undefined)
+            if default is Undefined and generic_origin:
+                default = (generic_origin.__pydantic_generic_defaults__ or {}).get(ann_name, Undefined)
+            if default is Undefined:
+                raise AttributeError
         except AttributeError:
-            if ann_name in annotations:
+            if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
                 fields[ann_name] = FieldInfo.from_annotation(ann_type)
             else:
-                # if field has no default value and is not in __annotations__ this means that it is
-                # defined in a base class and we can take it from there
-                fields[ann_name] = cls_fields[ann_name]
+                # # if field has no default value and is not in __annotations__ this means that it is
+                # # defined in a base class and we can take it from there
+                # fields[ann_name] = cls_fields[ann_name]
+                model_fields_lookup: dict[str, FieldInfo] = {}
+                for x in cls.__bases__[::-1]:
+                    model_fields_lookup.update(getattr(x, 'model_fields', {}))
+                if ann_name in model_fields_lookup:
+                    # The field was present on one of the (possibly multiple) base classes
+                    # copy the field to make sure typevar substitutions don't cause issues with the base classes
+                    field = copy(model_fields_lookup[ann_name])
+                else:
+                    # The field was not found on any base classes; this seems to be caused by fields not getting
+                    # generated thanks to models not being fully defined while initializing recursive models.
+                    # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
+                    field = FieldInfo.from_annotation(ann_type)
+                fields[ann_name] = field
         else:
             if isinstance(default, dataclasses.Field) and not default.init:
                 # dataclasses.Field with init=False are not fields
@@ -188,6 +211,18 @@ def collect_fields(  # noqa: C901
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
-            delattr(cls, ann_name)
+            try:
+                delattr(cls, ann_name)
+                if cls.__pydantic_generic_parameters__:  # model can be parametrized
+                    assert cls.__pydantic_generic_defaults__ is not None
+                    cls.__pydantic_generic_defaults__[ann_name] = default
+            except AttributeError:
+                pass  # indicates the attribute was on a parent class
+
+    typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
+    if typevars_map:
+        for field in fields.values():
+            field.annotation = replace_types(field.annotation, typevars_map)
+    schema_ref = self_schema['schema']['schema_ref']
 
     return fields, schema_ref

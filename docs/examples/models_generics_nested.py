@@ -1,16 +1,15 @@
 from typing import Generic, TypeVar
 
-from pydantic import ValidationError
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, ValidationError
 
 T = TypeVar('T')
 
 
-class InnerT(GenericModel, Generic[T]):
+class InnerT(BaseModel, Generic[T]):
     inner: T
 
 
-class OuterT(GenericModel, Generic[T]):
+class OuterT(BaseModel, Generic[T]):
     outer: T
     nested: InnerT[T]
 

@@ -30,7 +30,7 @@ from uuid import UUID
 
 import annotated_types
 import pytest
-from dirty_equals import AnyThing, HasRepr
+from dirty_equals import HasRepr
 from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -2167,6 +2167,8 @@ pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
 neg_int_values = '-Inf', '-Infinity'
 nan_values = 'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN'
 non_finite_values = nan_values + pos_int_values + neg_int_values
+# dirty_equals.AnyThing() doesn't work with Decimal on PyPy, hence this hack
+ANY_THING = object()
 
 
 @pytest.mark.parametrize(
@@ -2335,7 +2337,7 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
                         'loc': ('foo',),
                         'msg': 'Input should be a finite number',
                         'type': 'finite_number',
-                        'input': AnyThing(),
+                        'input': ANY_THING,
                     }
                 ],
             )
@@ -2375,7 +2377,12 @@ def test_decimal_validation(mode, type_args, value, result):
             m = Model(foo=value)
             print(f'unexpected result: {m!r}')
         # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == result
+        # dirty_equals.AnyThing() doesn't work with Decimal on PyPy, hence this hack
+        errors = exc_info.value.errors()
+        if result[0].get('input') is ANY_THING:
+            for e in errors:
+                e['input'] = ANY_THING
+        assert errors == result
         # assert exc_info.value.json().startswith('[')
     else:
         assert Model(foo=value).foo == result

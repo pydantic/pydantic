@@ -1,13 +1,12 @@
 from typing import Generic, TypeVar
 
-from pydantic import ValidationError
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, ValidationError
 
 AT = TypeVar('AT')
 BT = TypeVar('BT')
 
 
-class Model(GenericModel, Generic[AT, BT]):
+class Model(BaseModel, Generic[AT, BT]):
     a: AT
     b: BT
 

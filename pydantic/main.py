@@ -11,11 +11,11 @@ from enum import Enum
 from functools import partial
 from inspect import getdoc
 from types import prepare_class, resolve_bases
-from typing import Any
+from typing import Any, Generic
 
 import typing_extensions
 
-from ._internal import _decorators, _model_construction, _repr, _typing_extra, _utils
+from ._internal import _decorators, _forward_ref, _generics, _model_construction, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -46,9 +46,18 @@ _object_setattr = _model_construction.object_setattr
 _base_class_defined = False
 
 
-@typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
+@typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(mcs, cls_name: str, bases: tuple[type[Any], ...], namespace: dict[str, Any], **kwargs: Any) -> type:
+    def __new__(
+        mcs,
+        cls_name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        __pydantic_generic_origin__: type[BaseModel] | None = None,
+        __pydantic_generic_args__: tuple[Any, ...] | None = None,
+        __pydantic_generic_parameters__: tuple[Any, ...] | None = None,
+        **kwargs: Any,
+    ) -> type:
         if _base_class_defined:
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
@@ -99,6 +108,19 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
+            cls.__pydantic_generic_args__ = __pydantic_generic_args__
+            cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
+            cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
+                cls, '__parameters__', None
+            )
+            cls.__pydantic_generic_defaults__ = None if not cls.__pydantic_generic_parameters__ else {}
+            cls.__pydantic_generic_typevars_map__ = (
+                None
+                if __pydantic_generic_origin__ is None
+                else dict(
+                    zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
+                )
+            )
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
@@ -135,6 +157,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
+        __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None]
+        __pydantic_generic_defaults__: typing.ClassVar[dict[str, Any] | None]
+        __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
+        __pydantic_generic_parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None]
+        __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -482,7 +509,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @classmethod
     def model_rebuild(
-        cls, *, force: bool = False, raise_errors: bool = True, types_namespace: typing.Dict[str, Any] | None = None
+        cls,
+        *,
+        force: bool = False,
+        raise_errors: bool = True,
+        types_namespace: typing.Dict[str, Any] | None = None,
+        typevars_map: typing.Dict[str, Any] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -502,6 +534,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 cls.__bases__,
                 raise_errors=raise_errors,
                 types_namespace=types_namespace,
+                typevars_map=typevars_map,
             )
 
     def __iter__(self) -> 'TupleGenerator':
@@ -609,6 +642,84 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
+
+    def __class_getitem__(
+        cls, typevar_values: type[Any] | tuple[type[Any], ...]
+    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef:
+        cached = _generics.get_cached_generic_type_early(cls, typevar_values)
+        if cached is not None:
+            return cached
+
+        if cls is BaseModel:
+            raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
+        if not hasattr(cls, '__parameters__'):
+            raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
+        if not cls.__pydantic_generic_parameters__ and Generic not in cls.__bases__:
+            raise TypeError(f'{cls} is not a generic class')
+
+        if not isinstance(typevar_values, tuple):
+            typevar_values = (typevar_values,)
+        _generics.check_parameters_count(cls, typevar_values)
+
+        # Build map from generic typevars to passed params
+        typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
+            zip(cls.__pydantic_generic_parameters__ or (), typevar_values)
+        )
+        if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
+            submodel = cls  # if arguments are equal to parameters it's the same object
+            _generics.set_cached_generic_type(cls, typevar_values, submodel)
+        else:
+            parent_args = cls.__pydantic_generic_args__
+            if not parent_args:
+                args = typevar_values
+            else:
+                args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
+
+            origin = cls.__pydantic_generic_origin__ or cls
+            model_name = origin.model_parametrized_name(args)
+            params = tuple(
+                {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
+            )  # use dict as ordered set
+
+            with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
+                if maybe_self_type is not None:
+                    return maybe_self_type
+
+                cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
+                if cached is not None:
+                    return cached
+                submodel = _generics.create_generic_submodel(model_name, origin, args, params)
+
+                # Update cache
+                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+
+                # Doing the rebuild _after_ populating the cache prevents infinite recursion
+                submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
+
+        return submodel
+
+    @classmethod
+    def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
+        """
+        Compute class name for parametrizations of generic classes.
+
+        :param params: Tuple of types of the class . Given a generic class
+            `Model` with 2 type variables and a concrete model `Model[str, int]`,
+            the value `(str, int)` would be passed to `params`.
+        :return: String representing the new class where `params` are
+            passed to `cls` as type variables.
+
+        This method can be overridden to achieve a custom naming scheme for generic BaseModels.
+        """
+        if not issubclass(cls, Generic):  # type: ignore[arg-type]
+            raise TypeError('Concrete names should only be generated for generic models.')
+
+        # Any strings received should represent forward references, so we handle them specially below.
+        # If we eventually move toward wrapping them in a ForwardRef in __class_getitem__ in the future,
+        # we may be able to remove this special case.
+        param_names = [param if isinstance(param, str) else _repr.display_as_type(param) for param in params]
+        params_component = ', '.join(param_names)
+        return f'{cls.__name__}[{params_component}]'
 
 
 _base_class_defined = True
