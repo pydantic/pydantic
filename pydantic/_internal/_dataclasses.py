@@ -69,6 +69,11 @@ def prepare_dataclass(
     """
     name = cls.__name__
     bases = cls.__bases__
+    # added for compatibility with code that expects a model
+    # TODO actually support generic dataclasses
+    cls.__pydantic_generic_typevars_map__ = None
+    cls.__pydantic_generic_args__ = None
+    cls.__pydantic_generic_origin__ = None
     try:
         fields, model_ref = collect_fields(cls, name, bases, types_namespace)
     except PydanticUndefinedAnnotation as e:

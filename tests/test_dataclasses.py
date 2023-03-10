@@ -828,7 +828,6 @@ def test_override_builtin_dataclass_nested_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inherit_builtin_dataclass():
     @dataclasses.dataclass
     class Z:

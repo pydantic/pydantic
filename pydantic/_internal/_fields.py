@@ -6,17 +6,17 @@ from __future__ import annotations as _annotations
 import dataclasses
 import re
 import sys
-from copy import copy
 from abc import ABC, abstractmethod
+from copy import copy
 from typing import TYPE_CHECKING, Any, ForwardRef
 
 from pydantic_core import core_schema
 
 from ..errors import PydanticUndefinedAnnotation
 from ._forward_ref import PydanticForwardRef
+from ._generics import replace_types
 from ._repr import Representation
 from ._typing_extra import get_type_hints, is_classvar
-from ._generics import replace_types
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo

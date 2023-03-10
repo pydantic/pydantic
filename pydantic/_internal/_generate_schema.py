@@ -26,7 +26,6 @@ from ._generics import replace_types
 
 if TYPE_CHECKING:
     from ..config import ConfigDict
-    from ..main import BaseModel
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -71,7 +70,8 @@ def dataclass_fields_schema(
     Generate schema for the fields of a dataclass, this differs from a model since we use `arguments_schema`
     not `typed_dict_schema` so unnamed arguments can be used.
     """
-    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
+    # TODO add typevars_map argument when we support generic dataclasses
+    schema_generator = GenerateSchema(arbitrary_types, types_namespace, None)
     args = [
         schema_generator.generate_arg_param_schema(k, v, mode, validator_functions, serializer_functions)
         for k, v in fields.items()
@@ -815,9 +815,15 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
     return modify_js_function
 
 
-def get_model_self_schema(cls: type[BaseModel]) -> core_schema.ModelSchema:
+def get_model_self_schema(cls: type[Any]) -> core_schema.ModelSchema:
+    """
+    Type is Any, but `cls` should be either a Pydantic model or a Pydantic dataclass.
+    """
     model_ref = get_type_ref(cls)
-    model_js_metadata = cls.model_json_schema_metadata()
+    try:
+        model_js_metadata = cls.model_json_schema_metadata()
+    except AttributeError:
+        model_js_metadata = None
     return core_schema.model_schema(
         cls,
         core_schema.definition_reference_schema(model_ref),
