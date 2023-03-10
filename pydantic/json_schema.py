@@ -18,8 +18,6 @@ if TYPE_CHECKING:
     from .main import BaseModel
 
 JsonSchemaValue = Dict[str, Any]
-Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-HashableJson = Union[Tuple[Tuple[str, Any], ...], Tuple[Any, ...], str, int, float, bool, None]
 
 
 # ##### JSON Schema Metadata Manipulation #####
@@ -1075,11 +1073,15 @@ def model_schema(
     return model.model_json_schema(by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
 
 
-def _deduplicate_schemas(schemas: Iterable[Json]) -> list[Json]:
+_Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+_HashableJson = Union[Tuple[Tuple[str, Any], ...], Tuple[Any, ...], str, int, float, bool, None]
+
+
+def _deduplicate_schemas(schemas: Iterable[_Json]) -> list[_Json]:
     return list({_make_json_hashable(schema): schema for schema in schemas}.values())
 
 
-def _make_json_hashable(value: Json) -> HashableJson:
+def _make_json_hashable(value: _Json) -> _HashableJson:
     if isinstance(value, dict):
         return tuple(sorted((k, _make_json_hashable(v)) for k, v in value.items()))
     elif isinstance(value, list):
