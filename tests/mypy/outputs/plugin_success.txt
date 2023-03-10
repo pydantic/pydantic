@@ -1,3 +1,5 @@
 122: error: Unexpected keyword argument "name" for "AddProject"  [call-arg]
 122: error: Unexpected keyword argument "slug" for "AddProject"  [call-arg]
 122: error: Unexpected keyword argument "description" for "AddProject"  [call-arg]
+239: error: Unexpected keyword argument "foo" for "MyDataClass"  [call-arg]
+239: error: Unexpected keyword argument "bar" for "MyDataClass"  [call-arg]
