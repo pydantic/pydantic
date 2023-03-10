@@ -291,6 +291,10 @@ class _ApplyInferredDiscriminator:
             raise PydanticUserError(f'Field {self.discriminator!r} of {source} needs to be a `Literal`')
 
     def _set_unique_choice_for_values(self, choice: core_schema.CoreSchema, values: Sequence[str | int | Enum]) -> None:
+        """
+        This method updates `self.tagged_union_choices` so that all provided (discriminator) `values` map to the
+        provided `choice`, validating that none of these values already map to another (different) choice.
+        """
         primary_value: str | int | None = None
         for discriminator_value in values:
             while isinstance(discriminator_value, Enum):
