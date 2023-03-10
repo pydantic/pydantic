@@ -570,10 +570,6 @@ def test_optional_union_with_defaults():
 
 
 def test_aliases_matching_is_not_sufficient() -> None:
-    from typing import Literal, Union
-
-    from pydantic import BaseModel, Field
-
     class Case1(BaseModel):
         kind_one: Literal['1'] = Field(alias='kind')
 
