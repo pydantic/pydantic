@@ -114,6 +114,36 @@ def test_deque_validation():
     assert exc_info.value.errors() == [
         {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list/array', 'input': 'snap'}
     ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=['a'])
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=('a',))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a={'a'})
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
     assert Model(a={1, 2, 3}).a == deque([1, 2, 3])
     assert Model(a=deque({1, 2, 3})).a == deque([1, 2, 3])
     assert Model(a=[4, 5]).a == deque([4, 5])

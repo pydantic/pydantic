@@ -16,7 +16,7 @@ from pathlib import PurePath
 from typing import Any, Callable
 from uuid import UUID
 
-from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
+from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import get_args
 
 from ..json_schema import JsonSchemaMetadata
@@ -167,9 +167,15 @@ def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> cor
     return core_schema.function_wrap_ser_schema(_serializers.serialize_deque, inner_schema or core_schema.any_schema())
 
 
-def _deque_any_schema() -> core_schema.FunctionWrapSchema:
+def _deque_any_schema(inner: CoreSchema | None) -> core_schema.FunctionWrapSchema:
     return core_schema.function_wrap_schema(
-        _validators.deque_any_validator, core_schema.list_schema(allow_any_iter=True), serialization=_deque_ser_schema()
+        _validators.deque_any_validator,
+        core_schema.union_schema(
+            core_schema.list_schema(inner),
+            core_schema.set_schema(inner),
+            core_schema.tuple_variable_schema(inner),
+        ),
+        serialization=_deque_ser_schema(),
     )
 
 
@@ -177,17 +183,17 @@ def _deque_any_schema() -> core_schema.FunctionWrapSchema:
 def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.CoreSchema:
     if obj == deque:
         # bare `deque` type used as annotation
-        return _deque_any_schema()
+        return _deque_any_schema(None)
 
     try:
         arg = get_args(obj)[0]
     except IndexError:
         # not argument bare `Deque` is equivalent to `Deque[Any]`
-        return _deque_any_schema()
+        return _deque_any_schema(None)
 
     if arg == typing.Any:
         # `Deque[Any]`
-        return _deque_any_schema()
+        return _deque_any_schema(None)
     else:
         # `Deque[Something]`
         inner_schema = schema_generator.generate_schema(arg)
