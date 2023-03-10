@@ -261,11 +261,12 @@ class GenerateSchema:
         schema = self.generate_schema(field_info.annotation)
         schema = apply_annotations(schema, field_info.metadata)
 
+        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
+
         if not field_info.is_required():
             required = False
             schema = wrap_default(field_info, schema)
 
-        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
         misc = JsonSchemaMetadata(
             title=field_info.title,

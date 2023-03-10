@@ -169,7 +169,7 @@ def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> cor
 
 def _deque_any_schema() -> core_schema.FunctionWrapSchema:
     return core_schema.function_wrap_schema(
-        _validators.deque_any_validator, core_schema.list_schema(), serialization=_deque_ser_schema()
+        _validators.deque_any_validator, core_schema.list_schema(allow_any_iter=True), serialization=_deque_ser_schema()
     )
 
 
