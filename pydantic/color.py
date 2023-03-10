@@ -197,7 +197,7 @@ class Color(_repr.Representation):
         return core_schema.function_plain_schema(cls._validate, serialization=core_schema.to_string_ser_schema())
 
     @classmethod
-    def _validate(cls, __input_value: Any, **_kwargs: Any) -> 'Color':
+    def _validate(cls, __input_value: Any, _: Any) -> 'Color':
         return cls(__input_value)
 
     def __str__(self) -> str:

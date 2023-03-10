@@ -437,8 +437,7 @@ def test_generic():
         positive_number: int
 
         @validator('error')
-        def validate_error(cls, v: Optional[error_type], **kwargs) -> Optional[error_type]:
-            values = kwargs.get('data')
+        def validate_error(cls, v: Optional[error_type], values: Dict[str, Any]) -> Optional[error_type]:
             if values.get('data', None) is None and v is None:
                 raise ValueError('Must provide data or error')
             if values.get('data', None) is not None and v is not None:
@@ -446,7 +445,7 @@ def test_generic():
             return v
 
         @validator('positive_number')
-        def validate_positive_number(cls, v: int, **kwargs) -> int:
+        def validate_positive_number(cls, v: int) -> int:
             if v < 0:
                 raise ValueError
             return v

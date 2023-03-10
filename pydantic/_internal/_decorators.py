@@ -4,9 +4,12 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 from __future__ import annotations as _annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar
+from functools import wraps
+from inspect import Parameter, signature
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, List, TypeVar, Union, cast
 
-from pydantic_core.core_schema import JsonReturnTypes, WhenUsed
+from pydantic_core.core_schema import JsonReturnTypes, ValidationInfo, ValidatorFunction, WhenUsed
+from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
 
@@ -133,7 +136,15 @@ class DecoratorFunctions(Generic[DecFunc]):
         Set functions in self._decorators, now that the class is created and functions are bound.
         """
         for name, decorator in self._decorators.items():
-            decorator.function = getattr(cls, name)
+            func = getattr(cls, name)
+            if isinstance(decorator, Validator):
+                try:
+                    decorator.function = make_generic_validator(func, decorator.mode)
+                except Exception as e:
+                    print(e)
+                    raise
+            else:
+                decorator.function = func
 
     def get_root_decorators(self) -> list[DecFunc]:
         return [self._decorators[name] for name in self._root_decorators]
@@ -218,3 +229,106 @@ def in_ipython() -> bool:
         return False
     else:  # pragma: no cover
         return True
+
+
+class OnlyValueValidator(Protocol):
+    def __call__(self, __value: Any) -> Any:  # pragma: no cover
+        ...
+
+
+class V1ValidatorWithValues(Protocol):
+    def __call__(self, __value: Any, values: dict[str, Any]) -> Any:  # pragma: no cover
+        ...
+
+
+class V1ValidatorWithValuesKwOnly(Protocol):
+    def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any:  # pragma: no cover
+        ...
+
+
+class V1ValidatorWithKwargs(Protocol):
+    def __call__(self, __value: Any, **kwargs: Any) -> Any:  # pragma: no cover
+        ...
+
+
+class V1ValidatorWithKwargsAndValue(Protocol):
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:  # pragma: no cover
+        ...
+
+
+class V1ValidatorWithValuesAndKwargs(Protocol):
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:  # pragma: no cover
+        ...
+
+
+V1Validator = Union[
+    V1ValidatorWithValues, V1ValidatorWithValuesKwOnly, V1ValidatorWithKwargs, V1ValidatorWithValuesAndKwargs
+]
+
+
+def make_generic_validator(
+    validator: V1Validator | OnlyValueValidator | ValidatorFunction, mode: str
+) -> ValidatorFunction:
+    """
+    Make a generic function which calls a validator with the right arguments.
+    """
+    sig = signature(validator)
+
+    positional_params: List[str] = []
+    keyword_only_params: List[str] = []
+    accepts_kwargs = False
+    for param_name, parameter in sig.parameters.items():
+        if param_name in ('field', 'config'):
+            raise TypeError(
+                'The `field` and `config` parameters are not available in Pydantic V2.'
+                ' Please use the `info` parameter instead.'
+                ' You can access the configuration via `info.config`,'
+                ' but it is a dictionary instead of an object like it was in Pydantic V1.'
+                ' The `field` argument is unavailable.'
+            )
+        if parameter.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD):
+            positional_params.append(param_name)
+        elif parameter.kind is Parameter.KEYWORD_ONLY:
+            keyword_only_params.append(param_name)
+        elif parameter.kind is Parameter.VAR_KEYWORD:
+            accepts_kwargs = True
+
+    accepts_values_kw = (keyword_only_params == ['values'] and len(positional_params) == 1) or (
+        len(positional_params) == 2 and positional_params[1] == 'values'
+    )
+
+    if accepts_kwargs and len(positional_params) == 1:
+        # although this could be compatible with the V2 signature we want to discourage it,
+        # so we treat it as a backwards compatible validator
+        validator = cast(V1ValidatorWithKwargs, validator)
+
+        @wraps(validator)
+        def _wrapper1(value: Any, info: ValidationInfo) -> Any:
+            return validator(value, values=info.data)  # type: ignore[call-arg]
+
+        return _wrapper1
+    if len(positional_params) == 1 and keyword_only_params == []:
+        validator = cast(OnlyValueValidator, validator)
+
+        @wraps(validator)
+        def _wrapper2(value: Any, info: ValidationInfo) -> Any:
+            return validator(value)  # type: ignore[call-arg]
+
+        return _wrapper2
+    elif len(positional_params) in (1, 2) and accepts_values_kw:
+        validator = cast(V1ValidatorWithValues, validator)
+
+        @wraps(validator)
+        def _wrapper3(value: Any, info: ValidationInfo) -> Any:
+            return validator(value, values=info.data)  # type: ignore[call-arg]
+
+        return _wrapper3
+    elif keyword_only_params == [] and len(positional_params) == 2:
+        validator = cast(ValidatorFunction, validator)
+        return validator
+    raise TypeError(
+        f'Unsupported signature for {mode} validator {validator}: {sig} is not supported.'
+        ' Validators must be compatible with one of the following two signatures:\n'
+        ' - (__value: Any, __info: pydantic.ValidationInfo) -> Any\n'
+        ' - (__value: Any, values: dict[str, Any]) -> Any'
+    )

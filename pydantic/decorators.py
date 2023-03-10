@@ -8,13 +8,106 @@ Public methods related to:
 from __future__ import annotations as _annotations
 
 from types import FunctionType
-from typing import Any, Callable, overload
+from typing import Any, Callable, Union, overload
 
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Literal
+from typing_extensions import Literal, Protocol
 
 from ._internal import _decorators
 from .errors import PydanticUserError
+
+
+class _OnlyValueValidator(Protocol):
+    def __call__(self, __cls: Any, __value: Any) -> Any:  # pragma: no cover
+        ...
+
+
+class _V1ValidatorWithValues(Protocol):
+    def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:  # pragma: no cover
+        ...
+
+
+class _V1ValidatorWithValuesKwOnly(Protocol):
+    def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:  # pragma: no cover
+        ...
+
+
+class _V1ValidatorWithKwargs(Protocol):
+    def __call__(self, __cls: Any, **kwargs: Any) -> Any:  # pragma: no cover
+        ...
+
+
+class _V1ValidatorWithValuesAndKwargs(Protocol):
+    def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:  # pragma: no cover
+        ...
+
+
+class _V2Validator(Protocol):
+    def __call__(self, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:  # pragma: no cover
+        ...
+
+
+class _V2WrapValidator(Protocol):
+    def __call__(
+        self, __input_value: Any, __validator: _core_schema.CallableValidator, __info: _core_schema.ValidationInfo
+    ) -> Any:  # pragma: no cover
+        ...
+
+
+V1Validator = Union[
+    _V1ValidatorWithValues,
+    _V1ValidatorWithValuesKwOnly,
+    _V1ValidatorWithKwargs,
+    _V1ValidatorWithValuesAndKwargs,
+    _decorators.V1ValidatorWithValues,
+    _decorators.V1ValidatorWithValuesKwOnly,
+    _decorators.V1ValidatorWithKwargs,
+    _decorators.V1ValidatorWithKwargsAndValue,
+]
+
+V2Validator = Union[
+    _V2Validator,
+    _core_schema.ValidatorFunction,
+    _OnlyValueValidator,
+    _decorators.OnlyValueValidator,
+]
+
+V2WrapValidator = Union[
+    _V2WrapValidator,
+    _core_schema.WrapValidatorFunction,
+]
+
+
+@overload
+def validator(
+    *fields: str,
+    check_fields: bool | None = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    allow_reuse: bool = False,
+) -> Callable[[V2Validator | V1Validator], classmethod[Any]]:
+    ...
+
+
+@overload
+def validator(
+    *fields: str,
+    mode: Literal['before', 'after', 'plain'],
+    check_fields: bool | None = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    allow_reuse: bool = False,
+) -> Callable[[V2Validator], classmethod[Any]]:
+    ...
+
+
+@overload
+def validator(
+    *fields: str,
+    mode: Literal['wrap'],
+    check_fields: bool | None = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    allow_reuse: bool = False,
+) -> Callable[[V2WrapValidator], classmethod[Any]]:
+    ...
 
 
 def validator(

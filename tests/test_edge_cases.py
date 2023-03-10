@@ -1435,7 +1435,6 @@ def test_optional_subfields():
     assert Model(a=12).a == 12
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
 def test_validated_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]

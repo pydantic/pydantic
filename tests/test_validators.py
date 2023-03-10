@@ -2,7 +2,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
-from typing import Dict, FrozenSet, List, Optional, Tuple, Union
+from typing import Any, Dict, FrozenSet, List, Optional, Tuple, Union
 
 import pytest
 from typing_extensions import Literal
@@ -11,7 +11,6 @@ from pydantic import BaseModel, ConfigDict, Extra, Field, PydanticUserError, Val
 from pydantic.decorators import root_validator
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_simple():
     class Model(BaseModel):
         a: str
@@ -26,10 +25,17 @@ def test_simple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'}]
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, "foobar" not found in a',
+            'input': 'snap',
+            'ctx': {'error': '"foobar" not found in a'},
+        }
+    ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_int_validation():
     class Model(BaseModel):
         a: int
@@ -37,12 +43,26 @@ def test_int_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'snap',
+        }
     ]
     assert Model(a=3).a == 3
     assert Model(a=True).a == 1
     assert Model(a=False).a == 0
-    assert Model(a=4.5).a == 4
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=4.5)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_from_float',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, got a number with a fractional part',
+            'input': 4.5,
+        }
+    ]
 
 
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
@@ -118,15 +138,14 @@ def test_validate_kwargs():
     assert Model(a=[1, 2], b=6).a == [7, 8]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_pre_error():
     calls = []
 
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', pre=True)
-        def check_a1(cls, v):
+        @validator('a', mode='before')
+        def check_a1(cls, v: Any):
             calls.append(f'check_a1 {v}')
             if 1 in v:
                 raise ValueError('a1 broken')
@@ -146,13 +165,29 @@ def test_validate_pre_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[1, 3])
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'a1 broken', 'type': 'value_error'}]
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, a1 broken',
+            'input': [1, 3],
+            'ctx': {'error': 'a1 broken'},
+        }
+    ]
     assert calls == ['check_a1 [1, 3]']
 
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[5, 10])
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'a2 broken', 'type': 'value_error'}]
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, a2 broken',
+            'input': [6, 10],
+            'ctx': {'error': 'a2 broken'},
+        }
+    ]
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
 
 
@@ -178,13 +213,11 @@ def validate_assignment_model_fixture():
     return ValidateAssignmentModel
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_ok(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello')
     assert p.b == 'hello'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_fail(ValidateAssignmentModel):
     with pytest.raises(ValidationError):
         ValidateAssignmentModel(a=10, b='hello')
@@ -205,7 +238,6 @@ def test_validating_assignment_value_change(ValidateAssignmentModel):
     assert p.c == 6
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
@@ -226,7 +258,6 @@ def test_validating_assignment_dict(ValidateAssignmentModel):
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_values_dict():
     class ModelOne(BaseModel):
         a: int
@@ -273,7 +304,6 @@ def test_validate_multiple():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_classmethod():
     class Model(BaseModel):
         a: str
@@ -456,7 +486,6 @@ def test_invalid_field():
     )
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_child():
     class Parent(BaseModel):
         a: str
@@ -474,7 +503,6 @@ def test_validate_child():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_child_extra():
     class Parent(BaseModel):
         a: str
@@ -514,7 +542,6 @@ def test_validate_child_all():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent():
     class Parent(BaseModel):
         a: str
@@ -558,7 +585,6 @@ def test_validate_parent_all():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_keep():
     class Parent(BaseModel):
         a: int
@@ -590,7 +616,6 @@ def test_inheritance_replace():
     assert Child(a=0).a == 5
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_new():
     class Parent(BaseModel):
         a: int
@@ -633,7 +658,6 @@ def test_validation_each_item_one_sublevel():
     assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -1127,7 +1151,6 @@ def test_root_validator_skip_on_failure():
     assert not b_called
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_assignment_validator_cls():
     validator_calls = 0
 
@@ -1258,7 +1281,6 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker)
     assert list(dict(model).items()) == [('foo', 'new_foo_value'), ('bar', 'new_bar_value'), ('baz', 'baz_value')]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_exceptions_in_field_validators_restore_original_field_value():
     class Model(BaseModel):
         foo: str
