@@ -3,7 +3,7 @@ Tests for TypedDict
 """
 import sys
 import typing
-from typing import Optional
+from typing import Generic, List, Optional, TypeVar
 
 import pytest
 import typing_extensions
@@ -378,3 +378,32 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
             Model(d=input_value)
     else:
         assert Model(d=input_value).d == expected
+
+
+class RecursiveTypedDict(typing_extensions.TypedDict):
+    foo: Optional['RecursiveTypedDict']
+
+
+class RecursiveTypedDictModel(BaseModel):
+    rec: RecursiveTypedDict
+
+
+def test_recursive_typeddict():
+    assert RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
+
+
+T = TypeVar('T')
+
+
+class RecursiveGenTypedDict(typing_extensions.TypedDict, Generic[T]):
+    foo: Optional['RecursiveGenTypedDict[T]']
+    ls: List[T]
+
+
+class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+    rec: RecursiveGenTypedDict[T]
+
+
+def test_recursive_generic_typeddict():
+    data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': []}, 'ls': []}
+    assert RecursiveGenTypedDictModel[int](rec=data).rec == data
