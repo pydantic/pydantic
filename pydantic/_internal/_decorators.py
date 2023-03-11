@@ -230,7 +230,7 @@ def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool)
 
 def prepare_serializer_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
     """
-    Convert the function to a classmethod if it isn't already.
+    Register the serializer so we can warn if it is re-used.
 
     Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
