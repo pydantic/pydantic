@@ -35,7 +35,7 @@ def fixture_typed_dict(TypedDictAll):
         foo: str
 
     if sys.version_info < (3, 11) and TypedDictAll.__module__ == 'typing':
-        pytest.xfail('typing.TypedDict does not track required keys correctly on Python < 3.11')
+        pytest.skip('typing.TypedDict does not track required keys correctly on Python < 3.11')
 
     if hasattr(TestTypedDict, '__required_keys__'):
         return TypedDictAll
