@@ -15,7 +15,7 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ..errors import PydanticSchemaGenerationError
+from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
@@ -313,16 +313,21 @@ class GenerateSchema:
     def _typed_dict_schema(self, typed_dict_cls: Any) -> core_schema.TypedDictSchema:
         """
         Generate schema for a TypedDict.
+
+        It is not possible to track required/optional keys in TypedDict without __required_keys__
+        since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
+        and thus we can track usage of total=True/False
+        __required_keys__ was added in Python 3.9
+        (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)
+        however it is buggy
+        (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666).
+        Hence to avoid creating validators that do not do what users expect we only
+        support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
-        # It is not possible to track required/optional keys in TypedDict without __required_keys__
-        # since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
-        # and thus we can track usage of total=True/False
-        # __required_keys__ was added in Python 3.9 (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)  # noqa: E501
-        # however it is buggy (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666)  # noqa: E501
-        # Hence to avoid creating validators that do not do what users expect we only
-        # support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
-            raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.')
+            raise PydanticUserError(
+                'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
+            )
 
         required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
 
