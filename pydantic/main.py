@@ -879,7 +879,9 @@ class Validator(Generic[T]):
         # does not work for more complex cases
         global_ns = sys._getframe(1).f_globals.copy()
         global_ns.update(local_ns or {})
-        gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns)
+        gen = _generate_schema.GenerateSchema(
+            arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={}
+        )
         schema = gen.generate_schema(__type)
         self._validator = SchemaValidator(schema, config=merged_config)
 

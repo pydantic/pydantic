@@ -1,14 +1,25 @@
 import sys
-from typing import Any, Dict, ForwardRef, List, NamedTuple, Tuple, Union
+from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, TypeVar, Union
 
 import pytest
 from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import BaseModel, Validator
 
+ItemType = TypeVar('ItemType')
+
+NestedList = List[List[ItemType]]
+
 
 class PydanticModel(BaseModel):
     x: int
+
+
+T = TypeVar('T')
+
+
+class GenericPydanticModel(BaseModel, Generic[T]):
+    x: NestedList[T]
 
 
 class SomeTypedDict(TypedDict):
@@ -33,6 +44,10 @@ class SomeNamedTuple(NamedTuple):
         (Dict[str, int], {'foo': 123}, {'foo': 123}),
         (Union[int, str], 1, 1),
         (Union[int, str], '2', '2'),
+        (GenericPydanticModel[int], {'x': [[1]]}, GenericPydanticModel[int](x=[[1]])),
+        (GenericPydanticModel[int], {'x': [['1']]}, GenericPydanticModel[int](x=[[1]])),
+        (NestedList[int], [[1]], [[1]]),
+        (NestedList[int], [['1']], [[1]]),
     ],
 )
 def test_types(tp: Any, val: Any, expected: Any):
