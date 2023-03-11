@@ -297,7 +297,9 @@ def make_generic_validator(
     validator: V1Validator | OnlyValueValidator | ValidatorFunction, mode: str
 ) -> ValidatorFunction:
     """
-    Make a generic function which calls a validator with the right arguments.
+    In order to support different signatures, including deprecated validator signatures from v1,
+    we introspect the function signature and wrap it in a parent function that has a signature
+    compatible with pydantic_core
     """
     sig = signature(validator)
 
