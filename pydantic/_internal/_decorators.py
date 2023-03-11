@@ -328,7 +328,7 @@ def make_generic_validator(
                 ' Please use the `info` parameter instead.'
                 ' You can access the configuration via `info.config`,'
                 ' but it is a dictionary instead of an object like it was in Pydantic V1.'
-                ' The `field` argument is unavailable.'
+                ' The `field` argument is no longer available.'
             )
         if parameter.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD):
             positional_params.append(param_name)
