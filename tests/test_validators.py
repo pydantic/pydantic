@@ -312,7 +312,7 @@ def test_validating_assignment_values_dict():
         @validator('b')
         def validate_b(cls, b, info: ValidationInfo):
             if 'm' in info.data:
-                return b + info.data['m'].a  # this fails if values['m'] is a dict
+                return b + info.data['m'].a  # this fails if info.data['m'] is a dict
             else:
                 return b
 
