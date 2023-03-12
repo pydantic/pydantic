@@ -1500,10 +1500,12 @@ def test_v1_validator_values_cls_method():
             x: int
 
             @validator('x')
-            def check_x(cls, y: Any, values: Dict[str, Any]) -> int:
-                raise NotImplementedError
+            def check_x(cls, x: int, values: Dict[str, Any]) -> int:
+                assert x * 2 == values['y']
+                return x
 
     _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
 
 def test_v1_validator_values_kwargs_cls_method():
@@ -1514,10 +1516,13 @@ def test_v1_validator_values_kwargs_cls_method():
             x: int
 
             @validator('x')
-            def check_x(cls, y: Any, values: Dict[str, Any], **kwargs: Any) -> int:
-                raise NotImplementedError
+            def check_x(cls, x: int, values: Dict[str, Any], **kwargs: Any) -> int:
+                assert kwargs.keys() == set()
+                assert x * 2 == values['y']
+                return x
 
     _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
 
 def test_v1_validator_kwargs_cls_method():
@@ -1528,15 +1533,19 @@ def test_v1_validator_kwargs_cls_method():
             x: int
 
             @validator('x')
-            def check_x(cls, y: Any, **kwargs: Any) -> int:
-                raise NotImplementedError
+            def check_x(cls, x: Any, **kwargs: Any) -> int:
+                assert kwargs.keys() == {'values'}
+                assert x * 2 == kwargs['values']['y']
+                return x
 
     _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
 
 def test_v1_validator_values_function():
-    def _check_x(y: Any, values: Dict[str, Any]) -> int:
-        raise NotImplementedError
+    def _check_x(x: Any, values: Dict[str, Any]) -> int:
+        assert x * 2 == values['y']
+        return x
 
     with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
 
@@ -1547,11 +1556,14 @@ def test_v1_validator_values_function():
             check_x = validator('x')(_check_x)
 
     _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
 
 def test_v1_validator_values_kwargs_function():
-    def _check_x(y: Any, values: Dict[str, Any], **kwargs: Any) -> int:
-        raise NotImplementedError
+    def _check_x(x: Any, values: Dict[str, Any], **kwargs: Any) -> int:
+        assert kwargs.keys() == set()
+        assert x * 2 == values['y']
+        return x
 
     with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
 
@@ -1562,11 +1574,14 @@ def test_v1_validator_values_kwargs_function():
             check_x = validator('x')(_check_x)
 
     _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
 
 def test_v1_validator_kwargs_function():
-    def _check_x(y: Any, **kwargs: Any) -> int:
-        raise NotImplementedError
+    def _check_x(x: Any, **kwargs: Any) -> int:
+        assert kwargs.keys() == {'values'}
+        assert x * 2 == kwargs['values']['y']
+        return x
 
     with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
 
@@ -1576,11 +1591,5 @@ def test_v1_validator_kwargs_function():
 
             check_x = validator('x')(_check_x)
 
-    assert len(w.list) == 1
-    w = w.list[0]
-    # check that we got stacklevel correct
-    # if this fails you need to edit the stacklevel
-    # parameter to warnings.warn in _decorators.py
-    assert w.filename == __file__
-    source = _get_source_line(w.filename, w.lineno)
-    assert 'class Point(BaseModel):' in source
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
