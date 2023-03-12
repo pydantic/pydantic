@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import abc
 import dataclasses as _dataclasses
 import re
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -70,6 +70,8 @@ __all__ = [
     'PastDate',
     'FutureDate',
     'condate',
+    'AwareDatetime',
+    'NaiveDatetime',
 ]
 
 from ._internal._core_metadata import build_metadata_dict
@@ -402,6 +404,12 @@ else:
 
         def __repr__(self) -> str:
             return 'Json'
+
+        def __hash__(self) -> int:
+            return hash(type(self))
+
+        def __eq__(self, other: Any) -> bool:
+            return type(other) == type(self)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -790,6 +798,46 @@ def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date =
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
     ]
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATETIME TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if TYPE_CHECKING:
+    AwareDatetime = Annotated[datetime, ...]
+    NaiveDatetime = Annotated[datetime, ...]
+else:
+
+    class AwareDatetime:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+        ) -> core_schema.CoreSchema:
+            if schema is None:
+                # used directly as a type
+                return core_schema.datetime_schema(tz_constraint='aware')
+            else:
+                assert schema['type'] == 'datetime'
+                schema['tz_constraint'] = 'aware'
+                return schema
+
+        def __repr__(self) -> str:
+            return 'AwareDatetime'
+
+    class NaiveDatetime:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+        ) -> core_schema.CoreSchema:
+            if schema is None:
+                # used directly as a type
+                return core_schema.datetime_schema(tz_constraint='naive')
+            else:
+                assert schema['type'] == 'datetime'
+                schema['tz_constraint'] = 'naive'
+                return schema
+
+        def __repr__(self) -> str:
+            return 'NaiveDatetime'
 
 
 def __getattr__(name: str) -> None:

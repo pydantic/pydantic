@@ -108,6 +108,8 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'AwareDatetime',
+    'NaiveDatetime',
     # version
     'VERSION',
 ]

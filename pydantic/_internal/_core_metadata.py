@@ -40,13 +40,7 @@ class CoreMetadataHandler:
     def __init__(self, schema: CoreSchema | TypedDictField):
         self._schema = schema
 
-        try:
-            metadata = schema.get('metadata')
-        except AttributeError:  # This happens for schema of type _fields.SelfType
-            # TODO: Need to figure out a better way to handle _fields.SelfType
-            #   Solution?: Adding `definitions` into pydantic_core
-            metadata = {}
-
+        metadata = schema.get('metadata')
         if metadata is None:
             schema['metadata'] = {}
         elif not isinstance(metadata, dict):
@@ -55,8 +49,8 @@ class CoreMetadataHandler:
     @property
     def metadata(self) -> _CoreMetadata:
         """
-        Retrieves the metadata dict off the schema, initializing it to a dict if necessary,
-        and erroring if it is not None and not a dict
+        Retrieves the metadata dict off the schema, initializing it to a dict if it is None
+        and raises an error if it is not a dict.
         """
         metadata = self._schema.get('metadata')
         if metadata is None:

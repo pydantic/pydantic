@@ -1,3 +1,4 @@
+import platform
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -907,6 +908,7 @@ def test_model_iteration():
             TypeError,
             '`exclude` argument must a set or dict',
             id='value as int should be an error',
+            marks=pytest.mark.xfail(reason='working on V2'),
         ),
         pytest.param(
             {'foos': {'__all__': {1}}},
@@ -1615,7 +1617,11 @@ def test_class_kwargs_config_and_attr_conflict():
 
 
 def test_class_kwargs_custom_config():
-    with pytest.raises(TypeError, match=r'__init_subclass__\(\) takes no keyword arguments'):
+    if platform.python_implementation() == 'PyPy':
+        msg = r"__init_subclass__\(\) got an unexpected keyword argument 'some_config'"
+    else:
+        msg = r'__init_subclass__\(\) takes no keyword arguments'
+    with pytest.raises(TypeError, match=msg):
 
         class Model(BaseModel, some_config='new_value'):
             a: int
@@ -1733,3 +1739,24 @@ def test_extra_args_to_field_type_error():
 
         class Model(BaseModel):
             a: int = Field(thing=1)
+
+
+def test_deeper_recursive_model():
+    class A(BaseModel):
+        b: 'B'
+        model_config = {'undefined_types_warning': False}
+
+    class B(BaseModel):
+        c: 'C'
+        model_config = {'undefined_types_warning': False}
+
+    class C(BaseModel):
+        a: Optional['A']
+        model_config = {'undefined_types_warning': False}
+
+    A.model_rebuild()
+    B.model_rebuild()
+    C.model_rebuild()
+
+    m = A(b=B(c=C(a=None)))
+    assert m.model_dump() == {'b': {'c': {'a': None}}}

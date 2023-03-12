@@ -1,11 +1,11 @@
 from typing import Generic, TypeVar, Type, Any, Tuple
 
-from pydantic.generics import GenericModel
+from pydantic import BaseModel
 
 DataT = TypeVar('DataT')
 
 
-class Response(GenericModel, Generic[DataT]):
+class Response(BaseModel, Generic[DataT]):
     data: DataT
 
     @classmethod

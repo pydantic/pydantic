@@ -2,7 +2,12 @@ from __future__ import annotations as _annotations
 
 from typing import Optional
 
-__all__ = 'PydanticUserError', 'PydanticSchemaGenerationError', 'PydanticUndefinedAnnotation'
+__all__ = (
+    'PydanticUserError',
+    'PydanticSchemaGenerationError',
+    'PydanticUndefinedAnnotation',
+    'PydanticInvalidForJsonSchema',
+)
 
 
 class PydanticErrorMixin:

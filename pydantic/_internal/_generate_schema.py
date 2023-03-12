@@ -6,6 +6,7 @@ from __future__ import annotations as _annotations
 import collections.abc
 import dataclasses
 import re
+import sys
 import typing
 import warnings
 from typing import TYPE_CHECKING, Any
@@ -14,17 +15,23 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ..errors import PydanticSchemaGenerationError
+from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
+from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._forward_ref import PydanticForwardRef
+from ._generics import replace_types
 
 if TYPE_CHECKING:
     from ..main import BaseModel
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
+
+
+_SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 
 def model_fields_schema(
@@ -34,12 +41,13 @@ def model_fields_schema(
     serialization_functions: SerializationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
+    typevars_map: dict[Any, Any] | None,
 ) -> core_schema.CoreSchema:
     """
     Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself,
     since this is typed_dict schema which is used to create the model.
     """
-    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
+    schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
     schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {
             k: schema_generator.generate_field_schema(k, v, validator_functions, serialization_functions)
@@ -72,11 +80,14 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
 
 
 class GenerateSchema:
-    __slots__ = 'arbitrary_types', 'types_namespace'
+    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map'
 
-    def __init__(self, arbitrary_types: bool, types_namespace: dict[str, Any] | None):
+    def __init__(
+        self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None
+    ):
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
+        self.typevars_map = typevars_map
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
@@ -116,11 +127,20 @@ class GenerateSchema:
         if from_property is not None:
             return from_property
 
-        if obj is _fields.SelfType:
-            # returned value doesn't do anything here since SchemaRef should always be used as an annotated argument
-            # which replaces the schema returned here, we return `SelfType` to make debugging easier if
-            # this schema is not overwritten
-            return obj
+        if isinstance(obj, PydanticForwardRef):
+            if not obj.deferred_actions:
+                return obj.schema
+            resolved_model = obj.resolve_model()
+            if isinstance(resolved_model, PydanticForwardRef):
+                # If you still have a PydanticForwardRef after resolving, it should be deeply nested enough that it will
+                # eventually be substituted out. So it is safe to return an invalid schema here.
+                # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+                return core_schema.none_schema(
+                    metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
+                )
+            else:
+                return get_model_self_schema(resolved_model)
+
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
                 # Note: obj may fail to be hashable if it has an unhashable annotation
@@ -151,6 +171,8 @@ class GenerateSchema:
             if issubclass(obj, dict):
                 return self._dict_subclass_schema(obj)
             # probably need to take care of other subclasses here
+        elif isinstance(obj, typing.TypeVar):
+            return self._unsubstituted_typevar_schema(obj)
 
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
@@ -291,11 +313,23 @@ class GenerateSchema:
     def _typed_dict_schema(self, typed_dict_cls: Any) -> core_schema.TypedDictSchema:
         """
         Generate schema for a TypedDict.
+
+        It is not possible to track required/optional keys in TypedDict without __required_keys__
+        since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
+        and thus we can track usage of total=True/False
+        __required_keys__ was added in Python 3.9
+        (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)
+        however it is buggy
+        (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666).
+        Hence to avoid creating validators that do not do what users expect we only
+        support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
-        try:
-            required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
-        except AttributeError:
-            raise TypeError('Please use `typing_extensions.TypedDict` instead of `typing.TypedDict`.')
+        if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
+            raise PydanticUserError(
+                'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
+            )
+
+        required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
 
         fields: typing.Dict[str, core_schema.TypedDictField] = {}
         validation_functions = ValidationFunctions(())
@@ -310,6 +344,9 @@ class GenerateSchema:
             elif get_origin(annotation) == _typing_extra.NotRequired:
                 required = False
                 annotation = get_args(annotation)[0]
+
+            if self.typevars_map is not None:
+                annotation = replace_types(annotation, self.typevars_map)
 
             field_info = FieldInfo.from_annotation(annotation)
             fields[field_name] = self.generate_field_schema(
@@ -493,6 +530,15 @@ class GenerateSchema:
         type_param = get_first_arg(type_)
         if type_param == Any:
             return self._type_schema()
+        elif isinstance(type_param, typing.TypeVar):
+            if type_param.__bound__:
+                return core_schema.is_subclass_schema(type_param.__bound__)
+            elif type_param.__constraints__:
+                return core_schema.union_schema(
+                    *[self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
+                )
+            else:
+                return self._type_schema()
         else:
             return core_schema.is_subclass_schema(type_param)
 
@@ -568,6 +614,16 @@ class GenerateSchema:
                 continue
             return encoder(self, obj)
         return None
+
+    def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
+        assert isinstance(typevar, typing.TypeVar)
+        if typevar.__bound__:
+            schema = self.generate_schema(typevar.__bound__)
+        elif typevar.__constraints__:
+            schema = self._union_schema(typing.Union[typevar.__constraints__])
+        else:
+            schema = core_schema.AnySchema(type='any')
+        return schema
 
 
 def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]) -> core_schema.CoreSchema:
@@ -716,3 +772,13 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
         return obj.__modify_schema__
 
     return modify_js_function
+
+
+def get_model_self_schema(cls: type[BaseModel]) -> core_schema.ModelSchema:
+    model_ref = get_type_ref(cls)
+    model_js_metadata = cls.model_json_schema_metadata()
+    return core_schema.model_schema(
+        cls,
+        core_schema.definition_reference_schema(model_ref),
+        metadata=build_metadata_dict(js_metadata=model_js_metadata),
+    )
