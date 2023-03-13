@@ -875,7 +875,7 @@ class Validator(Generic[T]):
         # including type aliases where __module__ (always `typing.py`) is not useful
         # So instead we look at the globals in our parent stack frame
         # This works for the case where Validator() is called in a module that
-        # has the target of forward references in it's scope but obviously
+        # has the target of forward references in its scope but
         # does not work for more complex cases
         # for example, take the following:
         #
