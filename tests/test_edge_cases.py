@@ -1079,6 +1079,9 @@ def test_annotation_inheritance():
             integer = 'G'
 
     # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
+    #   "I think it should be an error to redefine any field without an annotation - that way we
+    #   don't need to start trying to infer the type of the default value."
+    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130681812
     assert str(exc_info.value) == (
         'The type of D.integer differs from the new default value; '
         'if you wish to change the type of this field, please use a type annotation'
@@ -1168,6 +1171,9 @@ def test_unable_to_infer():
             x = None
 
     # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
+    #   "x definitely shouldn't be a field, I guess an error would be best,
+    #   but might be hard to identify 'non-field attributes reliable'?"
+    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130682562
     assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
@@ -1343,7 +1349,11 @@ def test_nested_init():
         nest: NestedModel
 
     # TODO: Do we want any changes to this behavior in v2? (Currently the __init__-override is not called)
-    #   We could detect if `__init__` has been overridden if necessary...
+    #   "I guess this should be an error or warning. If you want to do stuff on init, you should use model_post_init"
+    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130684097
+    #   -
+    #   I think we can detect and warn/error if you override `__init__`. If we do that,
+    #   we'll need to add a note to the migration guide about it.
     m = TopModel.model_validate(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
@@ -1991,6 +2001,8 @@ def test_hashable_required():
         v: Hashable
 
         # TODO: Should arbitrary_types_allowed be necessary for Hashable?
+        #   "ideally I guess we should have a validator for this."
+        #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130684977
         model_config = dict(arbitrary_types_allowed=True)
 
     Model(v=None)
@@ -2158,6 +2170,8 @@ def test_int_subclass():
 
     m = MyModel(my_int=IntSubclass(123))
     # TODO: Is this still the behavior we want in v2? (Currently m.my_int.__class__ is int)
+    #   yes, because in pydantic-core we cast the value to a rust i64, so the sub-type information is lost.
+    #   (more detail about how to handle this in: https://github.com/pydantic/pydantic/pull/5151#discussion_r1130691036)
     assert m.my_int.__class__ == IntSubclass
 
 
@@ -2190,6 +2204,14 @@ def test_long_int():
     #     E         Input should be a finite number [type=finite_number,
     #     input_value='111111111111111111111111...11111111111111111111111', input_type=str]
     #   Do we need to resolve this? How hard would that be in pydantic_core? Is it worth it?
+    #   -
+    #   "in pydantic-core we use an i64, which constrains the max and min values. Since that's massively more
+    #   performant, and there are very few real world uses for int > i64:MAX, the error is correct."
+    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130693762
+    #   -
+    #   I think before modifying this test and removing the xfail, we should create a new test
+    #   that handles the following line without failure using the is-instance approach described in the comment
+    #   linked above.
     assert Model(x='1' * 4_300).x == int('1' * 4_300)
     assert Model(x=b'1' * 4_300).x == int('1' * 4_300)
     assert Model(x=bytearray(b'1' * 4_300)).x == int('1' * 4_300)
