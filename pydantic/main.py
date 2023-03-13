@@ -895,6 +895,9 @@ class Validator(Generic[T]):
         # v({"x": 1})  # should fail but doesn't
         # ```
         #
+        # If OuterDict were a BaseModel this would work because it would resolve
+        # the forward reference within the `a.py` namespace.
+        # But Validator(OuterDict) can't know what module OuterDict came from.
         # In other words, the assumption that _all_ forward references exist in the
         # module we are being called from is not technically always true
         # Although most of the time it is and it works fine for recursive models and such/
