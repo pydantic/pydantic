@@ -7,7 +7,7 @@ import sys
 import types
 import typing
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Dict, ForwardRef
 
 from typing_extensions import Annotated, Final, Literal, get_args, get_origin
 
@@ -374,3 +374,18 @@ else:
                 value = typing.Optional[value]
             hints[name] = value
         return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}
+
+
+if sys.version_info < (3, 9):
+
+    def evaluate_fwd_ref(
+        ref: ForwardRef, globalns: Dict[str, Any] | None = None, localns: Dict[str, Any] | None = None
+    ) -> Any:
+        return ref._evaluate(globalns=globalns, localns=localns)
+
+else:
+
+    def evaluate_fwd_ref(
+        ref: ForwardRef, globalns: Dict[str, Any] | None = None, localns: Dict[str, Any] | None = None
+    ) -> Any:
+        return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())
