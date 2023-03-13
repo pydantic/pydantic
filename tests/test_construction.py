@@ -81,23 +81,18 @@ def test_simple_copy():
     assert m.model_fields == m2.model_fields
 
 
-@pytest.fixture(scope='session', name='ModelTwo')
-def model_two_fixture():
-    class ModelTwo(BaseModel):
-        __foo__ = PrivateAttr({'private'})
+class ModelTwo(BaseModel):
+    _foo_ = PrivateAttr({'private'})
 
-        a: float
-        b: int = 10
-        c: str = 'foobar'
-        d: Model
-
-    return ModelTwo
+    a: float
+    b: int = 10
+    c: str = 'foobar'
+    d: Model
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_deep_copy(ModelTwo):
+def test_deep_copy():
     m = ModelTwo(a=24, d=Model(a='12'))
-    m.__foo__ = {'new value'}
+    m._foo_ = {'new value'}
     m2 = m.copy(deep=True)
 
     assert m.a == m2.a == 24
@@ -106,12 +101,12 @@ def test_deep_copy(ModelTwo):
     assert m.d is not m2.d
     assert m == m2
     assert m.model_fields == m2.model_fields
-    assert m.__foo__ == m2.__foo__
-    assert m.__foo__ is not m2.__foo__
+    assert m._foo_ == m2._foo_
+    assert m._foo_ is not m2._foo_
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_exclude(ModelTwo):
+def test_copy_exclude():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(exclude={'b'})
 
@@ -128,7 +123,7 @@ def test_copy_exclude(ModelTwo):
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_include(ModelTwo):
+def test_copy_include():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a'})
 
@@ -140,7 +135,7 @@ def test_copy_include(ModelTwo):
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_include_exclude(ModelTwo):
+def test_copy_include_exclude():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
 
@@ -216,7 +211,7 @@ def test_copy_advanced_include_exclude():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_update(ModelTwo):
+def test_copy_update():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(update={'a': 'different'})
 
@@ -239,8 +234,7 @@ def test_copy_update_unset():
     )
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_copy_set_fields(ModelTwo):
+def test_copy_set_fields():
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
 
@@ -261,8 +255,7 @@ def test_simple_pickle():
     assert m.model_fields == m2.model_fields
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_recursive_pickle(ModelTwo):
+def test_recursive_pickle():
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = pickle.loads(pickle.dumps(m))
     assert m == m2
@@ -270,29 +263,27 @@ def test_recursive_pickle(ModelTwo):
     assert m.d.a == 123.45
     assert m2.d.a == 123.45
     assert m.model_fields == m2.model_fields
-    assert m.__foo__ == m2.__foo__
+    assert m._foo_ == m2._foo_
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_pickle_undefined(ModelTwo):
+def test_pickle_undefined():
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = pickle.loads(pickle.dumps(m))
-    assert m2.__foo__ == {'private'}
+    assert m2._foo_ == {'private'}
 
-    m.__foo__ = Undefined
+    m._foo_ = Undefined
     m3 = pickle.loads(pickle.dumps(m))
-    assert not hasattr(m3, '__foo__')
+    assert not hasattr(m3, '_foo_')
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_copy_undefined(ModelTwo):
+def test_copy_undefined():
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = m.copy()
-    assert m2.__foo__ == {'private'}
+    assert m2._foo_ == {'private'}
 
-    m.__foo__ = Undefined
+    m._foo_ = Undefined
     m3 = m.copy()
-    assert not hasattr(m3, '__foo__')
+    assert not hasattr(m3, '_foo_')
 
 
 def test_immutable_copy_with_frozen():

@@ -59,31 +59,45 @@ def test_alias_generator_wrong_type_error():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_infer_alias():
-    class Model(BaseModel):
-        a = Field('foobar', alias='_a')
+def test_cannot_infer_type_with_alias():
+    # TODO: This is the replacement for an old test that checked that type was inferred properly if not annotated.
+    #   I don't think we've decided yet what should happen to fields that are missing annotations,
+    #   but whatever gets decided, this test should be made consistent with that
+    with pytest.raises(TypeError):
 
+        class Model(BaseModel):
+            a: str = Field('foobar', alias='_a')
+
+
+def test_basic_alias():
+    class Model(BaseModel):
+        a: str = Field('foobar', alias='_a')
+
+    assert Model().a == 'foobar'
     assert Model(_a='different').a == 'different'
     assert repr(Model.model_fields['a']) == (
-        "ModelField(name='a', type=str, required=False, default='foobar', alias='_a')"
+        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', alias_priority=2)"
     )
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_alias_error():
     class Model(BaseModel):
-        a = Field(123, alias='_a')
+        a: int = Field(123, alias='_a')
 
     assert Model(_a='123').a == 123
 
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
     assert exc_info.value.errors() == [
-        {'loc': ('_a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'input': 'foo',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_annotation_config():
     class Model(BaseModel):
         b: float = Field(alias='foobar')
@@ -91,11 +105,11 @@ def test_annotation_config():
         _c: str
 
     assert list(Model.model_fields.keys()) == ['b', 'a']
-    assert [f.alias for f in Model.model_fields.values()] == ['foobar', 'a']
+    # TODO: The value at the end of the next line used to be `'a'`, should it be `None` (as it has been changed to)?
+    assert [f.alias for f in Model.model_fields.values()] == ['foobar', None]
     assert Model(foobar='123').b == 123.0
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_pop_by_field_name():
     class Model(BaseModel):
         model_config = ConfigDict(extra=Extra.forbid, populate_by_name=True)
@@ -106,12 +120,18 @@ def test_pop_by_field_name():
     with pytest.raises(ValidationError) as exc_info:
         Model(lastUpdatedBy='foo', last_updated_by='bar')
     assert exc_info.value.errors() == [
-        {'loc': ('last_updated_by',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'}
+        {
+            'input': 'bar',
+            'loc': ('last_updated_by',),
+            'msg': 'Extra inputs are not permitted',
+            'type': 'extra_forbidden',
+        }
     ]
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_alias_child_precedence():
+    # TODO: Need to decide what we are doing with config fields — if dropping completely, should we drop this test?
     class Parent(BaseModel):
         x: int
 
@@ -178,6 +198,9 @@ def test_alias_generator_on_child():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_low_priority_alias():
+    # TODO: alias_priority is gone — what should happen to this test?
+    #   Is there something new that can be used to replicate this functionality?
+    #   If not, do we need to update the migration guide?
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc', alias_priority=1)
         y: str

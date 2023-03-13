@@ -3,8 +3,9 @@ import pickle
 from typing import List, Tuple, Union
 
 import pytest
+from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, ConfigDict, ValidationError, parse_obj_as
 
 
 class Model(BaseModel):
@@ -17,12 +18,11 @@ def test_obj():
     assert str(m) == 'a=10.2 b=10'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_validate_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate([1, 2, 3])
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
+        {'input': [1, 2, 3], 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
 
 
@@ -114,13 +114,16 @@ def test_parse_nested_custom_root():
     assert isinstance(m.__root__.__root__[0], str)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json():
-    assert Model.parse_raw('{"a": 12, "b": 8}') == Model(a=12, b=8)
+    # TODO: Are we planning to keep model_validate_json?
+    assert Model.model_validate_json('{"a": 12, "b": 8}') == Model(a=12, b=8)
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_json_ct():
+    # TODO: It seems model_validate_json has replaced parse_raw, except that it can _only_ be used with json
+    #   Are we just dropping this functionality? If so, should we drop these tests?
+    #   Do we need to document and/or create a suggested migration path?
     assert Model.parse_raw('{"a": 12, "b": 8}', content_type='application/json') == Model(a=12, b=8)
 
 
@@ -148,6 +151,7 @@ def test_bad_proto():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_file_json(tmpdir):
+    # TODO: Should the parse_file tests be dropped?
     p = tmpdir.join('test.json')
     p.write('{"a": 12, "b": 8}')
     assert Model.parse_file(str(p)) == Model(a=12, b=8)
@@ -191,14 +195,15 @@ def test_file_pickle_no_ext(tmpdir):
     assert Model.parse_file(str(p), content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_const_differentiates_union():
+def test_literal_differentiates_union_during_validate():
+    # TODO: Is it really necessary to keep this test?
+    #   I think since we dropped Field-const, it's probably fine to drop this..
     class SubModelA(BaseModel):
-        key: str = Field('A', const=True)
+        key: Literal['A'] = 'A'
         foo: int
 
     class SubModelB(BaseModel):
-        key: str = Field('B', const=True)
+        key: Literal['B'] = 'B'
         foo: int
 
     class Model(BaseModel):

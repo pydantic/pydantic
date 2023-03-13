@@ -633,6 +633,8 @@ class Model(BaseModel):
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
+    # TODO: Do we need to support models_as_dict=False?
+    #   If not, is there a way to replicate this custom-encoder functionality?
     assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
@@ -648,7 +650,7 @@ class User(BaseModel):
     name: str
     friends: Optional[List['User']] = None
 
-    mdoel_config = ConfigDict(
+    model_config = ConfigDict(
         json_encoders = {
             ForwardRef('User'): lambda v: f'User({v.name})',
         })
@@ -656,7 +658,7 @@ class User(BaseModel):
     )
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.model_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+    assert m.model_dump_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
 
 
 skip_pep585 = pytest.mark.skipif(

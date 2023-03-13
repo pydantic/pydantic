@@ -647,13 +647,13 @@ def test_custom_schemes():
         Model(v='ws:///foo/bar')
 
 
-@pytest.mark.xfail(reason='URL to JSON not yet supported')
 def test_json():
     class Model(BaseModel):
         v: HttpUrl
 
     m = Model(v='http://foo@example.net')
-    assert m.model_dump_json() == '{"v": "http://foo@example.net"}'
+    # TODO: Is it okay that the trailing '/' gets added?
+    assert m.model_dump_json() == b'{"v":"http://foo@example.net/"}'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
