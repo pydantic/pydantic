@@ -877,6 +877,30 @@ class Validator(Generic[T]):
         # This works for the case where Validator() is called in a module that
         # has the target of forward references in it's scope but obviously
         # does not work for more complex cases
+        # for example, take the following:
+        #
+        # a.py
+        # ```python
+        # from typing import List, Dict
+        # IntList = List[int]
+        # OuterDict = Dict[str, 'IntList']
+        # ```
+        #
+        # b.py
+        # ```python
+        # from pydantic import Validator
+        # from a import OuterDict
+        # IntList = int  # replaces the symbol the forward reference is looking for
+        # v = Validator(OuterDict)
+        # v({"x": 1})  # should fail but doesn't
+        # ```
+        #
+        # In other words, the assumption that _all_ forward references exist in the
+        # module we are being called from is not technically always true
+        # Although most of the time it is and it works fine for recursive models and such/
+        # BaseModel's behavior isn't perfect either and _can_ break in similar ways,
+        # so there is no right or wrong between the two.
+        # But at the very least this behavior is _subtly_ different from BaseModel's.
         global_ns = sys._getframe(1).f_globals.copy()
         global_ns.update(local_ns or {})
         gen = _generate_schema.GenerateSchema(
