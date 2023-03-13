@@ -1739,3 +1739,24 @@ def test_extra_args_to_field_type_error():
 
         class Model(BaseModel):
             a: int = Field(thing=1)
+
+
+def test_deeper_recursive_model():
+    class A(BaseModel):
+        b: 'B'
+        model_config = {'undefined_types_warning': False}
+
+    class B(BaseModel):
+        c: 'C'
+        model_config = {'undefined_types_warning': False}
+
+    class C(BaseModel):
+        a: Optional['A']
+        model_config = {'undefined_types_warning': False}
+
+    A.model_rebuild()
+    B.model_rebuild()
+    C.model_rebuild()
+
+    m = A(b=B(c=C(a=None)))
+    assert m.model_dump() == {'b': {'c': {'a': None}}}

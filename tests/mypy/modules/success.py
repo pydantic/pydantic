@@ -44,7 +44,6 @@ from pydantic import (
     validator,
 )
 from pydantic.fields import Field, PrivateAttr
-from pydantic.generics import GenericModel
 
 
 class Flags(BaseModel):
@@ -125,7 +124,7 @@ assert m_copy.list_of_ints == m_from_obj.list_of_ints
 T = TypeVar('T')
 
 
-class WrapperModel(GenericModel, Generic[T]):
+class WrapperModel(BaseModel, Generic[T]):
     payload: T
 
 

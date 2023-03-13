@@ -2,9 +2,9 @@ from typing import Generic, List, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, validator
 from pydantic.dataclasses import dataclass
-from pydantic.generics import GenericModel
 
 
+# placeholder for removed line
 class Model(BaseModel):
     model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
     x: int
@@ -129,7 +129,7 @@ class Blah(BaseModel):
 T = TypeVar('T')
 
 
-class Response(GenericModel, Generic[T]):
+class Response(BaseModel, Generic[T]):
     data: T
     error: Optional[str]
 

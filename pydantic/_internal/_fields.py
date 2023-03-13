@@ -45,12 +45,6 @@ class PydanticGeneralMetadata(PydanticMetadata):
         self.__dict__ = metadata
 
 
-class SelfType:
-    """
-    No-op marker class for `self` type reference.
-    """
-
-
 class SchemaRef(Representation):
     """
     Holds a reference to another schema.
