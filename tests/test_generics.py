@@ -1894,3 +1894,14 @@ def test_generics_memory_use():
 
         class _(Outer[Foo]):
             pass
+
+
+@pytest.mark.xfail(reason='Generic models are not type aliases', raises=TypeError)
+def test_generic_model_as_parameter_to_generic_type_alias() -> None:
+    T = TypeVar('T')
+
+    class GenericPydanticModel(BaseModel, Generic[T]):
+        x: T
+
+    GenericPydanticModelList = List[GenericPydanticModel[T]]
+    GenericPydanticModelList[int]
