@@ -10,6 +10,8 @@
 
 Data validation using Python type hints.
 
+This is a change!
+
 Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
 Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
 
