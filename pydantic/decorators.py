@@ -8,7 +8,7 @@ Public methods related to:
 from __future__ import annotations as _annotations
 
 from types import FunctionType
-from typing import Any, Callable, TypeVar, Union, overload
+from typing import Any, Callable, Union, overload
 
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, Protocol
@@ -194,11 +194,6 @@ def root_validator(
     return dec
 
 
-_SerializerFunctionType = TypeVar(
-    '_SerializerFunctionType', bound=Union[_core_schema.SerializeWrapFunction, _core_schema.SerializePlainFunction]
-)
-
-
 def serializer(
     *fields: str,
     json_return_type: _core_schema.JsonReturnTypes | None = None,
@@ -206,10 +201,9 @@ def serializer(
     sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
-) -> Callable[[_SerializerFunctionType], _SerializerFunctionType]:
+) -> Callable[[Callable[..., Any]], classmethod[Any]]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
-
     :param fields: which field(s) the method should be called on
     :param json_return_type: The type that the function returns if the serialization mode is JSON.
     :param when_used: When the function should be called
@@ -244,4 +238,4 @@ def serializer(
         )
         return f_cls
 
-    return dec  # type: ignore[return-value]
+    return dec

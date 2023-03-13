@@ -26,6 +26,7 @@ __all__ = (
     'ValidationFunctions',
     'SerializationFunctions',
     'prepare_validator_decorator',
+    'prepare_serializer_decorator',
 )
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
@@ -200,6 +201,21 @@ class SerializationFunctions(DecoratorFunctions[Serializer]):
 _FUNCS: set[str] = set()
 
 
+def prepare_serializer_decorator(function: Callable[..., Any], allow_reuse: bool) -> classmethod[Any]:
+    """
+    Convert the function to a classmethod if it isn't already.
+    Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
+    which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
+    """
+    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    if not allow_reuse and not in_ipython():
+        ref = f'{f_cls.__func__.__module__}::{f_cls.__func__.__qualname__}'
+        if ref in _FUNCS:
+            warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
+        _FUNCS.add(ref)
+    return f_cls
+
+
 def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
     """
     Convert the function to a classmethod if it isn't already.
@@ -226,24 +242,6 @@ def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool)
             warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
     return ret
-
-
-def prepare_serializer_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
-    """
-    Register the serializer so we can warn if it is re-used.
-
-    Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
-    which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
-    """
-    fn = function
-    if isinstance(fn, staticmethod):
-        fn = fn.__func__
-    if not allow_reuse and not in_ipython():
-        ref = f'{fn.__module__}::{fn.__qualname__}'
-        if ref in _FUNCS:
-            warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
-        _FUNCS.add(ref)
-    return function
 
 
 def in_ipython() -> bool:

@@ -15,8 +15,7 @@ def test_serialize_decorator_always():
         x: Optional[int]
 
         @serializer('x', json_return_type='str')
-        @staticmethod
-        def customise_x_serialisation(v, _info):
+        def customise_x_serialisation(cls, v, _info):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -39,8 +38,7 @@ def test_serialize_decorator_json():
         x: int
 
         @serializer('x', json_return_type='str', when_used='json')
-        @staticmethod
-        def customise_x_serialisation(v, _info):
+        def customise_x_serialisation(cls, v, _info):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 1234}
@@ -53,8 +51,7 @@ def test_serialize_decorator_unless_none():
         x: Optional[int]
 
         @serializer('x', when_used='unless-none')
-        @staticmethod
-        def customise_x_serialisation(v, _info):
+        def customise_x_serialisation(cls, v, _info):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
