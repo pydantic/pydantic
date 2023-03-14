@@ -226,7 +226,7 @@ def field_schema(
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
     ref_template: str = default_ref_template,
-    known_models: TypeModelSet = None,
+    known_models: Optional[TypeModelSet] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
     Process a Pydantic field and return a tuple with a JSON Schema for it as the first item.
@@ -346,7 +346,7 @@ def get_model_name_map(unique_models: TypeModelSet) -> Dict[TypeModelOrEnum, str
     return {v: k for k, v in name_model_map.items()}
 
 
-def get_flat_models_from_model(model: Type['BaseModel'], known_models: TypeModelSet = None) -> TypeModelSet:
+def get_flat_models_from_model(model: Type['BaseModel'], known_models: Optional[TypeModelSet] = None) -> TypeModelSet:
     """
     Take a single ``model`` and generate a set with itself and all the sub-models in the tree. I.e. if you pass
     model ``Foo`` (subclass of Pydantic ``BaseModel``) as ``model``, and it has a field of type ``Bar`` (also
@@ -555,7 +555,7 @@ def model_process_schema(
     model_name_map: Dict[TypeModelOrEnum, str],
     ref_prefix: Optional[str] = None,
     ref_template: str = default_ref_template,
-    known_models: TypeModelSet = None,
+    known_models: Optional[TypeModelSet] = None,
     field: Optional[ModelField] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any], Set[str]]:
     """
@@ -717,6 +717,8 @@ def field_singleton_sub_fields_schema(
             discriminator_models_refs: Dict[str, Union[str, Dict[str, Any]]] = {}
 
             for discriminator_value, sub_field in field.sub_fields_mapping.items():
+                if isinstance(discriminator_value, Enum):
+                    discriminator_value = str(discriminator_value.value)
                 # sub_field is either a `BaseModel` or directly an `Annotated` `Union` of many
                 if is_union(get_origin(sub_field.type_)):
                     sub_models = get_sub_types(sub_field.type_)
@@ -867,7 +869,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema['const'] = field.default
 
     if is_literal_type(field_type):
-        values = all_literal_values(field_type)
+        values = tuple(x.value if isinstance(x, Enum) else x for x in all_literal_values(field_type))
 
         if len({v.__class__ for v in values}) > 1:
             return field_schema(
