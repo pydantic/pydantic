@@ -724,7 +724,7 @@ def test_override_builtin_dataclass_2():
     assert f.seen_count == 7
 
 
-# @pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='TODO we need to optionally run validation even on exact types')
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:
@@ -1013,7 +1013,6 @@ def test_issue_2162(foo, bar):
     assert foo == bar.c
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_issue_2383():
     @dataclasses.dataclass
     class A:
@@ -1032,7 +1031,6 @@ def test_issue_2383():
     assert hash(b.a) == 123
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_issue_2398():
     @dataclasses.dataclass(order=True)
     class DC:
@@ -1117,7 +1115,6 @@ def test_issue_2555():
     assert M.model_json_schema()
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_issue_2594():
     @dataclasses.dataclass
     class Empty:
@@ -1166,7 +1163,10 @@ def test_schema_description_set():
     assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
 
 
+@pytest.mark.xfail(reason='TODO update pydantic-core to allow subclasses')
 def test_issue_3011():
+    """Validation of a subclass of a dataclass"""
+
     @dataclasses.dataclass
     class A:
         thing_a: str
@@ -1174,7 +1174,7 @@ def test_issue_3011():
     class B(A):
         thing_b: str
 
-    @pydantic.dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
+    @pydantic.dataclasses.dataclass
     class C:
         thing: A
 

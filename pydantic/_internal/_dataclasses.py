@@ -17,7 +17,7 @@ from ._fields import collect_fields
 from ._generate_schema import dataclass_fields_schema, generate_config
 from ._model_construction import MockValidator, object_setattr
 
-__all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass', 'std_dataclass_schema'
+__all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
 
 if typing.TYPE_CHECKING:
     from ..config import BaseConfig
@@ -98,7 +98,7 @@ def prepare_dataclass(
     validator_functions.set_bound_functions(cls)
     serializer_functions.set_bound_functions(cls)
 
-    inner_schema = dataclass_fields_schema(
+    fields_schema = dataclass_fields_schema(
         model_ref,
         fields,
         hasattr(cls, '__post_init__'),
@@ -112,34 +112,17 @@ def prepare_dataclass(
 
     core_config = generate_config(config, cls)
     cls.__pydantic_fields__ = fields
-    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
+    cls.__pydantic_validator__ = SchemaValidator(fields_schema, core_config)
 
     dc_init = copy(pydantic_dataclass_init)
     dc_init.__name__ = '__init__'
     dc_init.__qualname__ = f'{cls.__qualname__}.__init__'
     setattr(cls, '__init__', dc_init)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
-    cls.__pydantic_core_schema__ = core_schema.dataclass_schema(cls, inner_schema)
+    cls.__pydantic_core_schema__ = core_schema.dataclass_schema(cls, fields_schema)
     # cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
 
     return True
-
-
-def std_dataclass_schema(cls: type[Any], types_namespace: dict[str, Any] | None):
-    return NotImplementedError(f'{cls}, {types_namespace}')
-    # TODO do we want to allow positional arguments
-    # fields, ref = collect_fields(cls, cls.__name__, cls.__bases__,
-    # types_namespace, dc_kw_only=True, is_dataclass=True)
-
-    # inner_schema = dataclass_fields_schema(
-    #     ref,
-    #     fields,
-    #     hasattr(cls, '__post_init__'),
-    #     ValidationFunctions(),
-    #     SerializationFunctions(),
-    #     config['arbitrary_types_allowed'],
-    #     types_namespace,
-    # )
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> bool:

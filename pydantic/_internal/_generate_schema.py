@@ -26,6 +26,8 @@ from ._generics import replace_types
 
 if TYPE_CHECKING:
     from ..config import ConfigDict
+    from ..main import BaseModel
+    from ._dataclasses import StandardDataclass
 
 __all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
 
@@ -664,13 +666,25 @@ class GenerateSchema:
             return self._dataclass_schema(obj)
         return None
 
-    def _dataclass_schema(self, dataclass: Any) -> core_schema.CoreSchema:
+    def _dataclass_schema(self, dataclass: type[StandardDataclass]) -> core_schema.CoreSchema:
         """
         Generate schema for a dataclass.
         """
-        from ._dataclasses import std_dataclass_schema
+        # FIXME we need a way to make sure kw_only info is propagated through to fields
+        fields, ref = _fields.collect_fields(
+            dataclass, dataclass.__name__, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
+        )
 
-        return std_dataclass_schema(dataclass, self.types_namespace)
+        fields_schema = dataclass_fields_schema(
+            ref,
+            fields,
+            hasattr(dataclass, '__post_init__'),
+            ValidationFunctions(()),
+            SerializationFunctions(()),
+            self.arbitrary_types,
+            self.types_namespace,
+        )
+        return core_schema.dataclass_schema(dataclass, fields_schema)
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)
@@ -831,7 +845,7 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
     return modify_js_function
 
 
-def get_model_self_schema(cls: type[Any]) -> core_schema.ModelSchema:
+def get_model_self_schema(cls: type[BaseModel] | type[StandardDataclass]) -> core_schema.ModelSchema:
     """
     Type is Any, but `cls` should be either a Pydantic model or a Pydantic dataclass.
     """

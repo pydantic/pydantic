@@ -131,6 +131,7 @@ def collect_fields(  # noqa: C901
             else:
                 global_ns = module.__dict__
 
+    # FIXME (dataclasses) this is wrong as it's alwasy a model
     self_schema = get_model_self_schema(cls)
     local_ns = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
     # schema_ref = f'{module_name}.{name}'
@@ -157,7 +158,9 @@ def collect_fields(  # noqa: C901
     annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo] = {}
 
+    # FIXME (dataclasses) what are we doing here?
     # cls_fields: dict[str, FieldInfo] = getattr(cls, 'model_fields', None) or getattr(cls, '__pydantic_fields__', {})
+
     # currently just used for `init=False` dataclass fields, but could be used more
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
@@ -169,8 +172,10 @@ def collect_fields(  # noqa: C901
         if isinstance(ann_type, ForwardRef):
             raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
-        if cls.__pydantic_generic_typevars_map__:
-            ann_type = replace_types(ann_type, cls.__pydantic_generic_typevars_map__)
+        # FIXME (dataclasses) what are we doing here?
+        pydantic_generic_typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
+        if pydantic_generic_typevars_map:
+            ann_type = replace_types(ann_type, pydantic_generic_typevars_map)
 
         if ann_type is dataclasses.KW_ONLY:
             # all field fields will be kw_only
@@ -186,7 +191,8 @@ def collect_fields(  # noqa: C901
             init_var = True
             ann_type = ann_type.type
 
-        generic_origin = cls.__pydantic_generic_origin__
+        # FIXME (dataclasses) what are we doing here?
+        generic_origin = getattr(cls, '__pydantic_generic_origin__', ())
         for base in bases:
             if hasattr(base, ann_name):
                 if base is generic_origin:
@@ -251,7 +257,8 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
+    # FIXME (dataclasses) what are we doing here?
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
     if typevars_map:
         for field in fields.values():
             field.annotation = replace_types(field.annotation, typevars_map)
