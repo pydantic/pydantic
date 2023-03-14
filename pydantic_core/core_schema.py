@@ -1811,7 +1811,7 @@ class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
     choices: Required[Dict[Union[str, int], Union[str, int, CoreSchema]]]
     discriminator: Required[
-        Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[str]]]
+        Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[Union[str, int]]]]
     ]
     custom_error_type: str
     custom_error_message: str
@@ -1825,7 +1825,7 @@ class TaggedUnionSchema(TypedDict, total=False):
 
 def tagged_union_schema(
     choices: Dict[Union[int, str], int | str | CoreSchema],
-    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | None],
+    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | int | None],
     *,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
@@ -1874,7 +1874,8 @@ def tagged_union_schema(
             * If `discriminator` is a str, it is the name of the attribute to use as the discriminator
             * If `discriminator` is a list of int/str, it should be used as a "path" to access the discriminator
             * If `discriminator` is a list of lists, each inner list is a path, and the first path that exists is used
-            * If `discriminator` is a callable, it should return the discriminator when called on the value to validate
+            * If `discriminator` is a callable, it should return the discriminator when called on the value to validate;
+              the callable can return `None` to indicate that there is no matching discriminator present on the input
         custom_error_type: The custom error type to use if the validation fails
         custom_error_message: The custom error message to use if the validation fails
         custom_error_context: The custom error context to use if the validation fails
