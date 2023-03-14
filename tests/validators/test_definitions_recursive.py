@@ -29,7 +29,9 @@ def test_branch_nullable():
     assert 'return_fields_set:false' in plain_repr(v)
 
     assert v.validate_python({'name': 'root'}) == {'name': 'root', 'sub_branch': None}
-    assert plain_repr(v).startswith('SchemaValidator(name="typed-dict",validator=DefinitionRef(DefinitionRefValidator{')
+    assert plain_repr(v).startswith(
+        'SchemaValidator(title="typed-dict",validator=DefinitionRef(DefinitionRefValidator{'
+    )
     assert ',slots=[TypedDict(TypedDictValidator{' in plain_repr(v)
 
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1'}}) == (
@@ -85,7 +87,7 @@ def test_unused_ref():
             'fields': {'name': {'schema': {'type': 'str'}}, 'other': {'schema': {'type': 'int'}}},
         }
     )
-    assert plain_repr(v).startswith('SchemaValidator(name="typed-dict",validator=TypedDict(TypedDictValidator')
+    assert plain_repr(v).startswith('SchemaValidator(title="typed-dict",validator=TypedDict(TypedDictValidator')
     assert v.validate_python({'name': 'root', 'other': '4'}) == {'name': 'root', 'other': 4}
     assert ',slots=[]' in plain_repr(v)
 

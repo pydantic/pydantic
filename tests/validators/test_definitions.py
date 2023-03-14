@@ -15,7 +15,7 @@ def test_list_with_def():
     assert v.validate_python([1, 2, '3']) == [1, 2, 3]
     assert v.validate_json(b'[1, 2, "3"]') == [1, 2, 3]
     r = plain_repr(v)
-    assert r.startswith('SchemaValidator(name="list[int]",')
+    assert r.startswith('SchemaValidator(title="list[int]",')
     # definitions aren't used in slots
     assert r.endswith('slots=[])')
 
@@ -28,7 +28,7 @@ def test_ignored_def():
     )
     assert v.validate_python([1, 2, '3']) == [1, 2, 3]
     r = plain_repr(v)
-    assert r.startswith('SchemaValidator(name="list[int]",')
+    assert r.startswith('SchemaValidator(title="list[int]",')
     # definitions aren't used in slots
     assert r.endswith('slots=[])')
 

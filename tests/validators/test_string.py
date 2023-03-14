@@ -185,7 +185,7 @@ def test_regex_error():
 
 def test_default_validator():
     v = SchemaValidator(core_schema.str_schema(strict=True, to_lower=False), {'str_strip_whitespace': False})
-    assert plain_repr(v) == 'SchemaValidator(name="str",validator=Str(StrValidator{strict:true}),slots=[])'
+    assert plain_repr(v) == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:true}),slots=[])'
 
 
 @pytest.fixture(scope='session', name='FruitEnum')
