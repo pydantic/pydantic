@@ -205,7 +205,7 @@ impl SchemaValidator {
 
     pub fn __repr__(&self, py: Python) -> String {
         format!(
-            "SchemaValidator(name={:?}, validator={:#?}, slots={:#?})",
+            "SchemaValidator(title={:?}, validator={:#?}, slots={:#?})",
             self.title.extract::<&str>(py).unwrap(),
             self.validator,
             self.slots,

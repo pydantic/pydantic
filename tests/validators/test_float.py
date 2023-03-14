@@ -172,15 +172,15 @@ def test_float_repr():
     v = SchemaValidator({'type': 'float'})
     assert (
         plain_repr(v)
-        == 'SchemaValidator(name="float",validator=Float(FloatValidator{strict:false,allow_inf_nan:true}),slots=[])'
+        == 'SchemaValidator(title="float",validator=Float(FloatValidator{strict:false,allow_inf_nan:true}),slots=[])'
     )
     v = SchemaValidator({'type': 'float', 'strict': True})
     assert (
         plain_repr(v)
-        == 'SchemaValidator(name="float",validator=Float(FloatValidator{strict:true,allow_inf_nan:true}),slots=[])'
+        == 'SchemaValidator(title="float",validator=Float(FloatValidator{strict:true,allow_inf_nan:true}),slots=[])'
     )
     v = SchemaValidator({'type': 'float', 'multiple_of': 7})
-    assert plain_repr(v).startswith('SchemaValidator(name="constrained-float",validator=ConstrainedFloat(')
+    assert plain_repr(v).startswith('SchemaValidator(title="constrained-float",validator=ConstrainedFloat(')
 
 
 @pytest.mark.parametrize('input_value,expected', [(Decimal('1.23'), 1.23), (Decimal('1'), 1.0)])

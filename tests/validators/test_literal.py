@@ -168,7 +168,7 @@ def test_literal_none():
     assert v.isinstance_python(0) is False
     assert v.isinstance_json('null') is True
     assert v.isinstance_json('""') is False
-    assert plain_repr(v) == 'SchemaValidator(name="none",validator=None(NoneValidator),slots=[])'
+    assert plain_repr(v) == 'SchemaValidator(title="none",validator=None(NoneValidator),slots=[])'
 
 
 def test_union():

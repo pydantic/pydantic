@@ -619,7 +619,8 @@ def test_aliases_debug():
             'fields': {'field_a': {'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3]], 'schema': {'type': 'int'}}},
         }
     )
-    assert repr(v).startswith('SchemaValidator(name="typed-dict", validator=TypedDict(')
+    print(repr(v))
+    assert repr(v).startswith('SchemaValidator(title="typed-dict", validator=TypedDict(')
     assert 'PathChoices(' in repr(v)
 
 
