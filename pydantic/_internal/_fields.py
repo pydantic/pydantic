@@ -96,8 +96,11 @@ def collect_fields(  # noqa: C901
     cls: type[Any],
     name: str,
     bases: tuple[type[Any], ...],
-    types_namespace: dict[str, Any] | None = None,
+    types_namespace: dict[str, Any] | None,
+    *,
     typevars_map: dict[str, Any] | None = None,
+    is_dataclass: bool = False,
+    dc_kw_only: bool | None = None,
 ) -> tuple[dict[str, FieldInfo], str]:
     """
     Collect the fields of a pydantic model or dataclass, also returns the model/class ref to use in the
@@ -107,7 +110,9 @@ def collect_fields(  # noqa: C901
     :param name: name of the class, generally `cls.__name__`
     :param bases: parents of the class, generally `cls.__bases__`
     :param types_namespace: optional extra namespace to look for types in
-    :param typevars_map: TODO
+    :param typevars_map: TODO ???
+    :param is_dataclass: whether the class is a dataclass, used to decide about kw_only setting
+    :param dc_kw_only: whether the whole dataclass is kw_only
     """
     from ..fields import FieldInfo
     from ._generate_schema import get_model_self_schema
@@ -167,14 +172,33 @@ def collect_fields(  # noqa: C901
         if cls.__pydantic_generic_typevars_map__:
             ann_type = replace_types(ann_type, cls.__pydantic_generic_typevars_map__)
 
+        if ann_type is dataclasses.KW_ONLY:
+            # all field fields will be kw_only
+            dc_kw_only = True
+            continue
+        kw_only = dc_kw_only
+
+        init_var = False
+        if ann_type is dataclasses.InitVar:
+            init_var = True
+            ann_type = Any
+        elif isinstance(ann_type, dataclasses.InitVar):
+            init_var = True
+            ann_type = ann_type.type
+
         generic_origin = cls.__pydantic_generic_origin__
         for base in bases:
             if hasattr(base, ann_name):
-                if base is not generic_origin:  # Don't warn about "shadowing" of attributes in parametrized generics
-                    raise NameError(
-                        f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
-                        f'you might want to use a different field name with "alias=\'{ann_name}\'".'
-                    )
+                if base is generic_origin:
+                    # Don't error when "shadowing" of attributes in parametrized generics
+                    continue
+                if is_dataclass and dataclasses.is_dataclass(base):
+                    # Don't error when shadowing a field in a parent dataclass
+                    continue
+                raise NameError(
+                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
+                    f'you might want to use a different field name with "alias=\'{ann_name}\'".'
+                )
 
         try:
             default = getattr(cls, ann_name, Undefined)
@@ -184,7 +208,7 @@ def collect_fields(  # noqa: C901
                 raise AttributeError
         except AttributeError:
             if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
-                fields[ann_name] = FieldInfo.from_annotation(ann_type)
+                field_info = FieldInfo.from_annotation(ann_type)
             else:
                 # # if field has no default value and is not in __annotations__ this means that it is
                 # # defined in a base class and we can take it from there
@@ -195,19 +219,21 @@ def collect_fields(  # noqa: C901
                 if ann_name in model_fields_lookup:
                     # The field was present on one of the (possibly multiple) base classes
                     # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                    field = copy(model_fields_lookup[ann_name])
+                    field_info = copy(model_fields_lookup[ann_name])
                 else:
                     # The field was not found on any base classes; this seems to be caused by fields not getting
                     # generated thanks to models not being fully defined while initializing recursive models.
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                    field = FieldInfo.from_annotation(ann_type)
-                fields[ann_name] = field
+                    field_info = FieldInfo.from_annotation(ann_type)
         else:
-            if isinstance(default, dataclasses.Field) and not default.init:
-                # dataclasses.Field with init=False are not fields
-                continue
+            if isinstance(default, dataclasses.Field):
+                if not default.init:
+                    # dataclasses.Field with init=False are not fields
+                    continue
+                if default.kw_only is True:
+                    kw_only = True
 
-            fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
+            field_info = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
@@ -218,6 +244,12 @@ def collect_fields(  # noqa: C901
                     cls.__pydantic_generic_defaults__[ann_name] = default
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
+
+        if init_var:
+            field_info.init_var = True
+        if kw_only is not None:
+            field_info.kw_only = kw_only
+        fields[ann_name] = field_info
 
     typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
     if typevars_map:

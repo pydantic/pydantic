@@ -40,6 +40,8 @@ class FieldInfo(_repr.Representation):
         'repr',
         'discriminator',
         'json_schema_extra',
+        'init_var',
+        'kw_only',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -88,6 +90,9 @@ class FieldInfo(_repr.Representation):
         self.discriminator = kwargs.get('discriminator')
         self.repr = kwargs.get('repr', True)
         self.json_schema_extra = kwargs.get('json_schema_extra')
+        # currently only used on dataclasses
+        self.init_var = kwargs.get('init_var', False)
+        self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':

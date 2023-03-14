@@ -4,6 +4,7 @@ Private logic for creating pydantic datacalsses.
 from __future__ import annotations as _annotations
 
 import typing
+import warnings
 from copy import copy
 from typing import Any, Callable, ClassVar
 
@@ -16,7 +17,7 @@ from ._fields import collect_fields
 from ._generate_schema import dataclass_fields_schema, generate_config
 from ._model_construction import MockValidator, object_setattr
 
-__all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
+__all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass', 'std_dataclass_schema'
 
 if typing.TYPE_CHECKING:
     from ..config import BaseConfig
@@ -39,17 +40,13 @@ if typing.TYPE_CHECKING:
 
 
 def pydantic_dataclass_init(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-    # just a dict returned since we set `return_dict_only=True`
-    dc_dict = __dataclass_self__.__pydantic_validator__.validate_python({'__args__': args, '__kwargs__': kwargs})
+    __tracebackhide__ = True
+    dc_dict, init_vars = __dataclass_self__.__pydantic_validator__.validate_python(
+        {'__args__': args, '__kwargs__': kwargs}
+    )
     object_setattr(__dataclass_self__, '__dict__', dc_dict)
-
-
-def pydantic_dataclass_init_post(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-    # same as above, avoid call for performance, just a dict returned since we set `return_dict_only=True`
-    dc_dict = __dataclass_self__.__pydantic_validator__.validate_python({'__args__': args, '__kwargs__': kwargs})
-    object_setattr(__dataclass_self__, '__dict__', dc_dict)
-    # TODO support InitVar
-    __dataclass_self__.__post_init__()
+    if init_vars is not None:
+        __dataclass_self__.__post_init__(*init_vars)
 
 
 def prepare_dataclass(
@@ -67,6 +64,11 @@ def prepare_dataclass(
 
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
     """
+    if hasattr(cls, '__post_init_post_parse__'):
+        warnings.warn(
+            'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
+        )
+
     name = cls.__name__
     bases = cls.__bases__
     # added for compatibility with code that expects a model
@@ -75,7 +77,7 @@ def prepare_dataclass(
     cls.__pydantic_generic_args__ = None
     cls.__pydantic_generic_origin__ = None
     try:
-        fields, model_ref = collect_fields(cls, name, bases, types_namespace)
+        fields, model_ref = collect_fields(cls, name, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -99,7 +101,7 @@ def prepare_dataclass(
     inner_schema = dataclass_fields_schema(
         model_ref,
         fields,
-        'keyword_only' if kw_only else 'positional_or_keyword',
+        hasattr(cls, '__post_init__'),
         validator_functions,
         serializer_functions,
         config['arbitrary_types_allowed'],
@@ -112,15 +114,32 @@ def prepare_dataclass(
     cls.__pydantic_fields__ = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
 
-    dc_init = copy(pydantic_dataclass_init_post) if hasattr(cls, '__post_init__') else copy(pydantic_dataclass_init)
+    dc_init = copy(pydantic_dataclass_init)
     dc_init.__name__ = '__init__'
     dc_init.__qualname__ = f'{cls.__qualname__}.__init__'
     setattr(cls, '__init__', dc_init)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
-    cls.__pydantic_core_schema__ = core_schema.call_schema(inner_schema, cls)
+    cls.__pydantic_core_schema__ = core_schema.dataclass_schema(cls, inner_schema)
     # cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
 
     return True
+
+
+def std_dataclass_schema(cls: type[Any], types_namespace: dict[str, Any] | None):
+    return NotImplementedError(f'{cls}, {types_namespace}')
+    # TODO do we want to allow positional arguments
+    # fields, ref = collect_fields(cls, cls.__name__, cls.__bases__,
+    # types_namespace, dc_kw_only=True, is_dataclass=True)
+
+    # inner_schema = dataclass_fields_schema(
+    #     ref,
+    #     fields,
+    #     hasattr(cls, '__post_init__'),
+    #     ValidationFunctions(),
+    #     SerializationFunctions(),
+    #     config['arbitrary_types_allowed'],
+    #     types_namespace,
+    # )
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> bool:

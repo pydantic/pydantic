@@ -60,23 +60,22 @@ def model_fields_schema(
 def dataclass_fields_schema(
     ref: str,
     fields: dict[str, FieldInfo],
-    mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'],
+    has_post_init: bool,
     validator_functions: ValidationFunctions,
     serializer_functions: SerializationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
     """
-    Generate schema for the fields of a dataclass, this differs from a model since we use `arguments_schema`
-    not `typed_dict_schema` so unnamed arguments can be used.
+    Generate schema for the fields of a dataclass, using `dataclass_args_schema`.
     """
     # TODO add typevars_map argument when we support generic dataclasses
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, None)
     args = [
-        schema_generator.generate_arg_param_schema(k, v, mode, validator_functions, serializer_functions)
+        schema_generator.generate_dc_field_schema(k, v, validator_functions, serializer_functions)
         for k, v in fields.items()
     ]
-    schema: core_schema.CoreSchema = core_schema.arguments_schema(*args, return_dict_only=True, ref=ref)
+    schema: core_schema.CoreSchema = core_schema.dataclass_args_schema(*args, collect_init_only=has_post_init, ref=ref)
     schema = apply_validators(schema, validator_functions.get_root_decorators())
     return schema
 
@@ -300,30 +299,35 @@ class GenerateSchema:
             field_schema['serialization_exclude'] = True
         return field_schema
 
-    def generate_arg_param_schema(
+    def generate_dc_field_schema(
         self,
         name: str,
-        field: FieldInfo,
-        mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'],
+        field_info: FieldInfo,
         validator_functions: ValidationFunctions,
         serializer_functions: SerializationFunctions,
-    ) -> core_schema.ArgumentsParameter:
+    ) -> core_schema.DataclassField:
         """
-        Prepare a ArgumentsParameter to represent the parameter/field, e.g. of a dataclass
+        Prepare a DataclassField to represent the parameter/field, of a dataclass
         """
-        assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.metadata)
+        assert field_info.annotation is not None, 'field.annotation should not be None when generating a schema'
+        schema = self.generate_schema(field_info.annotation)
+        schema = apply_annotations(schema, field_info.metadata)
 
-        if not field.is_required():
-            schema = wrap_default(field, schema)
+        if not field_info.is_required():
+            schema = wrap_default(field_info, schema)
 
         schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
-        param_schema = core_schema.arguments_parameter(name, schema, mode=mode)
-        if field.alias is not None:
-            param_schema['alias'] = field.alias
-        return param_schema
+        # use `or None` to so the core schema is minimal
+        return core_schema.dataclass_field(
+            name,
+            schema,
+            init_only=field_info.init_var or None,
+            kw_only=None if field_info.kw_only else False,
+            serialization_exclude=field_info.exclude or None,
+            validation_alias=field_info.alias,
+            serialization_alias=field_info.alias,
+        )
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """
@@ -643,6 +647,8 @@ class GenerateSchema:
             return None
 
         # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
+        import dataclasses
+
         from ._std_types_schema import SCHEMA_LOOKUP
 
         # instead of iterating over a list and calling is_instance, this should be somewhat faster,
@@ -654,7 +660,17 @@ class GenerateSchema:
             except KeyError:
                 continue
             return encoder(self, obj)
+        if dataclasses.is_dataclass(obj):
+            return self._dataclass_schema(obj)
         return None
+
+    def _dataclass_schema(self, dataclass: Any) -> core_schema.CoreSchema:
+        """
+        Generate schema for a dataclass.
+        """
+        from ._dataclasses import std_dataclass_schema
+
+        return std_dataclass_schema(dataclass, self.types_namespace)
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)

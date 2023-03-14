@@ -241,21 +241,15 @@ def test_post_init_inheritance_chain():
     assert post_init_called
 
 
-@pytest.mark.xfail(reason='__post_init_post_parse__ dropped, dep warning?')
 def test_post_init_post_parse():
-    post_init_post_parse_called = False
+    with pytest.warns(DeprecationWarning, match='Support for `__post_init_post_parse__` has been dropped'):
 
-    @pydantic.dataclasses.dataclass
-    class MyDataclass:
-        a: int
+        @pydantic.dataclasses.dataclass
+        class MyDataclass:
+            a: int
 
-        def __post_init_post_parse__(self):
-            nonlocal post_init_post_parse_called
-            post_init_post_parse_called = True
-
-    d = MyDataclass('1')
-    assert d.a == 1
-    assert post_init_post_parse_called
+            def __post_init_post_parse__(self):
+                pass
 
 
 def test_post_init_assignment():
@@ -352,7 +346,6 @@ def test_no_validate_assigment_long_string_error():
     assert d.a == 'xxxx'
 
 
-@pytest.mark.xfail(reason='TODO dataclasses as fields')
 def test_nested_dataclass():
     @pydantic.dataclasses.dataclass
     class Nested:
@@ -378,17 +371,22 @@ def test_nested_dataclass():
         Outer(n='not nested')
     assert exc_info.value.errors() == [
         {
+            'type': 'arguments_type',
             'loc': ('n',),
-            'msg': 'instance of Nested, tuple or dict expected',
-            'type': 'type_error.dataclass',
-            'ctx': {'class_name': 'Nested'},
+            'msg': 'Arguments must be a tuple, list or a dictionary',
+            'input': 'not nested',
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Outer(n=('x',))
     assert exc_info.value.errors() == [
-        {'loc': ('n', 'number'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('n', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        }
     ]
 
 
@@ -419,7 +417,6 @@ def test_arbitrary_types_allowed():
     ]
 
 
-@pytest.mark.xfail(reason='dataclass as field')
 def test_nested_dataclass_model():
     @pydantic.dataclasses.dataclass
     class Nested:
@@ -451,7 +448,6 @@ def test_fields():
     assert fields['signup_ts'].default is None
 
 
-# @pytest.mark.xfail(reason='working on V2')
 def test_default_factory_field():
     @pydantic.dataclasses.dataclass
     class User:
@@ -484,7 +480,7 @@ def test_default_factory_singleton_field():
     assert Foo().singleton is Foo().singleton
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - json schema')
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:
@@ -526,7 +522,7 @@ def test_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - json schema')
 def test_nested_schema():
     @pydantic.dataclasses.dataclass
     class Nested:
@@ -552,7 +548,6 @@ def test_nested_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_initvar():
     InitVar = dataclasses.InitVar
 
@@ -567,7 +562,6 @@ def test_initvar():
         tiv.y
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_derived_field_from_initvar():
     InitVar = dataclasses.InitVar
 
@@ -579,13 +573,13 @@ def test_derived_field_from_initvar():
         def __post_init__(self, number):
             self.plusone = number + 1
 
-    derived = DerivedWithInitVar(1)
+    derived = DerivedWithInitVar('1')
     assert derived.plusone == 2
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError, match='Input should be a valid integer, unable to parse string as an integer'):
         DerivedWithInitVar('Not A Number')
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - requires validator fix')
 def test_initvars_post_init():
     @pydantic.dataclasses.dataclass
     class PathDataPostInit:
@@ -604,36 +598,6 @@ def test_initvars_post_init():
     with pytest.raises(TypeError) as exc_info:
         PathDataPostInit('world', base_path='/hello')
     assert str(exc_info.value) == "unsupported operand type(s) for /: 'str' and 'str'"
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_initvars_post_init_post_parse():
-    @pydantic.dataclasses.dataclass
-    class PathDataPostInitPostParse:
-        path: Path
-        base_path: dataclasses.InitVar[Optional[Path]] = None
-
-        def __post_init_post_parse__(self, base_path):
-            if base_path is not None:
-                self.path = base_path / self.path
-
-    path_data = PathDataPostInitPostParse('world')
-    assert 'path' in path_data.__dict__
-    assert 'base_path' not in path_data.__dict__
-    assert path_data.path == Path('world')
-
-    assert PathDataPostInitPostParse('world', base_path='/hello').path == Path('/hello/world')
-
-
-def test_post_init_post_parse_without_initvars():
-    @pydantic.dataclasses.dataclass
-    class Foo:
-        a: int
-
-        def __post_init_post_parse__(self):
-            ...
-
-    Foo(a=1)
 
 
 def test_classvar():
@@ -676,7 +640,7 @@ def test_inheritance_post_init():
     assert post_init_called
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - support hashable')
 def test_hashable_required():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
@@ -693,7 +657,7 @@ def test_hashable_required():
     assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - support hashable')
 @pytest.mark.parametrize('default', [1, None, ...])
 def test_hashable_optional(default):
     @pydantic.dataclasses.dataclass
@@ -704,7 +668,6 @@ def test_hashable_optional(default):
     MyDataclass(v=None)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_override_builtin_dataclass():
     @dataclasses.dataclass
     class File:
@@ -729,7 +692,15 @@ def test_override_builtin_dataclass():
 
     with pytest.raises(ValidationError) as e:
         ValidFile(hash=[1], name='name', size=3)
-    assert e.value.errors() == [{'loc': ('hash',), 'msg': 'str type expected', 'type': 'type_error.str'}]
+
+    assert e.value.errors() == [
+        {
+            'type': 'string_type',
+            'loc': ('hash',),
+            'msg': 'Input should be a valid string',
+            'input': [1],
+        },
+    ]
 
 
 def test_override_builtin_dataclass_2():
@@ -753,7 +724,7 @@ def test_override_builtin_dataclass_2():
     assert f.seen_count == 7
 
 
-@pytest.mark.xfail(reason='working on V2')
+# @pytest.mark.xfail(reason='working on V2')
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:
@@ -1079,7 +1050,6 @@ def test_issue_2398():
     assert real_dc <= model.dc
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_issue_2424():
     @dataclasses.dataclass
     class Base:
@@ -1409,7 +1379,6 @@ def test_self_reference_dataclass():
     assert MyDataclass.__pydantic_model__.model_fields['self_reference'].type_ is MyDataclass
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 def test_kw_only():
     @pydantic.dataclasses.dataclass(kw_only=True)
@@ -1417,13 +1386,12 @@ def test_kw_only():
         a: int | None = None
         b: str
 
-    with pytest.raises(TypeError, match='takes 1 positional argument but 3 were given'):
+    with pytest.raises(ValidationError):
         A(1, '')
 
     assert A(b='hi').b == 'hi'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_extra_forbid_list_no_error():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
     class Bar:
@@ -1436,58 +1404,52 @@ def test_extra_forbid_list_no_error():
     assert isinstance(Foo(a=[Bar()]).a[0], Bar)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_extra_forbid_list_error():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    @pydantic.dataclasses.dataclass
     class Bar:
         ...
 
-    with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'a'")):
-
-        @pydantic.dataclasses.dataclass
-        class Foo:
-            a: List[Bar(a=1)]
+    with pytest.raises(ValidationError, match=r'a\s+Unexpected keyword argument'):
+        Bar(a=1)
 
 
-@pytest.mark.xfail(reason='working on V2')
+def test_validator():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+        b: float
+
+        @validator('b')
+        def double_b(cls, v, _):
+            return v * 2
+
+    d = MyDataclass('1', '2.5')
+    assert d.a == 1
+    assert d.b == 5.0
+
+
+@pytest.mark.xfail(reason='working on V2 - validator in child not applied')
 def test_parent_post_init():
     @dataclasses.dataclass
     class A:
-        a: float = 1
+        a: float
 
         def __post_init__(self):
             self.a *= 2
 
-    @pydantic.dataclasses.dataclass
-    class B(A):
-        @validator('a')
-        def validate_a(cls, value):
-            value += 3
-            return value
-
-    assert B().a == 5  # 1 * 2 + 3
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_subclass_post_init_post_parse():
-    @dataclasses.dataclass
-    class A:
-        a: float = 1
+    assert A(a=1.2).a == 2.4
 
     @pydantic.dataclasses.dataclass
     class B(A):
-        def __post_init_post_parse__(self):
-            self.a *= 2
-
         @validator('a')
-        def validate_a(cls, value):
+        def validate_a(cls, value, _):
             value += 3
             return value
 
-    assert B().a == 8  # (1 + 3) * 2
+    assert B(a=1).a == 5  # 1 * 2 + 3
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validator in child not applied')
 def test_subclass_post_init():
     @dataclasses.dataclass
     class A:
@@ -1506,7 +1468,7 @@ def test_subclass_post_init():
     assert B().a == 5  # 1 * 2 + 3
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2 - validator in child not applied')
 def test_subclass_post_init_inheritance():
     @dataclasses.dataclass
     class A:

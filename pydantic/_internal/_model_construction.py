@@ -147,7 +147,7 @@ def complete_model_class(
     serializer_functions.set_bound_functions(cls)
 
     try:
-        fields, model_ref = collect_fields(cls, name, bases, types_namespace, typevars_map)
+        fields, model_ref = collect_fields(cls, name, bases, types_namespace, typevars_map=typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
