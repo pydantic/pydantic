@@ -63,7 +63,7 @@ def timedelta_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_s
 
 @schema_function(Enum)
 def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> core_schema.CoreSchema:
-    def to_enum(__input_value: Any, **_kwargs: Any) -> Enum:
+    def to_enum(__input_value: Any, _: core_schema.ValidationInfo) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
@@ -169,7 +169,7 @@ def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> cor
 
 def _deque_any_schema() -> core_schema.FunctionWrapSchema:
     return core_schema.function_wrap_schema(
-        _validators.deque_any_validator, core_schema.list_schema(), serialization=_deque_ser_schema()
+        _validators.deque_any_validator, core_schema.list_schema(allow_any_iter=True), serialization=_deque_ser_schema()
     )
 
 
