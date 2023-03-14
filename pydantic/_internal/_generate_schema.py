@@ -263,6 +263,9 @@ class GenerateSchema:
 
         schema = apply_validators(schema, validator_functions.get_field_decorators(name))
 
+        # the default validator needs to go outside of any other validators
+        # so that it is the topmost validator for the typed-dict-field validator
+        # which uses it to check if the field has a default value or not
         if not field_info.is_required():
             required = False
             schema = wrap_default(field_info, schema)
