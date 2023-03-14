@@ -9,7 +9,7 @@ import re
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ForwardRef
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
@@ -122,6 +122,16 @@ class GenerateSchema:
         elif isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
+
+        if isinstance(obj, ForwardRef):
+            # we assume that types_namespace has the target of forward references in its scope,
+            # but this could fail, for example, if calling Validator on an imported type which contains
+            # forward references to other types only defined in the module from which it was imported
+            # `Validator(SomeImportedTypeAliasWithAForwardReference)`
+            # or the equivalent for BaseModel
+            # class Model(BaseModel):
+            #   x: SomeImportedTypeAliasWithAForwardReference
+            obj = _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=self.types_namespace)
 
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
@@ -253,11 +263,15 @@ class GenerateSchema:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
+        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
+
+        # the default validator needs to go outside of any other validators
+        # so that it is the topmost validator for the typed-dict-field validator
+        # which uses it to check if the field has a default value or not
         if not field_info.is_required():
             required = False
             schema = wrap_default(field_info, schema)
 
-        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
         misc = JsonSchemaMetadata(
             title=field_info.title,

@@ -1740,7 +1740,7 @@ def test_field_with_validator():
         something: Optional[int] = None
 
         @validator('something')
-        def check_field(cls, v, *, values, config, field):
+        def check_field(cls, v, info):
             return v
 
     assert Model.model_json_schema() == {

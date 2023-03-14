@@ -8,13 +8,110 @@ Public methods related to:
 from __future__ import annotations as _annotations
 
 from types import FunctionType
-from typing import Any, Callable, overload
+from typing import Any, Callable, Union, overload
 
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Literal
+from typing_extensions import Literal, Protocol
 
 from ._internal import _decorators
 from .errors import PydanticUserError
+
+
+class _OnlyValueValidatorClsMethod(Protocol):
+    def __call__(self, __cls: Any, __value: Any) -> Any:
+        ...
+
+
+class _V1ValidatorWithValuesClsMethod(Protocol):
+    def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:
+        ...
+
+
+class _V1ValidatorWithValuesKwOnlyClsMethod(Protocol):
+    def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:
+        ...
+
+
+class _V1ValidatorWithKwargsClsMethod(Protocol):
+    def __call__(self, __cls: Any, **kwargs: Any) -> Any:
+        ...
+
+
+class _V1ValidatorWithValuesAndKwargsClsMethod(Protocol):
+    def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:
+        ...
+
+
+class _V2ValidatorClsMethod(Protocol):
+    def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
+        ...
+
+
+class _V2WrapValidatorClsMethod(Protocol):
+    def __call__(
+        self,
+        __cls: Any,
+        __input_value: Any,
+        __validator: _core_schema.CallableValidator,
+        __info: _core_schema.ValidationInfo,
+    ) -> Any:
+        ...
+
+
+V1Validator = Union[
+    _V1ValidatorWithValuesClsMethod,
+    _V1ValidatorWithValuesKwOnlyClsMethod,
+    _V1ValidatorWithKwargsClsMethod,
+    _V1ValidatorWithValuesAndKwargsClsMethod,
+    _decorators.V1ValidatorWithValues,
+    _decorators.V1ValidatorWithValuesKwOnly,
+    _decorators.V1ValidatorWithKwargs,
+    _decorators.V1ValidatorWithKwargsAndValue,
+]
+
+V2Validator = Union[
+    _V2ValidatorClsMethod,
+    _core_schema.ValidatorFunction,
+    _OnlyValueValidatorClsMethod,
+    _decorators.OnlyValueValidator,
+]
+
+V2WrapValidator = Union[
+    _V2WrapValidatorClsMethod,
+    _core_schema.WrapValidatorFunction,
+]
+
+
+@overload
+def validator(
+    *fields: str,
+    check_fields: bool | None = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    allow_reuse: bool = False,
+) -> Callable[[V2Validator | V1Validator], classmethod[Any]]:
+    ...
+
+
+@overload
+def validator(
+    *fields: str,
+    mode: Literal['before', 'after', 'plain'],
+    check_fields: bool | None = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    allow_reuse: bool = False,
+) -> Callable[[V2Validator], classmethod[Any]]:
+    ...
+
+
+@overload
+def validator(
+    *fields: str,
+    mode: Literal['wrap'],
+    check_fields: bool | None = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    allow_reuse: bool = False,
+) -> Callable[[V2WrapValidator], classmethod[Any]]:
+    ...
 
 
 def validator(
@@ -46,7 +143,7 @@ def validator(
         )
 
     def dec(f: Callable[..., Any]) -> classmethod[Any]:
-        f_cls = _decorators.prepare_decorator(f, allow_reuse)
+        f_cls = _decorators.prepare_validator_decorator(f, allow_reuse)
         setattr(
             f_cls,
             _decorators.FIELD_VALIDATOR_TAG,
@@ -85,12 +182,12 @@ def root_validator(
     before or after standard model parsing/validation is performed.
     """
     if __func:
-        f_cls = _decorators.prepare_decorator(__func, allow_reuse)
+        f_cls = _decorators.prepare_validator_decorator(__func, allow_reuse)
         setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode))
         return f_cls
 
     def dec(f: Callable[..., Any]) -> classmethod[Any]:
-        f_cls = _decorators.prepare_decorator(f, allow_reuse)
+        f_cls = _decorators.prepare_validator_decorator(f, allow_reuse)
         setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode))
         return f_cls
 
@@ -107,7 +204,6 @@ def serializer(
 ) -> Callable[[Callable[..., Any]], classmethod[Any]]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
-
     :param fields: which field(s) the method should be called on
     :param json_return_type: The type that the function returns if the serialization mode is JSON.
     :param when_used: When the function should be called
@@ -129,7 +225,7 @@ def serializer(
         )
 
     def dec(f: Callable[..., Any]) -> classmethod[Any]:
-        f_cls = _decorators.prepare_decorator(f, allow_reuse)
+        f_cls = _decorators.prepare_serializer_decorator(f, allow_reuse)
         setattr(
             f_cls,
             _decorators.FIELD_SERIALIZER_TAG,
