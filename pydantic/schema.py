@@ -869,8 +869,7 @@ def field_singleton_schema(  # noqa: C901 (ignore complexity)
         f_schema['const'] = field.default
 
     if is_literal_type(field_type):
-        values = all_literal_values(field_type)
-        values = tuple(x.value if isinstance(x, Enum) else x for x in values)
+        values = tuple(x.value if isinstance(x, Enum) else x for x in all_literal_values(field_type))
 
         if len({v.__class__ for v in values}) > 1:
             return field_schema(
