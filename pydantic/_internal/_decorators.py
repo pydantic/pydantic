@@ -222,7 +222,10 @@ def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool)
     Warn about validators with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
-    first_param = next(iter(inspect.signature(function).parameters.values()))
+    sig = inspect.signature(function)
+    first_param = next(iter(sig.parameters.values()), None)
+    if first_param is None:
+        raise TypeError(f'Unrecognized validator signature {sig} for {function}')
     ret: Any
     if first_param.name == 'cls':
         ret = function if isinstance(function, classmethod) else classmethod(function)
@@ -375,7 +378,6 @@ def make_generic_validator(
         return validator
     raise TypeError(
         f'Unsupported signature for {mode} validator {validator}: {sig} is not supported.'
-        ' Validators must be compatible with one of the following two signatures:\n'
+        ' Validators must be compatible with the following two signature:\n'
         ' - (__value: Any, __info: pydantic.ValidationInfo) -> Any\n'
-        ' - (__value: Any, values: dict[str, Any]) -> Any'
     )

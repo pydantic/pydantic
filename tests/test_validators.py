@@ -1604,3 +1604,20 @@ def test_instance_method() -> None:
             @validator('x')
             def check_x(self, x: int) -> int:
                 return x
+
+
+def test_unrecognized_signature() -> None:
+    with pytest.raises(
+        TypeError,
+        match=(
+            r'Unrecognized validator signature \(\) -> int'
+            r' for <function test_unrecognized_signature.<locals>._.check_x'
+        ),
+    ):
+
+        class _(BaseModel):
+            x: int
+
+            @validator('x')
+            def check_x() -> int:
+                raise NotImplementedError
