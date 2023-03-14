@@ -231,7 +231,7 @@ def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool)
         ret = function if isinstance(function, classmethod) else classmethod(function)
         function = ret.__func__
     elif first_param.name == 'self':
-        raise TypeError('Validators cannot be instance methods (they should not accept self as an argument)')
+        raise TypeError('Validators cannot be instance methods (they should not accept `self` as an argument)')
     else:
         ret = function if isinstance(function, staticmethod) else staticmethod(function)
         function = ret.__func__
