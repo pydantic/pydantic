@@ -259,7 +259,7 @@ def test_repr():
     v = SchemaValidator({'type': 'frozenset', 'strict': True, 'min_length': 42})
     assert plain_repr(v) == (
         'SchemaValidator('
-        'name="frozenset[any]",'
+        'title="frozenset[any]",'
         'validator=FrozenSet(FrozenSetValidator{'
         'strict:true,item_validator:None,min_length:Some(42),max_length:None,generator_max_length:None,'
         'name:"frozenset[any]"'
