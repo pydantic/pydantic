@@ -1593,3 +1593,14 @@ def test_v1_validator_kwargs_function():
 
     _check_warning(w.list)
     assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_instance_method() -> None:
+    with pytest.raises(TypeError, match='Validators cannot be instance methods'):
+
+        class _(BaseModel):
+            x: int
+
+            @validator('x')
+            def check_x(self, x: int) -> int:
+                return x

@@ -218,9 +218,8 @@ def prepare_serializer_decorator(function: Callable[..., Any], allow_reuse: bool
 
 def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
     """
-    Convert the function to a classmethod if it isn't already.
-
-    Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
+    Apply the @classmethod or @staticmethod decorator to @validator functions if it was not applied already.
+    Warn about validators with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
     first_param = next(iter(inspect.signature(function).parameters.values()))
@@ -229,7 +228,7 @@ def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool)
         ret = function if isinstance(function, classmethod) else classmethod(function)
         function = ret.__func__
     elif first_param.name == 'self':
-        ret = function
+        raise TypeError('Validators cannot be instance methods (they should not accept self as an argument)')
     else:
         ret = function if isinstance(function, staticmethod) else staticmethod(function)
         function = ret.__func__
