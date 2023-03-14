@@ -909,8 +909,8 @@ class Validator(Generic[T]):
         gen = _generate_schema.GenerateSchema(
             arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={}
         )
-        self.schema = gen.generate_schema(__type)
-        self._validator = SchemaValidator(self.schema, config=merged_config)
+        schema = gen.generate_schema(__type)
+        self._validator = SchemaValidator(schema, config=merged_config)
 
     def __call__(self, __input: Any) -> T:
         return self._validator.validate_python(__input)
