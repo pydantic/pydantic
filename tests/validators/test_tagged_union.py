@@ -343,6 +343,72 @@ def test_discriminator_function(py_and_json: PyAndJson, input_value, expected):
         assert v.validate_test(input_value) == expected
 
 
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        ('foo', 'foo'),
+        (123, 123),
+        (
+            None,
+            Err(
+                'union_tag_not_found',
+                [
+                    {
+                        'type': 'union_tag_not_found',
+                        'loc': (),
+                        'msg': 'Unable to extract tag using discriminator discriminator_function()',
+                        'input': None,
+                        'ctx': {'discriminator': 'discriminator_function()'},
+                    }
+                ],
+            ),
+        ),
+        (
+            ['wrong type'],
+            Err(
+                'union_tag_invalid',
+                [
+                    {
+                        'ctx': {'discriminator': 'discriminator_function()', 'expected_tags': "'a', 1", 'tag': 'other'},
+                        'input': ['wrong type'],
+                        'loc': (),
+                        'msg': "Input tag 'other' found using discriminator_function() does not "
+                        "match any of the expected tags: 'a', 1",
+                        'type': 'union_tag_invalid',
+                    }
+                ],
+            ),
+        ),
+    ],
+)
+def test_int_discriminator_function(py_and_json: PyAndJson, input_value, expected):
+    def discriminator_function(obj):
+        if isinstance(obj, str):
+            return 'a'
+        elif isinstance(obj, int):
+            return 1
+        elif obj is None:
+            return None
+        else:
+            return 'other'
+
+    v = py_and_json(
+        {
+            'type': 'tagged-union',
+            'discriminator': discriminator_function,
+            'choices': {'a': {'type': 'str'}, 1: {'type': 'int'}},
+        }
+    )
+    assert 'discriminator: Function' in repr(v.validator)
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=expected.message) as exc_info:
+            v.validate_python(input_value)
+        # debug(exc_info.value.errors())
+        assert exc_info.value.errors() == expected.errors
+    else:
+        assert v.validate_test(input_value) == expected
+
+
 def test_from_attributes():
     v = SchemaValidator(
         {
