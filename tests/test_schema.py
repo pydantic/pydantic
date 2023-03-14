@@ -2922,6 +2922,131 @@ def test_discriminated_annotated_union():
     }
 
 
+def test_discriminated_annotated_union_enum():
+    class PetType(Enum):
+        cat = 'cat'
+        dog = 'dog'
+
+    class PetColor(str, Enum):
+        black = 'black'
+        white = 'white'
+
+    class PetInfo(Enum):
+        height = 0
+        weight = 1
+
+    class BlackCatWithHeight(BaseModel):
+        pet_type: Literal[PetType.cat]
+        color: Literal[PetColor.black]
+        info: Literal[PetInfo.height]
+        black_infos: str
+
+    class BlackCatWithWeight(BaseModel):
+        pet_type: Literal[PetType.cat]
+        color: Literal[PetColor.black]
+        info: Literal[PetInfo.weight]
+        black_infos: str
+
+    BlackCat = Annotated[Union[BlackCatWithHeight, BlackCatWithWeight], Field(discriminator='info')]
+
+    class WhiteCat(BaseModel):
+        pet_type: Literal[PetType.cat]
+        color: Literal[PetColor.white]
+        white_infos: str
+
+    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+    class Dog(BaseModel):
+        pet_type: Literal[PetType.dog]
+        dog_name: str
+
+    Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+    class Model(BaseModel):
+        pet: Pet
+        number: int
+
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {
+                    'propertyName': 'pet_type',
+                    'mapping': {
+                        'cat': {
+                            'BlackCatWithHeight': {'$ref': '#/definitions/BlackCatWithHeight'},
+                            'BlackCatWithWeight': {'$ref': '#/definitions/BlackCatWithWeight'},
+                            'WhiteCat': {'$ref': '#/definitions/WhiteCat'},
+                        },
+                        'dog': '#/definitions/Dog',
+                    },
+                },
+                'oneOf': [
+                    {
+                        'oneOf': [
+                            {
+                                'oneOf': [
+                                    {'$ref': '#/definitions/BlackCatWithHeight'},
+                                    {'$ref': '#/definitions/BlackCatWithWeight'},
+                                ]
+                            },
+                            {'$ref': '#/definitions/WhiteCat'},
+                        ]
+                    },
+                    {'$ref': '#/definitions/Dog'},
+                ],
+            },
+            'number': {'title': 'Number', 'type': 'integer'},
+        },
+        'required': ['pet', 'number'],
+        'definitions': {
+            'BlackCatWithHeight': {
+                'title': 'BlackCatWithHeight',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                    'info': {'title': 'Info', 'enum': [0], 'type': 'integer'},
+                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+            },
+            'BlackCatWithWeight': {
+                'title': 'BlackCatWithWeight',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
+                    'info': {'title': 'Info', 'enum': [1], 'type': 'integer'},
+                    'black_infos': {'title': 'Black Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+            },
+            'WhiteCat': {
+                'title': 'WhiteCat',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
+                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
+                    'white_infos': {'title': 'White Infos', 'type': 'string'},
+                },
+                'required': ['pet_type', 'color', 'white_infos'],
+            },
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'},
+                    'dog_name': {'title': 'Dog Name', 'type': 'string'},
+                },
+                'required': ['pet_type', 'dog_name'],
+            },
+        },
+    }
+
+
 def test_alias_same():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='typeOfPet')
