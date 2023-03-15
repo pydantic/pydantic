@@ -237,3 +237,19 @@ class MyDataClass:
 
 
 MyDataClass(foo='foo', bar='bar')
+
+
+_TModel = TypeVar('_TModel')
+_TType = TypeVar('_TType')
+
+
+class OrmMixin(Generic[_TModel, _TType]):
+    @classmethod
+    def from_orm(cls, model: _TModel) -> _TType:
+        raise NotImplementedError
+
+    @classmethod
+    def from_orm_optional(cls, model: Optional[_TModel]) -> Optional[_TType]:
+        if model is None:
+            return None
+        return cls.from_orm(model)
