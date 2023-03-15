@@ -5,10 +5,10 @@ import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any
 
-from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
+from pydantic_core import MultiHostUrl, PydanticCustomError, Url
 from typing_extensions import Annotated
 
-from ._internal import _fields, _repr
+from ._internal import _fields, _repr, core_schemas_cover as core_schema
 
 if TYPE_CHECKING:
     import email_validator

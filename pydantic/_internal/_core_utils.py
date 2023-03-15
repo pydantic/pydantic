@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from pydantic_core import CoreSchema, CoreSchemaType, core_schema
-from typing_extensions import TypeGuard, get_args
+from typing_extensions import TypeGuard, get_args, TypeAlias
 
-from . import _repr
+from . import _repr, core_schemas_cover as core_schema
+from .core_schemas_cover import CoreSchema, CoreSchemaType
 
 
 def is_typed_dict_field(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard[core_schema.TypedDictField]:

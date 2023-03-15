@@ -6,8 +6,7 @@ from __future__ import annotations as _annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from pydantic_core import core_schema
-
+from . import core_schemas_cover as core_schema
 from ._repr import Representation
 
 

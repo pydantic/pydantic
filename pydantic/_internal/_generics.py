@@ -11,8 +11,8 @@ from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Tuple, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
-from pydantic_core import core_schema
 
+from . import core_schemas_cover as core_schema
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticForwardRef
 from ._typing_extra import TypeVarType, typing_base

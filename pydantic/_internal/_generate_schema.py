@@ -12,13 +12,13 @@ import warnings
 from typing import TYPE_CHECKING, Any, ForwardRef
 
 from annotated_types import BaseMetadata, GroupedMetadata
-from pydantic_core import SchemaError, SchemaValidator, core_schema
+from pydantic_core import SchemaError, SchemaValidator
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
-from . import _discriminated_union, _fields, _typing_extra
+from . import _discriminated_union, _fields, _typing_extra, core_schemas_cover as core_schema
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator

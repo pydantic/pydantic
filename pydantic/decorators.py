@@ -10,10 +10,9 @@ from __future__ import annotations as _annotations
 from types import FunctionType
 from typing import Any, Callable, Union, overload
 
-from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, Protocol
 
-from ._internal import _decorators
+from ._internal import _decorators, core_schemas_cover as _core_schema
 from .errors import PydanticUserError
 
 

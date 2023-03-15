@@ -5,9 +5,9 @@ import typing
 from typing import Any
 
 import typing_extensions
-from pydantic_core import CoreSchema
-from pydantic_core.core_schema import TypedDictField
 
+from . import core_schemas_cover as core_schema
+from .core_schemas_cover import CoreSchema, TypedDictField
 from ._typing_extra import EllipsisType
 
 if typing.TYPE_CHECKING:

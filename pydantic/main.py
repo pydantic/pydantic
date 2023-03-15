@@ -15,7 +15,7 @@ from types import prepare_class, resolve_bases
 from typing import Any, Generic, Type, TypeVar, overload
 
 import typing_extensions
-from pydantic_core import CoreConfig, SchemaValidator
+from pydantic_core import SchemaValidator
 
 from ._internal import (
     _decorators,
@@ -27,6 +27,7 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
+from ._internal.core_schemas_cover import CoreConfig
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -37,7 +38,8 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaSerializer
+    from pydantic_core import SchemaSerializer
+    from ._internal.core_schemas_cover import CoreSchema
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 

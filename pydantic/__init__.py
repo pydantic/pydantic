@@ -1,7 +1,7 @@
 from pydantic_core import ValidationError
-from pydantic_core.core_schema import ValidationInfo
 
 from . import dataclasses
+from ._internal.core_schemas_cover import ValidationInfo
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
 from .decorators import root_validator, serializer, validator

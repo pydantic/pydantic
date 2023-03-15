@@ -3,9 +3,8 @@ from __future__ import annotations as _annotations
 from enum import Enum
 from typing import Sequence
 
-from pydantic_core import core_schema
-
 from ..errors import PydanticUserError
+from . import core_schemas_cover as core_schema
 
 
 def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> core_schema.CoreSchema:

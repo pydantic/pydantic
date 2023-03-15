@@ -12,9 +12,9 @@ import re
 from colorsys import hls_to_rgb, rgb_to_hls
 from typing import Any, Dict, Optional, Tuple, Union, cast
 
-from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core import PydanticCustomError
 
-from ._internal import _repr, _utils
+from ._internal import _repr, _utils, core_schemas_cover as core_schema
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]

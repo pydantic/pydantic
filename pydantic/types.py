@@ -25,10 +25,10 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import PydanticCustomError, PydanticKnownError
 from typing_extensions import Annotated, Literal
 
-from ._internal import _fields, _validators
+from ._internal import _fields, _validators, core_schemas_cover as core_schema
 
 __all__ = [
     'Strict',

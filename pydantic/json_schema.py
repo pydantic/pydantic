@@ -6,11 +6,10 @@ from dataclasses import is_dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, Iterable, List, NewType, Sequence, Tuple, Union, cast
 
-from pydantic_core import CoreSchema, CoreSchemaType, core_schema
-from pydantic_core.core_schema import TypedDictField
 from typing_extensions import TypedDict
 
-from ._internal import _core_metadata, _core_utils, _typing_extra, _utils
+from ._internal import _core_metadata, _core_utils, _typing_extra, _utils, core_schemas_cover as core_schema
+from ._internal.core_schemas_cover import CoreSchema, CoreSchemaType, TypedDictField
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:

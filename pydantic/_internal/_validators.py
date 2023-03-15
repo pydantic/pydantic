@@ -15,13 +15,13 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import PydanticCustomError, PydanticKnownError
 
-from . import _fields
+from . import _fields, core_schemas_cover as core_schema
 
 
 def mapping_validator(
-    __input_value: typing.Mapping[Any, Any], validator: core_schema.CallableValidator, info: core_schema.ValidationInfo
+    __input_value: typing.Mapping[Any, Any], validator: core_schema.CallableValidator, _info: core_schema.ValidationInfo
 ) -> typing.Mapping[Any, Any]:
     """
     Validator for `Mapping` types, if required `isinstance(v, Mapping)` has already been called.

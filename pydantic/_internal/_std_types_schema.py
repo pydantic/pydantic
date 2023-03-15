@@ -16,11 +16,11 @@ from pathlib import PurePath
 from typing import Any, Callable
 from uuid import UUID
 
-from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
+from pydantic_core import MultiHostUrl, PydanticCustomError, Url
 from typing_extensions import get_args
 
 from ..json_schema import JsonSchemaMetadata
-from . import _serializers, _validators
+from . import _serializers, _validators, core_schemas_cover as core_schema
 from ._core_metadata import build_metadata_dict
 
 if typing.TYPE_CHECKING:

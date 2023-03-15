@@ -3,9 +3,9 @@ from __future__ import annotations as _annotations
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any, Union
 
-from pydantic_core import core_schema
 from typing_extensions import Literal, TypedDict
 
+from . import core_schemas_cover as core_schema
 from ._typing_extra import TypeVarType
 
 if TYPE_CHECKING:

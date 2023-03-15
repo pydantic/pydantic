@@ -12,11 +12,11 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from . import _typing_extra
+from . import _typing_extra, core_schemas_cover as core_schema
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._decorators import SerializationFunctions, ValidationFunctions
