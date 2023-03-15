@@ -18,7 +18,7 @@ from typing_extensions import Annotated, Literal, get_args, get_origin, is_typed
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
-from . import _fields, _typing_extra
+from . import _discriminated_union, _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
@@ -259,6 +259,8 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
+        if field_info.discriminator is not None:
+            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
         schema = apply_validators(schema, validator_functions.get_field_decorators(name))
@@ -712,6 +714,8 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
         return apply_annotations(schema, metadata)
     elif isinstance(metadata, FieldInfo):
         schema = apply_annotations(schema, metadata.metadata)
+        if metadata.discriminator is not None:
+            schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
 
