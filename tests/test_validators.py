@@ -2,22 +2,32 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
-from typing import Dict, FrozenSet, List, Optional, Tuple, Union
+from typing import Any, Deque, Dict, FrozenSet, List, Optional, Tuple, Union
+from warnings import WarningMessage
 
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, PydanticUserError, ValidationError, errors, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    PydanticUserError,
+    ValidationError,
+    ValidationInfo,
+    errors,
+    validator,
+)
 from pydantic.decorators import root_validator
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_simple():
     class Model(BaseModel):
         a: str
 
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
@@ -26,10 +36,17 @@ def test_simple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'}]
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, "foobar" not found in a',
+            'input': 'snap',
+            'ctx': {'error': '"foobar" not found in a'},
+        }
+    ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_int_validation():
     class Model(BaseModel):
         a: int
@@ -37,12 +54,26 @@ def test_int_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'snap',
+        }
     ]
     assert Model(a=3).a == 3
     assert Model(a=True).a == 1
     assert Model(a=False).a == 0
-    assert Model(a=4.5).a == 4
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=4.5)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_from_float',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, got a number with a fractional part',
+            'input': 4.5,
+        }
+    ]
 
 
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
@@ -76,29 +107,60 @@ def test_frozenset_validation():
 @pytest.mark.xfail(reason='working on V2')
 def test_deque_validation():
     class Model(BaseModel):
-        a: deque
+        a: Deque[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'value is not a valid deque', 'type': 'type_error.deque'}]
+    assert exc_info.value.errors() == [
+        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list/array', 'input': 'snap'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=['a'])
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=('a',))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a={'a'})
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
     assert Model(a={1, 2, 3}).a == deque([1, 2, 3])
     assert Model(a=deque({1, 2, 3})).a == deque([1, 2, 3])
     assert Model(a=[4, 5]).a == deque([4, 5])
     assert Model(a=(6,)).a == deque([6])
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_whole():
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', pre=True)
-        def check_a1(cls, v):
+        @validator('a', mode='before')
+        def check_a1(cls, v: Any):
             v.append('123')
             return v
 
         @validator('a')
-        def check_a2(cls, v):
+        def check_a2(cls, v: Any):
             v.append(456)
             return v
 
@@ -111,6 +173,7 @@ def test_validate_kwargs():
         b: int
         a: List[int]
 
+        # TODO: do we support `each_item`?
         @validator('a', each_item=True)
         def check_a1(cls, v, values, **kwargs):
             return v + values['b']
@@ -118,15 +181,14 @@ def test_validate_kwargs():
     assert Model(a=[1, 2], b=6).a == [7, 8]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_pre_error():
     calls = []
 
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', pre=True)
-        def check_a1(cls, v):
+        @validator('a', mode='before')
+        def check_a1(cls, v: Any):
             calls.append(f'check_a1 {v}')
             if 1 in v:
                 raise ValueError('a1 broken')
@@ -134,7 +196,7 @@ def test_validate_pre_error():
             return v
 
         @validator('a')
-        def check_a2(cls, v):
+        def check_a2(cls, v: Any):
             calls.append(f'check_a2 {v}')
             if 10 in v:
                 raise ValueError('a2 broken')
@@ -146,13 +208,29 @@ def test_validate_pre_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[1, 3])
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'a1 broken', 'type': 'value_error'}]
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, a1 broken',
+            'input': [1, 3],
+            'ctx': {'error': 'a1 broken'},
+        }
+    ]
     assert calls == ['check_a1 [1, 3]']
 
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[5, 10])
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'a2 broken', 'type': 'value_error'}]
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, a2 broken',
+            'input': [6, 10],
+            'ctx': {'error': 'a2 broken'},
+        }
+    ]
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
 
 
@@ -164,13 +242,14 @@ def validate_assignment_model_fixture():
         c: int = 0
 
         @validator('b')
-        def b_length(cls, v, values, **kwargs):
+        def b_length(cls, v, info):
+            values = info.data
             if 'a' in values and len(v) < values['a']:
                 raise ValueError('b too short')
             return v
 
         @validator('c')
-        def double_c(cls, v):
+        def double_c(cls, v: Any):
             return v * 2
 
         model_config = ConfigDict(validate_assignment=True, extra=Extra.allow)
@@ -178,13 +257,11 @@ def validate_assignment_model_fixture():
     return ValidateAssignmentModel
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_ok(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello')
     assert p.b == 'hello'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_fail(ValidateAssignmentModel):
     with pytest.raises(ValidationError):
         ValidateAssignmentModel(a=10, b='hello')
@@ -194,7 +271,6 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         p.b = 'x'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_value_change(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', c=2)
     assert p.c == 4
@@ -205,7 +281,6 @@ def test_validating_assignment_value_change(ValidateAssignmentModel):
     assert p.c == 6
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
@@ -226,7 +301,6 @@ def test_validating_assignment_dict(ValidateAssignmentModel):
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_values_dict():
     class ModelOne(BaseModel):
         a: int
@@ -236,9 +310,9 @@ def test_validating_assignment_values_dict():
         b: int
 
         @validator('b')
-        def validate_b(cls, b, values):
-            if 'm' in values:
-                return b + values['m'].a  # this fails if values['m'] is a dict
+        def validate_b(cls, b, info: ValidationInfo):
+            if 'm' in info.data:
+                return b + info.data['m'].a  # this fails if info.data['m'] is a dict
             else:
                 return b
 
@@ -258,6 +332,7 @@ def test_validate_multiple():
         b: str
 
         @validator('a', 'b')
+        # TODO: missing a field arg
         def check_a_and_b(cls, v, field, **kwargs):
             if len(v) < 4:
                 raise TypeError(f'{field.alias} is too short')
@@ -273,13 +348,12 @@ def test_validate_multiple():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_classmethod():
     class Model(BaseModel):
         a: str
 
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             assert cls is Model
             return v
 
@@ -288,27 +362,21 @@ def test_classmethod():
     m.check_a('x')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_duplicates():
-    with pytest.raises(errors.PydanticUserError) as exc_info:
+    msg = r'duplicate validator function \"tests.test_validators::test_duplicates.<locals>.Model.duplicate_name\";'
+    with pytest.warns(UserWarning, match=msg):
 
         class Model(BaseModel):
             a: str
             b: str
 
             @validator('a')
-            def duplicate_name(cls, v):
+            def duplicate_name(cls, v: Any):
                 return v
 
             @validator('b')
-            def duplicate_name(cls, v):  # noqa
+            def duplicate_name(cls, v: Any):  # noqa
                 return v
-
-    assert str(exc_info.value) == (
-        'duplicate validator function '
-        '"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name"; '
-        'if this is intended, set `allow_reuse=True`'
-    )
 
 
 def test_use_bare():
@@ -318,7 +386,7 @@ def test_use_bare():
             a: str
 
             @validator
-            def checker(cls, v):
+            def checker(cls, v: Any):
                 return v
 
     assert 'validators should be used with fields' in str(exc_info.value)
@@ -331,7 +399,7 @@ def test_use_no_fields():
             a: str
 
             @validator()
-            def checker(cls, v):
+            def checker(cls, v: Any):
                 return v
 
     assert 'validator with no fields specified' in str(exc_info.value)
@@ -344,8 +412,9 @@ def test_validate_always():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', pre=True, always=True)
-        def check_a(cls, v):
+        # TODO: do we support always? I think we now always validate always
+        @validator('a', mode='before', always=True)
+        def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v or 'xxx'
@@ -364,8 +433,8 @@ def test_validate_always_on_inheritance():
         a: str = None
 
     class Model(ParentModel):
-        @validator('a', pre=True, always=True)
-        def check_a(cls, v):
+        @validator('a', mode='before', always=True)
+        def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v or 'xxx'
@@ -376,15 +445,14 @@ def test_validate_always_on_inheritance():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_not_always():
     check_calls = 0
 
     class Model(BaseModel):
-        a: str = None
+        a: Optional[str] = None
 
-        @validator('a', pre=True)
-        def check_a(cls, v):
+        @validator('a', mode='before')
+        def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v or 'xxx'
@@ -447,7 +515,7 @@ def test_invalid_field():
             a: str
 
             @validator('b')
-            def check_b(cls, v):
+            def check_b(cls, v: Any):
                 return v
 
     assert str(exc_info.value) == (
@@ -456,14 +524,13 @@ def test_invalid_field():
     )
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_child():
     class Parent(BaseModel):
         a: str
 
     class Child(Parent):
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
@@ -474,20 +541,19 @@ def test_validate_child():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_child_extra():
     class Parent(BaseModel):
         a: str
 
         @validator('a')
-        def check_a_one(cls, v):
+        def check_a_one(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
 
     class Child(Parent):
         @validator('a')
-        def check_a_two(cls, v):
+        def check_a_two(cls, v: Any):
             return v.upper()
 
     assert Parent(a='this is foobar good').a == 'this is foobar good'
@@ -503,7 +569,7 @@ def test_validate_child_all():
 
     class Child(Parent):
         @validator('*')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
@@ -514,13 +580,12 @@ def test_validate_child_all():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent():
     class Parent(BaseModel):
         a: str
 
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
@@ -542,7 +607,7 @@ def test_validate_parent_all():
         a: str
 
         @validator('*')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
@@ -558,13 +623,12 @@ def test_validate_parent_all():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_keep():
     class Parent(BaseModel):
         a: int
 
         @validator('a')
-        def add_to_a(cls, v):
+        def add_to_a(cls, v: Any):
             return v + 1
 
     class Child(Parent):
@@ -579,29 +643,28 @@ def test_inheritance_replace():
         a: int
 
         @validator('a')
-        def add_to_a(cls, v):
+        def add_to_a(cls, v: Any):
             return v + 1
 
     class Child(Parent):
         @validator('a')
-        def add_to_a(cls, v):
+        def add_to_a(cls, v: Any):
             return v + 5
 
     assert Child(a=0).a == 5
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_new():
     class Parent(BaseModel):
         a: int
 
         @validator('a')
-        def add_one_to_a(cls, v):
+        def add_one_to_a(cls, v: Any):
             return v + 1
 
     class Child(Parent):
         @validator('a')
-        def add_five_to_a(cls, v):
+        def add_five_to_a(cls, v: Any):
             return v + 5
 
     assert Child(a=0).a == 6
@@ -613,7 +676,7 @@ def test_validation_each_item():
         foobar: Dict[int, int]
 
         @validator('foobar', each_item=True)
-        def check_foobar(cls, v):
+        def check_foobar(cls, v: Any):
             return v + 1
 
     assert Model(foobar={1: 1}).foobar == {1: 2}
@@ -633,7 +696,6 @@ def test_validation_each_item_one_sublevel():
     assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
@@ -652,8 +714,8 @@ def test_validator_always_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', pre=True, always=True)
-        def check_a(cls, v):
+        @validator('a', mode='before', always=True)
+        def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v or 'default value'
@@ -671,8 +733,8 @@ def test_validator_always_pre():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', always=True, pre=True)
-        def check_a(cls, v):
+        @validator('a', always=True, mode='before')
+        def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v or 'default value'
@@ -688,7 +750,7 @@ def test_validator_always_post():
         a: str = None
 
         @validator('a', always=True)
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             return v or 'default value'
 
     assert Model(a='y').a == 'y'
@@ -700,8 +762,8 @@ def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', always=True, pre=True)
-        def check_a(cls, v):
+        @validator('a', always=True, mode='before')
+        def check_a(cls, v: Any):
             return v or 'default value'
 
     assert Model(a='y').a == 'y'
@@ -720,7 +782,7 @@ def test_validator_bad_fields_throws_configerror():
             b: str
 
             @validator(['a', 'b'])
-            def check_fields(cls, v):
+            def check_fields(cls, v: Any):
                 return v
 
 
@@ -731,8 +793,8 @@ def test_datetime_validator():
     class Model(BaseModel):
         d: datetime = None
 
-        @validator('d', pre=True, always=True)
-        def check_d(cls, v):
+        @validator('d', mode='before', always=True)
+        def check_d(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v or datetime(2032, 1, 1)
@@ -745,15 +807,14 @@ def test_datetime_validator():
     assert check_calls == 3
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_pre_called_once():
     check_calls = 0
 
     class Model(BaseModel):
         a: Tuple[int, int, int]
 
-        @validator('a', pre=True)
-        def check_a(cls, v):
+        @validator('a', mode='before')
+        def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
             return v
@@ -762,13 +823,12 @@ def test_pre_called_once():
     assert check_calls == 1
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_assert_raises_validation_error():
     class Model(BaseModel):
         a: str
 
         @validator('a')
-        def check_a(cls, v):
+        def check_a(cls, v: Any):
             assert v == 'a', 'invalid a'
             return v
 
@@ -776,9 +836,15 @@ def test_assert_raises_validation_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    injected_by_pytest = "\nassert 'snap' == 'a'\n  - a\n  + snap"
+    injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': f'invalid a{injected_by_pytest}', 'type': 'assertion_error'}
+        {
+            'type': 'assertion_error',
+            'loc': ('a',),
+            'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
+            'input': 'snap',
+            'ctx': {'error': "invalid a\nassert 'snap' == 'a'\n  - a\n  + snap"},
+        }
     ]
 
 
@@ -790,7 +856,7 @@ def test_whole():
             x: List[int]
 
             @validator('x', whole=True)
-            def check_something(cls, v):
+            def check_something(cls, v: Any):
                 return v
 
 
@@ -804,7 +870,7 @@ def test_root_validator():
         c: str
 
         @validator('b')
-        def repeat_b(cls, v):
+        def repeat_b(cls, v: Any):
             return v * 2
 
         @root_validator
@@ -855,10 +921,10 @@ def test_root_validator_pre():
         b: str
 
         @validator('b')
-        def repeat_b(cls, v):
+        def repeat_b(cls, v: Any):
             return v * 2
 
-        @root_validator(pre=True)
+        @root_validator(mode='before')
         def root_validator(cls, values):
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
@@ -898,10 +964,10 @@ def test_root_validator_repeat2():
             a: int = 1
 
             @validator('a')
-            def repeat_validator(cls, v):
+            def repeat_validator(cls, v: Any):
                 return v
 
-            @root_validator(pre=True)
+            @root_validator(mode='before')
             def repeat_validator(cls, values):  # noqa: F811
                 return values
 
@@ -1001,7 +1067,6 @@ def reusable_validator(num):
     return num * 2
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_reuse_global_validators():
     class Model(BaseModel):
         x: int
@@ -1020,11 +1085,11 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
         b: str
 
         @validator('a', allow_reuse=allow_1)
-        def duplicate_name(cls, v):
+        def duplicate_name(cls, v: Any):
             return v
 
         @validator('b', allow_reuse=allow_2)
-        def duplicate_name(cls, v):  # noqa F811
+        def duplicate_name(cls, v: Any):  # noqa F811
             return v
 
         if include_root:
@@ -1065,7 +1130,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
         a: int = 1
         b: str
 
-        def repeat_b(cls, v):
+        def repeat_b(cls, v: Any):
             return v * 2
 
         if validator_classmethod:
@@ -1127,7 +1192,6 @@ def test_root_validator_skip_on_failure():
     assert not b_called
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_assignment_validator_cls():
     validator_calls = 0
 
@@ -1258,7 +1322,6 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values(mocker)
     assert list(dict(model).items()) == [('foo', 'new_foo_value'), ('bar', 'new_bar_value'), ('baz', 'baz_value')]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_exceptions_in_field_validators_restore_original_field_value():
     class Model(BaseModel):
         foo: str
@@ -1266,7 +1329,7 @@ def test_exceptions_in_field_validators_restore_original_field_value():
         model_config = ConfigDict(validate_assignment=True)
 
         @validator('foo')
-        def validate_foo(cls, v):
+        def validate_foo(cls, v: Any):
             if v == 'raise_exception':
                 raise RuntimeError('test error')
             return v
@@ -1284,7 +1347,7 @@ def test_overridden_root_validators(mocker):
     class A(BaseModel):
         x: str
 
-        @root_validator(pre=True)
+        @root_validator(mode='before')
         def pre_root(cls, values):
             validate_stub('A', 'pre')
             return values
@@ -1295,7 +1358,7 @@ def test_overridden_root_validators(mocker):
             return values
 
     class B(A):
-        @root_validator(pre=True)
+        @root_validator(mode='before')
         def pre_root(cls, values):
             validate_stub('B', 'pre')
             return values
@@ -1322,7 +1385,7 @@ def test_validating_assignment_pre_root_validator_fail():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @root_validator(pre=True)
+        @root_validator(mode='before')
         def values_are_not_string(cls, values):
             if any(isinstance(x, str) for x in values.values()):
                 raise ValueError('values cannot be a string')
@@ -1404,3 +1467,157 @@ def test_root_validator_many_values_change():
     assert r.area == 1
     r.height = 5
     assert r.area == 5
+
+
+V1_VALIDATOR_DEPRECATION_MATCH = (
+    r'Validator signatures using the `values` keyword argument or `\*\*kwargs` are no longer supported'
+)
+
+
+def _get_source_line(filename: str, lineno: int) -> str:
+    with open(filename) as f:
+        for _ in range(lineno - 1):
+            f.readline()
+        return f.readline()
+
+
+def _check_warning(warnings: List[WarningMessage]) -> None:
+    assert len(warnings) == 1
+    w = warnings[0]
+    # check that we got stacklevel correct
+    # if this fails you need to edit the stacklevel
+    # parameter to warnings.warn in _decorators.py
+    assert w.filename == __file__
+    source = _get_source_line(w.filename, w.lineno)
+    assert 'class Point(BaseModel):' in source
+
+
+def test_v1_validator_values_cls_method():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            @validator('x')
+            def check_x(cls, x: int, values: Dict[str, Any]) -> int:
+                assert x * 2 == values['y']
+                return x
+
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_v1_validator_values_kwargs_cls_method():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            @validator('x')
+            def check_x(cls, x: int, values: Dict[str, Any], **kwargs: Any) -> int:
+                assert kwargs.keys() == set()
+                assert x * 2 == values['y']
+                return x
+
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_v1_validator_kwargs_cls_method():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            @validator('x')
+            def check_x(cls, x: Any, **kwargs: Any) -> int:
+                assert kwargs.keys() == {'values'}
+                assert x * 2 == kwargs['values']['y']
+                return x
+
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_v1_validator_values_function():
+    def _check_x(x: Any, values: Dict[str, Any]) -> int:
+        assert x * 2 == values['y']
+        return x
+
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            check_x = validator('x')(_check_x)
+
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_v1_validator_values_kwargs_function():
+    def _check_x(x: Any, values: Dict[str, Any], **kwargs: Any) -> int:
+        assert kwargs.keys() == set()
+        assert x * 2 == values['y']
+        return x
+
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            check_x = validator('x')(_check_x)
+
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_v1_validator_kwargs_function():
+    def _check_x(x: Any, **kwargs: Any) -> int:
+        assert kwargs.keys() == {'values'}
+        assert x * 2 == kwargs['values']['y']
+        return x
+
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+
+        class Point(BaseModel):
+            y: int
+            x: int
+
+            check_x = validator('x')(_check_x)
+
+    _check_warning(w.list)
+    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+
+
+def test_instance_method() -> None:
+    with pytest.raises(TypeError, match='Validators cannot be instance methods'):
+
+        class _(BaseModel):
+            x: int
+
+            @validator('x')
+            def check_x(self, x: int) -> int:
+                return x
+
+
+def test_unrecognized_signature() -> None:
+    with pytest.raises(
+        TypeError,
+        match=(
+            r'Unrecognized validator signature \(\) -> int'
+            r' for <function test_unrecognized_signature.<locals>._.check_x'
+        ),
+    ):
+
+        class _(BaseModel):
+            x: int
+
+            @validator('x')
+            def check_x() -> int:
+                raise NotImplementedError

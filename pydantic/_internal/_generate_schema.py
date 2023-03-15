@@ -9,7 +9,7 @@ import re
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ForwardRef
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
@@ -18,7 +18,7 @@ from typing_extensions import Annotated, Literal, get_args, get_origin, is_typed
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
-from . import _fields, _typing_extra
+from . import _discriminated_union, _fields, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
@@ -122,6 +122,16 @@ class GenerateSchema:
         elif isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
+
+        if isinstance(obj, ForwardRef):
+            # we assume that types_namespace has the target of forward references in its scope,
+            # but this could fail, for example, if calling Validator on an imported type which contains
+            # forward references to other types only defined in the module from which it was imported
+            # `Validator(SomeImportedTypeAliasWithAForwardReference)`
+            # or the equivalent for BaseModel
+            # class Model(BaseModel):
+            #   x: SomeImportedTypeAliasWithAForwardReference
+            obj = _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=self.types_namespace)
 
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
@@ -249,13 +259,19 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
+        if field_info.discriminator is not None:
+            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
+        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
+
+        # the default validator needs to go outside of any other validators
+        # so that it is the topmost validator for the typed-dict-field validator
+        # which uses it to check if the field has a default value or not
         if not field_info.is_required():
             required = False
             schema = wrap_default(field_info, schema)
 
-        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
         schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
         misc = JsonSchemaMetadata(
             title=field_info.title,
@@ -698,6 +714,8 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
         return apply_annotations(schema, metadata)
     elif isinstance(metadata, FieldInfo):
         schema = apply_annotations(schema, metadata.metadata)
+        if metadata.discriminator is not None:
+            schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
 

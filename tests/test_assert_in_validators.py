@@ -11,7 +11,7 @@ def test_assert_raises_validation_error():
         a: str
 
         @validator('a')
-        def check_a(cls, v, **kwargs):
+        def check_a(cls, v):
             assert v == 'a', 'invalid a'
             return v
 

@@ -263,9 +263,9 @@ else:
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.function_plain_schema(_validators.import_string)
+                return core_schema.function_plain_schema(lambda v, _: _validators.import_string(v))
             else:
-                return core_schema.function_before_schema(_validators.import_string, schema)
+                return core_schema.function_before_schema(lambda v, _: _validators.import_string(v), schema)
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -312,7 +312,7 @@ class UuidVersion:
     ) -> core_schema.FunctionSchema:
         return core_schema.function_after_schema(schema, cast(core_schema.ValidatorFunction, self.validate))
 
-    def validate(self, value: UUID, **_kwargs: Any) -> UUID:
+    def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
         if value.version != self.uuid_version:
             raise PydanticCustomError(
                 'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
@@ -352,21 +352,21 @@ class PathType:
         )
 
     @staticmethod
-    def validate_file(path: Path, **_kwargs: Any) -> Path:
+    def validate_file(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.is_file():
             return path
         else:
             raise PydanticCustomError('path_not_file', 'Path does not point to a file')
 
     @staticmethod
-    def validate_directory(path: Path, **_kwargs: Any) -> Path:
+    def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.is_dir():
             return path
         else:
             raise PydanticCustomError('path_not_directory', 'Path does not point to a directory')
 
     @staticmethod
-    def validate_new(path: Path, **_kwargs: Any) -> Path:
+    def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.exists():
             raise PydanticCustomError('path_exists', 'path already exists')
         elif not path.parent.exists():
@@ -518,7 +518,7 @@ class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
         self.max_length = max_length
         self.error_prefix: Literal['string', 'bytes'] = 'string' if field_type is SecretStr else 'bytes'
 
-    def __call__(self, __value: SecretField[SecretType] | SecretType, **_kwargs: Any) -> Any:
+    def __call__(self, __value: SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
         if self.min_length is not None and len(__value) < self.min_length:
             short_kind: core_schema.ErrorType = f'{self.error_prefix}_too_short'  # type: ignore[assignment]
             raise PydanticKnownError(short_kind, {'min_length': self.min_length})
@@ -603,7 +603,7 @@ class PaymentCardNumber(str):
         )
 
     @classmethod
-    def validate(cls, __input_value: str, **_kwargs: Any) -> 'PaymentCardNumber':
+    def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> 'PaymentCardNumber':
         return cls(__input_value)
 
     @property
@@ -701,7 +701,7 @@ class ByteSize(int):
         return core_schema.function_plain_schema(cls.validate)
 
     @classmethod
-    def validate(cls, __input_value: Any, **_kwargs: Any) -> 'ByteSize':
+    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> 'ByteSize':
         try:
             return cls(int(__input_value))
         except ValueError:

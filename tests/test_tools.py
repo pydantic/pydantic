@@ -7,13 +7,11 @@ from pydantic.dataclasses import dataclass
 from pydantic.tools import parse_obj_as, schema_json_of, schema_of
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
 def test_parse_obj(obj, type_, parsed):
     assert parse_obj_as(type_, obj) == parsed
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_as_model():
     class Model(BaseModel):
         x: int
@@ -38,14 +36,17 @@ def test_parse_obj_preserves_subclasses():
     assert parsed == [model_b]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'input': 'a',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
     ]
-    assert exc_info.value.model.__name__ == 'ParsingModel[int]'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -73,7 +74,6 @@ def test_parse_as_dataclass():
     assert parse_obj_as(PydanticDataclass, inputs) == PydanticDataclass(1)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_mapping_as():
     inputs = {'1': '2'}
     assert parse_obj_as(Dict[int, int], inputs) == {1: 2}

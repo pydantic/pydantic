@@ -540,7 +540,6 @@ def test_nested_forward_ref():
     assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
-@pytest.mark.xfail(reason='TODO discriminator')
 def test_discriminated_union_forward_ref(create_module):
     @create_module
     def module():
@@ -551,7 +550,9 @@ def test_discriminated_union_forward_ref(create_module):
         from pydantic import BaseModel, Field
 
         class Pet(BaseModel):
-            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')
+            pet: Union['Cat', 'Dog'] = Field(discriminator='type')
+
+            model_config = dict(undefined_types_warning=False)
 
         class Cat(BaseModel):
             type: Literal['cat']
@@ -560,28 +561,38 @@ def test_discriminated_union_forward_ref(create_module):
             type: Literal['dog']
 
     with pytest.raises(PydanticUserError, match='`Pet` is not fully defined; you should define `Cat`'):
-        module.Pet.model_validate({'type': 'pika'})
+        module.Pet.model_validate({'pet': {'type': 'pika'}})
 
     module.Pet.model_rebuild()
 
-    with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
-        module.Pet.model_validate({'type': 'pika'})
+    with pytest.raises(
+        ValidationError,
+        match="Input tag 'pika' found using 'type' does not match any of the expected tags: 'cat', 'dog'",
+    ):
+        module.Pet.model_validate({'pet': {'type': 'pika'}})
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
-        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}},
-        'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+        'required': ['pet'],
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}, 'propertyName': 'type'},
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+            }
+        },
         '$defs': {
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'type': {'title': 'Type', 'enum': ['cat'], 'type': 'string'}},
+                'properties': {'type': {'const': 'cat', 'title': 'Type'}},
                 'required': ['type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'type': {'title': 'Type', 'enum': ['dog'], 'type': 'string'}},
+                'properties': {'type': {'const': 'dog', 'title': 'Type'}},
                 'required': ['type'],
             },
         },

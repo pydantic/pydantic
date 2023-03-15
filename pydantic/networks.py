@@ -147,7 +147,7 @@ else:
             field_schema.update(type='string', format='email')
 
         @classmethod
-        def validate(cls, __input_value: str, **_kwargs: Any) -> str:
+        def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> str:
             return validate_email(__input_value)[1]
 
 
@@ -178,7 +178,7 @@ class NameEmail(_repr.Representation):
         )
 
     @classmethod
-    def _validate(cls, __input_value: NameEmail | str, **_kwargs: Any) -> NameEmail:
+    def _validate(cls, __input_value: NameEmail | str, _: core_schema.ValidationInfo) -> NameEmail:
         if isinstance(__input_value, cls):
             return __input_value
         else:
@@ -212,7 +212,7 @@ class IPvAnyAddress:
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: Any, **_kwargs: Any) -> IPv4Address | IPv6Address:
+    def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address | IPv6Address:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -239,7 +239,7 @@ class IPvAnyInterface:
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Interface | IPv6Interface:
+    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Interface | IPv6Interface:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -268,7 +268,7 @@ class IPvAnyNetwork:
         return core_schema.function_plain_schema(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Network | IPv6Network:
+    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Network | IPv6Network:
         return cls(__input_value)  # type: ignore[return-value]
 
 
