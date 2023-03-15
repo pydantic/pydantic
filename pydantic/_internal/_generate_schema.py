@@ -60,6 +60,7 @@ def model_fields_schema(
 
 
 def dataclass_fields_schema(
+    dataclass_name: str,
     ref: str,
     fields: dict[str, FieldInfo],
     has_post_init: bool,
@@ -77,7 +78,9 @@ def dataclass_fields_schema(
         schema_generator.generate_dc_field_schema(k, v, validator_functions, serializer_functions)
         for k, v in fields.items()
     ]
-    schema: core_schema.CoreSchema = core_schema.dataclass_args_schema(*args, collect_init_only=has_post_init, ref=ref)
+    schema: core_schema.CoreSchema = core_schema.dataclass_args_schema(
+        dataclass_name, args, collect_init_only=has_post_init, ref=ref
+    )
     schema = apply_validators(schema, validator_functions.get_root_decorators())
     return schema
 
@@ -671,11 +674,13 @@ class GenerateSchema:
         Generate schema for a dataclass.
         """
         # FIXME we need a way to make sure kw_only info is propagated through to fields
+        name = dataclass.__name__
         fields, ref = _fields.collect_fields(
-            dataclass, dataclass.__name__, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
+            dataclass, name, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
         )
 
         fields_schema = dataclass_fields_schema(
+            name,
             ref,
             fields,
             hasattr(dataclass, '__post_init__'),

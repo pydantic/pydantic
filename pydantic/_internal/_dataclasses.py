@@ -8,7 +8,7 @@ import warnings
 from copy import copy
 from typing import Any, Callable, ClassVar
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
@@ -41,9 +41,7 @@ if typing.TYPE_CHECKING:
 
 def pydantic_dataclass_init(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
     __tracebackhide__ = True
-    dc_dict, init_vars = __dataclass_self__.__pydantic_validator__.validate_python(
-        {'__args__': args, '__kwargs__': kwargs}
-    )
+    dc_dict, init_vars = __dataclass_self__.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs))
     object_setattr(__dataclass_self__, '__dict__', dc_dict)
     if init_vars is not None:
         __dataclass_self__.__post_init__(*init_vars)
@@ -90,15 +88,16 @@ def prepare_dataclass(
     cls.__pydantic_validator_functions__ = validator_functions = ValidationFunctions(bases)
     cls.__pydantic_serializer_functions__ = serializer_functions = SerializationFunctions(bases)
 
-    for name, value in vars(cls).items():
-        found_validator = validator_functions.extract_decorator(name, value)
+    for var_name, value in vars(cls).items():
+        found_validator = validator_functions.extract_decorator(var_name, value)
         if not found_validator:
-            serializer_functions.extract_decorator(name, value)
+            serializer_functions.extract_decorator(var_name, value)
 
     validator_functions.set_bound_functions(cls)
     serializer_functions.set_bound_functions(cls)
 
     fields_schema = dataclass_fields_schema(
+        name,
         model_ref,
         fields,
         hasattr(cls, '__post_init__'),

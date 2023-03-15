@@ -359,31 +359,29 @@ def test_nested_dataclass():
     assert isinstance(navbar.n, Nested)
     assert navbar.n.number == 1
 
-    navbar = Outer(n=('2',))
-    assert isinstance(navbar.n, Nested)
-    assert navbar.n.number == 2
-
     navbar = Outer(n={'number': '3'})
     assert isinstance(navbar.n, Nested)
     assert navbar.n.number == 3
 
     with pytest.raises(ValidationError) as exc_info:
         Outer(n='not nested')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'type': 'arguments_type',
+            'type': 'dataclass_type',
             'loc': ('n',),
-            'msg': 'Arguments must be a tuple, list or a dictionary',
+            'msg': 'Input should be a dictionary or an instance of Nested',
             'input': 'not nested',
+            'ctx': {'dataclass_name': 'Nested'},
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Outer(n=('x',))
+        Outer(n={'number': 'x'})
     assert exc_info.value.errors() == [
         {
             'type': 'int_parsing',
-            'loc': ('n', 0),
+            'loc': ('n', 'number'),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'x',
         }
@@ -1163,7 +1161,6 @@ def test_schema_description_set():
     assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
 
 
-@pytest.mark.xfail(reason='TODO update pydantic-core to allow subclasses')
 def test_issue_3011():
     """Validation of a subclass of a dataclass"""
 
@@ -1254,7 +1251,6 @@ def test_discriminated_union_basemodel_instance_value():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_post_init_after_validation():
     @dataclasses.dataclass
     class SetWrapper:
@@ -1265,12 +1261,12 @@ def test_post_init_after_validation():
                 self.set, set
             ), f"self.set should be a set but it's {self.set!r} of type {type(self.set).__name__}"
 
-    class Model(pydantic.BaseModel, post_init_call='after_validation'):
+    class Model(pydantic.BaseModel):
         set_wrapper: SetWrapper
 
     model = Model(set_wrapper=SetWrapper({1, 2, 3}))
     json_text = model.model_dump_json()
-    assert Model.parse_raw(json_text) == model
+    assert Model.model_validate_json(json_text).model_dump() == model.model_dump()
 
 
 @pytest.mark.xfail(reason='working on V2')
