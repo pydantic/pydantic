@@ -60,13 +60,12 @@ def test_alias_generator_wrong_type_error():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_cannot_infer_type_with_alias():
-    # TODO: This is the replacement for an old test that checked that type was inferred properly if not annotated.
-    #   I don't think we've decided yet what should happen to fields that are missing annotations,
-    #   but whatever gets decided, this test should be made consistent with that
+    # TODO: I don't think we've finalized the exact error that should be raised when fields are missing annotations,
+    #   but this test should be made consistent with that once it is finalized
     with pytest.raises(TypeError):
 
         class Model(BaseModel):
-            a: str = Field('foobar', alias='_a')
+            a = Field('foobar', alias='_a')
 
 
 def test_basic_alias():
@@ -92,7 +91,7 @@ def test_alias_error():
         {
             'input': 'foo',
             'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -131,7 +130,8 @@ def test_pop_by_field_name():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_alias_child_precedence():
-    # TODO: Need to decide what we are doing with config fields — if dropping completely, should we drop this test?
+    # TODO: Need to decide what we are doing with fields in model_config
+    #   If dropping completely, should we drop this test?
     class Parent(BaseModel):
         x: int
 
@@ -198,9 +198,10 @@ def test_alias_generator_on_child():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_low_priority_alias():
-    # TODO: alias_priority is gone — what should happen to this test?
+    # TODO: alias_priority has been removed from `Field` — what should happen to this test?
+    #   Should we re-add alias_priority as a keyword argument to `Field`?
     #   Is there something new that can be used to replicate this functionality?
-    #   If not, do we need to update the migration guide?
+    #   Either way, if we don't re-add it to `Field`, remember to update the migration guide
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc', alias_priority=1)
         y: str

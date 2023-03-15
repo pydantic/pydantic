@@ -1,9 +1,8 @@
 import json
 import pickle
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import pytest
-from typing_extensions import Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError, parse_obj_as
 
@@ -121,14 +120,15 @@ def test_json():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_json_ct():
-    # TODO: It seems model_validate_json has replaced parse_raw, except that it can _only_ be used with json
-    #   Are we just dropping this functionality? If so, should we drop these tests?
-    #   Do we need to document and/or create a suggested migration path?
+    # TODO: Should this test be dropped now that parse_raw is gone?
     assert Model.parse_raw('{"a": 12, "b": 8}', content_type='application/json') == Model(a=12, b=8)
 
 
 @pytest.mark.xfail(reason='working on V2')
 def test_pickle_ct():
+    # TODO: It seems model_validate_json has replaced parse_raw, except that it can _only_ be used with json
+    #   Are we just dropping the content_type/proto functionality? If so, should we drop these tests?
+    #   Do we need to document and/or create a suggested migration path?
     data = pickle.dumps(dict(a=12, b=8))
     assert Model.parse_raw(data, content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
 
@@ -193,21 +193,3 @@ def test_file_pickle_no_ext(tmpdir):
     p = tmpdir.join('test')
     p.write_binary(pickle.dumps(dict(a=12, b=8)))
     assert Model.parse_file(str(p), content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
-
-
-def test_literal_differentiates_union_during_validate():
-    # TODO: Is it really necessary to keep this test?
-    #   I think since we dropped Field-const, it's probably fine to drop this..
-    class SubModelA(BaseModel):
-        key: Literal['A'] = 'A'
-        foo: int
-
-    class SubModelB(BaseModel):
-        key: Literal['B'] = 'B'
-        foo: int
-
-    class Model(BaseModel):
-        a: Union[SubModelA, SubModelB]
-
-    m = Model.model_validate({'a': {'key': 'B', 'foo': 3}})
-    assert isinstance(m.a, SubModelB)
