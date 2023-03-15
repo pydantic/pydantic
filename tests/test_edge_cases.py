@@ -1565,7 +1565,6 @@ def test_any_none():
     assert dict(m) == {'foo': None}
 
 
-@pytest.mark.xfail(reason='working on V2 - typevar-handling will be improved after merging generics')
 def test_type_var_any():
     Foobar = TypeVar('Foobar')
 
@@ -1573,16 +1572,16 @@ def test_type_var_any():
         foo: Foobar
 
     assert MyModel.model_json_schema() == {
+        'properties': {'foo': {'title': 'Foo'}},
+        'required': ['foo'],
         'title': 'MyModel',
         'type': 'object',
-        'properties': {'foo': {'title': 'Foo'}},
     }
     assert MyModel(foo=None).foo is None
     assert MyModel(foo='x').foo == 'x'
     assert MyModel(foo=123).foo == 123
 
 
-@pytest.mark.xfail(reason='working on V2 - typevar-handling will be improved after merging generics')
 def test_type_var_constraint():
     Foobar = TypeVar('Foobar', int, str)
 
@@ -1595,15 +1594,24 @@ def test_type_var_constraint():
         'properties': {'foo': {'title': 'Foo', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
         'required': ['foo'],
     }
-    with pytest.raises(ValidationError, match='none is not an allowed value'):
+    with pytest.raises(ValidationError) as exc_info:
         MyModel(foo=None)
-    with pytest.raises(ValidationError, match='value is not a valid integer'):
+    assert exc_info.value.errors() == [
+        {'input': None, 'loc': ('foo', 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
+        {'input': None, 'loc': ('foo', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
+    ]
+
+    with pytest.raises(ValidationError):
         MyModel(foo=[1, 2, 3])
+    assert exc_info.value.errors() == [
+        {'input': None, 'loc': ('foo', 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
+        {'input': None, 'loc': ('foo', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
+    ]
+
     assert MyModel(foo='x').foo == 'x'
     assert MyModel(foo=123).foo == 123
 
 
-@pytest.mark.xfail(reason='working on V2 - typevar-handling will be improved after merging generics')
 def test_type_var_bound():
     Foobar = TypeVar('Foobar', bound=int)
 
@@ -1616,10 +1624,17 @@ def test_type_var_bound():
         'properties': {'foo': {'title': 'Foo', 'type': 'integer'}},
         'required': ['foo'],
     }
-    with pytest.raises(ValidationError, match='none is not an allowed value'):
+    with pytest.raises(ValidationError) as exc_info:
         MyModel(foo=None)
-    with pytest.raises(ValidationError, match='value is not a valid integer'):
+    assert exc_info.value.errors() == [
+        {'input': None, 'loc': ('foo',), 'msg': 'Input should be a valid integer', 'type': 'int_type'}
+    ]
+
+    with pytest.raises(ValidationError):
         MyModel(foo='x')
+    assert exc_info.value.errors() == [
+        {'input': None, 'loc': ('foo',), 'msg': 'Input should be a valid integer', 'type': 'int_type'}
+    ]
     assert MyModel(foo=123).foo == 123
 
 
@@ -1647,7 +1662,6 @@ def test_dict_any():
     assert m.foo == {'x': 'a', 'y': None}
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
 def test_modify_fields():
     class Foo(BaseModel):
         foo: List[List[int]]
@@ -1751,7 +1765,6 @@ def test_repr_method_inheritance():
     assert repr(Bar()) == '7'
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
 def test_optional_validator():
     val_calls = []
 
@@ -1812,8 +1825,10 @@ def test_required_any():
     class Model(BaseModel):
         optional1: Any
         optional2: Any = None
+        optional3: Optional[Any] = None
         nullable1: Any = ...
         nullable2: Any = Field(...)
+        nullable3: Optional[Any]
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1821,18 +1836,21 @@ def test_required_any():
         {'input': {}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable3',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable1='a')
     assert exc_info.value.errors() == [
         {'input': {'nullable1': 'a'}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {'nullable1': 'a'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable1': 'a'}, 'loc': ('nullable3',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable2=False)
     assert exc_info.value.errors() == [
         {'input': {'nullable2': False}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {'nullable2': False}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable2': False}, 'loc': ('nullable3',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         assert Model(nullable1=None, nullable2=None).model_dump() == {
@@ -1847,19 +1865,29 @@ def test_required_any():
             'loc': ('optional1',),
             'msg': 'Field required',
             'type': 'missing',
-        }
+        },
+        {
+            'input': {'nullable1': None, 'nullable2': None},
+            'loc': ('nullable3',),
+            'msg': 'Field required',
+            'type': 'missing',
+        },
     ]
-    assert Model(optional1=None, nullable1=1, nullable2='two').model_dump() == {
+    assert Model(optional1=None, nullable1=1, nullable2='two', nullable3=None).model_dump() == {
         'optional1': None,
         'optional2': None,
+        'optional3': None,
         'nullable1': 1,
         'nullable2': 'two',
+        'nullable3': None,
     }
-    assert Model(optional1='op1', optional2=False, nullable1=1, nullable2='two').model_dump() == {
+    assert Model(optional1='op1', optional2=False, nullable1=1, nullable2='two', nullable3='three').model_dump() == {
         'optional1': 'op1',
         'optional2': False,
+        'optional3': None,
         'nullable1': 1,
         'nullable2': 'two',
+        'nullable3': 'three',
     }
 
 
@@ -2169,7 +2197,7 @@ def test_int_subclass():
 
     m = MyModel(my_int=IntSubclass(123))
     # TODO: Is this still the behavior we want in v2? (Currently m.my_int.__class__ is int)
-    #   yes, because in pydantic-core we cast the value to a rust i64, so the sub-type information is lost.
+    #   "yes, because in pydantic-core we cast the value to a rust i64, so the sub-type information is lost."
     #   (more detail about how to handle this in: https://github.com/pydantic/pydantic/pull/5151#discussion_r1130691036)
     assert m.my_int.__class__ == IntSubclass
 
