@@ -77,7 +77,7 @@ class CustomValidator(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def __call__(self, __input_value: Any, **_kwargs: Any) -> Any:
+    def __call__(self, __input_value: Any, __info: core_schema.ValidationInfo) -> Any:
         raise NotImplementedError()
 
     def _update_attrs(self, constraints: dict[str, Any], attrs: set[str] | None = None) -> None:

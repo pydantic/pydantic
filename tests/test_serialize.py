@@ -1,7 +1,7 @@
 """
 New tests for v2 of serialization logic.
 """
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema
@@ -63,7 +63,7 @@ def test_serialize_decorator_unless_none():
 
 
 def test_annotated_customisation():
-    def parse_int(s: str, **kwargs) -> int:
+    def parse_int(s: str, _: Any) -> int:
         return int(s.replace(',', ''))
 
     class CommaFriendlyIntLogic:
