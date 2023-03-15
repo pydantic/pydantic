@@ -81,7 +81,6 @@ def generate_config(cls: type[BaseModel]) -> core_schema.CoreConfig:
 
 class GenerateSchema:
     __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map', '_recursion_cache'
-    _recursion_cache: dict[str, core_schema.DefinitionReferenceSchema]
 
     def __init__(
         self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None
@@ -89,7 +88,7 @@ class GenerateSchema:
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
-        self._recursion_cache = {}
+        self._recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)

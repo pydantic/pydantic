@@ -381,33 +381,108 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
 
 
 class RecursiveTypedDict(typing_extensions.TypedDict):
+    # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
     foo: Optional['RecursiveTypedDict']
 
 
-class RecursiveTypedDictModel(BaseModel):
-    rec: RecursiveTypedDict
-
-
 def test_recursive_typeddict():
+    class RecursiveTypedDictModel(BaseModel):
+        rec: RecursiveTypedDict
+
     assert RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
+    with pytest.raises(ValidationError) as exc_info:
+        RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
+    assert exc_info.value.errors() == [
+        {
+            'input': 1,
+            'loc': ('rec', 'foo', 'foo', 'foo'),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+        }
+    ]
+
+
+T = TypeVar('T')
+
+
+@pytest.mark.xfail(reason='generic typed dict')
+def test_generic_typeddict_in_concrete_model():
+    T = TypeVar('T')
+
+    class GenericTypedDict(typing_extensions.TypedDict, Generic[T]):
+        x: T
+
+    class Model(BaseModel):
+        y: GenericTypedDict[int]
+
+    Model[int](y={'x': 1})
+    with pytest.raises(ValidationError) as exc_info:
+        Model[int](y={'x': 'a'})
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('y', 'x'),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
+@pytest.mark.xfail(reason='generic typed dict')
+def test_generic_typeddict_in_generic_model():
+    T = TypeVar('T')
+
+    class GenericTypedDict(typing_extensions.TypedDict, Generic[T]):
+        x: T
+
+    class Model(BaseModel, Generic[T]):
+        y: GenericTypedDict[T]
+
+    Model[int](y={'x': 1})
+    with pytest.raises(ValidationError) as exc_info:
+        Model[int](y={'x': 'a'})
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('y', 'x'),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
 
 
 T = TypeVar('T')
 
 
 class RecursiveGenTypedDict(typing_extensions.TypedDict, Generic[T]):
+    # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
     foo: Optional['RecursiveGenTypedDict[T]']
     ls: List[T]
 
 
-# TODO: check what happens if RecursiveGenTypedDict is a forward reference
-class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
-    rec: RecursiveGenTypedDict[T]
-
-
+@pytest.mark.xfail(reason='Generic typed dict')
 def test_recursive_generic_typeddict():
-    data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': []}, 'ls': []}
-    assert RecursiveGenTypedDictModel[int](rec=data).rec == data
+    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+        # TODO: check what happens if RecursiveGenTypedDict is a forward reference
+        rec: RecursiveGenTypedDict[T]
 
-    data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': ['a']}
-    assert RecursiveGenTypedDictModel[int](rec=data).rec == data
+    int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
+    assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
+
+    str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
+    with pytest.raises(ValidationError) as exc_info:
+        RecursiveGenTypedDictModel[int](rec=str_data)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('rec', 'foo', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': 'a',
+            'loc': ('rec', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+    ]
