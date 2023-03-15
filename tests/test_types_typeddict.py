@@ -400,10 +400,14 @@ class RecursiveGenTypedDict(typing_extensions.TypedDict, Generic[T]):
     ls: List[T]
 
 
+# TODO: check what happens if RecursiveGenTypedDict is a forward reference
 class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
     rec: RecursiveGenTypedDict[T]
 
 
 def test_recursive_generic_typeddict():
     data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': []}, 'ls': []}
+    assert RecursiveGenTypedDictModel[int](rec=data).rec == data
+
+    data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': ['a']}
     assert RecursiveGenTypedDictModel[int](rec=data).rec == data
