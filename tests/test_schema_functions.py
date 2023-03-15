@@ -52,7 +52,7 @@ all_schema_functions = [
     (core_schema.time_schema, args(), {'type': 'time'}),
     (core_schema.datetime_schema, args(), {'type': 'datetime'}),
     (core_schema.timedelta_schema, args(), {'type': 'timedelta'}),
-    (core_schema.literal_schema, args('a', 'b'), {'type': 'literal', 'expected': ('a', 'b')}),
+    (core_schema.literal_schema, args('a', 'b'), {'type': 'literal', 'expected': ['a', 'b']}),
     (core_schema.is_instance_schema, args(int), {'type': 'is-instance', 'cls': int}),
     (core_schema.callable_schema, args(), {'type': 'callable'}),
     (core_schema.list_schema, args(), {'type': 'list'}),
@@ -60,9 +60,9 @@ all_schema_functions = [
     (
         core_schema.tuple_positional_schema,
         args({'type': 'int'}),
-        {'type': 'tuple', 'mode': 'positional', 'items_schema': ({'type': 'int'},)},
+        {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'int'}]},
     ),
-    (core_schema.tuple_positional_schema, args(), {'type': 'tuple', 'mode': 'positional', 'items_schema': ()}),
+    (core_schema.tuple_positional_schema, args(), {'type': 'tuple', 'mode': 'positional', 'items_schema': []}),
     (
         core_schema.tuple_variable_schema,
         args({'type': 'int'}),
@@ -124,14 +124,14 @@ all_schema_functions = [
     (
         core_schema.union_schema,
         args({'type': 'int'}, {'type': 'str'}),
-        {'type': 'union', 'choices': ({'type': 'int'}, {'type': 'str'})},
+        {'type': 'union', 'choices': [{'type': 'int'}, {'type': 'str'}]},
     ),
     (
         core_schema.union_schema,
         args({'type': 'int'}, {'type': 'str'}, custom_error_type='foobar', custom_error_message='This is Foobar'),
         {
             'type': 'union',
-            'choices': ({'type': 'int'}, {'type': 'str'}),
+            'choices': [{'type': 'int'}, {'type': 'str'}],
             'custom_error_type': 'foobar',
             'custom_error_message': 'This is Foobar',
         },
@@ -144,7 +144,7 @@ all_schema_functions = [
     (
         core_schema.chain_schema,
         args({'type': 'int'}, {'type': 'str'}),
-        {'type': 'chain', 'steps': ({'type': 'int'}, {'type': 'str'})},
+        {'type': 'chain', 'steps': [{'type': 'int'}, {'type': 'str'}]},
     ),
     (core_schema.typed_dict_field, args({'type': 'int'}, required=True), {'schema': {'type': 'int'}, 'required': True}),
     (
@@ -167,10 +167,10 @@ all_schema_functions = [
         ),
         {
             'type': 'arguments',
-            'arguments_schema': (
+            'arguments_schema': [
                 {'name': 'foo', 'schema': {'type': 'int'}},
                 {'name': 'bar', 'schema': {'type': 'str'}},
-            ),
+            ],
             'serialization': {'type': 'format', 'formatting_string': 'd'},
         },
     ),
@@ -180,10 +180,7 @@ all_schema_functions = [
         {
             'type': 'call',
             'function': val_function,
-            'arguments_schema': {
-                'type': 'arguments',
-                'arguments_schema': ({'name': 'foo', 'schema': {'type': 'int'}},),
-            },
+            'arguments_schema': {'type': 'arguments', 'arguments_schema': [{'name': 'foo', 'schema': {'type': 'int'}}]},
         },
     ),
     (
