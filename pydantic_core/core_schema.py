@@ -884,7 +884,9 @@ def literal_schema(
         metadata: See [TODO] for details
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='literal', expected=expected, ref=ref, metadata=metadata, serialization=serialization)
+    return dict_not_none(
+        type='literal', expected=list(expected), ref=ref, metadata=metadata, serialization=serialization
+    )
 
 
 # must match input/parse_json.rs::JsonType::try_from
@@ -1134,7 +1136,7 @@ def tuple_positional_schema(
     return dict_not_none(
         type='tuple',
         mode='positional',
-        items_schema=items_schema,
+        items_schema=list(items_schema),
         extra_schema=extra_schema,
         strict=strict,
         ref=ref,
@@ -1795,7 +1797,7 @@ def union_schema(
     """
     return dict_not_none(
         type='union',
-        choices=choices,
+        choices=list(choices),
         auto_collapse=auto_collapse,
         custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
@@ -1933,7 +1935,7 @@ def chain_schema(
         metadata: See [TODO] for details
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='chain', steps=steps, ref=ref, metadata=metadata, serialization=serialization)
+    return dict_not_none(type='chain', steps=list(steps), ref=ref, metadata=metadata, serialization=serialization)
 
 
 class LaxOrStrictSchema(TypedDict, total=False):
@@ -2257,7 +2259,7 @@ def arguments_schema(
     """
     return dict_not_none(
         type='arguments',
-        arguments_schema=arguments,
+        arguments_schema=list(arguments),
         populate_by_name=populate_by_name,
         var_args_schema=var_args_schema,
         var_kwargs_schema=var_kwargs_schema,
