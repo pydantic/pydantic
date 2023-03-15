@@ -677,7 +677,7 @@ def test_unions_of_optionals() -> None:
     class Lizard(BaseModel):
         pet_type: Literal['lizard'] = Field(alias='typeOfPet')
 
-    MaybeCat = Annotated[Cat | None, 'some annotation']
+    MaybeCat = Annotated[Union[Cat, None], 'some annotation']
     MaybeDogLizard = Annotated[Optional[Union[Dog, Lizard]], 'some other annotation']
 
     class Model(BaseModel):
@@ -690,7 +690,7 @@ def test_unions_of_optionals() -> None:
 
 def test_union_discriminator_literals() -> None:
     class Cat(BaseModel):
-        pet_type: Literal['cat'] | Literal['CAT'] = Field(alias='typeOfPet')
+        pet_type: Union[Literal['cat'], Literal['CAT']] = Field(alias='typeOfPet')
 
     class Dog(BaseModel):
         pet_type: Literal['dog'] = Field(alias='typeOfPet')
@@ -863,7 +863,7 @@ def test_wrap_function_schema() -> None:
     assert apply_discriminator(schema, 'kind') == {
         'choices': {
             'cat': {
-                'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-f]+>')),
+                'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                 'mode': 'wrap',
                 'schema': {
                     'fields': {'kind': {'schema': {'expected': ('cat',), 'type': 'literal'}}},
@@ -994,7 +994,7 @@ def test_wrapped_nullable_union() -> None:
                     'type': 'typed-dict',
                 },
                 'cat': {
-                    'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-f]+>')),
+                    'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                     'mode': 'wrap',
                     'schema': {
                         'schema': {
