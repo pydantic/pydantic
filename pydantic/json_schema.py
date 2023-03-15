@@ -503,7 +503,9 @@ class GenerateJsonSchema:
             if isinstance(v, (str, int)):
                 while isinstance(schema['choices'][v], (str, int)):
                     v = schema['choices'][v]
-                if str(v) in generated:  # PydanticInvalidForJsonSchema may have been raised above
+                if str(v) in generated:
+                    # while it might seem unnecessary to check `if str(v) in generated`, a PydanticInvalidForJsonSchema
+                    # may have been raised above, which would mean that the schema we want to reference won't be present
                     generated[str(k)] = generated[str(v)]
 
         json_schema: JsonSchemaValue = {'oneOf': _deduplicate_schemas(generated.values())}
