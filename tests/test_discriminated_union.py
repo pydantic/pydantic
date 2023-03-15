@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, Validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -71,7 +71,6 @@ def test_discriminated_union_literal_discriminator():
             number: int
 
 
-@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_discriminated_union_root_same_discriminator():
     class BlackCat(BaseModel):
         pet_type: Literal['blackcat']
@@ -79,19 +78,29 @@ def test_discriminated_union_root_same_discriminator():
     class WhiteCat(BaseModel):
         pet_type: Literal['whitecat']
 
-    class Cat(BaseModel):
-        __root__: Union[BlackCat, WhiteCat]
+    Cat = Union[BlackCat, WhiteCat]
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
 
-    with pytest.raises(PydanticUserError, match="Field 'pet_type' is not the same for all submodels of 'Cat'"):
+    CatDog = Validator(Annotated[Union[Cat, Dog], Field(..., discriminator='pet_type')])
+    CatDog({'pet_type': 'blackcat'})
+    CatDog({'pet_type': 'whitecat'})
+    CatDog({'pet_type': 'dog'})
+    with pytest.raises(ValidationError) as exc_info:
+        CatDog({'pet_type': 'llama'})
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'blackcat', 'whitecat', 'dog'", 'tag': 'llama'},
+            'input': {'pet_type': 'llama'},
+            'loc': (),
+            'msg': "Input tag 'llama' found using 'pet_type' does not match any of the "
+            "expected tags: 'blackcat', 'whitecat', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]
 
-        class Pet(BaseModel):
-            __root__: Union[Cat, Dog] = Field(..., discriminator='pet_type')
 
-
-@pytest.mark.xfail(reason='working on V2 - __root__')
 def test_discriminated_union_validation():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -103,8 +112,7 @@ def test_discriminated_union_validation():
         color: Literal['white']
         white_infos: str
 
-    class Cat(BaseModel):
-        __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -122,64 +130,66 @@ def test_discriminated_union_validation():
         Model.model_validate({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
     assert exc_info.value.errors() == [
         {
+            'ctx': {'discriminator': "'pet_type'"},
+            'input': {'pet_typ': 'cat'},
             'loc': ('pet',),
-            'msg': "Discriminator 'pet_type' is missing in value",
-            'type': 'value_error.discriminated_union.missing_discriminator',
-            'ctx': {'discriminator_key': 'pet_type'},
+            'msg': "Unable to extract tag using discriminator 'pet_type'",
+            'type': 'union_tag_not_found',
         },
-        {'loc': ('number',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
+        {
+            'input': 'x',
+            'loc': ('number',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': 'fish', 'number': 2})
     assert exc_info.value.errors() == [
         {
+            'input': 'fish',
             'loc': ('pet',),
-            'msg': "Discriminator 'pet_type' is missing in value",
-            'type': 'value_error.discriminated_union.missing_discriminator',
-            'ctx': {'discriminator_key': 'pet_type'},
-        },
+            'msg': 'Input should be a valid dictionary or instance to extract fields ' 'from',
+            'type': 'dict_attributes_type',
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
+            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog', 'reptile', 'lizard'", 'tag': 'fish'},
+            'input': {'pet_type': 'fish'},
             'loc': ('pet',),
-            'msg': (
-                "No match for discriminator 'pet_type' and value 'fish' "
-                "(allowed values: 'cat', 'dog', 'reptile', 'lizard')"
-            ),
-            'type': 'value_error.discriminated_union.invalid_discriminator',
-            'ctx': {
-                'discriminator_key': 'pet_type',
-                'discriminator_value': 'fish',
-                'allowed_values': "'cat', 'dog', 'reptile', 'lizard'",
-            },
-        },
+            'msg': "Input tag 'fish' found using 'pet_type' does not match any of the "
+            "expected tags: 'cat', 'dog', 'reptile', 'lizard'",
+            'type': 'union_tag_invalid',
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'lizard'}, 'number': 2})
     assert exc_info.value.errors() == [
-        {'loc': ('pet', 'Lizard', 'l'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {'pet_type': 'lizard'}, 'loc': ('pet', 'lizard', 'm'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
-    m = Model.model_validate({'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2})
+    m = Model.model_validate({'pet': {'pet_type': 'lizard', 'm': 'pika'}, 'number': 2})
     assert isinstance(m.pet, Lizard)
-    assert m.model_dump() == {'pet': {'pet_type': 'lizard', 'l': 'pika'}, 'number': 2}
+    assert m.model_dump() == {'pet': {'pet_type': 'lizard', 'm': 'pika'}, 'number': 2}
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
     assert exc_info.value.errors() == [
         {
-            'loc': ('pet', 'Cat', '__root__', 'WhiteCat', 'white_infos'),
-            'msg': 'field required',
-            'type': 'value_error.missing',
+            'input': {'color': 'white', 'pet_type': 'cat'},
+            'loc': ('pet', 'cat', 'white', 'white_infos'),
+            'msg': 'Field required',
+            'type': 'missing',
         }
     ]
     m = Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white', 'white_infos': 'pika'}, 'number': 2})
-    assert isinstance(m.pet.__root__, WhiteCat)
+    assert isinstance(m.pet, WhiteCat)
 
 
 def test_discriminated_annotated_union():
