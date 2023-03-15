@@ -40,7 +40,7 @@ macro_rules! extract_shared_iter {
     };
 }
 
-/// Extract dict keys, values and items into a `GenericCollection`, not available on PyPy
+/// Extract dict keys, values and items into a `GenericCollection`
 #[cfg(not(PyPy))]
 macro_rules! extract_dict_iter {
     ($obj:ident) => {
@@ -49,6 +49,21 @@ macro_rules! extract_dict_iter {
         } else if $obj.is_instance_of::<PyDictValues>().unwrap_or(false) {
             Some($obj.into())
         } else if $obj.is_instance_of::<PyDictItems>().unwrap_or(false) {
+            Some($obj.into())
+        } else {
+            None
+        }
+    };
+}
+
+#[cfg(PyPy)]
+macro_rules! extract_dict_iter {
+    ($obj:ident) => {
+        if is_dict_keys_type($obj) {
+            Some($obj.into())
+        } else if is_dict_values_type($obj) {
+            Some($obj.into())
+        } else if is_dict_items_type($obj) {
             Some($obj.into())
         } else {
             None
@@ -373,7 +388,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    #[cfg(not(PyPy))]
     fn lax_list(&'a self, allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
         if let Ok(list) = self.downcast::<PyList>() {
             Ok(list.into())
@@ -381,21 +395,6 @@ impl<'a> Input<'a> for PyAny {
             Ok(tuple.into())
         } else if let Some(collection) = extract_dict_iter!(self) {
             Ok(collection)
-        } else if allow_any_iter && self.iter().is_ok() {
-            Ok(self.into())
-        } else if let Some(collection) = extract_shared_iter!(PyList, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::ListType, self))
-        }
-    }
-
-    #[cfg(PyPy)]
-    fn lax_list(&'a self, allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
-        if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
         } else if allow_any_iter && self.iter().is_ok() {
             Ok(self.into())
         } else if let Some(collection) = extract_shared_iter!(PyList, self) {
@@ -413,7 +412,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    #[cfg(not(PyPy))]
     fn lax_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(tuple) = self.downcast::<PyTuple>() {
             Ok(tuple.into())
@@ -421,19 +419,6 @@ impl<'a> Input<'a> for PyAny {
             Ok(list.into())
         } else if let Some(collection) = extract_dict_iter!(self) {
             Ok(collection)
-        } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::TupleType, self))
-        }
-    }
-
-    #[cfg(PyPy)]
-    fn lax_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
@@ -449,7 +434,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    #[cfg(not(PyPy))]
     fn lax_set(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(set) = self.downcast::<PySet>() {
             Ok(set.into())
@@ -461,23 +445,6 @@ impl<'a> Input<'a> for PyAny {
             Ok(frozen_set.into())
         } else if let Some(collection) = extract_dict_iter!(self) {
             Ok(collection)
-        } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::SetType, self))
-        }
-    }
-
-    #[cfg(PyPy)]
-    fn lax_set(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(set) = self.downcast::<PySet>() {
-            Ok(set.into())
-        } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Ok(frozen_set) = self.downcast::<PyFrozenSet>() {
-            Ok(frozen_set.into())
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
@@ -493,7 +460,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    #[cfg(not(PyPy))]
     fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
         if let Ok(frozen_set) = self.downcast::<PyFrozenSet>() {
             Ok(frozen_set.into())
@@ -505,23 +471,6 @@ impl<'a> Input<'a> for PyAny {
             Ok(tuple.into())
         } else if let Some(collection) = extract_dict_iter!(self) {
             Ok(collection)
-        } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::FrozenSetType, self))
-        }
-    }
-
-    #[cfg(PyPy)]
-    fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(frozen_set) = self.downcast::<PyFrozenSet>() {
-            Ok(frozen_set.into())
-        } else if let Ok(set) = self.downcast::<PySet>() {
-            Ok(set.into())
-        } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
         } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
             Ok(collection)
         } else {
@@ -696,4 +645,58 @@ fn import_type(py: Python, module: &str, attr: &str) -> PyResult<Py<PyType>> {
 
 fn is_builtin_str(py_str: &PyString) -> bool {
     py_str.get_type().is(PyString::type_object(py_str.py()))
+}
+
+#[cfg(PyPy)]
+static DICT_KEYS_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+
+#[cfg(PyPy)]
+fn is_dict_keys_type(v: &PyAny) -> bool {
+    let py = v.py();
+    let keys_type = DICT_KEYS_TYPE
+        .get_or_init(py, || {
+            py.eval("type({}.keys())", None, None)
+                .unwrap()
+                .extract::<&PyType>()
+                .unwrap()
+                .into()
+        })
+        .as_ref(py);
+    v.is_instance(keys_type).unwrap_or(false)
+}
+
+#[cfg(PyPy)]
+static DICT_VALUES_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+
+#[cfg(PyPy)]
+fn is_dict_values_type(v: &PyAny) -> bool {
+    let py = v.py();
+    let values_type = DICT_VALUES_TYPE
+        .get_or_init(py, || {
+            py.eval("type({}.values())", None, None)
+                .unwrap()
+                .extract::<&PyType>()
+                .unwrap()
+                .into()
+        })
+        .as_ref(py);
+    v.is_instance(values_type).unwrap_or(false)
+}
+
+#[cfg(PyPy)]
+static DICT_ITEMS_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+
+#[cfg(PyPy)]
+fn is_dict_items_type(v: &PyAny) -> bool {
+    let py = v.py();
+    let items_type = DICT_ITEMS_TYPE
+        .get_or_init(py, || {
+            py.eval("type({}.items())", None, None)
+                .unwrap()
+                .extract::<&PyType>()
+                .unwrap()
+                .into()
+        })
+        .as_ref(py);
+    v.is_instance(items_type).unwrap_or(false)
 }

@@ -1,4 +1,3 @@
-import platform
 import re
 from collections import deque
 from collections.abc import Sequence
@@ -56,20 +55,8 @@ def gen_ints():
         ({1, 2, '3'}, Err('Input should be a valid list/array [type=list_type,')),
         (gen_ints(), [1, 2, 3]),
         (frozenset({1, 2, '3'}), Err('Input should be a valid list/array [type=list_type,')),
-        pytest.param(
-            {1: 10, 2: 20, '3': '30'}.keys(),
-            [1, 2, 3],
-            marks=pytest.mark.skipif(
-                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
-            ),
-        ),
-        pytest.param(
-            {1: 10, 2: 20, '3': '30'}.values(),
-            [10, 20, 30],
-            marks=pytest.mark.skipif(
-                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
-            ),
-        ),
+        ({1: 10, 2: 20, '3': '30'}.keys(), [1, 2, 3]),
+        ({1: 10, 2: 20, '3': '30'}.values(), [10, 20, 30]),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid list/array [type=list_type,')),
         ((x for x in [1, 2, '3']), [1, 2, 3]),
         ('456', Err("Input should be a valid list/array [type=list_type, input_value='456', input_type=str]")),
@@ -272,7 +259,6 @@ def test_generator_error():
     ]
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy')
 @pytest.mark.parametrize(
     'input_value,items_schema,expected',
     [
