@@ -204,7 +204,6 @@ def test_dict_keys():
 
 
 def test_function_as_key():
-
     s = SchemaSerializer(
         core_schema.dict_schema(
             core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(repr_function)),
@@ -231,7 +230,6 @@ def test_function_only_json():
 
 
 def test_function_unless_none():
-
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.function_plain_ser_schema(repr_function, when_used='unless-none')

@@ -276,7 +276,6 @@ class MyEnum(Enum):
 
 
 def test_enum(any_serializer):
-
     assert any_serializer.to_python(MyEnum.a) == MyEnum.a
     assert any_serializer.to_python(MyEnum.b) == MyEnum.b
     assert any_serializer.to_python({MyEnum.a: 42}) == {MyEnum.a: 42}

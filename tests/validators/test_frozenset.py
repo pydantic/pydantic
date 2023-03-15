@@ -1,4 +1,3 @@
-import platform
 import re
 from collections import deque
 from typing import Any, Dict
@@ -73,20 +72,8 @@ def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expec
         (deque((1, 2, '3')), frozenset({1, 2, 3})),
         ((), frozenset()),
         (frozenset([1, 2, 3, 2, 3]), frozenset({1, 2, 3})),
-        pytest.param(
-            {1: 10, 2: 20, '3': '30'}.keys(),
-            frozenset({1, 2, 3}),
-            marks=pytest.mark.skipif(
-                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
-            ),
-        ),
-        pytest.param(
-            {1: 10, 2: 20, '3': '30'}.values(),
-            frozenset({10, 20, 30}),
-            marks=pytest.mark.skipif(
-                platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy'
-            ),
-        ),
+        ({1: 10, 2: 20, '3': '30'}.keys(), frozenset({1, 2, 3})),
+        ({1: 10, 2: 20, '3': '30'}.values(), frozenset({10, 20, 30})),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid frozenset [type=frozen_set_type,')),
         ((x for x in [1, 2, '3']), frozenset({1, 2, 3})),
         ({'abc'}, Err('0\n  Input should be a valid integer')),
@@ -285,7 +272,6 @@ def test_generator_error():
         v.validate_python(gen(True))
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='dict views not implemented in pyo3 for pypy')
 @pytest.mark.parametrize(
     'input_value,items_schema,expected',
     [

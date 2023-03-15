@@ -38,7 +38,6 @@ class MyModel:
 
 
 def test_on_model_class():
-
     v = SchemaValidator(
         {
             'type': 'model',
