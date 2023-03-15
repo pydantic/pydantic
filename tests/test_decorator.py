@@ -145,7 +145,6 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_field_can_provide_factory() -> None:
     @validate_arguments
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:

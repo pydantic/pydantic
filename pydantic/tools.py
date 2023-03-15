@@ -1,6 +1,8 @@
+import warnings
 from functools import lru_cache
 from typing import Any, Callable, Optional, Type, TypeVar, Union
 
+from . import Validator
 from ._internal import _repr
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
@@ -26,9 +28,12 @@ def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) ->
 T = TypeVar('T')
 
 
-def parse_obj_as(type_: Type[T], obj: Any, *, type_name: Optional[NameFactory] = None) -> T:
-    model_type = _get_parsing_type(type_, type_name=type_name)  # type: ignore[arg-type]
-    return model_type(__root__=obj).__root__
+def parse_obj_as(type_: Type[T], obj: Any, type_name: Optional[NameFactory] = None) -> T:
+    if type_name is not None:  # pragma: no cover
+        warnings.warn(
+            'The type_name parameter is deprecated. parse_obj_as not longer creates temporary models', stacklevel=2
+        )
+    return Validator(type_)(obj)
 
 
 def schema_of(type_: Any, *, title: Optional[NameFactory] = None, **schema_kwargs: Any) -> 'dict[str, Any]':

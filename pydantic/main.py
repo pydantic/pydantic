@@ -3,6 +3,7 @@ Logic for creating models, could perhaps be renamed to `models.py`.
 """
 from __future__ import annotations as _annotations
 
+import sys
 import typing
 import warnings
 from abc import ABCMeta
@@ -11,11 +12,21 @@ from enum import Enum
 from functools import partial
 from inspect import getdoc
 from types import prepare_class, resolve_bases
-from typing import Any, Generic
+from typing import Any, Generic, Type, TypeVar, overload
 
 import typing_extensions
+from pydantic_core import CoreConfig, SchemaValidator
 
-from ._internal import _decorators, _forward_ref, _generics, _model_construction, _repr, _typing_extra, _utils
+from ._internal import (
+    _decorators,
+    _forward_ref,
+    _generate_schema,
+    _generics,
+    _model_construction,
+    _repr,
+    _typing_extra,
+    _utils,
+)
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -26,7 +37,7 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+    from pydantic_core import CoreSchema, SchemaSerializer
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
@@ -36,7 +47,7 @@ if typing.TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
 
-__all__ = 'BaseModel', 'create_model'
+__all__ = 'BaseModel', 'create_model', 'Validator'
 
 _object_setattr = _model_construction.object_setattr
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
@@ -832,3 +843,74 @@ def create_model(
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
     return meta(__model_name, resolved_bases, namespace, **kwds)
+
+
+T = TypeVar('T')
+
+
+class Validator(Generic[T]):
+    @overload
+    def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
+        ...
+
+    # Adding this overload ensures you can use special forms without getting mypy errors.
+    # For example:
+    #   v: Validator[int | str] = Validator(int | str)
+    # Type checkers don't consider special forms like `int | str` (or `Union[int, str]`) to satisfy a Type[T]
+    @overload
+    def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
+        ...
+
+    def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
+        self._type = __type
+        merged_config: CoreConfig = {
+            **(config or {}),  # type: ignore[misc]
+            **getattr(__type, 'model_config', {}),
+        }
+        arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
+        local_ns = _typing_extra.parent_frame_namespace(parent_depth=2)
+        # BaseModel uses it's own __module__ to find out where it was defined
+        # and then look for symbols to resolve forward references in those globals
+        # On the other hand Validator() can be called with arbitrary objects,
+        # including type aliases where __module__ (always `typing.py`) is not useful
+        # So instead we look at the globals in our parent stack frame
+        # This works for the case where Validator() is called in a module that
+        # has the target of forward references in its scope but
+        # does not work for more complex cases
+        # for example, take the following:
+        #
+        # a.py
+        # ```python
+        # from typing import List, Dict
+        # IntList = List[int]
+        # OuterDict = Dict[str, 'IntList']
+        # ```
+        #
+        # b.py
+        # ```python
+        # from pydantic import Validator
+        # from a import OuterDict
+        # IntList = int  # replaces the symbol the forward reference is looking for
+        # v = Validator(OuterDict)
+        # v({"x": 1})  # should fail but doesn't
+        # ```
+        #
+        # If OuterDict were a BaseModel this would work because it would resolve
+        # the forward reference within the `a.py` namespace.
+        # But Validator(OuterDict) can't know what module OuterDict came from.
+        # In other words, the assumption that _all_ forward references exist in the
+        # module we are being called from is not technically always true
+        # Although most of the time it is and it works fine for recursive models and such/
+        # BaseModel's behavior isn't perfect either and _can_ break in similar ways,
+        # so there is no right or wrong between the two.
+        # But at the very least this behavior is _subtly_ different from BaseModel's.
+        global_ns = sys._getframe(1).f_globals.copy()
+        global_ns.update(local_ns or {})
+        gen = _generate_schema.GenerateSchema(
+            arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={}
+        )
+        schema = gen.generate_schema(__type)
+        self._validator = SchemaValidator(schema, config=merged_config)
+
+    def __call__(self, __input: Any) -> T:
+        return self._validator.validate_python(__input)
