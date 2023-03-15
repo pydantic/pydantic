@@ -117,7 +117,7 @@ class _ApplyInferredDiscriminator:
         self._choices_to_handle.extend(schema['choices'][::-1])
         while self._choices_to_handle:
             choice = self._choices_to_handle.pop()
-            self._handle_choice(choice)
+            self._handle_choice(choice, None)
 
         if self._discriminator_alias is not None and self._discriminator_alias != self.discriminator:
             # * We need to annotate `discriminator` as a union here to handle both branches of this conditional
@@ -142,7 +142,7 @@ class _ApplyInferredDiscriminator:
             serialization=schema.get('serialization'),
         )
 
-    def _handle_choice(self, choice: core_schema.CoreSchema) -> None:
+    def _handle_choice(self, choice: core_schema.CoreSchema, definitions: list[core_schema.CoreSchema] | None) -> None:
         """
         This method handles the "middle" stage of recursion over the input schema.
         Specifically, it is responsible for handling each choice of the outermost union
@@ -156,14 +156,17 @@ class _ApplyInferredDiscriminator:
         """
         if choice['type'] == 'none':
             self._should_be_nullable = True
+        elif choice['type'] == 'definitions':
+            definitions = (definitions or []) + choice['definitions']
+            self._handle_choice(choice['schema'], definitions)
         elif choice['type'] == 'nullable':
             self._should_be_nullable = True
-            self._handle_choice(choice['schema'])  # unwrap the nullable schema
+            self._handle_choice(choice['schema'], definitions)  # unwrap the nullable schema
         elif choice['type'] == 'union':
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
             self._choices_to_handle.extend(choice['choices'][::-1])
-        elif choice['type'] not in {'model', 'typed-dict', 'tagged-union'}:
-            # Remaining cases I think we should eventually handle: 'definitions', 'definition-ref', 'lax-or-strict'
+        elif choice['type'] not in {'model', 'typed-dict', 'tagged-union', 'function', 'lax-or-strict'}:
+            # We should eventually handle 'definition-ref' as well
             raise TypeError(
                 f'{choice["type"]!r} is not a valid discriminated union variant;'
                 ' should be a `BaseModel` or `dataclass`'
@@ -177,7 +180,9 @@ class _ApplyInferredDiscriminator:
                 self._choices_to_handle.extend(subchoices[::-1])
                 return
 
-            inferred_discriminator_values = self._infer_discriminator_values_for_choice(choice)
+            inferred_discriminator_values = self._infer_discriminator_values_for_choice(choice, source_name=None)
+            if definitions:
+                choice = core_schema.definitions_schema(choice, definitions)
             self._set_unique_choice_for_values(choice, inferred_discriminator_values)
 
     def _is_discriminator_shared(self, choice: core_schema.TaggedUnionSchema) -> bool:
@@ -194,7 +199,7 @@ class _ApplyInferredDiscriminator:
         )
 
     def _infer_discriminator_values_for_choice(
-        self, choice: core_schema.CoreSchema, source_name: str | None = None
+        self, choice: core_schema.CoreSchema, source_name: str | None
     ) -> list[str | int]:
         """
         This function recurses over `choice`, extracting all discriminator values that should map to this choice.
@@ -202,37 +207,56 @@ class _ApplyInferredDiscriminator:
         `model_name` is accepted for the purpose of producing useful error messages.
         """
         if choice['type'] == 'definitions':
-            return self._infer_discriminator_values_for_choice(choice['schema'])
+            return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
+
+        elif choice['type'] == 'function':
+            if choice['mode'] != 'plain':
+                return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
+            else:
+                raise TypeError(
+                    f'{choice["type"]!r} with mode={choice["mode"]!r} is not a valid discriminated union variant;'
+                    ' should be a `BaseModel` or `dataclass`'
+                )
+
+        elif choice['type'] == 'lax-or-strict':
+            return sorted(
+                set(
+                    self._infer_discriminator_values_for_choice(choice['lax_schema'], source_name=None)
+                    + self._infer_discriminator_values_for_choice(choice['strict_schema'], source_name=None)
+                )
+            )
 
         elif choice['type'] == 'tagged-union':
             values: list[str | int] = []
+            # Ignore str/int "choices" since these are just references to other choices
             subchoices = [x for x in choice['choices'].values() if not isinstance(x, (str, int))]
             for subchoice in subchoices:
-                # Ignore str/int "choices" since these are just references to other choices
-                if not isinstance(subchoice, (str, int)):
-                    subchoice_values = self._infer_discriminator_values_for_choice(subchoice)
-                    values.extend(subchoice_values)
+                subchoice_values = self._infer_discriminator_values_for_choice(subchoice, source_name=None)
+                values.extend(subchoice_values)
             return values
 
         elif choice['type'] == 'union':
             values = []
             for subchoice in choice['choices']:
-                subchoice_values = self._infer_discriminator_values_for_choice(subchoice)
+                subchoice_values = self._infer_discriminator_values_for_choice(subchoice, source_name=None)
                 values.extend(subchoice_values)
             return values
 
         elif choice['type'] == 'nullable':
             self._should_be_nullable = True
-            return self._infer_discriminator_values_for_choice(choice['schema'])
+            return self._infer_discriminator_values_for_choice(choice['schema'], source_name=None)
 
         elif choice['type'] == 'model':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=choice['cls'].__name__)
 
         elif choice['type'] == 'typed-dict':
-            return self._infer_discriminator_values_for_typed_dict_choice(choice, source_name)
+            return self._infer_discriminator_values_for_typed_dict_choice(choice, source_name=source_name)
 
         else:
-            raise PydanticUserError(f'Field {self.discriminator!r} of needs to be a `Literal`')
+            raise TypeError(
+                f'{choice["type"]!r} is not a valid discriminated union variant;'
+                ' should be a `BaseModel` or `dataclass`'
+            )
 
     def _infer_discriminator_values_for_typed_dict_choice(
         self, choice: core_schema.TypedDictSchema, source_name: str | None = None
@@ -241,11 +265,14 @@ class _ApplyInferredDiscriminator:
         This method just extracts the _infer_discriminator_values_for_choice logic specific to TypedDictSchema
         for the sake of readability.
         """
+        if source_name is None:
+            source = 'TypedDict'  # We may eventually want to provide a more useful name
+        else:
+            source = f'Model {source_name!r}'
+
         field = choice['fields'].get(self.discriminator)
         if field is None:
-            if source_name is None:
-                source_name = 'TypedDict'  # We may eventually want to provide a more useful name
-            raise PydanticUserError(f'Model {source_name!r} needs a discriminator field for key {self.discriminator!r}')
+            raise PydanticUserError(f'{source} needs a discriminator field for key {self.discriminator!r}')
         alias = field.get('validation_alias', self.discriminator)
         if not isinstance(alias, str):
             raise TypeError(f'Alias {alias!r} is not supported in a discriminated union')
@@ -256,7 +283,7 @@ class _ApplyInferredDiscriminator:
                 f'Aliases for discriminator {self.discriminator!r} must be the same '
                 f'(got {alias}, {self._discriminator_alias})'
             )
-        return self._infer_discriminator_values_for_field(field['schema'], f'model {source_name!r}')
+        return self._infer_discriminator_values_for_field(field['schema'], source)
 
     def _infer_discriminator_values_for_field(self, schema: core_schema.CoreSchema, source: str) -> list[str | int]:
         """
@@ -288,19 +315,15 @@ class _ApplyInferredDiscriminator:
             return self._infer_discriminator_values_for_field(schema['schema'], source)
 
         else:
-            raise PydanticUserError(f'Field {self.discriminator!r} of {source} needs to be a `Literal`')
+            raise PydanticUserError(f'{source} needs field {self.discriminator!r} to be of type `Literal`')
 
-    def _set_unique_choice_for_values(self, choice: core_schema.CoreSchema, values: Sequence[str | int | Enum]) -> None:
+    def _set_unique_choice_for_values(self, choice: core_schema.CoreSchema, values: Sequence[str | int]) -> None:
         """
         This method updates `self.tagged_union_choices` so that all provided (discriminator) `values` map to the
         provided `choice`, validating that none of these values already map to another (different) choice.
         """
         primary_value: str | int | None = None
         for discriminator_value in values:
-            while isinstance(discriminator_value, Enum):
-                discriminator_value = discriminator_value.value
-            if not isinstance(discriminator_value, (str, int)):
-                raise ValueError(f'Invalid discriminator value {discriminator_value!r}; must be a string, int, or Enum')
             if discriminator_value in self._tagged_union_choices:
                 # It is okay if `value` is already in tagged_union_choices as long as it maps to the same value.
                 # Because tagged_union_choices may map values to other values, we need to walk the choices dict
@@ -309,7 +332,7 @@ class _ApplyInferredDiscriminator:
                 while isinstance(existing_choice, (str, int)):
                     existing_choice = self._tagged_union_choices[existing_choice]
                 if existing_choice != choice:
-                    raise ValueError(
+                    raise TypeError(
                         f'Value {discriminator_value!r} for discriminator '
                         f'{self.discriminator!r} mapped to multiple choices'
                     )
