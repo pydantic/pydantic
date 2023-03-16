@@ -194,7 +194,9 @@ class Color(_repr.Representation):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainCallbackSchema:
-        return core_schema.general_plain_validation_callback(cls._validate, serialization=core_schema.to_string_ser_schema())
+        return core_schema.general_plain_validation_callback(
+            cls._validate, serialization=core_schema.to_string_ser_schema()
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: Any) -> 'Color':

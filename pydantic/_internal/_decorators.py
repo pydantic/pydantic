@@ -9,7 +9,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, List, TypeVar, Union, cast
 
-from pydantic_core.core_schema import JsonReturnTypes, ValidationInfo, GeneralValidatorCallback, WhenUsed
+from pydantic_core.core_schema import GeneralValidatorCallback, JsonReturnTypes, ValidationInfo, WhenUsed
 from typing_extensions import Protocol
 
 from ..errors import PydanticUserError

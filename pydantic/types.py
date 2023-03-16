@@ -304,7 +304,9 @@ class UuidVersion:
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.CallbackSchema:
-        return core_schema.general_after_validation_callback(schema, cast(core_schema.GeneralValidatorCallback, self.validate))
+        return core_schema.general_after_validation_callback(
+            cast(core_schema.GeneralValidatorCallback, self.validate), schema
+        )
 
     def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
         if value.version != self.uuid_version:
@@ -341,8 +343,8 @@ class PathType:
         }
 
         return core_schema.general_after_validation_callback(
-            schema,
             function_lookup[self.path_type],
+            schema,
         )
 
     @staticmethod
@@ -441,13 +443,13 @@ class SecretField(abc.ABC, Generic[SecretType]):
             js_metadata=JsonSchemaMetadata(core_schema_override=override),
         )
         return core_schema.general_after_validation_callback(
+            validator,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
                 cls._pre_core_schema(),
                 strict=True,
                 custom_error_type=cls._error_kind,
             ),
-            validator,
             metadata=metadata,
             serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
         )
@@ -590,10 +592,10 @@ class PaymentCardNumber(str):
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CallbackSchema:
         return core_schema.general_after_validation_callback(
+            cls.validate,
             core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
             ),
-            cls.validate,
         )
 
     @classmethod

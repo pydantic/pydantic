@@ -582,11 +582,11 @@ class GenerateSchema:
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(Counter), ...` in strict mode
         return core_schema.general_after_validation_callback(
+            construct_counter,
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg),
                 values_schema=core_schema.int_schema(),
             ),
-            construct_counter,
         )
 
     def _mapping_schema(self, mapping_type: Any) -> core_schema.CoreSchema:
@@ -755,10 +755,21 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
         elif validator.mode == 'wrap':
             schema = core_schema.general_wrap_validation_callback(function, schema)
         else:
+            func: core_schema.FieldValidatorCallbackSchema | core_schema.GeneralValidatorCallbackSchema
+            if validator.is_field_validator:
+                func = core_schema.FieldValidatorCallbackSchema(
+                    type='field',
+                    call=function,
+                )
+            else:
+                func = core_schema.GeneralValidatorCallbackSchema(
+                    type='general',
+                    call=function,
+                )
             schema = core_schema.CallbackSchema(
-                type= 'function',
+                type='function',
                 mode=validator.mode,
-                function={'type': 'field' if validator.is_field_validator else 'general', 'call': function},
+                function=func,
                 schema=schema,
             )
     return schema

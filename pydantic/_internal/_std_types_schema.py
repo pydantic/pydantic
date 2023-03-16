@@ -86,17 +86,23 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         js_metadata['extra_updates'] = {'type': 'integer'}
         return core_schema.chain_schema(
-            core_schema.int_schema(), literal_schema, core_schema.general_plain_validation_callback(to_enum), metadata=metadata
+            core_schema.int_schema(),
+            literal_schema,
+            core_schema.general_plain_validation_callback(to_enum),
+            metadata=metadata,
         )
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
         js_metadata['extra_updates'] = {'type': 'string'}
         return core_schema.chain_schema(
-            core_schema.str_schema(), literal_schema, core_schema.general_plain_validation_callback(to_enum), metadata=metadata
+            core_schema.str_schema(),
+            literal_schema,
+            core_schema.general_plain_validation_callback(to_enum),
+            metadata=metadata,
         )
     else:
-        return core_schema.general_after_validation_callback(literal_schema, to_enum, metadata=metadata)
+        return core_schema.general_after_validation_callback(to_enum, literal_schema, metadata=metadata)
 
 
 @schema_function(Decimal)
@@ -110,6 +116,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
         ),
     )
     return core_schema.general_after_validation_callback(
+        decimal_validator,
         core_schema.union_schema(
             core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
             core_schema.int_schema(),
@@ -117,7 +124,6 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
             core_schema.str_schema(strip_whitespace=True),
             strict=True,
         ),
-        decimal_validator,
         metadata=metadata,
     )
 
@@ -133,11 +139,11 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
     return core_schema.union_schema(
         core_schema.is_instance_schema(uuid_type),
         core_schema.general_after_validation_callback(
+            _validators.uuid_validator,
             core_schema.union_schema(
                 core_schema.str_schema(),
                 core_schema.bytes_schema(),
             ),
-            _validators.uuid_validator,
             metadata=metadata,
         ),
         custom_error_type='uuid_type',
@@ -153,8 +159,8 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
     return core_schema.union_schema(
         core_schema.is_instance_schema(path_type),
         core_schema.general_after_validation_callback(
-            core_schema.str_schema(),
             _validators.path_validator,
+            core_schema.str_schema(),
             metadata=metadata,
         ),
         custom_error_type='path_type',
@@ -167,7 +173,7 @@ def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> cor
     return core_schema.function_wrap_ser_schema(_serializers.serialize_deque, inner_schema or core_schema.any_schema())
 
 
-def _deque_any_schema() -> core_schema.FunctionWrapSchema:
+def _deque_any_schema() -> core_schema.WrapCallbackSchema:
     return core_schema.general_wrap_validation_callback(
         _validators.deque_any_validator, core_schema.list_schema(allow_any_iter=True), serialization=_deque_ser_schema()
     )
@@ -192,14 +198,16 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
         # `Deque[Something]`
         inner_schema = schema_generator.generate_schema(arg)
         return core_schema.general_after_validation_callback(
-            core_schema.list_schema(inner_schema),
             _validators.deque_typed_validator,
+            core_schema.list_schema(inner_schema),
             serialization=_deque_ser_schema(inner_schema),
         )
 
 
-def _ordered_dict_any_schema() -> core_schema.FunctionWrapSchema:
-    return core_schema.general_wrap_validation_callback(_validators.ordered_dict_any_validator, core_schema.dict_schema())
+def _ordered_dict_any_schema() -> core_schema.WrapCallbackSchema:
+    return core_schema.general_wrap_validation_callback(
+        _validators.ordered_dict_any_validator, core_schema.dict_schema()
+    )
 
 
 @schema_function(OrderedDict)
@@ -220,10 +228,10 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
     else:
         # `OrderedDict[Foo, Bar]`
         return core_schema.general_after_validation_callback(
+            _validators.ordered_dict_typed_validator,
             core_schema.dict_schema(
                 schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
             ),
-            _validators.ordered_dict_typed_validator,
         )
 
 

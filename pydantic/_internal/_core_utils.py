@@ -207,7 +207,7 @@ class WalkAndApply:
         return schema
 
     def handle_function_schema(
-        self, schema: core_schema.CallbackSchema | core_schema.PlainCallbackSchema | core_schema.FunctionWrapSchema
+        self, schema: core_schema.CallbackSchema | core_schema.PlainCallbackSchema | core_schema.WrapCallbackSchema
     ) -> CoreSchema:
         if schema['mode'] == 'plain':
             return schema

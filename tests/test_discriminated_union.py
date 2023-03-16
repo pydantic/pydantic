@@ -873,7 +873,10 @@ def test_wrap_function_schema() -> None:
     assert apply_discriminator(schema, 'kind') == {
         'choices': {
             'cat': {
-                'function': {'type': 'general', 'call': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>'))},
+                'function': {
+                    'type': 'general',
+                    'call': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
+                },
                 'mode': 'wrap',
                 'schema': {
                     'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}}},
@@ -1004,7 +1007,10 @@ def test_wrapped_nullable_union() -> None:
                     'type': 'typed-dict',
                 },
                 'cat': {
-                    'function': {'type': 'general', 'call': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>'))},
+                    'function': {
+                        'type': 'general',
+                        'call': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
+                    },
                     'mode': 'wrap',
                     'schema': {
                         'schema': {

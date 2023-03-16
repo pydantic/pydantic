@@ -183,12 +183,12 @@ def root_validator(
     """
     if __func:
         f_cls = _decorators.prepare_validator_decorator(__func, allow_reuse)
-        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode, is_field_validator=True))
+        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode, is_field_validator=False))
         return f_cls
 
     def dec(f: Callable[..., Any]) -> classmethod[Any]:
         f_cls = _decorators.prepare_validator_decorator(f, allow_reuse)
-        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode, is_field_validator=True))
+        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode, is_field_validator=False))
         return f_cls
 
     return dec
