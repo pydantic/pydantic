@@ -102,8 +102,10 @@ def collect_fields(  # noqa: C901
     dc_kw_only: bool | None = None,
 ) -> dict[str, FieldInfo]:
     """
-    Collect the fields of a pydantic model or dataclass, also returns the model/class ref to use in the
-    core-schema.
+    Collect the fields of:
+    * a nascent pydantic model
+    * a nascent pydantic dataclass
+    * or, a standard library dataclass
 
     :param cls: BaseModel or dataclass
     :param bases: parents of the class, generally `cls.__bases__`
@@ -145,8 +147,10 @@ def collect_fields(  # noqa: C901
 
     # FIXME (dataclasses) what are we doing here?
     # cls_fields: dict[str, FieldInfo] = getattr(cls, 'model_fields', None) or getattr(cls, '__pydantic_fields__', {})
+    pydantic_generic_typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
 
-    # currently just used for `init=False` dataclass fields, but could be used more
+    # currently just used for `init=False` dataclass fields, this logic can probably be removed if
+    # we simplify this file to not be "all things to all men"
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
     for ann_name, ann_type in type_hints.items():
@@ -157,8 +161,6 @@ def collect_fields(  # noqa: C901
         if isinstance(ann_type, ForwardRef):
             raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
-        # FIXME (dataclasses) what are we doing here?
-        pydantic_generic_typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
         if pydantic_generic_typevars_map:
             ann_type = replace_types(ann_type, pydantic_generic_typevars_map)
 
@@ -176,8 +178,9 @@ def collect_fields(  # noqa: C901
             init_var = True
             ann_type = ann_type.type
 
-        # FIXME (dataclasses) what are we doing here?
-        generic_origin = getattr(cls, '__pydantic_generic_origin__', ())
+        # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
+        # "... shadows an attribute" errors
+        generic_origin = getattr(cls, '__pydantic_generic_origin__', None)
         for base in bases:
             if hasattr(base, ann_name):
                 if base is generic_origin:
@@ -242,8 +245,7 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    # FIXME (dataclasses) what are we doing here?
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
+    typevars_map = pydantic_generic_typevars_map or typevars_map
     if typevars_map:
         for field in fields.values():
             field.annotation = replace_types(field.annotation, typevars_map)

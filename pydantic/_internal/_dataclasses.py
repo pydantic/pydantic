@@ -61,11 +61,6 @@ def prepare_dataclass(
 
     name = cls.__name__
     bases = cls.__bases__
-    # added for compatibility with code that expects a model
-    # TODO actually support generic dataclasses
-    cls.__pydantic_generic_typevars_map__ = None
-    cls.__pydantic_generic_args__ = None
-    cls.__pydantic_generic_origin__ = None
 
     self_schema, model_ref = get_dc_self_schema(cls)
     types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
