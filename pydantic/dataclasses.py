@@ -131,6 +131,12 @@ def dataclass(
 
         config_dict = get_config(config)
         _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)
+
+        if sys.version_info >= (3, 10):
+            kwargs = dict(kw_only=kw_only)
+        else:
+            kwargs = {}
+
         return dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
             init=init,
@@ -139,7 +145,7 @@ def dataclass(
             order=order,
             unsafe_hash=unsafe_hash,
             frozen=frozen,
-            kw_only=kw_only,
+            **kwargs,
         )
 
     if _cls is None:

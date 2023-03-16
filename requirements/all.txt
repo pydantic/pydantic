@@ -1,5 +1,5 @@
 -r ./pyproject-all.txt
 -r ./docs.txt
--r ./linting.txt
+# -r ./linting.txt
 -r ./testing.txt
 -r ./testing-extra.txt

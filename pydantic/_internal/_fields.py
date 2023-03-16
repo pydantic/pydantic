@@ -92,6 +92,10 @@ class CustomValidator(ABC):
             setattr(self, k, v)
 
 
+# KW_ONLY is only available in Python 3.10+
+DC_KW_ONLY = getattr(dataclasses, 'KW_ONLY', None)
+
+
 def collect_fields(  # noqa: C901
     cls: type[Any],
     bases: tuple[type[Any], ...],
@@ -164,7 +168,7 @@ def collect_fields(  # noqa: C901
         if pydantic_generic_typevars_map:
             ann_type = replace_types(ann_type, pydantic_generic_typevars_map)
 
-        if ann_type is dataclasses.KW_ONLY:
+        if DC_KW_ONLY and ann_type is DC_KW_ONLY:
             # all field fields will be kw_only
             dc_kw_only = True
             continue
@@ -172,6 +176,9 @@ def collect_fields(  # noqa: C901
 
         init_var = False
         if ann_type is dataclasses.InitVar:
+            if sys.version_info < (3, 8):
+                raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
+
             init_var = True
             ann_type = Any
         elif isinstance(ann_type, dataclasses.InitVar):
@@ -224,7 +231,7 @@ def collect_fields(  # noqa: C901
                 if not default.init:
                     # dataclasses.Field with init=False are not fields
                     continue
-                if default.kw_only is True:
+                if DC_KW_ONLY and default.kw_only is True:
                     kw_only = True
 
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
