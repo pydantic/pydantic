@@ -420,7 +420,7 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
-    def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
+    def function_schema(self, schema: core_schema.CallbackSchema) -> JsonSchemaValue:
         source_class = _core_metadata.CoreMetadataHandler(schema).get_source_class()
         if source_class is not None:
             # If a source_class has been specified, assume that its json schema will be handled elsewhere
@@ -431,7 +431,7 @@ class GenerateJsonSchema:
 
         # I'm not sure if this might need to be different if the function's mode is 'before'
         if schema['mode'] == 'plain':
-            return self.handle_invalid_for_json_schema(schema, f'core_schema.FunctionSchema ({schema["function"]})')
+            return self.handle_invalid_for_json_schema(schema, f'core_schema.CallbackSchema ({schema["function"]})')
         else:
             # 'after', 'before', and 'wrap' functions all have a required 'schema' field
             return self.generate_inner(schema['schema'])

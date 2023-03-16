@@ -564,7 +564,7 @@ class GenerateSchema:
         from ._validators import mapping_validator
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(dict_subclass), ...` in strict mode
-        return core_schema.function_wrap_schema(
+        return core_schema.general_wrap_validation_callback(
             mapping_validator,
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg0),
@@ -581,7 +581,7 @@ class GenerateSchema:
         from ._validators import construct_counter
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(Counter), ...` in strict mode
-        return core_schema.function_after_schema(
+        return core_schema.general_after_validation_callback(
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg),
                 values_schema=core_schema.int_schema(),
@@ -600,7 +600,7 @@ class GenerateSchema:
         else:
             from ._validators import mapping_validator
 
-            return core_schema.function_wrap_schema(
+            return core_schema.general_wrap_validation_callback(
                 mapping_validator,
                 core_schema.dict_schema(
                     keys_schema=self.generate_schema(arg0),
@@ -647,7 +647,7 @@ class GenerateSchema:
 
             return core_schema.chain_schema(
                 core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence'),
-                core_schema.function_wrap_schema(
+                core_schema.general_wrap_validation_callback(
                     sequence_validator,
                     core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
                 ),
@@ -670,17 +670,17 @@ class GenerateSchema:
         ser = core_schema.function_plain_ser_schema(_serializers.pattern_serializer, json_return_type='str')
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
-            return core_schema.function_plain_schema(
+            return core_schema.general_plain_validation_callback(
                 _validators.pattern_either_validator, serialization=ser, metadata=metadata
             )
 
         param = get_args(pattern_type)[0]
         if param == str:
-            return core_schema.function_plain_schema(
+            return core_schema.general_plain_validation_callback(
                 _validators.pattern_str_validator, serialization=ser, metadata=metadata
             )
         elif param == bytes:
-            return core_schema.function_plain_schema(
+            return core_schema.general_plain_validation_callback(
                 _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
             )
         else:
@@ -751,14 +751,14 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
         assert validator.sub_path is None, 'validator.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], validator.function)
         if validator.mode == 'plain':
-            schema = core_schema.function_plain_schema(function)
+            schema = core_schema.general_plain_validation_callback(function)
         elif validator.mode == 'wrap':
-            schema = core_schema.function_wrap_schema(function, schema)
+            schema = core_schema.general_wrap_validation_callback(function, schema)
         else:
-            schema = core_schema.FunctionSchema(
-                type='function',
+            schema = core_schema.CallbackSchema(
+                type= 'function',
                 mode=validator.mode,
-                function=function,
+                function={'type': 'field' if validator.is_field_validator else 'general', 'call': function},
                 schema=schema,
             )
     return schema

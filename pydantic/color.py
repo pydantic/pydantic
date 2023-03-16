@@ -193,8 +193,8 @@ class Color(_repr.Representation):
         return 1 if self._rgba.alpha is None else self._rgba.alpha
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate, serialization=core_schema.to_string_ser_schema())
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainCallbackSchema:
+        return core_schema.general_plain_validation_callback(cls._validate, serialization=core_schema.to_string_ser_schema())
 
     @classmethod
     def _validate(cls, __input_value: Any, _: Any) -> 'Color':
