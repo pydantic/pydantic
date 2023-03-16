@@ -72,4 +72,4 @@ virtualenv==20.20.0
 cd
 
 # TODO: publish
-pydantic-core-subs @ git+https://git@github.com/pydantic/pydantic-core@core-stubs
+pydantic-core-stubs @ git+https://git@github.com/pydantic/pydantic-core@core-stubs#subdirectory=pydantic-core-stubs
