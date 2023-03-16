@@ -185,6 +185,9 @@ class ErrorTypeInfo(TypedDict):
     example_message: str
     example_context: 'dict[str, str | int | float] | None'
 
+class ArgsKwargs:
+    def __init__(self, args: 'tuple[Any, ...]', kwargs: 'dict[str, Any] | None' = None) -> None: ...
+
 def list_all_errors() -> 'list[ErrorTypeInfo]':
     """
     Get information about all built-in errors.

@@ -13,7 +13,7 @@ import hypothesis
 import pytest
 from typing_extensions import Literal
 
-from pydantic_core import SchemaValidator
+from pydantic_core import ArgsKwargs, SchemaValidator
 
 __all__ = 'Err', 'PyAndJson', 'plain_repr', 'infinite_generator'
 
@@ -41,6 +41,13 @@ class Err:
             return f'Err({self.message!r})'
 
 
+def json_default(obj):
+    if isinstance(obj, ArgsKwargs):
+        raise pytest.skip('JSON skipping ArgsKwargs')
+    else:
+        raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')
+
+
 class PyAndJsonValidator:
     def __init__(self, schema, validator_type: Literal['json', 'python'] | None = None):
         self.validator = SchemaValidator(schema)
@@ -51,7 +58,7 @@ class PyAndJsonValidator:
 
     def validate_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
-            return self.validator.validate_json(json.dumps(py_input), strict, context)
+            return self.validator.validate_json(json.dumps(py_input, default=json_default), strict, context)
         else:
             assert self.validator_type == 'python', self.validator_type
             return self.validator.validate_python(py_input, strict, context)

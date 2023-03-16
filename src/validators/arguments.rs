@@ -1,7 +1,8 @@
-use ahash::AHashSet;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
+
+use ahash::AHashSet;
 
 use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
@@ -124,24 +125,28 @@ macro_rules! py_get {
         $obj.get_item($index).ok()
     };
 }
+pub(super) use py_get;
 
 macro_rules! py_slice {
     ($obj:ident, $from:expr, $to:expr) => {
         $obj.get_slice($from, $to)
     };
 }
+pub(super) use py_slice;
 
 macro_rules! json_get {
     ($obj:ident, $index:ident) => {
         $obj.get($index)
     };
 }
+pub(super) use json_get;
 
 macro_rules! json_slice {
     ($obj:ident, $from:expr, $to:expr) => {
         $obj[$from..$to]
     };
 }
+pub(super) use json_slice;
 
 impl Validator for ArgumentsValidator {
     fn validate<'s, 'data>(
@@ -265,37 +270,39 @@ impl Validator for ArgumentsValidator {
                 }
                 // if there are kwargs check any that haven't been processed yet
                 if let Some(kwargs) = $args.kwargs {
-                    for (raw_key, value) in kwargs.iter() {
-                        let either_str = match raw_key.strict_str() {
-                            Ok(k) => k,
-                            Err(ValError::LineErrors(line_errors)) => {
-                                for err in line_errors {
-                                    errors.push(
-                                        err.with_outer_location(raw_key.as_loc_item())
-                                            .with_type(ErrorType::InvalidKey),
-                                    );
-                                }
-                                continue;
-                            }
-                            Err(err) => return Err(err),
-                        };
-                        if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
-                            match self.var_kwargs_validator {
-                                Some(ref validator) => match validator.validate(py, value, extra, slots, recursion_guard) {
-                                    Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
-                                    Err(ValError::LineErrors(line_errors)) => {
-                                        for err in line_errors {
-                                            errors.push(err.with_outer_location(raw_key.as_loc_item()));
-                                        }
+                    if kwargs.len() > used_kwargs.len() {
+                        for (raw_key, value) in kwargs.iter() {
+                            let either_str = match raw_key.strict_str() {
+                                Ok(k) => k,
+                                Err(ValError::LineErrors(line_errors)) => {
+                                    for err in line_errors {
+                                        errors.push(
+                                            err.with_outer_location(raw_key.as_loc_item())
+                                                .with_type(ErrorType::InvalidKey),
+                                        );
                                     }
-                                    Err(err) => return Err(err),
-                                },
-                                None => {
-                                    errors.push(ValLineError::new_with_loc(
-                                        ErrorType::UnexpectedKeywordArgument,
-                                        value,
-                                        raw_key.as_loc_item(),
-                                    ));
+                                    continue;
+                                }
+                                Err(err) => return Err(err),
+                            };
+                            if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
+                                match self.var_kwargs_validator {
+                                    Some(ref validator) => match validator.validate(py, value, extra, slots, recursion_guard) {
+                                        Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            for err in line_errors {
+                                                errors.push(err.with_outer_location(raw_key.as_loc_item()));
+                                            }
+                                        }
+                                        Err(err) => return Err(err),
+                                    },
+                                    None => {
+                                        errors.push(ValLineError::new_with_loc(
+                                            ErrorType::UnexpectedKeywordArgument,
+                                            value,
+                                            raw_key.as_loc_item(),
+                                        ));
+                                    }
                                 }
                             }
                         }

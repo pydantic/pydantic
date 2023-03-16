@@ -9,6 +9,7 @@ use pyo3::prelude::*;
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+mod args_kwargs;
 mod build_context;
 mod build_tools;
 mod errors;
@@ -22,6 +23,7 @@ mod validators;
 
 // required for benchmarks
 pub use self::url::{PyMultiHostUrl, PyUrl};
+pub use args_kwargs::ArgsKwargs;
 pub use build_tools::SchemaError;
 pub use errors::{list_all_errors, PydanticCustomError, PydanticKnownError, PydanticOmit, ValidationError};
 pub use serializers::{to_json, PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer};
@@ -51,6 +53,7 @@ fn _pydantic_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PydanticSerializationUnexpectedValue>()?;
     m.add_class::<PyUrl>()?;
     m.add_class::<PyMultiHostUrl>()?;
+    m.add_class::<ArgsKwargs>()?;
     m.add_class::<SchemaSerializer>()?;
     m.add_function(wrap_pyfunction!(to_json, m)?)?;
     m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;

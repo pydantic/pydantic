@@ -22,6 +22,7 @@ mod call;
 mod callable;
 mod chain;
 mod custom_error;
+mod dataclass;
 mod date;
 mod datetime;
 mod definitions;
@@ -372,6 +373,9 @@ pub fn build_validator<'a>(
         nullable::NullableValidator,
         // model classes
         model::ModelValidator,
+        // dataclasses
+        dataclass::DataclassArgsValidator,
+        dataclass::DataclassValidator,
         // strings
         string::StrValidator,
         // integers
@@ -485,6 +489,9 @@ pub enum CombinedValidator {
     Nullable(nullable::NullableValidator),
     // create new model classes
     Model(model::ModelValidator),
+    // dataclasses
+    DataclassArgs(dataclass::DataclassArgsValidator),
+    Dataclass(dataclass::DataclassValidator),
     // strings
     Str(string::StrValidator),
     StrConstrained(string::StrConstrainedValidator),
