@@ -577,7 +577,6 @@ def test_derived_field_from_initvar():
         DerivedWithInitVar('Not A Number')
 
 
-@pytest.mark.xfail(reason='working on V2 - requires validator fix')
 def test_initvars_post_init():
     @pydantic.dataclasses.dataclass
     class PathDataPostInit:
@@ -593,9 +592,8 @@ def test_initvars_post_init():
     assert 'base_path' not in path_data.__dict__
     assert path_data.path == Path('world')
 
-    with pytest.raises(TypeError) as exc_info:
-        PathDataPostInit('world', base_path='/hello')
-    assert str(exc_info.value) == "unsupported operand type(s) for /: 'str' and 'str'"
+    p = PathDataPostInit('world', base_path='/hello')
+    assert p.path == Path('/hello/world')
 
 
 def test_classvar():
