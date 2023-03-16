@@ -39,12 +39,7 @@ def test_str_bytes():
         Model(v=None)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'type': 'string_type',
-            'loc': ('v', 'str'),
-            'msg': 'Input should be a valid string',
-            'input': None,
-        },
+        {'type': 'string_type', 'loc': ('v', 'str'), 'msg': 'Input should be a valid string', 'input': None},
         {'type': 'bytes_type', 'loc': ('v', 'bytes'), 'msg': 'Input should be a valid bytes', 'input': None},
     ]
 
