@@ -86,9 +86,9 @@ impl Validator for ModelValidator {
                 if self.expect_fields_set {
                     let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
                     let fields_set = fields_set.unwrap_or(validation_fields_set);
-                    Ok(self.create_class(py, model_dict, Some(fields_set))?)
+                    Ok(self.create_class(model_dict, Some(fields_set))?)
                 } else {
-                    Ok(self.create_class(py, output.as_ref(py), fields_set)?)
+                    Ok(self.create_class(output.as_ref(py), fields_set)?)
                 }
             } else {
                 Ok(input.to_object(py))
@@ -104,9 +104,9 @@ impl Validator for ModelValidator {
             let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
             let instance = if self.expect_fields_set {
                 let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-                self.create_class(py, model_dict, Some(fields_set))?
+                self.create_class(model_dict, Some(fields_set))?
             } else {
-                self.create_class(py, output.as_ref(py), None)?
+                self.create_class(output.as_ref(py), None)?
             };
 
             if let Some(ref call_after_init) = self.call_after_init {
@@ -126,36 +126,41 @@ impl Validator for ModelValidator {
 }
 
 impl ModelValidator {
-    fn create_class(&self, py: Python, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
-        // based on the following but with the second argument of new_func set to an empty tuple as required
-        // https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
-        let args = PyTuple::empty(py);
-        let raw_type = self.class.as_ref(py).as_type_ptr();
-        let instance = unsafe {
-            // Safety: raw_type is known to be a non-null type object pointer
-            match (*raw_type).tp_new {
-                // Safety: the result of new_func is guaranteed to be either an owned pointer or null on error returns.
-                Some(new_func) => PyObject::from_owned_ptr_or_err(
-                    py,
-                    // Safety: the non-null pointers are known to be valid, and it's allowed to call tp_new with a
-                    // null kwargs dict.
-                    new_func(raw_type, args.as_ptr(), null_mut()),
-                )?,
-                None => return py_err!(PyTypeError; "base type without tp_new"),
-            }
-        };
-
-        let instance_ref = instance.as_ref(py);
-        force_setattr(py, instance_ref, intern!(py, "__dict__"), model_dict)?;
-        if let Some(fields_set) = fields_set {
-            force_setattr(py, instance_ref, intern!(py, "__fields_set__"), fields_set)?;
-        }
-
-        Ok(instance)
+    fn create_class(&self, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
+        create_class(self.class.as_ref(model_dict.py()), model_dict, fields_set)
     }
 }
 
-pub fn force_setattr<N, V>(py: Python<'_>, obj: &PyAny, attr_name: N, value: V) -> PyResult<()>
+/// based on the following but with the second argument of new_func set to an empty tuple as required
+/// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
+pub(super) fn create_class(class: &PyType, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
+    let py = class.py();
+    let args = PyTuple::empty(py);
+    let raw_type = class.as_type_ptr();
+    let instance = unsafe {
+        // Safety: raw_type is known to be a non-null type object pointer
+        match (*raw_type).tp_new {
+            // Safety: the result of new_func is guaranteed to be either an owned pointer or null on error returns.
+            Some(new_func) => PyObject::from_owned_ptr_or_err(
+                py,
+                // Safety: the non-null pointers are known to be valid, and it's allowed to call tp_new with a
+                // null kwargs dict.
+                new_func(raw_type, args.as_ptr(), null_mut()),
+            )?,
+            None => return py_err!(PyTypeError; "base type without tp_new"),
+        }
+    };
+
+    let instance_ref = instance.as_ref(py);
+    force_setattr(py, instance_ref, intern!(py, "__dict__"), model_dict)?;
+    if let Some(fields_set) = fields_set {
+        force_setattr(py, instance_ref, intern!(py, "__fields_set__"), fields_set)?;
+    }
+
+    Ok(instance)
+}
+
+fn force_setattr<N, V>(py: Python<'_>, obj: &PyAny, attr_name: N, value: V) -> PyResult<()>
 where
     N: ToPyObject,
     V: ToPyObject,

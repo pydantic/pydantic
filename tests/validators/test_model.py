@@ -34,6 +34,20 @@ def test_model_class():
     assert m.__fields_set__ == {'field_a', 'field_b'}
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
+    with pytest.raises(ValidationError, match='Input should be an instance of MyModel') as exc_info:
+        v.validate_python({'field_a': 'test', 'field_b': 12}, strict=True)
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'model_class_type',
+            'loc': (),
+            'msg': 'Input should be an instance of MyModel',
+            'input': {'field_a': 'test', 'field_b': 12},
+            'ctx': {'class_name': 'MyModel'},
+        }
+    ]
+
 
 def test_model_class_setattr():
     setattr_calls = []

@@ -1,5 +1,6 @@
 pub mod any;
 pub mod bytes;
+pub mod dataclass;
 pub mod datetime_etc;
 pub mod definitions;
 pub mod dict;

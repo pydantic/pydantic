@@ -11,7 +11,6 @@ pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> 
     )
 }
 
-#[inline]
 pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bool> {
     if str == "0"
         || str.eq_ignore_ascii_case("f")
@@ -34,7 +33,6 @@ pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bo
     }
 }
 
-#[inline]
 pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, bool> {
     if int == 0 {
         Ok(false)
@@ -45,7 +43,6 @@ pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, boo
     }
 }
 
-#[inline]
 pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<'s, i64> {
     if let Ok(i) = str.parse::<i64>() {
         Ok(i)

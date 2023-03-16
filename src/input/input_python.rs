@@ -13,7 +13,7 @@ use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
 use crate::build_tools::safe_repr;
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
-use crate::{PyMultiHostUrl, PyUrl};
+use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, date_as_datetime, float_as_datetime,
@@ -121,6 +121,14 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
+    fn maybe_subclass_dict(&self, class: &PyType) -> PyResult<&Self> {
+        if matches!(self.is_instance(class), Ok(true)) {
+            self.getattr(intern!(self.py(), "__dict__"))
+        } else {
+            Ok(self)
+        }
+    }
+
     fn input_as_url(&self) -> Option<PyUrl> {
         self.extract::<PyUrl>().ok()
     }
@@ -135,8 +143,8 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            if let Some(args) = dict.get_item("__args__") {
-                if let Some(kwargs) = dict.get_item("__kwargs__") {
+            if let Some(args) = dict.get_item(intern!(self.py(), "__args__")) {
+                if let Some(kwargs) = dict.get_item(intern!(self.py(), "__kwargs__")) {
                     // we only try this logic if there are only these two items in the dict
                     if dict.len() == 2 {
                         let args = if let Ok(tuple) = args.downcast::<PyTuple>() {
@@ -144,7 +152,7 @@ impl<'a> Input<'a> for PyAny {
                         } else if args.is_none() {
                             Ok(None)
                         } else if let Ok(list) = args.downcast::<PyList>() {
-                            Ok(Some(PyTuple::new(self.py(), list.iter())))
+                            Ok(Some(list_as_tuple(list)))
                         } else {
                             Err(ValLineError::new_with_loc(
                                 ErrorType::PositionalArgumentsType,
@@ -180,10 +188,23 @@ impl<'a> Input<'a> for PyAny {
         } else if let Ok(tuple) = self.downcast::<PyTuple>() {
             Ok(PyArgs::new(Some(tuple), None).into())
         } else if let Ok(list) = self.downcast::<PyList>() {
-            let tuple = PyTuple::new(self.py(), list.iter());
+            let tuple = list_as_tuple(list);
             Ok(PyArgs::new(Some(tuple), None).into())
         } else {
             Err(ValError::new(ErrorType::ArgumentsType, self))
+        }
+    }
+
+    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+        if let Ok(dict) = self.downcast::<PyDict>() {
+            Ok(PyArgs::new(None, Some(dict)).into())
+        } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
+            let args = args_kwargs.args.into_ref(self.py());
+            let kwargs = args_kwargs.kwargs.map(|d| d.into_ref(self.py()));
+            Ok(PyArgs::new(Some(args), kwargs).into())
+        } else {
+            let dataclass_name = dataclass_name.to_string();
+            Err(ValError::new(ErrorType::DataclassType { dataclass_name }, self))
         }
     }
 
@@ -699,4 +720,13 @@ fn is_dict_items_type(v: &PyAny) -> bool {
         })
         .as_ref(py);
     v.is_instance(items_type).unwrap_or(false)
+}
+
+pub fn list_as_tuple(list: &PyList) -> &PyTuple {
+    let py_tuple: Py<PyTuple> = unsafe {
+        let ptr = list.as_ptr();
+        let tuple_ptr = ffi::PyList_AsTuple(ptr);
+        Py::from_owned_ptr(list.py(), tuple_ptr)
+    };
+    py_tuple.into_ref(list.py())
 }

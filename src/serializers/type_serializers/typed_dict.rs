@@ -18,7 +18,7 @@ use super::{
 };
 
 #[derive(Debug, Clone)]
-struct TypedDictField {
+pub(super) struct TypedDictField {
     key_py: Py<PyString>,
     alias: Option<String>,
     alias_py: Option<Py<PyString>>,
@@ -27,6 +27,23 @@ struct TypedDictField {
 }
 
 impl TypedDictField {
+    pub(super) fn new(
+        py: Python,
+        key_py: Py<PyString>,
+        alias: Option<String>,
+        serializer: CombinedSerializer,
+        required: bool,
+    ) -> Self {
+        let alias_py = alias.as_ref().map(|alias| PyString::new(py, alias.as_str()).into());
+        Self {
+            key_py,
+            alias,
+            alias_py,
+            serializer,
+            required,
+        }
+    }
+
     fn get_key_py<'py>(&'py self, py: Python<'py>, extra: &Extra) -> &'py PyAny {
         if extra.by_alias {
             if let Some(ref alias_py) = self.alias_py {
@@ -83,51 +100,49 @@ impl BuildSerializer for TypedDictSerializer {
             let key: String = key.extract()?;
             let field_info: &PyDict = value.downcast()?;
 
-            let schema = field_info.get_as_req(intern!(py, "schema"))?;
-
-            let serializer = CombinedSerializer::build(schema, config, build_context)
-                .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
-
-            let (alias, alias_py) = match field_info.get_as::<&PyString>(intern!(py, "serialization_alias"))? {
-                Some(alias_py) => {
-                    let alias: String = alias_py.extract()?;
-                    let alias_py = PyString::intern(py, &alias);
-                    (Some(alias), Some(alias_py.into_py(py)))
-                }
-                None => (None, None),
-            };
-
             let key_py: Py<PyString> = PyString::intern(py, &key).into_py(py);
-
-            let required = field_info.get_as::<bool>(intern!(py, "required"))?.unwrap_or(total);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 exclude.push(key_py.clone_ref(py));
+            } else {
+                let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
+
+                let schema = field_info.get_as_req(intern!(py, "schema"))?;
+                let serializer = CombinedSerializer::build(schema, config, build_context)
+                    .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
+
+                fields.insert(
+                    key,
+                    TypedDictField::new(
+                        py,
+                        key_py,
+                        alias,
+                        serializer,
+                        field_info.get_as(intern!(py, "required"))?.unwrap_or(total),
+                    ),
+                );
             }
-            fields.insert(
-                key,
-                TypedDictField {
-                    key_py,
-                    alias,
-                    alias_py,
-                    serializer,
-                    required,
-                },
-            );
         }
 
         let filter = SchemaFilter::from_vec_hash(py, exclude)?;
 
-        Ok(Self {
-            fields,
-            include_extra,
-            filter,
-        }
-        .into())
+        Ok(Self::new(fields, include_extra, filter).into())
     }
 }
 
 impl TypedDictSerializer {
+    pub(super) fn new(
+        fields: AHashMap<String, TypedDictField>,
+        include_extra: bool,
+        filter: SchemaFilter<isize>,
+    ) -> Self {
+        Self {
+            fields,
+            include_extra,
+            filter,
+        }
+    }
+
     fn exclude_default(&self, value: &PyAny, extra: &Extra, field: &TypedDictField) -> PyResult<bool> {
         if extra.exclude_defaults {
             if let Some(default) = get_default(value.py(), &field.serializer)? {
