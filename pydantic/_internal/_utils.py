@@ -19,11 +19,9 @@ from typing_extensions import TypeGuard
 from . import _repr, _typing_extra
 
 if typing.TYPE_CHECKING:
-    from ..dataclasses import Dataclass
-    from ..main import BaseModel
-
     MappingIntStrAny = typing.Mapping[int | str, Any]
     AbstractSetIntStr = typing.AbstractSet[int | str]
+    from ..main import BaseModel
 
 __all__ = (
     'sequence_like',
@@ -33,7 +31,6 @@ __all__ = (
     'deep_update',
     'update_not_none',
     'almost_equal_floats',
-    'get_model',
     'to_camel',
     'smart_deepcopy',
     'ValueItems',
@@ -152,19 +149,6 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     Return True if two floats are almost equal
     """
     return abs(value_1 - value_2) <= delta
-
-
-def get_model(obj: type[BaseModel] | type[Dataclass]) -> type[BaseModel]:
-    from ..main import BaseModel
-
-    try:
-        model_cls = obj.__pydantic_model__  # type: ignore
-    except AttributeError:
-        model_cls = obj
-
-    if not issubclass(model_cls, BaseModel):
-        raise TypeError('Unsupported type, must be either BaseModel or dataclass')
-    return model_cls
 
 
 def to_camel(string: str) -> str:

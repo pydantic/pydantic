@@ -64,7 +64,6 @@ def test_parsing_model_naming():
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_as_dataclass():
     @dataclass
     class PydanticDataclass:

@@ -14,7 +14,7 @@ from ._internal import _core_metadata, _core_utils, _typing_extra, _utils
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass
+    from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
 JsonSchemaValue = Dict[str, Any]
@@ -599,6 +599,14 @@ class GenerateJsonSchema:
             # TODO: Should we be setting `allowedProperties: false` if the model's ConfigDict has extra='forbid'?
         return json_schema
 
+    def dataclass_args_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
+        # TODO copy much of typed_dict_schema, share logic where possible
+        return {}
+
+    def dataclass_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
+        # TODO copy much of model_schema, share logic where possible
+        return {}
+
     def arguments_schema(self, schema: core_schema.ArgumentsSchema, prefer_positional: bool = False) -> JsonSchemaValue:
         source_class = _core_metadata.CoreMetadataHandler(schema).get_source_class()
         prefer_positional = _utils.lenient_issubclass(source_class, tuple)  # intended to catch NamedTuple
@@ -1043,7 +1051,7 @@ class GenerateJsonSchema:
 
 
 def schema(
-    models: Sequence[type[BaseModel] | type[Dataclass]],
+    models: Sequence[type[BaseModel] | type[PydanticDataclass]],
     *,
     by_alias: bool = True,
     title: str | None = None,
@@ -1052,7 +1060,7 @@ def schema(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    definitions = instance.generate_definitions([_utils.get_model(x).__pydantic_core_schema__ for x in models])
+    definitions = instance.generate_definitions([x.__pydantic_core_schema__ for x in models])
 
     json_schema: dict[str, Any] = {}
     if definitions:
@@ -1066,12 +1074,11 @@ def schema(
 
 
 def model_schema(
-    model: type[BaseModel] | type[Dataclass],
+    model: type[BaseModel],
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
-    model = _utils.get_model(model)
     return model.model_json_schema(by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
 
 

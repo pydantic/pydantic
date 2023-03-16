@@ -238,17 +238,19 @@ def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) 
     else:
         token = None
 
-    type_ref = get_type_ref(origin, args_override=args)
-    if visit_counts_by_ref[type_ref] >= 2:
-        self_type = PydanticForwardRef(
-            core_schema.definition_reference_schema(type_ref), origin, ({'kind': 'class_getitem', 'item': args},)
-        )
-        yield self_type
-    else:
-        visit_counts_by_ref[type_ref] += 1
-        yield None
-    if token:
-        _visit_counts_context.reset(token)
+    try:
+        type_ref = get_type_ref(origin, args_override=args)
+        if visit_counts_by_ref[type_ref] >= 2:
+            self_type = PydanticForwardRef(
+                core_schema.definition_reference_schema(type_ref), origin, ({'kind': 'class_getitem', 'item': args},)
+            )
+            yield self_type
+        else:
+            visit_counts_by_ref[type_ref] += 1
+            yield None
+    finally:
+        if token:
+            _visit_counts_context.reset(token)
 
 
 def recursively_defined_type_refs() -> set[str]:
