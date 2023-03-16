@@ -70,3 +70,6 @@ virtualenv==20.20.0
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
 cd
+
+# TODO: publish
+pydantic-core-subs @ git+https://git@github.com/pydantic/pydantic-core@core-stubs
