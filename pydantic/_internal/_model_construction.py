@@ -100,17 +100,18 @@ def deferred_model_get_pydantic_validation_schema(
     """
     fields, model_ref = collect_fields(cls, cls.__name__, cls.__bases__, types_namespace)
 
+    model_config = cls.model_config
     inner_schema = model_fields_schema(
         model_ref,
         fields,
         cls.__pydantic_validator_functions__,
         cls.__pydantic_serializer_functions__,
-        cls.__config__.arbitrary_types_allowed,
+        model_config.arbitrary_types_allowed,
         types_namespace,
         typevars_map,
     )
 
-    core_config = generate_config(cls.__config__, cls)
+    core_config = generate_config(model_config, cls)
     # we have to set model_fields as otherwise `repr` on the model will fail
     # cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
