@@ -12,43 +12,21 @@ env:
   COLUMNS: 150
 
 jobs:
-  test-cpython:
-    name: test ${{ matrix.python-version }} rust ${{ matrix.rust-toolchain }}
-    strategy:
-      fail-fast: false
-      matrix:
-        rust-toolchain:
-          - nightly
-        python-version:
-          - '3.7'
-          - '3.8'
-          - '3.9'
-          - '3.10'
-          - '3.11'
-        include:
-          - rust-toolchain: stable
-            python-version: '3.10'
-
+  coverage:
+    name: Test Coverage
     runs-on: ubuntu-latest
-
-    env:
-      PYTHON: ${{ matrix.python-version }}
 
     steps:
       - uses: actions/checkout@v3
 
-      - run: rm rust-toolchain
-
-      - name: install rust ${{ matrix.rust-toolchain }}
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust-toolchain }}
+      - name: install rust nightly
+        uses: dtolnay/rust-toolchain@nightly
 
       - id: cache-rust
         name: cache rust
         uses: Swatinem/rust-cache@v2
         with:
-          key: v5
+          key: coverage-v1
 
       - run: cargo install rustfilt coverage-prepare
         if: steps.cache-rust.outputs.cache-hit != 'true'
@@ -58,7 +36,7 @@ jobs:
       - name: set up python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.11'
 
       - id: cache-py
         name: cache python
@@ -82,7 +60,7 @@ jobs:
 
       - run: pip freeze
 
-      - run: make test
+      - run: coverage run -m pytest
         env:
           BENCHMARK_VS_PYDANTIC: 1
           HYPOTHESIS_PROFILE: slow
@@ -93,18 +71,20 @@ jobs:
       - run: coverage-prepare lcov pydantic_core/*.so
 
       - uses: codecov/codecov-action@v3
-        if: matrix.rust-toolchain == 'nightly'
-        with:
-          env_vars: PYTHON
 
   # See https://github.com/PyO3/pyo3/discussions/2781
-  # tests intermittently segfault with pypy when using `coverage run ...`, hence separate job
-  test-pypy:
-    name: test ${{ matrix.python-version }} rust stable
+  # tests intermittently segfault with pypy and cpython 3.7 when using `coverage run ...`, hence separate job
+  test-python:
+    name: test ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       matrix:
         python-version:
+          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
           - 'pypy3.7'
           - 'pypy3.8'
           - 'pypy3.9'
@@ -117,15 +97,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: rm rust-toolchain
-
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
         with:
-          key: pypy-v3
+          key: test-v3
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -154,6 +132,9 @@ jobs:
       - run: pip freeze
 
       - run: pytest
+        env:
+          BENCHMARK_VS_PYDANTIC: 1
+          HYPOTHESIS_PROFILE: slow
 
   test-os:
     name: test on ${{ matrix.os }}
@@ -193,7 +174,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: rm rust-toolchain
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -243,7 +223,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - run: rm rust-toolchain
       - name: install rust nightly
         uses: dtolnay/rust-toolchain@nightly
 
@@ -306,7 +285,7 @@ jobs:
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
     if: always()
-    needs: [test-cpython, test-pypy, test-os, lint, bench, build-wasm-emscripten]
+    needs: [coverage, test-python, test-os, lint, bench, build-wasm-emscripten]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
