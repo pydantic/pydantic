@@ -28,3 +28,9 @@ disallow_any_generics = true
 check_untyped_defs = true
 no_implicit_reexport = true
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    'pydantic_core.*',
+]
+follow_imports = "skip"
