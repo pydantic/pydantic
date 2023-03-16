@@ -548,7 +548,6 @@ def test_nested_schema():
 
 @pytest.mark.skipif(sys.version_info >= (3, 8), reason='InitVar not supported in python 3.7')
 def test_intvar_3_7():
-
     with pytest.raises(RuntimeError, match=r'^InitVar is not supported in Python 3\.7 as type information is lost$'):
 
         @pydantic.dataclasses.dataclass
