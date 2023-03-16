@@ -2029,7 +2029,9 @@ def typed_dict_field(
     Args:
         schema: The schema to use for the field
         required: Whether the field is required
-        alias: The alias(es) to use for the field
+        validation_alias: The alias(es) to use to find the field in the validation data
+        serialization_alias: The alias to use as a key when serializing
+        serialization_exclude: Whether to exclude the field when serializing
         frozen: Whether the field is frozen
     """
     return dict_not_none(
@@ -2185,6 +2187,156 @@ def model_schema(
     )
 
 
+class DataclassField(TypedDict, total=False):
+    name: Required[str]
+    schema: Required[CoreSchema]
+    kw_only: bool  # default: True
+    init_only: bool  # default: False
+    validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
+    serialization_alias: str
+    serialization_exclude: bool  # default: False
+
+
+def dataclass_field(
+    name: str,
+    schema: CoreSchema,
+    *,
+    kw_only: bool | None = None,
+    init_only: bool | None = None,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
+    serialization_exclude: bool | None = None,
+) -> DataclassField:
+    """
+    Returns a schema for a dataclass field, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+    field = core_schema.dataclass_field(name='a', schema=core_schema.str_schema(), kw_only=False)
+    schema = core_schema.dataclass_args_schema('Foobar', [field])
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': 'hello'}) == ({'a': 'hello'}, None)
+    ```
+
+    Args:
+        name: The name to use for the argument parameter
+        schema: The schema to use for the argument parameter
+        kw_only: Whether the field can be set with a positional argument as well as a keyword argument
+        init_only: Whether the field should be omitted  from `__dict__` and passed to `__post_init__`
+        validation_alias: The alias(es) to use to find the field in the validation data
+        serialization_alias: The alias to use as a key when serializing
+        serialization_exclude: Whether to exclude the field when serializing
+    """
+    return dict_not_none(
+        name=name,
+        schema=schema,
+        kw_only=kw_only,
+        init_only=init_only,
+        validation_alias=validation_alias,
+        serialization_alias=serialization_alias,
+        serialization_exclude=serialization_exclude,
+    )
+
+
+class DataclassArgsSchema(TypedDict, total=False):
+    type: Required[Literal['dataclass-args']]
+    dataclass_name: Required[str]
+    fields: Required[List[DataclassField]]
+    populate_by_name: bool  # default: False
+    collect_init_only: bool  # default: False
+    ref: str
+    metadata: Any
+    serialization: SerSchema
+
+
+def dataclass_args_schema(
+    dataclass_name: str,
+    fields: list[DataclassField],
+    populate_by_name: bool | None = None,
+    collect_init_only: bool | None = None,
+    ref: str | None = None,
+    metadata: Any = None,
+    serialization: SerSchema | None = None,
+) -> DataclassArgsSchema:
+    """
+    Returns a schema for validating dataclass arguments, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+    field_a = core_schema.dataclass_field(name='a', schema=core_schema.str_schema(), kw_only=False)
+    field_b = core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), kw_only=False)
+    schema = core_schema.dataclass_args_schema('Foobar', [field_a, field_b])
+    v = SchemaValidator(schema)
+    assert v.validate_python({'a': 'hello', 'b': True}) == ({'a': 'hello', 'b': True}, None)
+    ```
+
+    Args:
+        dataclass_name: The name of the dataclass being validated
+        fields: The fields to use for the dataclass
+        populate_by_name: Whether to populate by name
+        collect_init_only: Whether to collect init only fields into a dict to pass to `__post_init__`
+        ref: See [TODO] for details
+        metadata: See [TODO] for details
+        serialization: Custom serialization schema
+    """
+    return dict_not_none(
+        type='dataclass-args',
+        dataclass_name=dataclass_name,
+        fields=fields,
+        populate_by_name=populate_by_name,
+        collect_init_only=collect_init_only,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class DataclassSchema(TypedDict, total=False):
+    type: Required[Literal['dataclass']]
+    cls: Required[Type[Any]]
+    schema: Required[CoreSchema]
+    post_init: bool  # default: False
+    strict: bool  # default: False
+    ref: str
+    metadata: Any
+    serialization: SerSchema
+
+
+def dataclass_schema(
+    cls: Type[Any],
+    schema: CoreSchema,
+    *,
+    post_init: bool | None = None,
+    strict: bool | None = None,
+    ref: str | None = None,
+    metadata: Any = None,
+    serialization: SerSchema | None = None,
+) -> DataclassSchema:
+    """
+    Returns a schema for a dataclass. As with `ModelSchema`, this schema can only be used as a field within
+    another schema, not as the root type.
+
+    Args:
+        cls: The dataclass type, used to to perform subclass checks
+        schema: The schema to use for the dataclass fields
+        post_init: Whether to call `__post_init__` after validation
+        strict: Whether to require an exact instance of `cls`
+        ref: See [TODO] for details
+        metadata: See [TODO] for details
+        serialization: Custom serialization schema
+    """
+    return dict_not_none(
+        type='dataclass',
+        cls=cls,
+        schema=schema,
+        post_init=post_init,
+        strict=strict,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
 class ArgumentsParameter(TypedDict, total=False):
     name: Required[str]
     schema: Required[CoreSchema]
@@ -2205,6 +2357,9 @@ def arguments_parameter(
     ```py
     from pydantic_core import SchemaValidator, core_schema
     param = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
+    schema = core_schema.arguments_schema(param)
+    v = SchemaValidator(schema)
+    assert v.validate_python(('hello',)) == (('hello',), {})
     ```
 
     Args:
@@ -2245,7 +2400,7 @@ def arguments_schema(
     param_b = core_schema.arguments_parameter(name='b', schema=core_schema.bool_schema(), mode='positional_only')
     schema = core_schema.arguments_schema(param_a, param_b)
     v = SchemaValidator(schema)
-    v.validate_python({'__args__': ('hello', True), '__kwargs__': {}})
+    assert v.validate_python(('hello', True)) == (('hello', True), {})
     ```
 
     Args:
@@ -2651,6 +2806,8 @@ CoreSchema = Union[
     LaxOrStrictSchema,
     TypedDictSchema,
     ModelSchema,
+    DataclassArgsSchema,
+    DataclassSchema,
     ArgumentsSchema,
     CallSchema,
     CustomErrorSchema,
@@ -2693,6 +2850,8 @@ CoreSchemaType = Literal[
     'lax-or-strict',
     'typed-dict',
     'model',
+    'dataclass-args',
+    'dataclass',
     'arguments',
     'call',
     'custom-error',
@@ -2784,6 +2943,7 @@ ErrorType = Literal[
     'unexpected_positional_argument',
     'missing_positional_argument',
     'multiple_argument_values',
+    'dataclass_type',
     'url_type',
     'url_parsing',
     'url_syntax_violation',

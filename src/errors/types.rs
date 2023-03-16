@@ -322,6 +322,12 @@ pub enum ErrorType {
     #[strum(message = "Got multiple values for argument")]
     MultipleArgumentValues,
     // ---------------------
+    // dataclass errors (we don't talk about ArgsKwargs here for simplicity)
+    #[strum(message = "Input should be a dictionary or an instance of {dataclass_name}")]
+    DataclassType {
+        dataclass_name: String,
+    },
+    // ---------------------
     // URL errors
     #[strum(message = "URL input should be a string or URL")]
     UrlType,
@@ -474,6 +480,7 @@ impl ErrorType {
                 expected_tags: String
             ),
             Self::UnionTagNotFound { .. } => extract_context!(UnionTagNotFound, ctx, discriminator: String),
+            Self::DataclassType { .. } => extract_context!(DataclassType, ctx, dataclass_name: String),
             Self::UrlParsing { .. } => extract_context!(UrlParsing, ctx, error: String),
             Self::UrlSyntaxViolation { .. } => extract_context!(Cow::Owned, UrlSyntaxViolation, ctx, error: String),
             Self::UrlTooLong { .. } => extract_context!(UrlTooLong, ctx, max_length: usize),
@@ -565,6 +572,7 @@ impl ErrorType {
                 expected_tags,
             } => render!(self, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => render!(self, discriminator),
+            Self::DataclassType { dataclass_name } => render!(self, dataclass_name),
             Self::UrlParsing { error } => render!(self, error),
             Self::UrlSyntaxViolation { error } => render!(self, error),
             Self::UrlTooLong { max_length } => to_string_render!(self, max_length),
@@ -618,6 +626,7 @@ impl ErrorType {
                 expected_tags,
             } => py_dict!(py, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => py_dict!(py, discriminator),
+            Self::DataclassType { dataclass_name } => py_dict!(py, dataclass_name),
             Self::UrlParsing { error } => py_dict!(py, error),
             Self::UrlSyntaxViolation { error } => py_dict!(py, error),
             Self::UrlTooLong { max_length } => py_dict!(py, max_length),

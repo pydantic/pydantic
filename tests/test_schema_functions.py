@@ -208,6 +208,17 @@ all_schema_functions = [
         {'type': 'definitions', 'schema': {'type': 'int'}, 'definitions': [{'type': 'int'}]},
     ),
     (core_schema.definition_reference_schema, args('foo'), {'type': 'definition-ref', 'schema_ref': 'foo'}),
+    (
+        core_schema.dataclass_args_schema,
+        args('Foo', [{'name': 'foo', 'schema': {'type': 'int'}}]),
+        {'type': 'dataclass-args', 'dataclass_name': 'Foo', 'fields': [{'name': 'foo', 'schema': {'type': 'int'}}]},
+    ),
+    (
+        core_schema.dataclass_schema,
+        # MyModel should be a dataclass, but I'm being lazy here
+        args(MyModel, {'type': 'int'}),
+        {'type': 'dataclass', 'schema': {'type': 'int'}, 'cls': MyModel},
+    ),
 ]
 
 

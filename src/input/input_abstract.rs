@@ -55,6 +55,11 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         Ok(false)
     }
 
+    // if the input is a subclass of `_class`, return `input.__dict__`, used on dataclasses
+    fn maybe_subclass_dict(&self, _class: &PyType) -> PyResult<&Self> {
+        Ok(self)
+    }
+
     fn input_as_url(&self) -> Option<PyUrl> {
         None
     }
@@ -68,6 +73,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     }
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>>;
+
+    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>>;
 
     fn parse_json(&'a self) -> ValResult<'a, JsonInput>;
 
