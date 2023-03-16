@@ -379,8 +379,7 @@ class GenerateSchema:
                 field_name, field_info, validation_functions, serialization_functions, required=required
             )
 
-        module_name = getattr(typed_dict_cls, '__module__', None)
-        typed_dict_ref = f'{module_name}.{typed_dict_cls.__qualname__}:{id(typed_dict_cls)}'
+        typed_dict_ref = get_type_ref(typed_dict_cls)
         return core_schema.typed_dict_schema(
             fields,
             extra_behavior='forbid',
