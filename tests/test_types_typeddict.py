@@ -380,18 +380,25 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
         assert Model(d=input_value).d == expected
 
 
-class RecursiveTypedDict(typing_extensions.TypedDict):
-    # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
-    foo: Optional['RecursiveTypedDict']
+def test_recursive_typeddict(create_module):
+    @create_module
+    def module():
+        from typing import Optional
 
+        from typing_extensions import TypedDict
 
-def test_recursive_typeddict():
-    class RecursiveTypedDictModel(BaseModel):
-        rec: RecursiveTypedDict
+        from pydantic import BaseModel
 
-    assert RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
+        class RecursiveTypedDict(TypedDict):
+            # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
+            foo: Optional['RecursiveTypedDict']
+
+        class RecursiveTypedDictModel(BaseModel):
+            rec: RecursiveTypedDict
+
+    assert module.RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
     with pytest.raises(ValidationError) as exc_info:
-        RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
+        module.RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
     assert exc_info.value.errors() == [
         {
             'input': 1,
@@ -451,27 +458,31 @@ def test_generic_typeddict_in_generic_model():
     ]
 
 
-T = TypeVar('T')
-
-
-class RecursiveGenTypedDict(typing_extensions.TypedDict, Generic[T]):
-    # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
-    foo: Optional['RecursiveGenTypedDict[T]']
-    ls: List[T]
-
-
 @pytest.mark.xfail(reason='Generic typed dict')
-def test_recursive_generic_typeddict():
-    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
-        # TODO: check what happens if RecursiveGenTypedDict is a forward reference
-        rec: RecursiveGenTypedDict[T]
+def test_recursive_generic_typeddict(create_module):
+    @create_module
+    def module():
+        from typing import Generic, Optional, TypeVar
 
-    int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
-    assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
+        from typing_extensions import TypedDict
 
-    str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
+        T = TypeVar('T')
+
+        class RecursiveGenTypedDict(TypedDict, Generic[T]):
+            # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
+            foo: Optional['RecursiveGenTypedDict[T]']
+            ls: List[T]
+
+        class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+            # TODO: check what happens if RecursiveGenTypedDict is a forward reference
+            rec: RecursiveGenTypedDict[T]
+
+    int_data: module.RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
+    assert module.RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
+
+    str_data: module.RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
     with pytest.raises(ValidationError) as exc_info:
-        RecursiveGenTypedDictModel[int](rec=str_data)
+        module.RecursiveGenTypedDictModel[int](rec=str_data)
     assert exc_info.value.errors() == [
         {
             'input': 'a',
