@@ -193,16 +193,16 @@ jobs:
       fail-fast: false
       matrix:
         # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
-        mypy-version: ['0.971', '0.982', '0.991', '1.0.1']
+        mypy-version: ['1.0.1', '1.1.1']
         python-version: ['3.10']
         include:
-          - mypy-version: '1.0.1'
+          - mypy-version: '1.1.1'
             python-version: '3.7'
-          - mypy-version: '1.0.1'
+          - mypy-version: '1.1.1'
             python-version: '3.8'
-          - mypy-version: '1.0.1'
+          - mypy-version: '1.1.1'
             python-version: '3.9'
-          - mypy-version: '1.0.1'
+          - mypy-version: '1.1.1'
             python-version: '3.11'
 
     steps:
