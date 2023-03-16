@@ -13,7 +13,7 @@ def test_simple():
         a: str
 
         @validator('a')
-        def change_a(cls, v, **kwargs):
+        def change_a(cls, v):
             return v + ' changed'
 
     assert MyDataclass(a='this is foobar good').a == 'this is foobar good changed'
@@ -25,12 +25,12 @@ def test_validate_pre():
         a: List[int]
 
         @validator('a', mode='before')
-        def check_a1(cls, v, **kwargs):
+        def check_a1(cls, v):
             v.append('123')
             return v
 
         @validator('a')
-        def check_a2(cls, v, **kwargs):
+        def check_a2(cls, v):
             v.append(456)
             return v
 
@@ -46,9 +46,9 @@ def test_validate_multiple():
         b: str
 
         @validator('a', 'b')
-        def check_a_and_b(cls, v, **kwargs):
+        def check_a_and_b(cls, v, info):
             if len(v) < 4:
-                raise TypeError(f'{kwargs.alias} is too short')
+                raise TypeError(f'{info.field_name} is too short')
             return v + 'x'
 
     assert asdict(MyDataclass(a='1234', b='5678')) == {'a': '1234x', 'b': '5678x'}
@@ -68,7 +68,7 @@ def test_classmethod():
         a: str
 
         @validator('a')
-        def check_a(cls, v, **kwargs):
+        def check_a(cls, v):
             assert cls is MyDataclass and is_dataclass(MyDataclass)
             return v
 
@@ -83,7 +83,7 @@ def test_validate_parent():
         a: str
 
         @validator('a')
-        def change_a(cls, v, **kwargs):
+        def change_a(cls, v):
             return v + ' changed'
 
     @dataclass
