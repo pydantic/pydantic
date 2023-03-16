@@ -18,10 +18,11 @@ from typing_extensions import Annotated, Literal, get_args, get_origin, is_typed
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
-from . import _discriminated_union, _fields, _typing_extra
+from . import _discriminated_union, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import get_type_ref
 from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
 
@@ -30,7 +31,7 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
-__all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config'
+__all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
 
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
@@ -185,7 +186,7 @@ class GenerateSchema:
                     metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
                 )
             else:
-                return get_model_self_schema(resolved_model)
+                return get_model_self_schema(resolved_model)[0]
 
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
@@ -706,14 +707,13 @@ class GenerateSchema:
         Generate schema for a dataclass.
         """
         # FIXME we need a way to make sure kw_only info is propagated through to fields
-        name = dataclass.__name__
-        fields, ref = _fields.collect_fields(
-            dataclass, name, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
+        fields = collect_fields(
+            dataclass, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
         )
 
         fields_schema = dataclass_fields_schema(
-            name,
-            ref,
+            dataclass.__name__,
+            get_type_ref(dataclass),
             fields,
             hasattr(dataclass, '__post_init__'),
             ValidationFunctions(()),
@@ -811,11 +811,11 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
 
-    if isinstance(metadata, _fields.PydanticGeneralMetadata):
+    if isinstance(metadata, PydanticGeneralMetadata):
         metadata_dict = metadata.__dict__
-    elif isinstance(metadata, (BaseMetadata, _fields.PydanticMetadata)):
+    elif isinstance(metadata, (BaseMetadata, PydanticMetadata)):
         metadata_dict = dataclasses.asdict(metadata)
-    elif isinstance(metadata, type) and issubclass(metadata, _fields.PydanticMetadata):
+    elif isinstance(metadata, type) and issubclass(metadata, PydanticMetadata):
         # also support PydanticMetadata classes being used without initialisation,
         # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
         metadata_dict = {k: v for k, v in vars(metadata).items() if not k.startswith('_')}
@@ -855,7 +855,7 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     if field_info.default_factory:
         return core_schema.with_default_schema(schema, default_factory=field_info.default_factory)
-    elif field_info.default is not _fields.Undefined:
+    elif field_info.default is not Undefined:
         return core_schema.with_default_schema(schema, default=field_info.default)
     else:
         return schema
@@ -884,17 +884,25 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
     return modify_js_function
 
 
-def get_model_self_schema(cls: type[BaseModel] | type[StandardDataclass]) -> core_schema.ModelSchema:
-    """
-    Type is Any, but `cls` should be either a Pydantic model or a Pydantic dataclass.
-    """
+def get_model_self_schema(cls: type[BaseModel]) -> tuple[core_schema.ModelSchema, str]:
     model_ref = get_type_ref(cls)
     try:
         model_js_metadata = cls.model_json_schema_metadata()
     except AttributeError:
         model_js_metadata = None
-    return core_schema.model_schema(
+    schema = core_schema.model_schema(
         cls,
         core_schema.definition_reference_schema(model_ref),
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
+    return schema, model_ref
+
+
+def get_dc_self_schema(cls: type[StandardDataclass]) -> tuple[core_schema.DataclassSchema, str]:
+    dataclass_ref = get_type_ref(cls)
+    # TODO js_metadata
+    schema = core_schema.dataclass_schema(
+        cls,
+        core_schema.definition_reference_schema(dataclass_ref),
+    )
+    return schema, dataclass_ref

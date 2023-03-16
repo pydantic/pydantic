@@ -94,20 +94,18 @@ class CustomValidator(ABC):
 
 def collect_fields(  # noqa: C901
     cls: type[Any],
-    name: str,
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None,
     *,
     typevars_map: dict[str, Any] | None = None,
     is_dataclass: bool = False,
     dc_kw_only: bool | None = None,
-) -> tuple[dict[str, FieldInfo], str]:
+) -> dict[str, FieldInfo]:
     """
     Collect the fields of a pydantic model or dataclass, also returns the model/class ref to use in the
     core-schema.
 
     :param cls: BaseModel or dataclass
-    :param name: name of the class, generally `cls.__name__`
     :param bases: parents of the class, generally `cls.__bases__`
     :param types_namespace: optional extra namespace to look for types in
     :param typevars_map: TODO ???
@@ -115,32 +113,19 @@ def collect_fields(  # noqa: C901
     :param dc_kw_only: whether the whole dataclass is kw_only
     """
     from ..fields import FieldInfo
-    from ._generate_schema import get_model_self_schema
 
     module_name = getattr(cls, '__module__', None)
     global_ns: dict[str, Any] | None = None
     if module_name:
         try:
-            module = sys.modules[module_name]
+            global_ns = sys.modules[module_name].__dict__
         except KeyError:
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
-        else:
-            if types_namespace:
-                global_ns = {**module.__dict__, **types_namespace}
-            else:
-                global_ns = module.__dict__
-
-    # FIXME (dataclasses) this is wrong as it's alwasy a model
-    self_schema = get_model_self_schema(cls)
-    local_ns = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
-    # schema_ref = f'{module_name}.{name}'
-    # self_schema = core_schema.model_schema(cls, core_schema.recursive_reference_schema(schema_ref))
-    # local_ns = {name: Annotated[SelfType, SchemaRef(self_schema)]}
 
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
-        type_hints = get_type_hints(cls, global_ns, local_ns, include_extras=True)
+        type_hints = get_type_hints(cls, global_ns, types_namespace, include_extras=True)
     except NameError as e:
         try:
             name = e.name
@@ -262,6 +247,5 @@ def collect_fields(  # noqa: C901
     if typevars_map:
         for field in fields.values():
             field.annotation = replace_types(field.annotation, typevars_map)
-    schema_ref = self_schema['schema']['schema_ref']
 
-    return fields, schema_ref
+    return fields

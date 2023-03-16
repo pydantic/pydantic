@@ -16,7 +16,8 @@ from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._fields import Undefined, collect_fields
-from ._generate_schema import generate_config, model_fields_schema
+from ._forward_ref import PydanticForwardRef
+from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
 from ._generics import recursively_defined_type_refs
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -98,7 +99,9 @@ def deferred_model_get_pydantic_validation_schema(
     the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
     models.
     """
-    fields, model_ref = collect_fields(cls, cls.__name__, cls.__bases__, types_namespace)
+    self_schema, model_ref = get_model_self_schema(cls)
+    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
+    fields = collect_fields(cls, cls.__bases__, types_namespace)
 
     model_config = cls.model_config
     inner_schema = model_fields_schema(
@@ -106,14 +109,14 @@ def deferred_model_get_pydantic_validation_schema(
         fields,
         cls.__pydantic_validator_functions__,
         cls.__pydantic_serializer_functions__,
-        model_config.arbitrary_types_allowed,
+        model_config['arbitrary_types_allowed'],
         types_namespace,
         typevars_map,
     )
 
     core_config = generate_config(model_config, cls)
     # we have to set model_fields as otherwise `repr` on the model will fail
-    # cls.model_fields = fields
+    cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
     return core_schema.model_schema(
@@ -147,8 +150,10 @@ def complete_model_class(
     validator_functions.set_bound_functions(cls)
     serializer_functions.set_bound_functions(cls)
 
+    self_schema, model_ref = get_model_self_schema(cls)
+    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
-        fields, model_ref = collect_fields(cls, name, bases, types_namespace, typevars_map=typevars_map)
+        fields = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

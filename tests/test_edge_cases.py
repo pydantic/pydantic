@@ -41,7 +41,7 @@ def test_str_bytes():
     assert exc_info.value.errors() == [
         {
             'type': 'string_type',
-            'loc': ('v', 'constrained-str'),
+            'loc': ('v', 'str'),
             'msg': 'Input should be a valid string',
             'input': None,
         },
@@ -86,7 +86,7 @@ def test_union_int_str():
         {'type': 'int_type', 'loc': ('v', 'int'), 'msg': 'Input should be a valid integer', 'input': None},
         {
             'type': 'string_type',
-            'loc': ('v', 'constrained-str'),
+            'loc': ('v', 'str'),
             'msg': 'Input should be a valid string',
             'input': None,
         },

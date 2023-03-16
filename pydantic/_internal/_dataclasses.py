@@ -5,7 +5,6 @@ from __future__ import annotations as _annotations
 
 import typing
 import warnings
-from copy import copy
 from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
@@ -14,7 +13,8 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import collect_fields
-from ._generate_schema import dataclass_fields_schema, generate_config
+from ._forward_ref import PydanticForwardRef
+from ._generate_schema import dataclass_fields_schema, generate_config, get_dc_self_schema
 from ._model_construction import MockValidator, object_setattr
 
 __all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
@@ -37,14 +37,6 @@ if typing.TYPE_CHECKING:
         __pydantic_validator_functions__: typing.ClassVar[ValidationFunctions]
         __pydantic_serializer_functions__: typing.ClassVar[SerializationFunctions]
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
-
-
-def pydantic_dataclass_init(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-    __tracebackhide__ = True
-    dc_dict, init_vars = __dataclass_self__.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs))
-    object_setattr(__dataclass_self__, '__dict__', dc_dict)
-    if init_vars is not None:
-        __dataclass_self__.__post_init__(*init_vars)
 
 
 def prepare_dataclass(
@@ -74,8 +66,11 @@ def prepare_dataclass(
     cls.__pydantic_generic_typevars_map__ = None
     cls.__pydantic_generic_args__ = None
     cls.__pydantic_generic_origin__ = None
+
+    self_schema, model_ref = get_dc_self_schema(cls)
+    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
     try:
-        fields, model_ref = collect_fields(cls, name, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
+        fields = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -113,10 +108,17 @@ def prepare_dataclass(
     cls.__pydantic_fields__ = fields
     cls.__pydantic_validator__ = SchemaValidator(fields_schema, core_config)
 
-    dc_init = copy(pydantic_dataclass_init)
-    dc_init.__name__ = '__init__'
-    dc_init.__qualname__ = f'{cls.__qualname__}.__init__'
-    setattr(cls, '__init__', dc_init)
+    # dataclass.__init__ must be defined here so its `__qualname__` can be changed.
+
+    def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
+        __tracebackhide__ = True
+        dc_dict, init_vars = __dataclass_self__.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs))
+        object_setattr(__dataclass_self__, '__dict__', dc_dict)
+        if init_vars is not None:
+            __dataclass_self__.__post_init__(*init_vars)
+
+    __init__.__qualname__ = f'{cls.__qualname__}.__init__'
+    cls.__init__ = __init__
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_core_schema__ = core_schema.dataclass_schema(cls, fields_schema)
     # cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
