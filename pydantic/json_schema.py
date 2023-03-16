@@ -14,7 +14,7 @@ from ._internal import _core_metadata, _core_utils, _typing_extra, _utils
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
-    from .dataclasses import Dataclass
+    from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
 JsonSchemaValue = Dict[str, Any]
@@ -1051,7 +1051,7 @@ class GenerateJsonSchema:
 
 
 def schema(
-    models: Sequence[type[BaseModel] | type[Dataclass]],
+    models: Sequence[type[BaseModel] | type[PydanticDataclass]],
     *,
     by_alias: bool = True,
     title: str | None = None,
@@ -1074,7 +1074,7 @@ def schema(
 
 
 def model_schema(
-    model: type[BaseModel] | type[Dataclass],
+    model: type[BaseModel],
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,

@@ -20,7 +20,7 @@ from ._model_construction import MockValidator, object_setattr
 __all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
 
 if typing.TYPE_CHECKING:
-    from ..config import BaseConfig
+    from ..config import ConfigDict
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
@@ -41,7 +41,7 @@ if typing.TYPE_CHECKING:
 
 def prepare_dataclass(
     cls: type[Any],
-    config: type[BaseConfig],
+    config: ConfigDict,
     kw_only: bool,
     *,
     raise_errors: bool = True,
@@ -75,7 +75,7 @@ def prepare_dataclass(
         if raise_errors:
             raise
         warning_string = f'`{name}` is not fully defined, you should define `{e}`, then call `{name}.model_rebuild()`'
-        if config.undefined_types_warning:
+        if config['undefined_types_warning']:
             raise UserWarning(warning_string)
         cls.__pydantic_validator__ = MockValidator(warning_string)
         return False

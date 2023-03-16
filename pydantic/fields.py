@@ -170,7 +170,7 @@ class FieldInfo(_repr.Representation):
             return cls(annotation=annotation, default=default)
 
     @classmethod
-    def from_dataclass_field(cls, dc_field: DataclassField) -> 'FieldInfo':
+    def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> 'FieldInfo':
         """
         Construct a `FieldInfo` from a `dataclasses.Field` instance.
         """
@@ -180,9 +180,10 @@ class FieldInfo(_repr.Representation):
         if default is dataclasses.MISSING:
             default = Undefined
 
-        default_factory = dc_field.default_factory
-        if default_factory is dataclasses.MISSING:
-            default_factory = None
+        if dc_field.default_factory is dataclasses.MISSING:
+            default_factory: typing.Callable[[], Any] | None = None
+        else:
+            default_factory = dc_field.default_factory
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)

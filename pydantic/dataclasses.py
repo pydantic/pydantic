@@ -107,7 +107,6 @@ def dataclass(
     """
     Like the python standard lib dataclasses but enhanced with validation.
     """
-    the_config = get_config(config)
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
     def create_dataclass(cls: Type[Any]) -> PydanticDataclass:
@@ -130,7 +129,8 @@ def dataclass(
                 {'__pydantic_fields__': fields, '__pydantic_omitted_fields__': omitted_fields or None},
             )
 
-        _pydantic_dataclasses.prepare_dataclass(cls, the_config, kw_only)
+        config_dict = get_config(config)
+        _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)
         return dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
             init=init,
