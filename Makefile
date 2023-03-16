@@ -76,7 +76,7 @@ pyright:
 
 .PHONY: test
 test:
-	coverage run -m pytest
+	pytest
 
 .PHONY: py-benchmark
 py-benchmark: BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
