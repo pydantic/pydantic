@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, BaseSettings, Field, create_model, validator
 from pydantic.dataclasses import dataclass
@@ -253,3 +253,12 @@ class OrmMixin(Generic[_TModel, _TType]):
         if model is None:
             return None
         return cls.from_orm(model)
+
+
+class Sample(BaseModel):
+    foo: str
+    bar: Optional[str] = Field(description='optional')
+    zoo: Any
+
+
+Sample(foo='hello world')
