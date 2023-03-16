@@ -13,7 +13,6 @@ env:
 
 jobs:
   coverage:
-    name: Test Coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -38,20 +37,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - id: cache-py
-        name: cache python
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.pythonLocation }}
-          key: >
-            py-v2
-            ${{ runner.os }}
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('tests/requirements.txt') }}
-            ${{ hashFiles('pyproject.toml') }}
-
       - run: pip install -r tests/requirements.txt
-        if: steps.cache-py.outputs.cache-hit != 'true'
 
       - run: pip install -e .
         env:
@@ -110,20 +96,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - id: cache-py
-        name: cache python
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.pythonLocation }}
-          key: >
-            py
-            ${{ runner.os }}
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('tests/requirements.txt') }}
-            ${{ hashFiles('pyproject.toml') }}
-
       - run: pip install -r tests/requirements.txt
-        if: steps.cache-py.outputs.cache-hit != 'true'
 
       - run: pip install -e .
         env:
