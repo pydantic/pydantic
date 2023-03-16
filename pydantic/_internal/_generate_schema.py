@@ -117,7 +117,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
 
 
 class GenerateSchema:
-    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map'
+    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map', '_recursion_cache'
 
     def __init__(
         self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None
@@ -125,6 +125,7 @@ class GenerateSchema:
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
+        self._recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
@@ -393,7 +394,9 @@ class GenerateSchema:
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         return core_schema.literal_schema(*expected)
 
-    def _typed_dict_schema(self, typed_dict_cls: Any) -> core_schema.TypedDictSchema:
+    def _typed_dict_schema(
+        self, typed_dict_cls: Any
+    ) -> core_schema.TypedDictSchema | core_schema.DefinitionReferenceSchema:
         """
         Generate schema for a TypedDict.
 
@@ -418,6 +421,13 @@ class GenerateSchema:
         validator_functions = ValidationFunctions(())
         serializer_functions = SerializationFunctions(())
 
+        obj_ref = f'{typed_dict_cls.__module__}.{typed_dict_cls.__qualname__}:{id(typed_dict_cls)}'
+        if obj_ref in self._recursion_cache:
+            return self._recursion_cache[obj_ref]
+        else:
+            recursive_schema = core_schema.definition_reference_schema(obj_ref)
+            self._recursion_cache[obj_ref] = recursive_schema
+
         for field_name, annotation in _typing_extra.get_type_hints(typed_dict_cls, include_extras=True).items():
             required = field_name in required_keys
 
@@ -436,8 +446,7 @@ class GenerateSchema:
                 field_name, field_info, validator_functions, serializer_functions, required=required
             )
 
-        module_name = getattr(typed_dict_cls, '__module__', None)
-        typed_dict_ref = f'{module_name}.{typed_dict_cls.__qualname__}:{id(typed_dict_cls)}'
+        typed_dict_ref = get_type_ref(typed_dict_cls)
         return core_schema.typed_dict_schema(
             fields,
             extra_behavior='forbid',

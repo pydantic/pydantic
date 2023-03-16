@@ -26,7 +26,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     when creating generic models without needing to create a concrete class.
     """
     origin = getattr(type_, '__pydantic_generic_origin__', None) or type_
-    args = getattr(type_, '__pydantic_generic_args__', args_override) or ()
+    args = getattr(type_, '__pydantic_generic_args__', None) or args_override or ()
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
