@@ -91,7 +91,7 @@ class FieldInfo(_repr.Representation):
         self.repr = kwargs.get('repr', True)
         self.json_schema_extra = kwargs.get('json_schema_extra')
         # currently only used on dataclasses
-        self.init_var = kwargs.get('init_var', False)
+        self.init_var = kwargs.get('init_var', None)
         self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod

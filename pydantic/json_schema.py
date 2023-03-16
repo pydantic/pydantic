@@ -599,6 +599,14 @@ class GenerateJsonSchema:
             # TODO: Should we be setting `allowedProperties: false` if the model's ConfigDict has extra='forbid'?
         return json_schema
 
+    def dataclass_args_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
+        # TODO copy much of typed_dict_schema, share logic where possible
+        return {}
+
+    def dataclass_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
+        # TODO copy much of model_schema, share logic where possible
+        return {}
+
     def arguments_schema(self, schema: core_schema.ArgumentsSchema, prefer_positional: bool = False) -> JsonSchemaValue:
         source_class = _core_metadata.CoreMetadataHandler(schema).get_source_class()
         prefer_positional = _utils.lenient_issubclass(source_class, tuple)  # intended to catch NamedTuple

@@ -1109,6 +1109,7 @@ def test_issue_2555():
         s: Sentence
 
     assert M.model_json_schema()
+    pytest.fail('TODO check the schema is actually right')
 
 
 def test_issue_2594():
