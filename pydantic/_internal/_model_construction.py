@@ -154,6 +154,15 @@ def complete_model_class(
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
         fields = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+        inner_schema = model_fields_schema(
+            model_ref,
+            fields,
+            validator_functions,
+            serializer_functions,
+            cls.model_config['arbitrary_types_allowed'],
+            types_namespace,
+            typevars_map,
+        )
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -175,15 +184,6 @@ def complete_model_class(
         )
         return False
 
-    inner_schema = model_fields_schema(
-        model_ref,
-        fields,
-        validator_functions,
-        serializer_functions,
-        cls.model_config['arbitrary_types_allowed'],
-        types_namespace,
-        typevars_map,
-    )
     inner_schema = consolidate_refs(inner_schema)
     inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
