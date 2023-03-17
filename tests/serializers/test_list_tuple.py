@@ -309,7 +309,7 @@ def test_filter_list_of_dicts():
 
 def test_positional_tuple():
     s = SchemaSerializer(
-        {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'int'}, {'type': 'bytes'}, {'type': 'float'}]}
+        {'type': 'tuple-positional', 'items_schema': [{'type': 'int'}, {'type': 'bytes'}, {'type': 'float'}]}
     )
     assert s.to_python((1, b'2', 3.0)) == (1, b'2', 3.0)
     assert s.to_python((1, b'2', 3.0, 123)) == (1, b'2', 3.0, 123)
@@ -330,8 +330,7 @@ def test_function_positional_tuple():
 
     s = SchemaSerializer(
         {
-            'type': 'tuple',
-            'mode': 'positional',
+            'type': 'tuple-positional',
             'items_schema': [
                 core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(partial(f, 'a'))),
                 core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(partial(f, 'b'))),

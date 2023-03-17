@@ -29,30 +29,6 @@ impl BuildSerializer for ChainBuilder {
     }
 }
 
-pub struct FunctionBuilder;
-
-impl BuildSerializer for FunctionBuilder {
-    const EXPECTED_TYPE: &'static str = "function";
-
-    fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        let py = schema.py();
-        let mode: &str = schema.get_as_req(intern!(py, "mode"))?;
-        // `before` schemas will obviously have type from `schema` since the validator is called second
-        // `after` schemas it's less, clear but the default will be the same type, and the user/lib can always
-        // override the serializer
-        if mode == "before" || mode == "after" {
-            let schema = schema.get_as_req(intern!(py, "schema"))?;
-            CombinedSerializer::build(schema, config, build_context)
-        } else {
-            AnySerializer::build(schema, config, build_context)
-        }
-    }
-}
-
 pub struct CustomErrorBuilder;
 
 impl BuildSerializer for CustomErrorBuilder {

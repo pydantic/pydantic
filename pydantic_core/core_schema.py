@@ -1139,8 +1139,7 @@ def list_schema(
 
 
 class TuplePositionalSchema(TypedDict, total=False):
-    type: Required[Literal['tuple']]
-    mode: Required[Literal['positional']]
+    type: Required[Literal['tuple-positional']]
     items_schema: Required[List[CoreSchema]]
     extra_schema: CoreSchema
     strict: bool
@@ -1179,8 +1178,7 @@ def tuple_positional_schema(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='tuple',
-        mode='positional',
+        type='tuple-positional',
         items_schema=list(items_schema),
         extra_schema=extra_schema,
         strict=strict,
@@ -1191,8 +1189,7 @@ def tuple_positional_schema(
 
 
 class TupleVariableSchema(TypedDict, total=False):
-    type: Required[Literal['tuple']]
-    mode: Literal['variable']
+    type: Required[Literal['tuple-variable']]
     items_schema: CoreSchema
     min_length: int
     max_length: int
@@ -1232,8 +1229,7 @@ def tuple_variable_schema(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='tuple',
-        mode='variable',
+        type='tuple-variable',
         items_schema=items_schema,
         min_length=min_length,
         max_length=max_length,
@@ -1509,14 +1505,16 @@ class GeneralValidatorFunctionSchema(TypedDict):
     function: GeneralValidatorFunction
 
 
-class FunctionSchema(TypedDict, total=False):
-    type: Required[Literal['function']]
+class _FunctionSchema(TypedDict, total=False):
     function: Required[Union[FieldValidatorFunctionSchema, GeneralValidatorFunctionSchema]]
-    mode: Required[Literal['before', 'after']]
     schema: Required[CoreSchema]
     ref: str
     metadata: Any
     serialization: SerSchema
+
+
+class FunctionBeforeSchema(_FunctionSchema, total=False):
+    type: Required[Literal['function-before']]
 
 
 def field_before_validation_function(
@@ -1526,7 +1524,7 @@ def field_before_validation_function(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
-) -> FunctionSchema:
+) -> FunctionBeforeSchema:
     """
     Returns a schema that calls a validator function before validating
     the provided **model field** schema, e.g.:
@@ -1556,8 +1554,7 @@ def field_before_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='before',
+        type='function-before',
         function={'type': 'field', 'function': function},
         schema=schema,
         ref=ref,
@@ -1573,7 +1570,7 @@ def general_before_validation_function(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
-) -> FunctionSchema:
+) -> FunctionBeforeSchema:
     """
     Returns a schema that calls a validator function before validating the provided schema, e.g.:
 
@@ -1599,14 +1596,17 @@ def general_before_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='before',
+        type='function-before',
         function={'type': 'general', 'function': function},
         schema=schema,
         ref=ref,
         metadata=metadata,
         serialization=serialization,
     )
+
+
+class FunctionAfterSchema(_FunctionSchema, total=False):
+    type: Required[Literal['function-after']]
 
 
 def field_after_validation_function(
@@ -1616,7 +1616,7 @@ def field_after_validation_function(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
-) -> FunctionSchema:
+) -> FunctionAfterSchema:
     """
     Returns a schema that calls a validator function after validating
     the provided **model field** schema, e.g.:
@@ -1646,8 +1646,7 @@ def field_after_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='after',
+        type='function-after',
         function={'type': 'field', 'function': function},
         schema=schema,
         ref=ref,
@@ -1663,7 +1662,7 @@ def general_after_validation_function(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
-) -> FunctionSchema:
+) -> FunctionAfterSchema:
     """
     Returns a schema that calls a validator function after validating the provided schema, e.g.:
 
@@ -1687,8 +1686,7 @@ def general_after_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='after',
+        type='function-after',
         function={'type': 'general', 'function': function},
         schema=schema,
         ref=ref,
@@ -1727,9 +1725,8 @@ class GeneralWrapValidatorFunctionSchema(TypedDict):
 
 
 class WrapFunctionSchema(TypedDict, total=False):
-    type: Required[Literal['function']]
+    type: Required[Literal['function-wrap']]
     function: Required[Union[GeneralWrapValidatorFunctionSchema, FieldWrapValidatorFunctionSchema]]
-    mode: Required[Literal['wrap']]
     schema: Required[CoreSchema]
     ref: str
     metadata: Any
@@ -1768,8 +1765,7 @@ def general_wrap_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='wrap',
+        type='function-wrap',
         function={'type': 'general', 'function': function},
         schema=schema,
         ref=ref,
@@ -1817,8 +1813,7 @@ def field_wrap_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='wrap',
+        type='function-wrap',
         function={'type': 'field', 'function': function},
         schema=schema,
         ref=ref,
@@ -1828,8 +1823,7 @@ def field_wrap_validation_function(
 
 
 class PlainFunctionSchema(TypedDict, total=False):
-    type: Required[Literal['function']]
-    mode: Required[Literal['plain']]
+    type: Required[Literal['function-plain']]
     function: Required[Union[FieldValidatorFunctionSchema, GeneralValidatorFunctionSchema]]
     ref: str
     metadata: Any
@@ -1865,8 +1859,7 @@ def general_plain_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='plain',
+        type='function-plain',
         function={'type': 'general', 'function': function},
         ref=ref,
         metadata=metadata,
@@ -1909,8 +1902,7 @@ def field_plain_validation_function(
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='function',
-        mode='plain',
+        type='function-plain',
         function={'type': 'field', 'function': function},
         ref=ref,
         metadata=metadata,
@@ -3068,7 +3060,8 @@ CoreSchema = Union[
     FrozenSetSchema,
     GeneratorSchema,
     DictSchema,
-    FunctionSchema,
+    FunctionAfterSchema,
+    FunctionBeforeSchema,
     WrapFunctionSchema,
     PlainFunctionSchema,
     WithDefaultSchema,
@@ -3109,12 +3102,16 @@ CoreSchemaType = Literal[
     'is-subclass',
     'callable',
     'list',
-    'tuple',
+    'tuple-positional',
+    'tuple-variable',
     'set',
     'frozenset',
     'generator',
     'dict',
-    'function',
+    'function-after',
+    'function-before',
+    'function-wrap',
+    'function-plain',
     'default',
     'nullable',
     'union',

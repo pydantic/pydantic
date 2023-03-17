@@ -16,7 +16,7 @@ all_scalars = (
     'url',
     'multi-host-url',
 )
-all_types = all_scalars + ('list', 'tuple', 'dict', 'set', 'frozenset')
+all_types = all_scalars + ('list', 'tuple-variable', 'dict', 'set', 'frozenset')
 
 
 @pytest.mark.parametrize('schema_type', all_types)

@@ -620,11 +620,7 @@ def test_internal_error(py_and_json: PyAndJson):
                 {
                     'name': 'b',
                     'mode': 'positional_only',
-                    'schema': {
-                        'type': 'function',
-                        'mode': 'plain',
-                        'function': {'type': 'general', 'function': double_or_bust},
-                    },
+                    'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': double_or_bust}},
                 },
             ],
         }

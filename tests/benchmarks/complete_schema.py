@@ -54,15 +54,19 @@ def schema(*, strict: bool = False) -> dict:
                         'max_length': 42,
                     }
                 },
-                'field_tuple_var_len_any': {'schema': {'type': 'tuple'}},
-                'field_tuple_var_len_float': {'schema': {'type': 'tuple', 'items_schema': {'type': 'float'}}},
+                'field_tuple_var_len_any': {'schema': {'type': 'tuple-variable'}},
+                'field_tuple_var_len_float': {'schema': {'type': 'tuple-variable', 'items_schema': {'type': 'float'}}},
                 'field_tuple_var_len_float_con': {
-                    'schema': {'type': 'tuple', 'items_schema': {'type': 'float'}, 'min_length': 3, 'max_length': 42}
+                    'schema': {
+                        'type': 'tuple-variable',
+                        'items_schema': {'type': 'float'},
+                        'min_length': 3,
+                        'max_length': 42,
+                    }
                 },
                 'field_tuple_fix_len': {
                     'schema': {
-                        'type': 'tuple',
-                        'mode': 'positional',
+                        'type': 'tuple-positional',
                         'items_schema': [{'type': 'str'}, {'type': 'int'}, {'type': 'float'}, {'type': 'bool'}],
                     }
                 },
@@ -108,32 +112,28 @@ def schema(*, strict: bool = False) -> dict:
                         'fields': {
                             'field_before': {
                                 'schema': {
-                                    'type': 'function',
-                                    'mode': 'before',
+                                    'type': 'function-before',
                                     'function': {'type': 'general', 'function': append_func},
                                     'schema': {'type': 'str'},
                                 }
                             },
                             'field_after': {
                                 'schema': {
-                                    'type': 'function',
-                                    'mode': 'after',
+                                    'type': 'function-after',
                                     'function': {'type': 'general', 'function': append_func},
                                     'schema': {'type': 'str'},
                                 }
                             },
                             'field_wrap': {
                                 'schema': {
-                                    'type': 'function',
-                                    'mode': 'wrap',
+                                    'type': 'function-wrap',
                                     'function': {'type': 'general', 'function': wrap_function},
                                     'schema': {'type': 'str'},
                                 }
                             },
                             'field_plain': {
                                 'schema': {
-                                    'type': 'function',
-                                    'mode': 'plain',
+                                    'type': 'function-plain',
                                     'function': {'type': 'general', 'function': append_func},
                                 }
                             },

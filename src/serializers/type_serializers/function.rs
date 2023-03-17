@@ -21,6 +21,54 @@ use super::{
     PydanticSerializationError, TypeSerializer,
 };
 
+pub struct FunctionBeforeSerializerBuilder;
+
+impl BuildSerializer for FunctionBeforeSerializerBuilder {
+    const EXPECTED_TYPE: &'static str = "function-before";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        let py = schema.py();
+        // `before` schemas will obviously have type from `schema` since the validator is called second
+        let schema = schema.get_as_req(intern!(py, "schema"))?;
+        CombinedSerializer::build(schema, config, build_context)
+    }
+}
+
+pub struct FunctionAfterSerializerBuilder;
+
+impl BuildSerializer for FunctionAfterSerializerBuilder {
+    const EXPECTED_TYPE: &'static str = "function-after";
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        let py = schema.py();
+        // while `before` schemas have an obvious type, for
+        // `after` schemas it's less, clear but the default will be the same type, and the user/lib can always
+        // override the serializer
+        let schema = schema.get_as_req(intern!(py, "schema"))?;
+        CombinedSerializer::build(schema, config, build_context)
+    }
+}
+
+pub struct FunctionPlainSerializerBuilder;
+
+impl BuildSerializer for FunctionPlainSerializerBuilder {
+    const EXPECTED_TYPE: &'static str = "function-plain";
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        super::any::AnySerializer::build(schema, config, build_context)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FunctionPlainSerializer {
     func: PyObject,
@@ -30,8 +78,13 @@ pub struct FunctionPlainSerializer {
     when_used: WhenUsed,
 }
 
-impl FunctionPlainSerializer {
-    pub fn new_combined(schema: &PyDict) -> PyResult<CombinedSerializer> {
+impl BuildSerializer for FunctionPlainSerializer {
+    const EXPECTED_TYPE: &'static str = "function-plain";
+    fn build(
+        schema: &PyDict,
+        _config: Option<&PyDict>,
+        _build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let function = schema.get_as_req::<&PyAny>(intern!(py, "function"))?;
         let function_name = function_name(function)?;
@@ -46,7 +99,9 @@ impl FunctionPlainSerializer {
         }
         .into())
     }
+}
 
+impl FunctionPlainSerializer {
     fn call(
         &self,
         value: &PyAny,
@@ -177,6 +232,19 @@ macro_rules! function_type_serializer {
 
 function_type_serializer!(FunctionPlainSerializer);
 
+pub struct FunctionWrapSerializerBuilder;
+
+impl BuildSerializer for FunctionWrapSerializerBuilder {
+    const EXPECTED_TYPE: &'static str = "function-wrap";
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        super::any::AnySerializer::build(schema, config, build_context)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FunctionWrapSerializer {
     serializer: Box<CombinedSerializer>,
@@ -187,8 +255,9 @@ pub struct FunctionWrapSerializer {
     when_used: WhenUsed,
 }
 
-impl FunctionWrapSerializer {
-    pub fn new_combined(
+impl BuildSerializer for FunctionWrapSerializer {
+    const EXPECTED_TYPE: &'static str = "function-wrap";
+    fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
         build_context: &mut BuildContext<CombinedSerializer>,
@@ -211,7 +280,9 @@ impl FunctionWrapSerializer {
         }
         .into())
     }
+}
 
+impl FunctionWrapSerializer {
     fn call(
         &self,
         value: &PyAny,

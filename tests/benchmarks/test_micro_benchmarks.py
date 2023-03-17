@@ -910,7 +910,7 @@ def test_dont_raise_error(benchmark):
     def f(input_value, info):
         return input_value
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
+    v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'general', 'function': f}})
 
     @benchmark
     def t():
@@ -922,7 +922,7 @@ def test_raise_error_value_error(benchmark):
     def f(input_value, info):
         raise ValueError('this is a custom error')
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
+    v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'general', 'function': f}})
 
     @benchmark
     def t():
@@ -939,7 +939,7 @@ def test_raise_error_custom(benchmark):
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', {'foo': 'FOOBAR'})
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
+    v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'general', 'function': f}})
 
     @benchmark
     def t():
@@ -955,8 +955,7 @@ def test_raise_error_custom(benchmark):
 def test_positional_tuple(benchmark):
     v = SchemaValidator(
         {
-            'type': 'tuple',
-            'mode': 'positional',
+            'type': 'tuple-positional',
             'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
         }
     )
@@ -967,7 +966,7 @@ def test_positional_tuple(benchmark):
 
 @pytest.mark.benchmark(group='tuple')
 def test_variable_tuple(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple-variable', 'items_schema': {'type': 'int'}})
     assert v.validate_python((1, 2, 3, '4', 5)) == (1, 2, 3, 4, 5)
 
     benchmark(v.validate_python, (1, 2, 3, '4', 5))
@@ -975,7 +974,7 @@ def test_variable_tuple(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_variable(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'items_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple-variable', 'items_schema': {'type': 'int'}})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))
@@ -983,7 +982,7 @@ def test_tuple_many_variable(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_positional(benchmark):
-    v = SchemaValidator({'type': 'tuple', 'mode': 'positional', 'items_schema': [], 'extra_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple-positional', 'items_schema': [], 'extra_schema': {'type': 'int'}})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))
@@ -1035,11 +1034,7 @@ def test_chain_list(benchmark):
             'type': 'chain',
             'steps': [
                 {'type': 'str'},
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
-                },
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)}},
             ],
         }
     )
@@ -1052,8 +1047,7 @@ def test_chain_list(benchmark):
 def test_chain_function(benchmark):
     validator = SchemaValidator(
         {
-            'type': 'function',
-            'mode': 'after',
+            'type': 'function-after',
             'schema': {'type': 'str'},
             'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
         }
@@ -1070,16 +1064,8 @@ def test_chain_two_functions(benchmark):
             'type': 'chain',
             'steps': [
                 {'type': 'str'},
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
-                },
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: v * 2},
-                },
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)}},
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: v * 2}},
             ],
         }
     )
@@ -1092,14 +1078,12 @@ def test_chain_two_functions(benchmark):
 def test_chain_nested_functions(benchmark):
     validator = SchemaValidator(
         {
-            'type': 'function',
+            'type': 'function-after',
             'schema': {
-                'type': 'function',
+                'type': 'function-after',
                 'schema': {'type': 'str'},
-                'mode': 'after',
                 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
             },
-            'mode': 'after',
             'function': {'type': 'general', 'function': lambda v, info: v * 2},
         }
     )

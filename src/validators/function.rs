@@ -14,8 +14,6 @@ use crate::recursion_guard::RecursionGuard;
 use super::generator::InternalValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
-pub struct FunctionBuilder;
-
 fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, &PyAny)> {
     let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
     let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
@@ -28,29 +26,11 @@ fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, &PyAny)> {
     Ok((is_field_validator, function))
 }
 
-impl BuildValidator for FunctionBuilder {
-    const EXPECTED_TYPE: &'static str = "function";
-
-    fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        let mode: &str = schema.get_as_req(intern!(schema.py(), "mode"))?;
-        match mode {
-            "before" => FunctionBeforeValidator::build(schema, config, build_context),
-            "after" => FunctionAfterValidator::build(schema, config, build_context),
-            "wrap" => FunctionWrapValidator::build(schema, config, build_context),
-            // must be "plain"
-            _ => FunctionPlainValidator::build(schema, config),
-        }
-    }
-}
-
 macro_rules! impl_build {
     ($impl_name:ident, $name:literal) => {
-        impl $impl_name {
-            pub fn build(
+        impl BuildValidator for $impl_name {
+            const EXPECTED_TYPE: &'static str = $name;
+            fn build(
                 schema: &PyDict,
                 config: Option<&PyDict>,
                 build_context: &mut BuildContext<CombinedValidator>,
@@ -169,8 +149,14 @@ pub struct FunctionPlainValidator {
     is_field_validator: bool,
 }
 
-impl FunctionPlainValidator {
-    pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+impl BuildValidator for FunctionPlainValidator {
+    const EXPECTED_TYPE: &'static str = "function-plain";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        _build_context: &mut BuildContext<CombinedValidator>,
+    ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let (is_field_validator, function) = destructure_function_schema(schema)?;
         Ok(Self {
