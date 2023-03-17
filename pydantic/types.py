@@ -257,9 +257,9 @@ else:
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.general_plain_validation_callback(lambda v, _: _validators.import_string(v))
+                return core_schema.general_plain_validation_function(lambda v, _: _validators.import_string(v))
             else:
-                return core_schema.general_before_validation_callback(lambda v, _: _validators.import_string(v), schema)
+                return core_schema.general_before_validation_function(lambda v, _: _validators.import_string(v), schema)
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -303,9 +303,9 @@ class UuidVersion:
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.CallbackSchema:
-        return core_schema.general_after_validation_callback(
-            cast(core_schema.GeneralValidatorCallback, self.validate), schema
+    ) -> core_schema.FunctionSchema:
+        return core_schema.general_after_validation_function(
+            cast(core_schema.GeneralValidatorFunction, self.validate), schema
         )
 
     def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
@@ -335,14 +335,14 @@ class PathType:
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.CallbackSchema:
+    ) -> core_schema.FunctionSchema:
         function_lookup = {
-            'file': cast(core_schema.GeneralValidatorCallback, self.validate_file),
-            'dir': cast(core_schema.GeneralValidatorCallback, self.validate_directory),
-            'new': cast(core_schema.GeneralValidatorCallback, self.validate_new),
+            'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.GeneralValidatorFunction, self.validate_new),
         }
 
-        return core_schema.general_after_validation_callback(
+        return core_schema.general_after_validation_function(
             function_lookup[self.path_type],
             schema,
         )
@@ -423,7 +423,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CallbackSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
         validator = SecretFieldValidator(cls)
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
@@ -442,7 +442,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
             update_cs_function=validator.__pydantic_update_schema__,
             js_metadata=JsonSchemaMetadata(core_schema_override=override),
         )
-        return core_schema.general_after_validation_callback(
+        return core_schema.general_after_validation_function(
             validator,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
@@ -590,8 +590,8 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CallbackSchema:
-        return core_schema.general_after_validation_callback(
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+        return core_schema.general_after_validation_function(
             cls.validate,
             core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
@@ -692,9 +692,9 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainCallbackSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainFunctionSchema:
         # TODO better schema
-        return core_schema.general_plain_validation_callback(cls.validate)
+        return core_schema.general_plain_validation_function(cls.validate)
 
     @classmethod
     def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> 'ByteSize':

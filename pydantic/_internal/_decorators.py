@@ -9,7 +9,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, List, TypeVar, Union, cast
 
-from pydantic_core.core_schema import GeneralValidatorCallback, JsonReturnTypes, ValidationInfo, WhenUsed
+from pydantic_core.core_schema import GeneralValidatorFunction, JsonReturnTypes, ValidationInfo, WhenUsed
 from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
@@ -296,8 +296,8 @@ V1Validator = Union[
 
 
 def make_generic_validator(
-    validator: V1Validator | OnlyValueValidator | GeneralValidatorCallback, mode: str
-) -> GeneralValidatorCallback:
+    validator: V1Validator | OnlyValueValidator | GeneralValidatorFunction, mode: str
+) -> GeneralValidatorFunction:
     """
     In order to support different signatures, including deprecated validator signatures from v1,
     we introspect the function signature and wrap it in a parent function that has a signature
@@ -376,7 +376,7 @@ def make_generic_validator(
 
         return _wrapper3
     elif keyword_only_params == [] and len(positional_params) == 2:
-        validator = cast(GeneralValidatorCallback, validator)
+        validator = cast(GeneralValidatorFunction, validator)
         return validator
     raise TypeError(
         f'Unsupported signature for {mode} validator {validator}: {sig} is not supported.'

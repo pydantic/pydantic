@@ -112,28 +112,28 @@ class PydanticPlugin(Plugin):
         if sym and isinstance(sym.node, TypeInfo):  # pragma: no branch
             # No branching may occur if the mypy cache has not been cleared
             if any(get_fullname(base) == BASEMODEL_FULLNAME for base in sym.node.mro):
-                return self._pydantic_model_class_maker_callback
+                return self._pydantic_model_class_maker_function
         return None
 
     def get_metaclass_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
         if fullname == MODEL_METACLASS_FULLNAME:
-            return self._pydantic_model_metaclass_marker_callback
+            return self._pydantic_model_metaclass_marker_function
         return None
 
     def get_function_hook(self, fullname: str) -> 'Optional[Callable[[FunctionContext], Type]]':
         sym = self.lookup_fully_qualified(fullname)
         if sym and sym.fullname == FIELD_FULLNAME:
-            return self._pydantic_field_callback
+            return self._pydantic_field_function
         return None
 
     def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         if fullname.endswith('.from_orm'):
-            return from_attributes_callback
+            return from_attributes_function
         return None
 
     def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
         if fullname == DATACLASS_FULLNAME:
-            return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
+            return dataclasses.dataclass_class_maker_function  # type: ignore[return-value]
         return None
 
     def report_config_data(self, ctx: ReportConfigContext) -> Dict[str, Any]:
@@ -143,11 +143,11 @@ class PydanticPlugin(Plugin):
         """
         return self._plugin_data
 
-    def _pydantic_model_class_maker_callback(self, ctx: ClassDefContext) -> None:
+    def _pydantic_model_class_maker_function(self, ctx: ClassDefContext) -> None:
         transformer = PydanticModelTransformer(ctx, self.plugin_config)
         transformer.transform()
 
-    def _pydantic_model_metaclass_marker_callback(self, ctx: ClassDefContext) -> None:
+    def _pydantic_model_metaclass_marker_function(self, ctx: ClassDefContext) -> None:
         """Reset dataclass_transform_spec attribute of ModelMetaclass.
 
         Let the plugin handle it. This behavior can be disabled
@@ -160,7 +160,7 @@ class PydanticPlugin(Plugin):
         if getattr(info_metaclass.type, 'dataclass_transform_spec', None):
             info_metaclass.type.dataclass_transform_spec = None  # type: ignore[attr-defined]
 
-    def _pydantic_field_callback(self, ctx: FunctionContext) -> 'Type':
+    def _pydantic_field_function(self, ctx: FunctionContext) -> 'Type':
         """
         Extract the type of the `default` argument from the Field function, and use it as the return type.
 
@@ -247,7 +247,7 @@ class PydanticPluginConfig:
         return {key: getattr(self, key) for key in self.__slots__}
 
 
-def from_attributes_callback(ctx: MethodContext) -> Type:
+def from_attributes_function(ctx: MethodContext) -> Type:
     """
     Raise an error if from_attributes is not enabled
     """
