@@ -149,10 +149,6 @@ def collect_fields(  # noqa: C901
     annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo] = {}
 
-    # FIXME (dataclasses) what are we doing here?
-    # cls_fields: dict[str, FieldInfo] = getattr(cls, 'model_fields', None) or getattr(cls, '__pydantic_fields__', {})
-    pydantic_generic_typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
-
     # currently just used for `init=False` dataclass fields, this logic can probably be removed if
     # we simplify this file to not be "all things to all men"
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
@@ -164,9 +160,6 @@ def collect_fields(  # noqa: C901
         # raise a PydanticUndefinedAnnotation if type is undefined
         if isinstance(ann_type, ForwardRef):
             raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
-
-        if pydantic_generic_typevars_map:
-            ann_type = replace_types(ann_type, pydantic_generic_typevars_map)
 
         if DC_KW_ONLY and ann_type is DC_KW_ONLY:
             # all field fields will be kw_only
@@ -252,7 +245,7 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    typevars_map = pydantic_generic_typevars_map or typevars_map
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
     if typevars_map:
         for field in fields.values():
             field.annotation = replace_types(field.annotation, typevars_map)
