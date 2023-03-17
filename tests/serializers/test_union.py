@@ -130,7 +130,7 @@ def test_union_of_functions():
 
     s = SchemaSerializer(
         core_schema.union_schema(
-            core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(repr_function)),
+            core_schema.any_schema(serialization=core_schema.general_function_plain_ser_schema(repr_function)),
             core_schema.float_schema(serialization=core_schema.format_ser_schema('_^14')),
         )
     )

@@ -332,11 +332,11 @@ def test_function_positional_tuple():
         {
             'type': 'tuple-positional',
             'items_schema': [
-                core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(partial(f, 'a'))),
-                core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(partial(f, 'b'))),
+                core_schema.any_schema(serialization=core_schema.general_function_plain_ser_schema(partial(f, 'a'))),
+                core_schema.any_schema(serialization=core_schema.general_function_plain_ser_schema(partial(f, 'b'))),
             ],
             'extra_schema': core_schema.any_schema(
-                serialization=core_schema.function_plain_ser_schema(partial(f, 'extra'))
+                serialization=core_schema.general_function_plain_ser_schema(partial(f, 'extra'))
             ),
         }
     )

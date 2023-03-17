@@ -200,7 +200,7 @@ def test_ser_function_plain():
         return str(__info)
 
     s = SchemaSerializer(
-        core_schema.any_schema(serialization=core_schema.function_plain_ser_schema(f, json_return_type='str'))
+        core_schema.any_schema(serialization=core_schema.general_function_plain_ser_schema(f, json_return_type='str'))
     )
     assert s.to_python(123) == (
         "SerializationInfo(include=None, exclude=None, mode='python', by_alias=True, exclude_unset=False, "
@@ -214,7 +214,7 @@ def test_ser_function_wrap():
 
     s = SchemaSerializer(
         core_schema.any_schema(
-            serialization=core_schema.function_wrap_ser_schema(f, core_schema.str_schema(), when_used='json')
+            serialization=core_schema.general_function_wrap_ser_schema(f, core_schema.str_schema(), when_used='json')
         )
     )
     # insert_assert(s.to_python(123, mode='json'))

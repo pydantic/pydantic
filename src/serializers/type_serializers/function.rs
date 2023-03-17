@@ -1,10 +1,13 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
+use pyo3::exceptions::PyAttributeError;
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use pyo3::types::PyString;
 use serde::ser::Error;
 
 use crate::build_context::BuildContext;
@@ -69,6 +72,18 @@ impl BuildSerializer for FunctionPlainSerializerBuilder {
     }
 }
 
+fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, &PyAny)> {
+    let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
+    let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
+    let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
+    let is_field_serializer = match func_type {
+        "field" => true,
+        "general" => false,
+        _ => unreachable!(),
+    };
+    Ok((is_field_serializer, function))
+}
+
 #[derive(Debug, Clone)]
 pub struct FunctionPlainSerializer {
     func: PyObject,
@@ -76,6 +91,7 @@ pub struct FunctionPlainSerializer {
     function_name: String,
     json_return_ob_type: Option<ObType>,
     when_used: WhenUsed,
+    is_field_serializer: bool,
 }
 
 impl BuildSerializer for FunctionPlainSerializer {
@@ -86,7 +102,7 @@ impl BuildSerializer for FunctionPlainSerializer {
         _build_context: &mut BuildContext<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
-        let function = schema.get_as_req::<&PyAny>(intern!(py, "function"))?;
+        let (is_field_serializer, function) = destructure_function_schema(schema)?;
         let function_name = function_name(function)?;
 
         let name = format!("plain_function[{function_name}]");
@@ -96,6 +112,7 @@ impl BuildSerializer for FunctionPlainSerializer {
             name,
             json_return_ob_type: get_json_return_type(schema)?,
             when_used: WhenUsed::new(schema, WhenUsed::Always)?,
+            is_field_serializer,
         }
         .into())
     }
@@ -111,8 +128,15 @@ impl FunctionPlainSerializer {
     ) -> PyResult<PyObject> {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
-            self.func
-                .call1(py, (value, SerializationInfo::new(py, include, exclude, extra)))
+            let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
+            if self.is_field_serializer {
+                match extra.model {
+                    Some(model) => self.func.call1(py, (model, value, info)),
+                    _ => Err(PyRuntimeError::new_err("This serializer expected to be run inside the context of a model field but no model field was found")),
+                }
+            } else {
+                self.func.call1(py, (value, info))
+            }
         } else {
             Ok(value.into_py(py))
         }
@@ -253,6 +277,7 @@ pub struct FunctionWrapSerializer {
     function_name: String,
     json_return_ob_type: Option<ObType>,
     when_used: WhenUsed,
+    is_field_serializer: bool,
 }
 
 impl BuildSerializer for FunctionWrapSerializer {
@@ -264,7 +289,7 @@ impl BuildSerializer for FunctionWrapSerializer {
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
-        let function = schema.get_as_req::<&PyAny>(intern!(py, "function"))?;
+        let (is_field_serializer, function) = destructure_function_schema(schema)?;
         let function_name = function_name(function)?;
 
         let serializer_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
@@ -277,6 +302,7 @@ impl BuildSerializer for FunctionWrapSerializer {
             name,
             json_return_ob_type: get_json_return_type(schema)?,
             when_used: WhenUsed::new(schema, WhenUsed::Always)?,
+            is_field_serializer,
         }
         .into())
     }
@@ -293,8 +319,15 @@ impl FunctionWrapSerializer {
         let py = value.py();
         if self.when_used.should_use(value, extra) {
             let serialize = SerializationCallable::new(py, &self.serializer, include, exclude, extra);
-            let info = SerializationInfo::new(py, include, exclude, extra);
-            self.func.call1(py, (value, serialize, info))
+            let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
+            if self.is_field_serializer {
+                match extra.model {
+                    Some(model) => self.func.call1(py, (model, value, serialize, info)),
+                    _ => Err(PyRuntimeError::new_err("This serializer expected to be run inside the context of a model field but no model field was found")),
+                }
+            } else {
+                self.func.call1(py, (value, serialize, info))
+            }
         } else {
             Ok(value.into_py(py))
         }
@@ -398,19 +431,46 @@ struct SerializationInfo {
     exclude_none: bool,
     #[pyo3(get)]
     round_trip: bool,
+    field_name: Option<String>,
 }
 
 impl SerializationInfo {
-    fn new(py: Python, include: Option<&PyAny>, exclude: Option<&PyAny>, extra: &Extra) -> Self {
-        Self {
-            include: include.map(|i| i.into_py(py)),
-            exclude: exclude.map(|e| e.into_py(py)),
-            _mode: extra.mode.clone(),
-            by_alias: extra.by_alias,
-            exclude_unset: extra.exclude_unset,
-            exclude_defaults: extra.exclude_defaults,
-            exclude_none: extra.exclude_none,
-            round_trip: extra.round_trip,
+    fn new(
+        py: Python,
+        include: Option<&PyAny>,
+        exclude: Option<&PyAny>,
+        extra: &Extra,
+        is_field_serializer: bool,
+    ) -> PyResult<Self> {
+        if is_field_serializer {
+            match extra.field_name {
+                Some(field_name) => Ok(
+                    Self {
+                        include: include.map(|i| i.into_py(py)),
+                        exclude: exclude.map(|e| e.into_py(py)),
+                        _mode: extra.mode.clone(),
+                        by_alias: extra.by_alias,
+                        exclude_unset: extra.exclude_unset,
+                        exclude_defaults: extra.exclude_defaults,
+                        exclude_none: extra.exclude_none,
+                        round_trip: extra.round_trip,
+                        field_name: Some(field_name.to_string()),
+                    }
+                ),
+                _ => Err(PyRuntimeError::new_err("This serializer expected to be run inside the context of a model field but no model field was found")),
+            }
+        } else {
+            Ok(Self {
+                include: include.map(|i| i.into_py(py)),
+                exclude: exclude.map(|e| e.into_py(py)),
+                _mode: extra.mode.clone(),
+                by_alias: extra.by_alias,
+                exclude_unset: extra.exclude_unset,
+                exclude_defaults: extra.exclude_defaults,
+                exclude_none: extra.exclude_none,
+                round_trip: extra.round_trip,
+                field_name: None,
+            })
         }
     }
 }
@@ -466,6 +526,13 @@ impl SerializationInfo {
 
     fn __str__(&self, py: Python) -> PyResult<String> {
         self.__repr__(py)
+    }
+    #[getter]
+    fn get_field_name<'py>(&self, py: Python<'py>) -> PyResult<&'py PyString> {
+        match self.field_name {
+            Some(ref field_name) => Ok(PyString::new(py, field_name)),
+            None => Err(PyAttributeError::new_err("No attribute named 'field_name'")),
+        }
     }
 }
 

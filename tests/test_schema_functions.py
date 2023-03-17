@@ -281,6 +281,8 @@ def repr_function(value, _info):
 def test_expected_serialization_types(json_return_type):
     SchemaSerializer(
         core_schema.any_schema(
-            serialization=core_schema.function_plain_ser_schema(repr_function, json_return_type=json_return_type)
+            serialization=core_schema.general_function_plain_ser_schema(
+                repr_function, json_return_type=json_return_type
+            )
         )
     )
