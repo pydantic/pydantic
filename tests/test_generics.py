@@ -1893,3 +1893,12 @@ def test_generic_model_as_parameter_to_generic_type_alias() -> None:
 
     GenericPydanticModelList = List[GenericPydanticModel[T]]
     GenericPydanticModelList[int]
+
+
+def test_double_typevar_substitution() -> None:
+    T = TypeVar('T')
+
+    class GenericPydanticModel(BaseModel, Generic[T]):
+        x: T = []
+
+    assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
