@@ -130,6 +130,11 @@ impl Validator for DataclassArgsValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
+        let extra = Extra {
+            data: Some(output_dict),
+            ..*extra
+        };
+
         macro_rules! set_item {
             ($field:ident, $value:expr) => {{
                 let py_name = $field.py_name.as_ref(py);
@@ -147,6 +152,10 @@ impl Validator for DataclassArgsValidator {
             ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
                 // go through fields getting the value from args or kwargs and validating it
                 for (index, field) in self.fields.iter().enumerate() {
+                    let extra = Extra {
+                        field_name: Some(&field.name),
+                        ..extra
+                    };
                     let mut pos_value = None;
                     if let Some(args) = $args.args {
                         if !field.kw_only {
@@ -175,7 +184,7 @@ impl Validator for DataclassArgsValidator {
                         (Some(pos_value), None) => {
                             match field
                                 .validator
-                                .validate(py, pos_value, extra, slots, recursion_guard)
+                                .validate(py, pos_value, &extra, slots, recursion_guard)
                             {
                                 Ok(value) => set_item!(field, value),
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -192,7 +201,7 @@ impl Validator for DataclassArgsValidator {
                         (None, Some(kw_value)) => {
                             match field
                                 .validator
-                                .validate(py, kw_value, extra, slots, recursion_guard)
+                                .validate(py, kw_value, &extra, slots, recursion_guard)
                             {
                                 Ok(value) => set_item!(field, value),
                                 Err(ValError::LineErrors(line_errors)) => {
