@@ -72,7 +72,7 @@ class ModelMetaclass(ABCMeta):
         if _base_class_defined:
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
-            namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
+            private_attributes = _model_construction.inspect_namespace(namespace)
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
                 namespace['__slots__'] = slots | private_attributes.keys()
@@ -91,6 +91,12 @@ class ModelMetaclass(ABCMeta):
                     namespace['__pydantic_post_init__'] = _model_construction.init_private_attributes
             elif 'model_post_init' in namespace:
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
+
+            base_private_attributes: dict[str, ModelPrivateAttr] = {}
+            for base in bases:
+                if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+                    base_private_attributes.update(base.__private_attributes__)
+            namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
             namespace['__pydantic_validator_functions__'] = validator_functions = _decorators.ValidationFunctions(bases)
 
