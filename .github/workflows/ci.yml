@@ -192,9 +192,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # test recent mypy versions on 3.10 and mypy latest on all supported python versions
-        # (note pydantic V2 only supports mypy>1 and we don't yet support mypy 1.1.1)
-        mypy-version: ['1.0.1']
+        # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
+        mypy-version: ['0.971', '0.982', '0.991', '1.0.1']
         python-version: ['3.10']
         include:
           - mypy-version: '1.0.1'
