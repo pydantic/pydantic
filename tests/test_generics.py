@@ -29,7 +29,13 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, Field, Json, ValidationError, ValidationInfo, root_validator, validator
 from pydantic._internal._core_utils import collect_invalid_schemas
-from pydantic._internal._generics import _GENERIC_TYPES_CACHE, iter_contained_typevars, replace_types
+from pydantic._internal._generics import (
+    _GENERIC_TYPES_CACHE,
+    generic_recursion_self_type,
+    iter_contained_typevars,
+    recursively_defined_type_refs,
+    replace_types,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -1545,6 +1551,13 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
 
 def test_generic_recursive_models_complicated(create_module):
+    """
+    TODO: this test will fail if run by itself. This is due to weird behavior with the WeakValueDictionary
+        used for caching. As part of the next batch of generics work, we should attempt to fix this if possible.
+        In the meantime, if this causes issues, or the test otherwise starts failing, please make it xfail
+        with strict=False
+    """
+
     @create_module
     def module():
         from typing import Generic, TypeVar, Union
@@ -1556,7 +1569,7 @@ def test_generic_recursive_models_complicated(create_module):
         T3 = TypeVar('T3')
 
         class A1(BaseModel, Generic[T1]):
-            a1: T1  # 'A2[T1]'
+            a1: 'A2[T1]'
 
             model_config = dict(undefined_types_warning=False)
 
@@ -1902,3 +1915,32 @@ def test_double_typevar_substitution() -> None:
         x: T = []
 
     assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
+
+
+@pytest.fixture(autouse=True)
+def ensure_contextvar_gets_reset():
+    # Ensure that the generic recursion contextvar is empty at the start of every test
+    assert not recursively_defined_type_refs()
+
+
+def test_generic_recursion_contextvar():
+    T = TypeVar('T')
+
+    class TestingException(Exception):
+        pass
+
+    class Model(BaseModel, Generic[T]):
+        pass
+
+    # Make sure that the contextvar-managed recursive types cache begins empty
+    assert not recursively_defined_type_refs()
+    try:
+        with generic_recursion_self_type(Model, (int,)):
+            # Make sure that something has been added to the contextvar-managed recursive types cache
+            assert recursively_defined_type_refs()
+            raise TestingException
+    except TestingException:
+        pass
+
+    # Make sure that an exception causes the contextvar-managed recursive types cache to be reset
+    assert not recursively_defined_type_refs()

@@ -1,5 +1,5 @@
 """
-Private logic for creating pydantic datacalsses.
+Private logic for creating pydantic dataclasses.
 """
 from __future__ import annotations as _annotations
 
