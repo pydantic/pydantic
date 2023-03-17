@@ -164,6 +164,13 @@ impl TypeSerializer for TypedDictSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         let py = value.py();
+        // If there is already a model registered (from a dataclass, BaseModel)
+        // then do not touch it
+        // If there is no model, we (a TypedDict) are the model
+        let extra = Extra {
+            model: extra.model.map_or_else(|| Some(value), Some),
+            ..*extra
+        };
         match value.downcast::<PyDict>() {
             Ok(py_dict) => {
                 // NOTE! we maintain the order of the input dict assuming that's right
@@ -175,6 +182,10 @@ impl TypeSerializer for TypedDictSerializer {
                 };
 
                 for (key, value) in py_dict {
+                    let extra = Extra {
+                        field_name: Some(key.extract()?),
+                        ..extra
+                    };
                     if extra.exclude_none && value.is_none() {
                         continue;
                     }
@@ -182,11 +193,11 @@ impl TypeSerializer for TypedDictSerializer {
                         if let Ok(key_py_str) = key.downcast::<PyString>() {
                             let key_str = key_py_str.to_str()?;
                             if let Some(field) = self.fields.get(key_str) {
-                                if self.exclude_default(value, extra, field)? {
+                                if self.exclude_default(value, &extra, field)? {
                                     continue;
                                 }
-                                let value = field.serializer.to_python(value, next_include, next_exclude, extra)?;
-                                let output_key = field.get_key_py(py, extra);
+                                let value = field.serializer.to_python(value, next_include, next_exclude, &extra)?;
+                                let output_key = field.get_key_py(py, &extra);
                                 new_dict.set_item(output_key, value)?;
 
                                 if let Some(ref mut used_fields) = used_fields {
@@ -196,7 +207,7 @@ impl TypeSerializer for TypedDictSerializer {
                             }
                         }
                         if self.include_extra {
-                            let value = infer_to_python(value, include, exclude, extra)?;
+                            let value = infer_to_python(value, include, exclude, &extra)?;
                             new_dict.set_item(key, value)?;
                         } else if extra.check.enabled() {
                             return Err(PydanticSerializationUnexpectedValue::new_err(None));
@@ -215,8 +226,8 @@ impl TypeSerializer for TypedDictSerializer {
                 Ok(new_dict.into_py(py))
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-                infer_to_python(value, include, exclude, extra)
+                extra.warnings.on_fallback_py(self.get_name(), value, &extra)?;
+                infer_to_python(value, include, exclude, &extra)
             }
         }
     }

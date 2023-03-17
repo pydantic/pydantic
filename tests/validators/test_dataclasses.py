@@ -430,7 +430,7 @@ def test_dataclass_field_after_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: str, info: core_schema.ModelFieldValidationInfo) -> str:
+        def validate_b(cls, v: str, info: core_schema.FieldValidationInfo) -> str:
             assert v == 'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -462,7 +462,7 @@ def test_dataclass_field_plain_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: bytes, info: core_schema.ModelFieldValidationInfo) -> str:
+        def validate_b(cls, v: bytes, info: core_schema.FieldValidationInfo) -> str:
             assert v == b'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -493,7 +493,7 @@ def test_dataclass_field_before_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: bytes, info: core_schema.ModelFieldValidationInfo) -> bytes:
+        def validate_b(cls, v: bytes, info: core_schema.FieldValidationInfo) -> bytes:
             assert v == b'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -525,9 +525,7 @@ def test_dataclass_field_wrap_validator1():
         b: str
 
         @classmethod
-        def validate_b(
-            cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.ModelFieldValidationInfo
-        ) -> str:
+        def validate_b(cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.FieldValidationInfo) -> str:
             assert v == b'hello'
             v = nxt(v)
             assert v == 'hello'
@@ -562,7 +560,7 @@ def test_dataclass_field_wrap_validator2():
 
         @classmethod
         def validate_b(
-            cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.ModelFieldValidationInfo
+            cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.FieldValidationInfo
         ) -> bytes:
             assert v == b'hello'
             assert info.field_name == 'b'
