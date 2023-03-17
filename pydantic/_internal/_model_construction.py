@@ -3,11 +3,8 @@ Private logic for creating models.
 """
 from __future__ import annotations as _annotations
 
-import re
-import sys
 import typing
 import warnings
-from copy import copy
 from functools import partial
 from types import FunctionType
 from typing import Any, Callable
@@ -16,14 +13,12 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from . import _typing_extra
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs, define_expected_missing_refs
-from ._decorators import SerializationFunctions, ValidationFunctions
-from ._fields import Undefined
+from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
-from ._generics import recursively_defined_type_refs, replace_types
+from ._generics import recursively_defined_type_refs
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -32,7 +27,7 @@ if typing.TYPE_CHECKING:
     from ..config import ConfigDict
     from ..main import BaseModel
 
-__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class'
+__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator'
 
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod)
@@ -104,17 +99,22 @@ def deferred_model_get_pydantic_validation_schema(
     the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
     models.
     """
-    inner_schema, fields = build_inner_schema(
-        cls,
-        cls.__name__,
+    self_schema, model_ref = get_model_self_schema(cls)
+    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
+    fields = collect_fields(cls, cls.__bases__, types_namespace)
+
+    model_config = cls.model_config
+    inner_schema = model_fields_schema(
+        model_ref,
+        fields,
         cls.__pydantic_validator_functions__,
         cls.__pydantic_serializer_functions__,
-        cls.__bases__,
+        model_config['arbitrary_types_allowed'],
         types_namespace,
         typevars_map,
     )
 
-    core_config = generate_config(cls)
+    core_config = generate_config(model_config, cls)
     # we have to set model_fields as otherwise `repr` on the model will fail
     cls.model_fields = fields
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
@@ -131,8 +131,6 @@ def deferred_model_get_pydantic_validation_schema(
 def complete_model_class(
     cls: type[BaseModel],
     name: str,
-    validator_functions: ValidationFunctions,
-    serialization_functions: SerializationFunctions,
     bases: tuple[type[Any], ...],
     *,
     raise_errors: bool = True,
@@ -147,12 +145,23 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
+    validator_functions = cls.__pydantic_validator_functions__
+    serializer_functions = cls.__pydantic_serializer_functions__
     validator_functions.set_bound_functions(cls)
-    serialization_functions.set_bound_functions(cls)
+    serializer_functions.set_bound_functions(cls)
 
+    self_schema, model_ref = get_model_self_schema(cls)
+    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
-        inner_schema, fields = build_inner_schema(
-            cls, name, validator_functions, serialization_functions, bases, types_namespace, typevars_map
+        fields = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+        inner_schema = model_fields_schema(
+            model_ref,
+            fields,
+            validator_functions,
+            serializer_functions,
+            cls.model_config['arbitrary_types_allowed'],
+            types_namespace,
+            typevars_map,
         )
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
@@ -174,13 +183,14 @@ def complete_model_class(
             deferred_model_get_pydantic_validation_schema, cls, typevars_map=typevars_map
         )
         return False
+
     inner_schema = consolidate_refs(inner_schema)
     inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
     validator_functions.check_for_unused()
-    serialization_functions.check_for_unused()
+    serializer_functions.check_for_unused()
 
-    core_config = generate_config(cls)
+    core_config = generate_config(cls.model_config, cls)
     cls.model_fields = fields
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
@@ -200,126 +210,6 @@ def complete_model_class(
         '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
     )
     return True
-
-
-def build_inner_schema(  # noqa: C901
-    cls: type[BaseModel],
-    name: str,
-    validator_functions: ValidationFunctions,
-    serialization_functions: SerializationFunctions,
-    bases: tuple[type[Any], ...],
-    types_namespace: dict[str, Any] | None = None,
-    typevars_map: dict[Any, Any] = None,
-) -> tuple[core_schema.CoreSchema, dict[str, FieldInfo]]:
-    module_name = getattr(cls, '__module__', None)
-    global_ns: dict[str, Any] | None = None
-    if module_name:
-        try:
-            module = sys.modules[module_name]
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
-        else:
-            if types_namespace:
-                global_ns = {**module.__dict__, **types_namespace}
-            else:
-                global_ns = module.__dict__
-
-    self_schema = get_model_self_schema(cls)
-    local_ns = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
-
-    # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
-    try:
-        type_hints = _typing_extra.get_type_hints(cls, global_ns, local_ns, include_extras=True)
-    except NameError as e:
-        try:
-            name = e.name
-        except AttributeError:
-            m = re.search(r".*'(.+?)'", str(e))
-            if m:
-                name = m.group(1)
-            else:
-                # should never happen
-                raise
-        raise PydanticUndefinedAnnotation(name) from e
-
-    # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
-    # annotations is only used for finding fields in parent classes
-    annotations = cls.__dict__.get('__annotations__', {})
-    fields: dict[str, FieldInfo] = {}
-    for ann_name, ann_type in type_hints.items():
-        if ann_name.startswith('_') or _typing_extra.is_classvar(ann_type):
-            continue
-
-        # raise a PydanticUndefinedAnnotation if type is undefined
-        if isinstance(ann_type, typing.ForwardRef):
-            raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
-
-        if cls.__pydantic_generic_typevars_map__:
-            ann_type = replace_types(ann_type, cls.__pydantic_generic_typevars_map__)
-
-        generic_origin = cls.__pydantic_generic_origin__
-        for base in bases:
-            if hasattr(base, ann_name):
-                if base is not generic_origin:  # Don't warn about "shadowing" of attributes in parametrized generics
-                    raise NameError(
-                        f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
-                        f'you might want to use a different field name with "alias=\'{ann_name}\'".'
-                    )
-
-        try:
-            default = getattr(cls, ann_name, Undefined)
-            if default is Undefined and generic_origin:
-                default = (generic_origin.__pydantic_generic_defaults__ or {}).get(ann_name, Undefined)
-            if default is Undefined:
-                raise AttributeError
-        except AttributeError:
-            # if field has no default value and is not in __annotations__ this usually means that it is
-            # defined in a base class and we can take it from there
-            if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
-                fields[ann_name] = FieldInfo.from_annotation(ann_type)
-            else:
-                model_fields_lookup: dict[str, FieldInfo] = {}
-                for x in cls.__bases__[::-1]:
-                    model_fields_lookup.update(getattr(x, 'model_fields', {}))
-                if ann_name in model_fields_lookup:
-                    # The field was present on one of the (possibly multiple) base classes
-                    # copy the field to make sure typevar substitutions don't cause issues with the base classes
-                    field = copy(model_fields_lookup[ann_name])
-                else:
-                    # The field was not found on any base classes; this seems to be caused by fields not getting
-                    # generated thanks to models not being fully defined while initializing recursive models.
-                    # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
-                    field = FieldInfo.from_annotation(ann_type)
-                fields[ann_name] = field
-        else:
-            fields[ann_name] = FieldInfo.from_annotated_attribute(ann_type, default)
-            # attributes which are fields are removed from the class namespace:
-            # 1. To match the behaviour of annotation-only fields
-            # 2. To avoid false positives in the NameError check above
-            try:
-                delattr(cls, ann_name)
-                if cls.__pydantic_generic_parameters__:  # model can be parametrized
-                    assert cls.__pydantic_generic_defaults__ is not None
-                    cls.__pydantic_generic_defaults__[ann_name] = default
-            except AttributeError:
-                pass  # indicates the attribute was on a parent class
-
-    typevars_map = cls.__pydantic_generic_typevars_map__ or typevars_map
-    if typevars_map:
-        for field in fields.values():
-            field.annotation = replace_types(field.annotation, typevars_map)
-    model_ref = self_schema['schema']['schema_ref']
-    schema = model_fields_schema(
-        model_ref,
-        fields,
-        validator_functions,
-        serialization_functions,
-        cls.model_config['arbitrary_types_allowed'],
-        local_ns,
-        typevars_map,
-    )
-    return schema, fields
 
 
 def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:

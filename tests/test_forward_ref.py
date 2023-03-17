@@ -3,7 +3,6 @@ import sys
 from typing import Optional, Tuple
 
 import pytest
-from dirty_equals import HasRepr
 
 from pydantic import BaseModel, PydanticUserError, ValidationError
 
@@ -58,8 +57,8 @@ def test_forward_ref_auto_update_no_model(create_module):
     b = module.Bar(b={'a': {'b': {}}})
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
-    # __field__ is complete on Foo
-    assert module.Foo.model_fields['a'] == HasRepr(
+    # model_fields is complete on Foo
+    assert repr(module.Foo.model_fields['a']) == (
         'FieldInfo(annotation=Union[PydanticForwardRef, NoneType], required=False)'
     )
 
@@ -507,7 +506,6 @@ def test_forward_ref_with_create_model(create_module):
         assert instance.sub.model_dump() == {'foo': 'bar'}
 
 
-@pytest.mark.xfail(reason='TODO dataclasses')
 def test_resolve_forward_ref_dataclass(create_module):
     module = create_module(
         # language=Python

@@ -78,12 +78,6 @@ from ._internal._core_metadata import build_metadata_dict
 from ._internal._utils import update_not_none
 from .json_schema import JsonSchemaMetadata
 
-if TYPE_CHECKING:
-    from .dataclasses import Dataclass
-    from .main import BaseModel
-
-    ModelOrDc = Type[Union[BaseModel, Dataclass]]
-
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):

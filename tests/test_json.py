@@ -259,7 +259,6 @@ def test_encode_dataclass():
     assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
 
 
-@pytest.mark.xfail(reason='dataclasses not implemented')
 def test_encode_pydantic_dataclass():
     @pydantic_dataclass
     class Foo:
@@ -267,7 +266,7 @@ def test_encode_pydantic_dataclass():
         spam: str
 
     f = Foo(bar=123, spam='apple pie')
-    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+    assert json.dumps(f, default=pydantic_encoder) == '{"bar": 123, "spam": "apple pie"}'
 
 
 def test_json_nested_encode_models():

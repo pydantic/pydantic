@@ -9,7 +9,6 @@ from pathlib import Path, PurePath
 from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
-from pydantic_core import Url
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
@@ -44,6 +43,7 @@ from pydantic import (
     validator,
 )
 from pydantic.fields import Field, PrivateAttr
+from pydantic.networks import AnyUrl
 
 
 class Flags(BaseModel):
@@ -245,9 +245,9 @@ validated.my_json_list[0].capitalize()
 
 
 class UrlModel(BaseModel):
-    x: Annotated[Url, UrlConstraints(allowed_schemes=['http'])] = Field(None)
-    y: Annotated[Url, UrlConstraints(allowed_schemes=['http'])] = Field(None)
-    z: Annotated[Url, UrlConstraints(allowed_schemes=['s3', 's3n', 's3a'])] = Field(None)
+    x: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http'])] = Field(None)
+    y: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http'])] = Field(None)
+    z: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['s3', 's3n', 's3a'])] = Field(None)
 
 
 url_model = UrlModel(x='http://example.com')
