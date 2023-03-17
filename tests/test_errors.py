@@ -36,7 +36,7 @@ def test_pydantic_value_error_usage():
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo} {bar}', {'foo': 'FOOBAR', 'bar': 42})
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(42)
@@ -56,7 +56,7 @@ def test_pydantic_value_error_invalid_dict():
     def my_function(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', {(): 'foobar'})
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': my_function})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': my_function}})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(42)
@@ -74,7 +74,7 @@ def test_pydantic_value_error_invalid_type():
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', [('foo', 123)])
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
 
     with pytest.raises(TypeError, match="argument 'context': 'list' object cannot be converted to 'PyDict'"):
         v.validate_python(42)
@@ -90,7 +90,14 @@ def test_validator_instance_plain():
             return f'{input_value} {self.foo} {self.bar}'
 
     c = CustomValidator()
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'metadata': {'instance': c}, 'function': c.validate})
+    v = SchemaValidator(
+        {
+            'type': 'function',
+            'mode': 'plain',
+            'metadata': {'instance': c},
+            'function': {'type': 'general', 'function': c.validate},
+        }
+    )
     c.foo += 1
 
     assert v.validate_python('input value') == 'input value 43 before'
@@ -113,7 +120,7 @@ def test_validator_instance_after():
             'type': 'function',
             'mode': 'after',
             'metadata': {'instance': c},
-            'function': c.validate,
+            'function': {'type': 'general', 'function': c.validate},
             'schema': {'type': 'str'},
         }
     )
@@ -136,7 +143,14 @@ def test_pydantic_error_type_raise_no_ctx():
     def f(input_value, info):
         raise PydanticKnownError('finite_number')
 
-    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
+    v = SchemaValidator(
+        {
+            'type': 'function',
+            'mode': 'before',
+            'function': {'type': 'general', 'function': f},
+            'schema': {'type': 'int'},
+        }
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(4)
@@ -150,7 +164,14 @@ def test_pydantic_error_type_raise_ctx():
     def f(input_value, info):
         raise PydanticKnownError('greater_than', {'gt': 42})
 
-    v = SchemaValidator({'type': 'function', 'mode': 'before', 'function': f, 'schema': {'type': 'int'}})
+    v = SchemaValidator(
+        {
+            'type': 'function',
+            'mode': 'before',
+            'function': {'type': 'general', 'function': f},
+            'schema': {'type': 'int'},
+        }
+    )
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(4)
@@ -299,7 +320,7 @@ def test_pydantic_value_error_plain(py_and_json: PyAndJson):
     def f(input_value, info):
         raise PydanticCustomError
 
-    v = py_and_json({'type': 'function', 'mode': 'plain', 'function': f})
+    v = py_and_json({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
     with pytest.raises(TypeError, match='missing 2 required positional arguments'):
         v.validate_test('4')
 
@@ -314,7 +335,12 @@ def test_list_omit_exception(py_and_json: PyAndJson, exception):
     v = py_and_json(
         {
             'type': 'list',
-            'items_schema': {'type': 'function', 'schema': {'type': 'int'}, 'mode': 'after', 'function': f},
+            'items_schema': {
+                'type': 'function',
+                'schema': {'type': 'int'},
+                'mode': 'after',
+                'function': {'type': 'general', 'function': f},
+            },
         }
     )
     assert v.validate_test([1, 2, '3', '4']) == [1, 3]

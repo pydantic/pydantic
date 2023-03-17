@@ -910,7 +910,7 @@ def test_dont_raise_error(benchmark):
     def f(input_value, info):
         return input_value
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
 
     @benchmark
     def t():
@@ -922,7 +922,7 @@ def test_raise_error_value_error(benchmark):
     def f(input_value, info):
         raise ValueError('this is a custom error')
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
 
     @benchmark
     def t():
@@ -939,7 +939,7 @@ def test_raise_error_custom(benchmark):
     def f(input_value, info):
         raise PydanticCustomError('my_error', 'this is a custom error {foo}', {'foo': 'FOOBAR'})
 
-    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': f})
+    v = SchemaValidator({'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}})
 
     @benchmark
     def t():
@@ -1033,7 +1033,14 @@ def test_chain_list(benchmark):
     validator = SchemaValidator(
         {
             'type': 'chain',
-            'steps': [{'type': 'str'}, {'type': 'function', 'mode': 'plain', 'function': lambda v, info: Decimal(v)}],
+            'steps': [
+                {'type': 'str'},
+                {
+                    'type': 'function',
+                    'mode': 'plain',
+                    'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
+                },
+            ],
         }
     )
     assert validator.validate_python('42.42') == Decimal('42.42')
@@ -1044,7 +1051,12 @@ def test_chain_list(benchmark):
 @pytest.mark.benchmark(group='chain')
 def test_chain_function(benchmark):
     validator = SchemaValidator(
-        {'type': 'function', 'mode': 'after', 'schema': {'type': 'str'}, 'function': lambda v, info: Decimal(v)}
+        {
+            'type': 'function',
+            'mode': 'after',
+            'schema': {'type': 'str'},
+            'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
+        }
     )
     assert validator.validate_python('42.42') == Decimal('42.42')
 
@@ -1058,8 +1070,16 @@ def test_chain_two_functions(benchmark):
             'type': 'chain',
             'steps': [
                 {'type': 'str'},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: Decimal(v)},
-                {'type': 'function', 'mode': 'plain', 'function': lambda v, info: v * 2},
+                {
+                    'type': 'function',
+                    'mode': 'plain',
+                    'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
+                },
+                {
+                    'type': 'function',
+                    'mode': 'plain',
+                    'function': {'type': 'general', 'function': lambda v, info: v * 2},
+                },
             ],
         }
     )
@@ -1077,10 +1097,10 @@ def test_chain_nested_functions(benchmark):
                 'type': 'function',
                 'schema': {'type': 'str'},
                 'mode': 'after',
-                'function': lambda v, info: Decimal(v),
+                'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
             },
             'mode': 'after',
-            'function': lambda v, info: v * 2,
+            'function': {'type': 'general', 'function': lambda v, info: v * 2},
         }
     )
     assert validator.validate_python('42.42') == Decimal('84.84')
@@ -1103,7 +1123,7 @@ def generator_gen_python(v, validator, info):
 
 @pytest.mark.benchmark(group='generator')
 def test_generator_python(benchmark):
-    schema = core_schema.function_wrap_schema(generator_gen_python, {'type': 'int'})
+    schema = core_schema.general_wrap_validation_function(generator_gen_python, {'type': 'int'})
     v = SchemaValidator(schema)
     input_value = tuple(range(100))
 
