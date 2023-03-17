@@ -1,5 +1,5 @@
 from pydantic_core import ValidationError
-from pydantic_core.core_schema import ValidationInfo
+from pydantic_core.core_schema import ModelFieldValidationInfo, ValidationInfo
 
 from . import dataclasses
 from .config import BaseConfig, ConfigDict, Extra
@@ -25,6 +25,7 @@ __all__ = [
     'validator',
     'serializer',
     'ValidationInfo',
+    'ModelFieldValidationInfo',
     # config
     'BaseConfig',
     'ConfigDict',

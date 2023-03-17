@@ -13,6 +13,7 @@ from pydantic import (
     ConfigDict,
     Extra,
     Field,
+    ModelFieldValidationInfo,
     PydanticUserError,
     ValidationError,
     ValidationInfo,
@@ -1621,3 +1622,24 @@ def test_unrecognized_signature() -> None:
             @validator('x')
             def check_x() -> int:
                 raise NotImplementedError
+
+
+def test_info_field_name_data_before():
+    """
+    Test accessing info.field_name and info.data
+    We only test the `before` validator because they
+    all share the same implementation.
+    """
+
+    class Model(BaseModel):
+        a: str
+        b: str
+
+        @validator('b', mode='before')
+        def check_a(cls, v: Any, info: ModelFieldValidationInfo) -> Any:
+            assert v == b'but my barbaz is better'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 'your foobar is good'}
+            return 'just kidding!'
+
+    assert Model(a=b'your foobar is good', b=b'but my barbaz is better').b == 'just kidding!'
