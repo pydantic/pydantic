@@ -71,14 +71,14 @@ V1Validator = Union[
 
 V2Validator = Union[
     _V2ValidatorClsMethod,
-    _core_schema.ValidatorFunction,
+    _core_schema.GeneralValidatorFunction,
     _OnlyValueValidatorClsMethod,
     _decorators.OnlyValueValidator,
 ]
 
 V2WrapValidator = Union[
     _V2WrapValidatorClsMethod,
-    _core_schema.WrapValidatorFunction,
+    _core_schema.GeneralWrapValidatorFunctionSchema,
 ]
 
 
@@ -149,7 +149,7 @@ def validator(
             _decorators.FIELD_VALIDATOR_TAG,
             (
                 fields,
-                _decorators.Validator(mode=mode, sub_path=sub_path, check_fields=check_fields),
+                _decorators.Validator(mode=mode, is_field_validator=True, sub_path=sub_path, check_fields=check_fields),
             ),
         )
         return f_cls
@@ -183,12 +183,12 @@ def root_validator(
     """
     if __func:
         f_cls = _decorators.prepare_validator_decorator(__func, allow_reuse)
-        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode))
+        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode, is_field_validator=False))
         return f_cls
 
     def dec(f: Callable[..., Any]) -> classmethod[Any]:
         f_cls = _decorators.prepare_validator_decorator(f, allow_reuse)
-        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode))
+        setattr(f_cls, _decorators.ROOT_VALIDATOR_TAG, _decorators.Validator(mode=mode, is_field_validator=False))
         return f_cls
 
     return dec
