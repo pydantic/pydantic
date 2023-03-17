@@ -642,13 +642,13 @@ class Model(BaseModel):
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
-    # TODO: Do we need to support models_as_dict=False?
-    #   If not, is there a way to replicate this custom-encoder functionality?
+    # TODO: How can we replicate this custom-encoder functionality without affecting the serialization of `User`?
     assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
-@pytest.mark.xfail(reason='TODO json encoding')
+@pytest.mark.xfail(reason='working on v2')
 def test_json_encoder_forward_ref(create_module):
+    # TODO: Replace the use of json_encoders with a root_serializer
     module = create_module(
         # language=Python
         """

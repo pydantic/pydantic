@@ -81,16 +81,20 @@ def test_simple_copy():
     assert m.model_fields == m2.model_fields
 
 
-class ModelTwo(BaseModel):
-    _foo_ = PrivateAttr({'private'})
+@pytest.fixture(scope='session', name='ModelTwo')
+def model_two_fixture():
+    class ModelTwo(BaseModel):
+        _foo_ = PrivateAttr({'private'})
 
-    a: float
-    b: int = 10
-    c: str = 'foobar'
-    d: Model
+        a: float
+        b: int = 10
+        c: str = 'foobar'
+        d: Model
+
+    return ModelTwo
 
 
-def test_deep_copy():
+def test_deep_copy(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m._foo_ = {'new value'}
     m2 = m.copy(deep=True)
@@ -106,7 +110,7 @@ def test_deep_copy():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_exclude():
+def test_copy_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(exclude={'b'})
 
@@ -123,7 +127,7 @@ def test_copy_exclude():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_include():
+def test_copy_include(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a'})
 
@@ -135,7 +139,7 @@ def test_copy_include():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_include_exclude():
+def test_copy_include_exclude(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(include={'a', 'b', 'c'}, exclude={'c'})
 
@@ -211,7 +215,7 @@ def test_copy_advanced_include_exclude():
 
 
 @pytest.mark.xfail(reason='working on V2')
-def test_copy_update():
+def test_copy_update(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy(update={'a': 'different'})
 
@@ -234,7 +238,7 @@ def test_copy_update_unset():
     )
 
 
-def test_copy_set_fields():
+def test_copy_set_fields(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = m.copy()
 
@@ -255,8 +259,24 @@ def test_simple_pickle():
     assert m.model_fields == m2.model_fields
 
 
-def test_recursive_pickle():
-    m = ModelTwo(a=24, d=Model(a='123.45'))
+def test_recursive_pickle(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel, PrivateAttr
+
+        class PickleModel(BaseModel):
+            a: float
+            b: int = 10
+
+        class PickleModelTwo(BaseModel):
+            _foo_ = PrivateAttr({'private'})
+
+            a: float
+            b: int = 10
+            c: str = 'foobar'
+            d: PickleModel
+
+    m = module.PickleModelTwo(a=24, d=module.PickleModel(a='123.45'))
     m2 = pickle.loads(pickle.dumps(m))
     assert m == m2
 
@@ -266,8 +286,24 @@ def test_recursive_pickle():
     assert m._foo_ == m2._foo_
 
 
-def test_pickle_undefined():
-    m = ModelTwo(a=24, d=Model(a='123.45'))
+def test_pickle_undefined(create_module):
+    @create_module
+    def module():
+        from pydantic import BaseModel, PrivateAttr
+
+        class PickleModel(BaseModel):
+            a: float
+            b: int = 10
+
+        class PickleModelTwo(BaseModel):
+            _foo_ = PrivateAttr({'private'})
+
+            a: float
+            b: int = 10
+            c: str = 'foobar'
+            d: PickleModel
+
+    m = module.PickleModelTwo(a=24, d=module.PickleModel(a='123.45'))
     m2 = pickle.loads(pickle.dumps(m))
     assert m2._foo_ == {'private'}
 
@@ -276,7 +312,7 @@ def test_pickle_undefined():
     assert not hasattr(m3, '_foo_')
 
 
-def test_copy_undefined():
+def test_copy_undefined(ModelTwo):
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = m.copy()
     assert m2._foo_ == {'private'}

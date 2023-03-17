@@ -104,7 +104,6 @@ def test_annotation_config():
         _c: str
 
     assert list(Model.model_fields.keys()) == ['b', 'a']
-    # TODO: The value at the end of the next line used to be `'a'`, should it be `None` (as it has been changed to)?
     assert [f.alias for f in Model.model_fields.values()] == ['foobar', None]
     assert Model(foobar='123').b == 123.0
 
@@ -126,26 +125,6 @@ def test_pop_by_field_name():
             'type': 'extra_forbidden',
         }
     ]
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_alias_child_precedence():
-    # TODO: Need to decide what we are doing with fields in model_config
-    #   If dropping completely, should we drop this test?
-    class Parent(BaseModel):
-        x: int
-
-        class Config:
-            fields = {'x': 'x1'}
-
-    class Child(Parent):
-        y: int
-
-        class Config:
-            fields = {'y': 'y2', 'x': 'x2'}
-
-    assert Child.model_fields['y'].alias == 'y2'
-    assert Child.model_fields['x'].alias == 'x2'
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -198,9 +177,9 @@ def test_alias_generator_on_child():
 
 @pytest.mark.xfail(reason='working on V2')
 def test_low_priority_alias():
-    # TODO: alias_priority has been removed from `Field` — what should happen to this test?
-    #   Should we re-add alias_priority as a keyword argument to `Field`?
+    # TODO: alias_priority has been removed from `Field`. Should we re-add it?
     #   Is there something new that can be used to replicate this functionality?
+    #   See discussion in https://github.com/pydantic/pydantic/pull/5181/files#r1137618854
     #   Either way, if we don't re-add it to `Field`, remember to update the migration guide
     class Parent(BaseModel):
         x: bool = Field(..., alias='abc', alias_priority=1)

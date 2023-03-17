@@ -652,7 +652,6 @@ def test_json():
         v: HttpUrl
 
     m = Model(v='http://foo@example.net')
-    # TODO: Is it okay that the trailing '/' gets added?
     assert m.model_dump_json() == b'{"v":"http://foo@example.net/"}'
 
 
