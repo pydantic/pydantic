@@ -1716,7 +1716,7 @@ def test_post_init():
         a: int
         b: int
 
-        def model_post_init(self, **kwargs) -> None:
+        def model_post_init(self, _context) -> None:
             assert self.model_dump() == {'a': 3, 'b': 4}
             calls.append('submodel_post_init')
 
@@ -1725,7 +1725,7 @@ def test_post_init():
         d: int
         sub: SubModel
 
-        def model_post_init(self, **kwargs) -> None:
+        def model_post_init(self, _context) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 

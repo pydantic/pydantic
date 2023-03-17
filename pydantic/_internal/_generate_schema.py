@@ -32,13 +32,13 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
-__all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
+__all__ = 'model_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
 
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 
-def model_fields_schema(
+def model_schema(
     model_ref: str,
     fields: dict[str, FieldInfo],
     validator_functions: ValidationFunctions,
@@ -53,7 +53,7 @@ def model_fields_schema(
     This is typed_dict schema which is used to create the model.
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
-    schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
+    fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {
             k: schema_generator.generate_td_field_schema(k, v, validator_functions, serializer_functions)
             for k, v in fields.items()
@@ -61,8 +61,8 @@ def model_fields_schema(
         ref=model_ref,
         return_fields_set=True,
     )
-    schema = apply_validators(schema, validator_functions.get_root_decorators())
-    return schema
+    fields_schema = apply_validators(fields_schema, validator_functions.get_root_decorators())
+    return fields_schema
 
 
 def dataclass_fields_schema(
