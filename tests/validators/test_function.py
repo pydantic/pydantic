@@ -10,7 +10,7 @@ from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_sc
 from ..conftest import plain_repr
 
 
-def deepcopy_info(info: Union[core_schema.ValidationInfo, core_schema.ModelFieldValidationInfo]) -> Dict[str, Any]:
+def deepcopy_info(info: Union[core_schema.ValidationInfo, core_schema.FieldValidationInfo]) -> Dict[str, Any]:
     return {
         'context': deepcopy(info.context),
         'data': deepcopy(getattr(info, 'data', None)),
@@ -434,7 +434,7 @@ def test_model_field_before_validator() -> None:
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value: Any, info: core_schema.ModelFieldValidationInfo) -> Any:
+    def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
         assert isinstance(input_value, bytes)
@@ -463,7 +463,7 @@ def test_model_field_after_validator() -> None:
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value: str, info: core_schema.ModelFieldValidationInfo) -> Any:
+    def f(input_value: str, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
         assert isinstance(input_value, str)
@@ -492,7 +492,7 @@ def test_model_field_plain_validator() -> None:
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value: Any, info: core_schema.ModelFieldValidationInfo) -> Any:
+    def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
         assert isinstance(input_value, bytes)
@@ -517,7 +517,7 @@ def test_model_field_wrap_validator() -> None:
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value: Any, val: core_schema.CallableValidator, info: core_schema.ModelFieldValidationInfo) -> Any:
+    def f(input_value: Any, val: core_schema.CallableValidator, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
         assert isinstance(input_value, bytes)
@@ -670,7 +670,7 @@ def test_method_function_no_model():
 def test_typed_dict_data() -> None:
     info_stuff = None
 
-    def f(input_value: Any, info: core_schema.ModelFieldValidationInfo) -> Any:
+    def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         nonlocal info_stuff
         info_stuff = {'field_name': info.field_name, 'data': info.data.copy()}
         assert isinstance(input_value, str)

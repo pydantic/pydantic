@@ -68,12 +68,16 @@ impl TypeSerializer for ModelSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
-        if self.allow_value(value, extra)? {
-            let dict = object_to_dict(value, true, extra)?;
-            self.serializer.to_python(dict, include, exclude, extra)
+        let extra = Extra {
+            model: Some(value),
+            ..*extra
+        };
+        if self.allow_value(value, &extra)? {
+            let dict = object_to_dict(value, true, &extra)?;
+            self.serializer.to_python(dict, include, exclude, &extra)
         } else {
-            extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
-            infer_to_python(value, include, exclude, extra)
+            extra.warnings.on_fallback_py(self.get_name(), value, &extra)?;
+            infer_to_python(value, include, exclude, &extra)
         }
     }
 

@@ -32,6 +32,11 @@ pub(crate) struct Extra<'a> {
     pub rec_guard: &'a SerRecursionGuard,
     // the next two are used for union logic
     pub check: SerCheck,
+    // data representing the current model field
+    // that is being serialized, if this is a model serializer
+    // it will be None otherwise
+    pub model: Option<&'a PyAny>,
+    pub field_name: Option<&'a str>,
 }
 
 impl<'a> Extra<'a> {
@@ -62,6 +67,8 @@ impl<'a> Extra<'a> {
             config,
             rec_guard,
             check: SerCheck::None,
+            model: None,
+            field_name: None,
         }
     }
 }
@@ -97,6 +104,8 @@ pub(crate) struct ExtraOwned {
     config: SerializationConfig,
     rec_guard: SerRecursionGuard,
     check: SerCheck,
+    model: Option<Py<PyAny>>,
+    field_name: Option<String>,
 }
 
 impl ExtraOwned {
@@ -113,6 +122,8 @@ impl ExtraOwned {
             config: extra.config.clone(),
             rec_guard: extra.rec_guard.clone(),
             check: extra.check,
+            model: extra.model.map(|v| v.into()),
+            field_name: extra.field_name.map(|v| v.to_string()),
         }
     }
 
@@ -130,6 +141,8 @@ impl ExtraOwned {
             config: &self.config,
             rec_guard: &self.rec_guard,
             check: self.check,
+            model: self.model.as_ref().map(|m| m.as_ref(py)),
+            field_name: self.field_name.as_ref().map(|n| n.as_ref()),
         }
     }
 }
