@@ -421,3 +421,168 @@ def test_dataclass_exact_validation(input_value, expected):
     v = SchemaValidator(schema)
     foo = v.validate_python(input_value)
     assert dataclasses.asdict(foo) == expected
+
+
+def test_dataclass_field_after_validator():
+    @dataclasses.dataclass
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(cls, v: str, info: core_schema.ModelFieldValidationInfo) -> str:
+            assert v == 'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return 'hello world!'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b',
+                    schema=core_schema.field_after_validation_function(Foo.validate_b, core_schema.str_schema()),
+                ),
+            ],
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
+
+
+def test_dataclass_field_plain_validator():
+    @dataclasses.dataclass
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(cls, v: bytes, info: core_schema.ModelFieldValidationInfo) -> str:
+            assert v == b'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return 'hello world!'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b', schema=core_schema.field_plain_validation_function(Foo.validate_b)
+                ),
+            ],
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
+
+
+def test_dataclass_field_before_validator():
+    @dataclasses.dataclass
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(cls, v: bytes, info: core_schema.ModelFieldValidationInfo) -> bytes:
+            assert v == b'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return b'hello world!'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b',
+                    schema=core_schema.field_before_validation_function(Foo.validate_b, core_schema.str_schema()),
+                ),
+            ],
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
+
+
+def test_dataclass_field_wrap_validator1():
+    @dataclasses.dataclass
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(
+            cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.ModelFieldValidationInfo
+        ) -> str:
+            assert v == b'hello'
+            v = nxt(v)
+            assert v == 'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return 'hello world!'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b',
+                    schema=core_schema.field_wrap_validation_function(Foo.validate_b, core_schema.str_schema()),
+                ),
+            ],
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
+
+
+def test_dataclass_field_wrap_validator2():
+    @dataclasses.dataclass
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(
+            cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.ModelFieldValidationInfo
+        ) -> bytes:
+            assert v == b'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return nxt(b'hello world!')
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b',
+                    schema=core_schema.field_wrap_validation_function(Foo.validate_b, core_schema.str_schema()),
+                ),
+            ],
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
