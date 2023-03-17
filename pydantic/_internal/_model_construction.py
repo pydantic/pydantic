@@ -19,6 +19,7 @@ from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
 from ._generics import recursively_defined_type_refs
+from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -69,6 +70,8 @@ def inspect_namespace(namespace: dict[str, Any]) -> dict[str, ModelPrivateAttr]:
         elif not single_underscore(var_name):
             continue
         elif var_name.startswith('_'):
+            if var_name in raw_annotations and is_classvar(raw_annotations[var_name]):
+                continue
             private_attributes[var_name] = PrivateAttr(default=value)
             del namespace[var_name]
         elif var_name not in raw_annotations and not isinstance(value, IGNORED_TYPES):
@@ -78,8 +81,8 @@ def inspect_namespace(namespace: dict[str, Any]) -> dict[str, ModelPrivateAttr]:
                 DeprecationWarning,
             )
 
-    for ann_name in raw_annotations:
-        if single_underscore(ann_name) and ann_name not in private_attributes:
+    for ann_name, ann_type in raw_annotations.items():
+        if single_underscore(ann_name) and ann_name not in private_attributes and not is_classvar(ann_type):
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
@@ -101,7 +104,7 @@ def deferred_model_get_pydantic_validation_schema(
     """
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
-    fields = collect_fields(cls, cls.__bases__, types_namespace)
+    fields, class_vars = collect_fields(cls, cls.__bases__, types_namespace)
 
     model_config = cls.model_config
     inner_schema = model_fields_schema(
@@ -153,7 +156,7 @@ def complete_model_class(
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
-        fields = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+        fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
         inner_schema = model_fields_schema(
             model_ref,
             fields,
@@ -192,6 +195,7 @@ def complete_model_class(
 
     core_config = generate_config(cls.model_config, cls)
     cls.model_fields = fields
+    cls.__class_vars__.update(class_vars)
     cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()

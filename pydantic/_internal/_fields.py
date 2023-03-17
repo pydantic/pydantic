@@ -104,7 +104,7 @@ def collect_fields(  # noqa: C901
     typevars_map: dict[str, Any] | None = None,
     is_dataclass: bool = False,
     dc_kw_only: bool | None = None,
-) -> dict[str, FieldInfo]:
+) -> tuple[dict[str, FieldInfo], set[str]]:
     """
     Collect the fields of:
     * a nascent pydantic model
@@ -153,8 +153,12 @@ def collect_fields(  # noqa: C901
     # we simplify this file to not be "all things to all men"
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
+    class_vars: set[str] = set()
     for ann_name, ann_type in type_hints.items():
-        if ann_name.startswith('_') or is_classvar(ann_type) or (omitted_fields and ann_name in omitted_fields):
+        if is_classvar(ann_type):
+            class_vars.add(ann_name)
+            continue
+        if ann_name.startswith('_') or (omitted_fields and ann_name in omitted_fields):
             continue
 
         # raise a PydanticUndefinedAnnotation if type is undefined
@@ -250,4 +254,4 @@ def collect_fields(  # noqa: C901
         for field in fields.values():
             field.annotation = replace_types(field.annotation, typevars_map)
 
-    return fields
+    return fields, class_vars

@@ -716,7 +716,7 @@ class GenerateSchema:
         Generate schema for a dataclass.
         """
         # FIXME we need a way to make sure kw_only info is propagated through to fields
-        fields = collect_fields(
+        fields, _class_vars = collect_fields(
             dataclass, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
         )
 

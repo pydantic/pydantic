@@ -111,7 +111,6 @@ def test_private_attribute_annotation():
     assert m.__dict__ == {}
 
 
-@pytest.mark.xfail(reason='ClassVar needs work')
 def test_underscore_attrs_are_private():
     class Model(BaseModel):
         _foo: str = 'abc'
