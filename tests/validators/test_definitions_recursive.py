@@ -520,7 +520,7 @@ def test_definition_wrap():
             'type': 'function',
             'ref': 'wrapper',
             'mode': 'wrap',
-            'function': wrap_func,
+            'function': {'type': 'general', 'function': wrap_func},
             'schema': {
                 'type': 'tuple',
                 'mode': 'positional',
@@ -645,7 +645,7 @@ def test_function_name():
                 {
                     'type': 'function',
                     'mode': 'after',
-                    'function': f,
+                    'function': {'type': 'general', 'function': f},
                     'schema': {'schema_ref': 'root-schema', 'type': 'definition-ref'},
                 },
                 {'type': 'int'},
@@ -688,7 +688,7 @@ def test_function_change_id(strict: bool):
                 {
                     'type': 'function',
                     'mode': 'before',
-                    'function': f,
+                    'function': {'type': 'general', 'function': f},
                     'schema': {'schema_ref': 'root-schema', 'type': 'definition-ref'},
                 }
             ],

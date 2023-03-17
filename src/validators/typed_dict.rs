@@ -162,7 +162,7 @@ impl Validator for TypedDictValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        if let Some(field) = extra.field {
+        if let Some(field) = extra.assignee_field {
             // we're validating assignment, completely different logic
             return self.validate_assignment(py, field, input, extra, slots, recursion_guard);
         }
@@ -183,16 +183,14 @@ impl Validator for TypedDictValidator {
             false => None,
         };
 
-        let extra = Extra {
-            data: Some(output_dict),
-            field: None,
-            strict: extra.strict,
-            context: extra.context,
-        };
-
         macro_rules! process {
             ($dict:ident, $get_method:ident, $iter:ty $(,$kwargs:ident)?) => {{
                 for field in &self.fields {
+                    let extra = Extra {
+                        data: Some(output_dict),
+                        field_name: Some(&field.name),
+                        ..*extra
+                    };
                     let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
                         Ok(v) => v,
                         Err(err) => {
@@ -348,6 +346,11 @@ impl TypedDictValidator {
     where
         'data: 's,
     {
+        let extra = Extra {
+            field_name: Some(field),
+            assignee_field: None,
+            ..*extra
+        };
         // TODO probably we should set location on errors here
         let data = match extra.data {
             Some(data) => data,
@@ -380,12 +383,12 @@ impl TypedDictValidator {
             if field.frozen {
                 Err(ValError::new_with_loc(ErrorType::Frozen, input, field.name.to_string()))
             } else {
-                prepare_result(field.validator.validate(py, input, extra, slots, recursion_guard))
+                prepare_result(field.validator.validate(py, input, &extra, slots, recursion_guard))
             }
         } else if self.check_extra && !self.forbid_extra {
             // this is the "allow" case of extra_behavior
             match self.extra_validator {
-                Some(ref validator) => prepare_result(validator.validate(py, input, extra, slots, recursion_guard)),
+                Some(ref validator) => prepare_result(validator.validate(py, input, &extra, slots, recursion_guard)),
                 None => prepare_tuple(input.to_object(py)),
             }
         } else {

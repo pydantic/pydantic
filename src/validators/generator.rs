@@ -218,7 +218,7 @@ impl InternalValidator {
             validator: validator.clone(),
             slots: slots.to_vec(),
             data: extra.data.map(|d| d.into_py(py)),
-            field: extra.field.map(|f| f.to_string()),
+            field: extra.assignee_field.map(|f| f.to_string()),
             strict: extra.strict,
             context: extra.context.map(|d| d.into_py(py)),
             recursion_guard: recursion_guard.clone(),
@@ -236,9 +236,10 @@ impl InternalValidator {
     {
         let extra = Extra {
             data: self.data.as_ref().map(|data| data.as_ref(py)),
-            field: self.field.as_deref(),
+            assignee_field: self.field.as_deref(),
             strict: self.strict,
             context: self.context.as_ref().map(|data| data.as_ref(py)),
+            field_name: None,
         };
         self.validator
             .validate(py, input, &extra, &self.slots, &mut self.recursion_guard)
