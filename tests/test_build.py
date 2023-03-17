@@ -6,7 +6,7 @@ from pydantic_core import SchemaError, SchemaValidator
 
 
 def test_build_error_type():
-    with pytest.raises(SchemaError, match="Input tag 'foobar' found using self-schema does not match any of the"):
+    with pytest.raises(SchemaError, match="Input tag 'foobar' found using 'type' does not match any of the"):
         SchemaValidator({'type': 'foobar', 'title': 'TestModel'})
 
 
@@ -35,7 +35,8 @@ def test_schema_wrong_type():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(1)
     assert exc_info.value.args[0] == (
-        'Invalid Schema:\n  Input should be a valid dictionary [type=dict_type, input_value=1, input_type=int]'
+        'Invalid Schema:\n  Input should be a valid dictionary or instance to'
+        ' extract fields from [type=dict_attributes_type, input_value=1, input_type=int]'
     )
 
 
@@ -66,17 +67,17 @@ def test_not_schema_definition_error():
 
 
 def test_no_type():
-    with pytest.raises(SchemaError, match='Unable to extract tag using discriminator self-schema'):
+    with pytest.raises(SchemaError, match="Unable to extract tag using discriminator 'type'"):
         SchemaValidator({})
 
 
 def test_wrong_type():
-    with pytest.raises(SchemaError, match="Input tag 'unknown' found using self-schema does not match any of the"):
+    with pytest.raises(SchemaError, match="Input tag 'unknown' found using 'type' does not match any of the"):
         SchemaValidator({'type': 'unknown'})
 
 
 def test_function_no_mode():
-    with pytest.raises(SchemaError, match='Unable to extract tag using discriminator self-schema'):
+    with pytest.raises(SchemaError, match="Input tag 'function' found using 'type' does not match any of the"):
         SchemaValidator({'type': 'function'})
 
 

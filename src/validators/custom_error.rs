@@ -17,7 +17,11 @@ pub enum CustomError {
 }
 
 impl CustomError {
-    pub fn build(schema: &PyDict) -> PyResult<Option<Self>> {
+    pub fn build(
+        schema: &PyDict,
+        _config: Option<&PyDict>,
+        _build_context: &mut BuildContext<CombinedValidator>,
+    ) -> PyResult<Option<Self>> {
         let py = schema.py();
         let error_type: String = match schema.get_as(intern!(py, "custom_error_type"))? {
             Some(error_type) => error_type,
@@ -66,7 +70,7 @@ impl BuildValidator for CustomErrorValidator {
         config: Option<&PyDict>,
         build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let custom_error = CustomError::build(schema)?.unwrap();
+        let custom_error = CustomError::build(schema, config, build_context)?.unwrap();
         let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
         let validator = Box::new(build_validator(schema, config, build_context)?);
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());

@@ -9,6 +9,33 @@ use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
+pub struct FloatBuilder;
+
+impl BuildValidator for FloatBuilder {
+    const EXPECTED_TYPE: &'static str = "float";
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedValidator>,
+    ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
+        let use_constrained = schema.get_item(intern!(py, "multiple_of")).is_some()
+            || schema.get_item(intern!(py, "le")).is_some()
+            || schema.get_item(intern!(py, "lt")).is_some()
+            || schema.get_item(intern!(py, "ge")).is_some()
+            || schema.get_item(intern!(py, "gt")).is_some();
+        if use_constrained {
+            ConstrainedFloatValidator::build(schema, config, build_context)
+        } else {
+            Ok(FloatValidator {
+                strict: is_strict(schema, config)?,
+                allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
+            }
+            .into())
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct FloatValidator {
     strict: bool,
@@ -24,20 +51,11 @@ impl BuildValidator for FloatValidator {
         _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let use_constrained = schema.get_item(intern!(py, "multiple_of")).is_some()
-            || schema.get_item(intern!(py, "le")).is_some()
-            || schema.get_item(intern!(py, "lt")).is_some()
-            || schema.get_item(intern!(py, "ge")).is_some()
-            || schema.get_item(intern!(py, "gt")).is_some();
-        if use_constrained {
-            ConstrainedFloatValidator::build(schema, config)
-        } else {
-            Ok(Self {
-                strict: is_strict(schema, config)?,
-                allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
-            }
-            .into())
+        Ok(Self {
+            strict: is_strict(schema, config)?,
+            allow_inf_nan: schema_or_config_same(schema, config, intern!(py, "allow_inf_nan"))?.unwrap_or(true),
         }
+        .into())
     }
 }
 
@@ -125,8 +143,13 @@ impl Validator for ConstrainedFloatValidator {
     }
 }
 
-impl ConstrainedFloatValidator {
-    pub fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<CombinedValidator> {
+impl BuildValidator for ConstrainedFloatValidator {
+    const EXPECTED_TYPE: &'static str = "float";
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        _build_context: &mut BuildContext<CombinedValidator>,
+    ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         Ok(Self {
             strict: is_strict(schema, config)?,

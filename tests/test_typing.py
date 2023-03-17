@@ -67,9 +67,9 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'set', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple', 'mode': 'variable', 'items_schema': {'type': 'str'}, 'max_length': 3}
+    schema: CoreSchema = {'type': 'tuple-variable', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
+    schema: CoreSchema = {'type': 'tuple-positional', 'items_schema': [{'type': 'str'}, {'type': 'int'}]}
     SchemaValidator(schema)
     schema: CoreSchema = {'type': 'frozenset', 'items_schema': {'type': 'str'}, 'max_length': 3}
     SchemaValidator(schema)
@@ -92,13 +92,12 @@ def test_schema_typing() -> None:
     }
     SchemaValidator(schema)
     schema: CoreSchema = {
-        'type': 'function',
-        'mode': 'wrap',
+        'type': 'function-wrap',
         'function': {'type': 'general', 'function': wrap_validator},
         'schema': {'type': 'str'},
     }
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': validator}}
+    schema: CoreSchema = {'type': 'function-plain', 'function': {'type': 'general', 'function': validator}}
     SchemaValidator(schema)
     schema: CoreSchema = {
         'ref': 'Branch',

@@ -384,9 +384,10 @@ pub fn build_validator<'a>(
         // boolean
         bool::BoolValidator,
         // floats
-        float::FloatValidator,
+        float::FloatBuilder,
         // tuples
-        tuple::TupleBuilder,
+        tuple::TuplePositionalValidator,
+        tuple::TupleVariableValidator,
         // list/arrays
         list::ListValidator,
         // sets - unique lists
@@ -396,7 +397,10 @@ pub fn build_validator<'a>(
         // None/null
         none::NoneValidator,
         // functions - before, after, plain & wrap
-        function::FunctionBuilder,
+        function::FunctionAfterValidator,
+        function::FunctionBeforeValidator,
+        function::FunctionPlainValidator,
+        function::FunctionWrapValidator,
         // function call - validation around a function call
         call::CallValidator,
         // literals

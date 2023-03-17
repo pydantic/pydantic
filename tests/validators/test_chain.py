@@ -14,11 +14,7 @@ def test_chain():
             'type': 'chain',
             'steps': [
                 {'type': 'str'},
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
-                },
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)}},
             ],
         }
     )
@@ -32,26 +28,10 @@ def test_chain_many():
         {
             'type': 'chain',
             'steps': [
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'},
-                },
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: f'{v}-2'},
-                },
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: f'{v}-3'},
-                },
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: f'{v}-4'},
-                },
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'}},
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-2'}},
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-3'}},
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-4'}},
             ],
         }
     )
@@ -87,11 +67,7 @@ def test_json(py_and_json: PyAndJson, input_value, expected):
             'type': 'chain',
             'steps': [
                 {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'float'}]},
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: Decimal(v)},
-                },
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)}},
             ],
         }
     )
@@ -105,22 +81,16 @@ def test_flatten():
         {
             'type': 'chain',
             'steps': [
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'},
-                },
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'}},
                 {
                     'type': 'chain',
                     'steps': [
                         {
-                            'type': 'function',
-                            'mode': 'plain',
+                            'type': 'function-plain',
                             'function': {'type': 'general', 'function': lambda v, info: f'{v}-2'},
                         },
                         {
-                            'type': 'function',
-                            'mode': 'plain',
+                            'type': 'function-plain',
                             'function': {'type': 'general', 'function': lambda v, info: f'{v}-3'},
                         },
                     ],
@@ -143,11 +113,7 @@ def test_chain_one():
         {
             'type': 'chain',
             'steps': [
-                {
-                    'type': 'function',
-                    'mode': 'plain',
-                    'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'},
-                }
+                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'}}
             ],
         }
     )
@@ -177,7 +143,7 @@ def test_ask():
                         'return_fields_set': True,
                         'fields': {'field_a': {'schema': {'type': 'str'}}},
                     },
-                    {'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}},
+                    {'type': 'function-plain', 'function': {'type': 'general', 'function': f}},
                 ],
             },
         }

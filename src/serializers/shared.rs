@@ -78,18 +78,12 @@ combined_serializer! {
         // hence they're here.
         Function: super::type_serializers::function::FunctionPlainSerializer;
         FunctionWrap: super::type_serializers::function::FunctionWrapSerializer;
-        // `TuplePositionalSerializer` & `TupleVariableSerializer` are created by
-        // `TupleBuilder` based on the `mode` parameter.
-        TuplePositional: super::type_serializers::tuple::TuplePositionalSerializer;
-        TupleVariable: super::type_serializers::tuple::TupleVariableSerializer;
     }
     // `find_only` is for type_serializers which are built directly via the `type` key and `find_serializer`
     // but aren't actually used for serialization, e.g. their `build` method must return another serializer
     find_only: {
-        super::type_serializers::tuple::TupleBuilder;
         super::type_serializers::union::TaggedUnionBuilder;
         super::type_serializers::other::ChainBuilder;
-        super::type_serializers::other::FunctionBuilder;
         super::type_serializers::other::CustomErrorBuilder;
         super::type_serializers::other::CallBuilder;
         super::type_serializers::other::LaxOrStrictBuilder;
@@ -100,6 +94,10 @@ combined_serializer! {
         super::type_serializers::definitions::DefinitionsBuilder;
         super::type_serializers::dataclass::DataclassArgsBuilder;
         super::type_serializers::dataclass::DataclassBuilder;
+        super::type_serializers::function::FunctionBeforeSerializerBuilder;
+        super::type_serializers::function::FunctionAfterSerializerBuilder;
+        super::type_serializers::function::FunctionPlainSerializerBuilder;
+        super::type_serializers::function::FunctionWrapSerializerBuilder;
     }
     // `both` means the struct is added to both the `CombinedSerializer` enum and the match statement in
     // `find_serializer` so they can be used via a `type` str.
@@ -132,6 +130,8 @@ combined_serializer! {
         Union: super::type_serializers::union::UnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;
+        TuplePositional: super::type_serializers::tuple::TuplePositionalSerializer;
+        TupleVariable: super::type_serializers::tuple::TupleVariableSerializer;
     }
 }
 
@@ -150,11 +150,15 @@ impl CombinedSerializer {
                 Some("function-plain") => {
                     // `function` is a special case, not included in `find_serializer` since it means something
                     // different in `schema.type`
-                    return super::type_serializers::function::FunctionPlainSerializer::new_combined(ser_schema)
-                        .map_err(|err| py_error_type!("Error building `function-plain` serializer:\n  {}", err));
+                    return super::type_serializers::function::FunctionPlainSerializer::build(
+                        ser_schema,
+                        config,
+                        build_context,
+                    )
+                    .map_err(|err| py_error_type!("Error building `function-plain` serializer:\n  {}", err));
                 }
                 Some("function-wrap") => {
-                    return super::type_serializers::function::FunctionWrapSerializer::new_combined(
+                    return super::type_serializers::function::FunctionWrapSerializer::build(
                         ser_schema,
                         config,
                         build_context,
