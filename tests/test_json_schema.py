@@ -2288,13 +2288,13 @@ def test_schema_for_generic_field():
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: Any, generator: GenerateSchema, **_kwargs: Any
-        ) -> core_schema.PlainCallbackSchema:
+        ) -> core_schema.PlainFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             metadata = build_metadata_dict(
                 js_metadata=JsonSchemaMetadata(core_schema_override=generator.generate_schema(param))
             )
-            return core_schema.general_plain_validation_callback(
+            return core_schema.general_plain_validation_function(
                 GenModel,
                 metadata=metadata,
             )
@@ -2387,13 +2387,13 @@ def test_advanced_generic_schema():
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: Any, generator: GenerateSchema, **_kwargs: Any
-        ) -> core_schema.PlainCallbackSchema:
+        ) -> core_schema.PlainFunctionSchema:
             if hasattr(source, '__args__'):
                 param = source.__args__[0]
                 metadata = build_metadata_dict(
                     js_metadata=JsonSchemaMetadata(core_schema_override=generator.generate_schema(Optional[param]))
                 )
-                return core_schema.general_plain_validation_callback(
+                return core_schema.general_plain_validation_function(
                     Gen,
                     metadata=metadata,
                 )
@@ -2419,14 +2419,14 @@ def test_advanced_generic_schema():
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: Any, generator: GenerateSchema, **_kwargs: Any
-        ) -> core_schema.PlainCallbackSchema:
+        ) -> core_schema.PlainFunctionSchema:
             if hasattr(source, '__args__'):
                 metadata = build_metadata_dict(
                     js_metadata=JsonSchemaMetadata(
                         core_schema_override=generator.generate_schema(Tuple[source.__args__])
                     )
                 )
-                return core_schema.general_plain_validation_callback(
+                return core_schema.general_plain_validation_function(
                     GenTwoParams,
                     metadata=metadata,
                 )
