@@ -248,13 +248,13 @@ def test_generator_error():
     [
         pytest.param(
             {1: 10, 2: 20, '3': '30'}.items(),
-            {'type': 'tuple', 'items_schema': {'type': 'any'}},
+            {'type': 'tuple-variable', 'items_schema': {'type': 'any'}},
             {(1, 10), (2, 20), ('3', '30')},
             id='Tuple[Any, Any]',
         ),
         pytest.param(
             {1: 10, 2: 20, '3': '30'}.items(),
-            {'type': 'tuple', 'items_schema': {'type': 'int'}},
+            {'type': 'tuple-variable', 'items_schema': {'type': 'int'}},
             {(1, 10), (2, 20), (3, 30)},
             id='Tuple[int, int]',
         ),

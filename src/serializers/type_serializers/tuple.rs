@@ -14,23 +14,6 @@ use super::{
     PydanticSerializer, SchemaFilter, SerMode, TypeSerializer,
 };
 
-pub struct TupleBuilder;
-
-impl BuildSerializer for TupleBuilder {
-    const EXPECTED_TYPE: &'static str = "tuple";
-
-    fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
-    ) -> PyResult<CombinedSerializer> {
-        match schema.get_as::<&str>(intern!(schema.py(), "mode"))? {
-            Some("positional") => TuplePositionalSerializer::build(schema, config, build_context),
-            _ => TupleVariableSerializer::build(schema, config, build_context),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct TupleVariableSerializer {
     item_serializer: Box<CombinedSerializer>,
@@ -38,7 +21,9 @@ pub struct TupleVariableSerializer {
     name: String,
 }
 
-impl TupleVariableSerializer {
+impl BuildSerializer for TupleVariableSerializer {
+    const EXPECTED_TYPE: &'static str = "tuple-variable";
+
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
@@ -159,7 +144,9 @@ pub struct TuplePositionalSerializer {
     name: String,
 }
 
-impl TuplePositionalSerializer {
+impl BuildSerializer for TuplePositionalSerializer {
+    const EXPECTED_TYPE: &'static str = "tuple-positional";
+
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,

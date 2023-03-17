@@ -11,24 +11,6 @@ use super::list::{get_items_schema, length_check};
 use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
-#[derive(Debug)]
-pub struct TupleBuilder;
-
-impl BuildValidator for TupleBuilder {
-    const EXPECTED_TYPE: &'static str = "tuple";
-
-    fn build(
-        schema: &PyDict,
-        config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
-    ) -> PyResult<CombinedValidator> {
-        match schema.get_as::<&str>(intern!(schema.py(), "mode"))? {
-            Some("positional") => TuplePositionalValidator::build(schema, config, build_context),
-            _ => TupleVariableValidator::build(schema, config, build_context),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct TupleVariableValidator {
     strict: bool,
@@ -38,7 +20,8 @@ pub struct TupleVariableValidator {
     name: String,
 }
 
-impl TupleVariableValidator {
+impl BuildValidator for TupleVariableValidator {
+    const EXPECTED_TYPE: &'static str = "tuple-variable";
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
@@ -114,7 +97,8 @@ pub struct TuplePositionalValidator {
     name: String,
 }
 
-impl TuplePositionalValidator {
+impl BuildValidator for TuplePositionalValidator {
+    const EXPECTED_TYPE: &'static str = "tuple-positional";
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,

@@ -51,7 +51,7 @@ impl BuildValidator for UnionValidator {
 
                 Ok(Self {
                     choices,
-                    custom_error: CustomError::build(schema)?,
+                    custom_error: CustomError::build(schema, config, build_context)?,
                     strict: is_strict(schema, config)?,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
                 }
@@ -326,7 +326,7 @@ impl BuildValidator for TaggedUnionValidator {
             discriminator,
             from_attributes,
             strict: is_strict(schema, config)?,
-            custom_error: CustomError::build(schema)?,
+            custom_error: CustomError::build(schema, config, build_context)?,
             tags_repr,
             discriminator_repr,
             name: format!("{}[{descr}]", Self::EXPECTED_TYPE),

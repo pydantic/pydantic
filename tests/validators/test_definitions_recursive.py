@@ -305,8 +305,7 @@ def test_outside_parent():
             'fields': {
                 'tuple1': {
                     'schema': {
-                        'type': 'tuple',
-                        'mode': 'positional',
+                        'type': 'tuple-positional',
                         'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'str'}],
                         'ref': 'tuple-iis',
                     }
@@ -413,8 +412,7 @@ def multiple_tuple_schema() -> SchemaValidator:
             'fields': {
                 'f1': {
                     'schema': {
-                        'type': 'tuple',
-                        'mode': 'positional',
+                        'type': 'tuple-positional',
                         'items_schema': [
                             {'type': 'int'},
                             {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 't'}},
@@ -517,13 +515,11 @@ def test_definition_wrap():
 
     v = SchemaValidator(
         {
-            'type': 'function',
+            'type': 'function-wrap',
             'ref': 'wrapper',
-            'mode': 'wrap',
             'function': {'type': 'general', 'function': wrap_func},
             'schema': {
-                'type': 'tuple',
-                'mode': 'positional',
+                'type': 'tuple-positional',
                 'items_schema': [
                     {'type': 'int'},
                     {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'wrapper'}},
@@ -643,8 +639,7 @@ def test_function_name():
         {
             'choices': [
                 {
-                    'type': 'function',
-                    'mode': 'after',
+                    'type': 'function-after',
                     'function': {'type': 'general', 'function': f},
                     'schema': {'schema_ref': 'root-schema', 'type': 'definition-ref'},
                 },
@@ -686,8 +681,7 @@ def test_function_change_id(strict: bool):
         {
             'choices': [
                 {
-                    'type': 'function',
-                    'mode': 'before',
+                    'type': 'function-before',
                     'function': {'type': 'general', 'function': f},
                     'schema': {'schema_ref': 'root-schema', 'type': 'definition-ref'},
                 }

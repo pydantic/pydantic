@@ -292,16 +292,14 @@ def test_validate_assignment_functions():
             'fields': {
                 'field_a': {
                     'schema': {
-                        'type': 'function',
-                        'mode': 'after',
+                        'type': 'function-after',
                         'function': {'type': 'general', 'function': func_a},
                         'schema': {'type': 'str'},
                     }
                 },
                 'field_b': {
                     'schema': {
-                        'type': 'function',
-                        'mode': 'after',
+                        'type': 'function-after',
                         'function': {'type': 'general', 'function': func_b},
                         'schema': {'type': 'int'},
                     }
@@ -1397,8 +1395,7 @@ class TestOnError:
                             'type': 'default',
                             'on_error': 'raise',
                             'schema': {
-                                'type': 'function',
-                                'mode': 'wrap',
+                                'type': 'function-wrap',
                                 'function': {'type': 'general', 'function': wrap_function},
                                 'schema': {'type': 'str'},
                             },

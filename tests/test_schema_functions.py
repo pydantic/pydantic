@@ -60,13 +60,13 @@ all_schema_functions = [
     (
         core_schema.tuple_positional_schema,
         args({'type': 'int'}),
-        {'type': 'tuple', 'mode': 'positional', 'items_schema': [{'type': 'int'}]},
+        {'type': 'tuple-positional', 'items_schema': [{'type': 'int'}]},
     ),
-    (core_schema.tuple_positional_schema, args(), {'type': 'tuple', 'mode': 'positional', 'items_schema': []}),
+    (core_schema.tuple_positional_schema, args(), {'type': 'tuple-positional', 'items_schema': []}),
     (
         core_schema.tuple_variable_schema,
         args({'type': 'int'}),
-        {'type': 'tuple', 'mode': 'variable', 'items_schema': {'type': 'int'}},
+        {'type': 'tuple-variable', 'items_schema': {'type': 'int'}},
     ),
     (
         core_schema.set_schema,
@@ -89,8 +89,7 @@ all_schema_functions = [
         core_schema.general_before_validation_function,
         args(val_function, {'type': 'int'}),
         {
-            'type': 'function',
-            'mode': 'before',
+            'type': 'function-before',
             'function': {'type': 'general', 'function': val_function},
             'schema': {'type': 'int'},
         },
@@ -99,8 +98,7 @@ all_schema_functions = [
         core_schema.general_after_validation_function,
         args(val_function, {'type': 'int'}),
         {
-            'type': 'function',
-            'mode': 'after',
+            'type': 'function-after',
             'function': {'type': 'general', 'function': val_function},
             'schema': {'type': 'int'},
         },
@@ -108,17 +106,12 @@ all_schema_functions = [
     (
         core_schema.general_wrap_validation_function,
         args(val_function, {'type': 'int'}),
-        {
-            'type': 'function',
-            'mode': 'wrap',
-            'function': {'type': 'general', 'function': val_function},
-            'schema': {'type': 'int'},
-        },
+        {'type': 'function-wrap', 'function': {'type': 'general', 'function': val_function}, 'schema': {'type': 'int'}},
     ),
     (
         core_schema.general_plain_validation_function,
         args(val_function),
-        {'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': val_function}},
+        {'type': 'function-plain', 'function': {'type': 'general', 'function': val_function}},
     ),
     (
         core_schema.with_default_schema,
