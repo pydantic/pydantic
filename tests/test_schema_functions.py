@@ -86,24 +86,39 @@ all_schema_functions = [
         {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
     (
-        core_schema.function_before_schema,
+        core_schema.general_before_validation_function,
         args(val_function, {'type': 'int'}),
-        {'type': 'function', 'mode': 'before', 'function': val_function, 'schema': {'type': 'int'}},
+        {
+            'type': 'function',
+            'mode': 'before',
+            'function': {'type': 'general', 'function': val_function},
+            'schema': {'type': 'int'},
+        },
     ),
     (
-        core_schema.function_after_schema,
-        args({'type': 'int'}, val_function),
-        {'type': 'function', 'mode': 'after', 'function': val_function, 'schema': {'type': 'int'}},
-    ),
-    (
-        core_schema.function_wrap_schema,
+        core_schema.general_after_validation_function,
         args(val_function, {'type': 'int'}),
-        {'type': 'function', 'mode': 'wrap', 'function': val_function, 'schema': {'type': 'int'}},
+        {
+            'type': 'function',
+            'mode': 'after',
+            'function': {'type': 'general', 'function': val_function},
+            'schema': {'type': 'int'},
+        },
     ),
     (
-        core_schema.function_plain_schema,
+        core_schema.general_wrap_validation_function,
+        args(val_function, {'type': 'int'}),
+        {
+            'type': 'function',
+            'mode': 'wrap',
+            'function': {'type': 'general', 'function': val_function},
+            'schema': {'type': 'int'},
+        },
+    ),
+    (
+        core_schema.general_plain_validation_function,
         args(val_function),
-        {'type': 'function', 'mode': 'plain', 'function': val_function},
+        {'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': val_function}},
     ),
     (
         core_schema.with_default_schema,

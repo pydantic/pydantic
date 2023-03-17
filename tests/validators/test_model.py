@@ -95,7 +95,7 @@ def test_model_class_root_validator():
         {
             'type': 'function',
             'mode': 'wrap',
-            'function': f,
+            'function': {'type': 'general', 'function': f},
             'schema': {
                 'type': 'model',
                 'cls': MyModel,
@@ -129,7 +129,7 @@ def test_function_ask(mode, return_fields_set):
             'schema': {
                 'type': 'function',
                 'mode': mode,
-                'function': f,
+                'function': {'type': 'general', 'function': f},
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': return_fields_set,
@@ -150,7 +150,11 @@ def test_function_plain_ask():
         return input_value
 
     v = SchemaValidator(
-        {'type': 'model', 'cls': MyModel, 'schema': {'type': 'function', 'mode': 'plain', 'function': f}}
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'schema': {'type': 'function', 'mode': 'plain', 'function': {'type': 'general', 'function': f}},
+        }
     )
     assert 'expect_fields_set:false' in plain_repr(v)
     m = v.validate_python({'field_a': 'test'})
@@ -251,7 +255,7 @@ def test_model_class_function_after():
             'schema': {
                 'type': 'function',
                 'mode': 'after',
-                'function': f,
+                'function': {'type': 'general', 'function': f},
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,

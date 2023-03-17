@@ -78,7 +78,7 @@ def test_omit(py_and_json: PyAndJson):
         else:
             return v
 
-    v = py_and_json(core_schema.function_plain_schema(omit))
+    v = py_and_json(core_schema.general_plain_validation_function(omit))
     assert v.validate_test('foo') == 'foo'
     assert v.isinstance_test('foo') is True
 
