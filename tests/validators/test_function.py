@@ -20,7 +20,7 @@ def deepcopy_info(info: Union[core_schema.ValidationInfo, core_schema.FieldValid
 
 
 def test_function_before():
-    def f(input_value, info):
+    def f(input_value, _info):
         return input_value + ' Changed'
 
     v = SchemaValidator(
@@ -105,6 +105,28 @@ def test_function_before_error_model():
             'ctx': {'max_length': 5},
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'config,kwargs,expected_repr',
+    [
+        (None, {}, 'ValidationInfo(config=None, context=None)'),
+        (None, {'context': {1: 2}}, 'ValidationInfo(config=None, context={1: 2})'),
+        (None, {'context': None}, 'ValidationInfo(config=None, context=None)'),
+        ({'title': 'hello'}, {}, "ValidationInfo(config={'title': 'hello'}, context=None)"),
+    ],
+)
+def test_val_info_repr(config, kwargs, expected_repr):
+    def f(input_value, info: core_schema.ValidationInfo):
+        assert repr(info) == expected_repr
+        assert str(info) == expected_repr
+        return input_value
+
+    v = SchemaValidator(
+        {'type': 'function-before', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}, config
+    )
+
+    assert v.validate_python('input value', **kwargs) == 'input value'
 
 
 def test_function_wrap():
@@ -437,6 +459,8 @@ def test_model_field_before_validator() -> None:
     def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
+        assert repr(info) == "ValidationInfo(config=None, context=None, data={}, field_name='x')"
+        assert str(info) == "ValidationInfo(config=None, context=None, data={}, field_name='x')"
         assert isinstance(input_value, bytes)
         return f'input: {input_value.decode()}'
 
