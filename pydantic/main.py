@@ -12,7 +12,7 @@ from enum import Enum
 from functools import partial
 from inspect import getdoc
 from types import prepare_class, resolve_bases
-from typing import Any, Generic, Type, TypeVar, overload
+from typing import Any, Generic, TypeVar, overload
 
 import typing_extensions
 from pydantic_core import CoreConfig, SchemaValidator
@@ -350,7 +350,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             m.__pydantic_post_init__(context=None)
         return m
 
-    def _copy_and_set_values(self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
+    def _copy_and_set_values(self: Model, values: dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
         if deep:
             # chances of having empty dict here are quite low for using smart_deepcopy
             values = deepcopy(values)
@@ -373,7 +373,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: typing.Dict[str, Any] | None = None,
+        update: dict[str, Any] | None = None,
         deep: bool = False,
     ) -> Model:
         """
@@ -410,7 +410,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-    ) -> typing.Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         To override the logic used to generate the JSON schema, you can create a subclass of GenerateJsonSchema
         with your desired modifications, then override this method on a custom base class and set the default
@@ -530,8 +530,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         *,
         force: bool = False,
         raise_errors: bool = True,
-        types_namespace: typing.Dict[str, Any] | None = None,
-        typevars_map: typing.Dict[str, Any] | None = None,
+        types_namespace: dict[str, Any] | None = None,
+        typevars_map: dict[str, Any] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -554,7 +554,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 typevars_map=typevars_map,
             )
 
-    def __iter__(self) -> 'TupleGenerator':
+    def __iter__(self) -> TupleGenerator:
         """
         so `dict(model)` works
         """
@@ -569,7 +569,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> 'TupleGenerator':
+    ) -> TupleGenerator:
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
         # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
         # if exclude is not None or self.__exclude_fields__ is not None:
@@ -625,7 +625,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         include: MappingIntStrAny | None,
         exclude: MappingIntStrAny | None,
         exclude_unset: bool,
-        update: typing.Dict[str, Any] | None = None,
+        update: dict[str, Any] | None = None,
     ) -> typing.AbstractSet[str] | None:
         if include is None and exclude is None and exclude_unset is False:
             return None
@@ -807,7 +807,7 @@ def create_model(
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
+        __base__ = (typing.cast(type['Model'], BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 
@@ -852,7 +852,7 @@ T = TypeVar('T')
 
 class Validator(Generic[T]):
     @overload
-    def __init__(self, __type: Type[T], *, config: CoreConfig | None = None) -> None:
+    def __init__(self, __type: type[T], *, config: CoreConfig | None = None) -> None:
         ...
 
     # Adding this overload ensures you can use special forms without getting mypy errors.

@@ -3,10 +3,10 @@ import inspect
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
+from typing import Annotated, List
 
 import pytest
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction

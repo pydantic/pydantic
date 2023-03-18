@@ -5,7 +5,8 @@ from __future__ import annotations as _annotations
 
 import typing
 import warnings
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 

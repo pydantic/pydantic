@@ -6,7 +6,7 @@ import sys
 import textwrap
 from dataclasses import dataclass
 from types import FunctionType
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
@@ -74,7 +74,7 @@ def create_module(tmp_path, request):
 @dataclass
 class Err:
     message: str
-    errors: Optional[Any] = None
+    errors: Any | None = None
 
     def __repr__(self):
         if self.errors:

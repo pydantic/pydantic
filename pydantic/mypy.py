@@ -1,6 +1,8 @@
 import sys
+from collections.abc import Callable
 from configparser import ConfigParser
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
+from typing import Any, Optional
+from typing import Type as TypingType
 
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
@@ -79,7 +81,7 @@ FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 
 
-def parse_mypy_version(version: str) -> Tuple[int, ...]:
+def parse_mypy_version(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in version.split('+', 1)[0].split('.'))
 
 
@@ -115,7 +117,7 @@ class PydanticPlugin(Plugin):
                 return self._pydantic_model_class_maker_callback
         return None
 
-    def get_metaclass_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_metaclass_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         if fullname == MODEL_METACLASS_FULLNAME:
             return self._pydantic_model_metaclass_marker_callback
         return None
@@ -126,17 +128,17 @@ class PydanticPlugin(Plugin):
             return self._pydantic_field_callback
         return None
 
-    def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
+    def get_method_hook(self, fullname: str) -> Callable[[MethodContext], Type] | None:
         if fullname.endswith('.from_orm'):
             return from_attributes_callback
         return None
 
-    def get_class_decorator_hook(self, fullname: str) -> Optional[Callable[[ClassDefContext], None]]:
+    def get_class_decorator_hook(self, fullname: str) -> Callable[[ClassDefContext], None] | None:
         if fullname == DATACLASS_FULLNAME:
             return dataclasses.dataclass_class_maker_callback  # type: ignore[return-value]
         return None
 
-    def report_config_data(self, ctx: ReportConfigContext) -> Dict[str, Any]:
+    def report_config_data(self, ctx: ReportConfigContext) -> dict[str, Any]:
         """Return all plugin config data.
 
         Used by mypy to determine if cache needs to be discarded.
@@ -243,7 +245,7 @@ class PydanticPluginConfig:
                 setting = plugin_config.getboolean(CONFIGFILE_KEY, key, fallback=False)
                 setattr(self, key, setting)
 
-    def to_data(self) -> Dict[str, Any]:
+    def to_data(self) -> dict[str, Any]:
         return {key: getattr(self, key) for key in self.__slots__}
 
 
@@ -273,7 +275,7 @@ def from_attributes_callback(ctx: MethodContext) -> Type:
 
 
 class PydanticModelTransformer:
-    tracked_config_fields: Set[str] = {
+    tracked_config_fields: set[str] = {
         'extra',
         'frozen',
         'from_attributes',
@@ -400,15 +402,15 @@ class PydanticModelTransformer:
                 config.setdefault(name, value)
         return config
 
-    def collect_fields(self, model_config: 'ModelConfigData') -> List['PydanticModelField']:
+    def collect_fields(self, model_config: 'ModelConfigData') -> list['PydanticModelField']:
         """
         Collects the fields for the model, accounting for parent classes
         """
         # First, collect fields belonging to the current class.
         ctx = self._ctx
         cls = self._ctx.cls
-        fields = []  # type: List[PydanticModelField]
-        known_fields = set()  # type: Set[str]
+        fields: 'list[PydanticModelField]' = []
+        known_fields: 'set[str]' = set()
         for stmt in cls.defs.body:
             if not isinstance(stmt, AssignmentStmt):  # `and stmt.new_syntax` to require annotation
                 continue
@@ -484,7 +486,7 @@ class PydanticModelTransformer:
             all_fields = superclass_fields + all_fields
         return all_fields
 
-    def add_initializer(self, fields: List['PydanticModelField'], config: 'ModelConfigData') -> None:
+    def add_initializer(self, fields: list['PydanticModelField'], config: 'ModelConfigData') -> None:
         """
         Adds a fields-aware `__init__` method to the class.
 
@@ -504,7 +506,7 @@ class PydanticModelTransformer:
         if '__init__' not in ctx.cls.info.names:
             add_method(ctx, '__init__', init_arguments, NoneType())
 
-    def add_model_construct_method(self, fields: List['PydanticModelField']) -> None:
+    def add_model_construct_method(self, fields: list['PydanticModelField']) -> None:
         """
         Adds a fully typed `model_construct` classmethod to the class.
 
@@ -536,7 +538,7 @@ class PydanticModelTransformer:
             is_classmethod=True,
         )
 
-    def set_frozen(self, fields: List['PydanticModelField'], frozen: bool) -> None:
+    def set_frozen(self, fields: list['PydanticModelField'], frozen: bool) -> None:
         """
         Marks all fields as properties so that attempts to set them trigger mypy errors.
 
@@ -611,7 +613,7 @@ class PydanticModelTransformer:
         return isinstance(expr, EllipsisExpr)
 
     @staticmethod
-    def get_alias_info(stmt: AssignmentStmt) -> Tuple[Optional[str], bool]:
+    def get_alias_info(stmt: AssignmentStmt) -> tuple[str | None, bool]:
         """
         Returns a pair (alias, has_dynamic_alias), extracted from the declaration of the field defined in `stmt`.
 
@@ -640,8 +642,8 @@ class PydanticModelTransformer:
         return None, False
 
     def get_field_arguments(
-        self, fields: List['PydanticModelField'], typed: bool, force_all_optional: bool, use_alias: bool
-    ) -> List[Argument]:
+        self, fields: list['PydanticModelField'], typed: bool, force_all_optional: bool, use_alias: bool
+    ) -> list[Argument]:
         """
         Helper function used during the construction of the `__init__` and `model_construct` method signatures.
 
@@ -655,7 +657,7 @@ class PydanticModelTransformer:
         ]
         return arguments
 
-    def should_init_forbid_extra(self, fields: List['PydanticModelField'], config: 'ModelConfigData') -> bool:
+    def should_init_forbid_extra(self, fields: list['PydanticModelField'], config: 'ModelConfigData') -> bool:
         """
         Indicates whether the generated `__init__` should get a `**kwargs` at the end of its signature
 
@@ -670,7 +672,7 @@ class PydanticModelTransformer:
         return self.plugin_config.init_forbid_extra
 
     @staticmethod
-    def is_dynamic_alias_present(fields: List['PydanticModelField'], has_alias_generator: bool) -> bool:
+    def is_dynamic_alias_present(fields: list['PydanticModelField'], has_alias_generator: bool) -> bool:
         """
         Returns whether any fields on the model have a "dynamic alias", i.e., an alias that cannot be
         determined during static analysis.
@@ -687,7 +689,7 @@ class PydanticModelTransformer:
 
 class PydanticModelField:
     def __init__(
-        self, name: str, is_required: bool, alias: Optional[str], has_dynamic_alias: bool, line: int, column: int
+        self, name: str, is_required: bool, alias: str | None, has_dynamic_alias: bool, line: int, column: int
     ):
         self.name = name
         self.is_required = is_required
@@ -725,11 +727,11 @@ class PydanticModelField:
 class ModelConfigData:
     def __init__(
         self,
-        forbid_extra: Optional[bool] = None,
-        frozen: Optional[bool] = None,
-        from_attributes: Optional[bool] = None,
-        populate_by_name: Optional[bool] = None,
-        has_alias_generator: Optional[bool] = None,
+        forbid_extra: bool | None = None,
+        frozen: bool | None = None,
+        from_attributes: bool | None = None,
+        populate_by_name: bool | None = None,
+        has_alias_generator: bool | None = None,
     ):
         self.forbid_extra = forbid_extra
         self.frozen = frozen
@@ -737,7 +739,7 @@ class ModelConfigData:
         self.populate_by_name = populate_by_name
         self.has_alias_generator = has_alias_generator
 
-    def set_values_dict(self) -> Dict[str, Any]:
+    def set_values_dict(self) -> dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
     def update(self, config: Optional['ModelConfigData']) -> None:
@@ -790,10 +792,10 @@ def error_default_and_default_factory_specified(api: CheckerPluginInterface, con
 def add_method(
     ctx: ClassDefContext,
     name: str,
-    args: List[Argument],
+    args: list[Argument],
     return_type: Type,
-    self_type: Optional[Type] = None,
-    tvar_def: Optional[TypeVarDef] = None,
+    self_type: Type | None = None,
+    tvar_def: TypeVarDef | None = None,
     is_classmethod: bool = False,
     is_new: bool = False,
     # is_staticmethod: bool = False,
@@ -870,7 +872,7 @@ def add_method(
     info.defn.defs.body.append(func)
 
 
-def get_fullname(x: Union[FuncBase, SymbolNode]) -> str:
+def get_fullname(x: FuncBase | SymbolNode) -> str:
     """
     Used for compatibility with mypy 0.740; can be dropped once support for 0.740 is dropped.
     """
@@ -880,7 +882,7 @@ def get_fullname(x: Union[FuncBase, SymbolNode]) -> str:
     return fn
 
 
-def get_name(x: Union[FuncBase, SymbolNode]) -> str:
+def get_name(x: FuncBase | SymbolNode) -> str:
     """
     Used for compatibility with mypy 0.740; can be dropped once support for 0.740 is dropped.
     """
@@ -890,7 +892,7 @@ def get_name(x: Union[FuncBase, SymbolNode]) -> str:
     return fn
 
 
-def parse_toml(config_file: str) -> Optional[Dict[str, Any]]:
+def parse_toml(config_file: str) -> dict[str, Any] | None:
     if not config_file.endswith('.toml'):
         return None
 

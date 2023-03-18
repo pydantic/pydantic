@@ -1,7 +1,8 @@
 from __future__ import annotations as _annotations
 
 from collections import deque
-from typing import Any, Pattern
+from re import Pattern
+from typing import Any
 
 from pydantic_core import PydanticOmit
 from pydantic_core.core_schema import SerializationInfo, SerializeWrapHandler

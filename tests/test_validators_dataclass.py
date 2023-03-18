@@ -1,5 +1,4 @@
 from dataclasses import asdict, is_dataclass
-from typing import List
 
 import pytest
 
@@ -22,7 +21,7 @@ def test_simple():
 def test_validate_pre():
     @dataclass
     class MyDataclass:
-        a: List[int]
+        a: list[int]
 
         @validator('a', mode='before')
         def check_a1(cls, v):

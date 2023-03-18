@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
+from collections.abc import Sequence
 from enum import Enum
-from typing import Sequence
 
 from pydantic_core import core_schema
 

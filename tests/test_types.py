@@ -5,26 +5,18 @@ import re
 import sys
 import uuid
 from collections import OrderedDict, deque
+from collections.abc import Callable, Iterable, MutableSet, Sequence
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
+from re import Pattern
 from typing import (
+    Annotated,
     Any,
-    Callable,
     Deque,
-    Dict,
-    FrozenSet,
-    Iterable,
-    List,
-    MutableSet,
+    Literal,
     NewType,
-    Optional,
-    Pattern,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
 )
 from uuid import UUID
 
@@ -32,7 +24,7 @@ import annotated_types
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import TypedDict
 
 from pydantic import (
     UUID1,
@@ -229,8 +221,8 @@ def test_constrained_list_too_short():
 
 def test_constrained_list_optional():
     class Model(BaseModel):
-        req: Optional[conlist(str, min_length=1)]
-        opt: Optional[conlist(str, min_length=1)] = None
+        req: conlist(str, min_length=1) | None
+        opt: conlist(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -333,7 +325,7 @@ def test_constrained_list_item_type_fails():
 
 def test_conlist():
     class Model(BaseModel):
-        foo: List[int] = Field(..., min_length=2, max_length=4)
+        foo: list[int] = Field(..., min_length=2, max_length=4)
         bar: conlist(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': [1, 2], 'bar': ['spoon']}
@@ -444,8 +436,8 @@ def test_constrained_set_too_short():
 
 def test_constrained_set_optional():
     class Model(BaseModel):
-        req: Optional[conset(str, min_length=1)]
-        opt: Optional[conset(str, min_length=1)] = None
+        req: conset(str, min_length=1) | None
+        opt: conset(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -548,7 +540,7 @@ def test_constrained_set_item_type_fails():
 
 def test_conset():
     class Model(BaseModel):
-        foo: Set[int] = Field(..., min_length=2, max_length=4)
+        foo: set[int] = Field(..., min_length=2, max_length=4)
         bar: conset(str, min_length=1, max_length=4) = None
 
     assert Model(foo=[1, 2], bar=['spoon']).model_dump() == {'foo': {1, 2}, 'bar': {'spoon'}}
@@ -589,7 +581,7 @@ def test_conset():
 
 def test_conset_not_required():
     class Model(BaseModel):
-        foo: Optional[Set[int]] = None
+        foo: set[int] | None = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -597,7 +589,7 @@ def test_conset_not_required():
 
 def test_confrozenset():
     class Model(BaseModel):
-        foo: FrozenSet[int] = Field(..., min_length=2, max_length=4)
+        foo: frozenset[int] = Field(..., min_length=2, max_length=4)
         bar: confrozenset(str, min_length=1, max_length=4) = None
 
     m = Model(foo=[1, 2], bar=['spoon'])
@@ -641,7 +633,7 @@ def test_confrozenset():
 
 def test_confrozenset_not_required():
     class Model(BaseModel):
-        foo: Optional[FrozenSet[int]] = None
+        foo: frozenset[int] | None = None
 
     assert Model(foo=None).foo is None
     assert Model().foo is None
@@ -649,8 +641,8 @@ def test_confrozenset_not_required():
 
 def test_constrained_frozenset_optional():
     class Model(BaseModel):
-        req: Optional[confrozenset(str, min_length=1)]
-        opt: Optional[confrozenset(str, min_length=1)] = None
+        req: confrozenset(str, min_length=1) | None
+        opt: confrozenset(str, min_length=1) | None = None
 
     assert Model(req=None).model_dump() == {'req': None, 'opt': None}
     assert Model(req=None, opt=None).model_dump() == {'req': None, 'opt': None}
@@ -1345,7 +1337,7 @@ def test_tuple_fails(value):
 )
 def test_tuple_variable_len_success(value, cls, result):
     class Model(BaseModel):
-        v: Tuple[cls, ...]
+        v: tuple[cls, ...]
 
     assert Model(v=value).v == result
 
@@ -1387,7 +1379,7 @@ def test_tuple_variable_len_success(value, cls, result):
 )
 def test_tuple_variable_len_fails(value, cls, exc):
     class Model(BaseModel):
-        v: Tuple[cls, ...]
+        v: tuple[cls, ...]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
@@ -1425,7 +1417,7 @@ def test_set_fails(value):
 
 def test_list_type_fails():
     class Model(BaseModel):
-        v: List[int]
+        v: list[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
@@ -1437,7 +1429,7 @@ def test_list_type_fails():
 
 def test_set_type_fails():
     class Model(BaseModel):
-        v: Set[int]
+        v: set[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='123')
@@ -1454,8 +1446,8 @@ def test_set_type_fails():
         (int, (1, 2, 3), (1, 2, 3)),
         (int, range(5), [0, 1, 2, 3, 4]),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
-        (Set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
-        (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}], [{1, 2}, {3, 4}, {5, 6}]),
+        (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), ((1, 'a'), (2, 'b'), (3, 'c'))),
     ),
 )
 def test_sequence_success(cls, value, result):
@@ -1670,7 +1662,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            Set[int],
+            set[int],
             [{1, 2}, {2, 3}, {'d'}],
             [
                 {
@@ -1682,7 +1674,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            Tuple[int, str],
+            tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             [
                 {
@@ -1694,7 +1686,7 @@ def test_sequence_generator_fails():
             ],
         ),
         (
-            List[int],
+            list[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             [
                 {
@@ -2637,7 +2629,7 @@ def test_number_multiple_of_float_invalid(value):
 def test_new_type_success():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
-    c_type = NewType('c_type', List[int])
+    c_type = NewType('c_type', list[int])
 
     class Model(BaseModel):
         a: a_type
@@ -2651,7 +2643,7 @@ def test_new_type_success():
 def test_new_type_fails():
     a_type = NewType('a_type', int)
     b_type = NewType('b_type', a_type)
-    c_type = NewType('c_type', List[int])
+    c_type = NewType('c_type', list[int])
 
     class Model(BaseModel):
         a: a_type
@@ -2731,7 +2723,7 @@ def test_valid_simple_json_bytes():
 
 def test_valid_detailed_json():
     class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+        json_obj: Json[list[int]]
 
     obj = '[1, 2, 3]'
     assert JsonDetailedModel(json_obj=obj).model_dump() == {'json_obj': [1, 2, 3]}
@@ -2757,7 +2749,7 @@ def test_valid_detailed_json():
 def test_valid_model_json():
     class Model(BaseModel):
         a: int
-        b: List[int]
+        b: list[int]
 
     class JsonDetailedModel(BaseModel):
         json_obj: Json[Model]
@@ -2772,7 +2764,7 @@ def test_valid_model_json():
 def test_invalid_model_json():
     class Model(BaseModel):
         a: int
-        b: List[int]
+        b: list[int]
 
     class JsonDetailedModel(BaseModel):
         json_obj: Json[Model]
@@ -2789,7 +2781,7 @@ def test_invalid_model_json():
 
 def test_invalid_detailed_json_type_error():
     class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+        json_obj: Json[list[int]]
 
     obj = '["a", "b", "c"]'
     with pytest.raises(ValidationError) as exc_info:
@@ -2819,7 +2811,7 @@ def test_invalid_detailed_json_type_error():
 
 def test_json_not_str():
     class JsonDetailedModel(BaseModel):
-        json_obj: Json[List[int]]
+        json_obj: Json[list[int]]
 
     obj = 12
     with pytest.raises(ValidationError) as exc_info:
@@ -2854,7 +2846,7 @@ def test_json_pre_validator():
 
 def test_json_optional_simple():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json]
+        json_obj: Json | None
 
     assert JsonOptionalModel(json_obj=None).model_dump() == {'json_obj': None}
     assert JsonOptionalModel(json_obj='["x", "y", "z"]').model_dump() == {'json_obj': ['x', 'y', 'z']}
@@ -2862,7 +2854,7 @@ def test_json_optional_simple():
 
 def test_json_optional_complex():
     class JsonOptionalModel(BaseModel):
-        json_obj: Optional[Json[List[int]]]
+        json_obj: Json[list[int]] | None
 
     JsonOptionalModel(json_obj=None)
 
@@ -3140,9 +3132,9 @@ def test_secret_bytes_min_max_length():
 
 def test_generic_without_params():
     class Model(BaseModel):
-        generic_list: List
-        generic_dict: Dict
-        generic_tuple: Tuple
+        generic_list: list
+        generic_dict: dict
+        generic_tuple: tuple
 
     m = Model(generic_list=[0, 'a'], generic_dict={0: 'a', 'a': 0}, generic_tuple=(1, 'q'))
     assert m.model_dump() == {'generic_list': [0, 'a'], 'generic_dict': {0: 'a', 'a': 0}, 'generic_tuple': (1, 'q')}
@@ -3150,9 +3142,9 @@ def test_generic_without_params():
 
 def test_generic_without_params_error():
     class Model(BaseModel):
-        generic_list: List
-        generic_dict: Dict
-        generic_tuple: Tuple
+        generic_list: list
+        generic_dict: dict
+        generic_tuple: tuple
 
     with pytest.raises(ValidationError) as exc_info:
         Model(generic_list=0, generic_dict=0, generic_tuple=0)
@@ -3222,7 +3214,7 @@ def test_unsupported_field_type():
 
 def test_frozenset_field():
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = FrozenSetModel(set=test_set)
@@ -3241,7 +3233,7 @@ def test_frozenset_field():
 )
 def test_frozenset_field_conversion(value, result):
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     object_under_test = FrozenSetModel(set=value)
 
@@ -3250,7 +3242,7 @@ def test_frozenset_field_conversion(value, result):
 
 def test_frozenset_field_not_convertible():
     class FrozenSetModel(BaseModel):
-        set: FrozenSet[int]
+        set: frozenset[int]
 
     with pytest.raises(ValidationError, match=r'frozenset'):
         FrozenSetModel(set=42)
@@ -3326,8 +3318,8 @@ def test_deque_success():
         (int, (1, 2, 3), deque((1, 2, 3))),
         (int, deque((1, 2, 3)), deque((1, 2, 3))),
         (float, [1.0, 2.0, 3.0], deque([1.0, 2.0, 3.0])),
-        (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
-        (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
+        (set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
+        (tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
         # (float, {1.0, 2.0, 3.0}, deque([1.0, 2.0, 3.0])),
         # (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
@@ -3384,7 +3376,7 @@ def test_deque_generic_success(cls, value, result):
             },
         ),
         (
-            Tuple[int, str],
+            tuple[int, str],
             ((1, 'a'), ('a', 'a'), (3, 'c')),
             {
                 'type': 'int_parsing',
@@ -3394,7 +3386,7 @@ def test_deque_generic_success(cls, value, result):
             },
         ),
         (
-            List[int],
+            list[int],
             [{'a': 1, 'b': 2}, [1, 2], [2, 3]],
             {
                 'type': 'list_type',
@@ -3441,8 +3433,8 @@ def test_deque_json():
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
-        my_none_list: List[value_type]
-        my_none_dict: Dict[str, value_type]
+        my_none_list: list[value_type]
+        my_none_dict: dict[str, value_type]
         my_json_none: Json[value_type]
 
     Model(
@@ -3501,7 +3493,7 @@ def test_none(value_type):
 
 def test_default_union_types():
     class DefaultModel(BaseModel):
-        v: Union[int, bool, str]
+        v: int | bool | str
 
     # do it this way since `1 == True`
     assert repr(DefaultModel(v=True).v) == 'True'
@@ -3524,7 +3516,7 @@ def test_default_union_class():
         x: str
 
     class Model(BaseModel):
-        y: Union[A, B]
+        y: A | B
 
     assert isinstance(Model(y=A(x='a')).y, A)
     assert isinstance(Model(y=B(x='b')).y, B)
@@ -3535,7 +3527,7 @@ def test_union_subclass():
         ...
 
     class Model(BaseModel):
-        x: Union[int, str]
+        x: int | str
 
     # see https://github.com/pydantic/pydantic-core/pull/294, since subclasses are no-longer allowed as valid
     # inputs to strict-string, this doesn't work
@@ -3544,7 +3536,7 @@ def test_union_subclass():
 
 def test_union_compound_types():
     class Model(BaseModel):
-        values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
+        values: dict[str, str] | list[str] | dict[str, list[str]]
 
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
@@ -3578,7 +3570,7 @@ def test_union_compound_types():
 
 def test_smart_union_compounded_types_edge_case():
     class Model(BaseModel):
-        x: Union[List[str], List[int]]
+        x: list[str] | list[int]
 
     assert Model(x=[1, 2]).x == [1, 2]
     assert Model(x=['1', '2']).x == ['1', '2']
@@ -3593,6 +3585,6 @@ def test_union_typeddict():
         bar: str
 
     class M(BaseModel):
-        d: Union[Dict2, Dict1]
+        d: Dict2 | Dict1
 
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}

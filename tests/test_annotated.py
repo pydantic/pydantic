@@ -1,9 +1,8 @@
 import sys
-from typing import List
+from typing import Annotated
 
 import pytest
 from annotated_types import Gt, Lt
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
 from pydantic.fields import Undefined
@@ -171,7 +170,7 @@ def test_annotated_alias() -> None:
     StrAlias = Annotated[str, Field(max_length=3)]
     IntAlias = Annotated[int, Field(default_factory=lambda: 2)]
 
-    Nested = Annotated[List[StrAlias], Field(description='foo')]
+    Nested = Annotated[list[StrAlias], Field(description='foo')]
 
     class MyModel(BaseModel):
         a: StrAlias = 'abc'

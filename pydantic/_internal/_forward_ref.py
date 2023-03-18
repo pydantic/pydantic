@@ -1,10 +1,10 @@
 from __future__ import annotations as _annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from pydantic_core import core_schema
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 from ._typing_extra import TypeVarType
 

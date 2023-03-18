@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
 import importlib
 import json
 import os
@@ -9,8 +10,9 @@ import subprocess
 import sys
 import textwrap
 import traceback
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import patch
 
 from ansi2html import Ansi2HTMLConverter
@@ -237,8 +239,8 @@ def filter_lines(lines: list[str], error: Any) -> tuple[list[str], bool]:
 
 
 def upgrade_code(content: str, min_version: Version = HIGHEST_VERSION) -> str:
-    import pyupgrade._main  # type: ignore
     import autoflake  # type: ignore
+    import pyupgrade._main  # type: ignore
 
     upgraded = pyupgrade._main._fix_plugins(
         content,

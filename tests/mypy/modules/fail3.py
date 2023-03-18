@@ -1,7 +1,7 @@
 """
 Test mypy failure with invalid types.
 """
-from typing import Generic, List, TypeVar
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -10,7 +10,7 @@ T = TypeVar('T')
 
 
 class Model(BaseModel):
-    list_of_ints: List[int]
+    list_of_ints: list[int]
 
 
 class WrapperModel(BaseModel, Generic[T]):

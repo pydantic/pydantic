@@ -1,9 +1,9 @@
 import typing
 from collections import namedtuple
-from typing import Callable, NamedTuple
+from collections.abc import Callable
+from typing import Literal, NamedTuple, get_origin
 
 import pytest
-from typing_extensions import Literal, get_origin
 
 from pydantic import Field  # noqa: F401
 from pydantic._internal._typing_extra import is_namedtuple, is_none_type, origin_is_union
@@ -20,7 +20,7 @@ except ImportError:
 
 
 try:
-    from mypy_extensions import TypedDict as mypy_extensions_TypedDict
+    from typing import TypedDict as mypy_extensions_TypedDict
 except ImportError:
     mypy_extensions_TypedDict = None
 

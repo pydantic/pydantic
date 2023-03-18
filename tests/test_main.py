@@ -1,27 +1,22 @@
 import platform
 import sys
 from collections import defaultdict
+from collections.abc import Callable, Counter, Mapping
 from copy import deepcopy
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     ClassVar,
-    Counter,
     DefaultDict,
-    Dict,
-    List,
-    Mapping,
+    Final,
+    Literal,
     Optional,
-    Set,
-    Type,
     TypeVar,
     get_type_hints,
 )
 from uuid import UUID, uuid4
 
 import pytest
-from typing_extensions import Final, Literal
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
 
@@ -109,10 +104,10 @@ def none_check_model_fix():
     class NoneCheckModel(BaseModel):
         existing_str_value: str = 'foo'
         required_str_value: str = ...
-        required_str_none_value: Optional[str] = ...
+        required_str_none_value: str | None = ...
         existing_bytes_value: bytes = b'foo'
         required_bytes_value: bytes = ...
-        required_bytes_none_value: Optional[bytes] = ...
+        required_bytes_none_value: bytes | None = ...
 
     return NoneCheckModel
 
@@ -426,7 +421,7 @@ def test_frozen_with_unhashable_fields_are_not_hashable():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
         a: int = 10
-        y: List[int] = [1, 2, 3]
+        y: list[int] = [1, 2, 3]
 
     m = TestModel()
     with pytest.raises(TypeError) as exc_info:
@@ -568,7 +563,7 @@ def test_set_tuple_values():
 
 def test_default_copy():
     class User(BaseModel):
-        friends: List[int] = Field(default_factory=lambda: [])
+        friends: list[int] = Field(default_factory=lambda: [])
 
     u1 = User()
     u2 = User()
@@ -623,7 +618,7 @@ def test_arbitrary_types_not_allowed():
 @pytest.fixture(scope='session', name='TypeTypeModel')
 def type_type_model_fixture():
     class TypeTypeModel(BaseModel):
-        t: Type[ArbitraryType]
+        t: type[ArbitraryType]
 
     return TypeTypeModel
 
@@ -659,7 +654,7 @@ def test_type_type_validation_fails(TypeTypeModel, input_value):
     ]
 
 
-@pytest.mark.parametrize('bare_type', [type, Type])
+@pytest.mark.parametrize('bare_type', [type, type])
 def test_bare_type_type_validation_success(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -669,7 +664,7 @@ def test_bare_type_type_validation_success(bare_type):
     assert m.t == arbitrary_type_class
 
 
-@pytest.mark.parametrize('bare_type', [type, Type])
+@pytest.mark.parametrize('bare_type', [type, type])
 def test_bare_type_type_validation_fails(bare_type):
     class TypeTypeModel(BaseModel):
         t: bare_type
@@ -789,9 +784,9 @@ def test_dict_exclude_unset_populated_by_alias_with_extra():
 def test_exclude_defaults():
     class Model(BaseModel):
         mandatory: str
-        nullable_mandatory: Optional[str] = ...
+        nullable_mandatory: str | None = ...
         facultative: str = 'x'
-        nullable_facultative: Optional[str] = None
+        nullable_facultative: str | None = None
 
     m = Model(mandatory='a', nullable_mandatory=None)
     assert m.model_dump(exclude_defaults=True) == {
@@ -955,7 +950,7 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 
     class Bar(BaseModel):
         c: int
-        foos: List[Foo]
+        foos: list[Foo]
 
     m = Bar(c=3, foos=[Foo(a=1, b=2), Foo(a=3, b=4)])
 
@@ -987,7 +982,7 @@ def test_model_export_nested_list(exclude, expected, raises_match):
 def test_model_export_dict_exclusion(excludes, expected):
     class Foo(BaseModel):
         a: int = 1
-        bars: List[Dict[str, int]]
+        bars: list[dict[str, int]]
 
     m = Foo(a=1, bars=[{'w': 0, 'x': 1}, {'y': 2}, {'w': -1, 'z': 3}])
 
@@ -1002,7 +997,7 @@ def test_field_exclude():
         id: int
         username: str
         password: SecretStr = Field(exclude=True)
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(id=42, username='JohnDoe', password='hashedpassword', hobbies=['scuba diving'])
 
@@ -1020,7 +1015,7 @@ def test_model_exclude_copy_on_model_validation_shallow():
     class User(BaseModel):
         model_config = ConfigDict(copy_on_model_validation='shallow')
 
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(hobbies=['scuba diving'])
 
@@ -1040,7 +1035,7 @@ def test_copy_on_model_validation_warning(comv_value):
         # True interpreted as 'shallow', False interpreted as 'none'
         model_config = ConfigDict(copy_on_model_validation=comv_value)
 
-        hobbies: List[str]
+        hobbies: list[str]
 
     my_user = User(hobbies=['scuba diving'])
 
@@ -1066,7 +1061,7 @@ def test_validation_deep_copy():
         name: str
 
     class B(BaseModel):
-        list_a: List[A]
+        list_a: list[A]
 
     a = A(name='a')
     b = B(list_a=[a])
@@ -1119,7 +1114,7 @@ def test_model_export_exclusion_with_fields_and_config(kinds, exclude, expected)
         ParentConfig.fields = {'b': {'exclude': ...}, 'd': {'exclude': {'a'}}}
 
     class Sub(BaseModel):
-        a: List[int] = Field([3, 4, 5], exclude={1} if 'sub_fields' in kinds else None)
+        a: list[int] = Field([3, 4, 5], exclude={1} if 'sub_fields' in kinds else None)
         b: int = Field(4, exclude=... if 'sub_fields' in kinds else None)
         c: str = 'foobar'
 
@@ -1344,7 +1339,7 @@ def test_default_factory_validate_children():
         x: int
 
     class Parent(BaseModel):
-        children: List[Child] = Field(default_factory=list)
+        children: list[Child] = Field(default_factory=list)
 
     Parent(children=[{'x': 1}, {'x': 2}])
     with pytest.raises(ValidationError) as exc_info:
@@ -1433,7 +1428,7 @@ def test_inherited_model_field_copy():
             return id(self)
 
     class Item(BaseModel):
-        images: Set[Image]
+        images: set[Image]
 
     image_1 = Image(path='my_image1.png')
     image_2 = Image(path='my_image2.png')
@@ -1456,7 +1451,7 @@ def test_inherited_model_field_untouched():
             return id(self)
 
     class Item(BaseModel):
-        images: List[Image]
+        images: list[Image]
 
     image_1 = Image(path='my_image1.png')
     image_2 = Image(path='my_image2.png')
@@ -1515,7 +1510,7 @@ def test_mapping_retains_type_fallback_error():
 
 def test_typing_coercion_dict():
     class Model(BaseModel):
-        x: Dict[str, int]
+        x: dict[str, int]
 
     m = Model(x={'one': 1, 'two': 2})
     assert repr(m) == "Model(x={'one': 1, 'two': 2})"
@@ -1525,7 +1520,7 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
-class MyDict(Dict[KT, VT]):
+class MyDict(dict[KT, VT]):
     def __repr__(self):
         return f'MyDict({super().__repr__()})'
 

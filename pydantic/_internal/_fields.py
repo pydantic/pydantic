@@ -30,13 +30,13 @@ class _UndefinedType:
     def __repr__(self) -> str:
         return 'PydanticUndefined'
 
-    def __copy__(self) -> '_UndefinedType':
+    def __copy__(self) -> _UndefinedType:
         return self
 
     def __reduce__(self) -> str:
         return 'Undefined'
 
-    def __deepcopy__(self, _: Any) -> '_UndefinedType':
+    def __deepcopy__(self, _: Any) -> _UndefinedType:
         return self
 
 
@@ -169,9 +169,6 @@ def collect_fields(  # noqa: C901
 
         init_var = False
         if ann_type is dataclasses.InitVar:
-            if sys.version_info < (3, 8):
-                raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
-
             init_var = True
             ann_type = Any
         elif isinstance(ann_type, dataclasses.InitVar):

@@ -3,12 +3,11 @@ Tests for TypedDict
 """
 import sys
 import typing
-from typing import Generic, List, Optional, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 import pytest
 import typing_extensions
 from annotated_types import Lt
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, PositiveInt, ValidationError
 
@@ -325,9 +324,9 @@ def test_typed_dict_inheritance_schema(TypedDict, req_no_req):
 
 def test_typeddict_annotated_nonoptional_schema(TypedDict):
     class DataTD(TypedDict):
-        a: Optional[int]
-        b: Annotated[Optional[int], Field(42)]
-        c: Annotated[Optional[int], Field(description='Test')]
+        a: int | None
+        b: Annotated[int | None, Field(42)]
+        c: Annotated[int | None, Field(description='Test')]
 
     class Model(BaseModel):
         data_td: DataTD
@@ -366,9 +365,9 @@ def test_typeddict_annotated_nonoptional_schema(TypedDict):
 )
 def test_typeddict_annotated(TypedDict, input_value, expected):
     class DataTD(TypedDict):
-        a: Optional[int]
-        b: Annotated[Optional[int], Field(42)]
-        c: Annotated[Optional[int], Field(description='Test', lt=4)]
+        a: int | None
+        b: Annotated[int | None, Field(42)]
+        c: Annotated[int | None, Field(description='Test', lt=4)]
 
     class Model(BaseModel):
         d: DataTD
@@ -471,7 +470,7 @@ def test_recursive_generic_typeddict(create_module):
         class RecursiveGenTypedDict(TypedDict, Generic[T]):
             # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
             foo: Optional['RecursiveGenTypedDict[T]']
-            ls: List[T]
+            ls: list[T]
 
         class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
             # TODO: check what happens if RecursiveGenTypedDict is a forward reference

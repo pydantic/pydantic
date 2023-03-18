@@ -5,9 +5,10 @@ from __future__ import annotations as _annotations
 
 import typing
 import warnings
+from collections.abc import Callable
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable
+from typing import Any
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 

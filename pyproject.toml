@@ -100,9 +100,10 @@ require_change_file = false
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q', 'RUF100', 'C90']
+extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
+isort = { known-first-party = ['pydantic', 'tests'] }
 
 [tool.ruff.per-file-ignores]
 'pydantic/__init__.py' = ['F405', 'F403']
@@ -178,4 +179,3 @@ ignore_missing_imports = true
 
 [tool.pyright]
 include = ['pydantic']
-# reportUnnecessaryTypeIgnoreComment = true

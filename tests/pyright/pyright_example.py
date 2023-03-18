@@ -2,14 +2,13 @@
 This file is used to test pyright's ability to check pydantic code.
 """
 
-from typing import List
 
 from pydantic import BaseModel, Field
 
 
 class MyModel(BaseModel):
     x: str
-    y: List[int]
+    y: list[int]
 
 
 m1 = MyModel(x='hello', y=[1, 2, 3])

@@ -9,11 +9,11 @@ import re
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping, Tuple
+from collections.abc import Callable, Mapping
+from typing import TYPE_CHECKING, Annotated, Any, ForwardRef, Literal, Type, get_args, get_origin, is_typeddict
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
@@ -246,19 +246,19 @@ class GenerateSchema:
             return self._union_schema(obj)
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
-        elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
+        elif issubclass(origin, (list, set, frozenset)):
             return self._generic_collection_schema(obj)
-        elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
+        elif issubclass(origin, tuple):
             return self._tuple_schema(obj)
         elif issubclass(origin, typing.Counter):
             return self._counter_schema(obj)
-        elif origin == typing.Dict:
+        elif origin == dict:
             return self._dict_schema(obj)
-        elif issubclass(origin, typing.Dict):
+        elif issubclass(origin, dict):
             return self._dict_subclass_schema(obj)
         elif issubclass(origin, typing.Mapping):
             return self._mapping_schema(obj)
-        elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
+        elif issubclass(origin, type):
             return self._subclass_schema(obj)
         elif issubclass(origin, typing.Deque):
             from ._std_types_schema import deque_schema
@@ -417,9 +417,9 @@ class GenerateSchema:
                 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
             )
 
-        required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
+        required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
-        fields: typing.Dict[str, core_schema.TypedDictField] = {}
+        fields: dict[str, core_schema.TypedDictField] = {}
         validator_functions = ValidationFunctions(())
         serializer_functions = SerializationFunctions(())
 
@@ -519,7 +519,7 @@ class GenerateSchema:
         params = get_args(tuple_type)
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         if not params:
-            if tuple_type == typing.Tuple:
+            if tuple_type == tuple:
                 return core_schema.tuple_variable_schema()
             else:
                 # special case for `tuple[()]` which means `tuple[]` - an empty tuple
@@ -629,7 +629,7 @@ class GenerateSchema:
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema(
-                    *[self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
+                    *[self.generate_schema(Type[c]) for c in type_param.__constraints__]  # noqa: UP006
                 )
             else:
                 return self._type_schema()
@@ -750,7 +750,7 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     Apply validators to a schema.
     """
     f_match: Mapping[
-        Tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
+        tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
     ] = {
         ('before', True): core_schema.field_before_validation_function,
         ('after', True): core_schema.field_after_validation_function,

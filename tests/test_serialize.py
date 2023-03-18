@@ -1,18 +1,17 @@
 """
 New tests for v2 of serialization logic.
 """
-from typing import Any, Optional
+from typing import Annotated, Any
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, serializer
 
 
 def test_serialize_decorator_always():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @serializer('x', json_return_type='str')
         def customise_x_serialisation(cls, v, _info):
@@ -48,7 +47,7 @@ def test_serialize_decorator_json():
 
 def test_serialize_decorator_unless_none():
     class MyModel(BaseModel):
-        x: Optional[int]
+        x: int | None
 
         @serializer('x', when_used='unless-none')
         def customise_x_serialisation(cls, v, _info):

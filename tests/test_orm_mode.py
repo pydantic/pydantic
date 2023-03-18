@@ -1,5 +1,4 @@
 from types import SimpleNamespace
-from typing import Dict, List
 
 import pytest
 
@@ -62,7 +61,7 @@ def test_from_attributes_root():
         jp_name: str
 
     class PokemonList(BaseModel):
-        __root__: List[Pokemon]
+        __root__: list[Pokemon]
         model_config = ConfigDict(from_attributes=True)
 
     pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
@@ -75,7 +74,7 @@ def test_from_attributes_root():
     ]
 
     class PokemonDict(BaseModel):
-        __root__: Dict[str, Pokemon]
+        __root__: dict[str, Pokemon]
         model_config = ConfigDict(from_attributes=True)
 
     pokemons = PokemonDict.from_orm({'pika': pika, 'bulbi': bulbi})
@@ -93,7 +92,7 @@ def test_from_attributes():
             self.species = species
 
     class PersonCls:
-        def __init__(self, *, name: str, age: float = None, pets: List[PetCls]):
+        def __init__(self, *, name: str, age: float = None, pets: list[PetCls]):
             self.name = name
             self.age = age
             self.pets = pets
@@ -107,7 +106,7 @@ def test_from_attributes():
         model_config = ConfigDict(from_attributes=True)
         name: str
         age: float = None
-        pets: List[Pet]
+        pets: list[Pet]
 
     bones = PetCls(name='Bones', species='dog')
     orion = PetCls(name='Orion', species='cat')

@@ -1,12 +1,13 @@
 import datetime
 from collections import deque
+from collections.abc import Callable
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
 from re import Pattern
 from types import GeneratorType
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any
 from uuid import UUID
 
 from .color import Color
@@ -16,11 +17,11 @@ from .types import SecretBytes, SecretStr
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
 
-def isoformat(o: Union[datetime.date, datetime.time]) -> str:
+def isoformat(o: datetime.date | datetime.time) -> str:
     return o.isoformat()
 
 
-def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
+def decimal_encoder(dec_value: Decimal) -> int | float:
     """
     Encodes a Decimal as int of there's no exponent, otherwise float
 
@@ -42,7 +43,7 @@ def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
         return float(dec_value)
 
 
-ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
+ENCODERS_BY_TYPE: dict[type[Any], Callable[[Any], Any]] = {
     bytes: lambda o: o.decode(),
     Color: str,
     datetime.date: isoformat,
@@ -91,7 +92,7 @@ def pydantic_encoder(obj: Any) -> Any:
         raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
 
 
-def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
+def custom_pydantic_encoder(type_encoders: dict[Any, Callable[[type[Any]], Any]], obj: Any) -> Any:
     # Check the class type and its superclasses for a matching encoder
     for base in obj.__class__.__mro__[:-1]:
         try:

@@ -7,11 +7,11 @@ Public methods related to:
 
 from __future__ import annotations as _annotations
 
+from collections.abc import Callable
 from types import FunctionType
-from typing import Any, Callable, Union, overload
+from typing import Any, Literal, Protocol, Union, overload
 
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Literal, Protocol
 
 from ._internal import _decorators
 from .errors import PydanticUserError

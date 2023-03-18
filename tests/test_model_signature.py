@@ -1,15 +1,15 @@
 import sys
+from collections.abc import Iterable
 from inspect import Parameter, Signature, signature
-from typing import Any, Iterable, Optional, Union
+from typing import Annotated, Any, Optional
 
 import pytest
-from typing_extensions import Annotated
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, create_model
 from pydantic._internal._typing_extra import is_annotated
 
 
-def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
+def _equals(a: str | Iterable[str], b: str | Iterable[str]) -> bool:
     """
     compare strings with spaces removed
     """
@@ -150,7 +150,7 @@ def test_signature_is_class_only():
 
 def test_optional_field():
     class Model(BaseModel):
-        foo: Optional[int] = None
+        foo: int | None = None
 
     assert signature(Model) == Signature(
         [Parameter('foo', Parameter.KEYWORD_ONLY, default=None, annotation=Optional[int])], return_annotation=None
@@ -175,6 +175,6 @@ def test_annotated_optional_field():
     from annotated_types import Gt
 
     class Model(BaseModel):
-        foo: Annotated[Optional[int], Gt(1)] = None
+        foo: Annotated[int | None, Gt(1)] = None
 
     assert str(signature(Model)) == '(*, foo: Annotated[Optional[int], Gt(gt=1)] = None) -> None'
