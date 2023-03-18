@@ -53,6 +53,7 @@ from mypy.types import (
     Instance,
     NoneType,
     Overloaded,
+    ProperType,
     Type,
     TypeOfAny,
     TypeType,
@@ -573,10 +574,7 @@ class PydanticModelTransformer:
         if isinstance(expr, TempNode):
             # TempNode means annotation-only, so only non-required if Optional
             value_type = get_proper_type(cls.info[lhs.name].type)
-            if isinstance(value_type, UnionType) and any(isinstance(item, NoneType) for item in value_type.items):
-                # Annotated as Optional, or otherwise having NoneType in the union
-                return False
-            return True
+            return not PydanticModelTransformer.type_has_implicit_default(value_type)
         if isinstance(expr, CallExpr) and isinstance(expr.callee, RefExpr) and expr.callee.fullname == FIELD_FULLNAME:
             # The "default value" is a call to `Field`; at this point, the field is
             # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`) or if default_factory
@@ -587,9 +585,28 @@ class PydanticModelTransformer:
                     return arg.__class__ is EllipsisExpr
                 if name == 'default_factory':
                     return False
-            return True
+            # In this case, default and default_factory are not specified, so we need to look at the annotation
+            value_type = get_proper_type(cls.info[lhs.name].type)
+            return not PydanticModelTransformer.type_has_implicit_default(value_type)
         # Only required if the "default value" is Ellipsis (i.e., `field_name: Annotation = ...`)
         return isinstance(expr, EllipsisExpr)
+
+    @staticmethod
+    def type_has_implicit_default(type_: Optional[ProperType]) -> bool:
+        """
+        Returns True if the passed type will be given an implicit default value.
+
+        In pydantic v1, this is the case for Optional types and Any (with default value None).
+        """
+        if isinstance(type_, AnyType):
+            # Annotated as Any
+            return True
+        if isinstance(type_, UnionType) and any(
+            isinstance(item, NoneType) or isinstance(item, AnyType) for item in type_.items
+        ):
+            # Annotated as Optional, or otherwise having NoneType or AnyType in the union
+            return True
+        return False
 
     @staticmethod
     def get_alias_info(stmt: AssignmentStmt) -> Tuple[Optional[str], bool]:
