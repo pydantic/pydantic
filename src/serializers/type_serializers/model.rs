@@ -98,13 +98,17 @@ impl TypeSerializer for ModelSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        if self.allow_value(value, extra).map_err(py_err_se_err)? {
-            let dict = object_to_dict(value, true, extra).map_err(py_err_se_err)?;
+        let extra = Extra {
+            model: Some(value),
+            ..*extra
+        };
+        if self.allow_value(value, &extra).map_err(py_err_se_err)? {
+            let dict = object_to_dict(value, true, &extra).map_err(py_err_se_err)?;
             self.serializer
-                .serde_serialize(dict, serializer, include, exclude, extra)
+                .serde_serialize(dict, serializer, include, exclude, &extra)
         } else {
-            extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
-            infer_serialize(value, serializer, include, exclude, extra)
+            extra.warnings.on_fallback_ser::<S>(self.get_name(), value, &extra)?;
+            infer_serialize(value, serializer, include, exclude, &extra)
         }
     }
 

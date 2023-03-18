@@ -1,7 +1,9 @@
 import json
+from typing import Any
 
 import pytest
 from dirty_equals import IsStrictDict
+from typing_extensions import TypedDict
 
 from pydantic_core import SchemaSerializer, core_schema
 
@@ -159,3 +161,89 @@ def test_exclude_default():
 
     assert v.to_json({'foo': 1, 'bar': b'[default]'}) == b'{"foo":1,"bar":"[default]"}'
     assert v.to_json({'foo': 1, 'bar': b'[default]'}, exclude_defaults=True) == b'{"foo":1}'
+
+
+def test_function_plain_field_serializer_to_python():
+    class Model(TypedDict):
+        x: int
+
+    def ser_x(data: Model, v: Any, _) -> str:
+        assert data['x'] == 1_000
+        return f'{v:_}'
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'x': core_schema.typed_dict_field(
+                    core_schema.int_schema(serialization=core_schema.field_function_plain_ser_schema(ser_x))
+                )
+            }
+        )
+    )
+    assert s.to_python(Model(x=1000)) == {'x': '1_000'}
+
+
+def test_function_wrap_field_serializer_to_python():
+    class Model(TypedDict):
+        x: int
+
+    def ser_x(data: Model, v: Any, serializer: core_schema.SerializeWrapHandler, _) -> str:
+        x = serializer(v)
+        assert data['x'] == 1_000
+        return f'{x:_}'
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'x': core_schema.typed_dict_field(
+                    core_schema.int_schema(
+                        serialization=core_schema.field_function_wrap_ser_schema(ser_x, schema=core_schema.any_schema())
+                    )
+                )
+            }
+        )
+    )
+    assert s.to_python(Model(x=1000)) == {'x': '1_000'}
+
+
+def test_function_plain_field_serializer_to_json():
+    class Model(TypedDict):
+        x: int
+
+    def ser_x(data: Model, v: Any, _) -> str:
+        assert data['x'] == 1_000
+        return f'{v:_}'
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'x': core_schema.typed_dict_field(
+                    core_schema.int_schema(serialization=core_schema.field_function_plain_ser_schema(ser_x))
+                )
+            }
+        )
+    )
+    assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000'}
+
+
+def test_function_wrap_field_serializer_to_json():
+    class Model(TypedDict):
+        x: int
+
+    def ser_x(data: Model, v: Any, serializer: core_schema.SerializeWrapHandler, _) -> str:
+        assert data['x'] == 1_000
+        x = serializer(v)
+        return f'{x:_}'
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'x': core_schema.typed_dict_field(
+                    core_schema.int_schema(
+                        serialization=core_schema.field_function_wrap_ser_schema(ser_x, schema=core_schema.any_schema())
+                    )
+                )
+            }
+        )
+    )
+    assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000'}
