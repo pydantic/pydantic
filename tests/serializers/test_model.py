@@ -403,6 +403,7 @@ def test_function_plain_field_serializer_to_python():
         x: int
 
         def ser_x(self, v: Any, _) -> str:
+            assert self.x == 1_000
             return f'{v:_}'
 
     s = SchemaSerializer(
@@ -427,6 +428,7 @@ def test_function_wrap_field_serializer_to_python():
 
         def ser_x(self, v: Any, serializer: core_schema.SerializeWrapHandler, _) -> str:
             x = serializer(v)
+            assert self.x == 1_000
             return f'{x:_}'
 
     s = SchemaSerializer(
@@ -454,6 +456,7 @@ def test_function_plain_field_serializer_to_json():
         x: int
 
         def ser_x(self, v: Any, _) -> str:
+            assert self.x == 1_000
             return f'{v:_}'
 
     s = SchemaSerializer(
@@ -477,6 +480,7 @@ def test_function_wrap_field_serializer_to_json():
         x: int
 
         def ser_x(self, v: Any, serializer: core_schema.SerializeWrapHandler, _) -> str:
+            assert self.x == 1_000
             x = serializer(v)
             return f'{x:_}'
 
