@@ -19,6 +19,7 @@ from typing import (
     Mapping,
     NoReturn,
     Optional,
+    Pattern,
     Set,
     Tuple,
     Type,
@@ -792,6 +793,10 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
             raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
 
         return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)
+
+
+def get_pattern(regex: Union[str, Pattern[str]]) -> str:
+    return regex if isinstance(regex, str) else regex.pattern
 
 
 def _get_union_alias_and_all_values(

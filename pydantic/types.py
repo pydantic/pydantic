@@ -30,7 +30,7 @@ from weakref import WeakSet
 
 from . import errors
 from .datetime_parse import parse_date
-from .utils import import_string, update_not_none
+from .utils import get_pattern, import_string, update_not_none
 from .validators import (
     bytes_validator,
     constr_length_validator,
@@ -412,7 +412,7 @@ class ConstrainedStr(str):
             field_schema,
             minLength=cls.min_length,
             maxLength=cls.max_length,
-            pattern=cls.regex and cls._get_pattern(cls.regex),
+            pattern=cls.regex and get_pattern(cls.regex),
         )
 
     @classmethod
@@ -431,13 +431,9 @@ class ConstrainedStr(str):
 
         if cls.regex:
             if not re.match(cls.regex, value):
-                raise errors.StrRegexError(pattern=cls._get_pattern(cls.regex))
+                raise errors.StrRegexError(pattern=get_pattern(cls.regex))
 
         return value
-
-    @staticmethod
-    def _get_pattern(regex: Union[str, Pattern[str]]) -> str:
-        return regex if isinstance(regex, str) else regex.pattern
 
 
 def constr(
