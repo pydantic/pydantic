@@ -73,7 +73,7 @@ class Serializer:
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ):
-        # arguments match core_schema.function_plain_ser_schema or core_schema.function_wrap_ser_schema
+        # arguments match core_schema.general_function_plain_ser_schema or core_schema.general_function_wrap_ser_schema
         # function is set later after the class is created and functions are bound
         self.function: Callable[..., Any] | None = None
         self.sub_path = sub_path

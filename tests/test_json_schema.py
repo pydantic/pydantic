@@ -2479,7 +2479,7 @@ def test_advanced_generic_schema():
                 'title': 'Data2 title',
                 'type': 'array',
             },
-            'data3': {'title': 'Data3', 'type': 'array'},
+            'data3': {'title': 'Data3', 'type': 'array', 'items': {}},
             'data4': {
                 'title': 'Data4',
                 'type': 'array',

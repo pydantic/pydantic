@@ -63,7 +63,14 @@ table: list[tuple[str, str, str | dict[str, Any], str, str]] = [
         '',
     ),
     (
-        'tuple',
+        'tuple-positional',
+        'array',
+        {'items': {}},
+        'JSON Schema Core',
+        '',
+    ),
+    (
+        'tuple-variable',
         'array',
         {'items': {}},
         'JSON Schema Core',

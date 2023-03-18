@@ -303,7 +303,7 @@ class UuidVersion:
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.FunctionSchema:
+    ) -> core_schema.FunctionAfterSchema:
         return core_schema.general_after_validation_function(
             cast(core_schema.GeneralValidatorFunction, self.validate), schema
         )
@@ -335,7 +335,7 @@ class PathType:
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.FunctionSchema:
+    ) -> core_schema.FunctionAfterSchema:
         function_lookup = {
             'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
             'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
@@ -423,7 +423,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionAfterSchema:
         validator = SecretFieldValidator(cls)
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
@@ -451,7 +451,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 custom_error_type=cls._error_kind,
             ),
             metadata=metadata,
-            serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
+            serialization=core_schema.general_function_plain_ser_schema(cls._serialize, json_return_type='str'),
         )
 
     @classmethod
@@ -590,7 +590,7 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionAfterSchema:
         return core_schema.general_after_validation_function(
             cls.validate,
             core_schema.str_schema(

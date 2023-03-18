@@ -72,13 +72,15 @@ V1Validator = Union[
 V2Validator = Union[
     _V2ValidatorClsMethod,
     _core_schema.GeneralValidatorFunction,
+    _core_schema.FieldValidatorFunction,
     _OnlyValueValidatorClsMethod,
     _decorators.OnlyValueValidator,
 ]
 
 V2WrapValidator = Union[
     _V2WrapValidatorClsMethod,
-    _core_schema.GeneralWrapValidatorFunctionSchema,
+    _core_schema.GeneralWrapValidatorFunction,
+    _core_schema.FieldWrapValidatorFunction,
 ]
 
 
