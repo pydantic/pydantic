@@ -820,6 +820,23 @@ def test_str_basic_types(field_type, expected_schema):
     assert Model.schema() == base_schema
 
 
+def test_constrained_str_class_dict():
+    class CustomStr(ConstrainedStr):
+        regex = '^text$'
+
+    class Model(BaseModel):
+        a: Dict[CustomStr, Any]
+
+    json_schema = Model.schema()
+
+    assert json_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'patternProperties': {'^text$': {}}, 'title': 'A', 'type': 'object'}},
+        'required': ['a'],
+    }
+
+
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
