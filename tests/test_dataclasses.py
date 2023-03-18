@@ -5,13 +5,13 @@ import sys
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, ClassVar, Dict, FrozenSet, List, Optional, Set, Union
+from typing import Any, Callable, ClassVar, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, Extra, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, Extra, ModelFieldValidationInfo, ValidationError, validator
 
 
 def test_simple():
@@ -1510,3 +1510,25 @@ def test_config_as_type_deprecated():
             a: int
 
         assert MyDataclass.__pydantic_model__.model_config == ConfigDict(validate_assignment=True)
+
+
+def test_validator_info_field_name_data_before():
+    """
+    Test accessing info.field_name and info.data
+    We only test the `before` validator because they
+    all share the same implementation.
+    """
+
+    @pydantic.dataclasses.dataclass
+    class Model:
+        a: str
+        b: str
+
+        @validator('b', mode='before')
+        def check_a(cls, v: Any, info: ModelFieldValidationInfo) -> Any:
+            assert v == b'but my barbaz is better'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 'your foobar is good'}
+            return 'just kidding!'
+
+    assert Model(a=b'your foobar is good', b=b'but my barbaz is better').b == 'just kidding!'
