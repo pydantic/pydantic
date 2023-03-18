@@ -246,6 +246,13 @@ impl TypeSerializer for TypedDictSerializer {
     ) -> Result<S::Ok, S::Error> {
         match value.downcast::<PyDict>() {
             Ok(py_dict) => {
+                // If there is already a model registered (from a dataclass, BaseModel)
+                // then do not touch it
+                // If there is no model, we (a TypedDict) are the model
+                let extra = Extra {
+                    model: extra.model.map_or_else(|| Some(value), Some),
+                    ..*extra
+                };
                 let expected_len = match self.include_extra {
                     true => py_dict.len(),
                     false => self.fields.len(),
@@ -255,6 +262,10 @@ impl TypeSerializer for TypedDictSerializer {
                 let mut map = serializer.serialize_map(Some(expected_len))?;
 
                 for (key, value) in py_dict {
+                    let extra = Extra {
+                        field_name: Some(key.extract().map_err(py_err_se_err)?),
+                        ..extra
+                    };
                     if extra.exclude_none && value.is_none() {
                         continue;
                     }
@@ -264,24 +275,24 @@ impl TypeSerializer for TypedDictSerializer {
                         if let Ok(key_py_str) = key.downcast::<PyString>() {
                             let key_str = key_py_str.to_str().map_err(py_err_se_err)?;
                             if let Some(field) = self.fields.get(key_str) {
-                                if self.exclude_default(value, extra, field).map_err(py_err_se_err)? {
+                                if self.exclude_default(value, &extra, field).map_err(py_err_se_err)? {
                                     continue;
                                 }
-                                let output_key = field.get_key_json(key_str, extra);
+                                let output_key = field.get_key_json(key_str, &extra);
                                 let s = PydanticSerializer::new(
                                     value,
                                     &field.serializer,
                                     next_include,
                                     next_exclude,
-                                    extra,
+                                    &extra,
                                 );
                                 map.serialize_entry(&output_key, &s)?;
                                 continue;
                             }
                         }
                         if self.include_extra {
-                            let s = SerializeInfer::new(value, include, exclude, extra);
-                            let output_key = infer_json_key(key, extra).map_err(py_err_se_err)?;
+                            let s = SerializeInfer::new(value, include, exclude, &extra);
+                            let output_key = infer_json_key(key, &extra).map_err(py_err_se_err)?;
                             map.serialize_entry(&output_key, &s)?
                         }
                     }
