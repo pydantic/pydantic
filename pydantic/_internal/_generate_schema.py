@@ -9,6 +9,7 @@ import re
 import sys
 import typing
 import warnings
+from inspect import Signature, signature
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping, Tuple
 
 from annotated_types import BaseMetadata, GroupedMetadata
@@ -768,21 +769,64 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     return schema
 
 
+_SerializerType = Literal[
+    'field-wrap',
+    'general-wrap',
+    'field-plain',
+    'general-plain',
+]
+
+
+def _is_unbound_instance_method(sig: Signature) -> bool:
+    if len(sig.parameters) < 1:
+        raise TypeError
+    first = next(iter(sig.parameters.keys()))
+    return sig.parameters[first].name == 'self'
+
+
+def _infer_serializer_type_from_signature(func: Callable[..., Any]) -> _SerializerType:
+    sig = signature(func)
+    if len(sig.parameters) == 2:
+        # (value, info) -> Any
+        return 'general-plain'
+    elif len(sig.parameters) == 3:
+        # (self, value, info) -> Any or (value, nxt, info)
+        if _is_unbound_instance_method(sig):
+            return 'field-plain'
+        return 'general-wrap'
+    elif len(sig.parameters) == 4 and _is_unbound_instance_method(sig):
+        # (self, value, nxt, info) -> Any
+        return 'field-wrap'
+    raise TypeError(f'Unrecognized serializer signature for {func.__name__} {sig}')
+
+
 def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializer]) -> core_schema.CoreSchema:
     """
     Apply serializers to a schema.
     """
     if serializers:
-        # user the last serializser to make it easy to override a serializer set on a parent model
+        # user the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
         assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], serializer.function)
-        if serializer.wrap:
+        type_ = _infer_serializer_type_from_signature(function)
+        if serializer.wrap and type_ not in ('general-wrap', 'field-wrap'):
+            raise TypeError
+        if type_ == 'general-wrap':
             schema['serialization'] = core_schema.general_function_wrap_ser_schema(
                 function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
-        else:
+        elif type_ == 'field-wrap':
+            schema['serialization'] = core_schema.field_function_wrap_ser_schema(
+                function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
+            )
+        elif type_ == 'general-plain':
             schema['serialization'] = core_schema.general_function_plain_ser_schema(
+                function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
+            )
+        else:
+            # field-plain
+            schema['serialization'] = core_schema.field_function_plain_ser_schema(
                 function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
     return schema

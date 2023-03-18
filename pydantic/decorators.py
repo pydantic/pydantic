@@ -8,7 +8,7 @@ Public methods related to:
 from __future__ import annotations as _annotations
 
 from types import FunctionType
-from typing import Any, Callable, Union, overload
+from typing import Any, Callable, TypeVar, Union, overload
 
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, Protocol
@@ -196,17 +196,79 @@ def root_validator(
     return dec
 
 
+_PlainSerializationFunction = Union[
+    _core_schema.GeneralSerializePlainFunction,
+    _core_schema.FieldSerializePlainFunction,
+]
+
+
+_WrapSerializationFunction = Union[
+    _core_schema.GeneralSerializeWrapFunction,
+    _core_schema.FieldSerializeWrapFunction,
+]
+
+
+_PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
+_WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerializationFunction)
+
+
+@overload
 def serializer(
     *fields: str,
+    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    check_fields: bool | None = ...,
+    allow_reuse: bool = ...,
+) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
+    ...
+
+
+@overload
+def serializer(
+    *fields: str,
+    mode: Literal['plain'],
+    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    check_fields: bool | None = ...,
+    allow_reuse: bool = ...,
+) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
+    ...
+
+
+@overload
+def serializer(
+    *fields: str,
+    mode: Literal['wrap'],
+    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
+    sub_path: tuple[str | int, ...] | None = ...,
+    check_fields: bool | None = ...,
+    allow_reuse: bool = ...,
+) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
+    ...
+
+
+def serializer(
+    *fields: str,
+    mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
-) -> Callable[[Callable[..., Any]], classmethod[Any]]:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
+    Four signatures are supported:
+    - (self, value: Any, info: FieldSerializationInfo)
+    - (self, value: Any, nxt: SerializeWrapHandler, info: FieldSerializationInfo)
+    - (value: Any, info: SerializationInfo)
+    - (value: Any, nxt: SerializeWrapHandler, info: SerializationInfo)
+
     :param fields: which field(s) the method should be called on
+    :param mode: TODO
     :param json_return_type: The type that the function returns if the serialization mode is JSON.
     :param when_used: When the function should be called
     :param sub_path: TODO
@@ -226,7 +288,9 @@ def serializer(
             "E.g. usage should be `@serializer('<field_name_1>', '<field_name_2>', ...)`"
         )
 
-    def dec(f: Callable[..., Any]) -> classmethod[Any]:
+    wrap = mode == 'wrap'
+
+    def dec(f: Callable[..., Any]) -> Callable[..., Any]:
         f_cls = _decorators.prepare_serializer_decorator(f, allow_reuse)
         setattr(
             f_cls,
@@ -234,7 +298,11 @@ def serializer(
             (
                 fields,
                 _decorators.Serializer(
-                    json_return_type=json_return_type, when_used=when_used, sub_path=sub_path, check_fields=check_fields
+                    wrap=wrap,
+                    json_return_type=json_return_type,
+                    when_used=when_used,
+                    sub_path=sub_path,
+                    check_fields=check_fields,
                 ),
             ),
         )
