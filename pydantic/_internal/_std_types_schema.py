@@ -106,7 +106,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 
 
 @schema_function(Decimal)
-def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.FunctionSchema:
+def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.FunctionAfterSchema:
     decimal_validator = _validators.DecimalValidator()
     metadata = build_metadata_dict(
         update_cs_function=decimal_validator.__pydantic_update_schema__,
@@ -170,7 +170,9 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
 
 
 def _deque_ser_schema(inner_schema: core_schema.CoreSchema | None = None) -> core_schema.FunctionWrapSerSchema:
-    return core_schema.function_wrap_ser_schema(_serializers.serialize_deque, inner_schema or core_schema.any_schema())
+    return core_schema.general_function_wrap_ser_schema(
+        _serializers.serialize_deque, inner_schema or core_schema.any_schema()
+    )
 
 
 def _deque_any_schema() -> core_schema.WrapFunctionSchema:

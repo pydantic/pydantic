@@ -13,7 +13,7 @@ from pydantic import (
     ConfigDict,
     Extra,
     Field,
-    ModelFieldValidationInfo,
+    FieldValidationInfo,
     PydanticUserError,
     ValidationError,
     ValidationInfo,
@@ -1636,7 +1636,7 @@ def test_info_field_name_data_before():
         b: str
 
         @validator('b', mode='before')
-        def check_a(cls, v: Any, info: ModelFieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}

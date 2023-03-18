@@ -6,6 +6,7 @@ from typing import Sequence
 from pydantic_core import core_schema
 
 from ..errors import PydanticUserError
+from . import _core_utils
 
 
 def apply_discriminator(schema: core_schema.CoreSchema, discriminator: str) -> core_schema.CoreSchema:
@@ -165,7 +166,12 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'union':
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
             self._choices_to_handle.extend(choice['choices'][::-1])
-        elif choice['type'] not in {'model', 'typed-dict', 'tagged-union', 'function', 'lax-or-strict'}:
+        elif choice['type'] not in {
+            'model',
+            'typed-dict',
+            'tagged-union',
+            'lax-or-strict',
+        } and not _core_utils.is_function_with_inner_schema(choice):
             # We should eventually handle 'definition-ref' as well
             raise TypeError(
                 f'{choice["type"]!r} is not a valid discriminated union variant;'
@@ -208,16 +214,13 @@ class _ApplyInferredDiscriminator:
         """
         if choice['type'] == 'definitions':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
-
-        elif choice['type'] == 'function':
-            if choice['mode'] != 'plain':
-                return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
-            else:
-                raise TypeError(
-                    f'{choice["type"]!r} with mode={choice["mode"]!r} is not a valid discriminated union variant;'
-                    ' should be a `BaseModel` or `dataclass`'
-                )
-
+        elif choice['type'] == 'function-plain':
+            raise TypeError(
+                f'{choice["type"]!r} is not a valid discriminated union variant;'
+                ' should be a `BaseModel` or `dataclass`'
+            )
+        elif _core_utils.is_function_with_inner_schema(choice):
+            return self._infer_discriminator_values_for_choice(choice['schema'], source_name=source_name)
         elif choice['type'] == 'lax-or-strict':
             return sorted(
                 set(

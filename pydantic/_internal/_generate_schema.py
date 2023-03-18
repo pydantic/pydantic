@@ -9,7 +9,7 @@ import re
 import sys
 import typing
 import warnings
-from typing import TYPE_CHECKING, Any, ForwardRef
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping, Tuple
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
@@ -190,9 +190,11 @@ class GenerateSchema:
                 return get_model_self_schema(resolved_model)[0]
 
         try:
-            if obj in {bool, int, float, str, bytes, list, set, frozenset, tuple, dict}:
+            if obj in {bool, int, float, str, bytes, list, set, frozenset, dict}:
                 # Note: obj may fail to be hashable if it has an unhashable annotation
                 return {'type': obj.__name__}
+            elif obj is tuple:
+                return {'type': 'tuple-variable'}
         except TypeError:  # obj not hashable; can happen due to unhashable annotations
             pass
 
@@ -667,7 +669,7 @@ class GenerateSchema:
         from . import _serializers, _validators
 
         metadata = build_metadata_dict(js_metadata={'source_class': pattern_type, 'type': 'string', 'format': 'regex'})
-        ser = core_schema.function_plain_ser_schema(_serializers.pattern_serializer, json_return_type='str')
+        ser = core_schema.general_function_plain_ser_schema(_serializers.pattern_serializer, json_return_type='str')
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
             return core_schema.general_plain_validation_function(
@@ -747,31 +749,22 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     """
     Apply validators to a schema.
     """
+    f_match: Mapping[
+        Tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
+    ] = {
+        ('before', True): core_schema.field_before_validation_function,
+        ('after', True): core_schema.field_after_validation_function,
+        ('plain', True): lambda f, _: core_schema.field_plain_validation_function(f),
+        ('wrap', True): core_schema.field_wrap_validation_function,
+        ('before', False): core_schema.general_before_validation_function,
+        ('after', False): core_schema.general_after_validation_function,
+        ('plain', False): lambda f, _: core_schema.general_plain_validation_function(f),
+        ('wrap', False): core_schema.general_wrap_validation_function,
+    }
     for validator in validators:
         assert validator.sub_path is None, 'validator.sub_path is not yet supported'
-        function = typing.cast(typing.Callable[..., Any], validator.function)
-        if validator.mode == 'plain':
-            schema = core_schema.general_plain_validation_function(function)
-        elif validator.mode == 'wrap':
-            schema = core_schema.general_wrap_validation_function(function, schema)
-        else:
-            func: core_schema.FieldValidatorFunctionSchema | core_schema.GeneralValidatorFunctionSchema
-            if validator.is_field_validator:
-                func = core_schema.FieldValidatorFunctionSchema(
-                    type='field',
-                    function=function,
-                )
-            else:
-                func = core_schema.GeneralValidatorFunctionSchema(
-                    type='general',
-                    function=function,
-                )
-            schema = core_schema.FunctionSchema(
-                type='function',
-                mode=validator.mode,
-                function=func,
-                schema=schema,
-            )
+        assert validator.function is not None
+        schema = f_match[(validator.mode, validator.is_field_validator)](validator.function, schema)
     return schema
 
 
@@ -785,11 +778,11 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
         assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], serializer.function)
         if serializer.wrap:
-            schema['serialization'] = core_schema.function_wrap_ser_schema(
+            schema['serialization'] = core_schema.general_function_wrap_ser_schema(
                 function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
         else:
-            schema['serialization'] = core_schema.function_plain_ser_schema(
+            schema['serialization'] = core_schema.general_function_plain_ser_schema(
                 function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
     return schema

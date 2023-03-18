@@ -877,12 +877,11 @@ def test_wrap_function_schema() -> None:
                     'type': 'general',
                     'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                 },
-                'mode': 'wrap',
                 'schema': {
                     'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}}},
                     'type': 'typed-dict',
                 },
-                'type': 'function',
+                'type': 'function-wrap',
             },
             'dog': {'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}}}, 'type': 'typed-dict'},
         },
@@ -895,8 +894,7 @@ def test_wrap_function_schema() -> None:
 def test_plain_function_schema_is_invalid() -> None:
     with pytest.raises(
         TypeError,
-        match="'function' with mode='plain' is not a valid discriminated union variant; "
-        "should be a `BaseModel` or `dataclass`",
+        match="'function-plain' is not a valid discriminated union variant; " "should be a `BaseModel` or `dataclass`",
     ):
         apply_discriminator(
             core_schema.union_schema(
@@ -1011,7 +1009,6 @@ def test_wrapped_nullable_union() -> None:
                         'type': 'general',
                         'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                     },
-                    'mode': 'wrap',
                     'schema': {
                         'schema': {
                             'choices': [
@@ -1028,7 +1025,7 @@ def test_wrapped_nullable_union() -> None:
                         },
                         'type': 'nullable',
                     },
-                    'type': 'function',
+                    'type': 'function-wrap',
                 },
                 'dog': 'cat',
             },

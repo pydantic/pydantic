@@ -166,7 +166,7 @@ class NameEmail(_repr.Representation):
         field_schema.update(type='string', format='name-email')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionAfterSchema:
         import_email_validator()
         return core_schema.general_after_validation_function(
             cls._validate,

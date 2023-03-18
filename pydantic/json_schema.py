@@ -356,32 +356,23 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
-    def tuple_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema
-    ) -> JsonSchemaValue:
+    def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'array'}
-
-        if 'mode' not in schema:
-            json_schema['items'] = {}
-
-        elif schema['mode'] == 'variable':
-            if 'items_schema' in schema:
-                json_schema['items'] = self.generate_inner(schema['items_schema'])
-            self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
-
-        elif schema['mode'] == 'positional':
-            json_schema['minItems'] = len(schema['items_schema'])
-            prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
-            if prefixItems:
-                json_schema['prefixItems'] = prefixItems
-            if 'extra_schema' in schema:
-                json_schema['items'] = self.generate_inner(schema['extra_schema'])
-            else:
-                json_schema['maxItems'] = len(schema['items_schema'])
-
+        json_schema['minItems'] = len(schema['items_schema'])
+        prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
+        if prefixItems:
+            json_schema['prefixItems'] = prefixItems
+        if 'extra_schema' in schema:
+            json_schema['items'] = self.generate_inner(schema['extra_schema'])
         else:
-            raise ValueError(f'Unknown tuple schema mode: {schema["mode"]}')
+            json_schema['maxItems'] = len(schema['items_schema'])
+        self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
+        return json_schema
 
+    def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
+        json_schema: JsonSchemaValue = {'type': 'array', 'items': {}}
+        if 'items_schema' in schema:
+            json_schema['items'] = [self.generate_inner(s) for s in schema['items_schema']]
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
@@ -420,7 +411,10 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.object)
         return json_schema
 
-    def function_schema(self, schema: core_schema.FunctionSchema) -> JsonSchemaValue:
+    def _function_schema(
+        self,
+        schema: _core_utils.AnyFunctionSchema,
+    ) -> JsonSchemaValue:
         source_class = _core_metadata.CoreMetadataHandler(schema).get_source_class()
         if source_class is not None:
             # If a source_class has been specified, assume that its json schema will be handled elsewhere
@@ -429,12 +423,23 @@ class GenerateJsonSchema:
             #   (Note that __pydantic_json_schema__ won't work for many important cases of standard library types)
             return {}
 
-        # I'm not sure if this might need to be different if the function's mode is 'before'
-        if schema['mode'] == 'plain':
-            return self.handle_invalid_for_json_schema(schema, f'core_schema.FunctionSchema ({schema["function"]})')
-        else:
-            # 'after', 'before', and 'wrap' functions all have a required 'schema' field
+        if _core_utils.is_function_with_inner_schema(schema):
+            # I'm not sure if this might need to be different if the function's mode is 'before'
             return self.generate_inner(schema['schema'])
+        # function-plain
+        return self.handle_invalid_for_json_schema(schema, f'core_schema.PlainFunctionSchema ({schema["function"]})')
+
+    def function_before_schema(self, schema: core_schema.FunctionBeforeSchema) -> JsonSchemaValue:
+        return self._function_schema(schema)
+
+    def function_after_schema(self, schema: core_schema.FunctionAfterSchema) -> JsonSchemaValue:
+        return self._function_schema(schema)
+
+    def function_plain_schema(self, schema: core_schema.PlainFunctionSchema) -> JsonSchemaValue:
+        return self._function_schema(schema)
+
+    def function_wrap_schema(self, schema: core_schema.WrapFunctionSchema) -> JsonSchemaValue:
+        return self._function_schema(schema)
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
         json_schema = self.generate_inner(schema['schema'])
@@ -771,8 +776,8 @@ class GenerateJsonSchema:
             # TODO: This might not be handling some schema types it should
             if schema['type'] in {'default', 'nullable', 'model'}:
                 return self.field_title_should_be_set(schema['schema'])  # type: ignore[typeddict-item]
-            if schema['type'] == 'function' and 'schema' in schema:
-                return self.field_title_should_be_set(schema['schema'])  # type: ignore[typeddict-item]
+            if _core_utils.is_function_with_inner_schema(schema):
+                return self.field_title_should_be_set(schema['schema'])
             return not schema.get('ref')  # models, enums should not have titles set
 
         else:

@@ -11,7 +11,7 @@ import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, Extra, ModelFieldValidationInfo, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError, validator
 
 
 def test_simple():
@@ -1525,7 +1525,7 @@ def test_validator_info_field_name_data_before():
         b: str
 
         @validator('b', mode='before')
-        def check_a(cls, v: Any, info: ModelFieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}
