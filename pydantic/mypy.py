@@ -528,11 +528,18 @@ class PydanticModelTransformer:
             sym_node = info.names.get(field.name)
             if sym_node is not None:
                 var = sym_node.node
-                if not isinstance(var, Var):
-                    detail = f'sym_node.node: {var} (of type {var.__class__.__name__})'
-                    error_unexpected_behavior(detail, ctx.api, ctx.cls)
-                else:
+                if isinstance(var, Var):
                     var.is_property = frozen
+                elif isinstance(var, PlaceholderNode) and not ctx.api.final_iteration:
+                    ctx.api.defer()
+                else:
+                    try:
+                        var_str = str(var)
+                    except TypeError:  # pragma: no cover
+                        # This happens for PlaceholderNode; perhaps it will happen for other types in the future..
+                        var_str = repr(var)
+                    detail = f'sym_node.node: {var_str} (of type {var.__class__})'
+                    error_unexpected_behavior(detail, ctx.api, ctx.cls)
             else:
                 var = field.to_var(info, use_alias=False)
                 var.info = info
