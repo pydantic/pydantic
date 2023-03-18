@@ -354,4 +354,21 @@ impl ValidationInfo {
             None => Err(PyAttributeError::new_err("No attribute named 'field_name'")),
         }
     }
+
+    fn __repr__(&self, py: Python) -> PyResult<String> {
+        let context = match self.context {
+            Some(ref context) => context.as_ref(py).repr()?.extract()?,
+            None => "None",
+        };
+        let config = self.config.as_ref(py).repr()?;
+        let mut s = format!("ValidationInfo(config={config}, context={context}");
+        if let Some(ref data) = self.data {
+            s += &format!(", data={}", data.as_ref(py).repr()?);
+        }
+        if let Some(ref field_name) = self.field_name {
+            s += &format!(", field_name='{field_name}'");
+        }
+        s += ")";
+        Ok(s)
+    }
 }

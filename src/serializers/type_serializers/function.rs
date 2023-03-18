@@ -1,8 +1,7 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use pyo3::exceptions::PyAttributeError;
-use pyo3::exceptions::PyRuntimeError;
+use pyo3::exceptions::{PyAttributeError, PyRuntimeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
