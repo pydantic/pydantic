@@ -542,13 +542,26 @@ class PydanticModelTransformer:
 
         This is the same approach used by the attrs and dataclasses plugins.
         """
-        info = self._ctx.cls.info
+        ctx = self._ctx
+        info = ctx.cls.info
         for field in fields:
             sym_node = info.names.get(field.name)
             if sym_node is not None:
                 var = sym_node.node
-                assert isinstance(var, Var)
-                var.is_property = frozen
+                if isinstance(var, Var):
+                    var.is_property = frozen
+                elif isinstance(var, PlaceholderNode) and not ctx.api.final_iteration:
+                    # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
+                    ctx.api.defer()
+                else:  # pragma: no cover
+                    # I don't know whether it's possible to hit this branch, but I've added it for safety
+                    try:
+                        var_str = str(var)
+                    except TypeError:
+                        # This happens for PlaceholderNode; perhaps it will happen for other types in the future..
+                        var_str = repr(var)
+                    detail = f'sym_node.node: {var_str} (of type {var.__class__})'
+                    error_unexpected_behavior(detail, ctx.api, ctx.cls)
             else:
                 var = field.to_var(info, use_alias=False)
                 var.info = info
@@ -771,7 +784,9 @@ def error_required_dynamic_aliases(api: SemanticAnalyzerPluginInterface, context
     api.fail('Required dynamic aliases disallowed', context, code=ERROR_ALIAS)
 
 
-def error_unexpected_behavior(detail: str, api: CheckerPluginInterface, context: Context) -> None:  # pragma: no cover
+def error_unexpected_behavior(
+    detail: str, api: Union[CheckerPluginInterface, SemanticAnalyzerPluginInterface], context: Context
+) -> None:  # pragma: no cover
     # Can't think of a good way to test this, but I confirmed it renders as desired by adding to a non-error path
     link = 'https://github.com/pydantic/pydantic/issues/new/choose'
     full_message = f'The pydantic mypy plugin ran into unexpected behavior: {detail}\n'
