@@ -9,7 +9,7 @@ from functools import wraps
 from inspect import Parameter, signature
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, List, TypeVar, Union, cast
 
-from pydantic_core.core_schema import JsonReturnTypes, ValidationInfo, ValidatorFunction, WhenUsed
+from pydantic_core.core_schema import GeneralValidatorFunction, JsonReturnTypes, ValidationInfo, WhenUsed
 from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
@@ -39,12 +39,13 @@ class Validator:
     Store information about field and root validators.
     """
 
-    __slots__ = 'function', 'mode', 'sub_path', 'check_fields'
+    __slots__ = 'function', 'mode', 'sub_path', 'check_fields', 'is_field_validator'
 
     def __init__(
         self,
         *,
         mode: Literal['before', 'after', 'wrap', 'plain'],
+        is_field_validator: bool,
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ):
@@ -53,6 +54,7 @@ class Validator:
         self.mode = mode
         self.sub_path = sub_path
         self.check_fields = check_fields
+        self.is_field_validator = is_field_validator
 
 
 class Serializer:
@@ -294,8 +296,8 @@ V1Validator = Union[
 
 
 def make_generic_validator(
-    validator: V1Validator | OnlyValueValidator | ValidatorFunction, mode: str
-) -> ValidatorFunction:
+    validator: V1Validator | OnlyValueValidator | GeneralValidatorFunction, mode: str
+) -> GeneralValidatorFunction:
     """
     In order to support different signatures, including deprecated validator signatures from v1,
     we introspect the function signature and wrap it in a parent function that has a signature
@@ -374,7 +376,7 @@ def make_generic_validator(
 
         return _wrapper3
     elif keyword_only_params == [] and len(positional_params) == 2:
-        validator = cast(ValidatorFunction, validator)
+        validator = cast(GeneralValidatorFunction, validator)
         return validator
     raise TypeError(
         f'Unsupported signature for {mode} validator {validator}: {sig} is not supported.'

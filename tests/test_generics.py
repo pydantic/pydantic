@@ -831,7 +831,7 @@ def test_generic_subclass_of_concrete_generic():
 
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
-    # objects with <locals> in their __qualname__  (e. g. defined in function)
+    # objects with <locals> in their __qualname__  (e.g. defined in function)
     @create_module
     def module():
         import pickle

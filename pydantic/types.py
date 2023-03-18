@@ -257,9 +257,9 @@ else:
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.function_plain_schema(lambda v, _: _validators.import_string(v))
+                return core_schema.general_plain_validation_function(lambda v, _: _validators.import_string(v))
             else:
-                return core_schema.function_before_schema(lambda v, _: _validators.import_string(v), schema)
+                return core_schema.general_before_validation_function(lambda v, _: _validators.import_string(v), schema)
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -304,7 +304,9 @@ class UuidVersion:
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.FunctionSchema:
-        return core_schema.function_after_schema(schema, cast(core_schema.ValidatorFunction, self.validate))
+        return core_schema.general_after_validation_function(
+            cast(core_schema.GeneralValidatorFunction, self.validate), schema
+        )
 
     def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
         if value.version != self.uuid_version:
@@ -335,14 +337,14 @@ class PathType:
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.FunctionSchema:
         function_lookup = {
-            'file': cast(core_schema.ValidatorFunction, self.validate_file),
-            'dir': cast(core_schema.ValidatorFunction, self.validate_directory),
-            'new': cast(core_schema.ValidatorFunction, self.validate_new),
+            'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.GeneralValidatorFunction, self.validate_new),
         }
 
-        return core_schema.function_after_schema(
-            schema,
+        return core_schema.general_after_validation_function(
             function_lookup[self.path_type],
+            schema,
         )
 
     @staticmethod
@@ -440,14 +442,14 @@ class SecretField(abc.ABC, Generic[SecretType]):
             update_cs_function=validator.__pydantic_update_schema__,
             js_metadata=JsonSchemaMetadata(core_schema_override=override),
         )
-        return core_schema.function_after_schema(
+        return core_schema.general_after_validation_function(
+            validator,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
                 cls._pre_core_schema(),
                 strict=True,
                 custom_error_type=cls._error_kind,
             ),
-            validator,
             metadata=metadata,
             serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
         )
@@ -589,11 +591,11 @@ class PaymentCardNumber(str):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
-        return core_schema.function_after_schema(
+        return core_schema.general_after_validation_function(
+            cls.validate,
             core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
             ),
-            cls.validate,
         )
 
     @classmethod
@@ -690,9 +692,9 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainFunctionSchema:
         # TODO better schema
-        return core_schema.function_plain_schema(cls.validate)
+        return core_schema.general_plain_validation_function(cls.validate)
 
     @classmethod
     def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> 'ByteSize':
