@@ -531,11 +531,13 @@ class PydanticModelTransformer:
                 if isinstance(var, Var):
                     var.is_property = frozen
                 elif isinstance(var, PlaceholderNode) and not ctx.api.final_iteration:
+                    # See https://github.com/pydantic/pydantic/issues/5191 to hit this branch for test coverage
                     ctx.api.defer()
-                else:
+                else:  # pragma: no cover
+                    # I don't know whether it's possible to hit this branch, but I've added it for safety
                     try:
                         var_str = str(var)
-                    except TypeError:  # pragma: no cover
+                    except TypeError:
                         # This happens for PlaceholderNode; perhaps it will happen for other types in the future..
                         var_str = repr(var)
                     detail = f'sym_node.node: {var_str} (of type {var.__class__})'
