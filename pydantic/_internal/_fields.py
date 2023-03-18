@@ -169,6 +169,9 @@ def collect_fields(  # noqa: C901
 
         init_var = False
         if ann_type is dataclasses.InitVar:
+            if sys.version_info < (3, 8):
+                raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
+
             init_var = True
             ann_type = Any
         elif isinstance(ann_type, dataclasses.InitVar):

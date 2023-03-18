@@ -2,11 +2,10 @@ from __future__ import annotations as _annotations
 
 import json
 import warnings
-from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ForwardRef, Literal, Protocol
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef
 
-from typing_extensions import TypedDict
+from typing_extensions import Literal, Protocol, TypedDict
 
 from pydantic.errors import PydanticUserError
 

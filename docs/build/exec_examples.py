@@ -10,9 +10,8 @@ import subprocess
 import sys
 import textwrap
 import traceback
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from unittest.mock import patch
 
 from ansi2html import Ansi2HTMLConverter

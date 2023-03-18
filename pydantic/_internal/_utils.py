@@ -12,7 +12,9 @@ from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, TypeGuard, TypeVar
+from typing import Any, TypeVar
+
+from typing_extensions import TypeGuard
 
 from . import _repr, _typing_extra
 

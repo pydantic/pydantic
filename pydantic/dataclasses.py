@@ -4,10 +4,10 @@ Provide an enhanced dataclass that performs validation.
 from __future__ import annotations as _annotations
 
 import dataclasses
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+import sys
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
-from typing_extensions import dataclass_transform
+from typing_extensions import Literal, dataclass_transform
 
 from ._internal import _dataclasses as _pydantic_dataclasses
 from .config import ConfigDict, get_config
@@ -21,38 +21,73 @@ __all__ = ('dataclass',)
 
 _T = TypeVar('_T')
 
+if sys.version_info >= (3, 10):
 
-def dataclass(  # type: ignore[empty-body]
-    *,
-    init: Literal[False] = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool = False,
-    config: ConfigDict | type[object] | None = None,
-    validate_on_init: bool | None = None,
-    kw_only: bool = ...,
-) -> Callable[[type[_T]], PydanticDataclass]:
-    ...
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @overload
+    def dataclass(
+        *,
+        init: Literal[False] = False,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
+        kw_only: bool = ...,
+    ) -> Callable[[type[_T]], PydanticDataclass]:
+        ...
 
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @overload
+    def dataclass(
+        _cls: type[_T],
+        *,
+        init: Literal[False] = False,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
+        kw_only: bool = ...,
+    ) -> PydanticDataclass:
+        ...
 
-@dataclass_transform(field_specifiers=(dataclasses.field, Field))  # type: ignore[misc,no-redef]
-@overload
-def dataclass(  # noqa: F811
-    _cls: type[_T],
-    *,
-    init: Literal[False] = False,
-    repr: bool = True,
-    eq: bool = True,
-    order: bool = False,
-    unsafe_hash: bool = False,
-    frozen: bool = False,
-    config: ConfigDict | type[object] | None = None,
-    validate_on_init: bool | None = None,
-    kw_only: bool = ...,
-) -> PydanticDataclass:
-    ...
+else:
+
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @overload
+    def dataclass(
+        *,
+        init: Literal[False] = False,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
+    ) -> Callable[[type[_T]], PydanticDataclass]:
+        ...
+
+    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    @overload
+    def dataclass(
+        _cls: type[_T],
+        *,
+        init: Literal[False] = False,
+        repr: bool = True,
+        eq: bool = True,
+        order: bool = False,
+        unsafe_hash: bool = False,
+        frozen: bool = False,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
+    ) -> PydanticDataclass:
+        ...
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -97,7 +132,10 @@ def dataclass(
         config_dict = get_config(config)
         _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)
 
-        kwargs = dict(kw_only=kw_only)
+        if sys.version_info >= (3, 10):
+            kwargs = dict(kw_only=kw_only)
+        else:
+            kwargs = {}
 
         return dataclasses.dataclass(  # type: ignore[call-overload]
             cls,

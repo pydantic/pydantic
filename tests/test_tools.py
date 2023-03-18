@@ -1,5 +1,4 @@
-from collections.abc import Mapping
-from typing import Union
+from typing import Dict, List, Mapping, Union
 
 import pytest
 
@@ -8,7 +7,7 @@ from pydantic.dataclasses import dataclass
 from pydantic.tools import parse_obj_as, schema_json_of, schema_of
 
 
-@pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], list[int], [1])])
+@pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
 def test_parse_obj(obj, type_, parsed):
     assert parse_obj_as(type_, obj) == parsed
 
@@ -33,7 +32,7 @@ def test_parse_obj_preserves_subclasses():
 
     model_b = ModelB(a={1: 'f'}, b=2)
 
-    parsed = parse_obj_as(list[ModelA], [model_b])
+    parsed = parse_obj_as(List[ModelA], [model_b])
     assert parsed == [model_b]
 
 
@@ -76,7 +75,7 @@ def test_parse_as_dataclass():
 
 def test_parse_mapping_as():
     inputs = {'1': '2'}
-    assert parse_obj_as(dict[int, int], inputs) == {1: 2}
+    assert parse_obj_as(Dict[int, int], inputs) == {1: 2}
 
 
 @pytest.mark.xfail(reason='working on V2')

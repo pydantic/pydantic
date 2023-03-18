@@ -2,12 +2,12 @@ import collections.abc
 import os
 import pickle
 import sys
-from collections.abc import Callable
 from copy import copy, deepcopy
-from typing import Annotated, Generic, Literal, NewType, TypeVar, Union
+from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import PydanticCustomError
+from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
@@ -65,15 +65,15 @@ class LoggedVar(Generic[T]):
         (str, 'str'),
         ('foobar', 'str'),
         ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (list['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
+        (List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (Union[str, int], 'Union[str, int]'),
         (list, 'list'),
-        (list, 'List'),
+        (List, 'List'),
         ([1, 2, 3], 'list'),
-        (list[dict[str, int]], 'List[Dict[str, int]]'),
-        (tuple[str, int, float], 'Tuple[str, int, float]'),
-        (tuple[str, ...], 'Tuple[str, ...]'),
-        (Union[int, list[str], tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
+        (List[Dict[str, int]], 'List[Dict[str, int]]'),
+        (Tuple[str, int, float], 'Tuple[str, int, float]'),
+        (Tuple[str, ...], 'Tuple[str, ...]'),
+        (Union[int, List[str], Tuple[str, int]], 'Union[int, List[str], Tuple[str, int]]'),
         (foobar, 'foobar'),
         (LoggedVar, 'LoggedVar'),
         (LoggedVar(), 'LoggedVar'),
@@ -89,17 +89,17 @@ def test_display_as_type(value, expected):
     [
         (lambda: str, 'str'),
         (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
-        (lambda: list['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
+        (lambda: List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (lambda: str | int, 'Union[str, int]'),
         (lambda: list, 'list'),
-        (lambda: list, 'List'),
+        (lambda: List, 'List'),
         (lambda: list[int], 'list[int]'),
-        (lambda: list[int], 'List[int]'),
+        (lambda: List[int], 'List[int]'),
         (lambda: list[dict[str, int]], 'list[dict[str, int]]'),
-        (lambda: list[str | int], 'list[Union[str, int]]'),
+        (lambda: list[Union[str, int]], 'list[Union[str, int]]'),
         (lambda: list[str | int], 'list[Union[str, int]]'),
         (lambda: LoggedVar[int], 'LoggedVar[int]'),
-        (lambda: LoggedVar[dict[int, str]], 'LoggedVar[Dict[int, str]]'),
+        (lambda: LoggedVar[Dict[int, str]], 'LoggedVar[Dict[int, str]]'),
     ],
 )
 def test_display_as_type_310(value_gen, expected):
@@ -244,7 +244,7 @@ def test_is_new_type():
 def test_pretty():
     class MyTestModel(BaseModel):
         a: int = 1
-        b: list[int] = [1, 2, 3]
+        b: List[int] = [1, 2, 3]
 
     m = MyTestModel()
     assert m.__repr_name__() == 'MyTestModel'
@@ -289,7 +289,7 @@ def test_pretty_color():
 def test_devtools_output():
     class MyTestModel(BaseModel):
         a: int = 1
-        b: list[int] = [1, 2, 3]
+        b: List[int] = [1, 2, 3]
 
     assert devtools.pformat(MyTestModel()) == 'MyTestModel(\n    a=1,\n    b=[1, 2, 3],\n)'
 
@@ -415,8 +415,8 @@ T = TypeVar('T')
     [
         (Annotated[int, 10] if Annotated else None, Annotated),
         (Callable[[], T][int], collections.abc.Callable),
-        (dict[str, int], dict),
-        (list[str], list),
+        (Dict[str, int], dict),
+        (List[str], list),
         (Union[int, str], Union),
         (int, None),
     ],

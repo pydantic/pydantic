@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, Optional, TypeVar, Union
+from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, Field, create_model, validator
 from pydantic.dataclasses import dataclass
@@ -141,8 +141,8 @@ class Config:
 @dataclass(config=Config)
 class AddProject:
     name: str
-    slug: str | None
-    description: str | None
+    slug: Optional[str]
+    description: Optional[str]
 
 
 p = AddProject(name='x', slug='y', description='z')
@@ -220,7 +220,7 @@ T = TypeVar('T')
 
 class Response(BaseModel, Generic[T]):
     data: T
-    error: str | None
+    error: Optional[str]
 
 
 response = Response[Model](data=model, error=None)
@@ -238,7 +238,7 @@ def _default_factory_str() -> str:
     return 'x'
 
 
-def _default_factory_list() -> list[int]:
+def _default_factory_list() -> List[int]:
     return [1, 2, 3]
 
 
@@ -252,6 +252,6 @@ class FieldDefaultTestingModel(BaseModel):
     d: int = Field(1)
 
     # Default factory
-    g: list[int] = Field(default_factory=_default_factory_list)
+    g: List[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')

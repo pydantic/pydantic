@@ -1,3 +1,4 @@
+import typing
 from datetime import date
 
 import pytest
@@ -69,8 +70,8 @@ def gen_models():
         json_int: pydantic.Json[int]
         json_float: pydantic.Json[float]
         json_str: pydantic.Json[str]
-        json_int_or_str: pydantic.Json[int | str]
-        json_list_of_float: pydantic.Json[list[float]]
+        json_int_or_str: pydantic.Json[typing.Union[int, str]]
+        json_list_of_float: pydantic.Json[typing.List[float]]
         json_pydantic_model: pydantic.Json[pydantic.BaseModel]
 
     class ConstrainedNumbersModel(pydantic.BaseModel):

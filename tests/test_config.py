@@ -1,14 +1,20 @@
-from collections.abc import Iterable
+import sys
 from contextlib import nullcontext as does_not_raise
 from inspect import signature
-from typing import Annotated, Any, ContextManager, NamedTuple
+from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union
 
-import pytest
 from dirty_equals import HasRepr
 
 from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, PydanticSchemaGenerationError, ValidationError
 from pydantic.config import ConfigDict, _default_config
 from pydantic.errors import PydanticUserError
+
+if sys.version_info < (3, 9):
+    from typing_extensions import Annotated
+else:
+    from typing import Annotated
+
+import pytest
 
 
 @pytest.fixture(scope='session', name='BaseConfigModelWithStrictConfig')
@@ -28,7 +34,7 @@ def model_with_strict_config():
     return ModelWithStrictConfig
 
 
-def _equals(a: str | Iterable[str], b: str | Iterable[str]) -> bool:
+def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
     """
     Compare strings with spaces removed
     """
@@ -180,7 +186,7 @@ class TestsBaseConfig:
         assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
 
     def test_base_config_parse_model_with_strict_config_disabled(
-        self, BaseConfigModelWithStrictConfig: type[BaseModel]
+        self, BaseConfigModelWithStrictConfig: Type[BaseModel]
     ) -> None:
         class Model(BaseConfigModelWithStrictConfig):
             class Config:

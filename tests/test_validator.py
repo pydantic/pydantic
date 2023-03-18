@@ -1,14 +1,14 @@
 import sys
-from typing import Any, ForwardRef, Generic, NamedTuple, TypeAlias, TypeVar, Union
+from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, TypeVar, Union
 
 import pytest
-from typing_extensions import TypedDict
+from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import BaseModel, Validator
 
 ItemType = TypeVar('ItemType')
 
-NestedList = list[list[ItemType]]
+NestedList = List[List[ItemType]]
 
 
 class PydanticModel(BaseModel):
@@ -37,11 +37,11 @@ class SomeNamedTuple(NamedTuple):
         (PydanticModel, {'x': 1}, PydanticModel(x=1)),
         (SomeTypedDict, {'x': 1}, {'x': 1}),
         (SomeNamedTuple, SomeNamedTuple(x=1), SomeNamedTuple(x=1)),
-        (list[str], ['1', '2'], ['1', '2']),
-        (tuple[str], ('1',), ('1',)),
-        (tuple[str, int], ('1', 1), ('1', 1)),
-        (tuple[str, ...], ('1',), ('1',)),
-        (dict[str, int], {'foo': 123}, {'foo': 123}),
+        (List[str], ['1', '2'], ['1', '2']),
+        (Tuple[str], ('1',), ('1',)),
+        (Tuple[str, int], ('1', 1), ('1', 1)),
+        (Tuple[str, ...], ('1',), ('1',)),
+        (Dict[str, int], {'foo': 123}, {'foo': 123}),
         (Union[int, str], 1, 1),
         (Union[int, str], '2', '2'),
         (GenericPydanticModel[int], {'x': [[1]]}, GenericPydanticModel[int](x=[[1]])),
@@ -55,8 +55,8 @@ def test_types(tp: Any, val: Any, expected: Any):
     assert expected == v(val)
 
 
-IntList = list[int]
-OuterDict = dict[str, 'IntList']
+IntList = List[int]
+OuterDict = Dict[str, 'IntList']
 
 
 def test_global_namespace_variables():
@@ -66,8 +66,8 @@ def test_global_namespace_variables():
 
 
 def test_local_namespace_variables():
-    IntList = list[int]
-    OuterDict = dict[str, 'IntList']
+    IntList = List[int]
+    OuterDict = Dict[str, 'IntList']
 
     v = Validator(OuterDict)
 
@@ -88,7 +88,7 @@ MyUnion: TypeAlias = 'Union[str, int]'
 
 
 def test_type_alias():
-    MyList = list[MyUnion]
+    MyList = List[MyUnion]
     v: Validator[MyList] = Validator(MyList)
     res = v([1, '2'])
     assert res == [1, '2']

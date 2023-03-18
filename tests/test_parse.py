@@ -1,5 +1,6 @@
 import json
 import pickle
+from typing import List, Tuple, Union
 
 import pytest
 
@@ -54,7 +55,7 @@ def test_model_validate_root():
 @pytest.mark.xfail(reason='working on V2')
 def test_parse_root_list():
     class MyModel(BaseModel):
-        __root__: list[str]
+        __root__: List[str]
 
     m = MyModel.model_validate(['a'])
     assert m.model_dump() == {'__root__': ['a']}
@@ -67,7 +68,7 @@ def test_parse_nested_root_list():
         id: str
 
     class NestedModel(BaseModel):
-        __root__: list[NestedData]
+        __root__: List[NestedData]
 
     class MyModel(BaseModel):
         nested: NestedModel
@@ -83,10 +84,10 @@ def test_parse_nested_root_tuple():
         id: str
 
     class NestedModel(BaseModel):
-        __root__: tuple[int, NestedData]
+        __root__: Tuple[int, NestedData]
 
     class MyModel(BaseModel):
-        nested: list[NestedModel]
+        nested: List[NestedModel]
 
     data = [0, {'id': 'foo'}]
     m = MyModel.model_validate({'nested': [data]})
@@ -100,7 +101,7 @@ def test_parse_nested_root_tuple():
 @pytest.mark.xfail(reason='working on V2')
 def test_parse_nested_custom_root():
     class NestedModel(BaseModel):
-        __root__: list[str]
+        __root__: List[str]
 
     class MyModel(BaseModel):
         __root__: NestedModel
@@ -109,7 +110,7 @@ def test_parse_nested_custom_root():
     m = MyModel.model_validate(nested)
     assert isinstance(m, MyModel)
     assert isinstance(m.__root__, NestedModel)
-    assert isinstance(m.__root__.__root__, list)
+    assert isinstance(m.__root__.__root__, List)
     assert isinstance(m.__root__.__root__[0], str)
 
 
@@ -201,7 +202,7 @@ def test_const_differentiates_union():
         foo: int
 
     class Model(BaseModel):
-        a: SubModelA | SubModelB
+        a: Union[SubModelA, SubModelB]
 
     m = Model.model_validate({'a': {'key': 'B', 'foo': 3}})
     assert isinstance(m.a, SubModelB)

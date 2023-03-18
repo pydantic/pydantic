@@ -3,20 +3,18 @@ from __future__ import annotations as _annotations
 import abc
 import dataclasses as _dataclasses
 import re
-from collections.abc import Hashable
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     ClassVar,
     FrozenSet,
     Generic,
+    Hashable,
     List,
-    Literal,
     Set,
     Tuple,
     TypeVar,
@@ -26,6 +24,7 @@ from uuid import UUID
 
 import annotated_types
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from typing_extensions import Annotated, Literal
 
 from ._internal import _fields, _validators
 
@@ -204,7 +203,7 @@ def conset(
     item_type: type[HashableItemType], *, min_length: int = None, max_length: int = None
 ) -> type[set[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
-        Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]  # noqa: UP006
+        Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
     ]
 
 
@@ -212,7 +211,7 @@ def confrozenset(
     item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[frozenset[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
-        FrozenSet[item_type],  # type: ignore[valid-type]  # noqa: UP006
+        FrozenSet[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
     ]
 
@@ -224,7 +223,7 @@ def conlist(
     item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[list[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
-        List[item_type],  # type: ignore[valid-type]  # noqa: UP006
+        List[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
     ]
 
@@ -233,7 +232,7 @@ def contuple(
     item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[tuple[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
-        Tuple[item_type],  # noqa: UP006
+        Tuple[item_type],
         annotated_types.Len(min_length or 0, max_length),
     ]
 

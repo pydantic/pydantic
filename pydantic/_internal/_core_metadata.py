@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 _UPDATE_CS_FUNCTION_FIELD = 'pydantic_update_core_schema_function'
 _JS_METADATA_FIELD = 'pydantic_json_schema_metadata'
 
-_CoreMetadata = dict[str, Any]
+_CoreMetadata = typing.Dict[str, Any]
 
 
 class UpdateCoreSchemaCallable(typing_extensions.Protocol):

@@ -1,10 +1,10 @@
 import importlib.util
 import re
 import sys
-from collections.abc import Hashable, Sequence
+from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Generic, Optional, TypeVar, Union
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -26,7 +26,7 @@ from pydantic.fields import Field
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: str | bytes = ...
+        v: Union[str, bytes] = ...
 
     m = Model(v='s')
     assert m.v == 's'
@@ -46,7 +46,7 @@ def test_str_bytes():
 
 def test_str_bytes_none():
     class Model(BaseModel):
-        v: None | str | bytes = ...
+        v: Union[None, str, bytes] = ...
 
     m = Model(v='s')
     assert m.v == 's'
@@ -60,7 +60,7 @@ def test_str_bytes_none():
 
 def test_union_int_str():
     class Model(BaseModel):
-        v: int | str = ...
+        v: Union[int, str] = ...
 
     m = Model(v=123)
     assert m.v == 123
@@ -90,7 +90,7 @@ def test_union_int_str():
 
 def test_union_int_any():
     class Model(BaseModel):
-        v: int | Any
+        v: Union[int, Any]
 
     m = Model(v=123)
     assert m.v == 123
@@ -107,7 +107,7 @@ def test_union_int_any():
 
 def test_typed_list():
     class Model(BaseModel):
-        v: list[int] = ...
+        v: List[int] = ...
 
     m = Model(v=[1, 2, '3'])
     assert m.v == [1, 2, 3]
@@ -140,7 +140,7 @@ def test_typed_list():
 
 def test_typed_set():
     class Model(BaseModel):
-        v: set[int] = ...
+        v: Set[int] = ...
 
     assert Model(v={1, 2, '3'}).v == {1, 2, 3}
     assert Model(v=[1, 2, '3']).v == {1, 2, 3}
@@ -160,14 +160,14 @@ def test_typed_set():
 
 def test_dict_dict():
     class Model(BaseModel):
-        v: dict[str, int] = ...
+        v: Dict[str, int] = ...
 
     assert Model(v={'foo': 1}).model_dump() == {'v': {'foo': 1}}
 
 
 def test_none_list():
     class Model(BaseModel):
-        v: list[None] = [None]
+        v: List[None] = [None]
 
     assert Model.model_json_schema() == {
         'title': 'Model',
@@ -186,7 +186,7 @@ def test_none_list():
 )
 def test_typed_dict(value, result):
     class Model(BaseModel):
-        v: dict[str, int] = ...
+        v: Dict[str, int] = ...
 
     assert Model(v=value).v == result
 
@@ -214,7 +214,7 @@ def test_typed_dict(value, result):
 )
 def test_typed_dict_error(value, errors):
     class Model(BaseModel):
-        v: dict[str, int] = ...
+        v: Dict[str, int] = ...
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
@@ -223,7 +223,7 @@ def test_typed_dict_error(value, errors):
 
 def test_dict_key_error():
     class Model(BaseModel):
-        v: dict[int, int] = ...
+        v: Dict[int, int] = ...
 
     assert Model(v={1: 2, '3': '4'}).v == {1: 2, 3: 4}
 
@@ -242,7 +242,7 @@ def test_dict_key_error():
 
 def test_tuple():
     class Model(BaseModel):
-        v: tuple[int, float, bool]
+        v: Tuple[int, float, bool]
 
     m = Model(v=['1.0', '2.2', 'true'])
     assert m.v == (1, 2.2, True)
@@ -250,10 +250,10 @@ def test_tuple():
 
 def test_tuple_more():
     class Model(BaseModel):
-        empty_tuple: tuple[()]
+        empty_tuple: Tuple[()]
         simple_tuple: tuple = None
-        tuple_of_different_types: tuple[int, float, str, bool] = None
-        tuple_of_single_tuples: tuple[tuple[int], ...] = ()
+        tuple_of_different_types: Tuple[int, float, str, bool] = None
+        tuple_of_single_tuples: Tuple[Tuple[int], ...] = ()
 
     m = Model(
         empty_tuple=[],
@@ -272,7 +272,7 @@ def test_tuple_more():
 @pytest.mark.parametrize(
     'dict_cls,frozenset_cls,list_cls,set_cls,tuple_cls,type_cls',
     [
-        (dict, frozenset, list, set, tuple, type),
+        (Dict, FrozenSet, List, Set, Tuple, Type),
         (dict, frozenset, list, set, tuple, type),
     ],
 )
@@ -364,8 +364,8 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
 def test_tuple_length_error():
     class Model(BaseModel):
-        v: tuple[int, float, bool]
-        w: tuple[()]
+        v: Tuple[int, float, bool]
+        w: Tuple[()]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2], w=[1])
@@ -384,7 +384,7 @@ def test_tuple_length_error():
 
 def test_tuple_invalid():
     class Model(BaseModel):
-        v: tuple[int, float, bool]
+        v: Tuple[int, float, bool]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v='xxx')
@@ -395,7 +395,7 @@ def test_tuple_invalid():
 
 def test_tuple_value_error():
     class Model(BaseModel):
-        v: tuple[int, float, Decimal]
+        v: Tuple[int, float, Decimal]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=['x', 'y', 'x'])
@@ -422,7 +422,7 @@ def test_recursive_list():
         count: int = None
 
     class Model(BaseModel):
-        v: list[SubModel] = []
+        v: List[SubModel] = []
 
     m = Model(v=[])
     assert m.v == []
@@ -446,7 +446,7 @@ def test_recursive_list_error():
         count: int = None
 
     class Model(BaseModel):
-        v: list[SubModel] = []
+        v: List[SubModel] = []
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[{}])
@@ -457,7 +457,7 @@ def test_recursive_list_error():
 
 def test_list_unions():
     class Model(BaseModel):
-        v: list[int | str] = ...
+        v: List[Union[int, str]] = ...
 
     assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
@@ -472,10 +472,10 @@ def test_list_unions():
 
 def test_recursive_lists():
     class Model(BaseModel):
-        v: list[list[int | float]] = ...
+        v: List[List[Union[int, float]]] = ...
 
     assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
-    assert Model.model_fields['v'].annotation == list[list[int | float]]
+    assert Model.model_fields['v'].annotation == List[List[Union[int, float]]]
     assert Model.model_fields['v'].is_required()
 
 
@@ -496,7 +496,7 @@ def test_str_enum():
 
 def test_any_dict():
     class Model(BaseModel):
-        v: dict[int, Any] = ...
+        v: Dict[int, Any] = ...
 
     assert Model(v={1: 'foobar'}).model_dump() == {'v': {1: 'foobar'}}
     assert Model(v={123: 456}).model_dump() == {'v': {123: 456}}
@@ -584,7 +584,7 @@ def test_advanced_exclude():
 
     class SubModel(BaseModel):
         c: str
-        d: list[SubSubModel]
+        d: List[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -608,7 +608,7 @@ def test_advanced_exclude_by_alias():
 
     class SubModel(BaseModel):
         aliased_c: str = Field(..., alias='c_alias')
-        aliased_d: list[SubSubModel] = Field(..., alias='d_alias')
+        aliased_d: List[SubSubModel] = Field(..., alias='d_alias')
 
     class Model(BaseModel):
         aliased_e: str = Field(..., alias='e_alias')
@@ -637,7 +637,7 @@ def test_advanced_value_include():
 
     class SubModel(BaseModel):
         c: str
-        d: list[SubSubModel]
+        d: List[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -659,7 +659,7 @@ def test_advanced_value_exclude_include():
 
     class SubModel(BaseModel):
         c: str
-        d: list[SubSubModel]
+        d: List[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -758,10 +758,10 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
     class SubModel(BaseModel):
         k: int
-        subsubs: list[SubSubModel]
+        subsubs: List[SubSubModel]
 
     class Model(BaseModel):
-        subs: list[SubModel]
+        subs: List[SubModel]
 
     m = Model(subs=[dict(k=1, subsubs=[dict(i=1, j=1), dict(i=2, j=2)]), dict(k=2, subsubs=[dict(i=3, j=3)])])
 
@@ -855,10 +855,10 @@ def test_advanced_include_nested_lists(include, expected):
 
     class SubModel(BaseModel):
         k: int
-        subsubs: list[SubSubModel]
+        subsubs: List[SubSubModel]
 
     class Model(BaseModel):
-        subs: list[SubModel]
+        subs: List[SubModel]
 
     m = Model(subs=[dict(k=1, subsubs=[dict(i=1, j=1), dict(i=2, j=2)]), dict(k=2, subsubs=[dict(i=3, j=3)])])
 
@@ -1139,7 +1139,7 @@ def test_string_none():
 
 def test_optional_required():
     class Model(BaseModel):
-        bar: int | None
+        bar: Optional[int]
 
     assert Model(bar=123).model_dump() == {'bar': 123}
     assert Model(bar=None).model_dump() == {'bar': None}
@@ -1184,7 +1184,7 @@ def test_unable_to_infer():
 
 def test_multiple_errors():
     class Model(BaseModel):
-        a: None | int | float | Decimal
+        a: Union[None, int, float, Decimal]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
@@ -1383,14 +1383,14 @@ def test_type_on_annotation():
 
     class Model(BaseModel):
         a: int = int
-        b: type[int]
-        c: type[int] = int
+        b: Type[int]
+        c: Type[int] = int
         d: FooBar = FooBar
-        e: type[FooBar]
-        f: type[FooBar] = FooBar
-        g: Sequence[type[FooBar]] = [FooBar]
-        h: type[FooBar] | Sequence[type[FooBar]] = FooBar
-        i: type[FooBar] | Sequence[type[FooBar]] = [FooBar]
+        e: Type[FooBar]
+        f: Type[FooBar] = FooBar
+        g: Sequence[Type[FooBar]] = [FooBar]
+        h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
+        i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
 
         model_config = dict(arbitrary_types_allowed=True)
 
@@ -1411,7 +1411,7 @@ def test_assign_type():
             return 'different'
 
     class Model(BaseModel):
-        v: type[Parent] = Parent
+        v: Type[Parent] = Parent
 
     assert Model(v=Parent).v().echo() == 'parent'
     assert Model().v().echo() == 'parent'
@@ -1431,7 +1431,7 @@ def test_assign_type():
 
 def test_optional_subfields():
     class Model(BaseModel):
-        a: int | None
+        a: Optional[int]
 
     assert Model.model_fields['a'].annotation == Optional[int]
 
@@ -1456,7 +1456,7 @@ def test_optional_subfields():
 
 def test_validated_optional_subfields():
     class Model(BaseModel):
-        a: int | None
+        a: Optional[int]
 
         @validator('a')
         def check_a(cls, v):
@@ -1485,7 +1485,7 @@ def test_validated_optional_subfields():
 
 def test_optional_field_constraints():
     class MyModel(BaseModel):
-        my_int: int | None = Field(..., ge=3)
+        my_int: Optional[int] = Field(..., ge=3)
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel(my_int=2)
@@ -1502,7 +1502,7 @@ def test_optional_field_constraints():
 
 def test_field_str_shape():
     class Model(BaseModel):
-        a: list[int]
+        a: List[int]
 
     assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=List[int], required=True)'
     assert str(Model.model_fields['a']) == 'annotation=List[int] required=True'
@@ -1532,14 +1532,14 @@ class DisplayGen(Generic[T1, T2]):
         (Optional[int], 'Union[int, NoneType]'),
         (Union[None, int, str], 'Union[NoneType, int, str]'),
         (Union[int, str, bytes], 'Union[int, str, bytes]'),
-        (list[int], 'List[int]'),
-        (tuple[int, str, bytes], 'Tuple[int, str, bytes]'),
-        (Union[list[int], set[bytes]], 'Union[List[int], Set[bytes]]'),
-        (list[tuple[int, int]], 'List[Tuple[int, int]]'),
-        (dict[int, str], 'Dict[int, str]'),
-        (frozenset[int], 'FrozenSet[int]'),
-        (tuple[int, ...], 'Tuple[int, ...]'),
-        (Optional[list[int]], 'Union[List[int], NoneType]'),
+        (List[int], 'List[int]'),
+        (Tuple[int, str, bytes], 'Tuple[int, str, bytes]'),
+        (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
+        (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
+        (Dict[int, str], 'Dict[int, str]'),
+        (FrozenSet[int], 'FrozenSet[int]'),
+        (Tuple[int, ...], 'Tuple[int, ...]'),
+        (Optional[List[int]], 'Union[List[int], NoneType]'),
         (dict, 'dict'),
         pytest.param(
             DisplayGen[bool, str],
@@ -1645,7 +1645,7 @@ def test_type_var_bound():
 
 def test_dict_bare():
     class MyModel(BaseModel):
-        foo: dict
+        foo: Dict
 
     m = MyModel(foo={'x': 'a', 'y': None})
     assert m.foo == {'x': 'a', 'y': None}
@@ -1653,7 +1653,7 @@ def test_dict_bare():
 
 def test_list_bare():
     class MyModel(BaseModel):
-        foo: list
+        foo: List
 
     m = MyModel(foo=[1, 2, None])
     assert m.foo == [1, 2, None]
@@ -1661,7 +1661,7 @@ def test_list_bare():
 
 def test_dict_any():
     class MyModel(BaseModel):
-        foo: dict[str, Any]
+        foo: Dict[str, Any]
 
     m = MyModel(foo={'x': 'a', 'y': None})
     assert m.foo == {'x': 'a', 'y': None}
@@ -1669,7 +1669,7 @@ def test_dict_any():
 
 def test_modify_fields():
     class Foo(BaseModel):
-        foo: list[list[int]]
+        foo: List[List[int]]
 
         @validator('foo')
         def check_something(cls, value):
@@ -1686,7 +1686,7 @@ def test_modify_fields():
 
 def test_exclude_none():
     class MyModel(BaseModel):
-        a: int | None = None
+        a: Optional[int] = None
         b: int = 2
 
     m = MyModel(a=5)
@@ -1699,14 +1699,14 @@ def test_exclude_none():
 
 def test_exclude_none_recursive():
     class ModelA(BaseModel):
-        a: int | None = None
+        a: Optional[int] = None
         b: int = 1
 
     class ModelB(BaseModel):
         c: int
         d: int = 2
         e: ModelA
-        f: str | None = None
+        f: Optional[str] = None
 
     m = ModelB(c=5, e={'a': 0})
     assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
@@ -1723,7 +1723,7 @@ def test_exclude_none_with_extra():
     class MyModel(BaseModel):
         model_config = ConfigDict(extra='allow')
         a: str = 'default'
-        b: str | None = None
+        b: Optional[str] = None
 
     m = MyModel(a='a', c='c')
 
@@ -1774,7 +1774,7 @@ def test_optional_validator():
     val_calls = []
 
     class Model(BaseModel):
-        something: str | None
+        something: Optional[str]
 
         @validator('something')
         def check_something(cls, v):
@@ -1792,8 +1792,8 @@ def test_optional_validator():
 
 def test_required_optional():
     class Model(BaseModel):
-        nullable1: int | None = ...
-        nullable2: int | None = Field(...)
+        nullable1: Optional[int] = ...
+        nullable2: Optional[int] = Field(...)
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -1830,10 +1830,10 @@ def test_required_any():
     class Model(BaseModel):
         optional1: Any
         optional2: Any = None
-        optional3: Any | None = None
+        optional3: Optional[Any] = None
         nullable1: Any = ...
         nullable2: Any = Field(...)
-        nullable3: Any | None
+        nullable3: Optional[Any]
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -2085,7 +2085,7 @@ def test_default_factory_called_once():
 
     class MyBadModel(BaseModel):
         model_config = ConfigDict(validate_all=True)
-        id: list[str] = Field(default_factory=factory)
+        id: List[str] = Field(default_factory=factory)
 
     with pytest.raises(ValidationError) as exc_info:
         MyBadModel()
@@ -2098,7 +2098,7 @@ def test_default_factory_called_once():
 @pytest.mark.xfail(reason='working on V2 - validators')
 def test_default_factory_validator_child():
     class Parent(BaseModel):
-        foo: list[str] = Field(default_factory=list)
+        foo: List[str] = Field(default_factory=list)
 
         @validator('foo', pre=True, each_item=True)
         def mutate_foo(cls, v):

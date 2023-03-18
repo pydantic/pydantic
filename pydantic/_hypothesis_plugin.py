@@ -29,9 +29,8 @@ import datetime
 import ipaddress
 import json
 import math
-from collections.abc import Callable
 from fractions import Fraction
-from typing import TypeVar, overload
+from typing import Callable, Dict, Type, TypeVar, Union, overload
 
 import hypothesis.strategies as st
 
@@ -175,12 +174,12 @@ st.register_type_strategy(
 # For these ones, we actually want to inspect the type in order to work out a
 # satisfying strategy.  First up, the machinery for tracking resolver functions:
 
-RESOLVERS: dict[type, Callable[[type], st.SearchStrategy]] = {}  # type: ignore[type-arg]
+RESOLVERS: Dict[type, Callable[[type], st.SearchStrategy]] = {}  # type: ignore[type-arg]
 T = TypeVar('T')
 
 
 @overload
-def _registered(typ: type[T]) -> type[T]:
+def _registered(typ: Type[T]) -> Type[T]:
     pass
 
 
@@ -189,7 +188,7 @@ def _registered(typ: pydantic.types) -> pydantic.types:
     pass
 
 
-def _registered(typ: type[T]) -> type[T]:
+def _registered(typ: Union[Type[T]]) -> Union[Type[T]]:
     # This function replaces the version in `pydantic.types`, in order to
     # effect the registration of new constrained types so that Hypothesis
     # can generate valid examples.
@@ -202,7 +201,7 @@ def _registered(typ: type[T]) -> type[T]:
 
 
 def resolves(
-    typ: type,
+    typ: Union[type],
 ) -> Callable[[Callable[..., st.SearchStrategy]], Callable[..., st.SearchStrategy]]:  # type: ignore[type-arg]
     def inner(f):  # type: ignore
         assert f not in RESOLVERS

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, TypeGuard, Union, cast, get_args
+from typing import Any, Callable, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
+from typing_extensions import TypeGuard, get_args
 
 from . import _repr
 

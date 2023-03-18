@@ -9,11 +9,11 @@ import re
 import sys
 import typing
 import warnings
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Annotated, Any, ForwardRef, Literal, Type, get_args, get_origin, is_typeddict
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
+from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
@@ -246,19 +246,19 @@ class GenerateSchema:
             return self._union_schema(obj)
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
-        elif issubclass(origin, (list, set, frozenset)):
+        elif issubclass(origin, (typing.List, typing.Set, typing.FrozenSet)):
             return self._generic_collection_schema(obj)
-        elif issubclass(origin, tuple):
+        elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             return self._tuple_schema(obj)
         elif issubclass(origin, typing.Counter):
             return self._counter_schema(obj)
-        elif origin == dict:
+        elif origin == typing.Dict:
             return self._dict_schema(obj)
-        elif issubclass(origin, dict):
+        elif issubclass(origin, typing.Dict):
             return self._dict_subclass_schema(obj)
         elif issubclass(origin, typing.Mapping):
             return self._mapping_schema(obj)
-        elif issubclass(origin, type):
+        elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
             return self._subclass_schema(obj)
         elif issubclass(origin, typing.Deque):
             from ._std_types_schema import deque_schema
@@ -519,7 +519,7 @@ class GenerateSchema:
         params = get_args(tuple_type)
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         if not params:
-            if tuple_type == tuple:
+            if tuple_type == typing.Tuple:
                 return core_schema.tuple_variable_schema()
             else:
                 # special case for `tuple[()]` which means `tuple[]` - an empty tuple
@@ -629,7 +629,7 @@ class GenerateSchema:
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema(
-                    *[self.generate_schema(Type[c]) for c in type_param.__constraints__]  # noqa: UP006
+                    *[self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
                 )
             else:
                 return self._type_schema()

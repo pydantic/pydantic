@@ -1,6 +1,6 @@
 import re
 import sys
-from typing import Optional
+from typing import Optional, Tuple
 
 import pytest
 
@@ -90,7 +90,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
 def test_basic_forward_ref(create_module):
     @create_module
     def module():
-        from typing import ForwardRef
+        from typing import ForwardRef, Optional
 
         from pydantic import BaseModel
 
@@ -100,7 +100,7 @@ def test_basic_forward_ref(create_module):
         FooRef = ForwardRef('Foo')
 
         class Bar(BaseModel):
-            b: FooRef | None = None
+            b: Optional[FooRef] = None
 
     assert module.Bar().model_dump() == {'b': None}
     assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
@@ -109,7 +109,7 @@ def test_basic_forward_ref(create_module):
 def test_self_forward_ref_module(create_module):
     @create_module
     def module():
-        from typing import ForwardRef
+        from typing import ForwardRef, Optional
 
         from pydantic import BaseModel
 
@@ -117,7 +117,7 @@ def test_self_forward_ref_module(create_module):
 
         class Foo(BaseModel):
             a: int = 123
-            b: FooRef | None = None
+            b: Optional[FooRef] = None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None}
     assert module.Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
@@ -126,7 +126,7 @@ def test_self_forward_ref_module(create_module):
 def test_self_forward_ref_collection(create_module):
     @create_module
     def module():
-        from typing import Dict, List
+        from typing import Dict, List, Optional
 
         from pydantic import BaseModel
         from pydantic.json_schema import JsonSchemaMetadata
@@ -138,7 +138,7 @@ def test_self_forward_ref_collection(create_module):
             d: 'Dict[str, Foo]' = {}
 
             @classmethod
-            def model_json_schema_metadata(cls) -> JsonSchemaMetadata | None:
+            def model_json_schema_metadata(cls) -> Optional[JsonSchemaMetadata]:
                 return None
 
     assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
@@ -251,14 +251,14 @@ def test_forward_ref_sub_types(create_module):
 def test_forward_ref_nested_sub_types(create_module):
     @create_module
     def module():
-        from typing import ForwardRef, Union
+        from typing import ForwardRef, Tuple, Union
 
         from pydantic import BaseModel
 
         class Leaf(BaseModel):
             a: str
 
-        TreeType = Union[tuple[ForwardRef('Node'), str] | int, Leaf]
+        TreeType = Union[Union[Tuple[ForwardRef('Node'), str], int], Leaf]
 
         class Node(BaseModel):
             value: int
@@ -281,11 +281,13 @@ def test_forward_ref_nested_sub_types(create_module):
 def test_self_reference_json_schema(create_module):
     @create_module
     def module():
+        from typing import List
+
         from pydantic import BaseModel
 
         class Account(BaseModel):
             name: str
-            subaccounts: list['Account'] = []
+            subaccounts: List['Account'] = []
 
     Account = module.Account
     assert Account.model_json_schema() == {
@@ -347,6 +349,8 @@ class Account(BaseModel):
 def test_circular_reference_json_schema(create_module):
     @create_module
     def module():
+        from typing import List
+
         from pydantic import BaseModel
 
         class Owner(BaseModel):
@@ -357,7 +361,7 @@ def test_circular_reference_json_schema(create_module):
         class Account(BaseModel):
             name: str
             owner: 'Owner'
-            subaccounts: list['Account'] = []
+            subaccounts: List['Account'] = []
 
     Account = module.Account
     assert Account.model_json_schema() == {
@@ -440,7 +444,7 @@ class Account(BaseModel):
 def test_forward_ref_with_field(create_module):
     @create_module
     def module():
-        from typing import ForwardRef
+        from typing import ForwardRef, List
 
         import pytest
         from pydantic_core import SchemaError
@@ -452,7 +456,7 @@ def test_forward_ref_with_field(create_module):
         with pytest.raises(SchemaError, match=r'Extra inputs are not permitted \[type=extra_forbidden,'):
 
             class Foo(BaseModel):
-                c: list[Foo] = Field(..., gt=0)
+                c: List[Foo] = Field(..., gt=0)
 
 
 def test_forward_ref_optional(create_module):
@@ -528,7 +532,7 @@ class What(BaseModel):
 
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
-        x: tuple[int, Optional['NestedTuple']]
+        x: Tuple[int, Optional['NestedTuple']]
 
     obj = NestedTuple.model_validate({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
     assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
@@ -537,7 +541,9 @@ def test_nested_forward_ref():
 def test_discriminated_union_forward_ref(create_module):
     @create_module
     def module():
-        from typing import Literal, Union
+        from typing import Union
+
+        from typing_extensions import Literal
 
         from pydantic import BaseModel, Field
 
@@ -681,9 +687,11 @@ class SelfReferencing(BaseModel):
     )
 
     SelfReferencing = module.SelfReferencing
-    assert (
-        repr(SelfReferencing.model_fields['names']) == 'FieldInfo(annotation=list[PydanticForwardRef], required=True)'
-    )
+    if sys.version_info >= (3, 10):
+        assert (
+            repr(SelfReferencing.model_fields['names'])
+            == 'FieldInfo(annotation=list[PydanticForwardRef], required=True)'
+        )
 
     # test that object creation works
     obj = SelfReferencing(names=[SelfReferencing(names=[])])
@@ -813,9 +821,8 @@ def test_nested_more_annotation(create_module):
 def test_nested_annotation_priority(create_module):
     @create_module
     def module():
-        from typing import Annotated
-
         from annotated_types import Gt
+        from typing_extensions import Annotated
 
         from pydantic import BaseModel
 

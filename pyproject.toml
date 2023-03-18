@@ -104,6 +104,7 @@ extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
+target-version = "py37"
 
 [tool.ruff.per-file-ignores]
 'pydantic/__init__.py' = ['F405', 'F403']
@@ -137,14 +138,6 @@ color = true
 line-length = 120
 target-version = ['py310']
 skip-string-normalization = true
-
-[tool.isort]
-line_length = 120
-known_first_party = 'pydantic'
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
 
 [tool.mypy]
 # temporarily ignore some files

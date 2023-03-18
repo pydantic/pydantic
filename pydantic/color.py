@@ -10,15 +10,15 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Union, cast
+from typing import Any, Dict, Optional, Tuple, Union, cast
 
 from pydantic_core import PydanticCustomError, core_schema
 
 from ._internal import _repr, _utils
 
-ColorTuple = Union[tuple[int, int, int], tuple[int, int, int, float]]
+ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]
 ColorType = Union[ColorTuple, str]
-HslColorTuple = Union[tuple[float, float, float], tuple[float, float, float, float]]
+HslColorTuple = Union[Tuple[float, float, float], Tuple[float, float, float, float]]
 
 
 class RGBA:
@@ -28,13 +28,13 @@ class RGBA:
 
     __slots__ = 'r', 'g', 'b', 'alpha', '_tuple'
 
-    def __init__(self, r: float, g: float, b: float, alpha: float | None):
+    def __init__(self, r: float, g: float, b: float, alpha: Optional[float]):
         self.r = r
         self.g = g
         self.b = b
         self.alpha = alpha
 
-        self._tuple: tuple[float, float, float, float | None] = (r, g, b, alpha)
+        self._tuple: Tuple[float, float, float, Optional[float]] = (r, g, b, alpha)
 
     def __getitem__(self, item: Any) -> Any:
         return self._tuple[item]
@@ -84,7 +84,7 @@ class Color(_repr.Representation):
         self._original = value
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: Dict[str, Any]) -> None:
         field_schema.update(type='string', format='color')
 
     def original(self) -> ColorType:
@@ -95,7 +95,7 @@ class Color(_repr.Representation):
 
     def as_named(self, *, fallback: bool = False) -> str:
         if self._rgba.alpha is None:
-            rgb = cast(tuple[int, int, int], self.as_rgb_tuple())
+            rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
             try:
                 return COLORS_BY_VALUE[rgb]
             except KeyError as e:
@@ -132,7 +132,7 @@ class Color(_repr.Representation):
                 f'{round(self._alpha_float(), 2)})'
             )
 
-    def as_rgb_tuple(self, *, alpha: bool | None = None) -> ColorTuple:
+    def as_rgb_tuple(self, *, alpha: Optional[bool] = None) -> ColorTuple:
         """
         Color as an RGB or RGBA tuple; red, green and blue are in the range 0 to 255, alpha if included is
         in the range 0 to 1.
@@ -165,7 +165,7 @@ class Color(_repr.Representation):
             h, s, li, a = self.as_hsl_tuple(alpha=True)  # type: ignore
             return f'hsl({h * 360:0.0f}, {s:0.0%}, {li:0.0%}, {round(a, 2)})'
 
-    def as_hsl_tuple(self, *, alpha: bool | None = None) -> HslColorTuple:
+    def as_hsl_tuple(self, *, alpha: Optional[bool] = None) -> HslColorTuple:
         """
         Color as an HSL or HSLA tuple, e.g. hue, saturation, lightness and optionally alpha; all elements are in
         the range 0 to 1.
@@ -215,7 +215,7 @@ class Color(_repr.Representation):
         return hash(self.as_rgb_tuple())
 
 
-def parse_tuple(value: tuple[Any, ...]) -> RGBA:
+def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
     """
     Parse a tuple or list as a color.
     """
@@ -251,7 +251,7 @@ def parse_str(value: str) -> RGBA:
         *rgb, a = m.groups()
         r, g, b = (int(v * 2, 16) for v in rgb)
         if a:
-            alpha: float | None = int(a * 2, 16) / 255
+            alpha: Optional[float] = int(a * 2, 16) / 255
         else:
             alpha = None
         return ints_to_rgba(r, g, b, alpha)
@@ -277,11 +277,11 @@ def parse_str(value: str) -> RGBA:
     raise PydanticCustomError('color_error', 'value is not a valid color: string not recognised as a valid color')
 
 
-def ints_to_rgba(r: int | str, g: int | str, b: int | str, alpha: float | None = None) -> RGBA:
+def ints_to_rgba(r: Union[int, str], g: Union[int, str], b: Union[int, str], alpha: Optional[float] = None) -> RGBA:
     return RGBA(parse_color_value(r), parse_color_value(g), parse_color_value(b), parse_float_alpha(alpha))
 
 
-def parse_color_value(value: int | str, max_val: int = 255) -> float:
+def parse_color_value(value: Union[int, str], max_val: int = 255) -> float:
     """
     Parse a value checking it's a valid int in the range 0 to max_val and divide by max_val to give a number
     in the range 0 to 1
@@ -300,7 +300,7 @@ def parse_color_value(value: int | str, max_val: int = 255) -> float:
         )
 
 
-def parse_float_alpha(value: None | str | float | int) -> float | None:
+def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
     """
     Parse a value checking it's a valid float in the range 0 to 1
     """
@@ -322,7 +322,7 @@ def parse_float_alpha(value: None | str | float | int) -> float | None:
         raise PydanticCustomError('color_error', 'value is not a valid color: alpha values must be in the range 0 to 1')
 
 
-def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: float | None = None) -> RGBA:
+def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float] = None) -> RGBA:
     """
     Parse raw hue, saturation, lightness and alpha values and convert to RGBA.
     """

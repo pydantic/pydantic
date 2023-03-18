@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.dataclasses import dataclass
@@ -100,11 +100,11 @@ class DefaultTestingModel(BaseModel):
     a: int
     b: int = ...
     c: int = Field(...)
-    d: int | str
+    d: Union[int, str]
     e = ...
 
     # Not required
-    f: int | None
+    f: Optional[int]
     g: int = 1
     h: int = Field(1)
     i: int = Field(None)
@@ -131,7 +131,7 @@ Model(x='1', y='2')
 
 
 class Blah(BaseModel):
-    fields_set: set[str] | None = None
+    fields_set: Optional[Set[str]] = None
 
 
 # (comment to keep line numbers unchanged)
@@ -140,7 +140,7 @@ T = TypeVar('T')
 
 class Response(BaseModel, Generic[T]):
     data: T
-    error: str | None
+    error: Optional[str]
 
 
 response = Response[Model](data=model, error=None)
@@ -243,8 +243,8 @@ CoverageTester().from_orm()
 @dataclass(config={})
 class AddProject:
     name: str
-    slug: str | None
-    description: str | None
+    slug: Optional[str]
+    description: Optional[str]
 
 
 p = AddProject(name='x', slug='y', description='z')
@@ -278,7 +278,7 @@ def _default_factory() -> str:
     return 'x'
 
 
-test: list[str] = []
+test: List[str] = []
 
 
 class FieldDefaultTestingModel(BaseModel):
@@ -289,7 +289,7 @@ class FieldDefaultTestingModel(BaseModel):
     # Default factory
     g: str = Field(default_factory=set)
     h: int = Field(default_factory=_default_factory)
-    i: list[int] = Field(default_factory=list)
+    i: List[int] = Field(default_factory=list)
     l_: str = Field(default_factory=3)
 
     # Default and default factory

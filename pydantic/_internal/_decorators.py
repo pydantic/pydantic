@@ -5,17 +5,17 @@ from __future__ import annotations as _annotations
 
 import inspect
 import warnings
-from collections.abc import Callable
 from functools import wraps
 from inspect import Parameter, signature
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
 
 from pydantic_core.core_schema import GeneralValidatorFunction, JsonReturnTypes, ValidationInfo, WhenUsed
+from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
 
 if TYPE_CHECKING:
-    from typing import Literal
+    from typing_extensions import Literal
 
     from ..main import BaseModel
 

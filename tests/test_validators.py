@@ -2,10 +2,11 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from itertools import product
-from typing import Any, Deque, Literal
+from typing import Any, Deque, Dict, FrozenSet, List, Optional, Tuple, Union
 from warnings import WarningMessage
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import (
     BaseModel,
@@ -90,7 +91,7 @@ def test_int_overflow_validation(value):
 
 def test_frozenset_validation():
     class Model(BaseModel):
-        a: frozenset[int]
+        a: FrozenSet[int]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
@@ -152,7 +153,7 @@ def test_deque_validation():
 
 def test_validate_whole():
     class Model(BaseModel):
-        a: list[int]
+        a: List[int]
 
         @validator('a', mode='before')
         def check_a1(cls, v: Any):
@@ -171,7 +172,7 @@ def test_validate_whole():
 def test_validate_kwargs():
     class Model(BaseModel):
         b: int
-        a: list[int]
+        a: List[int]
 
         # TODO: do we support `each_item`?
         @validator('a', each_item=True)
@@ -185,7 +186,7 @@ def test_validate_pre_error():
     calls = []
 
     class Model(BaseModel):
-        a: list[int]
+        a: List[int]
 
         @validator('a', mode='before')
         def check_a1(cls, v: Any):
@@ -449,7 +450,7 @@ def test_validate_not_always():
     check_calls = 0
 
     class Model(BaseModel):
-        a: str | None = None
+        a: Optional[str] = None
 
         @validator('a', mode='before')
         def check_a(cls, v: Any):
@@ -673,7 +674,7 @@ def test_inheritance_new():
 @pytest.mark.xfail(reason='working on V2')
 def test_validation_each_item():
     class Model(BaseModel):
-        foobar: dict[int, int]
+        foobar: Dict[int, int]
 
         @validator('foobar', each_item=True)
         def check_foobar(cls, v: Any):
@@ -685,10 +686,10 @@ def test_validation_each_item():
 @pytest.mark.xfail(reason='working on V2')
 def test_validation_each_item_one_sublevel():
     class Model(BaseModel):
-        foobar: list[tuple[int, int]]
+        foobar: List[Tuple[int, int]]
 
         @validator('foobar', each_item=True)
-        def check_foobar(cls, v: tuple[int, int]) -> tuple[int, int]:
+        def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
             v1, v2 = v
             assert v1 == v2
             return v
@@ -698,7 +699,7 @@ def test_validation_each_item_one_sublevel():
 
 def test_key_validation():
     class Model(BaseModel):
-        foobar: dict[int, int]
+        foobar: Dict[int, int]
 
         @validator('foobar')
         def check_foobar(cls, value):
@@ -712,7 +713,7 @@ def test_validator_always_optional():
     check_calls = 0
 
     class Model(BaseModel):
-        a: str | None = None
+        a: Optional[str] = None
 
         @validator('a', mode='before', always=True)
         def check_a(cls, v: Any):
@@ -760,7 +761,7 @@ def test_validator_always_post():
 @pytest.mark.xfail(reason='working on V2')
 def test_validator_always_post_optional():
     class Model(BaseModel):
-        a: str | None = None
+        a: Optional[str] = None
 
         @validator('a', always=True, mode='before')
         def check_a(cls, v: Any):
@@ -811,7 +812,7 @@ def test_pre_called_once():
     check_calls = 0
 
     class Model(BaseModel):
-        a: tuple[int, int, int]
+        a: Tuple[int, int, int]
 
         @validator('a', mode='before')
         def check_a(cls, v: Any):
@@ -853,7 +854,7 @@ def test_whole():
     with pytest.warns(DeprecationWarning, match='The "whole" keyword argument is deprecated'):
 
         class Model(BaseModel):
-            x: list[int]
+            x: List[int]
 
             @validator('x', whole=True)
             def check_something(cls, v: Any):
@@ -1278,7 +1279,7 @@ def test_nested_literal_validator():
 @pytest.mark.xfail(reason='working on V2')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
-        x: Literal[42] | Literal['pika'] = Field(frozen=True)
+        x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
 
     m = Model(x=42)
     with pytest.raises(TypeError):
@@ -1481,7 +1482,7 @@ def _get_source_line(filename: str, lineno: int) -> str:
         return f.readline()
 
 
-def _check_warning(warnings: list[WarningMessage]) -> None:
+def _check_warning(warnings: List[WarningMessage]) -> None:
     assert len(warnings) == 1
     w = warnings[0]
     # check that we got stacklevel correct
@@ -1500,7 +1501,7 @@ def test_v1_validator_values_cls_method():
             x: int
 
             @validator('x')
-            def check_x(cls, x: int, values: dict[str, Any]) -> int:
+            def check_x(cls, x: int, values: Dict[str, Any]) -> int:
                 assert x * 2 == values['y']
                 return x
 
@@ -1516,7 +1517,7 @@ def test_v1_validator_values_kwargs_cls_method():
             x: int
 
             @validator('x')
-            def check_x(cls, x: int, values: dict[str, Any], **kwargs: Any) -> int:
+            def check_x(cls, x: int, values: Dict[str, Any], **kwargs: Any) -> int:
                 assert kwargs.keys() == set()
                 assert x * 2 == values['y']
                 return x
@@ -1543,7 +1544,7 @@ def test_v1_validator_kwargs_cls_method():
 
 
 def test_v1_validator_values_function():
-    def _check_x(x: Any, values: dict[str, Any]) -> int:
+    def _check_x(x: Any, values: Dict[str, Any]) -> int:
         assert x * 2 == values['y']
         return x
 
@@ -1560,7 +1561,7 @@ def test_v1_validator_values_function():
 
 
 def test_v1_validator_values_kwargs_function():
-    def _check_x(x: Any, values: dict[str, Any], **kwargs: Any) -> int:
+    def _check_x(x: Any, values: Dict[str, Any], **kwargs: Any) -> int:
         assert kwargs.keys() == set()
         assert x * 2 == values['y']
         return x

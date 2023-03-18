@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import math
 import re
-from collections import Counter
-from collections.abc import Callable, Iterable, Sequence
 from dataclasses import is_dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NewType, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, Iterable, List, NewType, Sequence, Tuple, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
@@ -19,7 +17,7 @@ if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
-JsonSchemaValue = dict[str, Any]
+JsonSchemaValue = Dict[str, Any]
 
 
 # ##### JSON Schema Metadata Manipulation #####
@@ -1089,8 +1087,8 @@ def model_schema(
     return model.model_json_schema(by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
 
 
-_Json = Union[dict[str, Any], list[Any], str, int, float, bool, None]
-_HashableJson = Union[tuple[tuple[str, Any], ...], tuple[Any, ...], str, int, float, bool, None]
+_Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+_HashableJson = Union[Tuple[Tuple[str, Any], ...], Tuple[Any, ...], str, int, float, bool, None]
 
 
 def _deduplicate_schemas(schemas: Iterable[_Json]) -> list[_Json]:

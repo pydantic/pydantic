@@ -1,5 +1,5 @@
 from contextlib import nullcontext as does_not_raise
-from typing import Any, ContextManager
+from typing import Any, ContextManager, List, Optional
 
 import pytest
 
@@ -14,7 +14,7 @@ def test_alias_generator():
 
     class MyModel(BaseModel):
         model_config = ConfigDict(alias_generator=to_camel)
-        a: list[str] = None
+        a: List[str] = None
         foo_bar: str
 
     data = {'A': ['foo', 'bar'], 'FooBar': 'foobar'}
@@ -99,7 +99,7 @@ def test_annotation_config():
 def test_pop_by_field_name():
     class Model(BaseModel):
         model_config = ConfigDict(extra=Extra.forbid, populate_by_name=True)
-        last_updated_by: str | None = Field(None, alias='lastUpdatedBy')
+        last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
     assert Model(last_updated_by='foo').model_dump() == {'last_updated_by': 'foo'}

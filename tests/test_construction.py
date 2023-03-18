@@ -1,5 +1,5 @@
 import pickle
-from typing import Any
+from typing import Any, List, Optional
 
 import pytest
 
@@ -156,7 +156,7 @@ def test_copy_advanced_exclude():
 
     class SubModel(BaseModel):
         c: str
-        d: list[SubSubModel]
+        d: List[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -180,7 +180,7 @@ def test_copy_advanced_include():
 
     class SubModel(BaseModel):
         c: str
-        d: list[SubSubModel]
+        d: List[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -204,7 +204,7 @@ def test_copy_advanced_include_exclude():
 
     class SubModel(BaseModel):
         c: str
-        d: list[SubSubModel]
+        d: List[SubSubModel]
 
     class Model(BaseModel):
         e: str
@@ -230,8 +230,8 @@ def test_copy_update(ModelTwo):
 @pytest.mark.xfail(reason='working on V2')
 def test_copy_update_unset():
     class Foo(BaseModel):
-        foo: str | None
-        bar: str | None
+        foo: Optional[str]
+        bar: Optional[str]
 
     assert (
         Foo(foo='hello').copy(update={'bar': 'world'}).model_dump_json(exclude_unset=True)
@@ -357,7 +357,7 @@ def test_shallow_copy_modify():
 @pytest.mark.xfail(reason='working on V2')
 def test_construct_default_factory():
     class Model(BaseModel):
-        foo: list[int] = Field(default_factory=list)
+        foo: List[int] = Field(default_factory=list)
         bar: str = 'Baz'
 
     m = Model.model_construct()

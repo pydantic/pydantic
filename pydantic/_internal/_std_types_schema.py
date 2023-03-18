@@ -8,16 +8,16 @@ from __future__ import annotations as _annotations
 import inspect
 import typing
 from collections import OrderedDict, deque
-from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import Any, get_args
+from typing import Any, Callable
 from uuid import UUID
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
+from typing_extensions import get_args
 
 from ..json_schema import JsonSchemaMetadata
 from . import _serializers, _validators

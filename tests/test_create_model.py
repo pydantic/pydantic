@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import pytest
 
@@ -261,7 +261,7 @@ def test_set_name(base):
 
 
 def test_create_model_with_slots():
-    field_definitions = {'__slots__': (Optional[tuple[str, ...]], None), 'foobar': (Optional[int], None)}
+    field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
     with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
         model = create_model('PartialPet', **field_definitions)
 

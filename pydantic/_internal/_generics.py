@@ -4,16 +4,10 @@ import sys
 import types
 import typing
 from collections import defaultdict
-from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import (  # type: ignore[attr-defined]
-    TYPE_CHECKING,
-    Any,
-    TypeVar,
-    _UnionGenericAlias,
-)
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Tuple, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -24,14 +18,20 @@ from ._forward_ref import PydanticForwardRef
 from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, is_basemodel
 
+if sys.version_info >= (3, 10):
+    from typing import _UnionGenericAlias  # type: ignore[attr-defined]
+
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-GenericTypesCacheKey = tuple[Any, Any, tuple[Any, ...]]
+GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
-GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
+if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
+    GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
+else:
+    GenericTypesCache = WeakValueDictionary
 
 
 def create_generic_submodel(
@@ -190,7 +190,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, (list, list)):
+    if isinstance(type_, (List, list)):
         resolved_list = list(replace_types(element, type_map) for element in type_)
         if all_identical(type_, resolved_list):
             return type_

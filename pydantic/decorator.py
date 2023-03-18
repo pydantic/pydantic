@@ -1,9 +1,8 @@
 """
 TODO this should be removed when we implement `validate` #4669
 """
-from collections.abc import Callable, Mapping
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
 from ._internal import _typing_extra, _utils
 from .config import Extra, get_config
@@ -17,7 +16,7 @@ if TYPE_CHECKING:
     AnyCallable = Callable[..., Any]
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
-    ConfigType = Union[None, type[Any], dict[str, Any]]
+    ConfigType = Union[None, Type[Any], Dict[str, Any]]
 
 
 @overload
@@ -73,7 +72,7 @@ class ValidatedFunction:
             )
 
         self.raw_function = function
-        self.arg_mapping: dict[int, str] = {}
+        self.arg_mapping: Dict[int, str] = {}
         self.positional_only_args = set()
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
@@ -81,7 +80,7 @@ class ValidatedFunction:
         type_hints = _typing_extra.get_type_hints(function, include_extras=True)
         takes_args = False
         takes_kwargs = False
-        fields: dict[str, tuple[Any, Any]] = {}
+        fields: Dict[str, Tuple[Any, Any]] = {}
         for i, (name, p) in enumerate(parameters.items()):
             if p.annotation is p.empty:
                 annotation = Any
@@ -92,22 +91,22 @@ class ValidatedFunction:
             if p.kind == Parameter.POSITIONAL_ONLY:
                 self.arg_mapping[i] = name
                 fields[name] = annotation, default
-                fields[V_POSITIONAL_ONLY_NAME] = List[str], None  # noqa: UP006
+                fields[V_POSITIONAL_ONLY_NAME] = List[str], None
                 self.positional_only_args.add(name)
             elif p.kind == Parameter.POSITIONAL_OR_KEYWORD:
                 self.arg_mapping[i] = name
                 fields[name] = annotation, default
-                fields[V_DUPLICATE_KWARGS] = List[str], None  # noqa: UP006
+                fields[V_DUPLICATE_KWARGS] = List[str], None
             elif p.kind == Parameter.KEYWORD_ONLY:
                 fields[name] = annotation, default
             elif p.kind == Parameter.VAR_POSITIONAL:
                 self.v_args_name = name
-                fields[name] = Tuple[annotation, ...], None  # noqa: UP006
+                fields[name] = Tuple[annotation, ...], None
                 takes_args = True
             else:
                 assert p.kind == Parameter.VAR_KEYWORD, p.kind
                 self.v_kwargs_name = name
-                fields[name] = Dict[str, annotation], None  # type: ignore[valid-type] # noqa: UP006
+                fields[name] = Dict[str, annotation], None  # type: ignore
                 takes_kwargs = True
 
         # these checks avoid a clash between "args" and a field with that name
@@ -120,11 +119,11 @@ class ValidatedFunction:
 
         if not takes_args:
             # we add the field so validation below can raise the correct exception
-            fields[self.v_args_name] = list[Any], None
+            fields[self.v_args_name] = List[Any], None
 
         if not takes_kwargs:
             # same with kwargs
-            fields[self.v_kwargs_name] = dict[Any, Any], None
+            fields[self.v_kwargs_name] = Dict[Any, Any], None
 
         self.create_model(fields, takes_args, takes_kwargs, config)
 
@@ -136,8 +135,8 @@ class ValidatedFunction:
         m = self.init_model_instance(*args, **kwargs)
         return self.execute(m)
 
-    def build_values(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> dict[str, Any]:
-        values: dict[str, Any] = {}
+    def build_values(self, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        values: Dict[str, Any] = {}
         if args:
             arg_iter = enumerate(args)
             while True:
@@ -152,7 +151,7 @@ class ValidatedFunction:
                     values[self.v_args_name] = [a] + [a for _, a in arg_iter]
                     break
 
-        var_kwargs: dict[str, Any] = {}
+        var_kwargs: Dict[str, Any] = {}
         wrong_positional_args = []
         duplicate_kwargs = []
         fields_alias = [
@@ -184,7 +183,7 @@ class ValidatedFunction:
         var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:
-            args_: list[Any] = []
+            args_: List[Any] = []
             in_kwargs = False
             kwargs = {}
             for name, value in d.items():
@@ -208,7 +207,7 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d, **var_kwargs)
 
-    def create_model(self, fields: dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
         config_dict = get_config(config)
@@ -223,14 +222,14 @@ class ValidatedFunction:
 
         class DecoratorBaseModel(BaseModel):
             @validator(self.v_args_name, check_fields=False, allow_reuse=True)
-            def check_args(cls, v: list[Any] | None) -> list[Any] | None:
+            def check_args(cls, v: Optional[List[Any]]) -> Optional[List[Any]]:
                 if takes_args or v is None:
                     return v
 
                 raise TypeError(f'{pos_args} positional arguments expected but {pos_args + len(v)} given')
 
             @validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
-            def check_kwargs(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
+            def check_kwargs(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
                 if takes_kwargs or v is None:
                     return v
 
@@ -239,7 +238,7 @@ class ValidatedFunction:
                 raise TypeError(f'unexpected keyword argument{plural}: {keys}')
 
             @validator(V_POSITIONAL_ONLY_NAME, check_fields=False, allow_reuse=True)
-            def check_positional_only(cls, v: list[str] | None) -> None:
+            def check_positional_only(cls, v: Optional[List[str]]) -> None:
                 if v is None:
                     return
 
@@ -248,7 +247,7 @@ class ValidatedFunction:
                 raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
 
             @validator(V_DUPLICATE_KWARGS, check_fields=False, allow_reuse=True)
-            def check_duplicate_kwargs(cls, v: list[str] | None) -> None:
+            def check_duplicate_kwargs(cls, v: Optional[List[str]]) -> None:
                 if v is None:
                     return
 

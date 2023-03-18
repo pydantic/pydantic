@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
 
 import pytest
 
@@ -61,7 +61,7 @@ def test_namedtuple_schema():
     class Model(BaseModel):
         pos1: Position1
         pos2: Position2
-        pos3: tuple[int, int]
+        pos3: Tuple[int, int]
 
     assert Model.model_json_schema() == {
         'title': 'Model',

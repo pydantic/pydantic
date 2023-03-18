@@ -1,15 +1,13 @@
 import json
 import re
 import sys
-from collections.abc import Generator
 from dataclasses import dataclass as vanilla_dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from re import Pattern
-from typing import Optional
+from typing import Generator, Optional, Pattern
 from uuid import UUID
 
 import pytest

@@ -807,7 +807,7 @@ def create_model(
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(type['Model'], BaseModel),)
+        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 

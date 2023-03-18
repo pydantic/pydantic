@@ -6,10 +6,10 @@ Do a little skipping about with types to demonstrate its usage.
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path, PurePath
-from typing import Annotated, Any, ForwardRef, Generic, TypeVar
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
-from typing_extensions import TypedDict
+from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     UUID1,
@@ -56,9 +56,9 @@ class Flags(BaseModel):
 class Model(BaseModel):
     age: int
     first_name: str = 'John'
-    last_name: str | None = None
-    signup_ts: datetime | None = None
-    list_of_ints: list[int]
+    last_name: Optional[str] = None
+    signup_ts: Optional[datetime] = None
+    list_of_ints: List[int]
 
     @validator('age')
     def check_age(cls, value: int) -> int:
@@ -66,11 +66,11 @@ class Model(BaseModel):
         return value
 
     @root_validator
-    def root_check(cls, values: dict[str, Any]) -> dict[str, Any]:
+    def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
     @root_validator(mode='before', allow_reuse=False)
-    def pre_root_check(cls, values: dict[str, Any]) -> dict[str, Any]:
+    def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
 
@@ -174,8 +174,8 @@ FooRef = ForwardRef('Foo')
 
 
 class MyConf(BaseModel):
-    str_pyobject: ImportString[type[date]] = Field('datetime.date')
-    callable_pyobject: ImportString[type[date]] = Field(date)
+    str_pyobject: ImportString[Type[date]] = Field('datetime.date')
+    callable_pyobject: ImportString[Type[date]] = Field(date)
 
 
 conf = MyConf()
@@ -218,8 +218,8 @@ class PydanticTypes(BaseModel):
     my_dir_path: DirectoryPath = Path('.')
     my_dir_path_str: DirectoryPath = '.'  # type: ignore
     # Json
-    my_json: Json[dict[str, str]] = '{"hello": "world"}'  # type: ignore
-    my_json_list: Json[list[str]] = '["hello", "world"]'  # type: ignore
+    my_json: Json[Dict[str, str]] = '{"hello": "world"}'  # type: ignore
+    my_json_list: Json[List[str]] = '["hello", "world"]'  # type: ignore
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)

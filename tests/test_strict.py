@@ -1,4 +1,10 @@
-from typing import Annotated, Any
+import sys
+from typing import Any, Type
+
+if sys.version_info < (3, 9):
+    from typing_extensions import Annotated
+else:
+    from typing import Annotated
 
 import pytest
 
@@ -21,7 +27,7 @@ def model_with_strict_field():
         1.0,
     ],
 )
-def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: type[BaseModel]) -> None:
+def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: Type[BaseModel]) -> None:
     with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictField(a=value)
     assert exc_info.value.errors() == [
@@ -29,7 +35,7 @@ def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: ty
     ]
 
 
-def test_parse_strict_mode_on_field_valid(ModelWithStrictField: type[BaseModel]) -> None:
+def test_parse_strict_mode_on_field_valid(ModelWithStrictField: Type[BaseModel]) -> None:
     value = ModelWithStrictField(a=1)
     assert value.model_dump() == {'a': 1}
 
@@ -50,7 +56,7 @@ def model_with_strict_config_false():
     return ModelWithStrictConfig
 
 
-def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: type[BaseModel]) -> None:
+def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
     with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a='1', b=2, c=3, d=4)
     assert exc_info.value.errors() == [
@@ -73,7 +79,7 @@ def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: type[Base
     assert all(v.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
 
 
-def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: type[BaseModel]) -> None:
+def test_parse_model_with_strict_config_disabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
     class Model(ModelWithStrictConfig):
         model_config = ConfigDict(strict=False)
 

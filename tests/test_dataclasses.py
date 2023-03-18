@@ -2,12 +2,13 @@ import dataclasses
 import pickle
 import re
 import sys
-from collections.abc import Callable, Hashable
+from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Any, Callable, ClassVar, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
+from typing_extensions import Literal
 
 import pydantic
 from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError, validator
@@ -449,7 +450,7 @@ def test_default_factory_field():
     @pydantic.dataclasses.dataclass
     class User:
         id: int
-        other: dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        other: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
 
     user = User(id=123)
     assert user.id == 123
@@ -483,12 +484,12 @@ def test_schema():
     class User:
         id: int
         name: str = 'John Doe'
-        aliases: dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
+        aliases: Dict[str, str] = dataclasses.field(default_factory=lambda: {'John': 'Joey'})
         signup_ts: datetime = None
-        age: int | None = dataclasses.field(
+        age: Optional[int] = dataclasses.field(
             default=None, metadata=dict(title='The age of the user', description='do not lie!')
         )
-        height: int | None = pydantic.Field(None, title='The height in cm', ge=50, le=300)
+        height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     user = User(id=123)
     assert user.__pydantic_model__.model_json_schema() == {
@@ -589,7 +590,7 @@ def test_initvars_post_init():
     @pydantic.dataclasses.dataclass
     class PathDataPostInit:
         path: Path
-        base_path: dataclasses.InitVar[Path | None] = None
+        base_path: dataclasses.InitVar[Optional[Path]] = None
 
         def __post_init__(self, base_path):
             if base_path is not None:
@@ -617,7 +618,7 @@ def test_classvar():
 def test_frozenset_field():
     @pydantic.dataclasses.dataclass
     class TestFrozenSet:
-        set: frozenset[int]
+        set: FrozenSet[int]
 
     test_set = frozenset({1, 2, 3})
     object_under_test = TestFrozenSet(set=test_set)
@@ -676,9 +677,9 @@ def test_override_builtin_dataclass():
     @dataclasses.dataclass
     class File:
         hash: str
-        name: str | None
+        name: Optional[str]
         size: int
-        content: bytes | None = None
+        content: Optional[bytes] = None
 
     ValidFile = pydantic.dataclasses.dataclass(File)
 
@@ -710,7 +711,7 @@ def test_override_builtin_dataclass():
 def test_override_builtin_dataclass_2():
     @dataclasses.dataclass
     class Meta:
-        modified_date: datetime | None
+        modified_date: Optional[datetime]
         seen_count: int
 
     Meta(modified_date='not-validated', seen_count=0)
@@ -732,7 +733,7 @@ def test_override_builtin_dataclass_2():
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:
-        modified_date: datetime | None
+        modified_date: Optional[datetime]
         seen_count: int
 
     @dataclasses.dataclass
@@ -772,7 +773,7 @@ def test_override_builtin_dataclass_nested():
 def test_override_builtin_dataclass_nested_schema():
     @dataclasses.dataclass
     class Meta:
-        modified_date: datetime | None
+        modified_date: Optional[datetime]
         seen_count: int
 
     @dataclasses.dataclass
@@ -831,7 +832,7 @@ def test_dataclass_arbitrary():
     @dataclasses.dataclass
     class Test:
         foo: ArbitraryType
-        bar: list[ArbitraryType]
+        bar: List[ArbitraryType]
 
     class TestModel(BaseModel):
         a: ArbitraryType
@@ -1226,7 +1227,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     @pydantic.dataclasses.dataclass
     class Top:
-        sub: A | B = dataclasses.field(metadata=dict(discriminator='l'))
+        sub: Union[A, B] = dataclasses.field(metadata=dict(discriminator='l'))
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
@@ -1261,7 +1262,7 @@ def test_discriminated_union_basemodel_instance_value():
 def test_post_init_after_validation():
     @dataclasses.dataclass
     class SetWrapper:
-        set: set[int]
+        set: Set[int]
 
         def __post_init__(self):
             assert isinstance(
@@ -1402,7 +1403,7 @@ def test_extra_forbid_list_no_error():
 
     @pydantic.dataclasses.dataclass
     class Foo:
-        a: list[Bar]
+        a: List[Bar]
 
     assert isinstance(Foo(a=[Bar()]).a[0], Bar)
 
