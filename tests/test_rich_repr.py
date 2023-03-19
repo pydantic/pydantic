@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import List, Optional
 
 import pytest
+from pydantic_extra_types.types.color import Color
 
 from pydantic import BaseModel
-from pydantic_extra_types.types.color import Color
 
 
 @pytest.fixture(scope='session', name='User')

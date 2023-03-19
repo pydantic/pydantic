@@ -7,6 +7,7 @@ from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 from pydantic_core import PydanticCustomError
+from pydantic_extra_types.types.color import Color
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
@@ -24,7 +25,6 @@ from pydantic._internal._utils import (
     unique_list,
 )
 from pydantic._internal._validators import import_string
-from pydantic_extra_types.types.color import Color
 from pydantic.fields import Undefined
 
 try:

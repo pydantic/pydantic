@@ -6,19 +6,7 @@ import re
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    FrozenSet,
-    Generic,
-    Hashable,
-    List,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, FrozenSet, Generic, Hashable, List, Set, Tuple, Type, TypeVar, cast
 from uuid import UUID
 
 import annotated_types
