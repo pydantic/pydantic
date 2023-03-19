@@ -21,6 +21,7 @@ from typing import (
     NamedTuple,
     NewType,
     Optional,
+    Pattern,
     Set,
     Tuple,
     Type,
@@ -1703,36 +1704,27 @@ def test_schema_kwargs():
     }
 
 
-class TestSchemaDictConstr:
+def test_schema_dict_constr():
     regex_str = r'^([a-zA-Z_][a-zA-Z0-9_]*)$'
+    ConStrType = constr(regex=regex_str)
+    ConStrKeyDict = Dict[ConStrType, str]
 
-    @pytest.mark.parametrize(
-        'con_str',
-        [
-            constr(regex=regex_str),
-            type('ConStrReStr', (ConstrainedStr,), {'regex': regex_str}),
-            type('ConStrRePattern', (ConstrainedStr,), {'regex': re.compile(regex_str)}),
-        ],
-    )
-    def test_schema_dict_constr(self, con_str: Type):
-        ConStrKeyDict = Dict[con_str, str]
+    class Foo(BaseModel):
+        a: ConStrKeyDict = {}
 
-        class Foo(BaseModel):
-            a: ConStrKeyDict = {}
-
-        assert Foo.schema() == {
-            'title': 'Foo',
-            'type': 'object',
-            'properties': {
-                'a': {
-                    'type': 'object',
-                    'title': 'A',
-                    'default': {},
-                    'additionalProperties': {'type': 'string'},
-                    'patternProperties': {self.regex_str: {'type': 'string'}},
-                }
-            },
-        }
+    assert Foo.schema() == {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'object',
+                'title': 'A',
+                'default': {},
+                'additionalProperties': {'type': 'string'},
+                'patternProperties': {regex_str: {'type': 'string'}},
+            }
+        },
+    }
 
 
 @pytest.mark.parametrize(
@@ -3265,4 +3257,28 @@ def test_model_with_type_attributes():
         'type': 'object',
         'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
         'required': ['a', 'b'],
+    }
+
+
+@pytest.mark.parametrize(
+    'regex_val',
+    [
+        '^text$',
+        re.compile('^text$'),
+    ],
+)
+def test_constrained_str_class_dict(regex_val: Union[str, Pattern[str]]):
+    class CustomStr(ConstrainedStr):
+        regex = regex_val
+
+    class Model(BaseModel):
+        a: Dict[CustomStr, Any]
+
+    json_schema = Model.schema()
+
+    assert json_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'patternProperties': {'^text$': {}}, 'title': 'A', 'type': 'object'}},
+        'required': ['a'],
     }
