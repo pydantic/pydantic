@@ -55,6 +55,7 @@ from .types import (
     ConstrainedInt,
     ConstrainedList,
     ConstrainedSet,
+    ConstrainedStr,
     SecretBytes,
     SecretStr,
     StrictBytes,
@@ -79,7 +80,7 @@ from .typing import (
     is_none_type,
     is_union,
 )
-from .utils import ROOT_KEY, get_model, get_pattern, lenient_issubclass
+from .utils import ROOT_KEY, get_model, lenient_issubclass
 
 if TYPE_CHECKING:
     from .dataclasses import Dataclass
@@ -490,7 +491,7 @@ def field_type_schema(
         if regex:
             # Dict keys have a regex pattern
             # items_schema might be a schema or empty dict, add it either way
-            f_schema['patternProperties'] = {get_pattern(regex): items_schema}
+            f_schema['patternProperties'] = {ConstrainedStr._get_pattern(regex): items_schema}
         if items_schema:
             # The dict values are not simply Any, so they need a schema
             f_schema['additionalProperties'] = items_schema
