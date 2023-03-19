@@ -7,6 +7,7 @@ import sys
 import typing
 import warnings
 from abc import ABCMeta
+from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -483,7 +484,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         value_include = _utils.ValueItems(v, include) if include else None
 
         if isinstance(v, dict):
-            return {
+            map_args = {
                 k_: cls._get_value(
                     v_,
                     to_dict=to_dict,
@@ -498,6 +499,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 if (not value_exclude or not value_exclude.is_excluded(k_))
                 and (not value_include or value_include.is_included(k_))
             }
+            return v.__class__(v.default_factory, map_args) if isinstance(v, defaultdict) else v.__class__(map_args)
 
         elif _utils.sequence_like(v):
             seq_args = (

@@ -1536,6 +1536,8 @@ def test_dict_subclasses_bare():
 
     assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
     assert repr(Model(a=MyDict({b'x': (1, 2)})).a) == "MyDict({b'x': (1, 2)})"
+    assert repr(Model(a=MyDict({b'x': (1, 2)})).copy().a) == "MyDict({b'x': (1, 2)})"
+    assert repr(Model(a=MyDict({b'x': (1, 2)})).copy(include={'a': True}).a) == "MyDict({b'x': (1, 2)})"
 
 
 def test_dict_subclasses_typed():
