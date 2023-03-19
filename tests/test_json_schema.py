@@ -36,7 +36,7 @@ from typing_extensions import Annotated, Literal
 from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset, validator
 from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic._internal._generate_schema import GenerateSchema
-from pydantic.color import Color
+from pydantic_extra_types.types.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema

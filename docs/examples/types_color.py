@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ValidationError
-from pydantic.color import Color
+from pydantic_extra_types.types.color import Color
+
 
 c = Color('ff00ff')
 print(c.as_named())

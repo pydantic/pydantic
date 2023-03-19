@@ -35,7 +35,7 @@ from typing import Callable, Dict, Type, TypeVar, Union, overload
 import hypothesis.strategies as st
 
 import pydantic
-import pydantic.color
+import pydantic_extra_types.types.color
 import pydantic.types
 
 from ._internal._utils import lenient_issubclass
@@ -91,21 +91,21 @@ else:
 _color_regexes = (
     '|'.join(
         (
-            pydantic.color.r_hex_short,
-            pydantic.color.r_hex_long,
-            pydantic.color.r_rgb,
-            pydantic.color.r_hsl,
+            pydantic_extra_types.types.color.r_hex_short,
+            pydantic_extra_types.types.color.r_hex_long,
+            pydantic_extra_types.types.color.r_rgb,
+            pydantic_extra_types.types.color.r_hsl,
         )
     )
     # Use more precise regex patterns to avoid value-out-of-range errors
-    .replace(pydantic.color._r_sl, r'(?:(\d\d?(?:\.\d+)?|100(?:\.0+)?)%)')
-    .replace(pydantic.color._r_alpha, r'(?:(0(?:\.\d+)?|1(?:\.0+)?|\.\d+|\d{1,2}%))')
-    .replace(pydantic.color._r_255, r'(?:((?:\d|\d\d|[01]\d\d|2[0-4]\d|25[0-4])(?:\.\d+)?|255(?:\.0+)?))')
+    .replace(pydantic_extra_types.types.color._r_sl, r'(?:(\d\d?(?:\.\d+)?|100(?:\.0+)?)%)')
+    .replace(pydantic_extra_types.types.color._r_alpha, r'(?:(0(?:\.\d+)?|1(?:\.0+)?|\.\d+|\d{1,2}%))')
+    .replace(pydantic_extra_types.types.color._r_255, r'(?:((?:\d|\d\d|[01]\d\d|2[0-4]\d|25[0-4])(?:\.\d+)?|255(?:\.0+)?))')
 )
 st.register_type_strategy(
-    pydantic.color.Color,
+    pydantic_extra_types.types.color.Color,
     st.one_of(
-        st.sampled_from(sorted(pydantic.color.COLORS_BY_NAME)),
+        st.sampled_from(sorted(pydantic_extra_types.types.color.COLORS_BY_NAME)),
         st.tuples(
             st.integers(0, 255),
             st.integers(0, 255),

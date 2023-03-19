@@ -24,7 +24,7 @@ from pydantic._internal._utils import (
     unique_list,
 )
 from pydantic._internal._validators import import_string
-from pydantic.color import Color
+from pydantic_extra_types.types.color import Color
 from pydantic.fields import Undefined
 
 try:

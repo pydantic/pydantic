@@ -4,7 +4,7 @@ from typing import List, Optional
 import pytest
 
 from pydantic import BaseModel
-from pydantic.color import Color
+from pydantic_extra_types.types.color import Color
 
 
 @pytest.fixture(scope='session', name='User')

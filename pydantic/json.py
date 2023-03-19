@@ -9,7 +9,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
 
-from .color import Color
+from pydantic_extra_types.types.color import Color
 from .networks import NameEmail
 from .types import SecretBytes, SecretStr
 
