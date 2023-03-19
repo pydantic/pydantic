@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 from datetime import date, datetime, time, timedelta
@@ -818,23 +819,6 @@ def test_str_basic_types(field_type, expected_schema):
     base_schema = {'title': 'Model', 'type': 'object'}
     base_schema.update(expected_schema)
     assert Model.schema() == base_schema
-
-
-def test_constrained_str_class_dict():
-    class CustomStr(ConstrainedStr):
-        regex = '^text$'
-
-    class Model(BaseModel):
-        a: Dict[CustomStr, Any]
-
-    json_schema = Model.schema()
-
-    assert json_schema == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {'a': {'patternProperties': {'^text$': {}}, 'title': 'A', 'type': 'object'}},
-        'required': ['a'],
-    }
 
 
 @pytest.mark.parametrize(
@@ -1719,27 +1703,36 @@ def test_schema_kwargs():
     }
 
 
-def test_schema_dict_constr():
+class TestSchemaDictConstr:
     regex_str = r'^([a-zA-Z_][a-zA-Z0-9_]*)$'
-    ConStrType = constr(regex=regex_str)
-    ConStrKeyDict = Dict[ConStrType, str]
 
-    class Foo(BaseModel):
-        a: ConStrKeyDict = {}
+    @pytest.mark.parametrize(
+        'con_str',
+        [
+            constr(regex=regex_str),
+            type('ConStrReStr', (ConstrainedStr,), {'regex': regex_str}),
+            type('ConStrRePattern', (ConstrainedStr,), {'regex': re.compile(regex_str)}),
+        ],
+    )
+    def test_schema_dict_constr(self, con_str: Type):
+        ConStrKeyDict = Dict[con_str, str]
 
-    assert Foo.schema() == {
-        'title': 'Foo',
-        'type': 'object',
-        'properties': {
-            'a': {
-                'type': 'object',
-                'title': 'A',
-                'default': {},
-                'additionalProperties': {'type': 'string'},
-                'patternProperties': {regex_str: {'type': 'string'}},
-            }
-        },
-    }
+        class Foo(BaseModel):
+            a: ConStrKeyDict = {}
+
+        assert Foo.schema() == {
+            'title': 'Foo',
+            'type': 'object',
+            'properties': {
+                'a': {
+                    'type': 'object',
+                    'title': 'A',
+                    'default': {},
+                    'additionalProperties': {'type': 'string'},
+                    'patternProperties': {self.regex_str: {'type': 'string'}},
+                }
+            },
+        }
 
 
 @pytest.mark.parametrize(
