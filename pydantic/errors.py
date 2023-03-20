@@ -1,7 +1,5 @@
 from __future__ import annotations as _annotations
 
-from typing import Optional
-
 __all__ = (
     'PydanticUserError',
     'PydanticSchemaGenerationError',
@@ -15,7 +13,7 @@ class PydanticErrorMixin:
     Pydantic Error Mixin for common functions
     """
 
-    def __init__(self, code: str, *, message: Optional[str] = None) -> None:
+    def __init__(self, code: str, *, message: str | None = None) -> None:
         self.code = code
         self.message = message
 
@@ -33,7 +31,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     Error occurs when annotations are not yet defined
     """
 
-    def __init__(self, name: str, *, message: Optional[str] = None) -> None:
+    def __init__(self, name: str, *, message: str | None = None) -> None:
         self.name = name
         super().__init__(code=name, message=message)
 

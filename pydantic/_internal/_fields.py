@@ -30,13 +30,13 @@ class _UndefinedType:
     def __repr__(self) -> str:
         return 'PydanticUndefined'
 
-    def __copy__(self) -> '_UndefinedType':
+    def __copy__(self) -> _UndefinedType:
         return self
 
     def __reduce__(self) -> str:
         return 'Undefined'
 
-    def __deepcopy__(self, _: Any) -> '_UndefinedType':
+    def __deepcopy__(self, _: Any) -> _UndefinedType:
         return self
 
 

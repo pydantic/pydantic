@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import json
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef
 
 from typing_extensions import Literal, Protocol, TypedDict
 
@@ -24,11 +24,11 @@ if TYPE_CHECKING:
         #   similar machinery to `_apply_modify_schema` to call the function properly for different signatures.
         #   (And use this Protocol-based approach to get good type-checking.)
         @overload
-        def __call__(self, schema: Dict[str, Any]) -> None:
+        def __call__(self, schema: dict[str, Any]) -> None:
             pass
 
         @overload
-        def __call__(self, schema: Dict[str, Any], model_class: Type[BaseModel]) -> None:
+        def __call__(self, schema: dict[str, Any], model_class: type[BaseModel]) -> None:
             pass
 
 else:
@@ -45,12 +45,12 @@ class Extra(str, Enum):
 
 class _ConfigDict(TypedDict, total=False):
     # TODO: We should raise a warning when building a model class if a now-invalid config key is present
-    title: Optional[str]
+    title: str | None
     str_to_lower: bool
     str_to_upper: bool
     str_strip_whitespace: bool
     str_min_length: int
-    str_max_length: Optional[int]
+    str_max_length: int | None
     extra: Extra
     frozen: bool
     populate_by_name: bool
@@ -59,11 +59,11 @@ class _ConfigDict(TypedDict, total=False):
     arbitrary_types_allowed: bool  # TODO default True, or remove
     undefined_types_warning: bool  # TODO review docs
     from_attributes: bool
-    alias_generator: Optional[Callable[[str], str]]
-    keep_untouched: Tuple[type, ...]  # TODO remove??
+    alias_generator: Callable[[str], str] | None
+    keep_untouched: tuple[type, ...]  # TODO remove??
     json_loads: Callable[[str], Any]  # TODO decide
     json_dumps: Callable[..., str]  # TODO decide
-    json_encoders: Dict[Union[Type[Any], str, ForwardRef], Callable[..., Any]]  # TODO decide
+    json_encoders: dict[type[Any] | str | ForwardRef, Callable[..., Any]]  # TODO decide
     allow_inf_nan: bool
 
     strict: bool
@@ -167,7 +167,7 @@ class BaseConfig(metaclass=ConfigMetaclass):
         return super().__init_subclass__(**kwargs)
 
 
-def get_config(config: Union[ConfigDict, Dict[str, Any], Type[Any], None]) -> ConfigDict:
+def get_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
     if config is None:
         return ConfigDict()
 

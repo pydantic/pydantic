@@ -7,6 +7,7 @@ Done like this rather than as a raw rst table to make future edits easier.
 Please edit this file directly not .tmp_schema_mappings.html
 """
 from __future__ import annotations
+
 import json
 import re
 from pathlib import Path

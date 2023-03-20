@@ -7,7 +7,7 @@ import inspect
 import warnings
 from functools import wraps
 from inspect import Parameter, signature
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, List, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
 
 from pydantic_core.core_schema import GeneralValidatorFunction, JsonReturnTypes, ValidationInfo, WhenUsed
 from typing_extensions import Protocol
@@ -323,8 +323,8 @@ def make_generic_validator(
             stacklevel=6,
         )
 
-    positional_params: List[str] = []
-    keyword_only_params: List[str] = []
+    positional_params: list[str] = []
+    keyword_only_params: list[str] = []
     accepts_kwargs = False
     for param_name, parameter in sig.parameters.items():
         if param_name in ('field', 'config'):

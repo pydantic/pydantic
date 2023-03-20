@@ -95,7 +95,7 @@ class FieldInfo(_repr.Representation):
         self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod
-    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
+    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
         """
         Create `FieldInfo` with the `Field` function, e.g.:
         >>> import pydantic
@@ -108,7 +108,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> 'FieldInfo':
+    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> FieldInfo:
         """
         Create `FieldInfo` from a bare annotation, e.g.:
         >>> import pydantic
@@ -134,7 +134,7 @@ class FieldInfo(_repr.Representation):
         return cls(annotation=annotation)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> 'FieldInfo':
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
         """
         Create `FieldInfo` from an annotation with a default value, e.g.:
         >>> import pydantic, annotated_types, typing
@@ -170,7 +170,7 @@ class FieldInfo(_repr.Representation):
             return cls(annotation=annotation, default=default)
 
     @classmethod
-    def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> 'FieldInfo':
+    def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
         """
         Construct a `FieldInfo` from a `dataclasses.Field` instance.
         """
@@ -258,7 +258,7 @@ class FieldInfo(_repr.Representation):
         else:
             return typing_extensions._AnnotatedAlias(self.annotation, self.metadata)
 
-    def __repr_args__(self) -> 'ReprArgs':
+    def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
         yield 'required', self.is_required()
 

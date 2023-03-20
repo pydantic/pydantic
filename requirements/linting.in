@@ -1,10 +1,10 @@
 annotated-types
 black
 hypothesis
-isort
 # pydantic-core is required for mypy
 pydantic-core
 pyupgrade
 mypy
-pre-commit
+# pre-commit 3.0.0 dropped 3.7 support
+pre-commit>=2.21.0,<3
 ruff

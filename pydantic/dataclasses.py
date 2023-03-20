@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Callable, Optional, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from typing_extensions import Literal, dataclass_transform
 
@@ -33,16 +33,16 @@ if sys.version_info >= (3, 10):
         order: bool = False,
         unsafe_hash: bool = False,
         frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
         kw_only: bool = ...,
-    ) -> Callable[[Type[_T]], PydanticDataclass]:
+    ) -> Callable[[type[_T]], PydanticDataclass]:
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
-        _cls: Type[_T],
+        _cls: type[_T],
         *,
         init: Literal[False] = False,
         repr: bool = True,
@@ -50,8 +50,8 @@ if sys.version_info >= (3, 10):
         order: bool = False,
         unsafe_hash: bool = False,
         frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
         kw_only: bool = ...,
     ) -> PydanticDataclass:
         ...
@@ -68,15 +68,15 @@ else:
         order: bool = False,
         unsafe_hash: bool = False,
         frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
-    ) -> Callable[[Type[_T]], PydanticDataclass]:
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
+    ) -> Callable[[type[_T]], PydanticDataclass]:
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
-        _cls: Type[_T],
+        _cls: type[_T],
         *,
         init: Literal[False] = False,
         repr: bool = True,
@@ -84,15 +84,15 @@ else:
         order: bool = False,
         unsafe_hash: bool = False,
         frozen: bool = False,
-        config: Union[ConfigDict, Type[object], None] = None,
-        validate_on_init: Optional[bool] = None,
+        config: ConfigDict | type[object] | None = None,
+        validate_on_init: bool | None = None,
     ) -> PydanticDataclass:
         ...
 
 
 @dataclass_transform(field_specifiers=(dataclasses.field, Field))
 def dataclass(
-    _cls: Optional[Type[_T]] = None,
+    _cls: type[_T] | None = None,
     *,
     init: Literal[False] = False,
     repr: bool = True,
@@ -100,16 +100,16 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    config: Union[ConfigDict, Type[object], None] = None,
-    validate_on_init: Optional[bool] = None,
+    config: ConfigDict | type[object] | None = None,
+    validate_on_init: bool | None = None,
     kw_only: bool = False,
-) -> Union[Callable[[Type[_T]], PydanticDataclass], PydanticDataclass]:
+) -> Callable[[type[_T]], PydanticDataclass] | PydanticDataclass:
     """
     Like the python standard lib dataclasses but enhanced with validation.
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
-    def create_dataclass(cls: Type[Any]) -> PydanticDataclass:
+    def create_dataclass(cls: type[Any]) -> PydanticDataclass:
         if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
             # so we don't add validation to the existing std lib dataclass, so we subclass it, but we need to
             # set `__pydantic_fields__` while subclassing so the logic below can treat the new class like its

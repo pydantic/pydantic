@@ -418,9 +418,9 @@ class GenerateSchema:
                 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
             )
 
-        required_keys: typing.FrozenSet[str] = typed_dict_cls.__required_keys__
+        required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
-        fields: typing.Dict[str, core_schema.TypedDictField] = {}
+        fields: dict[str, core_schema.TypedDictField] = {}
         validator_functions = ValidationFunctions(())
         serializer_functions = SerializationFunctions(())
 
@@ -751,7 +751,7 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     Apply validators to a schema.
     """
     f_match: Mapping[
-        Tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
+        tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
     ] = {
         ('before', True): core_schema.field_before_validation_function,
         ('after', True): core_schema.field_after_validation_function,
@@ -871,7 +871,7 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
     if isinstance(metadata, PydanticGeneralMetadata):
         metadata_dict = metadata.__dict__
     elif isinstance(metadata, (BaseMetadata, PydanticMetadata)):
-        metadata_dict = dataclasses.asdict(metadata)
+        metadata_dict = dataclasses.asdict(metadata)  # type: ignore[call-overload]
     elif isinstance(metadata, type) and issubclass(metadata, PydanticMetadata):
         # also support PydanticMetadata classes being used without initialisation,
         # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
