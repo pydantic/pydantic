@@ -1108,7 +1108,9 @@ class GenerateJsonSchema:
 
     def warning_message(self, kind: JsonSchemaWarningKind, detail: str) -> str | None:
         """
-        Override this method to return None for kinds that you don't want to produce warnings
+        Note: You can override the value of `ignored_warning_kinds` in a subclass of GenerateJsonSchema
+        to modify what warnings are generated. If you want more control, you can override this method
+        to return None in situations where you don't want warnings to be emitted.
         """
         if kind in self.ignored_warning_kinds:
             return None
