@@ -2,7 +2,8 @@ use pyo3::intern;
 use pyo3::prelude::*;
 
 use ahash::AHashSet;
-use pyo3::types::{PyDict, PySet, PyString};
+use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::types::{PyDict, PySet, PyString, PyType};
 
 use crate::build_tools::{is_strict, py_err, schema_or_config, schema_or_config_same, SchemaDict};
 use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
@@ -346,29 +347,22 @@ impl TypedDictValidator {
     where
         'data: 's,
     {
-        let extra = Extra {
-            field_name: Some(field),
-            assignee_field: None,
-            ..*extra
-        };
-        // TODO probably we should set location on errors here
-        let data = match extra.data {
-            Some(data) => data,
-            None => unreachable!(),
-        };
-
-        let prepare_tuple = |output: PyObject| {
-            data.set_item(field, output)?;
-            if self.return_fields_set {
-                let fields_set = PySet::new(py, &[field])?;
-                Ok((data, fields_set).to_object(py))
-            } else {
-                Ok(data.to_object(py))
+        let dict: &PyDict = match extra.self_instance {
+            Some(d) => d.downcast()?,
+            None => {
+                return Err(
+                    PyTypeError::new_err("self_instance should not be None on typed-dict validate_assignment").into(),
+                )
             }
         };
 
+        let ok = |output: PyObject| {
+            dict.set_item(field, output)?;
+            Ok(dict.to_object(py))
+        };
+
         let prepare_result = |result: ValResult<'data, PyObject>| match result {
-            Ok(output) => prepare_tuple(output),
+            Ok(output) => ok(output),
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors
                     .into_iter()
@@ -377,6 +371,22 @@ impl TypedDictValidator {
                 Err(ValError::LineErrors(errors))
             }
             Err(err) => Err(err),
+        };
+
+        // by using dict but removing the field in question, we match V1 behaviour
+        let data_dict = dict.copy()?;
+        if let Err(err) = data_dict.del_item(field) {
+            // KeyError is fine here as the field might not be in the dict
+            if !err.get_type(py).is(PyType::new::<PyKeyError>(py)) {
+                return Err(err.into());
+            }
+        }
+
+        let extra = Extra {
+            field_name: Some(field),
+            assignee_field: None,
+            data: Some(data_dict),
+            ..*extra
         };
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field) {
@@ -389,14 +399,16 @@ impl TypedDictValidator {
             // this is the "allow" case of extra_behavior
             match self.extra_validator {
                 Some(ref validator) => prepare_result(validator.validate(py, input, &extra, slots, recursion_guard)),
-                None => prepare_tuple(input.to_object(py)),
+                None => ok(input.to_object(py)),
             }
         } else {
             // otherwise we raise an error:
             // - with forbid this is obvious
             // - with ignore the model should never be overloaded, so an error is the clearest option
             Err(ValError::new_with_loc(
-                ErrorType::ExtraForbidden,
+                ErrorType::NoSuchAttribute {
+                    attribute: field.to_string(),
+                },
                 input,
                 field.to_string(),
             ))

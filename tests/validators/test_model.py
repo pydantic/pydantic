@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import plain_repr
 
@@ -511,7 +511,7 @@ def test_revalidate_extra():
     assert m3.__fields_set__ == {'field_a', 'field_b', 'another'}
 
 
-def test_call_after_init():
+def test_post_init():
     call_count = 0
 
     class MyModel:
@@ -519,11 +519,12 @@ def test_call_after_init():
         field_a: str
         field_b: int
 
-        def call_me_baby(self, context, **kwargs):
+        def call_me_maybe(self, *args):
             nonlocal call_count
             call_count += 1
+            assert len(args) == 1
+            context = args[0]
             assert context is None
-            assert kwargs == {}
             assert self.field_a == 'test'
             assert self.field_b == 12
             assert self.__fields_set__ == {'field_a', 'field_b'}
@@ -532,7 +533,7 @@ def test_call_after_init():
         {
             'type': 'model',
             'cls': MyModel,
-            'call_after_init': 'call_me_baby',
+            'post_init': 'call_me_maybe',
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -545,12 +546,58 @@ def test_call_after_init():
     assert call_count == 1
 
 
-def test_call_after_init_validation_error():
+def test_revalidate_post_init():
+    call_count = 0
+
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+
+        def call_me_maybe(self, context):
+            nonlocal call_count
+            call_count += 1
+            assert context is None
+
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'post_init': 'call_me_maybe',
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'from_attributes': True,
+                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+            },
+            'config': {'revalidate_models': True},
+        }
+    )
+    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: true'
+
+    m = v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
+    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert call_count == 1
+
+    m2 = MyModel()
+    m2.field_a = 'x'
+    m2.field_b = 42
+    m2.__fields_set__ = {'field_a'}
+
+    m3 = v.validate_python(m2)
+    assert isinstance(m3, MyModel)
+    assert m3 is not m2
+    assert m3.__dict__ == {'field_a': 'x', 'field_b': 42}
+    assert m3.__fields_set__ == {'field_a'}
+    assert call_count == 2
+
+
+def test_post_init_validation_error():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
         field_a: str
 
-        def call_me_baby(self, context, **kwargs):
+        def call_me_maybe(self, context, **kwargs):
             if context and 'error' in context:
                 raise ValueError(f'this is broken: {self.field_a}')
 
@@ -558,7 +605,7 @@ def test_call_after_init_validation_error():
         {
             'type': 'model',
             'cls': MyModel,
-            'call_after_init': 'call_me_baby',
+            'post_init': 'call_me_maybe',
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -571,7 +618,7 @@ def test_call_after_init_validation_error():
     assert m.field_a == 'test'
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_python({'field_a': 'test'}, None, {'error': 1})
+        v.validate_python({'field_a': 'test'}, strict=None, context={'error': 1})
     assert exc_info.value.errors() == [
         {
             'type': 'value_error',
@@ -583,7 +630,7 @@ def test_call_after_init_validation_error():
     ]
 
 
-def test_call_after_init_internal_error():
+def test_post_init_internal_error():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
         field_a: str
@@ -595,7 +642,7 @@ def test_call_after_init_internal_error():
         {
             'type': 'model',
             'cls': MyModel,
-            'call_after_init': 'wrong_signature',
+            'post_init': 'wrong_signature',
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -603,17 +650,17 @@ def test_call_after_init_internal_error():
             },
         }
     )
-    with pytest.raises(TypeError, match=r"wrong_signature\(\) got an unexpected keyword argument 'context'"):
+    with pytest.raises(TypeError, match=r'wrong_signature\(\) takes 1 positional argument but 2 were given'):
         v.validate_python({'field_a': 'test'})
 
 
-def test_call_after_init_mutate():
+def test_post_init_mutate():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
         field_a: str
         field_b: int
 
-        def call_me_baby(self, context, **kwargs):
+        def call_me_maybe(self, context, **kwargs):
             self.field_a *= 2
             self.__fields_set__ = {'field_a'}
 
@@ -621,7 +668,7 @@ def test_call_after_init_mutate():
         {
             'type': 'model',
             'cls': MyModel,
-            'call_after_init': 'call_me_baby',
+            'post_init': 'call_me_maybe',
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -635,3 +682,112 @@ def test_call_after_init_mutate():
     assert m.field_b == 12
     assert m.__fields_set__ == {'field_a'}
     assert m.__dict__ == {'field_a': 'testtest', 'field_b': 12}
+
+
+def test_validate_assignment():
+    class MyModel:
+        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__fields_set__'
+        field_a: str
+        field_b: int
+
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+            },
+        }
+    )
+
+    m = MyModel()
+    m.field_a = 'hello'
+    m.field_b = 123
+    m.__fields_set__ = {'field_a'}
+
+    v.validate_assignment(m, 'field_b', '321')
+
+    m.field_a = 'hello'
+    assert m.field_b == 321
+    assert m.__fields_set__ == {'field_a', 'field_b'}
+
+
+def test_validate_assignment_function():
+    class MyModel:
+        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__fields_set__'
+        field_a: str
+        field_b: int
+        field_c: int
+
+    calls = []
+
+    def func(x, info):
+        calls.append(str(info))
+        return x * 2
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.typed_dict_schema(
+                {
+                    'field_a': core_schema.typed_dict_field(core_schema.str_schema()),
+                    'field_b': core_schema.typed_dict_field(
+                        core_schema.field_after_validation_function(func, core_schema.int_schema())
+                    ),
+                    'field_c': core_schema.typed_dict_field(core_schema.int_schema()),
+                },
+                return_fields_set=True,
+            ),
+        )
+    )
+
+    m = v.validate_python({'field_a': 'x', 'field_b': 123, 'field_c': 456})
+    assert m.field_a == 'x'
+    assert m.field_b == 246
+    assert m.field_c == 456
+    assert m.__fields_set__ == {'field_a', 'field_b', 'field_c'}
+    assert calls == ["ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
+
+    v.validate_assignment(m, 'field_b', '111')
+
+    assert m.field_b == 222
+    assert calls == [
+        "ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
+        "ValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
+    ]
+
+
+def test_validate_assignment_no_fields_set():
+    class MyModel:
+        __slots__ = ('__dict__',)
+
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+            },
+        }
+    )
+
+    m = MyModel()
+    m.field_a = 'hello'
+    m.field_b = 123
+    assert not hasattr(m, '__fields_set__')
+
+    v.validate_assignment(m, 'field_a', b'different')
+
+    m.field_a = 'different'
+    assert m.field_b == 123
+    assert not hasattr(m, '__fields_set__')
+
+    # wrong arguments
+    with pytest.raises(TypeError, match='self_instance should not be None on typed-dict validate_assignment'):
+        v.validate_assignment('field_a', 'field_a', b'different')

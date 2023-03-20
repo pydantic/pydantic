@@ -37,6 +37,14 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
 #[derive(Clone, Debug, Display, EnumMessage, EnumIter)]
 #[strum(serialize_all = "snake_case")]
 pub enum ErrorType {
+    // ---------------------
+    // Assignment errors
+    #[strum(message = "Object has no attribute '{attribute}'")]
+    NoSuchAttribute {
+        attribute: String,
+    },
+    // ---------------------
+    // JSON errors
     #[strum(message = "Invalid JSON: {error}")]
     JsonInvalid {
         error: String,
@@ -432,6 +440,7 @@ impl ErrorType {
             None => return py_err!(PyKeyError; "Invalid error type: '{}'", value),
         };
         match error_type {
+            Self::NoSuchAttribute { .. } => extract_context!(NoSuchAttribute, ctx, attribute: String),
             Self::JsonInvalid { .. } => extract_context!(JsonInvalid, ctx, error: String),
             Self::GetAttributeError { .. } => extract_context!(GetAttributeError, ctx, error: String),
             Self::ModelClassType { .. } => extract_context!(ModelClassType, ctx, class_name: String),
@@ -523,6 +532,7 @@ impl ErrorType {
 
     pub fn render_message(&self, py: Python) -> PyResult<String> {
         match self {
+            Self::NoSuchAttribute { attribute } => render!(self, attribute),
             Self::JsonInvalid { error } => render!(self, error),
             Self::GetAttributeError { error } => render!(self, error),
             Self::ModelClassType { class_name } => render!(self, class_name),
@@ -583,6 +593,7 @@ impl ErrorType {
 
     pub fn py_dict(&self, py: Python) -> PyResult<Option<Py<PyDict>>> {
         match self {
+            Self::NoSuchAttribute { attribute } => py_dict!(py, attribute),
             Self::JsonInvalid { error } => py_dict!(py, error),
             Self::GetAttributeError { error } => py_dict!(py, error),
             Self::ModelClassType { class_name } => py_dict!(py, class_name),

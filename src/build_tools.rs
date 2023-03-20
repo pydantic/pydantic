@@ -204,8 +204,11 @@ pub fn function_name(f: &PyAny) -> PyResult<String> {
 }
 
 pub fn safe_repr(v: &PyAny) -> Cow<str> {
-    match v.repr() {
-        Ok(r) => r.to_string_lossy(),
-        Err(_) => v.to_string().into(),
+    if let Ok(s) = v.repr() {
+        s.to_string_lossy()
+    } else if let Ok(name) = v.get_type().name() {
+        format!("<unprintable {name} object>").into()
+    } else {
+        "<unprintable object>".into()
     }
 }

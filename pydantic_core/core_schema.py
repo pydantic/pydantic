@@ -2485,7 +2485,7 @@ class ModelSchema(TypedDict, total=False):
     type: Required[Literal['model']]
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
-    call_after_init: str
+    post_init: str
     strict: bool
     config: CoreConfig
     ref: str
@@ -2497,7 +2497,7 @@ def model_schema(
     cls: Type[Any],
     schema: CoreSchema,
     *,
-    call_after_init: str | None = None,
+    post_init: str | None = None,
     strict: bool | None = None,
     config: CoreConfig | None = None,
     ref: str | None = None,
@@ -2533,7 +2533,7 @@ def model_schema(
     Args:
         cls: The class to use for the model
         schema: The schema to use for the model
-        call_after_init: The call after init to use for the model
+        post_init: The call after init to use for the model
         strict: Whether the model is strict
         config: The config to use for the model
         ref: See [TODO] for details
@@ -2544,7 +2544,7 @@ def model_schema(
         type='model',
         cls=cls,
         schema=schema,
-        call_after_init=call_after_init,
+        post_init=post_init,
         strict=strict,
         config=config,
         ref=ref,
@@ -3237,6 +3237,7 @@ CoreSchemaType = Literal[
 # used in _pydantic_core.pyi::PydanticKnownError
 # to update this, call `pytest -k test_all_errors` and copy the output
 ErrorType = Literal[
+    'no_such_attribute',
     'json_invalid',
     'json_type',
     'recursion_loop',
