@@ -18,7 +18,7 @@ repos:
     pass_filenames: false
   - id: typecheck
     name: Typecheck
-    entry: mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/pre-commit.toml
+    entry: make typecheck-fast
     types: [python]
     language: system
     pass_filenames: false

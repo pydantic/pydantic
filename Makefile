@@ -33,6 +33,10 @@ lint:
 typecheck:
 	mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/full.toml
 
+.PHONY: typecheck-fast
+typecheck-fast:
+	mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/fast.toml
+
 .PHONY: mypy
 test-mypy:
 	coverage run -m pytest tests/mypy --test-mypy
