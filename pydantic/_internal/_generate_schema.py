@@ -10,7 +10,7 @@ import sys
 import typing
 import warnings
 from inspect import Signature, signature
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping, Tuple
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
@@ -804,7 +804,7 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
     Apply serializers to a schema.
     """
     if serializers:
-        # user the last serializer to make it easy to override a serializer set on a parent model
+        # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
         assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], serializer.function)
