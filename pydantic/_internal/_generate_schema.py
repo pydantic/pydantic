@@ -777,27 +777,26 @@ _SerializerType = Literal[
 ]
 
 
-def _is_unbound_instance_method(sig: Signature) -> bool:
-    if len(sig.parameters) < 1:
-        raise TypeError
+def _is_unbound_instance_method(sig: Signature, func: Callable[..., Any]) -> bool:
+    if len(sig.parameters) < 2:
+        raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}')
     first = next(iter(sig.parameters.keys()))
     return sig.parameters[first].name == 'self'
 
 
-def _infer_serializer_type_from_signature(func: Callable[..., Any]) -> _SerializerType:
-    sig = signature(func)
+def _infer_serializer_type_from_signature(sig: Signature, func: Callable[..., Any]) -> _SerializerType:
     if len(sig.parameters) == 2:
         # (value, info) -> Any
         return 'general-plain'
     elif len(sig.parameters) == 3:
         # (self, value, info) -> Any or (value, nxt, info)
-        if _is_unbound_instance_method(sig):
+        if _is_unbound_instance_method(sig, func):
             return 'field-plain'
         return 'general-wrap'
-    elif len(sig.parameters) == 4 and _is_unbound_instance_method(sig):
+    elif len(sig.parameters) == 4 and _is_unbound_instance_method(sig, func):
         # (self, value, nxt, info) -> Any
         return 'field-wrap'
-    raise TypeError(f'Unrecognized serializer signature for {func.__name__} {sig}')
+    raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}')
 
 
 def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializer]) -> core_schema.CoreSchema:
@@ -809,9 +808,12 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
         serializer = serializers[-1]
         assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
         function = typing.cast(typing.Callable[..., Any], serializer.function)
-        type_ = _infer_serializer_type_from_signature(function)
+        sig = signature(function)
+        type_ = _infer_serializer_type_from_signature(sig, function)
         if serializer.wrap and type_ not in ('general-wrap', 'field-wrap'):
-            raise TypeError
+            raise TypeError(f'Invalid signature for wrap serializer {function.__name__}: {sig}')
+        elif not serializer.wrap and type_ not in ('general-plain', 'field-plain'):
+            raise TypeError(f'Invalid signature for plain serializer {function.__name__}: {sig}')
         if type_ == 'general-wrap':
             schema['serialization'] = core_schema.general_function_wrap_ser_schema(
                 function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used

@@ -87,7 +87,7 @@ def test_annotated_customisation():
     assert m.model_dump_json() == b'{"x":"1,000"}'
 
 
-def test_serialize_signatures():
+def test_serialize_valid_signatures():
     def ser_plain(v: Any, info: SerializationInfo) -> Any:
         return f'{v:,}'
 
@@ -115,7 +115,7 @@ def test_serialize_signatures():
             return f'{nxt(v):,}'
 
         ser_f3 = serializer('f3')(ser_plain)
-        ser_f4 = serializer('f4')(ser_wrap)
+        ser_f4 = serializer('f4', mode='wrap')(ser_wrap)
 
     m = MyModel(**{f'f{x}': x * 1_000 for x in range(1, 9)})
 
@@ -126,3 +126,78 @@ def test_serialize_signatures():
         'f4': '4,000',
     }
     assert m.model_dump_json() == b'{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000"}'
+
+
+def test_invalid_signature_no_params() -> None:
+    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+
+        class _(BaseModel):
+            x: int
+
+            # caught by type checkers
+            @serializer('x')
+            def no_args() -> Any:  # pragma: no cover
+                ...
+
+
+def test_invalid_signature_single_params() -> None:
+    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+
+        class _(BaseModel):
+            x: int
+
+            # caught by type checkers
+            @serializer('x')
+            def no_args(self) -> Any:  # pragma: no cover
+                ...
+
+
+def test_invalid_signature_too_many_params_1() -> None:
+    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+
+        class _(BaseModel):
+            x: int
+
+            # caught by type checkers
+            @serializer('x')
+            def no_args(self, value: Any, nxt: Any, info: Any, extra_param: Any) -> Any:  # pragma: no cover
+                ...
+
+
+def test_invalid_signature_too_many_params_2() -> None:
+    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+
+        class _(BaseModel):
+            x: int
+
+            # caught by type checkers
+            @serializer('x')
+            @staticmethod
+            def no_args(not_self: Any, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
+                ...
+
+
+def test_invalid_signature_bad_wrap_signature() -> None:
+    with pytest.raises(TypeError, match='Invalid signature for wrap serializer'):
+
+        class _(BaseModel):
+            x: int
+
+            # note that type checkers won't pick this one up
+            # we could fix it but it would require some fiddling with the self argument in the
+            # callable protocols
+            @serializer('x', mode='wrap')
+            def no_args(self, value: Any, info: Any) -> Any:  # pragma: no cover
+                ...
+
+
+def test_invalid_signature_bad_plain_signature() -> None:
+    with pytest.raises(TypeError, match='Invalid signature for plain serializer'):
+
+        class _(BaseModel):
+            x: int
+
+            # caught by type checkers
+            @serializer('x', mode='plain')
+            def no_args(self, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
+                ...
