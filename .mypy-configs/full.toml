@@ -1,0 +1,30 @@
+[tool.mypy]
+# temporarily ignore some files
+exclude = 'pydantic/(schema|_hypothesis_plugin)\.py'
+python_version = '3.10'
+show_error_codes = true
+follow_imports = 'silent'
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+warn_unused_configs = true
+disallow_subclassing_any = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+implicit_optional = true
+
+# ansi2html and devtools are required to avoid the need to install these packages when running linting,
+# they're used in the docs build script
+[[tool.mypy.overrides]]
+module = [
+    'email_validator.*',
+    'toml.*',
+    'ansi2html.*',
+    'devtools.*',
+]
+ignore_missing_imports = true
