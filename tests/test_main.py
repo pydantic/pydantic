@@ -245,7 +245,7 @@ def test_assign_extra_no_validate():
         a: float
 
     model = Model(a=0.2)
-    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
+    with pytest.raises(ValidationError, match=r"b\s+Object has no attribute 'b'"):
         model.b = 2
 
 
@@ -255,7 +255,7 @@ def test_assign_extra_validate():
         a: float
 
     model = Model(a=0.2)
-    with pytest.raises(ValidationError, match='Extra inputs are not permitted'):
+    with pytest.raises(ValidationError, match=r"b\s+Object has no attribute 'b'"):
         model.b = 2
 
 

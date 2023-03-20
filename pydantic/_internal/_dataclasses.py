@@ -86,11 +86,12 @@ def prepare_dataclass(
     validator_functions.set_bound_functions(cls)
     serializer_functions.set_bound_functions(cls)
 
-    fields_schema = dataclass_fields_schema(
+    has_post_init = hasattr(cls, '__post_init__')
+    inner_schema = dataclass_fields_schema(
         name,
         model_ref,
         fields,
-        hasattr(cls, '__post_init__'),
+        has_post_init,
         validator_functions,
         serializer_functions,
         config['arbitrary_types_allowed'],
@@ -101,18 +102,19 @@ def prepare_dataclass(
 
     core_config = generate_config(config, cls)
     cls.__pydantic_fields__ = fields
-    cls.__pydantic_validator__ = SchemaValidator(fields_schema, core_config)
+    cls.__pydantic_core_schema__ = schema = core_schema.dataclass_schema(cls, inner_schema, post_init=has_post_init)
+    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
 
     # dataclass.__init__ must be defined here so its `__qualname__` can be changed.
 
     def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
         __tracebackhide__ = True
-        __dataclass_self__.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=True)
+        s = __dataclass_self__
+        s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
     cls.__init__ = __init__
     # this works because cls has been transformed into a dataclass by the time "cls" is called
-    cls.__pydantic_core_schema__ = core_schema.dataclass_schema(cls, fields_schema)
     # cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
 
     return True

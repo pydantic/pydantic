@@ -202,7 +202,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        __pydantic_self__.__pydantic_validator__.validate_python(data, init_self=__pydantic_self__)
+        __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
@@ -230,9 +230,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         elif self.model_config['frozen']:
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
         elif self.model_config['validate_assignment']:
-            values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
-            _object_setattr(self, '__dict__', values)
-            self.__fields_set__ |= fields_set
+            self.__pydantic_validator__.validate_assignment(self, name, value)
         elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
