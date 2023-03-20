@@ -4,7 +4,7 @@ use std::ptr::null_mut;
 use pyo3::conversion::AsPyPointer;
 use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString, PyTuple, PyType};
+use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
 use crate::build_tools::{py_err, SchemaDict};
@@ -22,7 +22,7 @@ pub struct ModelValidator {
     revalidate: bool,
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
-    call_after_init: Option<Py<PyString>>,
+    post_init: Option<Py<PyString>>,
     name: String,
     expect_fields_set: bool,
 }
@@ -52,8 +52,8 @@ impl BuildValidator for ModelValidator {
             revalidate: config.get_as(intern!(py, "revalidate_models"))?.unwrap_or(false),
             validator: Box::new(validator),
             class: class.into(),
-            call_after_init: schema
-                .get_as::<&str>(intern!(py, "call_after_init"))?
+            post_init: schema
+                .get_as::<&str>(intern!(py, "post_init"))?
                 .map(|s| PyString::intern(py, s).into_py(py)),
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
@@ -70,6 +70,7 @@ impl Validator for ModelValidator {
         self.validator.py_gc_traverse(visit)?;
         Ok(())
     }
+
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,
@@ -78,66 +79,132 @@ impl Validator for ModelValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
+        if let Some(self_instance) = extra.self_instance {
+            // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
+            // or from `validate_assignment`
+            return if let Some(assignee_field) = extra.assignee_field {
+                self.validate_assignment(py, self_instance, assignee_field, input, extra, slots, recursion_guard)
+            } else {
+                self.validate_init(py, self_instance, input, extra, slots, recursion_guard)
+            };
+        }
+
         let class = self.class.as_ref(py);
-        if input.is_exact_instance(class)? {
+        let instance = if input.is_exact_instance(class)? {
             if self.revalidate {
                 let fields_set = input.get_attr(intern!(py, "__fields_set__"));
                 let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
                 if self.expect_fields_set {
                     let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
                     let fields_set = fields_set.unwrap_or(validation_fields_set);
-                    Ok(self.create_class(model_dict, Some(fields_set))?)
+                    self.create_class(model_dict, Some(fields_set))?
                 } else {
-                    Ok(self.create_class(output.as_ref(py), fields_set)?)
+                    self.create_class(output.as_ref(py), fields_set)?
                 }
             } else {
-                Ok(input.to_object(py))
+                return Ok(input.to_object(py));
             }
         } else if extra.strict.unwrap_or(self.strict) {
-            Err(ValError::new(
+            return Err(ValError::new(
                 ErrorType::ModelClassType {
                     class_name: self.get_name().to_string(),
                 },
                 input,
-            ))
+            ));
         } else {
             let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-            let instance = if self.expect_fields_set {
+            if self.expect_fields_set {
                 let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
                 self.create_class(model_dict, Some(fields_set))?
             } else {
                 self.create_class(output.as_ref(py), None)?
-            };
-
-            if let Some(ref call_after_init) = self.call_after_init {
-                let kwargs = PyDict::new(py);
-                kwargs.set_item("context", extra.context)?;
-                instance
-                    .call_method(py, call_after_init.as_ref(py), (), Some(kwargs))
-                    .map_err(|e| convert_err(py, e, input))?;
             }
-            Ok(instance)
+        };
+        if let Some(ref post_init) = self.post_init {
+            instance
+                .call_method1(py, post_init.as_ref(py), (extra.context,))
+                .map_err(|e| convert_err(py, e, input))?;
         }
+        Ok(instance)
     }
-
     fn get_name(&self) -> &str {
         &self.name
     }
 }
 
 impl ModelValidator {
+    /// here we just call the inner validator, then set attributes on `self_instance`
+    fn validate_init<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        self_instance: &'s PyAny,
+        input: &'data impl Input<'data>,
+        extra: &Extra,
+        slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
+        // instance anymore
+        let new_extra = Extra {
+            self_instance: None,
+            ..*extra
+        };
+        let output = self.validator.validate(py, input, &new_extra, slots, recursion_guard)?;
+        if self.expect_fields_set {
+            let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+            set_model_attrs(self_instance, model_dict, Some(fields_set))?;
+        } else {
+            set_model_attrs(self_instance, output.as_ref(py), None)?;
+        };
+        if let Some(ref post_init) = self.post_init {
+            self_instance
+                .call_method1(post_init.as_ref(py), (extra.context,))
+                .map_err(|e| convert_err(py, e, input))?;
+        }
+        Ok(self_instance.into_py(py))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn validate_assignment<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        self_instance: &PyAny,
+        assignee_field: &str,
+        input: &'data impl Input<'data>,
+        extra: &Extra,
+        slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        // inner validator takes care of updating dict, here we just need to update fields_set
+        let next_extra = Extra {
+            self_instance: self_instance.get_attr(intern!(py, "__dict__")),
+            ..*extra
+        };
+        let output = self
+            .validator
+            .validate(py, input, &next_extra, slots, recursion_guard)?;
+        if self.expect_fields_set {
+            if let Some(fields_set) = self_instance.get_attr(intern!(py, "__fields_set__")) {
+                fields_set.downcast::<PySet>()?.add(assignee_field)?;
+            }
+        }
+        Ok(output)
+    }
+
     fn create_class(&self, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
-        create_class(self.class.as_ref(model_dict.py()), model_dict, fields_set)
+        let instance = create_class(self.class.as_ref(model_dict.py()))?;
+        set_model_attrs(instance.as_ref(model_dict.py()), model_dict, fields_set)?;
+        Ok(instance)
     }
 }
 
 /// based on the following but with the second argument of new_func set to an empty tuple as required
 /// https://github.com/PyO3/pyo3/blob/d2caa056e9aacc46374139ef491d112cb8af1a25/src/pyclass_init.rs#L35-L77
-pub(super) fn create_class(class: &PyType, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
+pub(super) fn create_class(class: &PyType) -> PyResult<PyObject> {
     let py = class.py();
     let args = PyTuple::empty(py);
     let raw_type = class.as_type_ptr();
-    let instance = unsafe {
+    unsafe {
         // Safety: raw_type is known to be a non-null type object pointer
         match (*raw_type).tp_new {
             // Safety: the result of new_func is guaranteed to be either an owned pointer or null on error returns.
@@ -146,21 +213,22 @@ pub(super) fn create_class(class: &PyType, model_dict: &PyAny, fields_set: Optio
                 // Safety: the non-null pointers are known to be valid, and it's allowed to call tp_new with a
                 // null kwargs dict.
                 new_func(raw_type, args.as_ptr(), null_mut()),
-            )?,
-            None => return py_err!(PyTypeError; "base type without tp_new"),
+            ),
+            None => py_err!(PyTypeError; "base type without tp_new"),
         }
-    };
-
-    let instance_ref = instance.as_ref(py);
-    force_setattr(py, instance_ref, intern!(py, "__dict__"), model_dict)?;
-    if let Some(fields_set) = fields_set {
-        force_setattr(py, instance_ref, intern!(py, "__fields_set__"), fields_set)?;
     }
-
-    Ok(instance)
 }
 
-fn force_setattr<N, V>(py: Python<'_>, obj: &PyAny, attr_name: N, value: V) -> PyResult<()>
+fn set_model_attrs(instance: &PyAny, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<()> {
+    let py = instance.py();
+    force_setattr(py, instance, intern!(py, "__dict__"), model_dict)?;
+    if let Some(fields_set) = fields_set {
+        force_setattr(py, instance, intern!(py, "__fields_set__"), fields_set)?;
+    }
+    Ok(())
+}
+
+pub(super) fn force_setattr<N, V>(py: Python<'_>, obj: &PyAny, attr_name: N, value: V) -> PyResult<()>
 where
     N: ToPyObject,
     V: ToPyObject,
