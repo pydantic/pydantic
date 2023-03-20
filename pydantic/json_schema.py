@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import math
 import re
+import warnings
 from dataclasses import is_dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Counter, Dict, Iterable, List, NewType, Sequence, Tuple, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from pydantic_core.core_schema import TypedDictField
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 from ._internal import _core_metadata, _core_utils, _typing_extra, _utils
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
@@ -95,6 +96,12 @@ _FIELDS_MAPPING = {
     'format': 'format',
 }
 
+JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
+
+
+class PydanticJsonSchemaWarning(UserWarning):
+    pass
+
 
 def _apply_js_metadata(js_metadata: JsonSchemaMetadata, schema: JsonSchemaValue) -> None:
     """
@@ -137,6 +144,7 @@ JsonRef = NewType('JsonRef', str)
 class GenerateJsonSchema:
     # See https://json-schema.org/understanding-json-schema/reference/schema.html#id4 for more info about dialects
     schema_dialect = 'https://json-schema.org/draft/2020-12/schema'
+    ignored_warning_kinds: set[JsonSchemaWarningKind] = {'skipped-choice'}
 
     def __init__(self, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE):
         self.by_alias = by_alias
@@ -372,7 +380,7 @@ class GenerateJsonSchema:
     def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'array', 'items': {}}
         if 'items_schema' in schema:
-            json_schema['items'] = [self.generate_inner(s) for s in schema['items_schema']]
+            json_schema['items'] = [self.generate_inner(schema['items_schema'])]
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
@@ -445,20 +453,20 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         if 'default' in schema:
-            default = self.encode_default(schema['default'])
+            default = schema['default']
         elif 'default_factory' in schema:
-            default = self.encode_default(schema['default_factory']())
+            default = schema['default_factory']()
         else:
             raise ValueError('`schema` has neither default nor default_factory')
 
         try:
             encoded_default = self.encode_default(default)
         except TypeError:
-            # This happens if the default value is not JSON serializable; in this case, just return the inner schema
-            # Note: We could update the '$comment' field to indicate that the default value was not JSON serializable.
-            #   This would have the upside that there would be some positive indication that the default value was not
-            #   valid, but would have the downside that it would make some assumptions about how users are using the
-            #   '$comment' field. For now, I have decided not to do this.
+            self.emit_warning(
+                'non-serializable-default',
+                f'Default value {default} is not JSON serializable; excluding default from JSON schema',
+            )
+            # Return the inner schema, as though there was no default
             return json_schema
 
         if '$ref' in json_schema:
@@ -486,8 +494,8 @@ class GenerateJsonSchema:
         for s in choices:
             try:
                 generated.append(self.generate_inner(s))
-            except PydanticInvalidForJsonSchema:
-                pass
+            except PydanticInvalidForJsonSchema as exc:
+                self.emit_warning('skipped-choice', str(exc))
         if len(generated) == 1:
             return generated[0]
         return self.get_flattened_anyof(generated)
@@ -500,8 +508,8 @@ class GenerateJsonSchema:
                     # Use str(k) since keys must be strings for json; while not technically correct,
                     # it's the closest that can be represented in valid JSON
                     generated[str(k)] = self.generate_inner(v).copy()
-                except PydanticInvalidForJsonSchema:
-                    pass
+                except PydanticInvalidForJsonSchema as exc:
+                    self.emit_warning('skipped-choice', str(exc))
 
         # Populate the schema with any "indirect" references
         for k, v in schema['choices'].items():
@@ -513,19 +521,56 @@ class GenerateJsonSchema:
                     # may have been raised above, which would mean that the schema we want to reference won't be present
                     generated[str(k)] = generated[str(v)]
 
-        json_schema: JsonSchemaValue = {'oneOf': _deduplicate_schemas(generated.values())}
+        one_of_choices = _deduplicate_schemas(generated.values())
+        json_schema: JsonSchemaValue = {'oneOf': one_of_choices}
 
-        # This reflects the v1 behavior, but we may want to only include the discriminator based on dialect / etc.
-        if 'discriminator' in schema and isinstance(schema['discriminator'], str):
+        # This reflects the v1 behavior; TODO: we should make it possible to exclude OpenAPI stuff from the JSON schema
+        openapi_discriminator = self._extract_discriminator(schema, one_of_choices)
+        if openapi_discriminator is not None:
             json_schema['discriminator'] = {
-                # TODO: Need to handle the case where the discriminator field has an alias
-                #   Note: Weird things would happen if the discriminator had a different alias for different choices
-                #   (This wouldn't make sense in OpenAPI)
-                'propertyName': schema['discriminator'],
+                'propertyName': openapi_discriminator,
                 'mapping': {k: v.get('$ref', v) for k, v in generated.items()},
             }
 
         return json_schema
+
+    def _extract_discriminator(
+        self, schema: core_schema.TaggedUnionSchema, one_of_choices: list[_JsonDict]
+    ) -> str | None:
+        """
+        Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final schema.
+        """
+        openapi_discriminator: str | None = None
+        if 'discriminator' not in schema:
+            return None
+
+        if isinstance(schema['discriminator'], str):
+            return schema['discriminator']
+
+        if isinstance(schema['discriminator'], list):
+            # When an alias is used, the discriminator will be a list of single str lists, one for the attribute
+            # and one for the actual alias. This logic will work even if there is more than one possible attribute,
+            # and looks for whether a single alias choice is present as a documented property on all choices.
+            # If so, that property will be used as the OpenAPI discriminator.
+            for alias_path in schema['discriminator']:
+                if not isinstance(alias_path, list):
+                    break  # this means that the discriminator is not a list of alias paths
+                if len(alias_path) != 1:
+                    continue  # this means that the "alias" does not represent a single field
+                alias = alias_path[0]
+                alias_is_present_on_all_choices = True
+                for choice in one_of_choices:
+                    while '$ref' in choice:
+                        assert isinstance(choice['$ref'], str)
+                        choice = self.get_schema_from_definitions(JsonRef(choice['$ref'])) or {}
+                    properties = choice.get('properties', {})
+                    if not isinstance(properties, dict) or alias not in properties:
+                        alias_is_present_on_all_choices = False
+                        break
+                if alias_is_present_on_all_choices:
+                    openapi_discriminator = alias
+                    break
+        return openapi_discriminator
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
         try:
@@ -1054,6 +1099,19 @@ class GenerateJsonSchema:
         else:
             raise PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
 
+    def emit_warning(self, kind: JsonSchemaWarningKind, detail: str) -> None:
+        message = self.warning_message(kind, detail)
+        if message is not None:
+            warnings.warn(message, PydanticJsonSchemaWarning)
+
+    def warning_message(self, kind: JsonSchemaWarningKind, detail: str) -> str | None:
+        """
+        Override this method to return None for kinds that you don't want to produce warnings
+        """
+        if kind in self.ignored_warning_kinds:
+            return None
+        return f'{detail} [{kind}]'
+
 
 def schema(
     models: Sequence[type[BaseModel] | type[PydanticDataclass]],
@@ -1088,10 +1146,11 @@ def model_schema(
 
 
 _Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+_JsonDict = Dict[str, _Json]
 _HashableJson = Union[Tuple[Tuple[str, Any], ...], Tuple[Any, ...], str, int, float, bool, None]
 
 
-def _deduplicate_schemas(schemas: Iterable[_Json]) -> list[_Json]:
+def _deduplicate_schemas(schemas: Iterable[_JsonDict]) -> list[_JsonDict]:
     return list({_make_json_hashable(schema): schema for schema in schemas}.values())
 
 

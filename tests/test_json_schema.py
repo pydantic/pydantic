@@ -1,8 +1,6 @@
 import json
 import math
-import os
-import sys
-import tempfile
+import re
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -41,7 +39,14 @@ from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata, model_schema, schema
+from pydantic.json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    JsonSchemaMetadata,
+    PydanticJsonSchemaWarning,
+    model_schema,
+    schema,
+)
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.types import (
     UUID1,
@@ -849,18 +854,14 @@ def test_str_constrained_types(field_type, expected_schema):
     assert model_schema == base_schema
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        # TODO: Do we still want a maxLength set on AnyUrl?
-        #   If so, update pydantic._internal._std_types_schema.url_schema
-        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16}),
-        # TODO: Does this test need to be uncommented?
-        # (
-        #     stricturl(min_length=5, max_length=10),
-        #     {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 5, 'maxLength': 10},
-        # ),
+        (AnyUrl, {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1}),
+        (
+            Annotated[AnyUrl, Field(max_length=2**16)],
+            {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16},
+        ),
     ],
 )
 def test_special_str_types(field_type, expected_schema):
@@ -1141,7 +1142,6 @@ def test_ipvanynetwork_type():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize(
     'type_,default_value',
     (
@@ -1166,10 +1166,85 @@ def test_callable_type(type_, default_value):
         callback: type_ = default_value
         foo: int
 
-    with pytest.warns(UserWarning):
+    with pytest.raises(PydanticInvalidForJsonSchema):
         model_schema = Model.model_json_schema()
+        assert 'callback' not in model_schema['properties']
 
-    assert 'callback' not in model_schema['properties']
+
+@pytest.mark.parametrize(
+    'default_value,properties',
+    (
+        (Field(...), {'callback': {'title': 'Callback', 'type': 'integer'}}),
+        (1, {'callback': {'default': 1, 'title': 'Callback', 'type': 'integer'}}),
+    ),
+)
+def test_callable_type_with_fallback(default_value, properties):
+    class Model(BaseModel):
+        callback: Union[int, Callable[[int], int]] = default_value
+
+    class MyGenerator(GenerateJsonSchema):
+        ignored_warning_kinds = ()
+
+    with pytest.warns(
+        PydanticJsonSchemaWarning,
+        match=re.escape('Cannot generate a JsonSchema for core_schema.CallableSchema [skipped-choice]'),
+    ):
+        model_schema = Model.model_json_schema(schema_generator=MyGenerator)
+    assert model_schema['properties'] == properties
+
+
+@pytest.mark.parametrize(
+    'type_,default_value,properties',
+    (
+        (
+            dict[Any, Any],
+            {(lambda x: x): 1},
+            {'callback': {'title': 'Callback', 'type': 'object'}},
+        ),
+        (
+            Union[int, Callable[[int], int]],
+            lambda x: x,
+            {'callback': {'title': 'Callback', 'type': 'integer'}},
+        ),
+    ),
+)
+def test_non_serializable_default(type_, default_value, properties):
+    class Model(BaseModel):
+        callback: type_ = default_value
+
+    with pytest.warns(
+        PydanticJsonSchemaWarning,
+        match=(
+            'Default value .* is not JSON serializable; excluding default from JSON schema '
+            r'\[non-serializable-default\]'
+        ),
+    ):
+        model_schema = Model.model_json_schema()
+    assert model_schema['properties'] == properties
+    assert model_schema.get('required') is None
+
+
+@pytest.mark.parametrize(
+    'warning_match',
+    (
+        r'Cannot generate a JsonSchema for core_schema.CallableSchema \[skipped-choice\]',
+        r'Default value .* is not JSON serializable; excluding default from JSON schema \[non-serializable-default\]',
+    ),
+)
+def test_callable_fallback_with_non_serializable_default(warning_match):
+    class Model(BaseModel):
+        callback: Union[int, Callable[[int], int]] = lambda x: x  # noqa E731
+
+    class MyGenerator(GenerateJsonSchema):
+        ignored_warning_kinds = ()
+
+    with pytest.warns(PydanticJsonSchemaWarning, match=warning_match):
+        model_schema = Model.model_json_schema(schema_generator=MyGenerator)
+    assert model_schema == {
+        'properties': {'callback': {'title': 'Callback', 'type': 'integer'}},
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 def test_error_non_supported_types():
@@ -1178,28 +1253,6 @@ def test_error_non_supported_types():
 
     with pytest.raises(PydanticInvalidForJsonSchema):
         Model.model_json_schema()
-
-
-@pytest.mark.xfail(reason='working on V2')
-def create_testing_submodules():
-    base_path = Path(tempfile.mkdtemp())
-    mod_root_path = base_path / 'pydantic_schema_test'
-    os.makedirs(mod_root_path, exist_ok=True)
-    open(mod_root_path / '__init__.py', 'w').close()
-    for mod in ['a', 'b', 'c']:
-        module_name = 'module' + mod
-        model_name = 'model' + mod + '.py'
-        os.makedirs(mod_root_path / module_name, exist_ok=True)
-        open(mod_root_path / module_name / '__init__.py', 'w').close()
-        with open(mod_root_path / module_name / model_name, 'w') as f:
-            f.write('from pydantic import BaseModel\n' 'class Model(BaseModel):\n' '    a: str\n')
-    module_name = 'moduled'
-    model_name = 'modeld.py'
-    os.makedirs(mod_root_path / module_name, exist_ok=True)
-    open(mod_root_path / module_name / '__init__.py', 'w').close()
-    with open(mod_root_path / module_name / model_name, 'w') as f:
-        f.write('from ..moduleb.modelb import Model')
-    sys.path.insert(0, str(base_path))
 
 
 def test_schema_overrides():
@@ -1708,14 +1761,14 @@ def test_optional_dict():
     assert Model(something={'foo': 'Bar'}).model_dump() == {'something': {'foo': 'Bar'}}
 
 
-@pytest.mark.xfail(reason='working on V2 - validator')
 def test_optional_validator():
     class Model(BaseModel):
         something: Optional[str] = None
 
-        @validator('something', always=True)
+        @validator('something')
         def check_something(cls, v):
-            assert v is None or 'x' not in v, 'should not contain x'
+            if v is not None and 'x' in v:
+                raise ValueError('should not contain x')
             return v
 
     assert Model.model_json_schema() == {
@@ -1733,6 +1786,17 @@ def test_optional_validator():
     assert Model().model_dump() == {'something': None}
     assert Model(something=None).model_dump() == {'something': None}
     assert Model(something='hello').model_dump() == {'something': 'hello'}
+    with pytest.raises(ValidationError) as exc_info:
+        Model(something='hellox')
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'error': 'should not contain x'},
+            'input': 'hellox',
+            'loc': ('something',),
+            'msg': 'Value error, should not contain x',
+            'type': 'value_error',
+        }
+    ]
 
 
 def test_field_with_validator():
@@ -1818,45 +1882,6 @@ def test_known_model_optimization():
     }
 
     assert Model.model_json_schema() == expected
-
-
-@pytest.mark.xfail(reason='working on V2 - __root__')
-def test_root():
-    class Model(BaseModel):
-        __root__: str
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'string'}
-
-
-@pytest.mark.xfail(reason='working on V2 - __root__')
-def test_root_list():
-    class Model(BaseModel):
-        __root__: List[str]
-
-    assert Model.model_json_schema() == {'title': 'Model', 'type': 'array', 'items': {'type': 'string'}}
-
-
-@pytest.mark.xfail(reason='working on V2 - __root__')
-def test_root_nested_model():
-    class NestedModel(BaseModel):
-        a: str
-
-    class Model(BaseModel):
-        __root__: List[NestedModel]
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'array',
-        'items': {'$ref': '#/$defs/NestedModel'},
-        '$defs': {
-            'NestedModel': {
-                'title': 'NestedModel',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'string'}},
-                'required': ['a'],
-            }
-        },
-    }
 
 
 def test_new_type_schema():
@@ -1945,7 +1970,6 @@ def test_model_with_extra_forbidden():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - passing field constraints to generic parameters', strict=False)
 @pytest.mark.parametrize(
     'annotation,kwargs,field_schema',
     [
@@ -1956,17 +1980,17 @@ def test_model_with_extra_forbidden():
             {'title': 'A', 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'type': 'null'}]},
         ),
         (
-            Tuple[int, ...],
-            dict(gt=0),
-            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+            Tuple[Annotated[int, Field(gt=0)], ...],
+            {},
+            {'items': [{'exclusiveMinimum': 0, 'type': 'integer'}], 'title': 'A', 'type': 'array'},
         ),
         (
-            Tuple[int, int, int],
-            dict(gt=0),
+            Tuple[Annotated[int, Field(gt=0)], Annotated[int, Field(gt=0)], Annotated[int, Field(gt=0)]],
+            {},
             {
                 'title': 'A',
                 'type': 'array',
-                'items': [
+                'prefixItems': [
                     {'exclusiveMinimum': 0, 'type': 'integer'},
                     {'exclusiveMinimum': 0, 'type': 'integer'},
                     {'exclusiveMinimum': 0, 'type': 'integer'},
@@ -1976,31 +2000,30 @@ def test_model_with_extra_forbidden():
             },
         ),
         (
-            Union[int, float],
-            dict(gt=0),
+            Union[Annotated[int, Field(gt=0)], Annotated[float, Field(gt=0)]],
+            {},
             {
                 'title': 'A',
                 'anyOf': [{'exclusiveMinimum': 0, 'type': 'integer'}, {'exclusiveMinimum': 0, 'type': 'number'}],
             },
         ),
         (
-            List[int],
-            dict(gt=0),
-            {'title': 'A', 'exclusiveMinimum': 0, 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
+            List[Annotated[int, Field(gt=0)]],
+            {},
+            {'title': 'A', 'type': 'array', 'items': {'exclusiveMinimum': 0, 'type': 'integer'}},
         ),
         (
-            Dict[str, int],
-            dict(gt=0),
+            Dict[str, Annotated[int, Field(gt=0)]],
+            {},
             {
                 'title': 'A',
-                'exclusiveMinimum': 0,
                 'type': 'object',
                 'additionalProperties': {'exclusiveMinimum': 0, 'type': 'integer'},
             },
         ),
         (
-            Union[str, int],
-            dict(gt=0, max_length=5),
+            Union[Annotated[str, Field(max_length=5)], Annotated[int, Field(gt=0)]],
+            {},
             {'title': 'A', 'anyOf': [{'maxLength': 5, 'type': 'string'}, {'exclusiveMinimum': 0, 'type': 'integer'}]},
         ),
     ],
@@ -3042,94 +3065,6 @@ def test_deeper_nested_discriminated_annotated_union():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - __root__')
-def test_discriminated_union_root():
-    class BlackCat(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['black']
-
-    class WhiteCat(BaseModel):
-        pet_type: Literal['cat']
-        color: Literal['white']
-
-    class Cat(BaseModel):
-        __root__: Union[BlackCat, WhiteCat] = Field(..., discriminator='color')
-
-    class Dog(BaseModel):
-        pet_type: Literal['dog']
-
-    class Lizard(BaseModel):
-        pet_type: Literal['reptile', 'lizard']
-
-    class Model(BaseModel):
-        pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
-
-    assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
-        'properties': {
-            'pet': {
-                'title': 'Pet',
-                'discriminator': {
-                    'propertyName': 'pet_type',
-                    'mapping': {
-                        'cat': '#/$defs/Cat',
-                        'dog': '#/$defs/Dog',
-                        'reptile': '#/$defs/Lizard',
-                        'lizard': '#/$defs/Lizard',
-                    },
-                },
-                'oneOf': [
-                    {'$ref': '#/$defs/Cat'},
-                    {'$ref': '#/$defs/Dog'},
-                    {'$ref': '#/$defs/Lizard'},
-                ],
-            }
-        },
-        'required': ['pet'],
-        '$defs': {
-            'BlackCat': {
-                'title': 'BlackCat',
-                'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['black'], 'type': 'string'},
-                },
-                'required': ['pet_type', 'color'],
-            },
-            'WhiteCat': {
-                'title': 'WhiteCat',
-                'type': 'object',
-                'properties': {
-                    'pet_type': {'title': 'Pet Type', 'enum': ['cat'], 'type': 'string'},
-                    'color': {'title': 'Color', 'enum': ['white'], 'type': 'string'},
-                },
-                'required': ['pet_type', 'color'],
-            },
-            'Cat': {
-                'title': 'Cat',
-                'discriminator': {
-                    'propertyName': 'color',
-                    'mapping': {'black': '#/$defs/BlackCat', 'white': '#/$defs/WhiteCat'},
-                },
-                'oneOf': [{'$ref': '#/$defs/BlackCat'}, {'$ref': '#/$defs/WhiteCat'}],
-            },
-            'Dog': {
-                'title': 'Dog',
-                'type': 'object',
-                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['dog'], 'type': 'string'}},
-                'required': ['pet_type'],
-            },
-            'Lizard': {
-                'title': 'Lizard',
-                'type': 'object',
-                'properties': {'pet_type': {'title': 'Pet Type', 'enum': ['reptile', 'lizard'], 'type': 'string'}},
-                'required': ['pet_type'],
-            },
-        },
-    }
-
-
 def test_discriminated_annotated_union_literal_enum():
     class PetType(Enum):
         cat = 'cat'
@@ -3310,7 +3245,6 @@ def test_discriminated_annotated_union_literal_enum():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - discriminated union with alias')
 def test_alias_same():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='typeOfPet')
@@ -3503,7 +3437,6 @@ def test_model_with_type_attributes():
     }
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize('secret_cls', [SecretStr, SecretBytes])
 @pytest.mark.parametrize(
     'field_kw,schema_kw',
