@@ -16,7 +16,6 @@ from pydantic import (
     FieldValidationInfo,
     PydanticUserError,
     ValidationError,
-    ValidationInfo,
     errors,
     validator,
 )

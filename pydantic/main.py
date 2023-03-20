@@ -83,9 +83,9 @@ class ModelMetaclass(ABCMeta):
                     # in a single function
                     namespace['_init_private_attributes'] = _model_construction.init_private_attributes
 
-                    def __pydantic_post_init__(self_: Any, **kwargs: Any) -> None:
-                        self_._init_private_attributes()
-                        self_.model_post_init(**kwargs)
+                    def __pydantic_post_init__(self_: Any, context: Any) -> None:
+                        self_._init_private_attributes(context)
+                        self_.model_post_init(context)
 
                     namespace['__pydantic_post_init__'] = __pydantic_post_init__
                 else:
