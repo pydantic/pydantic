@@ -827,7 +827,7 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
                 function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
         else:
-            # field-plain
+            assert type_ == 'field-plain'
             schema['serialization'] = core_schema.field_function_plain_ser_schema(
                 function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
