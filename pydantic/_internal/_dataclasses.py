@@ -15,7 +15,7 @@ from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import dataclass_fields_schema, generate_config, get_dc_self_schema
-from ._model_construction import MockValidator, object_setattr
+from ._model_construction import MockValidator
 
 __all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
 
@@ -107,10 +107,7 @@ def prepare_dataclass(
 
     def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
         __tracebackhide__ = True
-        dc_dict, init_vars = __dataclass_self__.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs))
-        object_setattr(__dataclass_self__, '__dict__', dc_dict)
-        if init_vars is not None:
-            __dataclass_self__.__post_init__(*init_vars)
+        __dataclass_self__.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=True)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
     cls.__init__ = __init__
