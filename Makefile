@@ -37,11 +37,11 @@ typecheck:
 typecheck-fast:
 	mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/fast.toml
 
-.PHONY: mypy
+.PHONY: test-mypy
 test-mypy:
 	coverage run -m pytest tests/mypy --test-mypy
 
-.PHONY: pyright
+.PHONY: test-pyright
 test-pyright:
 	cd tests/pyright && pyright
 
