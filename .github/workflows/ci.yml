@@ -39,6 +39,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install -r requirements/linting.txt
 
+      # need pyright for pre-commit
+      - run: npm install -g pyright
+
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --verbose
@@ -50,8 +53,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-
-      - run: npm install -g pyright
 
       - run: make test-pyright
 
