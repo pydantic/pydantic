@@ -33,11 +33,11 @@ lint:
 typecheck:
 	mypy pydantic docs/build --disable-recursive-aliases
 
-.PHONY: mypy
+.PHONY: test-mypy
 test-mypy:
 	coverage run -m pytest tests/mypy --test-mypy
 
-.PHONY: pyright
+.PHONY: test-pyright
 test-pyright:
 	cd tests/pyright && pyright
 
