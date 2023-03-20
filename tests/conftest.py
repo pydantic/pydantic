@@ -54,21 +54,23 @@ class PyAndJsonValidator:
         self.validator_type = validator_type
 
     def validate_python(self, py_input, strict: bool | None = None, context: Any = None):
-        return self.validator.validate_python(py_input, strict, context)
+        return self.validator.validate_python(py_input, strict=strict, context=context)
 
     def validate_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
-            return self.validator.validate_json(json.dumps(py_input, default=json_default), strict, context)
+            return self.validator.validate_json(
+                json.dumps(py_input, default=json_default), strict=strict, context=context
+            )
         else:
             assert self.validator_type == 'python', self.validator_type
-            return self.validator.validate_python(py_input, strict, context)
+            return self.validator.validate_python(py_input, strict=strict, context=context)
 
     def isinstance_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
-            return self.validator.isinstance_json(json.dumps(py_input), strict, context)
+            return self.validator.isinstance_json(json.dumps(py_input), strict=strict, context=context)
         else:
             assert self.validator_type == 'python', self.validator_type
-            return self.validator.isinstance_python(py_input, strict, context)
+            return self.validator.isinstance_python(py_input, strict=strict, context=context)
 
 
 PyAndJson = Type[PyAndJsonValidator]

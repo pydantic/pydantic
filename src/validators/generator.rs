@@ -195,6 +195,7 @@ pub struct InternalValidator {
     field: Option<String>,
     strict: Option<bool>,
     context: Option<PyObject>,
+    self_instance: Option<PyObject>,
     recursion_guard: RecursionGuard,
 }
 
@@ -221,6 +222,7 @@ impl InternalValidator {
             field: extra.assignee_field.map(|f| f.to_string()),
             strict: extra.strict,
             context: extra.context.map(|d| d.into_py(py)),
+            self_instance: extra.self_instance.map(|d| d.into_py(py)),
             recursion_guard: recursion_guard.clone(),
         }
     }
@@ -240,6 +242,7 @@ impl InternalValidator {
             strict: self.strict,
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             field_name: None,
+            self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
         self.validator
             .validate(py, input, &extra, &self.slots, &mut self.recursion_guard)

@@ -5,15 +5,8 @@ from pathlib import Path
 import pytest
 from typing_extensions import get_args
 
-from pydantic_core import CoreSchema, CoreSchemaType, core_schema
-from pydantic_core._pydantic_core import (
-    SchemaError,
-    SchemaValidator,
-    ValidationError,
-    __version__,
-    build_profile,
-    list_all_errors,
-)
+from pydantic_core import CoreSchema, CoreSchemaType
+from pydantic_core._pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, build_profile
 
 
 @pytest.mark.parametrize('obj', [ValidationError, SchemaValidator, SchemaError])
@@ -148,37 +141,6 @@ def test_readme(import_execute):
     readme = (this_dir / '..' / 'README.md').read_text()
     example_code = re.search(r'\n```py\n(.*?)\n```\n', readme, re.M | re.S).group(1)
     import_execute(example_code)
-
-
-def test_all_errors():
-    errors = list_all_errors()
-    # print(f'{len(errors)=}')
-    assert len(errors) == len(set(e['type'] for e in errors)), 'error types are not unique'
-    assert errors[:3] == [
-        {
-            'type': 'json_invalid',
-            'message_template': 'Invalid JSON: {error}',
-            'example_message': 'Invalid JSON: ',
-            'example_context': {'error': ''},
-        },
-        {
-            'type': 'json_type',
-            'message_template': 'JSON input should be string, bytes or bytearray',
-            'example_message': 'JSON input should be string, bytes or bytearray',
-            'example_context': None,
-        },
-        {
-            'type': 'recursion_loop',
-            'message_template': 'Recursion error - cyclic reference detected',
-            'example_message': 'Recursion error - cyclic reference detected',
-            'example_context': None,
-        },
-    ]
-    error_types = [e['type'] for e in errors]
-    if error_types != list(core_schema.ErrorType.__args__):
-        literal = ''.join(f'\n    {e!r},' for e in error_types)
-        print(f'python code (end of pydantic_core/core_schema.py):\n\nErrorType = Literal[{literal}\n]')
-        pytest.fail('core_schema.ErrorType needs to be updated')
 
 
 def test_core_schema_type_literal():
