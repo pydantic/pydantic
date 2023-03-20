@@ -53,7 +53,7 @@ jobs:
 
       - run: npm install -g pyright
 
-      - run: make pyright
+      - run: make test-pyright
 
   docs-build:
     runs-on: ubuntu-latest
